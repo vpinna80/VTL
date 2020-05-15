@@ -1,0 +1,232 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://oss.bancaditalia.it/vtl" 
+	xmlns="http://oss.bancaditalia.it/vtl" elementFormDefault="qualified" version="1.1">
+
+	<xs:element name="parserconfig" type="parserconfig"></xs:element>
+
+	<xs:complexType name="parserconfig">
+		<xs:sequence>
+			<xs:element name="tokenset" type="tokenset" maxOccurs="unbounded" minOccurs="0" />
+			<xs:element name="recursivecontexts" type="recursivecontexts" minOccurs="0" />
+			<xs:element name="mapping" type="mapping" maxOccurs="unbounded" minOccurs="0" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="recursivecontexts">
+		<xs:sequence>
+			<xs:element name="context" type="context" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="context">
+		<xs:attribute name="name" type="xs:string" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="tokenset">
+		<xs:sequence>
+			<xs:element name="tokenmapping" type="tokenmapping" maxOccurs="unbounded" minOccurs="1" />
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="required" />
+		<xs:attribute name="class" type="xs:string" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="mapping">
+		<xs:sequence>
+			<xs:choice>
+				<xs:element name="tokens" type="tokenscheck" maxOccurs="1" minOccurs="0" />
+				<xs:element name="context" type="contextcheck" maxOccurs="1" minOccurs="0" />
+				<xs:element name="nested" type="nestedcheck" maxOccurs="1" minOccurs="0" />
+			</xs:choice>
+			<xs:element name="params" type="params" maxOccurs="1" minOccurs="0" />
+		</xs:sequence>
+		<xs:attribute name="from" type="xs:string" use="required" />
+		<xs:attribute name="to" type="xs:string" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="check">
+		<xs:attribute name="name" type="xs:string" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="tokenscheck">
+		<xs:complexContent>
+			<xs:extension base="check">
+				<xs:sequence>
+					<xs:element name="value" type="xs:string" maxOccurs="unbounded" minOccurs="1" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="contextcheck">
+		<xs:complexContent>
+			<xs:extension base="check">
+				<xs:attribute name="context" type="xs:string" use="required" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="nestedcheck">
+		<xs:complexContent>
+			<xs:extension base="check">
+				<xs:choice>
+					<xs:element name="tokens" type="tokenscheck" maxOccurs="1" minOccurs="0" />
+					<xs:element name="context" type="contextcheck" maxOccurs="1" minOccurs="0" />
+					<xs:element name="nested" type="nestedcheck" maxOccurs="1" minOccurs="0" />
+				</xs:choice>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tokenmapping">
+		<xs:attribute name="name" type="xs:string" use="required" />
+		<xs:attribute name="value" type="xs:string" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="typemapping">
+		<xs:attribute name="type" type="xs:string" use="required" />
+		<xs:attribute name="class" type="xs:string" use="required" />
+		<xs:attribute name="method" type="xs:string" />
+	</xs:complexType>
+
+	<xs:complexType name="param" abstract="true" />
+
+	<xs:complexType name="params">
+		<xs:complexContent>
+			<xs:extension base="param">
+				<xs:choice xml:id="paramtypes" minOccurs="0" maxOccurs="unbounded">
+					<xs:element name="nullparam" type="nullparam" />
+					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="exprparam" type="exprparam" />
+					<xs:element name="valueparam" type="valueparam" />
+					<xs:element name="roleparam" type="roleparam" />
+					<xs:element name="tokensetparam" type="tokensetparam" />
+					<xs:element name="listparam" type="listparam" />
+					<xs:element name="mapparam" type="mapparam" />
+					<xs:element name="customparam" type="customparam" />
+					<xs:element name="nestedparam" type="nestedparam" />
+				</xs:choice>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="nullparam">
+		<xs:complexContent>
+			<xs:extension base="param" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="nonnullparam" abstract="true">
+		<xs:complexContent>
+			<xs:extension base="param">
+				<xs:attribute name="name" type="xs:string" />
+				<xs:attribute name="ordinal" type="xs:integer" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="stringparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="exprparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="valueparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="roleparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tokensetparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam">
+				<xs:attribute name="tokenset" type="xs:string" use="required" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="mapparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam">
+				<xs:choice minOccurs="2" maxOccurs="2">
+					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="exprparam" type="exprparam" />
+					<xs:element name="valueparam" type="valueparam" />
+					<xs:element name="roleparam" type="roleparam" />
+					<xs:element name="tokensetparam" type="tokensetparam" />
+					<xs:element name="listparam" type="listparam" />
+					<xs:element name="mapparam" type="mapparam" />
+					<xs:element name="customparam" type="customparam" />
+					<xs:element name="nestedparam" type="nestedparam" />
+				</xs:choice>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="listparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam">
+				<xs:choice>
+					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="exprparam" type="exprparam" />
+					<xs:element name="valueparam" type="valueparam" />
+					<xs:element name="roleparam" type="roleparam" />
+					<xs:element name="tokensetparam" type="tokensetparam" />
+					<xs:element name="listparam" type="listparam" />
+					<xs:element name="mapparam" type="mapparam" />
+					<xs:element name="customparam" type="customparam" />
+					<xs:element name="nestedparam" type="nestedparam" />
+				</xs:choice>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="customparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam">
+				<xs:choice minOccurs="1" maxOccurs="unbounded">
+					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="exprparam" type="exprparam" />
+					<xs:element name="valueparam" type="valueparam" />
+					<xs:element name="roleparam" type="roleparam" />
+					<xs:element name="tokensetparam" type="tokensetparam" />
+					<xs:element name="listparam" type="listparam" />
+					<xs:element name="mapparam" type="mapparam" />
+					<xs:element name="customparam" type="customparam" />
+					<xs:element name="nestedparam" type="nestedparam" />
+				</xs:choice>
+				<xs:attribute name="class" type="xs:string" use="required" />
+				<xs:attribute name="method" type="xs:string" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="nestedparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam">
+				<xs:choice minOccurs="1" maxOccurs="unbounded">
+					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="exprparam" type="exprparam" />
+					<xs:element name="valueparam" type="valueparam" />
+					<xs:element name="roleparam" type="roleparam" />
+					<xs:element name="tokensetparam" type="tokensetparam" />
+					<xs:element name="listparam" type="listparam" />
+					<xs:element name="mapparam" type="mapparam" />
+					<xs:element name="customparam" type="customparam" />
+					<xs:element name="nestedparam" type="nestedparam" />
+				</xs:choice>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

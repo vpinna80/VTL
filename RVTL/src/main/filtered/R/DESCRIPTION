@@ -1,0 +1,11 @@
+Package: ${project.artifactId}
+Version: ${r.package.version}
+Title: R Wrapper for VTL Engine
+Author: Attilio Mattiocco 
+Maintainer: Attilio Mattiocco <attilio.mattiocco@bancaditalia.it>
+Description: R wrapper for VTL Engine
+    More to be added.
+Depends: R (>= 3.3.0), rJava (>= 0.8-8), RJSDMX (>= ${RJSDMX.version}), igraph, networkD3, shiny, shinyAce, jdx, xtable, dplyr
+Suggests: testthat
+SystemRequirements: Java (>= 8)
+License: EUPL
