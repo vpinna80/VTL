@@ -140,7 +140,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.0.3</revision>
+		<revision>1.0.4-SNAPSHOT</revision>
 		<sdmx.version>2.3.3</sdmx.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -184,7 +184,7 @@
 						<id>aggregate</id>
 						<inherited>false</inherited>
 						<reports>
-							<report>aggregate-no-fork</report>
+							<report>aggregate</report>
 						</reports>
 					</reportSet>
 					<reportSet>
