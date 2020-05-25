@@ -30,6 +30,7 @@
 		<version>${revision}</version>
 	</parent>
 
+	<name>vtl-coverage</name>
         <description>Aggregator of coverage reports</description>
 
 	<dependencies>

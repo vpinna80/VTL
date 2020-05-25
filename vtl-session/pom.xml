@@ -30,7 +30,8 @@
 		<version>${revision}</version>
 	</parent>
 
-        <description>Implementation of VTL Sessions</description>
+	<name>vtl-session</name>
+	<description>Implementation of VTL Sessions</description>
 
 	<properties>
 		<antlr4.version>4.7.2</antlr4.version>
@@ -77,8 +78,12 @@
 				<artifactId>maven-gpg-plugin</artifactId>
 			</plugin>
 			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>

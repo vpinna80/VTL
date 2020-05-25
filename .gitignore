@@ -5,7 +5,6 @@ hs_err_*
 **/*.orig
 .R*
 .externalToolBuilders
-vtl-launcher/test_data/ecbexr.csv
 **/target
 **/.flattened-pom.xml
 **/.tracecompass/**
@@ -18,3 +17,4 @@ vtl-launcher/test_data/ecbexr.csv
 .settings
 **/.evosuite
 vtl-launcher/src/main/java/it/bancaditalia/oss/sdmx/util/SdmxConfiguration.java
+vtl-launcher/test_data/ecbexr.csv

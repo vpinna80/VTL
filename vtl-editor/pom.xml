@@ -30,6 +30,7 @@
 		<version>${revision}</version>
 	</parent>
 
+	<name>vtl-editor</name>
         <description>Javascript editor component to be integrated in VTL Studio</description>
 
 	<dependencies>

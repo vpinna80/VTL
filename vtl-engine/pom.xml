@@ -30,7 +30,8 @@
 		<version>${revision}</version>
 	</parent>
 
-        <description>The main VTL translation engine</description>
+	<name>vtl-transform</name>
+	<description>The main VTL translation engine</description>
 
 	<dependencies>
 		<dependency>
@@ -108,8 +109,12 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
