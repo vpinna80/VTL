@@ -6,7 +6,7 @@ written in Java, Javascript and R.
 
 ## Copyright notice
 
-Thi software is a copyright of Bank of Italy, 2019-2020.
+This software is a copyright of Bank of Italy, 2019-2020.
 The software is distributed under the European Public Licence v1.2.
 
 ## Project Status
@@ -20,7 +20,7 @@ Thus, some VTL operators and statements offer only limited functionality,
 and some have to be implemented yet.
 
 For the status of current implementation please look at 
-[this map](https://vpinna80.github.io/VTL/VTL.png)
+[this map](https://vpinna80.github.io/VTL/VTL.png).
 
 ## Usage and documentation
 
