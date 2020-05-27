@@ -28,12 +28,12 @@
 
 	<name>VTL</name>
 	<description>VTL prototypal engine</description>
-	<url>${scm-url}</url>
+	<url>${site-url}</url>
 
 	<licenses>
 		<license>
 			<name>European Union Public Licence v1.2 (EUPL)</name>
-			<url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</url>
+			<url>${license-url}</url>
 		</license>
 	</licenses>
 
@@ -65,7 +65,6 @@
 
 	<modules>
 		<module>vtl-api</module>
-		<module>vtl-coverage</module>
 		<module>vtl-domains</module>
 		<module>vtl-engine</module>
 		<module>vtl-envs</module>
@@ -82,7 +81,6 @@
 			<id>with-r</id>
 			<modules>
 				<module>vtl-api</module>
-				<module>vtl-coverage</module>
 				<module>vtl-domains</module>
 				<module>vtl-editor</module>
 				<module>vtl-engine</module>
@@ -151,6 +149,8 @@
 		<build-helper-maven-plugin.version>3.1.0</build-helper-maven-plugin.version>
 		<node.version>v10.20.1</node.version>
 		<scm-url>https://github.com/vpinna80/VTL</scm-url>
+		<site-url>https://vpinna80.github.io/VTL</site-url>
+		<license-url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
 	</properties>
 
 	<reporting>
@@ -201,7 +201,7 @@
 	<distributionManagement>
 		<site>
 			<id>site</id>
-			<url>https://vpinna80.github.io/VTL</url>
+			<url>${site-url}</url>
 		</site>
 		<repository>
 			<id>ossrh</id>
@@ -339,6 +339,31 @@
 							<groupId>io.github.devacfr.maven.skins</groupId>
 							<artifactId>reflow-velocity-tools</artifactId>
 							<version>2.3.0</version>
+						</dependency>
+						<dependency>
+							<groupId>org.apache.maven.doxia</groupId>
+							<artifactId>doxia-module-markdown</artifactId>
+							<version>1.9.1</version>
+						</dependency>
+						<dependency>
+							<groupId>org.eclipse.jetty</groupId>
+							<artifactId>jetty-server</artifactId>
+							<version>9.4.29.v20200521</version>
+						</dependency>
+						<dependency>
+							<groupId>org.eclipse.jetty</groupId>
+							<artifactId>jetty-servlet</artifactId>
+							<version>9.4.29.v20200521</version>
+						</dependency>
+						<dependency>
+							<groupId>org.eclipse.jetty</groupId>
+							<artifactId>jetty-util</artifactId>
+							<version>9.4.29.v20200521</version>
+						</dependency>
+						<dependency>
+							<groupId>org.eclipse.jetty</groupId>
+							<artifactId>jetty-webapp</artifactId>
+							<version>9.4.29.v20200521</version>
 						</dependency>
 					</dependencies>
 				</plugin>
@@ -485,7 +510,7 @@
 				<artifactId>maven-site-plugin</artifactId>
 				<configuration>
 					<port>18080</port>
-					<tempWebappDirectory>${project.build.directory}/site-stage</tempWebappDirectory>
+					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -509,10 +534,6 @@
 					<message>Update documentation</message>
 					<merge>true</merge>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>

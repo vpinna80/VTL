@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/badge/license-EUPL-green)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
+
 # VTL E&E
 
 An engine and editor for the 
@@ -20,7 +22,7 @@ Thus, some VTL operators and statements offer only limited functionality,
 and some have to be implemented yet.
 
 For the status of current implementation please look at 
-[this map](https://vpinna80.github.io/VTL/VTL.png).
+[this map](https://vpinna80.github.io/VTL/images/VTL.png).
 
 ## Usage and documentation
 

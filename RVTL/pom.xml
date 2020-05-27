@@ -89,13 +89,6 @@
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-launcher</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-editor</artifactId>
-			<version>${project.version}</version>
-			<classifier>bundle</classifier>
-			<type>zip</type>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -141,13 +134,20 @@
 						<id>add-editor</id>
 						<phase>prepare-package</phase>
 						<goals>
-							<goal>unpack-dependencies</goal>
+							<goal>unpack</goal>
 						</goals>
 						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>it.bancaditalia.oss.vtl</groupId>
+									<artifactId>vtl-editor</artifactId>
+									<version>${project.version}</version>
+									<classifier>bundle</classifier>
+									<type>zip</type>
+									<overWrite>true</overWrite>
+								</artifactItem>
+							</artifactItems>
 							<outputDirectory>${project.build.outputDirectory}/R/inst/vtlStudio2/www</outputDirectory>
-							<includeArtifactIds>vtl-editor</includeArtifactIds>
-							<classifier>bundle</classifier>
-							<type>zip</type>
 						</configuration>
 					</execution>
 				</executions>

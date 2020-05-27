@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="VTL Engine and Editor" xmlns="http://maven.apache.org/DECORATION/1.8.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
+
+
+	<bannerLeft>
+		<name>
+			<![CDATA[VTL <span class="color-highlight">E&amp;E</span>]]>
+		</name>
+		<src>images/logo.svg</src>
+		<width>144</width>
+		<height>144</height>
+		<alt>VTL E&amp;E</alt>
+		<href>${this.site-url}</href>
+	</bannerLeft>
+
+	<publishDate position="none" />
+	<version position="bottom" />
+	<edit>${project.scm.url}</edit>
+
+	<skin>
+		<groupId>io.github.devacfr.maven.skins</groupId>
+		<artifactId>reflow-maven-skin</artifactId>
+		<version>2.3.0</version>
+	</skin>
+
+	<custom>
+		<reflowSkin>
+			<absoluteResourceURL>${this.site-url}</absoluteResourceURL>
+			<localResources>false</localResources>
+
+			<smoothScroll>true</smoothScroll>
+
+			<highlightJs>true</highlightJs>
+			
+			<brand>
+				<name>
+					<![CDATA[<span class="color-highlight">VTL</span> E&amp;E]]>
+				</name>
+				<href>${this.site-url}</href>
+			</brand>
+
+			<slogan>The prototypal engine and editor for the Validation and Transformation Language</slogan>
+
+			<titleTemplate>%2$s | %1$s</titleTemplate>
+
+			<header type="banner" enabled="false" />
+
+			<toc theme="dark" background="dark" cssClass="border rounded">top</toc>
+
+			<navbar filterMenu="Documentation|Maven Documentation" theme="light" background="light" cssClass="border-bottom" center="false" alignMenu="right">
+				<image src="$resourcePath/images/logo.svg" />
+			</navbar>
+
+			<navside-menu theme="light" background="light" />
+			
+			<footer theme="dark" background="dark" />
+			
+			<bottomNav>
+				<column>Main</column>
+				<column>Documentation|Contribute</column>
+				<column>reports</column>
+			</bottomNav>
+
+			<bottomDescription quote="false">
+				<![CDATA[
+					<div>
+						<span class="color-highlight">VTL E&amp;E</span> is an interpreter engine and an editor
+						for the <a href="https://sdmx.org/?page_id=5096">Validation and Transformation Language</a>.
+						<div class="m-1">
+							<a href="https://github.com/vpinna80/VTL" class="p-1 text-secondary" target="_blank"><i class="fab fa-github"></i></a>
+							<a href="mailto:valentino.pinna@bancaditalia.it" class="p-1 text-secondary"><i class="fas fa-envelope"></i></a>
+							<a href="mailto:attilio.mattiocco@bancaditalia.it" class="p-1 text-secondary"><i class="fas fa-envelope"></i></a>
+						</div>
+					</div>
+				]]>
+			</bottomDescription>
+
+			<markPageHeader>false</markPageHeader>
+
+			<pages>
+				<index type="body" project="vtl"></index>
+
+				<development-documentation type="doc">
+					<menu name="Development Documentation">
+						<item name="Contribute" href="dev/contribute.html" />
+						<item name="Code Conventions" href="dev/code-conventions.html" />
+						<item name="Release Management" href="dev/release-management.html" />
+					</menu>
+				</development-documentation>
+
+				<licenses>
+					<highlightJs>false</highlightJs>
+					<toc>false</toc>
+				</licenses>
+
+				<modules>
+					<toc>false</toc>
+				</modules>
+
+				<summary>
+					<toc>false</toc>
+				</summary>
+
+				<team>
+					<toc>false</toc>
+				</team>
+
+				<scm>
+					<toc>false</toc>
+				</scm>
+
+				<issue-management>
+					<highlightJs>false</highlightJs>
+					<toc>false</toc>
+				</issue-management>
+
+				<dependency-convergence>
+					<toc>false</toc>
+				</dependency-convergence>
+
+				<plugins>
+					<toc>false</toc>
+				</plugins>
+
+				<github-report>
+					<toc>false</toc>
+				</github-report>
+
+				<dependencies>
+					<toc numberItems="4">top</toc>
+				</dependencies>
+			</pages>
+		</reflowSkin>
+	</custom>
+
+	<body>
+		<head>
+			<![CDATA[
+			        <link rel="apple-touch-icon" sizes="144x144" href="$resourcePath/apple-touch-icon.png">
+			        <link rel="icon" type="image/png" sizes="32x32" href="$resourcePath/favicon-32x32.png">
+			        <link rel="icon" type="image/png" sizes="16x16" href="$resourcePath/favicon-16x16.png">
+		        	<link rel="mask-icon" href="$resourcePath/safari-pinned-tab.svg" color="#5bbad5">
+			        <link rel="preload" as="image" href="$resourcePath/images/wallpaper.jpg">
+			        <meta name="apple-mobile-web-app-title" content="VTL E&amp;E">
+			        <meta name="application-name" content="VTL E&amp;E">
+		        ]]>
+		</head>
+
+		<links>
+			<item name="GitHub project" href="${this.scm-url}" target="_blank" />
+		</links>
+
+		<breadcrumbs>
+			<item name="VTL E&amp;E" href="/" />
+		</breadcrumbs>
+
+		<menu name="Main" inherit="top">
+			<item name="Home" href="./" />
+			<item name="GitHub project" href="${this.scm-url}" />
+			<item name="Release notes" href="#" />
+			<item name="Licenses" href="licenses.html" />
+		</menu>
+		
+		<menu name="Contribute" inherit="bottom">
+			<item name="Issues" href="${this.issueManagement.url}" />
+			<item name="Fork on GitHub" href="${this.scm-url}" />
+		</menu>	
+
+		<menu name="Documentation" inherit="bottom">
+			<item name="Get Started" href="get-started.html" />
+			<item name="Advanced usage" href="advanced.html" />
+			<item name="API documentation" href="apidocs" />
+		</menu>
+
+		<menu name="Maven Documentation" ref="reports" inherit="bottom" />
+	</body>
+</project>
+
