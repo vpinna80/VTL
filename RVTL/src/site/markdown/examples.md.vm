@@ -46,7 +46,7 @@ $CEND
 
 Note that if you access internet through a proxy server, you may need to configure it to replicate this example.
 
-$3 VTL code
+$h3 VTL code
 
 After your data is prepared, you may start vtlStudio, create a new session, and run the example:
 
