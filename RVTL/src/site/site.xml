@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project xmlns="http://maven.apache.org/DECORATION/1.8.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
+
+	<custom>
+		<reflowSkin>
+			<toc>sidebar</toc>
+			<pages>
+				<documentation type="doc">
+					<menu name="VTL E&amp;E Documentation" selectFirstOnExpand="true">
+						<item name="Get Started" href="get-started.html" />
+						<item name="VTL Examples" href="examples.html" />
+					</menu>
+				</documentation>
+				<get-started>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</get-started>
+				<examples>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</examples>
+			</pages>
+		</reflowSkin>
+	</custom>
+
+	<body>
+		<breadcrumbs>
+			<item name="VTL" href="/documentation.html" />
+		</breadcrumbs>
+	</body>
+</project>

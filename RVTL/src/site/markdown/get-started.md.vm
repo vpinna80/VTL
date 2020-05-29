@@ -1,0 +1,70 @@
+#set($h1 = '#')
+#set($h2 = '##')
+#set($h3 = '###')
+#set($h4 = '####')
+#set($h5 = '#####')
+#set($RCODE = '```R')
+#set($CSTART = '```R')
+#set($CEND = '```')
+
+$h1 Get Started
+
+This section explains how to fast forward into productivity with vtlStudio, the embedded VTL editor for R.
+
+$h2 Installation
+
+A release to CRAN is planned. In the meantime, just open an R session and submit the following command:
+
+$RCODE
+install.packages('${scm-url}/releases/download/v${project.version}/RVTL_${project.version}.tar.gz', dependencies = TRUE)
+$CEND
+
+R will download the package from GitHub and install it on your machine with all required dependencies.
+
+$h2 Startup
+
+To start the editor, from the R console, launch the commands:
+
+$RCODE
+> library(RVTL)
+> vtlStudio()
+
+Listening on http://127.0.0.1:4384
+$CEND
+
+Then, your default browser will open a page to the vtlStudio web application.
+If vtlStudio does not automatically open, just paste the output link in the R console to start it up.
+
+$h2 Creating a session
+
+The first thing to do when opening vtlStudio is to create a session.
+On the sidebar, type a name of your choice into the New Session box, and click the Create button.
+
+![create-session](/images/create-session.png)
+
+You will see the newly created session on the Session ID dropdown menu.
+
+$h2 Submitting code
+
+For a first run, enter the following VTL code in the editor:
+
+$CSTART
+a := "Hello World!";
+$CEND
+
+then submit the code by clicking the Compile and Submit button.
+
+After a moment, you will see the following message in the gray output box:
+
+![hello-world-compile](/images/hello-world-compile.png)
+
+$h2 Browse results
+
+The Dataset Explorer tab allows you to browse the computed values of any submitted rule.
+
+You can choose the rule to compute and show with the Select Node dropdown menu.
+
+In this case, select the **a** node. You will see the following:
+
+![hello-world-result](/images/hello-world-result.png)
+

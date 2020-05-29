@@ -6,24 +6,6 @@ An engine and editor for the
 [Validation and Transformation Language](https://sdmx.org/?page_id=5096), 
 written in Java, Javascript and R.
 
-## Copyright notice
-
-This software is a copyright of Bank of Italy, 2019-2020.
-The software is distributed under the European Public Licence v1.2.
-
-## Project Status
-
-The Project is an ongoing development effort at Bank of Italy, with the 
-purpose of demonstrating the feasibility and usefulness of VTL in a real 
-scenario, such as translating validation rules exchanged by entities 
-operating in the ESCB.
-
-Thus, some VTL operators and statements offer only limited functionality,
-and some have to be implemented yet.
-
-For the status of current implementation please look at 
-[this map](https://vpinna80.github.io/VTL/images/VTL.png).
-
 ## Usage and documentation
 
 Usage info, documentation and examples are available at the
@@ -52,3 +34,21 @@ be located there.
 If you want to use a different version of the 
 [SDMX connectors](https://github.com/amattioc/SDMX.git) dependency, change 
 the relative property value. The current default version is 2.3.3.
+
+## Project Status
+
+The Project is an ongoing development effort at Bank of Italy, with the 
+purpose of demonstrating the feasibility and usefulness of VTL in a real 
+scenario, such as translating validation rules exchanged by entities 
+operating in the ESCB.
+
+Thus, some VTL operators and statements offer only limited functionality,
+and some have to be implemented yet.
+
+The following map shows the current implementation status:
+![statusmap](https://vpinna80.github.io/VTL/images/VTL.png)
+
+## Copyright notice
+
+This software is a copyright of Bank of Italy, 2019-2020.
+The software is distributed under the European Public Licence v1.2.

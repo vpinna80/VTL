@@ -3,7 +3,7 @@
 		<div class="header--subhead">
 			<div id="banner" class="header__banner">
 				<a href="." class="d-inline-block">
-					<img style="vertical-align: middle;" class="m-2" src="$resourcePath/images/logo1.svg"
+					<img style="vertical-align: middle;" class="m-2" src="$resourcePath/images/logo.svg"
 						alt="$esc.html($decoration.bannerLeft.alt)" width="$decoration.bannerLeft.width"
 						height="$$decoration.bannerLeft.height" />
 				</a>
@@ -11,7 +11,7 @@
 				<p class="lead">$config.slogan.getValue()</p>
 			</div>
 			<p>
-				<a href="$resourcePath/get-started.html"
+				<a href="$resourcePath/RVTL/documentation.html#get-started"
 					class="btn btn-lg mb-2 mr-2 ml-2">
 					<span class="btn__link-icon">
 						<!-- MACRO{snippet|file=src/site/svg/pentone.svg|verbatim=false|ignoreDownloadError=false} -->
@@ -95,7 +95,7 @@
 				</div>
 				<div class="card-footer border-0 bg-transparent text-center">
 					<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
-						href="reflow-maven-skin/reflow-documentation.html#get-started_toc_configuration">Read more »</a>
+						href="RVTL/documentation.html#get-started">Read more »</a>
 				</div>
 			</div>
 			<div class="card border-0">

@@ -169,7 +169,7 @@
 		</menu>	
 
 		<menu name="Documentation" inherit="bottom">
-			<item name="Get Started" href="get-started.html" />
+			<item name="Get Started" href="/RVTL/documentation.html#get-started" />
 			<item name="Advanced usage" href="advanced.html" />
 			<item name="API documentation" href="apidocs" />
 		</menu>
