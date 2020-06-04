@@ -1,0 +1,4 @@
+it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment
+it.bancaditalia.oss.vtl.impl.environment.REnvironment
+it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment
+it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl

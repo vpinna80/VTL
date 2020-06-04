@@ -69,20 +69,27 @@ public class VTLSessionImpl implements VTLSession
 	private final static Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 
 	private final Engine engine;
-	private final List<Environment> environments;
+	private final List<Environment> environments = new ArrayList<>();
 	private final Workspace workspace;
 	private final Map<String, SoftReference<VTLValue>> cache = new ConcurrentHashMap<>();
 	private final Map<String, SoftReference<VTLValueMetadata>> metacache = new ConcurrentHashMap<>();
 	private final Map<String, ReentrantLock> cacheLocks = new ConcurrentHashMap<>();
 	private final MetadataRepository repository;
 
-	public VTLSessionImpl(List<Environment> environments, Engine engine)
+	public VTLSessionImpl()
 	{
-		this.environments = environments;
-		this.engine = engine;
+		Workspace selectedWorkspace = null;
+		for (Environment env: ServiceLoader.load(Environment.class))
+		{
+			environments.add(env);
+			
+			if (env instanceof Workspace)
+				selectedWorkspace = (Workspace) env;
+		}
+		
+		this.engine = ServiceLoader.load(Engine.class).iterator().next();
 		this.repository = ServiceLoader.load(MetadataRepositoryFactory.class).iterator().next().getDefaultRepository();
-		this.workspace = environments.stream().filter(Workspace.class::isInstance).map(Workspace.class::cast).findAny()
-				.orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
+		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
 	}
 
 	@Override
@@ -298,5 +305,11 @@ public class VTLSessionImpl implements VTLSession
 	public Engine getEngine()
 	{
 		return engine;
+	}
+
+	@Override
+	public Workspace getWorkspace()
+	{
+		return workspace;
 	}
 }

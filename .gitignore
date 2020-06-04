@@ -10,6 +10,7 @@ hs_err_*
 **/.tracecompass/**
 **/*.orig
 **/.classpath
+**/.factorypath
 **/.project
 **/.settings
 .classpath

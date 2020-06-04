@@ -31,7 +31,7 @@ import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 
-class WorkspaceImpl implements Workspace
+public class WorkspaceImpl implements Workspace
 {
 	private final Map<String, VTLValue>			values		= new ConcurrentHashMap<>();
 	private final Map<String, Statement>		rules		= Collections.synchronizedMap(new LinkedHashMap<>());

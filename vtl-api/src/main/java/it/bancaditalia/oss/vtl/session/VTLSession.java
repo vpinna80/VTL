@@ -25,14 +25,18 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.ServiceLoader;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public interface VTLSession extends TransformationScheme
 {
 	public Engine getEngine();
+	
+	public Workspace getWorkspace();
 	
 	public VTLSession addStatements(String statements);
 
@@ -43,4 +47,9 @@ public interface VTLSession extends TransformationScheme
 	public VTLSession addStatements(Path path, Charset charset) throws IOException;
 
 	public List<? extends VTLValueMetadata> compile();
+	
+	public static Iterable<VTLSession> getInstances()
+	{
+		return ServiceLoader.load(VTLSession.class);
+	}
 }

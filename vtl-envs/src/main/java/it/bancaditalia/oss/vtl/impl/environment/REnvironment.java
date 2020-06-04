@@ -63,20 +63,25 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-class REnvironment implements Environment
+public class REnvironment implements Environment
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
 	private final Map<String, VTLValue>	values	= new HashMap<>();
-	private Rengine						rengine;
+	private final Rengine engine;
 
-	public Rengine getREngine()
+	public REnvironment()
 	{
-		return rengine;
+		engine = isEnabled() ? new Rengine() : null;
+	}
+	
+	public Rengine getEngine()
+	{
+		return engine;
 	}
 
 	private boolean isEnabled()
 	{
-		return !"disable".equalsIgnoreCase(System.getProperty("vtl.r"));
+		return "enable".equalsIgnoreCase(System.getProperty("vtl.r"));
 	}
 	
 	@Override
@@ -88,11 +93,11 @@ class REnvironment implements Environment
 		if (values.containsKey(name))
 			return Optional.of(values.get(name).getMetadata());
 
-		if (rengine.eval("exists('" + name + "')").asBool().isTRUE())
+		if (getEngine().eval("exists('" + name + "')").asBool().isTRUE())
 		{
-			if (rengine.eval("is.data.frame(" + name + ")").asBool().isTRUE()) 
+			if (getEngine().eval("is.data.frame(" + name + ")").asBool().isTRUE()) 
 			{
-				REXP data = rengine.eval(name + "[1,]");
+				REXP data = getEngine().eval(name + "[1,]");
 				RList dataFrame = data.asList();
 
 				// manage measure and identifier attributes
@@ -105,7 +110,7 @@ class REnvironment implements Environment
 				List<String> identifiers = new ArrayList<>();
 				REXP idAttr = data.getAttribute("identifiers");
 				if(idAttr != null) {
-					if (rengine.eval("any(duplicated(" + name + "[,attr(" + name + ", 'identifiers')]))").asBool().isTRUE())
+					if (getEngine().eval("any(duplicated(" + name + "[,attr(" + name + ", 'identifiers')]))").asBool().isTRUE())
 						throw new IllegalStateException("Found duplicated rows in data frame " + name);
 					identifiers = Arrays.asList(idAttr.asStringArray());
 				}
@@ -148,10 +153,10 @@ class REnvironment implements Environment
 				
 				return Optional.of(builder.build());
 			}
-			else if (rengine.eval("is.integer(" + name + ") || is.numeric(" + name + ") || is.character(" + name + ") || is.logical(" + name + ")")
+			else if (getEngine().eval("is.integer(" + name + ") || is.numeric(" + name + ") || is.character(" + name + ") || is.logical(" + name + ")")
 					.asBool().isTRUE())
 			{
-				REXP data = rengine.eval(name);
+				REXP data = getEngine().eval(name);
 				switch (data.getType())
 				{
 					case REXP.XT_STR:
@@ -181,19 +186,19 @@ class REnvironment implements Environment
 		if (values.containsKey(name))
 			return Optional.of(values.get(name));
 
-		if (rengine.eval("exists('" + name + "')").asBool().isTRUE())
+		if (getEngine().eval("exists('" + name + "')").asBool().isTRUE())
 		{
 			VTLValue result;
 
-			if (rengine.eval("is.data.frame(" + name + ")").asBool().isTRUE()) {
+			if (getEngine().eval("is.data.frame(" + name + ")").asBool().isTRUE()) {
 				result = parseDataFrame(name);
 				values.put(name, result);
 				return Optional.of(result);
 			}
-			else if (rengine.eval("is.integer(" + name + ") || is.numeric(" + name + ") || is.character(" + name +
+			else if (getEngine().eval("is.integer(" + name + ") || is.numeric(" + name + ") || is.character(" + name +
 					")").asBool().isTRUE())
 			{
-				REXP data = rengine.eval(name);
+				REXP data = getEngine().eval(name);
 				switch (data.getType())
 				{
 					case REXP.XT_STR:
@@ -228,12 +233,12 @@ class REnvironment implements Environment
 		List<String> measures = new ArrayList<>();
 
 		// transform factors into strings
-		rengine.eval("if(any(sapply(" + name + ", is.factor))) " + name + "[which(sapply(" + name + ", is.factor))] <- sapply(" + name + "[which(sapply(" + name
+		getEngine().eval("if(any(sapply(" + name + ", is.factor))) " + name + "[which(sapply(" + name + ", is.factor))] <- sapply(" + name + "[which(sapply(" + name
 				+ ", is.factor))], as.character)");
 
 		LOGGER.info("Migrating dataset {} from R", name);
 		
-		REXP data = rengine.eval(name);
+		REXP data = getEngine().eval(name);
 		RList dataFrame = data.asList();
 
 		// manage measure and identifier attributes
@@ -294,14 +299,5 @@ class REnvironment implements Environment
 	public boolean contains(String id)
 	{
 		return values.containsKey(id);
-	}
-
-	@Override
-	public Environment init(Object... rengine)
-	{
-		if (isEnabled())
-			this.rengine = (rengine == null || rengine[0] == null) ? new Rengine() : (Rengine) rengine[0];
-		
-		return this;
 	}
 }

@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.environment;
 
 import java.util.Optional;
+import java.util.ServiceLoader;
 
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
@@ -61,5 +62,10 @@ public interface Environment
 	public default Environment init(Object... configuration)
 	{
 		return this;
+	}
+
+	public static Iterable<Environment> getInstances()
+	{
+		return ServiceLoader.load(Environment.class);
 	}
 }

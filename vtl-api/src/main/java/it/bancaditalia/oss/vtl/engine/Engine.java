@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
 /**
@@ -68,5 +69,10 @@ public interface Engine
 	public default Engine init(Object... configuration)
 	{
 		return this;
+	}
+	
+	public static Iterable<Engine> getInstances()
+	{
+		return ServiceLoader.load(Engine.class);
 	}
 }

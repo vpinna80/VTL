@@ -94,7 +94,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.MetadataRepositoryFactory;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-class SDMXEnvironment implements Environment
+public class SDMXEnvironment implements Environment
 {
 	public static final String DROP_ID_PROPERTY = "vtl.sdmx.keep.identifiers";
 	

@@ -34,16 +34,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.engine.Engine;
-import it.bancaditalia.oss.vtl.engine.EngineFactory;
-import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.environment.EnvironmentFactory;
 import it.bancaditalia.oss.vtl.impl.session.exceptions.VTLSessionException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -56,7 +50,6 @@ import it.bancaditalia.oss.vtl.util.Paginator;
 
 public class VTLSessionHandler
 {
-	private static final String JAVA_ENGINE = "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine";
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionHandler.class);
 	private static final Map<String, VTLSession> sessions = new HashMap<>();
 
@@ -66,68 +59,7 @@ public class VTLSessionHandler
 			return sessions.get(sessionID);
 		}
 		
-		Map<String, Object> envNames = new HashMap<>();
-		envNames.put("it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl", null);
-		envNames.put("it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment", null);
-		envNames.put("it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment", null);
-		if(!System.getProperty("NO_R", "false").equalsIgnoreCase("true")){
-			envNames.put("it.bancaditalia.oss.vtl.impl.environment.REnvironment", null);
-		}
-		List<Environment> envs = new ArrayList<>();
-
-		try
-		{
-			for (Entry<String, Object> entry : envNames.entrySet())
-			{
-				LOGGER.info("Creating environment " + entry.getKey() + "...");
-				Optional<Environment> result = Optional.empty();
-				for (EnvironmentFactory factory : EnvironmentFactory.getInstances())
-				{
-					result = factory.createEnvironment(entry.getKey(), entry.getValue());
-					if (result.isPresent())
-					{
-						envs.add(result.get());
-						break;
-					}
-				}
-
-				if (!result.isPresent())
-					throw new ClassNotFoundException("No factory for environment " + entry.getKey());
-			}
-		}
-		catch (Exception e)
-		{
-			LOGGER.error("Error creating environments", e);
-			throw new VTLSessionException("Error creating environments", e);
-		}
-
-		return getSession(sessionID, envs);
-	}
-
-	public static VTLSession getSession(String sessionID, List<Environment> envs) throws VTLSessionException
-	{
-		try
-		{
-			LOGGER.info("Creating java engine...");
-			for (EngineFactory factory : EngineFactory.getInstances())
-			{
-				Optional<Engine> result = factory.createEngine(JAVA_ENGINE, new Object[0]);
-				if (result.isPresent())
-					return getSession(sessionID, envs, result.get());
-			}
-
-			throw new ClassNotFoundException("No factory for engine " + JAVA_ENGINE);
-		}
-		catch (Exception e)
-		{
-			LOGGER.error("Error retrieving session", e);
-			throw new VTLSessionException("Error retrieving session", e);
-		}
-	}
-
-	public static VTLSession getSession(String sessionID, List<Environment> envs, Engine engine) // throws VTLSessionException
-	{
-		return sessions.computeIfAbsent(sessionID, id -> new VTLSessionImpl(envs, engine));
+		return sessions.computeIfAbsent(sessionID, id -> VTLSession.getInstances().iterator().next());
 	}
 
 	public static List<String> getSessions()
