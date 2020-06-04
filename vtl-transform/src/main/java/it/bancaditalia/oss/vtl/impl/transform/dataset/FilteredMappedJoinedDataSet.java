@@ -68,15 +68,23 @@ public class FilteredMappedJoinedDataSet extends AbstractDataSet
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		return right.stream().flatMap(
-				dpOther -> left.getMatching(dpOther.getValues(indexKeys, Identifier.class)).filter(dp -> predicate.test(dp, dpOther)).map(dp -> mergeOp.apply(dp, dpOther)));
+		return right.stream()
+				.map(dpOther -> left.getMatching(dpOther.getValues(indexKeys, Identifier.class))
+				.filter(dp -> predicate.test(dp, dpOther))
+				.map(dp -> mergeOp.apply(dp, dpOther)))
+				.reduce(Stream::concat)
+				.orElse(Stream.empty());
 	}
 
 	@Override
 	public Stream<DataPoint> getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
 	{
-		return left.getMatching(keyValues).flatMap(dpLeft -> right.getMatching(dpLeft.getValues(indexKeys, Identifier.class)).filter(dpRight -> predicate.test(dpLeft, dpRight))
-				.map(dpRight -> mergeOp.apply(dpLeft, dpRight)));
+		return left.getMatching(keyValues)
+				.map(dpLeft -> right.getMatching(dpLeft.getValues(indexKeys, Identifier.class))
+						.filter(dpRight -> predicate.test(dpLeft, dpRight))
+						.map(dpRight -> mergeOp.apply(dpLeft, dpRight)))
+				.reduce(Stream::concat)
+				.orElse(Stream.empty());
 	}
 
 	@Override
@@ -86,8 +94,12 @@ public class FilteredMappedJoinedDataSet extends AbstractDataSet
 	{
 		return left.streamByKeys(keys, filter, (keyValues, group) -> {
 			LOGGER.trace("Working on indexed dataset group {}", keyValues);
-			return groupMapper.apply(keyValues, group.flatMap(dpLeft -> right.getMatching(dpLeft.getValues(indexKeys, Identifier.class))
-					.filter(dpRight -> predicate.test(dpLeft, dpRight)).map(dpRight -> mergeOp.apply(dpLeft, dpRight))));
+			return groupMapper.apply(keyValues, group
+					.map(dpLeft -> right.getMatching(dpLeft.getValues(indexKeys, Identifier.class))
+							.filter(dpRight -> predicate.test(dpLeft, dpRight))
+							.map(dpRight -> mergeOp.apply(dpLeft, dpRight)))
+					.reduce(Stream::concat)
+					.orElse(Stream.empty()));
 		});
 	}
 }

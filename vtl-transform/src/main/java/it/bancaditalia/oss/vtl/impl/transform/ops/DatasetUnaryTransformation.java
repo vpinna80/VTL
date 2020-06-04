@@ -103,7 +103,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 					.collect(groupingByConcurrent(classifier, toCollection(() -> new TreeSet<>(comparator))))
 					.values();
 			return Utils.getStream(groups)
-				.flatMap(group -> {
+				.map(group -> {
 					Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> acc = new ConcurrentHashMap<>();
 					return group.stream().map(dp -> new DataPointBuilder(Utils.getStream(measures)
 							.collect(toConcurrentMap(m -> m, m -> {
@@ -113,7 +113,8 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 								return v; 
 							}))).addAll(dp.getValues(Identifier.class))
 							.build(ds.getDataStructure()));
-				});
+				}).reduce(Stream::concat)
+				.orElse(Stream.empty());
 		}
 		
 		@Override

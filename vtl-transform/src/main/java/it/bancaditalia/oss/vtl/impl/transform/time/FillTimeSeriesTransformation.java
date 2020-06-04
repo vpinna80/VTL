@@ -169,7 +169,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 				}
 				
 				return Stream.concat(Utils.getStream(elements), Utils.getStream(additional));
-			}).flatMap(UnaryOperator.identity()), ds);
+			}).reduce(Stream::concat).orElse(Stream.empty()), ds);
 	}
 	
 	@Override

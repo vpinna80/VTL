@@ -45,7 +45,10 @@ public class ProgressWindow
 	private static <T, K> Stream<T> streamHelper(String title, int maxValue, K source, Function<? super K, ? extends Stream<T>> streamProducer)
 	{
 		ProgressWindow window = new ProgressWindow(title, maxValue);
-		return Stream.of(source).flatMap(streamProducer.andThen(s -> s.onClose(window::dispose).peek(i -> window.progress())));
+		return Stream.of(source)
+				.map(streamProducer.andThen(s -> s.onClose(window::dispose).peek(i -> window.progress())))
+				.reduce(Stream::concat)
+				.orElse(Stream.empty());
 	}
 
 	private static <K> IntStream intStreamHelper(String title, int maxValue, K source, Function<? super K, ? extends IntStream> streamProducer)

@@ -19,17 +19,14 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.environment.dataset;
 
-import static java.lang.Boolean.TRUE;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;

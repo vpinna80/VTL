@@ -74,7 +74,6 @@
 		<module>vtl-session</module>
 		<module>vtl-transform</module>
 		<module>vtl-types</module>
-		<!--module>vtl-repl</module -->
 	</modules>
 
 	<profiles>
@@ -93,7 +92,6 @@
 				<module>vtl-transform</module>
 				<module>vtl-types</module>
 				<module>RVTL</module>
-				<!-- module>vtl-repl</module -->
 			</modules>
 		</profile>
 		<profile>

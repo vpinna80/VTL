@@ -127,7 +127,7 @@ public abstract class AbstractDataSet implements DataSet
 		}
 		
 		return new LightDataSet(metadata, () -> stream()
-				.flatMap(dps -> {
+				.map(dps -> {
 					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> valuesToMatch = dps.getValues(commonIds, Identifier.class);
 					List<DataPoint> group = index.get(valuesToMatch);
 					if (group == null)
@@ -136,7 +136,8 @@ public abstract class AbstractDataSet implements DataSet
 						return group.stream()
 							.filter(dpi -> predicate.test(dps, dpi))
 							.map(dpi -> mergeOp.apply(dps, dpi)); 
-				}));
+				}).reduce(Stream::concat)
+				.orElse(Stream.empty()));
 	}
 
 	@Override

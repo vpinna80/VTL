@@ -183,9 +183,11 @@ public class SDMXEnvironment implements Environment
 				.collect(entriesToMap());
 
 		return new LightDataSet(metadata, () -> Utils.getStream(table)
-				.flatMap(s -> s.stream()
+				.map(s -> s.stream()
 						.map(o -> l1(metadata, seriesMeta, s, o)) //
-						.map(v -> new DataPointBuilder(v).build(metadata))));
+						.map(v -> new DataPointBuilder(v).build(metadata))
+				).reduce(Stream::concat)
+				.orElse(Stream.empty()));
 	}
 
 	private ConcurrentMap<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> l1(VTLDataSetMetadata metadata,
