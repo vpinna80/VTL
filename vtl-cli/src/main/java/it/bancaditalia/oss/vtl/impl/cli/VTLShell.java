@@ -31,6 +31,7 @@ public class VTLShell implements Callable<Void>
 	
 	public static void main(String... args)
 	{
+		System.setProperty("vtl.r", "disable");
 		new CommandLine(VTLShell.class).execute(args);
 	}
 

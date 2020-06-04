@@ -81,7 +81,7 @@ public class REnvironment implements Environment
 
 	private boolean isEnabled()
 	{
-		return "enable".equalsIgnoreCase(System.getProperty("vtl.r"));
+		return !"disable".equalsIgnoreCase(System.getProperty("vtl.r"));
 	}
 	
 	@Override
