@@ -16,7 +16,8 @@ $h2 Installation
 A release to CRAN is planned. In the meantime, just open an R session and submit the following command:
 
 $RCODE
-install.packages('${scm-url}/releases/download/v${project.version}/RVTL_${project.version}.tar.gz', dependencies = TRUE)
+install.packages(c('rJava', 'RJSDMX', 'igraph', 'networkD3', 'shiny', 'shinyAce', 'jdx', 'xtable', 'dplyr'))
+install.packages('${scm-url}/releases/download/v${project.version}/RVTL_${project.version}.tar.gz')
 $CEND
 
 R will download the package from GitHub and install it on your machine with all required dependencies.

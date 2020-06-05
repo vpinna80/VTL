@@ -30,9 +30,10 @@
 				VTL <span class="color-highlight">E&amp;E</span>
 			</h2>
 			<p>is an interpreter engine and an editor for the 
-				<a href="https://sdmx.org/?page_id=5096">Validation and Transformation Language</a>,
+			   <a href="https://sdmx.org/?page_id=5096">Validation and Transformation Language</a>,
 			   a declarative, metadata-driven language with the goal of ensuring uniform data quality 
-			   across entities. Developed by Bank of Italy within the SDMX Tools Task Force of the Statistics 
+			   across entities.</p>
+			<p>Developed by Bank of Italy within the SDMX Tools Task Force of the Statistics 
 			   Committee (STC), an organism of the Working Group on Statistical Information Management (WGSIM).
 			</p>
 		</div>
