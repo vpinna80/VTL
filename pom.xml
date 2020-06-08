@@ -65,6 +65,8 @@
 
 	<modules>
 		<module>vtl-api</module>
+		<module>vtl-cli</module>
+		<module>vtl-docs</module>
 		<module>vtl-domains</module>
 		<module>vtl-engine</module>
 		<module>vtl-envs</module>
@@ -81,6 +83,8 @@
 			<id>with-r</id>
 			<modules>
 				<module>vtl-api</module>
+				<module>vtl-cli</module>
+				<module>vtl-docs</module>
 				<module>vtl-domains</module>
 				<module>vtl-editor</module>
 				<module>vtl-engine</module>
@@ -156,26 +160,6 @@
 	<reporting>
 		<plugins>
 			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.5</version>
-				<reportSets>
-					<reportSet>
-						<id>aggregate</id>
-						<inherited>false</inherited>
-						<reports>
-							<report>report-aggregate</report>
-						</reports>
-					</reportSet>
-					<reportSet>
-						<id>coverage</id>
-						<reports>
-							<report>report</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.2.0</version>
@@ -184,7 +168,7 @@
 						<id>aggregate</id>
 						<inherited>false</inherited>
 						<reports>
-							<report>aggregate</report>
+							<report>aggregate-no-fork</report>
 						</reports>
 					</reportSet>
 					<reportSet>
@@ -312,19 +296,6 @@
 	<build>
 		<pluginManagement>
 			<plugins>
-				<plugin>
-					<groupId>org.jacoco</groupId>
-					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.5</version>
-					<executions>
-						<execution>
-							<id>prepare-agent</id>
-							<goals>
-								<goal>prepare-agent</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
