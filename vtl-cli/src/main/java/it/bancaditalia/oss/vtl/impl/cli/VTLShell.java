@@ -20,7 +20,7 @@ import picocli.CommandLine.Parameters;
 		separator = " ")
 public class VTLShell implements Callable<Void>
 {
-	private static final String FILE_DESC = "Input VTL script. If missing, read rules from stdin.";
+	private static final String FILE_DESC = "Input VTL script. If not specified, read from stdin.";
 	private static final String NAMES_DESC = "Rule names whose values will be printed. If none is specified, print the values of all rules.";
 	
 	@Option(names = { "-f", "--file" }, description = FILE_DESC, paramLabel = "file")
