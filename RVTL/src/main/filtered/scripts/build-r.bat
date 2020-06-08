@@ -10,8 +10,10 @@ del /q %filename% 2> NUL:
 R CMD build ..\classes\R
 if ERRORLEVEL 1 goto error
 rd /s/q ${project.artifactId}.Rcheck
+if /i "${maven.test.skip}" EQU "true" goto dist
 R CMD check --no-manual --install-args=--no-multiarch %filename%
 if ERRORLEVEL 1 goto error
+:dist
 copy %filename% ..
 del /q %filename%
 goto fine
