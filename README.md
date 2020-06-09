@@ -15,6 +15,7 @@ Usage info, documentation and examples are available at the
 
 To build this project, you will need:
 
+* A Windows or Linux machine
 * JDK 8
 * [Apache Maven](https://maven.apache.org/) 3.6.3
 * [GNU R](https://www.r-project.org/) 3.5.3
