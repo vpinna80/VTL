@@ -34,7 +34,8 @@ be located there.
 
 If you want to use a different version of the 
 [SDMX connectors](https://github.com/amattioc/SDMX.git) dependency, change 
-the relative property value. The current default version is 2.3.3.
+the relative property value. The current default version is 2.3.3. [Check 
+here](https://search.maven.org/artifact/it.bancaditalia.oss/sdmx) the available maven releases.
 
 ## Project Status
 
