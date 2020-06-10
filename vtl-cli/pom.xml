@@ -34,7 +34,7 @@
 	<description>VTL Engine command line launcher</description>
 
 	<properties>
-		<manpage-sources>${project.basedir}/src/site/asciidoc</manpage-sources>
+		<manpage-sources>${project.build.directory}/generated-adoc</manpage-sources>
 		<main.class>it.bancaditalia.oss.vtl.impl.cli.VTLShell</main.class>
 		<asciidoctor.version>1.6.0</asciidoctor.version>
 	</properties>
@@ -103,29 +103,6 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>pre-site</phase>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-site-plugin</artifactId>
-				<dependencies>
-					<dependency>
-						<groupId>org.asciidoctor</groupId>
-						<artifactId>asciidoctor-maven-plugin</artifactId>
-						<version>${asciidoctor.version}</version>
-					</dependency>
-				</dependencies>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
 					<archive>
@@ -167,52 +144,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>pre-site</phase>
-						<goals>
-							<goal>java</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<includeProjectDependencies>true</includeProjectDependencies>
-					<includePluginDependencies>true</includePluginDependencies>
-					<mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
-					<arguments>
-						<argument>--outdir=${manpage-sources}</argument>
-						<argument>${main.class}</argument>
-					</arguments>
-				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>info.picocli</groupId>
-						<artifactId>picocli-codegen</artifactId>
-						<version>4.3.2</version>
-						<type>jar</type>
-					</dependency>
-				</dependencies>
-			</plugin>
-			<plugin>
-				<groupId>com.coderplus.maven.plugins</groupId>
-				<artifactId>copy-rename-maven-plugin</artifactId>
-				<version>1.0.1</version>
-				<executions>
-					<execution>
-						<phase>pre-site</phase>
-						<goals>
-							<goal>rename</goal>
-						</goals>
-						<configuration>
-							<sourceFile>${manpage-sources}/java_-jar_vtl-cli.jar.adoc</sourceFile>
-							<destinationFile>${manpage-sources}/cli-usage.adoc</destinationFile>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

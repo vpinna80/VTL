@@ -18,4 +18,3 @@ hs_err_*
 .settings
 **/.evosuite
 vtl-launcher/src/main/java/it/bancaditalia/oss/sdmx/util/SdmxConfiguration.java
-vtl-launcher/test_data/ecbexr.csv

@@ -3,6 +3,7 @@
 <project name="VTL Engine and Editor" xmlns="http://maven.apache.org/DECORATION/1.8.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
 
+	<!--  parent descriptor -->
 
 	<bannerLeft>
 		<name>
@@ -33,7 +34,7 @@
 			<smoothScroll>true</smoothScroll>
 
 			<highlightJs>true</highlightJs>
-			
+
 			<brand>
 				<name>
 					<![CDATA[<span class="color-highlight">VTL</span> E&amp;E]]>
@@ -45,18 +46,14 @@
 
 			<titleTemplate>%2$s | %1$s</titleTemplate>
 
-			<header type="banner" enabled="false" />
-
 			<toc theme="dark" background="dark" cssClass="border rounded">top</toc>
-
 			<navbar filterMenu="Documentation|Maven Documentation" theme="light" background="light" cssClass="border-bottom" center="false" alignMenu="right">
 				<image src="$resourcePath/images/logo.svg" />
 			</navbar>
 
 			<navside-menu theme="light" background="light" />
-			
 			<footer theme="dark" background="dark" />
-			
+
 			<bottomNav>
 				<column>Main</column>
 				<column>Documentation|Contribute</column>
@@ -131,6 +128,26 @@
 				<dependencies>
 					<toc numberItems="4">top</toc>
 				</dependencies>
+
+				<documentation type="doc">
+					<menu name="VTL E&amp;E Documentation" selectFirstOnExpand="true">
+						<item name="Get Started" href="get-started.html" />
+						<item name="VTL Examples" href="examples.html" />
+						<item name="CLI interface" href="cli-usage.html" />
+					</menu>
+				</documentation>
+
+				<get-started>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</get-started>
+
+				<examples>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</examples>
+
+				<cli-usage>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</cli-usage>
 			</pages>
 		</reflowSkin>
 	</custom>
@@ -138,14 +155,14 @@
 	<body>
 		<head>
 			<![CDATA[
-			        <link rel="apple-touch-icon" sizes="144x144" href="$resourcePath/apple-touch-icon.png">
-			        <link rel="icon" type="image/png" sizes="32x32" href="$resourcePath/favicon-32x32.png">
-			        <link rel="icon" type="image/png" sizes="16x16" href="$resourcePath/favicon-16x16.png">
-		        	<link rel="mask-icon" href="$resourcePath/safari-pinned-tab.svg" color="#5bbad5">
-			        <link rel="preload" as="image" href="$resourcePath/images/wallpaper.jpg">
-			        <meta name="apple-mobile-web-app-title" content="VTL E&amp;E">
-			        <meta name="application-name" content="VTL E&amp;E">
-		        ]]>
+				<link rel="apple-touch-icon" sizes="144x144" href="$resourcePath/apple-touch-icon.png">
+				<link rel="icon" type="image/png" sizes="32x32" href="$resourcePath/favicon-32x32.png">
+				<link rel="icon" type="image/png" sizes="16x16" href="$resourcePath/favicon-16x16.png">
+				<link rel="mask-icon" href="$resourcePath/safari-pinned-tab.svg" color="#5bbad5">
+				<link rel="preload" as="image" href="$resourcePath/images/wallpaper.jpg">
+				<meta name="apple-mobile-web-app-title" content="VTL E&amp;E">
+				<meta name="application-name" content="VTL E&amp;E">
+			]]>
 		</head>
 
 		<links>
@@ -162,14 +179,14 @@
 			<item name="Release notes" href="#" />
 			<item name="Licenses" href="licenses.html" />
 		</menu>
-		
+
 		<menu name="Contribute" inherit="bottom">
 			<item name="Issues" href="${this.issueManagement.url}" />
 			<item name="Fork on GitHub" href="${this.scm-url}" />
-		</menu>	
+		</menu>
 
 		<menu name="Documentation" inherit="bottom">
-			<item name="Get Started" href="/RVTL/documentation.html#get-started" />
+			<item name="Get Started" href="documentation.html#get-started" />
 			<item name="Advanced usage" href="advanced.html" />
 			<item name="API documentation" href="apidocs" />
 		</menu>
