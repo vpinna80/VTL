@@ -11,7 +11,7 @@
 				<p class="lead">$config.slogan.getValue()</p>
 			</div>
 			<p>
-				<a href="$resourcePath/RVTL/documentation.html#get-started"
+				<a href="$resourcePath/documentation.html#get-started"
 					class="btn btn-lg mb-2 mr-2 ml-2">
 					<span class="btn__link-icon">
 						<!-- MACRO{snippet|file=src/site/svg/pentone.svg|verbatim=false|ignoreDownloadError=false} -->
@@ -96,7 +96,7 @@
 				</div>
 				<div class="card-footer border-0 bg-transparent text-center">
 					<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
-						href="RVTL/documentation.html#get-started">Read more »</a>
+						href="documentation.html#get-started">Read more »</a>
 				</div>
 			</div>
 			<div class="card border-0">

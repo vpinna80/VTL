@@ -11,19 +11,31 @@ written in Java, Javascript and R.
 Usage info, documentation and examples are available at the
 [project site](http://vpinna80.github.io/VTL/).
 
+## Contributing to the project
+
+All contributions are welcome!
+
+Please take a moment to read the [Guideline](CONTRIBUTING.md).
+
 ## Build information
+
+A complete description of the project modules and the build process will be aailable soon.
 
 To build this project, you will need:
 
-* A Windows or Linux machine
-* JDK 8
-* [Apache Maven](https://maven.apache.org/) 3.6.3
-* [GNU R](https://www.r-project.org/) 3.5.3
-* Configured internet connection (to download [node.js](https://nodejs.org/))
+* A Windows or Linux machine;
+
+> Building on a MacOS machine should be possible by now but **it is untested**.
+
+* JDK 8;
+* [Apache Maven](https://maven.apache.org/) 3.6.3;
+* [GNU R](https://www.r-project.org/) 3.5.3;
+* Configured internet connection (to download [node.js](https://nodejs.org/)).
 
 To build the project, launch the command:
 
     mvn [-P with-r] [-Dsdmx.version=x.x.x] clean package
+
 
 Each artifact will be generated inside the `target` folder of each module.
 
@@ -42,9 +54,9 @@ here](https://search.maven.org/artifact/it.bancaditalia.oss/sdmx) the available 
 The Project is an ongoing development effort at Bank of Italy, with the 
 purpose of demonstrating the feasibility and usefulness of VTL in a real 
 scenario, such as translating validation rules exchanged by entities 
-operating in the ESCB.
+operating in the ESCB. Thus,
 
-Thus, some VTL operators and statements offer only limited functionality,
+> some VTL operators and statements offer only limited functionality,
 and some have to be implemented yet.
 
 The following map shows the current implementation status:

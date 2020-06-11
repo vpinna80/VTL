@@ -41,7 +41,7 @@ $h2 Creating a session
 The first thing to do when opening vtlStudio is to create a session.
 On the sidebar, type a name of your choice into the New Session box, and click the Create button.
 
-![create-session](/images/create-session.png)
+![create-session](images/create-session.png)
 
 You will see the newly created session on the Session ID dropdown menu.
 
@@ -57,7 +57,7 @@ then submit the code by clicking the Compile and Submit button.
 
 After a moment, you will see the following message in the gray output box:
 
-![hello-world-compile](/images/hello-world-compile.png)
+![hello-world-compile](images/hello-world-compile.png)
 
 $h2 Browse results
 
@@ -67,5 +67,5 @@ You can choose the rule to compute and show with the Select Node dropdown menu.
 
 In this case, select the **a** node. You will see the following:
 
-![hello-world-result](/images/hello-world-result.png)
+![hello-world-result](images/hello-world-result.png)
 
