@@ -44,8 +44,12 @@ shinyServer(function(input, output, session) {
   ##### Dynamic Input controls
   #####
   output$selectSession <- renderUI({
-    selectInput(inputId = 'sessionID', label = 'Session ID', multiple = F, choices = c('', vtlListSessions()), selected ='')
-    
+    activeSessions = vtlListSessions()
+    if(length(activeSessions) > 0)
+      selectInput(inputId = 'sessionID', label = 'Session ID', multiple = F, choices = activeSessions, selected =activeSessions[1])
+    else
+      selectInput(inputId = 'sessionID', label = 'Session ID', multiple = F, choices = 'test', selected ='test')
+      
   })
   
   output$dsNames<- renderUI({
@@ -143,6 +147,7 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'sessionID', choices = c(input$newSession, vtlListSessions()), selected = input$newSession)
     #update editor
     session$sendCustomMessage("editor-text", '')
+    updateTextInput(session = session, inputId = 'newSession', value = '')
   })
 
   # configure proxy
