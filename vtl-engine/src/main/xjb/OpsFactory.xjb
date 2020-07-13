@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
-<bindings xmlns="http://java.sun.com/xml/ns/jaxb" version="2.1">
+<bindings xmlns="http://java.sun.com/xml/ns/jaxb" extensionBindingPrefixes="xjc" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" version="2.1">
 	<globalBindings choiceContentProperty="true">
 		<javaType xmlType="xs:integer" name="java.lang.Integer" />
+		<xjc:serializable uid="1"/>
 	</globalBindings>
 </bindings>

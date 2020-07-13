@@ -250,7 +250,6 @@ public class OpsFactory
 
 	private Constructor<?> findConstructor(Class<?> target, List<Object> args, int level)
 	{
-		String tabs = new String(new char[level]).replace("\0", "    ");
 		if (!Transformation.class.isAssignableFrom(target))
 			throw new ClassCastException(target + " does not implement " + Transformation.class);
 
@@ -262,27 +261,31 @@ public class OpsFactory
 		List<Class<?>> argsClasses = args.stream().map(p -> p != null ? p.getClass() : null).collect(toList());
 
 		for (Constructor<?> constr : constructors)
-			if (constr.getParameterCount() == args.size())
-			{
-				Class<?>[] parameterTypes = constr.getParameterTypes();
-				boolean isValid = true;
-				for (int i = 0; isValid && i < args.size(); i++)
-					if (argsClasses.get(i) != null && !parameterTypes[i].isAssignableFrom(argsClasses.get(i)))
-						isValid = false;
-
-				if (isValid)
-				{
-					String argsClsStr = argsClasses.stream()
-							.map(c -> c != null ? c.getSimpleName() : "")
-							.collect(joining(", ", "{", "}"));
-
-					LOGGER.trace("|{}|| Found constructor for {} with {}", tabs, target.getSimpleName(), argsClsStr);
-					return constr;
-				}
-			}
+			if (checkConstructor(constr, target, argsClasses, args, level))
+				return constr;
 
 		String text = argsClasses.stream().map(c -> c != null ? c.getSimpleName() : null).collect(joining(", ", "[", "]"));
 		throw new IllegalStateException("Could not find a suitable public constructor for " + target.getSimpleName() + " with " + text);
+	}
+
+	private boolean checkConstructor(Constructor<?> constr, Class<?> target, List<Class<?>> argsClasses, List<Object> args, int level)
+	{
+		if (constr.getParameterCount() != args.size())
+			return false;
+		
+		Class<?>[] parameterTypes = constr.getParameterTypes();
+		
+		for (int i = 0; i < args.size(); i++)
+			if (argsClasses.get(i) != null && !parameterTypes[i].isAssignableFrom(argsClasses.get(i)))
+				return false;
+
+		String argsClsStr = argsClasses.stream()
+				.map(c -> c != null ? c.getSimpleName() : "")
+				.collect(joining(", ", "{", "}"));
+
+		String tabs = new String(new char[level]).replace("\0", "    ");
+		LOGGER.trace("|{}|| Found constructor for {} with {}", tabs, target.getSimpleName(), argsClsStr);
+		return true;
 	}
 
 	private boolean checkMapping(Check check, ParserRuleContext ctx)
