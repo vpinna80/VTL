@@ -23,6 +23,8 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
 import static it.bancaditalia.oss.vtl.util.Utils.byKey;
 import static it.bancaditalia.oss.vtl.util.Utils.byValue;
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -38,7 +40,6 @@ import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,7 +62,6 @@ import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -132,6 +132,7 @@ public class JoinTransformation extends TransformationImpl
 	private VTLDataSetMetadata metadata;
 	private JoinOperand referenceDataSet;
 
+	@SuppressWarnings("java:S107")
 	public JoinTransformation(JoinOperator operator, List<JoinOperand> operands, List<String> using, Transformation filter, Transformation apply, Transformation calc, Transformation aggr, Transformation keepOrDrop, Transformation rename)
 	{
 		this.operator = operator;
@@ -162,6 +163,7 @@ public class JoinTransformation extends TransformationImpl
 	}
 
 	@Override
+	@SuppressWarnings("java:S3864")
 	public DataSet eval(TransformationScheme session)
 	{
 		LOGGER.debug("Preparing renamed datasets for join");
@@ -170,13 +172,13 @@ public class JoinTransformation extends TransformationImpl
 		for (JoinOperand operand: operands)
 			values.put(operand, (DataSet) operand.getOperand().eval(session));
 		
-		Map<JoinOperand, DataSet> datasets = Utils.getStream(values.entrySet())
-				.collect(toConcurrentMap(Entry::getKey, Utils.splitting(this::generateRenamedDataset)));
-		
 		DataSet result;
 		
 		if (usingNames.isEmpty())
 		{
+			// Find out which component must be renamed
+			Map<JoinOperand, DataSet> datasets = renameCaseAB1(values); 
+
 			// Case A: join all to reference ds
 			LOGGER.debug("Collecting all identifiers");
 			Map<DataSet, Set<DataStructureComponent<Identifier, ?, ?>>> ids = Utils.getStream(datasets)
@@ -187,20 +189,29 @@ public class JoinTransformation extends TransformationImpl
 			// TODO: Memory hungry!!! Find some way to stream instead of building this big index collection 
 			LOGGER.debug("Indexing all datapoints");
 			Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier,?,?>, ScalarValue<?,?,?>>, DataPoint>> indexes = Utils.getStream(datasets)
-					.filter(Utils.byKey(op -> op != referenceDataSet))
+					.filter(byKey(op -> op != referenceDataSet))
 					.map(Entry::getValue)
-					.collect(toConcurrentMap(ds -> ds, ds -> {
+					.collect(toMapWithValues(ds -> {
+						// needed to close the stream after usage
 						try (Stream<DataPoint> stream = ds.stream())
 						{
 							return stream
-									// toMap instead of groupingBy because there's never more than one datapoint in each group
 									.peek(dp -> LOGGER.trace("Indexing {}", dp))
+									// toMap instead of groupingBy because there's never more than one datapoint in each group
 									.collect(toConcurrentMap(dp -> dp.getValues(Identifier.class), dp -> dp));
 						}
 					}));
+
+			// Structure before applying any clause
+			VTLDataSetMetadata totalStructure = Utils.getStream(datasets.values())
+				.map(DataSet::getMetadata)
+				.flatMap(Set::stream)
+				.reduce(new Builder(), Builder::addComponent, Builder::merge)
+				.build();
 			
 			LOGGER.debug("Joining all datapoints");
-			result = new LightFDataSet<>(metadata, dataset -> dataset.stream()
+			
+			result = new LightFDataSet<>(totalStructure, dataset -> dataset.stream()
 				.peek(refDP -> LOGGER.trace("Joining {}", refDP))
 				.map(refDP -> {
 					// Get all datapoints from other datasets (there is no more than 1 for each dataset)
@@ -217,7 +228,7 @@ public class JoinTransformation extends TransformationImpl
 						case LEFT_JOIN:
 							if (otherDPs.size() != indexes.size())
 								return operator == INNER_JOIN ? null : new DataPointBuilder(refDP)
-										.addAll(metadata.stream().collect(toMap(c -> c, c -> NullValue.instanceFrom(c))))
+										.addAll(metadata.stream().collect(toMapWithValues(NullValue::instanceFrom)))
 										.build(metadata);
 							else
 							{
@@ -234,28 +245,7 @@ public class JoinTransformation extends TransformationImpl
 				}).filter(Objects::nonNull), datasets.get(referenceDataSet));
 		}
 		else
-		{
-//			Set<DataStructureComponent<?, ?, ?>> using = usingNames.stream()
-//					.map(metadata::getComponent)
-//					.collect(Collectors.toSet());
-//			
-//			boolean isCaseB1 = datasets.values().stream()
-//					.map(DataSet::getDataStructure)
-//					.allMatch(str -> str.containsAll(using));
-//			
-//			if (isCaseB1)
-//			{
-//				// case B1: join all to reference dataset with given keys
-//				DataSet accumulator = datasets.get(referenceDataSet);
-//				for (JoinOperand item: datasets.keySet())
-//					if (item != referenceDataSet)
-//						accumulator = performBinaryJoin(accumulator, datasets.get(item));
-//				
-//				return accumulator;
-//			}
-//			else
-				throw new UnsupportedOperationException("inner_join case B1-B2 not implemented");
-		}
+			throw new UnsupportedOperationException("inner_join case B1-B2 not implemented");
 		
 		if (filter != null)
 			result = (DataSet) filter.eval(new ThisScope(result, session));
@@ -271,6 +261,38 @@ public class JoinTransformation extends TransformationImpl
 			result = (DataSet) rename.eval(new ThisScope(result, session));
 		
 		return result;
+	}
+
+	private Map<JoinOperand, DataSet> renameCaseAB1(Map<JoinOperand, DataSet> datasets)
+	{
+		ConcurrentMap<DataStructureComponent<?, ?, ?>, Boolean> unique = new ConcurrentHashMap<>();
+		Set<DataStructureComponent<?, ?, ?>> toBeRenamed = Utils.getStream(datasets.values())
+				.map(DataSet::getDataStructure)
+				.flatMap(d -> d.stream())
+				.filter(c -> unique.putIfAbsent(c, TRUE) != null)
+				.filter(c -> usingNames.isEmpty() ? c.is(NonIdentifier.class) : !usingNames.contains(c.getName()))
+				.collect(toSet());
+
+		return Utils.getStream(datasets)
+			.map(Utils.keepingKey((op, ds) -> {
+				VTLDataSetMetadata newStructure = ds.getComponents().stream()
+						.map(c -> toBeRenamed.contains(c) ? c.rename(op.getId() + "#" + c.getName()) : c)
+						.reduce(new Builder(), Builder::addComponent, Builder::merge)
+						.build();
+				
+				if (newStructure.equals(ds.getDataStructure()))
+					return ds;
+
+				LOGGER.trace("Structure of dataset {} will be changed to {}", ds, newStructure);
+
+				return new NamedDataSet(op.getId(), new LightFDataSet<>(newStructure, dataset -> dataset.stream()
+						.map(dp -> {
+							return Utils.getStream(dp)
+								.map(Utils.keepingValue(c -> toBeRenamed.contains(c) ? c.rename(op.getId() + "#" + c.getName()) : c))
+								.reduce(new DataPointBuilder(), DataPointBuilder::add, DataPointBuilder::merge)
+								.build(newStructure);
+						}), ds));
+			})).collect(entriesToMap());
 	}
 
 	private DataSet applyClause(TransformationScheme session, DataSet dataset)
@@ -294,33 +316,6 @@ public class JoinTransformation extends TransformationImpl
 		
 		return dataset.mapKeepingKeys(applyMetadata, dp -> applyComponents.stream()
 				.collect(toConcurrentMap(c -> c, c -> (ScalarValue<?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
-	}
-
-	private DataSet generateRenamedDataset(JoinOperand op, DataSet ds)
-	{
-		Set<DataStructureComponent<?, ?, ?>> nonMatching = new HashSet<>(ds.getComponents());
-		nonMatching.removeAll(metadata);
-		// Shortcut if no component is to be renamed
-		if (nonMatching.isEmpty())
-			return new NamedDataSet(op.getId(), ds);
-		else
-		{
-			LOGGER.trace("In dataset {} renaming components {}", op.getId(), ds.getComponents());
-			Set<DataStructureComponent<?, ?, ?>> matching = new HashSet<>(ds.getComponents());
-			matching.retainAll(metadata);
-			Map<DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>> renamed = nonMatching.stream()
-					.collect(toMap(c -> c, c -> c.rename(op.getId() + "#" + c.getName())));
-			VTLDataSetMetadata operandStructure = new DataStructureImpl.Builder(matching)
-					.addComponents(renamed.values())
-					.build();
-			LOGGER.trace("Structure of dataset {} will be changed to {}", op.getId(), operandStructure);
-			// must go through all datapoints to rename each component in the datapoint
-			return new NamedDataSet(op.getId(), new LightFDataSet<>(operandStructure, dataset -> dataset.stream()
-				.map(dp -> new DataPointBuilder(Utils.getStream(nonMatching)
-								.collect(toMap(renamed::get, dp::get)))
-							.addAll(dp.getValues(matching))
-							.build(operandStructure)), ds));
-		}
 	}
 
 	@Override
@@ -358,15 +353,14 @@ public class JoinTransformation extends TransformationImpl
 		
 		referenceDataSet = caseAorB1.orElseGet(caseB2::get);
 		
-		LOGGER.info("Joining {} to ({}: {})", operands.stream().filter(op -> op != referenceDataSet).map(JoinOperand::getId).collect(toList()), 
+		LOGGER.info("Joining {} to ({}: {})", 
+				operands.stream().filter(op -> op != referenceDataSet).collect(toMap(JoinOperand::getId, datasetsMeta::get)), 
 				referenceDataSet.getId(), datasetsMeta.get(referenceDataSet));
 			
-		metadata = joinStructures(datasetsMeta, caseAorB1, caseB2);
-		
-		VTLDataSetMetadata result = metadata;
+		VTLDataSetMetadata result = joinStructures(datasetsMeta, caseAorB1, caseB2);
 		
 		if (filter != null)
-			result = (VTLDataSetMetadata) aggr.getMetadata(new ThisScope(result, session));
+			result = (VTLDataSetMetadata) filter.getMetadata(new ThisScope(result, session));
 		if (apply != null)
 		{
 			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = metadata.getComponents(Measure.class).stream()
@@ -403,7 +397,7 @@ public class JoinTransformation extends TransformationImpl
 					.filter(c -> c.getName().endsWith("#" + ambiguousComponent.get()))
 					.collect(toSet()));
 		
-		return result;
+		return metadata = result;
 	}
 	
 	private Optional<JoinOperand> isCaseAorB1(Map<JoinOperand, VTLDataSetMetadata> datasetsMeta)

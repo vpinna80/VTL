@@ -24,5 +24,5 @@ import java.util.stream.Stream;
 public interface DataSetComponent<I extends Comparable<?>, R extends ComponentRole, S extends ValueDomainSubset<D>, D  extends ValueDomain>
 		extends DataStructureComponent<R, S, D>, VTLValue
 {
-	public Stream<? extends ScalarValue<?, S, D>> streamValues();
+	public Stream<ScalarValue<?, S, D>> streamValues();
 }
