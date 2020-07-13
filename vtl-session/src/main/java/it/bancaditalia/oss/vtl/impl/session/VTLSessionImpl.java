@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
@@ -60,7 +61,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.session.MetadataRepositoryFactory;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -88,7 +88,7 @@ public class VTLSessionImpl implements VTLSession
 		}
 		
 		this.engine = ServiceLoader.load(Engine.class).iterator().next();
-		this.repository = ServiceLoader.load(MetadataRepositoryFactory.class).iterator().next().getDefaultRepository();
+		this.repository = ConfigurationManager.getDefaultFactory().getMetadataRepositoryInstance();
 		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
 	}
 
@@ -192,6 +192,7 @@ public class VTLSessionImpl implements VTLSession
 		}
 		catch (InterruptedException e)
 		{
+			Thread.currentThread().interrupt();
 			throw new VTLNestedException("Program interrupted", e);
 		}
 		finally

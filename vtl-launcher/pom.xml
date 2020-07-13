@@ -45,6 +45,10 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-confman</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-engine</artifactId>
 		</dependency>
 		<dependency>

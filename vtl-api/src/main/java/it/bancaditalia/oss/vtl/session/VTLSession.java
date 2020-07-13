@@ -46,7 +46,7 @@ public interface VTLSession extends TransformationScheme
 
 	public VTLSession addStatements(Path path, Charset charset) throws IOException;
 
-	public List<? extends VTLValueMetadata> compile();
+	public List<VTLValueMetadata> compile();
 	
 	public static Iterable<VTLSession> getInstances()
 	{

@@ -60,6 +60,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -91,14 +92,14 @@ import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CSVFileEnvironment implements Environment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
-
-	private final static Map<Pattern, String> PATTERNS = new LinkedHashMap<>();
+	private static final Map<Pattern, String> PATTERNS = new LinkedHashMap<>();
 	
 	static {
 		PATTERNS.put(Pattern.compile("^(YYYY)(.*)$"), "yyyy");
@@ -114,6 +115,8 @@ public class CSVFileEnvironment implements Environment
 		PATTERNS.put(Pattern.compile("^(D)(.*)$"), "d");
 		PATTERNS.put(Pattern.compile("^([-/ ])(.*)$"), "$1");
 	}
+	
+	private final MetadataRepository repository = ConfigurationManager.getDefaultFactory().getMetadataRepositoryInstance();
 
 	@Override
 	public boolean contains(String name)
@@ -269,10 +272,10 @@ public class CSVFileEnvironment implements Environment
 			return new DateValue(LocalDateTime.parse(value, formatter));
 		}
 
-		throw new IllegalStateException("Unknown value type: " + component.getDomain());
+		throw new IllegalStateException("ValueDomain not supported in CSV: " + component.getDomain());
 	}
 
-	private static Entry<ValueDomainSubset<? extends ValueDomain>, String> mapVarType(String typeName)
+	private Entry<ValueDomainSubset<? extends ValueDomain>, String> mapVarType(String typeName)
 	{
 		String datePattern = "^[Dd][Aa][Tt][Ee]\\[(.*)\\]$";
 		
@@ -286,6 +289,8 @@ public class CSVFileEnvironment implements Environment
 			return new SimpleEntry<>(BOOLEANDS, "");
 		else if (typeName.matches(datePattern))
 			return new SimpleEntry<>(DATEDS, typeName.replaceAll(datePattern, "$1"));
+		else if (repository.isDomainDefined(typeName))
+			return new SimpleEntry<>(repository.getDomain(typeName), typeName);
 
 		throw new VTLException("Unsupported type: " + typeName);
 	}

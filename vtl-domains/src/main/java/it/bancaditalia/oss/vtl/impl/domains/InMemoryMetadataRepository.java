@@ -36,7 +36,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-class InMemoryMetadataRepository implements MetadataRepository 
+public class InMemoryMetadataRepository implements MetadataRepository 
 {
 	protected static final ValueDomainSubset<?>[] INITIAL_DOMAINS = new ValueDomainSubset<?>[] { NUMBERDS, INTEGERDS, STRINGDS, BOOLEANDS, TIMEDS, DATEDS };
 
