@@ -70,9 +70,9 @@ public class CheckTransformation extends TransformationImpl
 	}
 
 	private final Transformation operand;
-	private final Transformation errorcode;
-	private final Transformation errorlevel;
-	private final Transformation imbalance;
+	private final Transformation errorcodeExpr;
+	private final Transformation errorlevelExpr;
+	private final Transformation imbalanceExpr;
 	private final CheckOutput output;
 	private VTLDataSetMetadata metadata;
 	
@@ -87,9 +87,9 @@ public class CheckTransformation extends TransformationImpl
 		if (output != ALL)
 			throw new UnsupportedOperationException("Invalid not implemented.");
 		
-		this.errorcode = errorcode;
-		this.errorlevel = errorlevel;
-		this.imbalance = imbalance;
+		this.errorcodeExpr = errorcode;
+		this.errorlevelExpr = errorlevel;
+		this.imbalanceExpr = imbalance;
 		this.output = output;
 	}
 
@@ -98,7 +98,7 @@ public class CheckTransformation extends TransformationImpl
 	{
 		DataSet dataset = (DataSet) operand.eval(session);
 
-		if (imbalance == null)
+		if (imbalanceExpr == null)
 			// TODO: INVALID
 			return dataset.mapKeepingKeys(metadata, dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(); 
@@ -109,7 +109,7 @@ public class CheckTransformation extends TransformationImpl
 			});
 		else
 		{
-			DataSet imbalanceDataset = (DataSet) imbalance.eval(session);
+			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(session);
 			
 			// TODO: INVALID
 			BiPredicate<DataPoint, DataPoint> filter = (a, b) -> true;
@@ -127,11 +127,11 @@ public class CheckTransformation extends TransformationImpl
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata meta = operand.getMetadata(session),
-				imbalanceValue = imbalance != null ? imbalance.getMetadata(session) : null;
+				imbalanceValue = imbalanceExpr != null ? imbalanceExpr.getMetadata(session) : null;
 
 		if (meta instanceof VTLScalarValueMetadata)
 			throw new VTLInvalidParameterException(meta, VTLDataSetMetadata.class);
-		else if (imbalance instanceof VTLScalarValueMetadata)
+		else if (imbalanceExpr instanceof VTLScalarValueMetadata)
 			throw new VTLInvalidParameterException(imbalanceValue, VTLDataSetMetadata.class);
 		else
 		{
@@ -172,9 +172,9 @@ public class CheckTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return "CHECK(" + operand + (imbalance != null ? " IMBALANCE " + imbalance : "") 
-				+ (errorlevel != null ? " ERRORLEVEL " + errorlevel: "")
-				+ (errorcode != null ? " ERRORCODE " + errorcode: "")
+		return "CHECK(" + operand + (imbalanceExpr != null ? " IMBALANCE " + imbalanceExpr : "") 
+				+ (errorlevelExpr != null ? " ERRORLEVEL " + errorlevelExpr: "")
+				+ (errorcodeExpr != null ? " ERRORCODE " + errorcodeExpr: "")
 				+ " " + output + ")";
 	}
 

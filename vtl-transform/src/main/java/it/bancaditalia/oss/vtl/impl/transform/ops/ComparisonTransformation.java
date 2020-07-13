@@ -19,10 +19,14 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
 import java.util.function.BiFunction;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
@@ -51,9 +55,8 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ComparisonTransformation extends BinaryTransformation
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(JoinTransformation.class);
 	private static final long serialVersionUID = 1L;
-
-	private static final VTLScalarValueMetadata<BooleanDomainSubset> METABOOL = () -> BOOLEANDS;
 
 	private final ComparisonOperator operator;
 
@@ -155,7 +158,7 @@ public class ComparisonTransformation extends BinaryTransformation
 
 			castToLeft = scalarLeft.getDomain().isAssignableFrom(scalarRight.getDomain()); 
 			if (castToLeft || scalarRight.getDomain().isAssignableFrom(scalarLeft.getDomain())) 
-				return METABOOL;
+				return BOOLEAN;
 			else
 				throw new VTLIncompatibleTypesException("comparison branch", scalarLeft.getDomain(), ((VTLScalarValueMetadata<?>) right).getDomain());
 		}
@@ -185,6 +188,8 @@ public class ComparisonTransformation extends BinaryTransformation
 		else if (left instanceof VTLDataSetMetadata && right instanceof VTLDataSetMetadata)
 		{
 			VTLDataSetMetadata dsLeft = (VTLDataSetMetadata) left, dsRight = (VTLDataSetMetadata) right;
+			
+			LOGGER.info("Comparing {} to {}", dsLeft, dsRight);
 			
 			if (dsLeft.getComponents(Measure.class).size() != 1)
 				throw new VTLExpectedComponentException(Measure.class, dsLeft.getComponents(Measure.class));

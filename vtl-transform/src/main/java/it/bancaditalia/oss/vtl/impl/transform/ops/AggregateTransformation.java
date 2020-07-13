@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
@@ -34,7 +36,6 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -108,7 +109,7 @@ public class AggregateTransformation extends UnaryTransformation
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata opmeta = operand.getMetadata(session);
-		metadata = (VTLScalarValueMetadata<?>) () -> Domains.NUMBERDS;
+		metadata = NUMBER;
 		
 		if (opmeta instanceof VTLScalarValueMetadata && ((VTLScalarValueMetadata<?>) opmeta).getDomain() instanceof NumberDomainSubset)
 			return metadata;
@@ -123,8 +124,8 @@ public class AggregateTransformation extends UnaryTransformation
 					throw new VTLExpectedComponentException(Measure.class, measures);
 				
 				DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-				if (!Domains.NUMBERDS.isAssignableFrom(measure.getDomain()))
-					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, measure.getDomain());
+				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
+					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, measure.getDomain());
 				
 				return metadata;
 			}

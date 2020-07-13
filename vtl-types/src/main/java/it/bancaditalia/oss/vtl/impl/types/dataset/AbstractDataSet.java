@@ -19,7 +19,6 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
@@ -27,6 +26,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.lang.ref.SoftReference;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -85,7 +85,7 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		final VTLDataSetMetadata membershipStructure = dataStructure.membership(componentName);
 
-		LOGGER.debug("Creating dataset by membership on {} from {} to {}", componentName, dataStructure, membershipStructure);
+		LOGGER.trace("Creating dataset by membership on {} from {} to {}", componentName, dataStructure, membershipStructure);
 
 		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(componentName)
 				.orElseThrow(() -> new VTLMissingComponentsException(componentName, dataStructure));
@@ -121,7 +121,7 @@ public abstract class AbstractDataSet implements DataSet
 		try (Stream<DataPoint> stream = indexed.stream())
 		{
 			if (commonIds.equals(indexed.getComponents(Identifier.class)))
-				index = stream.collect(toConcurrentMap(dp -> dp.getValues(commonIds, Identifier.class), dp -> singletonList(dp)));
+				index = stream.collect(toConcurrentMap(dp -> dp.getValues(commonIds, Identifier.class), Collections::singletonList));
 			else
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class)));
 		}
@@ -152,7 +152,7 @@ public abstract class AbstractDataSet implements DataSet
 		
 		UnaryOperator<DataPoint> extendingOperator = dp -> new DataPointBuilder(dp.getValues(Identifier.class))
 				.addAll(operator.apply(dp))
-				.build(metadata); 
+				.build(metadata);
 		
 		return new AbstractDataSet(metadata)
 		{

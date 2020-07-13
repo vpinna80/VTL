@@ -87,7 +87,7 @@ public class CachedDataSet extends NamedDataSet
 			Queue<DataPoint> newQueue = new ConcurrentLinkedQueue<>();
 			isCompleted.set(false);
 			return getDelegate().stream()
-					.peek(dp -> newQueue.offer(dp))
+					.peek(newQueue::offer)
 					.onClose(() -> { 
 							synchronized (isCompleted)
 							{

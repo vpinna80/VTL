@@ -23,10 +23,10 @@ public interface ComponentRole
 {
 	public enum Roles
 	{
-		IDENTIFIER(ComponentRole.Identifier.class), 
-		MEASURE(ComponentRole.Measure.class), 
-		ATTRIBUTE(ComponentRole.Attribute.class), 
-		VIRAL_ATTRIBUTE(ComponentRole.ViralAttribute.class);
+		IDENTIFIER(Identifier.class),
+		MEASURE(Measure.class),
+		ATTRIBUTE(Attribute.class),
+		VIRAL_ATTRIBUTE(ViralAttribute.class);
 		
 		private final Class<? extends ComponentRole> clazz;
 

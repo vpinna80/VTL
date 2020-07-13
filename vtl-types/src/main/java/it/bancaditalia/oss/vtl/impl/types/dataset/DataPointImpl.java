@@ -54,7 +54,7 @@ public class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 	
-	private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> values;
+	private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> dpValues;
 
 	public static class DataPointBuilder 
 	{
@@ -146,9 +146,9 @@ public class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, 
 			.filter(c -> !values.containsKey(c))
 			.forEach(c -> filledValues.put(c, NullValue.instance(c.getDomain())));
 		
-		this.values = filledValues;
+		this.dpValues = filledValues;
 		
-		Utils.getStream(this.values.keySet())
+		Utils.getStream(this.dpValues.keySet())
 			.filter(c -> !structure.contains(c))
 			.map(c -> new SimpleEntry<>(c, new IllegalStateException("Component " + c + " has a value but is not defined on " + structure)))
 			.peek(e -> LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", e.getKey(), structure, values, e.getValue()))
@@ -159,18 +159,18 @@ public class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, 
 			});
 		
 		Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
-		missing.removeAll(this.values.keySet());
+		missing.removeAll(this.dpValues.keySet());
 		if (missing.size() > 0)
-			throw new VTLMissingComponentsException(missing, this.values);
+			throw new VTLMissingComponentsException(missing, this.dpValues);
 	}
 
 	@Override
 	public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role)
 	{
-		return Utils.getStream(values.keySet())
+		return Utils.getStream(dpValues.keySet())
 				.filter(k -> k.is(role))
 				.map(k -> k.as(role))
-				.collect(toMapWithValues(values::get));
+				.collect(toMapWithValues(dpValues::get));
 	}
 	
 	@Override
@@ -262,43 +262,43 @@ public class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, 
 	@Override
 	public boolean containsKey(Object key)
 	{
-		return values.containsKey(key);
+		return dpValues.containsKey(key);
 	}
 
 	@Override
 	public boolean containsValue(Object value)
 	{
-		return values.containsValue(value);
+		return dpValues.containsValue(value);
 	}
 
 	@Override
 	public Set<Map.Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>>> entrySet()
 	{
-		return values.entrySet();
+		return dpValues.entrySet();
 	}
 
 	@Override
 	public boolean equals(Object o)
 	{
-		return values.equals(o);
+		return dpValues.equals(o);
 	}
 
 	@Override
 	public ScalarValue<?, ?, ?> get(Object key)
 	{
-		return values.get(key);
+		return dpValues.get(key);
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return values.hashCode();
+		return dpValues.hashCode();
 	}
 
 	@Override
 	public int size()
 	{
-		return values.size();
+		return dpValues.size();
 	}
 
 	@Override
