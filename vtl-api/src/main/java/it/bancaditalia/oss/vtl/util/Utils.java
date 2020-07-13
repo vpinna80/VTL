@@ -23,6 +23,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.toConcurrentMap;
 
+import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -87,7 +88,7 @@ public final class Utils
 		return t -> new SimpleEntry<>(keyMapper.apply(t), valueMapper.apply(t));
 	}
 
-	public static <U, V> Collector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap()
+	public static <U, V> Collector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
 	{
 		return toConcurrentMap(Entry::getKey, Entry::getValue);
 	}
@@ -164,22 +165,22 @@ public final class Utils
 		return e -> function.accept(e.getKey(), e.getValue());
 	}
 
-	public static <A, B, C, R> Function<Triple<A, B, C>, R> splitting(TriFunction<? super A, ? super B, ? super C, ? extends R> trifunction)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable, R> Function<Triple<A, B, C>, R> splitting(TriFunction<? super A, ? super B, ? super C, ? extends R> trifunction)
 	{
 		return t -> trifunction.apply(t.a, t.b, t.c);
 	}
 
-	public static <A, B, C> Consumer<Triple<A, B, C>> triple(TriConsumer<? super A, ? super B, ? super C> triconsumer)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable> Consumer<Triple<A, B, C>> triple(TriConsumer<? super A, ? super B, ? super C> triconsumer)
 	{
 		return t -> triconsumer.accept(t.a, t.b, t.c);
 	}
 
-	public static <A, B, C, D> Consumer<Quadruple<A, B, C, D>> quartet(QuadConsumer<? super A, ? super B, ? super C, ? super D> quadconsumer)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable> Consumer<Quadruple<A, B, C, D>> quartet(QuadConsumer<? super A, ? super B, ? super C, ? super D> quadconsumer)
 	{
 		return q -> quadconsumer.accept(q.a, q.b, q.c, q.d);
 	}
 
-	public static <A, B, C, D, R> Function<Quadruple<A, B, C, D>, R> splitting(QuadFunction<? super A, ? super B, ? super C, ? super D, ? extends R> quadfunction)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable, R> Function<Quadruple<A, B, C, D>, R> splitting(QuadFunction<? super A, ? super B, ? super C, ? super D, ? extends R> quadfunction)
 	{
 		return q -> quadfunction.apply(q.a, q.b, q.c, q.d);
 	}
@@ -261,7 +262,7 @@ public final class Utils
         return target.negate();
     }
 
-	public static <A1, A2, B, C> Function<Triple<A1, B, C>, Triple<A2, B, C>> changingFirst(Function<? super A1, ? extends A2> mapper)
+	public static <A1 extends Serializable, A2 extends Serializable, B extends Serializable, C extends Serializable> Function<Triple<A1, B, C>, Triple<A2, B, C>> changingFirst(Function<? super A1, ? extends A2> mapper)
 	{
 		return t -> new Triple<>(mapper.apply(t.a), t.b, t.c);
 	}

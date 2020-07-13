@@ -19,9 +19,10 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.util;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
-public class Quadruple<A, B, C, D> extends Triple<A, B, C>
+public class Quadruple<A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable> extends Triple<A, B, C>
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -46,7 +47,7 @@ public class Quadruple<A, B, C, D> extends Triple<A, B, C>
 		return d;
 	}	
 
-	public <D2> Quadruple<A, B, C, D2> map4(Function<? super D, ? extends D2> mapper)
+	public <D2 extends Serializable> Quadruple<A, B, C, D2> map4(Function<? super D, ? extends D2> mapper)
 	{
 		return new Quadruple<>(a, b, c, mapper.apply(d));
 	}

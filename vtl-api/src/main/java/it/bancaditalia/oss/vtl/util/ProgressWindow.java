@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.util;
 
 import static java.awt.EventQueue.invokeLater;
 import static java.util.function.UnaryOperator.identity;
+import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
 
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
@@ -39,6 +40,7 @@ import javax.swing.Timer;
 public class ProgressWindow
 {
 	private final JFrame window;
+	private final Timer timer;
 	
 	private AtomicInteger progress = new AtomicInteger();
 
@@ -82,11 +84,11 @@ public class ProgressWindow
 		{
 			window = new JFrame();
 			JProgressBar progressBar = new JProgressBar();
-			Timer timer = new Timer(200, event -> invokeLater(() -> progressBar.setValue(progress.get())));
+			timer = new Timer(200, event -> invokeLater(() -> progressBar.setValue(progress.get())));
 	
 			window.setTitle(title);
 			window.setSize(400, 100);
-			window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			window.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 			window.addWindowListener(new WindowAdapter() {
 				
 					@Override
@@ -112,7 +114,10 @@ public class ProgressWindow
 			timer.start();
 		}
 		else
+		{
 			window = null;
+			timer = null;
+		}
 	}
 	
 	public void progress()
@@ -122,6 +127,8 @@ public class ProgressWindow
 	
 	public void dispose()
 	{
+		if (timer != null)
+			timer.stop();
 		if (window != null)
 			invokeLater(() -> window.dispose());
 	}

@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-public class Triple<A, B, C> implements Serializable, Cloneable
+public class Triple<A extends Serializable, B extends Serializable, C extends Serializable> implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -53,15 +53,9 @@ public class Triple<A, B, C> implements Serializable, Cloneable
 		this(e.getKey(), e.getValue(), c);
 	}
 	
-	public <D> Quadruple<A, B, C, D> extend(D d)
+	public <D extends Serializable> Quadruple<A, B, C, D> extend(D d)
 	{
 		return new Quadruple<>(this, d);
-	}
-	
-	@Override
-	public Object clone() throws CloneNotSupportedException
-	{
-		return super.clone();
 	}
 	
 	public A first()
@@ -79,12 +73,12 @@ public class Triple<A, B, C> implements Serializable, Cloneable
 		return c;
 	}
 	
-	public <B2> Triple<A, B2, C> map2(Function<? super Triple<A, B, C>, ? extends B2> mapper)
+	public <B2 extends Serializable> Triple<A, B2, C> map2(Function<? super Triple<A, B, C>, ? extends B2> mapper)
 	{
 		return new Triple<>(a, mapper.apply(this), c);
 	}
 	
-	public <C2> Triple<A, B, C2> map3(Function<? super Triple<A, B, C>, ? extends C2> mapper)
+	public <C2 extends Serializable> Triple<A, B, C2> map3(Function<? super Triple<A, B, C>, ? extends C2> mapper)
 	{
 		return new Triple<>(a, b, mapper.apply(this));
 	}
