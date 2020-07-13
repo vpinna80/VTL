@@ -122,7 +122,7 @@ public class CSVFileEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<? extends VTLValue> getValue(String name)
+	public Optional<VTLValue> getValue(String name)
 	{
 		if (!contains(name))
 			return Optional.empty();
@@ -291,7 +291,7 @@ public class CSVFileEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<? extends VTLValueMetadata> getValueMetadata(String name)
+	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
 		if (!contains(name))
 			return Optional.empty();

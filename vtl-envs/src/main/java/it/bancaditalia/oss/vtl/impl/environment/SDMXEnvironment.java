@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,6 +62,7 @@ import it.bancaditalia.oss.sdmx.api.SdmxMetaElement;
 import it.bancaditalia.oss.sdmx.client.SdmxClientHandler;
 import it.bancaditalia.oss.sdmx.exceptions.DataStructureException;
 import it.bancaditalia.oss.sdmx.exceptions.SdmxException;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -85,13 +85,13 @@ import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.session.MetadataRepositoryFactory;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SDMXEnvironment implements Environment
@@ -102,8 +102,8 @@ public class SDMXEnvironment implements Environment
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?>>> FORMATTERS = new HashMap<>();
 
-	private final boolean dropIdentifiers;
-	private final MetadataRepository repository;
+	private final boolean dropIdentifiers = !"true".equalsIgnoreCase(System.getProperty(DROP_ID_PROPERTY, "false"));
+	private final MetadataRepository repository = ConfigurationManager.getDefaultFactory().getMetadataRepositoryInstance();
 
 	static
 	{
@@ -117,13 +117,6 @@ public class SDMXEnvironment implements Environment
 		FORMATTERS.put(MONTH_PERIOD_FORMATTER.get(), TimePeriodValue::new);
 	}
 
-	public SDMXEnvironment()
-	{
-		ServiceLoader<MetadataRepositoryFactory> factoryLoader = ServiceLoader.load(MetadataRepositoryFactory.class);
-		repository = factoryLoader.iterator().next().getDefaultRepository();
-		dropIdentifiers = !"true".equalsIgnoreCase(System.getProperty(DROP_ID_PROPERTY, "false"));
-	}
-
 	@Override
 	public boolean contains(String id)
 	{
@@ -131,7 +124,7 @@ public class SDMXEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<? extends VTLValue> getValue(String name)
+	public Optional<VTLValue> getValue(String name)
 	{
 		if (contains(name))
 		{
@@ -153,7 +146,7 @@ public class SDMXEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<VTLDataSetMetadata> getValueMetadata(String name)
+	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
 		if (contains(name))
 		{
@@ -169,7 +162,7 @@ public class SDMXEnvironment implements Environment
 
 	protected DataSet parseSDMXTable(String name, List<PortableTimeSeries<Double>> table) throws DataStructureException
 	{
-		VTLDataSetMetadata metadata = getValueMetadata("sdmx:" + name)
+		VTLDataSetMetadata metadata = (VTLDataSetMetadata) getValueMetadata("sdmx:" + name)
 				.orElseThrow(() -> new NullPointerException("Could not retrieve SDMX metadata for " + name));
 
 		ConcurrentMap<PortableTimeSeries<Double>, ? extends ConcurrentMap<String, ? extends ScalarValue<?, ?, ?>>> seriesMeta = Utils.getStream(table)
@@ -251,7 +244,7 @@ public class SDMXEnvironment implements Environment
 		return new DataStructureComponentImpl<>(meta.getId(), role, vtlCodelist);
 	}
 
-	protected Optional<VTLDataSetMetadata> getMetadataSDMX(String provider, String dataflow, String[] tokens)
+	protected Optional<VTLValueMetadata> getMetadataSDMX(String provider, String dataflow, String[] tokens)
 	{
 		try
 		{

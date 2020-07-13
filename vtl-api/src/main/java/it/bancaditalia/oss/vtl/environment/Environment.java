@@ -46,7 +46,7 @@ public interface Environment
 	 * @param name The name of requested object.
 	 * @return An Optional with a reference to the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<? extends VTLValue> getValue(String name);
+	public Optional<VTLValue> getValue(String name);
 
 	/**
 	 * Returns an {@link Optional} reference to the metadata of a VTL object with the specified name in this environment.
@@ -54,7 +54,7 @@ public interface Environment
 	 * @param name The name of requested object
 	 * @return An Optional with a reference to the metadata of the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public default Optional<? extends VTLValueMetadata> getValueMetadata(String name)
+	public default Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
 		return getValue(name).map(VTLValue::getMetadata);
 	}

@@ -22,8 +22,6 @@ package it.bancaditalia.oss.vtl.model.transform;
 import java.util.Collections;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
-
 public interface LeafTransformation extends Transformation
 {
 	@Override

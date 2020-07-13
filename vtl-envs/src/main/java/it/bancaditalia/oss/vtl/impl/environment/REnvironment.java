@@ -85,7 +85,7 @@ public class REnvironment implements Environment
 	}
 	
 	@Override
-	public Optional<? extends VTLValueMetadata> getValueMetadata(String name)
+	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
 		if (!isEnabled())
 			return Optional.empty();

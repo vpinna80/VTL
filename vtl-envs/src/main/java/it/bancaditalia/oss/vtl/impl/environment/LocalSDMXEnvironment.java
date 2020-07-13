@@ -29,8 +29,8 @@ import it.bancaditalia.oss.sdmx.exceptions.DataStructureException;
 import it.bancaditalia.oss.sdmx.exceptions.SdmxException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.environment.exceptions.VTLInputException;
-import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 
 class LocalSDMXEnvironment extends SDMXEnvironment
 {
@@ -71,7 +71,7 @@ class LocalSDMXEnvironment extends SDMXEnvironment
 	}	
 	
 	@Override
-	public Optional<VTLDataSetMetadata> getValueMetadata(String name)
+	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
 		String tokens[] = name.split("\\.", -1); //avoid discard trailing blanks
 		if (tokens.length >= 2)

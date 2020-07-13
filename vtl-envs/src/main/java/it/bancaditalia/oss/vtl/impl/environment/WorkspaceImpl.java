@@ -63,7 +63,7 @@ public class WorkspaceImpl implements Workspace
 	}
 
 	@Override
-	public Optional<? extends VTLValue> getValue(String name)
+	public Optional<VTLValue> getValue(String name)
 	{
 		return Optional.ofNullable(values.get(name));
 	}
