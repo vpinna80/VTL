@@ -19,26 +19,25 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
-import static it.bancaditalia.oss.vtl.util.Utils.not;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.impl.transform.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -67,21 +66,13 @@ public class SetTransformation extends TransformationImpl
 		{
 			return (left, right) -> reducer.apply(left, right).apply(metadata);
 		}
-		
-		private static DataSet setDiff(DataSet a, DataSet b)
-		{
-			return setDiff("ACCUMULATOR", a, b);
-		}
+	}
 
-		private static DataSet setDiff(String name, DataSet a, DataSet b)
-		{
-			Set<DataStructureComponent<Identifier, ?, ?>> ids = b.getComponents(Identifier.class);
-			Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>> leftValues = b.stream()
-					.map(dp -> dp.getValues(ids, Identifier.class))
-					.collect(toSet());
-			
-			return a.filter(not(leftValues::contains));
-		}
+	private static DataSet setDiff(DataSet a, DataSet b)
+	{
+		Map<?, ?> leftValues = b.stream().collect(toMap(dp -> dp.getValues(Identifier.class), dp -> dp));
+		
+		return a.filter(dp -> !leftValues.containsKey(dp.getValues(Identifier.class)));
 	}
 
 	private final List<Transformation> operands;
@@ -98,11 +89,23 @@ public class SetTransformation extends TransformationImpl
 	@Override
 	public DataSet eval(TransformationScheme scheme)
 	{
-		return operands.stream().sequential()
-				.map(t -> t.eval(scheme))
-				.map(DataSet.class::cast)
-				.reduce((left, right) -> setOperator.getReducer(left.getDataStructure()).apply(left, right))
-				.orElse(new LightDataSet(metadata, Stream::empty));
+		DataSet accumulator = null;
+		AtomicBoolean first = new AtomicBoolean(true);
+		for (Transformation operand: operands)
+		{
+			DataSet other = (DataSet) operand.eval(scheme);
+			
+			if (first.getAndSet(false))
+				accumulator = other;
+			else
+			{
+				DataSet setDiff = setDiff(other, accumulator);
+				List<DataPoint> list = accumulator.concatDataPoints(setDiff).collect(toList());
+				accumulator = new LightDataSet(metadata, list::stream);
+			}
+		}
+		
+		return accumulator;
 	}
 
 	@Override
@@ -118,8 +121,7 @@ public class SetTransformation extends TransformationImpl
 		if (meta.stream().distinct().limit(2).count() != 1)
 			throw new UnsupportedOperationException("In set operation expected all datasets with equal structure but found: " + meta); 
 
-		metadata = (VTLDataSetMetadata) meta.get(0);
-		return metadata;	
+		return metadata = (VTLDataSetMetadata) meta.get(0);
 	}
 	
 	@Override

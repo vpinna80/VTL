@@ -37,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.transform.dataset.LightF2DataSet;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation;
@@ -48,6 +47,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
@@ -166,8 +166,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			final DataPointBuilder groupResult = new DataPointBuilder(Utils.getStream(operands)
 					.map(o -> {
 						DataSet groupDataSet = new LightDataSet(operand.getDataStructure(), groupList::stream);
-						Optional<DataStructureComponent<?, ?, ?>> found = metadata.getComponent(o.getComponent());
-						DataStructureComponent<?, ?, ?> component = found.get();
+						DataStructureComponent<?, ?, ?> component = metadata.getComponent(o.getComponent()).get();
 						ScalarValue<?, ?, ?> value = (ScalarValue<?, ?, ?>) o.getOperand().eval(new ThisScope(groupDataSet, session));
 
 						LOGGER.trace("Computed {} as {}", component, value);

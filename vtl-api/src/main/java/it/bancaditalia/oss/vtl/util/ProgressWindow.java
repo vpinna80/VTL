@@ -44,7 +44,7 @@ public class ProgressWindow
 	
 	private AtomicInteger progress = new AtomicInteger();
 
-	private static <T, K> Stream<T> streamHelper(String title, int maxValue, K source, Function<? super K, ? extends Stream<T>> streamProducer)
+	private static <T, K> Stream<T> streamHelper(String title, long maxValue, K source, Function<? super K, ? extends Stream<T>> streamProducer)
 	{
 		ProgressWindow window = new ProgressWindow(title, maxValue);
 		return Stream.of(source)
@@ -53,7 +53,7 @@ public class ProgressWindow
 				.orElse(Stream.empty());
 	}
 
-	private static <K> IntStream intStreamHelper(String title, int maxValue, K source, Function<? super K, ? extends IntStream> streamProducer)
+	private static <K> IntStream intStreamHelper(String title, long maxValue, K source, Function<? super K, ? extends IntStream> streamProducer)
 	{
 		ProgressWindow window = new ProgressWindow(title, maxValue);
 		try (IntStream watchedStream = streamProducer.apply(source).onClose(window::dispose))
@@ -67,7 +67,7 @@ public class ProgressWindow
 		return streamHelper(title, source.size(), source, Utils::getStream);
 	}
 
-	public static <T> Stream<T> of(String title, int maxValue, Stream<T> source)
+	public static <T> Stream<T> of(String title, long maxValue, Stream<T> source)
 	{
 		
 		return streamHelper(title, maxValue, source, identity());
@@ -78,7 +78,7 @@ public class ProgressWindow
 		return intStreamHelper(title, maxValue, maxValue, Utils::getStream);
 	}
 
-	private ProgressWindow(String title, int maxValue)
+	private ProgressWindow(String title, long maxValue)
 	{
 		if (maxValue > 1000)
 		{
@@ -106,7 +106,7 @@ public class ProgressWindow
 			window.setLocationRelativeTo(null);
 			window.getContentPane().add(new JLabel("Progress:"), BorderLayout.NORTH);
 			
-			progressBar.setMaximum(maxValue);
+			progressBar.setMaximum((int) maxValue);
 			progressBar.setMinimum(0);
 			window.getContentPane().add(progressBar, BorderLayout.CENTER);
 			window.setVisible(true);

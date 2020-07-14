@@ -162,7 +162,8 @@
 			<exprparam name="havingClause" />
 		</params>
 	</mapping>
-	<mapping from="AggrOperatorsContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+
+	<!-- mapping from="AggrOperatorsGroupingContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AggregateOperator" />
 			<exprparam name="exprComponent" />
@@ -170,15 +171,19 @@
 			<nullparam />
 		</params>
 	</mapping>
-	<mapping from="AggrOperatorsGroupingContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
-		<params>
-			<tokensetparam name="op" tokenset="AggregateOperator" />
-			<exprparam name="exprComponent" />
-			<nullparam />
-			<nullparam />
-		</params>
-	</mapping>
+
 	<mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+		<tokens name="op">
+			<value>SUM</value>
+			<value>MAX</value>
+			<value>MIN</value>
+			<value>MEDIAN</value>
+			<value>AVG</value>
+			<value>VAR_POP</value>
+			<value>VAR_SAMP</value>
+			<value>STDDEV_POP</value>
+			<value>STDDEV_SAMP</value>
+		</tokens>
 		<params>
 			<tokensetparam name="op" tokenset="AggregateOperator" />
 			<exprparam name="exprComponent" />
@@ -186,6 +191,24 @@
 			<nullparam />
 		</params>
 	</mapping>
+
+	<mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+		<tokens name="op">
+			<value>COUNT</value>
+		</tokens>
+		<params>
+			<nullparam />
+			<nullparam />
+		</params>
+	</mapping -->
+
+	<mapping from="CountAggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+		<params>
+			<nullparam />
+			<nullparam />
+		</params>
+	</mapping>
+
 	<mapping from="AggrFunctionClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.clause.AggrClauseTransformation$AggrClauseItem">
 		<params>
 			<roleparam name="componentRole" />
@@ -193,6 +216,7 @@
 			<exprparam name="aggrOperators" />
 		</params>
 	</mapping>
+
 	<mapping from="AggrClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.clause.AggrClauseTransformation">
 		<params>
 			<nestedparam name="aggregateClause">

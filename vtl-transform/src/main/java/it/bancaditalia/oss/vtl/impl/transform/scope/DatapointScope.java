@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
+import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+
 import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -27,6 +29,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue.VTLScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -60,12 +63,14 @@ public class DatapointScope implements TransformationScheme
 	}
 
 	@Override
-	public VTLScalarValueMetadata<?> getMetadata(String name)
+	public VTLValueMetadata getMetadata(String name)
 	{
 		if (Objects.requireNonNull(name, "The name to resolve cannot be null.").matches("'.*'"))
-			return () -> Utils.getStream(structure).filter(c -> c.getName().equals(name.replaceAll("'(.*)'", "$1"))).findAny().orElseThrow(() -> new VTLUnboundNameException(name)).getDomain();
+			return (VTLScalarValueMetadata<?>) () -> Utils.getStream(structure).filter(c -> c.getName().equals(name.replaceAll("'(.*)'", "$1"))).findAny().orElseThrow(() -> new VTLUnboundNameException(name)).getDomain();
+		else if (THIS.equals(name))
+			return structure;
 		else
-			return () -> Utils.getStream(structure).filter(c -> c.getName().equalsIgnoreCase(name)).findAny().orElseThrow(() -> new VTLUnboundNameException(name)).getDomain();
+			return (VTLScalarValueMetadata<?>) () -> Utils.getStream(structure).filter(c -> c.getName().equalsIgnoreCase(name)).findAny().orElseThrow(() -> new VTLUnboundNameException(name)).getDomain();
 	}
 
 	@Override

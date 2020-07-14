@@ -17,12 +17,11 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.dataset;
+package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 
 public class LightFDataSet<P> extends LightDataSet

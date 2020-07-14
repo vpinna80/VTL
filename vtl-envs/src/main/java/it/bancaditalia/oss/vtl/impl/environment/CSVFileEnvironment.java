@@ -24,8 +24,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static java.lang.Boolean.TRUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
@@ -36,7 +34,6 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -50,9 +47,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -73,7 +69,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -134,74 +130,69 @@ public class CSVFileEnvironment implements Environment
 		
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
-		List<DataStructureComponent<?, ?, ?>> metadata;
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
-			String headers[] = reader.readLine().substring(3).split(",");
-			metadata = new ArrayList<>();
-			Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();
-			for (String header: headers)
-			{
-				String cname = header.split("=", 2)[0];
-				String typeName = header.split("=", 2)[1];
-				
-				Entry<ValueDomainSubset<? extends ValueDomain>, String> mappedType = mapVarType(typeName);
-				ValueDomainSubset<? extends ValueDomain> domain = mappedType.getKey();
-				Class<? extends ComponentRole> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
-				cname = cname.replaceAll("^[$#]", "");
-				DataStructureComponentImpl<? extends ComponentRole, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
-				metadata.add(component);
-				
-				if (domain instanceof DateDomain)
-					masks.put(component, mappedType.getValue());
-			}
+			final VTLDataSetMetadata structure = new Builder(extractMetadata(reader.readLine().split(",")).getKey()).build();
 			
-			LOGGER.info("Reading {}", fileName);
-			
-			final VTLDataSetMetadata structure = new Builder(metadata).build();
-			
-			int lineCount = (int) Utils.getStream(Files.lines(Paths.get(fileName), UTF_8)).count();
-			Supplier<Stream<DataPoint>> datapoints = () -> {
-				try {
-					Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Boolean> set = new ConcurrentHashMap<>();
-					
-					return ProgressWindow.of("Loading CSV", lineCount, 
-							Utils.getStream(Files.lines(Paths.get(fileName), UTF_8)))
-						.filter(l -> !l.trim().isEmpty())
-						.filter(l -> !l.startsWith("-->"))
-						.map(l -> {
-							Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>();
-							int beginIndex = 0;
-							for (int i = 0; i < metadata.size(); i++)
-							{
-								DataStructureComponent<?, ?, ?> component = metadata.get(i);
-								if (beginIndex >= l.length())
-									throw new IllegalStateException("Expected value for " + component + " but row ended before: " + l);
-									
-								int endIndex = l.indexOf(',', beginIndex);
-								if (endIndex < 0)
-									endIndex = l.length();
-								result.put(component, mapValue(component, l.substring(beginIndex, endIndex), masks.get(component)));
-								beginIndex = endIndex + 1;
-							}
-
-							return result;
-						})
-						.map(m -> new DataPointBuilder(m).build(structure))
-						.peek(dp -> {
-							Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> values = dp.getValues(Identifier.class);
-							Boolean a = set.putIfAbsent(values, TRUE);
-							if (a != null)
-								throw new IllegalStateException("Identifiers are not unique: " + values);
-						});
-				} catch (IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			};
-			return Optional.of(new LightDataSet(structure, datapoints));
+			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName));
 		}
 		catch (IOException /*| ReflectiveOperationException */ e)
+		{
+			throw new VTLNestedException("Exception while reading " + fileName, e);
+		}
+	}
+	
+	private Stream<DataPoint> streamFileName(String fileName)
+	{
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
+		{
+			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
+			List<DataStructureComponent<?, ?, ?>> metadata = headerInfo.getKey();
+			Map<DataStructureComponent<?, ?, ?>, String> masks = headerInfo.getValue();
+			final VTLDataSetMetadata structure = new Builder(metadata).build();
+			long lineCount = reader.lines().count();
+			
+			LOGGER.info("Reading {}", fileName);
+	
+			// Do not close!
+			@SuppressWarnings("resource")
+			BufferedReader innerReader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8));
+			// Skip header
+			innerReader.readLine();
+			
+			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Boolean> set = new ConcurrentHashMap<>();
+			
+			return ProgressWindow.of("Loading CSV", lineCount, Utils.getStream(innerReader.lines()))
+				.filter(l -> !l.trim().isEmpty())
+				.map(l -> {
+					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>();
+					int beginIndex = 0;
+					for (int i = 0; i < metadata.size(); i++)
+					{
+						DataStructureComponent<?, ?, ?> component = metadata.get(i);
+						if (beginIndex >= l.length())
+							throw new IllegalStateException("Expected value for " + component + " but row ended before: " + l);
+							
+						int endIndex = l.indexOf(',', beginIndex);
+						if (endIndex < 0)
+							endIndex = l.length();
+						result.put(component, mapValue(component, l.substring(beginIndex, endIndex), masks.get(component)));
+						beginIndex = endIndex + 1;
+					}
+	
+					return result;
+				})
+				.map(m -> new DataPointBuilder(m).build(structure))
+				.peek(dp -> LOGGER.trace("Read: {}", dp))
+				.peek(dp -> {
+					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> values = dp.getValues(Identifier.class);
+					Boolean a = set.putIfAbsent(values, true);
+					if (a != null)
+						throw new IllegalStateException("Identifiers are not unique: " + values);
+				});
+		}
+		catch (IOException e)
 		{
 			throw new VTLNestedException("Exception while reading " + fileName, e);
 		}
@@ -307,32 +298,45 @@ public class CSVFileEnvironment implements Environment
 
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
 		{
-			// must be ordered
-			String headers[] = reader.readLine().substring(3).split(",");
-			List<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>();
-			Map<DataStructureComponent<?, ?, ?>, String> patterns = new HashMap<>();
-			for (String header: headers)
-			{
-				String cname = header.split("=", 2)[0];
-				String typeName = header.split("=", 2)[1];
-				
-				Entry<ValueDomainSubset<? extends ValueDomain>, String> mappedType = mapVarType(typeName);
-				ValueDomainSubset<? extends ValueDomain> domain = mappedType.getKey();
-				Class<? extends ComponentRole> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
-				cname = cname.replaceAll("^[$#]", "");
-				DataStructureComponentImpl<? extends ComponentRole, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
-				metadata.add(component);
-				
-				if (domain instanceof DateDomain)
-					patterns.put(component, mappedType.getValue());
-			}
-			
-			return Optional.of(new Builder(metadata).build());
+			return Optional.of(new Builder(extractMetadata(reader.readLine().split(",")).getKey()).build());
 		}
 		catch (IOException e)
 		{
 			throw new VTLNestedException("Exception while reading " + fileName, e);
 		}
+	}
+
+	private Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> extractMetadata(String headers[]) throws IOException
+	{
+		List<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>();
+		Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();
+		for (String header: headers)
+		{
+			String cname, typeName;
+			
+			if (header.indexOf('=') >= 0)
+			{
+				cname = header.split("=", 2)[0];
+				typeName = header.split("=", 2)[1];
+			}
+			else
+			{
+				cname = '$' + header;
+				typeName = "String";
+			}
+			
+			Entry<ValueDomainSubset<? extends ValueDomain>, String> mappedType = mapVarType(typeName);
+			ValueDomainSubset<? extends ValueDomain> domain = mappedType.getKey();
+			Class<? extends ComponentRole> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
+			cname = cname.replaceAll("^[$#]", "");
+			DataStructureComponentImpl<? extends ComponentRole, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
+			metadata.add(component);
+
+			if (domain instanceof DateDomain)
+				masks.put(component, mappedType.getValue());
+		}
+		
+		return new SimpleEntry<>(metadata, masks);
 	}
 	
 	/*private static class MemoryMapper implements Spliterator<String>

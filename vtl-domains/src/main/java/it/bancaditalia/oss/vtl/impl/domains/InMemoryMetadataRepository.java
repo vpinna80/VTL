@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
@@ -63,7 +64,10 @@ public class InMemoryMetadataRepository implements MetadataRepository
 	@Override
 	public ValueDomainSubset<?> getDomain(String alias) 
 	{
-		return domains.get(mapAlias(alias)); 
+		if (domains.containsKey(mapAlias(alias)))
+			return domains.get(mapAlias(alias));
+		
+		throw new VTLException("Domain '" + alias + "' is undefined in the metadata.");
 	}
 	
 	@Override

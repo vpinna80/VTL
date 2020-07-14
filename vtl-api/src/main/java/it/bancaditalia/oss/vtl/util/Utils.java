@@ -19,11 +19,16 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.util;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.toConcurrentMap;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -219,6 +224,14 @@ public final class Utils
 	public static IntStream getStream(int max)
 	{
 		IntStream stream = IntStream.range(0, max);
+		stream = SEQUENTIAL ? stream.sequential() : stream.parallel();
+		return ORDERED ? stream : stream.unordered();
+	}
+
+	public static Stream<String> getStream(String fileName) throws IOException
+	{
+		@SuppressWarnings("resource")
+		Stream<String> stream = Files.lines(Paths.get(fileName), UTF_8);
 		stream = SEQUENTIAL ? stream.sequential() : stream.parallel();
 		return ORDERED ? stream : stream.unordered();
 	}

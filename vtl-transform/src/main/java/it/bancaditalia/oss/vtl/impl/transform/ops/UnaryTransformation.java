@@ -23,6 +23,7 @@ import static java.util.Collections.emptySet;
 
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -55,7 +56,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValue eval(TransformationScheme session)
 	{
-		VTLValue value = operand.eval(session);
+		VTLValue value = operand == null ? session.resolve(ThisScope.THIS) : operand.eval(session);
 		
 		if (value instanceof DataSet)
 			return evalOnDataset((DataSet) value);
