@@ -1,0 +1,52 @@
+.antlr-editor {
+	position: relative;
+}
+
+.CodeMirror {
+	height: 100%;
+}
+
+.vtltoolbar, .vtltoolbar > * {
+	height: 25px;
+	margin: 0;
+	box-sizing: border-box;
+}
+
+.vtlLogo {
+  max-height: 20%;
+  max-width: 20%;
+}
+
+.tab-content, .content, .content > div {
+  padding: 0 !important;
+}
+
+.nav-tabs {
+  height: 45px;
+}
+
+.tab-pane {
+  height: calc(100vh - 45px);
+}
+
+.tab-content .tab-pane:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-content .tab-pane:not(:first-child) {
+  margin: 10px;
+}
+
+.antlr-editor {
+  height: 70vh;
+  resize: vertical;
+}
+
+#vtl_output {
+  border-radius: 0;
+  flex-shrink: 1;
+  flex-grow: 1;
+  padding: 0;
+  margin: 0;
+}

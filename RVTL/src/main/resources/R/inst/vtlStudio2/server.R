@@ -87,25 +87,6 @@ shinyServer(function(input, output, session) {
     textInput(inputId = 'proxyUser', label = 'Proxy User', value = user)
   })
   
-  #VTL Editor
-  output$vtl<-renderUI(
-    tags$head(HTML('<script src="bundle.js" type="text/javascript"></script>
-                    <script src="main.js" type="text/javascript"></script>
-                    <link rel="stylesheet" type="text/css" href="codemirror-icons.css"></link>
-                    <link rel="stylesheet" type="text/css" href="codemirror-editor.css"> </link>
-                    <link rel="stylesheet" type="text/css" href="codemirror-all-themes.css" ></link>
-                               
-                    <script>Shiny.addCustomMessageHandler(\'editor-text\', function(text) {
-                    vtl.editor.editorImplementation.setValue(text)
-                  });
-                    </script>
-                   '))
-  )
-  
-  output$compileBtn<- renderUI({
-    actionButton(inputId = 'compile', label = 'Compile and Update Current Session', onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());')
-  })
-
   #####
   ##### End Dynamic Input controls
   #####

@@ -24,31 +24,41 @@
 # Author: Attilio Mattiocco
 ###############################################################################
 
-ui <- fluidPage(
+ui <- dashboardPage(
   
-  titlePanel("VTL Studio!"),
-  
-  sidebarLayout(
-    
-    sidebarPanel(width = 2,
-                 uiOutput(outputId='selectSession'),
-                 hr(),
-                 textInput(inputId = 'newSession', label = 'New Session'),
-                 actionButton(inputId = 'createSession', label = 'Create'),
-                 hr(),
-                 fileInput(inputId = 'scriptFile', label = 'Load VTL Script Session')
+  dashboardHeader(disable = T),
+
+
+  dashboardSidebar(
+       img(src="logo.svg", class="vtlLogo"),
+       div(style="display:inline-block",titlePanel("VTL Studio!")),
+       hr(),
+       uiOutput(outputId='selectSession'),
+       actionButton(inputId = 'compile', label = 'Compile current session', onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());'),
+       hr(),
+       textInput(inputId = 'newSession', label = 'New Session'),
+       actionButton(inputId = 'createSession', label = 'Create'),
+       hr(),
+       fileInput(inputId = 'scriptFile', label = 'Load VTL Script Session')
     ),
     
-    mainPanel( width = 10, style="height: 93vh; overflow-y: auto;",
-               
-               tabsetPanel(
-                 tabPanel("VTL Editor",
+    dashboardBody(#Panel( width = 10, style="height: 93vh; overflow-y: auto;",
+      tags$head(
+        tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-icons.css"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-editor.css"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-all-themes.css"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "dialog.css"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "simplescrollbars.css"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "matchesonscrollbar.css"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "vtl-editor.css"),
+        tags$script('Shiny.addCustomMessageHandler(\'editor-text\', function(text) {
+                    vtl.editor.editorImplementation.setValue(text)
+                  });')
+      ),
+      tabBox(width = 12,
+                 tabPanel("VTL Editor", id = "editor-pane",
                           includeHTML('index.html')  ,
-                          htmlOutput("vtl"),
-                          hr(),
-                          uiOutput(outputId='compileBtn'),
-                          h4("VTL Output"),
-                          wellPanel(id = 'vtlout', verbatimTextOutput(outputId = "vtl_output", placeholder =T), height = "40vh")
+                          verbatimTextOutput(outputId = "vtl_output", placeholder =T)
                  ),
                  tabPanel("Dataset Explorer",
                           fluidRow(
@@ -82,9 +92,7 @@ ui <- fluidPage(
                           wellPanel(id = 'confout', verbatimTextOutput(outputId = "conf_output", placeholder =T), height = "40vh")
                           
                  )
-                 
-               )
-    )
+               )                 
   )
 )
 
