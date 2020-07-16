@@ -29,7 +29,7 @@
   height: calc(100vh - 45px);
 }
 
-.tab-content .tab-pane:first-child {
+.tab-content .tab-pane.active:first-child {
   display: flex;
   flex-direction: column;
 }
@@ -49,4 +49,9 @@
   flex-grow: 1;
   padding: 0;
   margin: 0;
+}
+
+#saveas {
+  margin: 6px 5px 6px 15px;
+  color: #444;
 }

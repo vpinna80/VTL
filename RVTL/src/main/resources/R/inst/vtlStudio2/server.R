@@ -52,6 +52,17 @@ shinyServer(function(input, output, session) {
       
   })
   
+  output$saveas <- downloadHandler(
+      filename = function() {
+        req(input$sessionID)
+        paste0(isolate(input$sessionID), ".vtl")
+      }, content = function (file) {
+        req(input$sessionID)
+        name = isolate(input$sessionID)
+        vtlSession = RVTL:::vtlGetSession(name)
+        writeLines(vtlSession$text, file)
+      })
+
   output$dsNames<- renderUI({
     req(input$sessionID)
     selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, choices = c('', vtlListNodes(input$sessionID)), selected ='')
@@ -94,7 +105,7 @@ shinyServer(function(input, output, session) {
   #####
   ##### Output widgets
   #####
-  
+
   # switch VTL session
   observeEvent(input$sessionID, {
     req(input$sessionID)
