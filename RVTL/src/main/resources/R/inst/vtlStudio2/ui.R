@@ -24,26 +24,93 @@
 # Author: Attilio Mattiocco
 ###############################################################################
 
+themes <- list('',
+               '3024-day',
+               '3024-night',
+               'abcdef',
+               'ambiance',
+               'base16-dark',
+               'base16-light',
+               'bespin',
+               'blackboard',
+               'cobalt',
+               'colorforth',
+               'darcula',
+               'dracula',
+               'duotone-dark',
+               'duotone-light',
+               'eclipse',
+               'elegant',
+               'erlang-dark',
+               'gruvbox-dark',
+               'hopscotch',
+               'icecoder',
+               'idea',
+               'isotope',
+               'lesser-dark',
+               'liquibyte',
+               'lucario',
+               'material',
+               'material-darker',
+               'material-palenight',
+               'material-ocean',
+               'mbo',
+               'mdn-like',
+               'midnight',
+               'monokai',
+               'moxer',
+               'neat',
+               'neo',
+               'night',
+               'nord',
+               'oceanic-next',
+               'panda-syntax',
+               'paraiso-dark',
+               'paraiso-light',
+               'pastel-on-dark',
+               'railscasts',
+               'rubyblue',
+               'seti',
+               'shadowfox',
+               'solarized dark',
+               'solarized light',
+               'the-matrix',
+               'tomorrow-night-bright',
+               'tomorrow-night-eighties',
+               'ttcn',
+               'twilight',
+               'vibrant-ink',
+               'xq-dark',
+               'xq-light',
+               'yeti',
+               'yonce',
+               'zenburn')
+
 ui <- dashboardPage(
   
   dashboardHeader(disable = T),
 
-
   dashboardSidebar(
-       img(src="logo.svg", class="vtlLogo"),
-       div(style="display:inline-block",titlePanel("VTL Studio!")),
+       div(style = "text-align: center",
+          img(src="logo.svg", class="vtlLogo"),
+          div(style="display:inline-block",titlePanel("VTL Studio!"))
+       ),
        hr(),
-       uiOutput(outputId='selectSession'),
+       selectInput(inputId = 'sessionID', label = 'Active VTL session:', multiple = F, choices = VTLSessionManager$list(), selected = VTLSessionManager$list()[1]),
        actionButton(inputId = 'compile', label = 'Compile session', onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());'),
        downloadButton(outputId = 'saveas', label = 'Save session as...'),
        hr(),
        textInput(inputId = 'newSession', label = 'New Session'),
-       actionButton(inputId = 'createSession', label = 'Create'),
+       actionButton(inputId = 'createSession', label = 'Create new session'),
+       actionButton(inputId = 'dupSession', label = 'Duplicate session'),
+       fileInput(inputId = 'scriptFile', label = NULL, buttonLabel = 'Load script from file...'),
        hr(),
-       fileInput(inputId = 'scriptFile', label = 'Load VTL Script Session')
-    ),
+       selectInput(inputId = 'editorTheme', label = 'Select editor theme:', multiple = F, choices = themes),
+       numericInput('editorFontSize', 'Select font size:', 12, min = 8, max = 40, step = 1)
+  ),
     
-    dashboardBody(#Panel( width = 10, style="height: 93vh; overflow-y: auto;",
+    dashboardBody(
+      useShinyjs(),
       tags$head(
         tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-icons.css"),
         tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-editor.css"),
@@ -54,12 +121,20 @@ ui <- dashboardPage(
         tags$link(rel = "stylesheet", type = "text/css", href = "vtl-editor.css"),
         tags$script('Shiny.addCustomMessageHandler(\'editor-text\', function(text) {
                     vtl.editor.editorImplementation.setValue(text)
+                  });'),
+        tags$script('Shiny.addCustomMessageHandler(\'editor-theme\', function(theme) {
+                    vtl.editor.setTheme(theme)
+                  });'),
+        tags$script('Shiny.addCustomMessageHandler(\'editor-fontsize\', function(fontsize) {
+                    document.getElementsByClassName(\'CodeMirror\')[0].style.fontSize = fontsize + \'pt\';
                   });')
+        
       ),
-      tabBox(width = 12,
+      tabBox(width = 12, id = "navtab",
                  tabPanel("VTL Editor", id = "editor-pane",
                           includeHTML('index.html')  ,
-                          verbatimTextOutput(outputId = "vtl_output", placeholder =T)
+                          verbatimTextOutput(outputId = "vtl_output", placeholder =T),
+                          tags$script('vtl.editor.editorImplementation.on("blur", function() { Shiny.setInputValue("editorText", vtl.editor.editorImplementation.getValue()); })')
                  ),
                  tabPanel("Dataset Explorer",
                           fluidRow(

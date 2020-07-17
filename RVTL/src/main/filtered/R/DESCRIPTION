@@ -5,7 +5,7 @@ Author: Attilio Mattiocco
 Maintainer: Attilio Mattiocco <attilio.mattiocco@bancaditalia.it>
 Description: R wrapper for VTL Engine
     More to be added.
-Depends: R (>= 3.3.0), rJava (>= 0.8-8), RJSDMX (>= ${RJSDMX.version}), igraph, networkD3, shiny, shinydashboard, jdx, xtable, dplyr
+Depends: R (>= 3.3.0), rJava (>= 0.8-8), RJSDMX (>= 2.3-3), R6, igraph, networkD3, shiny, shinydashboard, shinyjs, jdx, xtable, dplyr
 Suggests: testthat
 SystemRequirements: Java (>= 8)
 License: EUPL

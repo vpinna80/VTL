@@ -28,60 +28,42 @@ vtlStudio <- function() {
   shiny::runApp(system.file('vtlStudio2', package='RVTL'))  
 }
 
-vtlKillSessions <- function(sessions) {
-  sapply(sessions, J('it.bancaditalia.oss.vtl.impl.session.VTLSessionHandler')$killSession)
-  sapply(sessions, function(sessionID) {
-    if (exists(x = sessionID, envir = RVTL:::vtlSessions)) 
-      rm(list = sessionID, envir = RVTL:::vtlSessions)
-  })
-  return(invisible())
-}
-
-vtlListSessions <- function() {
-#  jsessions = J('it.bancaditalia.oss.vtl.impl.session.VTLSessionHandler')$getSessions()
-#  sessions = .jcall(jsessions, "[Ljava/lang/Object;","toArray")
-#  sessions = sapply(sessions, .jstrVal)
-  return(ls(RVTL:::vtlSessions))
-}
+vtlListSessions <- VTLSessionManager$list
 
 vtlAddStatements <- function(sessionID, statements, restartSession = F) {
-  rc <- vtlTryCatch({ 
-    if(restartSession || !exists(sessionID, envir = RVTL:::vtlSessions)) {
-      vtlKillSessions(sessionID)
-      vtlGetOrCreateSession(sessionID, statements) 
-    } else {
-      vtlGetSession(sessionID)$addStatements(statements)
-    }
-    return(T)
-  })
-  
-  if (rc)
-    print('Statements added')
-  return(rc)
+  if(restartSession) {
+    VTLSessionManager$kill(sessionID)
+  }
+
+  session = VTLSessionManager$getOrCreate(sessionID)$addStatements(statements)
+  print('Statements added')
+  return(session)
 }
 
 vtlEvalNodes <- function(sessionID, nodes) {
-  return(tryCatch({
   start = Sys.time()
-  session <- vtlGetSession(sessionID)
+  session <- VTLSessionManager$find(sessionID)
   jnodes = sapply(X = nodes, session$resolve)
   evalTime = Sys.time() - start
-  jstructs = sapply(X = nodes, FUN = function(x) J('it.bancaditalia.oss.vtl.impl.session.VTLSessionHandler')$getNodeStructure(sessionID,x))
   nodesdf = lapply(names(jnodes), FUN = function(x, jnodes, jstructs) {
     jnode = jnodes[[x]]
     if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
       jnode <- J("java.util.Collections")$singletonMap("Scalar", 
           J("java.util.Collections")$singletonList(
               .jcall(jnode, returnSig = "Ljava/lang/Object;", method="get")))
+      measuresJ <- list()
+      identifiersJ <- list()
     }
     else if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
       pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
                      .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"))
       jnode <- tryCatch({ pager$more(-1L) }, finally = { pager$close() })
+      measuresJ <- sapply(jnode$getComponents(J("it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure")), function(x) { x$getName })
+      identifiersJ <- sapply(jnode$getComponents(J("it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier")), function(x) { x$getName })
     }
     else
       stop(paste0("Unsupported result class: ", jnode$getClass()$getName()))
-    jstruct = jstructs[[x]]
+    
     tmp = convertToR(jnode, strings.as.factors = F)
     if(!is.data.frame(tmp)){
       if(is.list(tmp)){
@@ -100,8 +82,7 @@ vtlEvalNodes <- function(sessionID, nodes) {
       }
       tmp = as.data.frame(tmp, strings.as.factors = F)
     }
-    measuresJ = jstruct$get('MEASURES')
-    identifiersJ = jstruct$get('IDENTIFIERS')
+    
     if(length(measuresJ) > 0){
       measures = convertToR(measuresJ)
       if(length(measures) > 0){
@@ -119,32 +100,27 @@ vtlEvalNodes <- function(sessionID, nodes) {
   }, jnodes, jstructs)
   names(nodesdf) <- names(jnodes)
   return(nodesdf)
-  }, error = function(e) {
-    print(paste0("ERROR: ", e$jobj$getMessage()))
-    e$jobj$printStackTrace()
-    return(F)
-  }))
 }
 
 vtlListStatements <- function(sessionID) {
-  jstatements = vtlGetSession(sessionID)$getStatements()
+  jstatements = VTLSessionManager$find(sessionID)$getStatements()
   return(sapply(jstatements$entrySet(), function (x) setNames(list(x$getValue()), x$getKey())))
 }
 
 vtlListNodes <- function(sessionID){
-  return(vtlGetSession(sessionID)$getNodes())
+  return(VTLSessionManager$find(sessionID)$getNodes())
 }
 
 vtlGetCode <- function(sessionID) {
-  return(vtlGetSession(sessionID)$text)
+  return(VTLSessionManager$find(sessionID)$text)
 }
 
 vtlTopology <- function(session, distance =100, charge = -100) {
-  return(vtlGetSession(session)$getTopology(distance, charge))
+  return(VTLSessionManager$find(session)$getTopology(distance, charge))
 }
 
 vtlCompile <- function(sessionID) {
-  vtlSession <- vtlGetSession(sessionID)
+  vtlSession <- VTLSessionManager$find(sessionID)
   result <- vtlTryCatch({
     vtlSession$compile()
     print('Compilation successful!')
@@ -161,21 +137,6 @@ vtlCompile <- function(sessionID) {
 
 vtloperators <- function(){
   return(list(VTL=c('sqrt(x)', 'ln(x)', 'abs(x)', 'floor(x)')))
-}
-
-vtlSessions <- new.env(parent = emptyenv())
-
-vtlGetSession <- function(sessionID) {
-  return(get(sessionID, envir = RVTL:::vtlSessions))
-}
-
-vtlGetOrCreateSession <- function(sessionID, statements = "") {
-  if (is.null(vtlSession <- get0(sessionID, envir = RVTL:::vtlSessions))) {
-    vtlSession <- RVTL:::VTLSession$new(name = sessionID, code = statements)
-    assign(sessionID, vtlSession, envir = RVTL:::vtlSessions)
-  } 
-    
-  return(vtlSession)
 }
 
 vtlTryCatch <- function(expr) {
