@@ -33,7 +33,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.session.VTLSessionHandler;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
@@ -66,13 +66,12 @@ public class DatasetIT {
 	public void test(String testName, String datasetName, int expectedColumns, String operatorName, DoubleBinaryOperator op) 
 	{
 		System.setProperty("NO_R", "true");
-		String sessionName = testName + " " + operatorName;
 		
 		String script = "a:='" + datasetName + "';\n"
 					+ "b:=a;\n"
 					+ "c:=a" + operatorName + "b;\n";
 
-		VTLSession session = VTLSessionHandler.getSession(sessionName);
+		VTLSession session = ConfigurationManager.getDefaultFactory().createSessionInstance();
 		session.addStatements(script);
 		session.compile();
 		

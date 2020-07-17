@@ -33,7 +33,7 @@ public class CSVMetadataRepository extends InMemoryMetadataRepository
 			reader.lines()
 				.map(l -> new SimpleEntry<>(l.split(",", 2)[0], l.split(",", 2)[1]))
 				.collect(groupingByConcurrent(Entry::getKey, mapping(Entry::getValue, toSet())))
-				.forEach((name, set) -> metadata.put(name, new StringCodeListImpl(name, set)));
+				.forEach(defineDomainOf(StringCodeListImpl.class));
 		}
 	}
 

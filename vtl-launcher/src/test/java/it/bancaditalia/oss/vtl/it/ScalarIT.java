@@ -22,15 +22,15 @@ package it.bancaditalia.oss.vtl.it;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.session.VTLSessionHandler;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class ScalarIT {
 	
@@ -48,19 +48,17 @@ public class ScalarIT {
 	public void test(String operator, long result) 
 	{
 		System.setProperty("NO_R", "true");
-		String session = "Scalar operation " + operator;
 		
 		String script = "a:=100;\n"
 					+ "b:=50;\n"
 					+ "c:=a" + operator + "b;\n";
-		VTLSessionHandler.addStatements(session, script);
-		VTLSessionHandler.compile(session);
-		Map<String, List<Object>> c = VTLSessionHandler.evalNode(session, "c");
+		VTLSession session = ConfigurationManager.getDefaultFactory().createSessionInstance();
+		session.addStatements(script);
+		session.compile();
+		ScalarValue<?, ?, ?> c = session.resolve("c", ScalarValue.class);
 		
 		assertNotNull(c, "Null result");
-		assertEquals(1, c.size(), "Empty result");
-		assertNotNull(c.get("Scalar"), "Wrong Structure result");
-		assertEquals(result, c.get("Scalar").get(0), "Wrong Value Result");
+		assertEquals(result, c.get(), "Wrong Value Result");
 	}
 }
 

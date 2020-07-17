@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.it;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,7 +36,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.session.VTLSessionHandler;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.session.VTLSession;
+import it.bancaditalia.oss.vtl.util.Paginator;
 
 public class FilterIT
 {
@@ -64,11 +71,30 @@ public class FilterIT
 		String script = "a:='" + datasetName + "';\n"
 				+ "b:=a[filter " + filterBody + "];\n";
 
-		VTLSessionHandler.addStatements(testName, script);
-		VTLSessionHandler.compile(testName);
+		VTLSession session = ConfigurationManager.getDefaultFactory().createSessionInstance();
+		session.addStatements(script);
+		session.compile();
 
-		Map<String, List<Object>> left = VTLSessionHandler.evalNode(testName, "b");
-		Map<String, List<Object>> right = VTLSessionHandler.evalNode(testName, "b");
+		VTLValue leftV = session.resolve("a");
+		VTLValue rightV = session.resolve("b");
+		Map<String, List<Object>> left, right;
+
+		if (leftV instanceof ScalarValue)
+			left = singletonMap("Scalar", singletonList(((ScalarValue<?, ?, ?>) leftV).get()));
+		else 
+			try (Paginator pager = new Paginator((DataSet) leftV))
+			{
+				left = pager.more(-1);
+			}
+
+		if (rightV instanceof ScalarValue)
+			right = singletonMap("Scalar", singletonList(((ScalarValue<?, ?, ?>) rightV).get()));
+		else 
+			try (Paginator pager = new Paginator((DataSet) rightV))
+			{
+				right = pager.more(-1);
+			}
+
 		testBody.accept(left, right);
 	}
 

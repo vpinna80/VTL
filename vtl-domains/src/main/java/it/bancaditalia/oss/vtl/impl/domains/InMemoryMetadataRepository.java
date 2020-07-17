@@ -30,6 +30,7 @@ import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -88,6 +89,11 @@ public class InMemoryMetadataRepository implements MetadataRepository
 				throw new IllegalStateException(e);
 			}
 		}));
+	}
+	
+	public BiConsumer<? super String, ? super Object> defineDomainOf(Class<? extends ValueDomainSubset<?>> domainClass)
+	{
+		return (alias, arg) -> defineDomain(alias, domainClass, arg); 
 	}
 
 	private Class<? extends ValueDomainSubset<?>> mapClass(Class<? extends ValueDomain> domainClass)
