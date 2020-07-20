@@ -66,7 +66,30 @@ VTLSession <- R6Class("VTLSession",
                       return(list())
                     return(convertToR(private$checkInstance()$getNodes())) 
                   },
-      getTopology = function(distance =100, charge = -100) {
+      getValues = function (nodes) {
+                    jnodes <- sapply(X = nodes, private$checkInstance()$resolve)
+                    nodesdf <- lapply(names(jnodes), FUN = function(x, jnodes, jstructs) {
+                      jnode <- jnodes[[x]]
+                      if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
+                        df <- as.data.frame(list(Scalar = jnode$get()))
+                      }
+                      else if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
+                        pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
+                                       .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"))
+                        df <- convertToDF(tryCatch({ pager$more(-1L) }, finally = { pager$close() }))
+                        role <- J("it.bancaditalia.oss.vtl.model.data.ComponentRole")
+                        attr(df, 'measures') <- sapply(jnode$getComponents(attr(role$Measure, 'jobj')), function(x) { x$getName() })
+                        attr(df, 'identifiers') <- sapply(jnode$getComponents(attr(role$Identifier, 'jobj')), function(x) { x$getName() })
+                      }
+                      else
+                        stop(paste0("Unsupported result class: ", jnode$getClass()$getName()))
+                      
+                      return (df)
+                    }, jnodes, jstructs)
+                    names(nodesdf) <- names(jnodes)
+                    return(nodesdf)
+                  },
+      getTopology = function(distance = 100, charge = -100) {
           if (is.null(private$instance))
             return(NULL)
         

@@ -34,7 +34,7 @@ shinyServer(function(input, output, session) {
   evalNode <- reactive({
     req(input$sessionID)
     req(input$selectDatasets)
-    return(vtlEvalNodes(sessionID = input$sessionID, node = input$selectDatasets))
+    return(VTLSessionManager$find(input$sessionID)$getValues(input$selectDatasets))
   })
   
   isCompiled <- reactiveVal(F)
@@ -148,7 +148,7 @@ shinyServer(function(input, output, session) {
     vtlSession <- VTLSessionManager$getOrCreate(input$scriptFile$name)$setText(lines)
     isCompiled(vtlSession$isCompiled())
     #update current session
-    updateSelectInput(session = session, inputId = 'sessionID', choices = c(vtlListSessions()), selected = input$scriptFile$name)
+    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = input$scriptFile$name)
     #update editor
     session$sendCustomMessage("editor-text", lines)
   })
@@ -159,7 +159,7 @@ shinyServer(function(input, output, session) {
     name = isolate(input$newSession)
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
-    updateSelectInput(session = session, inputId = 'sessionID', choices = c(vtlListSessions()), selected = name)
+    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = name)
     #update editor
     session$sendCustomMessage("editor-text", '')
     updateTextInput(session = session, inputId = 'newSession', value = '')
@@ -174,7 +174,7 @@ shinyServer(function(input, output, session) {
     vtlSession <- VTLSessionManager$getOrCreate(name)
     vtlSession$setText(text)
     isCompiled(vtlSession$isCompiled())
-    updateSelectInput(session = session, inputId = 'sessionID', choices = c(vtlListSessions()), selected = name)
+    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = name)
     #update editor
     session$sendCustomMessage("editor-text", text)
     updateTextInput(session = session, inputId = 'newSession', value = '')
@@ -200,10 +200,10 @@ shinyServer(function(input, output, session) {
   
   #compile VTL code (action button)
   observeEvent(input$compile, {
-    req(isolate(input$sessionID))
+    req(input$sessionID)
     output$vtl_output <- renderPrint({
-      name = isolate(input$sessionID)
-      statements = isolate(input$vtlStatements)
+      name = input$sessionID
+      statements = input$vtlStatements
       print(name)
       print(statements)
       vtlSession = vtlAddStatements(sessionID = name,
@@ -218,21 +218,18 @@ shinyServer(function(input, output, session) {
     })
   })
 
-  output$datasetsInfo <- renderText({
+  output$datasetsInfo <- renderUI({
     req(input$sessionID)
     req(input$selectDatasets)
-    text = ''
-    nodes = evalNode()
-    if(length(nodes) > 0){
-      ddf = nodes[[1]]
-      nrows = nrow(ddf)
-      ncols = ncol(ddf)
-      statements = vtlListStatements(input$sessionID)
-      formula = statements[[input$selectDatasets]]
-      timing = attr(ddf, 'evalTime')
-      text = paste("<br><b>Node:</b>", input$selectDatasets, " (", nrows, " x ", ncols, ")","<br><b>Formula:</b> '",ifelse(test = is.null(formula), no = formula, yes = 'PRIMITIVE NODE'), "'<br><b>Evaluation time:</b> ", timing, "<br><br>")
-    }
-    return(text)
+    statements <- VTLSessionManager$find(input$sessionID)$getStatements()
+    statements <- sapply(statements$entrySet(), function (x) setNames(list(x$getValue()), x$getKey()))
+    ddf = evalNode()[[1]]
+    formula <- statements[[input$selectDatasets]]
+    
+    return(tags$div(
+      tags$p(tags$span("Node"), tags$span(input$selectDatasets), tags$span(paste("(", nrow(ddf), "by", ncol(ddf), ")"))),
+      tags$p(tags$span("Rule:"), ifelse(test = is.null(formula), no = formula, yes = 'Source data'))
+    ))
   })
 
   output$datasets <- DT::renderDataTable({

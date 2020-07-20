@@ -119,23 +119,25 @@ ui <- dashboardPage(
         tags$link(rel = "stylesheet", type = "text/css", href = "simplescrollbars.css"),
         tags$link(rel = "stylesheet", type = "text/css", href = "matchesonscrollbar.css"),
         tags$link(rel = "stylesheet", type = "text/css", href = "vtl-editor.css"),
-        tags$script('Shiny.addCustomMessageHandler(\'editor-text\', function(text) {
-                    vtl.editor.editorImplementation.setValue(text)
-                  });'),
-        tags$script('Shiny.addCustomMessageHandler(\'editor-theme\', function(theme) {
-                    vtl.editor.setTheme(theme)
-                  });'),
-        tags$script('Shiny.addCustomMessageHandler(\'editor-fontsize\', function(fontsize) {
-                    document.getElementsByClassName(\'CodeMirror\')[0].style.fontSize = fontsize + \'pt\';
-                  });')
-        
+        tags$script(HTML('Shiny.addCustomMessageHandler("editor-text", text => vtl.editor.editorImplementation.setValue(text))')),
+        tags$script(HTML('Shiny.addCustomMessageHandler("editor-theme", theme => vtl.editor.setTheme(theme));')),
+        tags$script(HTML('Shiny.addCustomMessageHandler("editor-fontsize", fontsize => $(".CodeMirror")[0].style.fontSize = fontsize + "pt");'))
       ),
       tabBox(width = 12, id = "navtab",
                  tabPanel("VTL Editor", id = "editor-pane",
-                          includeHTML('index.html')  ,
-                          verbatimTextOutput(outputId = "vtl_output", placeholder =T),
-                          tags$script('vtl.editor.editorImplementation.on("blur", function() { Shiny.setInputValue("editorText", vtl.editor.editorImplementation.getValue()); })')
-                 ),
+                          tags$div(id = 'vtlwell'),
+                          verbatimTextOutput(outputId = "vtl_output", placeholder = T),
+                          tags$script(src="bundle.js", type="text/javascript"),
+                          tags$script(src="main.js", type="text/javascript"),
+                          tags$script(src="closebrackets.js", type="text/javascript"),
+                          tags$script(src="dialog.js", type="text/javascript"),
+                          tags$script(src="matchesonscrollbar.js", type="text/javascript"),
+                          tags$script(src="search.js", type="text/javascript"),
+                          tags$script(src="show-hint.js", type="text/javascript"),
+                          tags$script(src="simplescrollbars.js", type="text/javascript"),
+                          tags$script('vtl.editor.editorImplementation.on("blur", function() { Shiny.setInputValue("editorText", vtl.editor.editorImplementation.getValue()); })'),
+                          tags$script('vtl.editor.editorImplementation.setOption("extraKeys", {\'Ctrl-Enter\': function() { $("#compile").click() }})')
+                      ),
                  tabPanel("Dataset Explorer",
                           fluidRow(
                             column(width=5,
@@ -147,14 +149,14 @@ ui <- dashboardPage(
                           ),
                           checkboxInput(inputId = 'showAttrs', label = "Show Attributes", value = T),
                           hr(),
-                          htmlOutput(outputId = "datasetsInfo", inline = F),
+                          uiOutput(outputId = "datasetsInfo"),
                           DT::dataTableOutput(outputId = "datasets")
                  ),
                  tabPanel("Graph Explorer",
                           sliderInput(inputId = 'distance', label = "Nodes distance", min=50, max=500, step=10, value=100),
                           fillPage(forceNetworkOutput("topology", height = '90vh'))
                  ),
-                 tabPanel("Configuration",
+                 tabPanel("Network",
                           h4('Proxy Settings'),
                           # textInput(inputId = 'proxyHost', label = 'Proxy Host'),
                           # textInput(inputId = 'proxyPort', label = 'Proxy Port'),
