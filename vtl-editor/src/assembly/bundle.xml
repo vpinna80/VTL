@@ -76,6 +76,7 @@
 			<directory>${project.build.outputDirectory}/node_modules/codemirror/addon/edit</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
+				<include>matchbrackets.js</include>
 				<include>closebrackets.js</include>
 			</includes>
 		</fileSet>

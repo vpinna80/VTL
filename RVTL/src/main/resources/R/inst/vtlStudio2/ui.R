@@ -86,31 +86,36 @@ themes <- list('',
                'yonce',
                'zenburn')
 
-ui <- dashboardPage(
+ui <- shinydashboard::dashboardPage(
   
-  dashboardHeader(disable = T),
+  shinydashboard::dashboardHeader(disable = T),
 
-  dashboardSidebar(
+  shinydashboard::dashboardSidebar(
        div(style = "text-align: center",
           img(src="logo.svg", class="vtlLogo"),
           div(style="display:inline-block",titlePanel("VTL Studio!"))
        ),
        hr(),
        selectInput(inputId = 'sessionID', label = 'Active VTL session:', multiple = F, choices = VTLSessionManager$list(), selected = VTLSessionManager$list()[1]),
-       actionButton(inputId = 'compile', label = 'Compile session', onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());'),
-       downloadButton(outputId = 'saveas', label = 'Save session as...'),
+       actionButton(inputId = 'compile', 
+                    label = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
+                    onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());'),
+       downloadButton(outputId = 'saveas', label = HTML('<span style="margin-right: 1em">Save as...</span><span style="font-family: monospace">(Ctrl+S)</span>')),
        hr(),
-       textInput(inputId = 'newSession', label = 'New Session'),
-       actionButton(inputId = 'createSession', label = 'Create new session'),
+       textInput(inputId = 'newSession',
+                 label = HTML('<span style="margin-right: 1em">New session:</span><span style="font-family: monospace">(Ctrl+N)</span>')), 
+       actionButton(inputId = 'createSession', 
+                    label = HTML('<span style="margin-right: 1em">Create new</span><span style="font-family: monospace">(Enter)</span>')), 
        actionButton(inputId = 'dupSession', label = 'Duplicate session'),
-       fileInput(inputId = 'scriptFile', label = NULL, buttonLabel = 'Load script from file...'),
+       fileInput(inputId = 'scriptFile', label = NULL, accept = 'vtl',
+                 buttonLabel = HTML('<span style="margin-right: 1em">Open...</span><span style="font-family: monospace">(Ctrl+O)</span>')),
        hr(),
        selectInput(inputId = 'editorTheme', label = 'Select editor theme:', multiple = F, choices = themes),
        numericInput('editorFontSize', 'Select font size:', 12, min = 8, max = 40, step = 1)
   ),
     
-    dashboardBody(
-      useShinyjs(),
+  shinydashboard::dashboardBody(
+      shinyjs::useShinyjs(),
       tags$head(
         tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-icons.css"),
         tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-editor.css"),
@@ -119,11 +124,12 @@ ui <- dashboardPage(
         tags$link(rel = "stylesheet", type = "text/css", href = "simplescrollbars.css"),
         tags$link(rel = "stylesheet", type = "text/css", href = "matchesonscrollbar.css"),
         tags$link(rel = "stylesheet", type = "text/css", href = "vtl-editor.css"),
-        tags$script(HTML('Shiny.addCustomMessageHandler("editor-text", text => vtl.editor.editorImplementation.setValue(text))')),
-        tags$script(HTML('Shiny.addCustomMessageHandler("editor-theme", theme => vtl.editor.setTheme(theme));')),
-        tags$script(HTML('Shiny.addCustomMessageHandler("editor-fontsize", fontsize => $(".CodeMirror")[0].style.fontSize = fontsize + "pt");'))
-      ),
-      tabBox(width = 12, id = "navtab",
+        tags$script(HTML('Shiny.addCustomMessageHandler("editor-text", text => vtl.editor.editorImplementation.setValue(text))
+                          Shiny.addCustomMessageHandler("editor-theme", theme => vtl.editor.setTheme(theme))
+                          Shiny.addCustomMessageHandler("editor-fontsize", fontsize => $(".CodeMirror")[0].style.fontSize = fontsize + "pt")
+                          Shiny.addCustomMessageHandler("editor-focus", discard => $("textarea")[0].focus())
+        '))
+      ), shinydashboard::tabBox(width = 12, id = "navtab",
                  tabPanel("VTL Editor", id = "editor-pane",
                           tags$div(id = 'vtlwell'),
                           verbatimTextOutput(outputId = "vtl_output", placeholder = T),
@@ -132,12 +138,32 @@ ui <- dashboardPage(
                           tags$script(src="closebrackets.js", type="text/javascript"),
                           tags$script(src="dialog.js", type="text/javascript"),
                           tags$script(src="matchesonscrollbar.js", type="text/javascript"),
+                          tags$script(src="matchbrackets.js", type="text/javascript"),
                           tags$script(src="search.js", type="text/javascript"),
                           tags$script(src="show-hint.js", type="text/javascript"),
                           tags$script(src="simplescrollbars.js", type="text/javascript"),
-                          tags$script('vtl.editor.editorImplementation.on("blur", function() { Shiny.setInputValue("editorText", vtl.editor.editorImplementation.getValue()); })'),
-                          tags$script('vtl.editor.editorImplementation.setOption("extraKeys", {\'Ctrl-Enter\': function() { $("#compile").click() }})')
-                      ),
+                          tags$script(HTML('vtl.editor.editorImplementation.setOption("matchBrackets", true)
+                                            vtl.editor.editorImplementation.setOption("autoCloseBrackets", true)
+                                            vtl.editor.editorImplementation.on("blur", function() { 
+                                              Shiny.setInputValue("editorText", vtl.editor.editorImplementation.getValue()); 
+                                            })
+                                            
+                                            vtl.editor.editorImplementation.setOption("extraKeys", {
+                                              \'Ctrl-Enter\': function() { $("#compile").click() },
+                                              \'Ctrl-N\': function() { $("#newSession")[0].focus(); $("#newSession")[0].select() },
+                                              \'Ctrl-O\': function() { $("#scriptFile")[0].click() },
+                                              \'Ctrl-S\': function() { $("#saveas")[0].click() }
+                                            })
+                                            
+                                            $(document).ready(function () {
+                                              $("#newSession").keyup(function(e) {
+                                                if (e.keyCode === 13) {
+                                                  e.preventDefault()
+                                                  $("#createSession").click()
+                                                }
+                                              })
+                                            })'))
+                 ),
                  tabPanel("Dataset Explorer",
                           fluidRow(
                             column(width=5,
@@ -154,18 +180,15 @@ ui <- dashboardPage(
                  ),
                  tabPanel("Graph Explorer",
                           sliderInput(inputId = 'distance', label = "Nodes distance", min=50, max=500, step=10, value=100),
-                          fillPage(forceNetworkOutput("topology", height = '90vh'))
+                          fillPage(networkD3::forceNetworkOutput("topology", height = '90vh'))
                  ),
                  tabPanel("Network",
                           h4('Proxy Settings'),
-                          # textInput(inputId = 'proxyHost', label = 'Proxy Host'),
-                          # textInput(inputId = 'proxyPort', label = 'Proxy Port'),
-                          # textInput(inputId = 'proxyUser', label = 'Proxy User'),
                           uiOutput(outputId = "proxyHostUI"),
                           uiOutput(outputId = "proxyPortUI"),
                           uiOutput(outputId = "proxyUserUI"),
                           passwordInput(inputId = 'proxyPassword', label = 'Proxy Password'),
-                          actionButton(inputId = 'setProxy', label = 'OK'),
+                          actionButton(inputId = 'setProxy', label = 'Save proxy settings'),
                           h4("Messages"),
                           wellPanel(id = 'confout', verbatimTextOutput(outputId = "conf_output", placeholder =T), height = "40vh")
                           

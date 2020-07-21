@@ -7,6 +7,7 @@ if ERRORLEVEL 1 goto error
 cd target\build
 if ERRORLEVEL 1 goto error
 del /q %filename% 2> NUL:
+echo roxygen2::roxygenize("..\\classes\\R") | R --vanilla -q
 R CMD build ..\classes\R
 if ERRORLEVEL 1 goto error
 rd /s/q ${project.artifactId}.Rcheck

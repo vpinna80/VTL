@@ -28,15 +28,18 @@
 shinyServer(function(input, output, session) {
   
   ######
-  ###### reactve functions
+  ###### reactive functions
   ######
   
-  evalNode <- reactive({
+  currentSession <- reactive({
     req(input$sessionID)
-    req(input$selectDatasets)
-    return(VTLSessionManager$find(input$sessionID)$getValues(input$selectDatasets))
+    VTLSessionManager$find(input$sessionID)
   })
-  
+
+  evalNode <- reactive({
+    return(currentSession()$getValues(req(input$selectDatasets)))
+  })
+
   isCompiled <- reactiveVal(F)
   
   ######
@@ -52,16 +55,12 @@ shinyServer(function(input, output, session) {
         req(input$sessionID)
         paste0(isolate(input$sessionID), ".vtl")
       }, content = function (file) {
-        req(input$sessionID)
-        vtlSession = input$sessionID
-        writeLines(vtlSession$text, file)
+        writeLines(currentSession()$text, file)
       })
 
   output$dsNames<- renderUI({
-    req(input$sessionID)
-    vtlSession <- VTLSessionManager$find(input$sessionID)
     selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, 
-                choices = c('', vtlSession$getNodes()), selected ='')
+                choices = c('', currentSession()$getNodes()), selected ='')
   })
 
   output$proxyHostUI<- renderUI({
@@ -94,6 +93,36 @@ shinyServer(function(input, output, session) {
     textInput(inputId = 'proxyUser', label = 'Proxy User', value = user)
   })
   
+  #compile VTL code (action button)
+  output$vtl_output <- renderPrint({
+    req(input$compile, cancelOutput = F)
+    shinyjs::disable("compile")
+    try({
+      vtlSession <- currentSession()
+      statements <- input$vtlStatements
+      print(vtlSession$name)
+      print(statements)
+      withProgress(message = 'Compiling current session', value = 0, {
+        vtlSession$addStatements(statements, restart = T)
+        setProgress(value = 0.5)
+        vtlSession$compile()
+        setProgress(value = 1)
+        print("Compilation successful")
+        isCompiled(T)
+      })
+      
+      # Update force network
+      output$topology <- networkD3::renderForceNetwork({
+        vtlSession$getTopology(distance = input$distance)
+      })
+      #update list of datasets to be explored
+      updateSelectInput(session = session, inputId = 'selectDatasets',
+                        label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
+    })
+    shinyjs::enable("compile")
+    return(invisible())
+  })
+  
   #####
   ##### End Dynamic Input controls
   #####
@@ -104,41 +133,47 @@ shinyServer(function(input, output, session) {
 
   # Disable buttons to create sessions
   observe({
-    toggleState("createSession", !is.null(input$newSession) && input$newSession != "")
-    toggleState("dupSession", !is.null(input$newSession) && input$newSession != "")
+    shinyjs::toggleState("createSession", isTruthy(input$newSession))
+    shinyjs::toggleState("dupSession", isTruthy(input$newSession))
+  })
+
+  # Disable proxy button if host and port not specified
+  observe({
+    shinyjs::toggleState("setProxy", isTruthy(input$proxyHost) && isTruthy(input$proxyPort))
   })
   
+  # Disable navigator and graph if the session was not compiled
   observe({
-    toggleCssClass(selector = ".nav-tabs li:nth-child(2)", class = "tab-disabled", condition = !isCompiled())
-    toggleCssClass(selector = ".nav-tabs li:nth-child(3)", class = "tab-disabled", condition = !isCompiled())
+    shinyjs::toggleCssClass(selector = ".nav-tabs li:nth-child(2)", class = "tab-disabled", condition = !isCompiled())
+    shinyjs::toggleCssClass(selector = ".nav-tabs li:nth-child(3)", class = "tab-disabled", condition = !isCompiled())
     if (isCompiled()) {
-      vtlSession <- VTLSessionManager$find(input$sessionID)
-      output$topology <- renderForceNetwork({
-        vtlSession$getTopology(distance = input$distance)
+      output$topology <- networkD3::renderForceNetwork({
+        currentSession()$getTopology(distance = input$distance)
       })
       #update list of datasets to be explored
-      updateSelectInput(session = session, inputId = 'selectDatasets', label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
+      updateSelectInput(session = session, inputId = 'selectDatasets', label = 'Select Node', 
+                        choices = c('', currentSession()$getNodes()), selected ='')
     } 
   })
 
-  observeEvent(input$editorTheme, {
-    req(input$editorTheme)
-    session$sendCustomMessage("editor-theme", input$editorTheme)
+  # Change editor theme
+  observe({
+    session$sendCustomMessage("editor-theme", req(input$editorTheme))
   })
   
-  observeEvent(input$editorFontSize, {
-    req(input$editorFontSize)
-    session$sendCustomMessage("editor-fontsize", input$editorFontSize)
+  # Change editor font size
+  observe({
+    session$sendCustomMessage("editor-fontsize", req(input$editorFontSize))
   })
   
   # switch VTL session
-  observeEvent(input$sessionID, {
-    req(input$sessionID)
-    name = isolate(input$sessionID)
-    vtlSession = VTLSessionManager$find(name)
+  observe({
+    vtlSession <- currentSession()
+    name <- vtlSession$name
     isCompiled(vtlSession$isCompiled())
     #update list of datasets to be explored
     session$sendCustomMessage("editor-text", vtlSession$text)
+    session$sendCustomMessage("editor-focus", message = '')
   })
   
   # load vl script
@@ -151,33 +186,34 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = input$scriptFile$name)
     #update editor
     session$sendCustomMessage("editor-text", lines)
+    session$sendCustomMessage("editor-focus", message = '')
   })
   
   # create new session
   observeEvent(input$createSession, {
-    req(input$newSession)
-    name = isolate(input$newSession)
+    name <- req(input$newSession)
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
     updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = name)
     #update editor
     session$sendCustomMessage("editor-text", '')
     updateTextInput(session = session, inputId = 'newSession', value = '')
+    session$sendCustomMessage("editor-focus", message = '')
   })
   
   # duplicate session
   observeEvent(input$dupSession, {
-    req(input$newSession)
-    req(input$sessionID)
-    name = isolate(input$newSession)
-    text <- VTLSessionManager$find(input$sessionID)$text
-    vtlSession <- VTLSessionManager$getOrCreate(name)
-    vtlSession$setText(text)
-    isCompiled(vtlSession$isCompiled())
-    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = name)
+    newName <- req(input$newSession)
+    text <- currentSession()$text
+    newSession <- VTLSessionManager$getOrCreate(newName)
+    newSession$setText(text)
+    browser()
+    isCompiled(newSession$isCompiled())
+    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = newName)
     #update editor
     session$sendCustomMessage("editor-text", text)
     updateTextInput(session = session, inputId = 'newSession', value = '')
+    session$sendCustomMessage("editor-focus", message = '')
   })
   
   # configure proxy
@@ -193,35 +229,12 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$editorText, {
-    req(input$sessionID)
-    req(input$editorText)
-    VTLSessionManager$find(input$sessionID)$setText(input$editorText)
-  })
-  
-  #compile VTL code (action button)
-  observeEvent(input$compile, {
-    req(input$sessionID)
-    output$vtl_output <- renderPrint({
-      name = input$sessionID
-      statements = input$vtlStatements
-      print(name)
-      print(statements)
-      vtlSession = vtlAddStatements(sessionID = name,
-                       statements = statements,
-                       restartSession = T)
-      vtlSession$compile()
-      print("Compilation successful")
-      isCompiled(T)
-      #update graph
-
-      return(invisible())
-    })
+    currentSession()$setText(req(input$editorText))
   })
 
   output$datasetsInfo <- renderUI({
-    req(input$sessionID)
     req(input$selectDatasets)
-    statements <- VTLSessionManager$find(input$sessionID)$getStatements()
+    statements <- currentSession()$getStatements()
     statements <- sapply(statements$entrySet(), function (x) setNames(list(x$getValue()), x$getKey()))
     ddf = evalNode()[[1]]
     formula <- statements[[input$selectDatasets]]

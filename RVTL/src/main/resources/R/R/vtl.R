@@ -24,13 +24,44 @@
 # Author: Attilio Mattiocco
 ###############################################################################
 
+#' @title Launch VTL editor
+#' @description This command opens a shiny-based rich editor for writing and testing VTL programs.
+#' @usage vtlStudio(...)
+#' @param ... More options to pass to \code{\link[shiny]{runApp}}.
+#' @export
+#' @examples \dontrun{
+#'     #opens the editor 
+#'     vtlStudio()
+#' }
 vtlStudio <- function(...) {
-  Sys.setenv(SDMX_CONF='C:\\Users\\m027907\\eclipse-workspace\\configuration.properties')
   shiny::runApp(appDir = system.file('vtlStudio2', package='RVTL'), ...)  
 }
 
-vtlListSessions <- VTLSessionManager$list
-
+#' @title Process VTL statements
+#' @description Replaces or adds more statements to an existing VTL session.
+#' @usage vtlAddStatements(sessionID, statements, restartSession = F)
+#' @param sessionID The symbolic name of an active VTL session
+#' @param statements The code to be added to the session
+#' @param restartSession \code{TRUE} if session must be restarted (default \code{FALSE})
+#' @details If you are replacing one or more already defined rules, 
+#'          you need to set \code{restartSession} to \code{TRUE} to avoid errors.
+#' @export
+#' @examples \dontrun{
+#'   #prepare a VTL compliant dataset in R
+#'   r_input <- data.frame(id1 = c('a', 'b', 'c'), m1 = c(1.23, -2.34, 3.45), m2 = c(1.23, -2.34, 3.45), stringsAsFactors = F)
+#'   attr(r_input, 'identifiers') <- c('id1')
+#'   attr(r_input, 'measures') <- c('m1', 'm2')
+#'   
+#'   vtlAddStatements(session = 'test', restartSession = T,
+#'                    statements = 'a := r_input;
+#'                                   b := 3;
+#'                                   c := abs(sqrt(14 + a));
+#'                                   d := a + b + c;
+#'                                   e := c + d / a;
+#'                                   f := e - d;
+#'                                   g := -f;
+#'                                   test := a * b + c / a;')
+#'   }
 vtlAddStatements <- function(sessionID, statements, restartSession = F) {
   if(restartSession) {
     VTLSessionManager$kill(sessionID)
@@ -41,27 +72,52 @@ vtlAddStatements <- function(sessionID, statements, restartSession = F) {
   return(session)
 }
 
-vtlEvalNodes <- function(sessionID, nodes) {
-  VTLSessionManager$find(sessionID)$getValues(nodes)
-}
-
+#' @title List VTL statements
+#' @description Lists all statements defined in an existing VTL session.
+#' @usage vtlListStatements(sessionID)
+#' @param sessionID The symbolic name of an active VTL session
+#' @details This function returns a named list containing all the statements defined in the specified VTL session.
+#' @export
+#' @examples \dontrun{
+#'   vtlAddStatements(session = 'test', statements = 'a := r_input;
+#'                                b := 3;
+#'                                c := abs(sqrt(14 + a));
+#'                                d := a + b + c;
+#'                                e := c + d / a;
+#'                                f := e - d;
+#'                                g := -f;
+#'                                test := a * b + c / a;')
+#'                                
+#'   vtlListStatements('test')
+#' }
 vtlListStatements <- function(sessionID) {
   jstatements = VTLSessionManager$find(sessionID)$getStatements()
   return(sapply(jstatements$entrySet(), function (x) setNames(list(x$getValue()), x$getKey())))
 }
 
-vtlListNodes <- function(sessionID){
-  return(VTLSessionManager$find(sessionID)$getNodes())
-}
-
-vtlGetCode <- function(sessionID) {
-  return(VTLSessionManager$find(sessionID)$text)
-}
-
-vtlTopology <- function(session, distance =100, charge = -100) {
-  return(VTLSessionManager$find(session)$getTopology(distance, charge))
-}
-
+#' @title Compile a VTL session
+#' @description Compiles all code submitted in  an existing VTL session.
+#' @usage vtlCompile(sessionID)
+#' @param sessionID The symbolic name of an active VTL session
+#' @export
+#' @examples \dontrun{
+#'   #prepare a VTL compliant dataset in R
+#'   r_input <- data.frame(id1 = c('a', 'b', 'c'), m1 = c(1.23, -2.34, 3.45), m2 = c(1.23, -2.34, 3.45), stringsAsFactors = F)
+#'   attr(r_input, 'identifiers') <- c('id1')
+#'   attr(r_input, 'measures') <- c('m1', 'm2')
+#'  
+#'   vtlAddStatements(session = 'test', restartSession = T,
+#'                   statements = 'a := r_input;
+#'                                b := 3;
+#'                                c := abs(sqrt(14 + a));
+#'                                d := a + b + c;
+#'                                e := c + d / a;
+#'                                f := e - d;
+#'                                g := -f;
+#'                                test := a * b + c / a;')
+#'  
+#'   vtlCompile('test')
+#' }
 vtlCompile <- function(sessionID) {
   result <- vtlTryCatch({
     VTLSessionManager$find(sessionID)$compile()
@@ -71,3 +127,12 @@ vtlCompile <- function(sessionID) {
   return(result)
 }
 
+#' @export
+vtlEvalNodes <- function(sessionID, nodes) {
+  VTLSessionManager$find(sessionID)$getValues(nodes)
+}
+
+#' @export
+vtlListNodes <- function(sessionID){
+  return(VTLSessionManager$find(sessionID)$getNodes())
+}
