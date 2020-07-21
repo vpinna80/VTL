@@ -45,6 +45,8 @@ vtlStudio <- function(...) {
 #' @param restartSession \code{TRUE} if session must be restarted (default \code{FALSE})
 #' @details If you are replacing one or more already defined rules, 
 #'          you need to set \code{restartSession} to \code{TRUE} to avoid errors.
+#'
+#'          Always returns true.
 #' @export
 #' @examples \dontrun{
 #'   #prepare a VTL compliant dataset in R
@@ -69,7 +71,7 @@ vtlAddStatements <- function(sessionID, statements, restartSession = F) {
 
   session = VTLSessionManager$getOrCreate(sessionID)$addStatements(statements)
   print('Statements added')
-  return(session)
+  return(T)
 }
 
 #' @title List VTL statements
@@ -92,7 +94,7 @@ vtlAddStatements <- function(sessionID, statements, restartSession = F) {
 #' }
 vtlListStatements <- function(sessionID) {
   jstatements = VTLSessionManager$find(sessionID)$getStatements()
-  return(sapply(jstatements$entrySet(), function (x) setNames(list(x$getValue()), x$getKey())))
+  return(sapply(jstatements$entrySet(), function (x) stats::setNames(list(x$getValue()), x$getKey())))
 }
 
 #' @title Compile a VTL session

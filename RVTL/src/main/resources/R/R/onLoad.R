@@ -18,6 +18,9 @@
 # See the Licence for the specific language governing
 # permissions and limitations under the Licence.
 #
+
+#' @import rJava
+#' @import R6
 .onLoad <- function(libname, pkgname) {
 	.jpackage(pkgname, lib.loc = libname)#, morePaths = dir(system.file('java', package='RJSDMX'), full.names = T))
 }

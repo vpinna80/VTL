@@ -77,6 +77,16 @@
 			<artifactId>vtl-confman</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-domains</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-session</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

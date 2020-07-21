@@ -24,7 +24,7 @@ vtlTryCatch <- function(expr) {
 }
 
 convertToDF <- function(jnode) {
-  node <- convertToR(jnode, strings.as.factors = F)
+  node <- jdx::convertToR(jnode, strings.as.factors = F)
   if(is.list(node) && length(node) > 0) {
     #there are columns with all nulls
     nulls = which(sapply(node, is.list))

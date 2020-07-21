@@ -170,7 +170,7 @@
 			<nullparam />
 			<nullparam />
 		</params>
-	</mapping>
+	</mapping -->
 
 	<mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
 		<tokens name="op">
@@ -192,7 +192,7 @@
 		</params>
 	</mapping>
 
-	<mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+	<!-- mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
 		<tokens name="op">
 			<value>COUNT</value>
 		</tokens>
