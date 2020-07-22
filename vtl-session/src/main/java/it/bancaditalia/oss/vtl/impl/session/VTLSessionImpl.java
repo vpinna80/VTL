@@ -68,6 +68,7 @@ public class VTLSessionImpl implements VTLSession
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 
+	private final ConfigurationManager config = ConfigurationManager.getDefault();
 	private final Engine engine;
 	private final List<Environment> environments = new ArrayList<>();
 	private final Workspace workspace;
@@ -87,8 +88,8 @@ public class VTLSessionImpl implements VTLSession
 				selectedWorkspace = (Workspace) env;
 		}
 		
-		this.engine = ServiceLoader.load(Engine.class).iterator().next();
-		this.repository = ConfigurationManager.getDefaultFactory().getMetadataRepositoryInstance();
+		this.repository = config.getMetadataRepositoryInstance();
+		this.engine = config.createEngineInstance();
 		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
 	}
 

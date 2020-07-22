@@ -112,7 +112,7 @@ public class CSVFileEnvironment implements Environment
 		PATTERNS.put(Pattern.compile("^([-/ ])(.*)$"), "$1");
 	}
 	
-	private final MetadataRepository repository = ConfigurationManager.getDefaultFactory().getMetadataRepositoryInstance();
+	private final MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepositoryInstance();
 
 	@Override
 	public boolean contains(String name)

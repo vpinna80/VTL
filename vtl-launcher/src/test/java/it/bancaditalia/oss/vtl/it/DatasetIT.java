@@ -71,7 +71,7 @@ public class DatasetIT {
 					+ "b:=a;\n"
 					+ "c:=a" + operatorName + "b;\n";
 
-		VTLSession session = ConfigurationManager.getDefaultFactory().createSessionInstance();
+		VTLSession session = ConfigurationManager.getDefault().createSessionInstance();
 		session.addStatements(script);
 		session.compile();
 		
