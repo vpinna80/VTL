@@ -113,6 +113,7 @@
 
 	<properties>
 		<r.prepend.path></r.prepend.path>
+		<maven.test.skip>false</maven.test.skip>
 	</properties>
 
 	<dependencies>
