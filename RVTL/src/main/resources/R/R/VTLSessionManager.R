@@ -48,7 +48,6 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             
             #' @description
             #' Returns the active session or an error if the search fails or a session doesn't exist.
-            #' @param sessionID The VTL session name to look up.
             find = function (sessionID) { get(sessionID, envir = private$sessions) },
             
             #' @description
@@ -66,7 +65,6 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             
             #' @description
             #' Silently terminates the named active VTL session if it exists.
-            #' @param sessionID The name of the VTL session to terminate.
             kill = function (sessionID) { 
               if (exists(sessionID, envir = private$sessions))
               rm(list = sessionID, envir = private$sessions)
@@ -75,7 +73,6 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             
             #' @description
             #' If the named VTL session exists, return it, otherwise create a new VTL session with the given name.
-            #' @param sessionID The name of the VTL session to retrieve
             getOrCreate = function(sessionID) {
               result <- get0(sessionID, envir = private$sessions)
               if (is.null(result))

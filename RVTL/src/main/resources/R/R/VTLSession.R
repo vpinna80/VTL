@@ -39,7 +39,6 @@ VTLSession <- R6Class("VTLSession",
       
       #' @description
       #' Creates a new VTL session with a given name.
-      #' @param name The name of the new session
       #' @details 
       #' This method should not be called by the application.
       initialize = function (name = character(0)) {
@@ -70,13 +69,10 @@ VTLSession <- R6Class("VTLSession",
 
       #' @description
       #' Changes the editor text in the session buffer.
-      #' @param code The new text to place inside the buffer
       setText = function(code) { self$text <- code; return(invisible(self)) },
       
       #' @description
       #' Replace or add new VTL statements to this session and updates the session code buffer.
-      #' @param statements The new statements to add to this session.
-      #' @param restart Whether or not the new statements must replace all previous ones.
       addStatements = function(statements, restart = T) { 
                         self$text = paste0(self$text, statements)
                         if (restart)
@@ -103,7 +99,6 @@ VTLSession <- R6Class("VTLSession",
       
       #' @description
       #' Returns a list of data frames containing the values of the named nodes defined in this session.
-      #' @param nodes The names of the nodes to compute.
       getValues = function (nodes) {
                     jnodes <- sapply(X = nodes, private$checkInstance()$resolve)
                     nodesdf <- lapply(names(jnodes), FUN = function(x, jnodes, jstructs) {
@@ -130,8 +125,6 @@ VTLSession <- R6Class("VTLSession",
       
       #' @description
       #' Creates a fore network representation of all nodes defined in this VTL session.
-      #' @param distance The length of the edges.
-      #' @param charge The "repulsion force" between two nodes.
       #' @importFrom igraph make_graph
       getTopology = function(distance = 100, charge = -100) {
           if (is.null(private$instance))

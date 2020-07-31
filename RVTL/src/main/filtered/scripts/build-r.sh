@@ -6,7 +6,7 @@ FILENAME="$PWD/${project.artifactId}_${r.package.version}.tar.gz"
 
 echo Building: $FILENAME
 
-echo 'roxygen2::roxygenize("..\\classes\\R")' | "${r.prepend.path}R" --vanilla -q
+echo 'roxygen2::roxygenize("../classes/R")' | "${r.prepend.path}R" --vanilla -q
 
 if [ "${maven.test.skip}" != "true" ]; then
 	rm -rf ${project.artifactId}.Rcheck
