@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Map;
@@ -38,8 +39,10 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-public class InMemoryMetadataRepository implements MetadataRepository 
+public class InMemoryMetadataRepository implements MetadataRepository, Serializable 
 {
+	private static final long serialVersionUID = 1L;
+
 	protected static final ValueDomainSubset<?>[] INITIAL_DOMAINS = new ValueDomainSubset<?>[] { NUMBERDS, INTEGERDS, STRINGDS, BOOLEANDS, TIMEDS, DATEDS };
 
 	private final Map<String, ValueDomainSubset<? extends ValueDomain>> domains = new ConcurrentHashMap<>();

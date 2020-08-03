@@ -34,11 +34,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	private final Class<? extends VTLSession> sessionClass;
 	private final Class<? extends Engine> engineClass;
 	
-	public ConfigurationManagerImpl() throws InstantiationException, IllegalAccessException, ClassNotFoundException 
+	public ConfigurationManagerImpl() 
 	{
-		metadataRepositoryInstance = Class.forName(METADATA_REPOSITORY.getValue()).asSubclass(MetadataRepository.class).newInstance();
-		sessionClass = Class.forName(SESSION_IMPLEMENTATION.getValue()).asSubclass(VTLSession.class);
-		engineClass = Class.forName(ENGINE_IMPLEMENTATION.getValue()).asSubclass(Engine.class);
+		try
+		{
+			metadataRepositoryInstance = Class.forName(METADATA_REPOSITORY.getValue()).asSubclass(MetadataRepository.class).newInstance();
+			sessionClass = Class.forName(SESSION_IMPLEMENTATION.getValue()).asSubclass(VTLSession.class);
+			engineClass = Class.forName(ENGINE_IMPLEMENTATION.getValue()).asSubclass(Engine.class);
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+		{
+			throw new VTLNestedException("Error loading implementations", e);
+		}
 	}
 
 	@Override

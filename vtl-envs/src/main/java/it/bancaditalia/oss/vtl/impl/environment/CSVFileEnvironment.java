@@ -113,6 +113,11 @@ public class CSVFileEnvironment implements Environment
 	}
 	
 	private final MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepositoryInstance();
+	
+	public CSVFileEnvironment() 
+	{
+		
+	}
 
 	@Override
 	public boolean contains(String name)

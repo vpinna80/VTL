@@ -29,21 +29,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 
 public class CSVMetadataRepository extends InMemoryMetadataRepository
 {
-	public static final String METADATA_CSV_SOURCE = "vtl.metadata.csv.source";
+	private static final long serialVersionUID = 1L;
 	
-	private final Map<String, StringCodeList> metadata = new ConcurrentHashMap<>();
+	public static final String METADATA_CSV_SOURCE = "vtl.metadata.csv.source";
 
 	public CSVMetadataRepository() throws IOException
 	{
@@ -54,25 +48,5 @@ public class CSVMetadataRepository extends InMemoryMetadataRepository
 				.collect(groupingByConcurrent(Entry::getKey, mapping(Entry::getValue, toSet())))
 				.forEach(defineDomainOf(StringCodeList.class));
 		}
-	}
-
-	@Override
-	public Collection<ValueDomainSubset<?>> getValueDomains()
-	{
-		Set<ValueDomainSubset<?>> result = new HashSet<>(metadata.values());
-		result.addAll(super.getValueDomains());
-		return result;
-	}
-
-	@Override
-	public boolean isDomainDefined(String alias)
-	{
-		return metadata.containsKey(alias) || super.isDomainDefined(alias);
-	}
-
-	@Override
-	public ValueDomainSubset<?> getDomain(String alias)
-	{
-		return metadata.containsKey(alias) ? metadata.get(alias) : super.getDomain(alias);
 	}
 }

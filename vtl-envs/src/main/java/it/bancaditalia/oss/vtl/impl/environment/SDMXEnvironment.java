@@ -239,9 +239,8 @@ public class SDMXEnvironment implements Environment
 		if (codelist == null)
 			return new DataStructureComponentImpl<>(meta.getId(), role, STRINGDS);
 
-		String domainName = codelist.getId();
-		StringCodeList vtlCodelist = repository.defineDomain(domainName, StringCodeList.class, codelist.keySet());
-		return new DataStructureComponentImpl<>(meta.getId(), role, vtlCodelist);
+		StringCodeList domain = repository.defineDomain(codelist.getId(), StringCodeList.class, codelist.keySet());
+		return new DataStructureComponentImpl<>(meta.getId(), role, domain);
 	}
 
 	protected Optional<VTLValueMetadata> getMetadataSDMX(String provider, String dataflow, String[] tokens)
