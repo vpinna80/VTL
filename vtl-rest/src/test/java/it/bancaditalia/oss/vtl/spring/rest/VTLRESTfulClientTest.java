@@ -14,43 +14,36 @@ import java.io.StringWriter;
 import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.context.junit4.SpringRunner;
 
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@EnableAutoConfiguration
 public class VTLRESTfulClientTest
 {
-	private static ConfigurableApplicationContext context;
-	
-	@SpringBootApplication
-	public static class VTLSpringApplication
-	{
-		
-	}
-	
-	@BeforeAll
-	public static void beforeAll() throws InterruptedException, MalformedURLException, IOException
-	{
+	static {
 		System.setProperty("vtl.r", "disable");
-
-		context = SpringApplication.run(VTLSpringApplication.class, new String[0]);
 	}
+	
+	@LocalServerPort private int port;
 	
 	@Test
 	public void test() throws Throwable 
 	{
 		CookieManager cookies = new CookieManager();
 		
-		String url = "http://localhost:8080/compile";
+		String url = "http://localhost:" + port + "/compile";
 		HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
 		connection.setRequestMethod("POST");
 		connection.setDoOutput(true);
@@ -80,7 +73,7 @@ public class VTLRESTfulClientTest
 			}
 		}
 		
-		url = "http://localhost:8080/metadata?alias=a&uuid=" + URLEncoder.encode(uuid.toString(), "utf8");
+		url = "http://localhost:" + port + "/metadata?alias=a&uuid=" + URLEncoder.encode(uuid.toString(), "utf8");
 		connection = (HttpURLConnection) new URL(url).openConnection();
 		if (cookies.getCookieStore().getCookies().size() > 0)
 		    connection.setRequestProperty("Cookie", cookies.getCookieStore().getCookies().stream().map(HttpCookie::toString).collect(joining(", ")));    
@@ -102,7 +95,7 @@ public class VTLRESTfulClientTest
 			}
 		}
 
-		url = "http://localhost:8080/resolve?alias=a&uuid=" + URLEncoder.encode(uuid.toString(), "utf8");
+		url = "http://localhost:" + port + "/resolve?alias=a&uuid=" + URLEncoder.encode(uuid.toString(), "utf8");
 		connection = (HttpURLConnection) new URL(url).openConnection();
 		if (cookies.getCookieStore().getCookies().size() > 0)
 		    connection.setRequestProperty("Cookie", cookies.getCookieStore().getCookies().stream().map(HttpCookie::toString).collect(joining(", ")));    
@@ -123,11 +116,5 @@ public class VTLRESTfulClientTest
 				return;
 			}
 		}
-	}
-	
-	@AfterAll
-	public static void afterAll() 
-	{
-		context.close();
 	}
 }
