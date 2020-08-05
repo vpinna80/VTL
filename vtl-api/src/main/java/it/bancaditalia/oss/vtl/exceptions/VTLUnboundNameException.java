@@ -33,6 +33,6 @@ public class VTLUnboundNameException extends VTLException {
 
 	public VTLUnboundNameException(String name) 
 	{
-		super("Symbolic name '" + name + "' is not bound to this environment");
+		super("Symbolic name '" + name + "' is not bound to this VTL session");
 	}
 }

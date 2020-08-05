@@ -103,12 +103,34 @@ shinyServer(function(input, output, session) {
       print(vtlSession$name)
       print(statements)
       withProgress(message = 'Compiling current session', value = 0, {
-        vtlSession$addStatements(statements, restart = T)
-        setProgress(value = 0.5)
-        vtlSession$compile()
-        setProgress(value = 1)
-        print("Compilation successful")
-        isCompiled(T)
+        tryCatch({ 
+            vtlSession$addStatements(statements, restart = T) 
+            setProgress(value = 0.5)
+            tryCatch({ 
+              vtlSession$compile()
+              setProgress(value = 1)
+              print("Compilation successful")
+              isCompiled(T)
+            }, error = function(e) {
+              message = conditionMessage(e)
+              if (is.list(e) && !is.null(e[['jobj']]))
+              {
+                e$jobj$printStackTrace()
+                message = e$jobj$getLocalizedMessage()
+              }
+              setProgress(value = 1)
+              print(paste0("Compilation error: ", message))
+            })
+          }, error = function(e) {
+            message = conditionMessage(e)
+            if (is.list(e) && !is.null(e[['jobj']]))
+            {
+              e$jobj$printStackTrace()
+              message = e$jobj$getLocalizedMessage()
+            }
+            setProgress(value = 1)
+            print(paste0("Syntax error: ", message))
+          })
       })
       
       # Update force network
