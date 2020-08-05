@@ -65,7 +65,6 @@
 
 	<modules>
 		<module>vtl-api</module>
-		<module>vtl-bootclient</module>
 		<module>vtl-cli</module>
 		<module>vtl-confman</module>
 		<module>vtl-domains</module>
@@ -84,7 +83,6 @@
 			<id>with-r</id>
 			<modules>
 				<module>vtl-api</module>
-				<module>vtl-bootclient</module>
 				<module>vtl-cli</module>
 				<module>vtl-confman</module>
 				<module>vtl-domains</module>
@@ -239,12 +237,6 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-api</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-rest</artifactId>
-				<classifier>classes</classifier>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
