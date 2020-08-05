@@ -205,10 +205,7 @@ shinyServer(function(input, output, session) {
     vtlSession <- VTLSessionManager$getOrCreate(input$scriptFile$name)$setText(lines)
     isCompiled(vtlSession$isCompiled())
     #update current session
-    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = input$scriptFile$name)
-    #update editor
-    session$sendCustomMessage("editor-text", lines)
-    session$sendCustomMessage("editor-focus", message = '')
+    updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = input$scriptFile$name)
   })
   
   # create new session
@@ -216,11 +213,8 @@ shinyServer(function(input, output, session) {
     name <- req(input$newSession)
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
-    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = name)
-    #update editor
-    session$sendCustomMessage("editor-text", '')
+    updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = name)
     updateTextInput(session = session, inputId = 'newSession', value = '')
-    session$sendCustomMessage("editor-focus", message = '')
   })
   
   # duplicate session
@@ -229,13 +223,9 @@ shinyServer(function(input, output, session) {
     text <- currentSession()$text
     newSession <- VTLSessionManager$getOrCreate(newName)
     newSession$setText(text)
-    browser()
     isCompiled(newSession$isCompiled())
-    updateSelectInput(session = session, inputId = 'sessionID', choices = c(VTLSessionManager$list()), selected = newName)
-    #update editor
-    session$sendCustomMessage("editor-text", text)
     updateTextInput(session = session, inputId = 'newSession', value = '')
-    session$sendCustomMessage("editor-focus", message = '')
+    updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = newName)
   })
   
   # configure proxy
