@@ -32,11 +32,11 @@ import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-class EntireDateDomainSubset extends EntireDomainSubset<LocalDateTime, DateDomain> implements DateDomainSubset, Serializable
+public class EntireDateDomainSubset extends EntireDomainSubset<LocalDateTime, DateDomain> implements DateDomainSubset, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	EntireDateDomainSubset()
+	public EntireDateDomainSubset()
 	{
 		super(DATEDS);
 	}

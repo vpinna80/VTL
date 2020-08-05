@@ -19,9 +19,10 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.model.data;
 
+import java.io.Serializable;
 import java.util.function.Supplier;
 
-public interface ScalarValue<R extends Comparable<?>, S extends ValueDomainSubset<? extends D>, D extends ValueDomain> 
+public interface ScalarValue<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<? extends D>, D extends ValueDomain> 
 		extends VTLValue, Comparable<ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain>>, Supplier<R>
 {
 	@FunctionalInterface

@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -97,8 +98,10 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.TriFunction;
 
-public class OpsFactory
+public class OpsFactory implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	private static class VTLParsingException extends RuntimeException
 	{
 		private static final long serialVersionUID = 1L;

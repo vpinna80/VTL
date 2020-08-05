@@ -19,6 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,7 +30,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class ConstantOperand<R extends Comparable<?>, S extends ValueDomainSubset<D>, D extends ValueDomain, 
+public class ConstantOperand<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain, 
 		T extends ScalarValue<R, S, D>> extends TransformationImpl implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;

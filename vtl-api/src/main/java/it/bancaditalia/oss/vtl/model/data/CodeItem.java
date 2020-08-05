@@ -19,7 +19,9 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.model.data;
 
-public interface CodeItem<I extends Comparable<?>, S extends ValueDomainSubset<D>, D extends ValueDomain> extends ScalarValue<I, S, D>
+import java.io.Serializable;
+
+public interface CodeItem<I extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> extends ScalarValue<I, S, D>
 {
 
 }

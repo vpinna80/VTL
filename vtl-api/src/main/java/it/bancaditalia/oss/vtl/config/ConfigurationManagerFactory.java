@@ -25,13 +25,14 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 
 public class ConfigurationManagerFactory
 {
-	private final ConfigurationManager config;
+	private static final ConfigurationManager INSTANCE;
 	
-	public ConfigurationManagerFactory()
-	{
+	private ConfigurationManagerFactory() {}
+	
+	static {
 		try
 		{
-			config = Class.forName(CONFIG_MANAGER.getValue())
+			INSTANCE = Class.forName(CONFIG_MANAGER.getValue())
 					.asSubclass(ConfigurationManager.class)
 					.newInstance();
 		}
@@ -41,8 +42,8 @@ public class ConfigurationManagerFactory
 		}
 	}
 	
-	public ConfigurationManager getDefault() 
+	public static ConfigurationManager getInstance() 
 	{
-		return config;
+		return INSTANCE;
 	} 
 }

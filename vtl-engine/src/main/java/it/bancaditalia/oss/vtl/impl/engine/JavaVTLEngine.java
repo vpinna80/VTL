@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.engine;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
@@ -53,8 +54,10 @@ import it.bancaditalia.oss.vtl.grammar.VtlTokens;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.StatementFactory;
 
-public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements Engine
+public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements Engine, Serializable
 {
+	private static final long serialVersionUID = 1L;
+	
 	private final OpsFactory opsFactory;
 	private final StatementFactory statementFactory;
 	@SuppressWarnings("unused")

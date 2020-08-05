@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +57,10 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class StatementFactory
+public class StatementFactory implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+	
 	private final OpsFactory opsFactory;
 
 	public StatementFactory(OpsFactory opsFactory)

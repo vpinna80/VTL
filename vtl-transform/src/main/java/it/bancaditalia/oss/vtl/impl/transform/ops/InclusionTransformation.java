@@ -95,7 +95,7 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		super(operand);
 		this.operator = operator;
-		StringCodeList domain = (StringCodeList) ConfigurationManager.getDefault().getMetadataRepositoryInstance().getDomain(dname);
+		StringCodeList domain = (StringCodeList) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
 		this.set = domain.getCodeItems();
 	}
 

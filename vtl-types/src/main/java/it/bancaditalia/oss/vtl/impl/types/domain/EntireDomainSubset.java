@@ -26,14 +26,14 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 
-abstract class EntireDomainSubset<S extends Comparable<? super S>, D extends ValueDomain> implements ValueDomainSubset<D>, Serializable
+public abstract class EntireDomainSubset<S extends Comparable<? super S>, D extends ValueDomain> implements ValueDomainSubset<D>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
 	private final D parentDomain;
 	private final String varName; 
 	
-	protected EntireDomainSubset(D parentDomain)
+	public EntireDomainSubset(D parentDomain)
 	{
 		this.parentDomain = parentDomain;
 		this.varName = toString().replaceAll("\\(.*\\)", "") + "_var";

@@ -103,7 +103,7 @@ public class SDMXEnvironment implements Environment
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?>>> FORMATTERS = new HashMap<>();
 
 	private final boolean dropIdentifiers = !"true".equalsIgnoreCase(System.getProperty(DROP_ID_PROPERTY, "false"));
-	private final MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepositoryInstance();
+	private final MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 
 	static
 	{

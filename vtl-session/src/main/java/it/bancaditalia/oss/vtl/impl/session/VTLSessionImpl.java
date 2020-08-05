@@ -88,8 +88,8 @@ public class VTLSessionImpl implements VTLSession
 				selectedWorkspace = (Workspace) env;
 		}
 		
-		this.repository = config.getMetadataRepositoryInstance();
-		this.engine = config.createEngineInstance();
+		this.repository = config.getMetadataRepository();
+		this.engine = config.getEngine();
 		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
 	}
 

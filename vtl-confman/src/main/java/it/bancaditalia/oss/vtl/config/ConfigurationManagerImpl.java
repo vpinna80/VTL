@@ -32,7 +32,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 {
 	private final MetadataRepository metadataRepositoryInstance;
 	private final Class<? extends VTLSession> sessionClass;
-	private final Class<? extends Engine> engineClass;
+	private final Engine engineInstance;
 	
 	public ConfigurationManagerImpl() 
 	{
@@ -40,7 +40,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 		{
 			metadataRepositoryInstance = Class.forName(METADATA_REPOSITORY.getValue()).asSubclass(MetadataRepository.class).newInstance();
 			sessionClass = Class.forName(SESSION_IMPLEMENTATION.getValue()).asSubclass(VTLSession.class);
-			engineClass = Class.forName(ENGINE_IMPLEMENTATION.getValue()).asSubclass(Engine.class);
+			engineInstance = Class.forName(ENGINE_IMPLEMENTATION.getValue()).asSubclass(Engine.class).newInstance();
 		}
 		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
 		{
@@ -49,31 +49,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	}
 
 	@Override
-	public MetadataRepository getMetadataRepositoryInstance()
+	public MetadataRepository getMetadataRepository()
 	{
 		return metadataRepositoryInstance;
 	}
 
 	@Override
-	public VTLSession createSessionInstance()
+	public Engine getEngine()
+	{
+		return engineInstance;
+	}
+
+	@Override
+	public VTLSession createSession()
 	{
 		try
 		{
 			return sessionClass.newInstance();
-		}
-		catch (InstantiationException | IllegalAccessException e)
-		{
-			throw new VTLNestedException("Error initializing session", e);
-		}
-	}
-
-
-	@Override
-	public Engine createEngineInstance()
-	{
-		try
-		{
-			return engineClass.newInstance();
 		}
 		catch (InstantiationException | IllegalAccessException e)
 		{

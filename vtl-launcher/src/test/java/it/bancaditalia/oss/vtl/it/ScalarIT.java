@@ -52,7 +52,7 @@ public class ScalarIT {
 		String script = "a:=100;\n"
 					+ "b:=50;\n"
 					+ "c:=a" + operator + "b;\n";
-		VTLSession session = ConfigurationManager.getDefault().createSessionInstance();
+		VTLSession session = ConfigurationManager.getDefault().createSession();
 		session.addStatements(script);
 		session.compile();
 		ScalarValue<?, ?, ?> c = session.resolve("c", ScalarValue.class);

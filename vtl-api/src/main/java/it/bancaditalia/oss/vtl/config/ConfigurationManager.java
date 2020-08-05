@@ -53,12 +53,12 @@ public interface ConfigurationManager
 	
 	public static ConfigurationManager getDefault()  
 	{
-		return new ConfigurationManagerFactory().getDefault();
+		return ConfigurationManagerFactory.getInstance();
 	}
 	
-	public MetadataRepository getMetadataRepositoryInstance();
+	public MetadataRepository getMetadataRepository();
 
-	public VTLSession createSessionInstance();
+	public VTLSession createSession();
 
-	public Engine createEngineInstance();
+	public Engine getEngine();
 }

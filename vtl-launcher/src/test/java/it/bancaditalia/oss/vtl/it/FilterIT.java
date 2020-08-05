@@ -71,7 +71,7 @@ public class FilterIT
 		String script = "a:='" + datasetName + "';\n"
 				+ "b:=a[filter " + filterBody + "];\n";
 
-		VTLSession session = ConfigurationManager.getDefault().createSessionInstance();
+		VTLSession session = ConfigurationManager.getDefault().createSession();
 		session.addStatements(script);
 		session.compile();
 

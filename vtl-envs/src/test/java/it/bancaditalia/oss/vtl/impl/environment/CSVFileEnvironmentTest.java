@@ -29,18 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import it.bancaditalia.oss.vtl.engine.Engine;
-import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -58,42 +53,9 @@ public class CSVFileEnvironmentTest
 	private static Path TEMPCSVFILE;
 	private static String CSVALIAS;
 	
-	private static class EngineMock implements Engine
-	{
-		@Override
-		public Stream<Statement> parseRules(String statements)
-		{
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public Stream<Statement> parseRules(Reader reader) throws IOException
-		{
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public Stream<Statement> parseRules(InputStream inputStream, Charset charset) throws IOException
-		{
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public Stream<Statement> parseRules(Path path, Charset charset) throws IOException
-		{
-			// TODO Auto-generated method stub
-			return null;
-		}
-	}
-	
 	@BeforeAll
 	public static void beforeClass() throws IOException
 	{
-		
-		
 		TEMPCSVFILE = Files.createTempFile(null, ".csv").toAbsolutePath();
 		InputStream csv = CSVFileEnvironmentTest.class.getResourceAsStream("test.csv");
 		assertNotNull(csv, "CSV test file not found");

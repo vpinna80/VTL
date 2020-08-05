@@ -94,7 +94,7 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 	}
 
 	@Override
-	public <T extends Comparable<?>> CodeItem<? extends Comparable<?>, StringDomainSubset, StringDomain> getItem(
+	public <T extends Comparable<?> & Serializable> CodeItem<? extends Comparable<?>, StringDomainSubset, StringDomain> getItem(
 			ScalarValue<T, StringDomainSubset, StringDomain> value)
 	{
 		throw new UnsupportedOperationException("getItem");
