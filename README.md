@@ -1,5 +1,7 @@
 [![License](https://img.shields.io/badge/license-EUPL-green)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
+![Java CI with Maven](https://github.com/vpinna80/VTL/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+
 # VTL E&E
 
 An engine and editor for the 
