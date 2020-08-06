@@ -21,7 +21,7 @@ jobs:
       with:
         java-version: 1.8
     - name: Setup R
-      uses: r-lib/actions/setup-R@v1
+      uses: r-lib/actions/setup-r@v1
       with:
         r-version: '3.6.3'
     - name: Cache Maven packages
