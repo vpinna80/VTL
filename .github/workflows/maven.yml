@@ -31,6 +31,6 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     - name: Install R packages
-      run: echo 'install.packages(c("R6", "rjava", "RJSDMX", "roxygen2", "devtools", "shiny", "shinydashboard"))' | R --vanilla -q
+      run: echo 'install.packages(c("R6", "rjava", "RJSDMX", "roxygen2", "devtools", "shiny", "shinydashboard"), repos = "http://cran.us.r-project.org")' | R --vanilla -q
     - name: Build with Maven
       run: mvn -P with-r --file pom.xml -Dgpg.skip=true clean install
