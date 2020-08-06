@@ -18,6 +18,9 @@
 # See the License for the specific language governing
 # permissions and limitations under the License.
 #*******************************************************************************
+set -e
+
+
 mkdir -p "${project.build.directory}/build"
 cd "${project.build.directory}/build"
 echo Working in: $PWD
