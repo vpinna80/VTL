@@ -21,39 +21,43 @@
 
 function suggest(ed, opts, offset)
 {
+	
+
     function MyListener()
     {
-        this.reportAmbiguity = function(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs) { /*debugger*/ }
-        this.reportAttemptingFullContext = function(recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs) { /*debugger*/ }
-        this.reportContextSensitivity = function(recognizer, dfa, startIndex, stopIndex, prediction, configs) { /*debugger*/ }
+        this.reportAmbiguity = function(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs) { /*debugger*/ };
+        this.reportAttemptingFullContext = function(recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs) { /*debugger*/ };
+        this.reportContextSensitivity = function(recognizer, dfa, startIndex, stopIndex, prediction, configs) { /*debugger*/ };
         this.syntaxError = (recognizer, offendingSymbol, line, column, msg, e) => {
             var ctx = e ? e.ctx : recognizer._ctx;
             var state = e ? e.offendingState : recognizer.state;
             result.push({
                 list: looklit(range(recognizer.getExpectedTokens(ctx, state))),
-                from: cm.findPosH(cm.getCursor(), - (offset + (offendingSymbol.stop - offendingSymbol.start + 1)), 'char'),
+                from: cm.findPosH(cm.getCursor(), - (offset + (offendingSymbol.stop - offendingSymbol.start + 1)), "char"),
                 to: vtl.editor.editorImplementation.getCursor()
             });
-        }
-    };
+        };
+    }
 
     var cm = vtl.editor.editorImplementation;
     var cursorPos = cm.getCursor();
     var startLine = cursorPos.line;
     var curRange = cm.findWordAt(cm.getCursor());
-    if (curRange.head.ch > cursorPos.ch)
+    if (curRange.head.ch > cursorPos.ch) {
         curRange.head.ch = cursorPos.ch;
+    }
     var word = cm.getDoc().getRange(curRange.anchor, curRange.head).trim();
-    var symbols = vtl.editor.parser.parser.parserWrapper.parser.literalNames.filter(t => t != null).map(t => t.substring(1, t.length - 1));
+    var symbols = vtl.editor.parser.parser.parserWrapper.parser.literalNames.filter((t) => t !== null).map((t) => t.substring(1, t.length - 1));
     offset = offset || (symbols.indexOf(word) >= 0 ? 0 : word.length);
 
     // determine start location of statement
     var idx = -1;
     while (startLine > 0 && (idx < 0 || startLine === cursorPos.line && idx > cursorPos.ch)) {
         var lineText = cm.getLine(startLine);
-        if (startLine === cursorPos.line)
+        if (startLine === cursorPos.line) {
             lineText = lineText.substring(0, cursorPos.ch);
-        idx = cm.getLine(lineText).indexOf(';');
+        }
+        idx = cm.getLine(lineText).indexOf(";");
         startLine--;
     }
 
@@ -71,12 +75,13 @@ function suggest(ed, opts, offset)
         // invoke the parser and catch the parsing exception
         var statement = parser.statement();
     } catch (e) {
-        if (!(e instanceof vtl.antlr.error.ParseCancellationException))
+        if (!(e instanceof vtl.antlr.error.ParseCancellationException)) {
             throw e;
+        }
         else if (result.length === 0) {
             result = [{
                 list: looklit(range(e.cause.recognizer.atn.getExpectedTokens(e.cause.offendingState, e.cause.ctx))),
-                from: cm.findPosH(cm.getCursor(), - (offset + (e.cause.offendingToken.stop - e.cause.offendingToken.start + 1)), 'char'),
+                from: cm.findPosH(cm.getCursor(), - (offset + (e.cause.offendingToken.stop - e.cause.offendingToken.start + 1)), "char"),
                 to: vtl.editor.editorImplementation.getCursor()
             }];
         }
@@ -85,16 +90,18 @@ function suggest(ed, opts, offset)
     if (result.length !== 0) {
 		result = result.reduce((a, b) => a.from.ch <= b.from.ch ? a : b);
 
-		var identifiers = vtl.editor.getAllTokens().map(t => t.token).filter(t => looksym(t.type) === 'IDENTIFIER').map(t => t.text);
+		var identifiers = vtl.editor.getAllTokens().map((t) => t.token).filter((t) => looksym(t.type) === "IDENTIFIER").map((t) => t.text);
 
-        if (result.list.length === 1 && result.list[0] === 'IDENTIFIER')
+        if (result.list.length === 1 && result.list[0] === "IDENTIFIER") {
             result.list = identifiers;
-        else if (result.list.indexOf('IDENTIFIER') >= 0)
-            result.list = result.list.filter(t => t !== 'IDENTIFIER').concat(identifiers);
+        } else if (result.list.indexOf("IDENTIFIER") >= 0) {
+            result.list = result.list.filter((t) => t !== "IDENTIFIER").concat(identifiers);
+        }
     }
 
-    if (result.from.ch < result.to.ch)
-        result.list = result.list.filter(t => t.toLowerCase().startsWith(cm.getDoc().getRange(result.from, result.to).toLowerCase()));
+    if (result.from.ch < result.to.ch) {
+        result.list = result.list.filter((t) => t.toLowerCase().startsWith(cm.getDoc().getRange(result.from, result.to).toLowerCase()));
+    }
 
     result.list = result.list.filter((value, index, self) => self.indexOf(value) === index);
     return result.list.length > 0 ? result : null;
@@ -102,24 +109,27 @@ function suggest(ed, opts, offset)
 
 function range(start, end)
 {
-    if (typeof start == 'number')
-        if (typeof end == 'number' && end > start)
-            return new Array(end - start).fill().map((_, idx) => start + idx)
-        else
+    if (typeof start === "number") {
+        if (typeof end === "number" && end > start) {
+            return new Array(end - start).fill().map((_, idx) => start + idx);
+        } else {
             return [start];
-    else if (start instanceof Array)
+        }
+    } else if (start instanceof Array) {
         return start.map(range).flat();
-    else
-        return start.intervals.map(i => range(i.start, i.stop)).flat();
+    } else {
+        return start.intervals.map((i) => range(i.start, i.stop)).flat();
+    }
 }
 
 function looksym(sym)
 {
     var symbolicNames = vtl.editor.parser.parser.parserWrapper.parser.symbolicNames;
-    if (typeof sym == 'number')
-        return sym == vtl.antlr.Token.EOF ? "##EOF##" : symbolicNames[sym];
-    else
+    if (typeof sym === "number") {
+        return sym === vtl.antlr.Token.EOF ? "##EOF##" : symbolicNames[sym];
+    } else {
         return sym.map(looksym);
+    }
 }
 
 function looklit(sym)

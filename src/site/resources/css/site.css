@@ -50,7 +50,6 @@
   fill: var(--purple) !important;
 }
 
-
 .svg-icon .svg-icon--sm {
   height: 20px;
   width: 20px;
@@ -74,17 +73,6 @@
 /*
  * header
 */
-.header .header__banner h1 {
-  font-size: 3rem;
-  font-weight: bold;
-  letter-spacing: -1px;
-  line-height: 1;
-}
-
-.header .header__banner .color-highlight::after {
-  left: -8px;
-}
-
 .header {
   background: #fff url(../images/wallpaper.jpg) center;
   background-size: cover;
@@ -95,8 +83,19 @@
   padding-bottom: 6rem;
 }
 
+.header .header__banner .color-highlight::after {
+  left: -8px;
+}
+
 .header h1 {
   font-weight: 200;
+}
+
+.header .header__banner h1 {
+  font-size: 3rem;
+  font-weight: bold;
+  letter-spacing: -1px;
+  line-height: 1;
 }
 
 .header p.lead {
@@ -118,22 +117,17 @@
   background-color: #fff;
 }
 
-.header .btn .btn__link-icon svg g [fill],
-.header .btn .btn__link-icon svg g [fill],
 .header .btn .btn__link-icon svg g [fill] {
-  transition: fill .3s ease;
+  transition: fill 0.3s ease;
   fill: #fff;
 }
-
 
 .header .btn:hover .btn__link-icon svg g [fill],
 .header .btn:focus .btn__link-icon svg g [fill],
 .header .btn:active .btn__link-icon svg g [fill] {
-  transition: fill .3s ease;
+  transition: fill 0.3s ease;
   fill: #46484a;
 }
-
-
 
 .highlight {
   padding-top: 45px;
@@ -158,12 +152,10 @@
   margin-bottom: 25px;
 }
 
-
 .highlight .text-right h2 {
   border-left: none;
   border-right: 8px solid var(--secondary);
 }
-
 
 .highlight .highlight-about {
   margin-bottom: 0;

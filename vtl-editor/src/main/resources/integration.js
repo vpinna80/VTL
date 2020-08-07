@@ -17,29 +17,29 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-require('codemirror');
-//require('codemirror/addon/hint/show-hint')
-require('codemirror/addon/edit/closebrackets')
+require("codemirror");
+//require("codemirror/addon/hint/show-hint")
+require("codemirror/addon/edit/closebrackets")
 
-var editor = require('./src').createEditor();
+var editor = require("./src").createEditor();
 
-editor.setEditorPlaceholderText('Enter your code here...');
+editor.setEditorPlaceholderText("Enter your code here...");
 editor.setShowLineNumbers(true);
 editor.setDisplayEditorErrors(true);
-editor.setTheme('idea');
+editor.setTheme("idea");
 
-merge = require('lodash.merge');
-antlr = require('antlr4');
-antlr.atn = merge(antlr.atn, require('antlr4/atn/ATNState'), require('antlr4/atn/Transition'))
-antlr.error = merge(antlr.error, require('antlr4/error/Errors'))
+merge = require("lodash.merge");
+antlr = require("antlr4");
+antlr.atn = merge(antlr.atn, require("antlr4/atn/ATNState"), require("antlr4/atn/Transition"))
+antlr.error = merge(antlr.error, require("antlr4/error/Errors"))
 
 module.exports = {
 	editor: editor,
 	antlr: antlr,
 	gen: {
-		VtlParser: require('./src/VtlParser').VtlParser,
-		VtlLexer: require('./src/VtlLexer').VtlLexer
+		VtlParser: require("./src/VtlParser").VtlParser,
+		VtlLexer: require("./src/VtlLexer").VtlLexer
 	},
-	CodeMirror: require('codemirror'),
-//	hint: require('codemirror/addon/hint/show-hint')
+	CodeMirror: require("codemirror"),
+//	hint: require("codemirror/addon/hint/show-hint")
 };

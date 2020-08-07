@@ -1,15 +1,18 @@
 .antlr-editor {
-	position: relative;
+  position: relative;
+  height: 70vh;
+  resize: vertical;
 }
 
 .CodeMirror {
-	height: 100%;
+  height: 100%;
 }
 
-.vtltoolbar, .vtltoolbar > * {
-	height: 25px;
-	margin: 0;
-	box-sizing: border-box;
+.vtltoolbar, 
+.vtltoolbar > * {
+  height: 25px;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .vtlLogo {
@@ -17,7 +20,9 @@
   max-width: 20%;
 }
 
-.tab-content, .content, .content > div {
+.tab-content, 
+.content, 
+.content > div {
   padding: 0 !important;
 }
 
@@ -38,11 +43,6 @@
   margin: 10px;
 }
 
-.antlr-editor {
-  height: 70vh;
-  resize: vertical;
-}
-
 #vtl_output {
   border-radius: 0;
   padding: 0;
@@ -60,3 +60,4 @@
   pointer-events: none;
   opacity: 0.6;
 }
+
