@@ -82,7 +82,7 @@ jobs:
 
     - name: Install RVTL dependencies
       run: |
-        remotes::install_cran(c('devtools', 'rJava', 'roxygen2'))
+        remotes::install_cran(c('devtools', 'rJava', 'roxygen2'),  type = ifelse(Sys.info()[["sysname"]] == "Windows", "binary", "both"))
         remotes::install_deps(pkgdir = 'RVTL/target/classes/R', dependencies = TRUE)
       shell: Rscript {0}
     
