@@ -83,9 +83,9 @@ function suggest(ed, opts, offset)
     }
 
     if (result.length !== 0) {
-        result = result.reduce((a, b) => a.from.ch <= b.from.ch ? a : b);
+		result = result.reduce((a, b) => a.from.ch <= b.from.ch ? a : b);
 
-	var identifiers = vtl.editor.getAllTokens().map(t => t.token).filter(t => looksym(t.type) === 'IDENTIFIER').map(t => t.text);
+		var identifiers = vtl.editor.getAllTokens().map(t => t.token).filter(t => looksym(t.type) === 'IDENTIFIER').map(t => t.text);
 
         if (result.list.length === 1 && result.list[0] === 'IDENTIFIER')
             result.list = identifiers;
@@ -94,7 +94,7 @@ function suggest(ed, opts, offset)
     }
 
     if (result.from.ch < result.to.ch)
-        result.list = result.list.filter(t => t.match(new RegExp("^" + cm.getDoc().getRange(result.from, result.to), "i")));
+        result.list = result.list.filter(t => t.toLowerCase().startsWith(cm.getDoc().getRange(result.from, result.to).toLowerCase()));
 
     result.list = result.list.filter((value, index, self) => self.indexOf(value) === index);
     return result.list.length > 0 ? result : null;
