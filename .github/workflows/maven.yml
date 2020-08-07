@@ -82,8 +82,7 @@ jobs:
 
     - name: Install RVTL dependencies
       run: |
-        remotes::install_cran('rJava', type = ifelse(tolower(Sys.info()[["sysname"]])=="linux","source","both"))
-        remotes::install_cran(c('devtools', 'roxygen2'))
+        remotes::install_cran(c('devtools', 'rJava', 'roxygen2'))
         remotes::install_deps(pkgdir = 'RVTL/target/classes/R', dependencies = TRUE)
       shell: Rscript {0}
     
