@@ -1,6 +1,6 @@
 name: VTL Engine builds
 
-on: [push, pull_request]
+on: push
 
 jobs:
   build:
@@ -52,12 +52,14 @@ jobs:
         key: ${{ runner.os }}-r-${{ matrix.config.r }}-1-${{ hashFiles('.github/depends.Rds') }}
         restore-keys: ${{ runner.os }}-r-${{ matrix.config.r }}-1-
     
+    - name: Install R package installer
+      run: Rscript -e "install.packages('remotes')"
+
     - name: Install system dependencies
       if: runner.os == 'Linux'
       env:
         RHUB_PLATFORM: linux-x86_64-ubuntu-gcc
       run: |
-        Rscript -e "install.packages('remotes')"
         Rscript -e "remotes::install_github('r-hub/sysreqs')"
         sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('RVTL/target/classes/R/DESCRIPTION'))")
         sudo -s eval "$sysreqs"
