@@ -35,7 +35,7 @@ jobs:
         r-version: ${{ matrix.config.r }}
     
     - name: Generate RVTL DESCRIPTION file
-      run: mvn -pl .,RVTL -P with-r --file pom.xml -Dgpg.skip=true org.apache.maven.plugins:maven-resources-plugin:3.1.0:resources
+      run: mvn -pl ".,RVTL" -P with-r --file pom.xml "-Dgpg.skip=true" "org.apache.maven.plugins:maven-resources-plugin:3.1.0:resources"
 
     - name: Cache Maven packages
       uses: actions/cache@v2
@@ -67,7 +67,8 @@ jobs:
     - name: Install dependencies
       run: |
         try(system("sudo R CMD javareconf"))
-        remotes::install_cran("rJava", type = ifelse(tolower(Sys.info()[["sysname"]])=="linux","source","both"))
+        remotes::install_cran('rJava', type = ifelse(tolower(Sys.info()[["sysname"]])=="linux","source","both"))
+        remotes::install_cran(c('devtools', 'roxygen2'))
         remotes::install_deps(pkgdir = 'RVTL/target/classes/R', dependencies = TRUE)
       shell: Rscript {0}
     
