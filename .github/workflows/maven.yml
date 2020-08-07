@@ -72,9 +72,9 @@ jobs:
     
     - name: Install dependencies
       env:
-        JAVA_CPPFLAGS: "-I$JAVA_HOME/include -I$JAVA_HOME/include/linux"
-        JAVA_LIBS: "-L$JAVA_HOME/jre/lib/amd64/server -ljvm"
-        LD_LIBRARY_PATH: "$JAVA_HOME/jre/lib/amd64:$JAVA_HOME/jre/lib/amd64/server"
+        JAVA_CPPFLAGS: "-I$$JAVA_HOME/include -I$$JAVA_HOME/include/linux"
+        JAVA_LIBS: "-L$$JAVA_HOME/jre/lib/amd64/server -ljvm"
+        LD_LIBRARY_PATH: "$$JAVA_HOME/jre/lib/amd64:$$JAVA_HOME/jre/lib/amd64/server"
       run: |
         try(system("sudo -E R CMD javareconf"))
         remotes::install_cran('rJava', type = ifelse(tolower(Sys.info()[["sysname"]])=="linux","source","both"))
