@@ -72,9 +72,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
@@ -269,7 +269,7 @@ public class SDMXEnvironment implements Environment
 			return Optional.of(Stream
 					.concat(activeDims.stream().map(d -> elementToComponent(Identifier.class, d)),
 							activeAttributes.stream().map(a -> elementToComponent(Attribute.class, a)))
-					.reduce(new Builder(), Builder::addComponent, Builder::merge)
+					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponent(new DataStructureComponentImpl<>(PortableDataSet.TIME_LABEL, Identifier.class, TIMEDS))
 					.addComponent(new DataStructureComponentImpl<>(PortableDataSet.OBS_LABEL, Measure.class, NUMBERDS)).build());
 		}

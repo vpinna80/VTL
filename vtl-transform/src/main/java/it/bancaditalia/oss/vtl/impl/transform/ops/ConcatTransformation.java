@@ -31,8 +31,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
@@ -161,7 +161,7 @@ public class ConcatTransformation extends BinaryTransformation
 							throw new VTLIncompatibleTypesException("concat", STRINGDS, m.getDomain());
 					});
 			
-			return metadata = new Builder()
+			return metadata = new DataStructureBuilder()
 					.addComponents(leftIds)
 					.addComponents(rightIds)
 					.addComponents(leftMeasures)

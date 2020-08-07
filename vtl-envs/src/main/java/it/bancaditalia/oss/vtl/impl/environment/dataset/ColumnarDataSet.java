@@ -33,8 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -52,7 +52,7 @@ public class ColumnarDataSet extends AbstractDataSet
 
 	public ColumnarDataSet(Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>[]> columns)
 	{
-		super(new Builder(columns.keySet()).build());
+		super(new DataStructureBuilder(columns.keySet()).build());
 		this.columns = columns;
 		nRows = columns.values().iterator().next().length;
 		

@@ -32,9 +32,9 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -182,7 +182,7 @@ public class ComparisonTransformation extends BinaryTransformation
 					|| !leftIsDataset && !measure.getDomain().isAssignableFrom(scalarDomain)))
 				throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
 			
-			return metadata = new Builder().addComponents(ds.getComponents(Identifier.class))
+			return metadata = new DataStructureBuilder().addComponents(ds.getComponents(Identifier.class))
 					.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS)).build();
 		}
 		else if (left instanceof VTLDataSetMetadata && right instanceof VTLDataSetMetadata)
@@ -208,7 +208,7 @@ public class ComparisonTransformation extends BinaryTransformation
 			else if (!rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
 				throw new VTLIncompatibleMeasuresException("comparison", leftMeasure, rightMeasure);
 
-			return metadata = new Builder()
+			return metadata = new DataStructureBuilder()
 					.addComponents(dsLeft.getComponents(Identifier.class))
 					.addComponents(dsRight.getComponents(Identifier.class))
 					.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))

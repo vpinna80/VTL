@@ -27,9 +27,8 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.impl.transform.ops.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -52,7 +51,6 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class TimeAggTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final TimePeriodDomainSubset periodDomain;
 	private final DataStructureComponentImpl<Measure, TimePeriodDomainSubset, TimePeriodDomain> periodComponent;
 	private final DurationValue frequency;
 
@@ -60,7 +58,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	{
 		super(operand);
 		frequency = DurationValue.of(periodTo.replaceAll("^\"(.*)\"$", "$1"));
-		periodDomain = frequency.get().getDomain();
+		TimePeriodDomainSubset periodDomain = frequency.get().getDomain();
 		periodComponent = new DataStructureComponentImpl<>(periodDomain.getVarName(), Measure.class, periodDomain);
 	}
 
@@ -74,7 +72,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
 		DataStructureComponent<Measure, TimeDomainSubset<TimeDomain>, TimeDomain> timeMeasure = dataset.getComponents(Measure.class, TIMEDS).iterator().next();
-		VTLDataSetMetadata structure = new DataStructureImpl.Builder(dataset.getComponents())
+		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getComponents())
 				.addComponent(periodComponent)
 				.build();
 		
@@ -116,7 +114,7 @@ public class TimeAggTransformation extends UnaryTransformation
 					throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, ds);
 //			}
 			
-			return new Builder(ds.getComponents(Identifier.class))
+			return new DataStructureBuilder(ds.getComponents(Identifier.class))
 					.addComponent(periodComponent)
 					.build();
 		}

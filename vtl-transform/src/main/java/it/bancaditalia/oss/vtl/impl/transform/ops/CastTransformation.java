@@ -50,8 +50,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -122,7 +122,7 @@ public class CastTransformation extends UnaryTransformation
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getComponents(Measure.class).iterator().next();
 		DataStructureComponent<Measure, ?, ?> measure = new DataStructureComponentImpl<>(target.getVarName(), Measure.class, target);
-		VTLDataSetMetadata structure = new DataStructureImpl.Builder(dataset.getComponents(Identifier.class))
+		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(measure)
 				.build();
 		return dataset.mapKeepingKeys(structure, dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));

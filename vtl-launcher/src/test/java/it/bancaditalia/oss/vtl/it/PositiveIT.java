@@ -87,7 +87,7 @@ class PositiveIT
 				}
 				else
 					buffer.append(line).append(System.lineSeparator());
-			};
+			}
 			
 			return parameters.stream();
 		}

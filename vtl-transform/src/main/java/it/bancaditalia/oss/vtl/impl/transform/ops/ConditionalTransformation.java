@@ -150,6 +150,7 @@ public class ConditionalTransformation extends TransformationImpl
 				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getComponents(Identifier.class) + " -- " + ((VTLDataSetMetadata) meta).getComponents(Identifier.class));
 
 			if (other instanceof VTLDataSetMetadata)
+			{
 				if (!dataset.equals(other))
 				{
 					Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(dataset);
@@ -169,10 +170,10 @@ public class ConditionalTransformation extends TransformationImpl
 				    	throw new VTLSyntaxException("Then and Else expressions must have the same structure.", new VTLMissingComponentsException(missing, (VTLDataSetMetadata) other));
 				    }
 				}
-				else
-					;
-			else if (!dataset.getComponents(Measure.class).stream()
-					.allMatch(c -> ((VTLScalarValueMetadata<?>) other).getDomain().isAssignableFrom(c.getDomain())))
+			}
+			else 
+				if (!dataset.getComponents(Measure.class).stream()
+						.allMatch(c -> ((VTLScalarValueMetadata<?>) other).getDomain().isAssignableFrom(c.getDomain())))
 				throw new UnsupportedOperationException("All measures must be assignable from " + ((VTLScalarValueMetadata<?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
 
 			return metadata = dataset;

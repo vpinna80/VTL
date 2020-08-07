@@ -51,22 +51,19 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.StartContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
 import it.bancaditalia.oss.vtl.grammar.VtlBaseVisitor;
 import it.bancaditalia.oss.vtl.grammar.VtlTokens;
-import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.StatementFactory;
 
 public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements Engine, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final OpsFactory opsFactory;
 	private final StatementFactory statementFactory;
 	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(JavaVTLEngine.class);
 	
 	public JavaVTLEngine() throws ClassNotFoundException, JAXBException, IOException 
 	{
-		opsFactory = new OpsFactory();
-		statementFactory = new StatementFactory(opsFactory);
+		statementFactory = new StatementFactory();
 	}
 	
 	public static class ThrowingErrorListener extends BaseErrorListener

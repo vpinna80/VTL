@@ -42,9 +42,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
@@ -184,14 +184,14 @@ public enum SampleComponents
 	{
 		List<DataStructureComponent<?,?,?>> structure = createStructure(components);
 		
-		return new LightDataSet(new Builder(structure).build(), () -> IntStream.range(0, 6)
+		return new LightDataSet(new DataStructureBuilder(structure).build(), () -> IntStream.range(0, 6)
 				.mapToObj(i -> IntStream.range(0, components.length)
 						.mapToObj(ci -> components[ci].getValues().stream()
 								.map(v -> new SimpleEntry<>(structure.get(ci), v))
 								.collect(Collectors.toList()))
 						.map(l -> l.get(i))
 						.collect(Collectors.toMap(Entry::getKey, Entry::getValue)))
-				.map(DataPointImpl.DataPointBuilder::new)
+				.map(DataPointBuilder::new)
 				.map(builder -> builder.build(structure)));
 	}
 	

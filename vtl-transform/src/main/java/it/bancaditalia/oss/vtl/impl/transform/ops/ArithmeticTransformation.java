@@ -45,9 +45,9 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -136,7 +136,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			else
 				resultComp = new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS);
 			
-			VTLDataSetMetadata newStructure = new Builder(streamed.getComponents(Identifier.class))
+			VTLDataSetMetadata newStructure = new DataStructureBuilder(streamed.getComponents(Identifier.class))
 					.addComponent(resultComp)
 					.build();
 			
@@ -231,7 +231,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 						? lm : rm : lm))
 				.collect(toSet());
 			
-			return metadata = new Builder().addComponents(leftData.getComponents(Identifier.class))
+			return metadata = new DataStructureBuilder().addComponents(leftData.getComponents(Identifier.class))
 					.addComponents(rightData.getComponents(Identifier.class))
 					.addComponents(measures)
 					.build();
@@ -265,7 +265,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			return metadata = metadata.stream()
 					.map(c -> c.is(Measure.class) && INTEGERDS.isAssignableFrom(c.getDomain()) 
 							? new DataStructureComponentImpl<>(c.getName(), Measure.class, NUMBERDS) : c)
-					.reduce(new Builder(), Builder::addComponent, Builder::merge)
+					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.build();
 		}
 	}

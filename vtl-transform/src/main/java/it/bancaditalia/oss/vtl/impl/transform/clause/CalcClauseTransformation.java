@@ -32,10 +32,10 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
@@ -163,7 +163,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			throw new VTLInvalidParameterException(operand, VTLDataSetMetadata.class);
 
 		metadata = (VTLDataSetMetadata) operand;
-		Builder builder = new Builder(metadata);
+		DataStructureBuilder builder = new DataStructureBuilder(metadata);
 
 		for (CalcClauseItem item : items)
 		{

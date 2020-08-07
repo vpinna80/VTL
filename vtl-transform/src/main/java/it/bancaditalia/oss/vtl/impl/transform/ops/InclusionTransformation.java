@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -128,7 +128,7 @@ public class InclusionTransformation extends UnaryTransformation
 			if (measures.size() != 1)
 				throw new UnsupportedOperationException("Expected single measure but found: " + measures);
 
-			return metadata = new Builder()
+			return metadata = new DataStructureBuilder()
 					.addComponents(ds.getComponents(Identifier.class))
 					.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))
 					.build();

@@ -43,9 +43,9 @@ import it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
@@ -217,7 +217,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				identifiers = groupComps.stream().map(c -> c.as(Identifier.class)).collect(toSet());
 			}
 
-			Builder builder = new Builder().addComponents(identifiers);
+			DataStructureBuilder builder = new DataStructureBuilder().addComponents(identifiers);
 
 			for (AggrClauseItem clause : operands)
 			{

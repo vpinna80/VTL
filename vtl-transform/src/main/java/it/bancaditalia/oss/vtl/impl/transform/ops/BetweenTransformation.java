@@ -25,10 +25,11 @@ import static java.util.Collections.singletonMap;
 
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -70,7 +71,7 @@ public class BetweenTransformation extends UnaryTransformation
 		if (!from.getDomain().isAssignableFrom(to.getDomain()) || !to.getDomain().isAssignableFrom(from.getDomain()))
 			throw new VTLIncompatibleTypesException("between", from, to);
 		if (from instanceof NullValue || to instanceof NullValue)
-			throw new NullPointerException("Between: Null constant not allowed.");
+			throw new VTLException("Between: Null constant not allowed.");
 		this.domain = from.getDomain(); 
 	}
 
@@ -93,7 +94,7 @@ public class BetweenTransformation extends UnaryTransformation
 			if (!measure.getDomain().isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("between", measure, domain);
 
-			return metadata = new Builder()
+			return metadata = new DataStructureBuilder()
 					.addComponents(ds.getComponents(Identifier.class))
 					.addComponent(BOOL_MEASURE)
 					.build();

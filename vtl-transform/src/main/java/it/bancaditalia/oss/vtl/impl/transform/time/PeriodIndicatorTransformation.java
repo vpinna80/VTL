@@ -31,8 +31,8 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -85,7 +85,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		{
 			DataSet ds = (DataSet) value;
 			
-			VTLDataSetMetadata metadata = new Builder(ds.getComponents(Identifier.class))
+			VTLDataSetMetadata metadata = new DataStructureBuilder(ds.getComponents(Identifier.class))
 					.addComponent(DURATION_MEASURE)
 					.build();
 			
@@ -141,7 +141,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 				component = anyDomainComponent.as(TIMEDS);
 			}
 
-			return new Builder(ds.getComponents(Identifier.class))
+			return new DataStructureBuilder(ds.getComponents(Identifier.class))
 					.addComponent(DURATION_MEASURE)
 					.build();
 		}

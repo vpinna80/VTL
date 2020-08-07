@@ -34,8 +34,8 @@ import java.util.function.Predicate;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -136,7 +136,7 @@ public class ExistsInTransformation extends BinaryTransformation
 		if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()) && !rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
 			throw new VTLIncompatibleMeasuresException("EXISTS_IN", leftMeasure, rightMeasure);
 		
-		Builder builder = new Builder((VTLDataSetMetadata) left)
+		DataStructureBuilder builder = new DataStructureBuilder((VTLDataSetMetadata) left)
 				.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS));
 		
 		if (mode != ALL)

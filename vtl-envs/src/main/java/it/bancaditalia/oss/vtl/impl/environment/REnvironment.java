@@ -49,8 +49,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -115,7 +115,7 @@ public class REnvironment implements Environment
 					identifiers = Arrays.asList(idAttr.asStringArray());
 				}
 				
-				Builder builder = new Builder();
+				DataStructureBuilder builder = new DataStructureBuilder();
 				for (String key: dataFrame.keys())
 				{
 					REXP columnData = dataFrame.at(key);

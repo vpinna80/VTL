@@ -66,9 +66,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
@@ -138,7 +138,7 @@ public class CSVFileEnvironment implements Environment
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
-			final VTLDataSetMetadata structure = new Builder(extractMetadata(reader.readLine().split(",")).getKey()).build();
+			final VTLDataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
 			
 			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName));
 		}
@@ -155,7 +155,7 @@ public class CSVFileEnvironment implements Environment
 			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
 			List<DataStructureComponent<?, ?, ?>> metadata = headerInfo.getKey();
 			Map<DataStructureComponent<?, ?, ?>, String> masks = headerInfo.getValue();
-			final VTLDataSetMetadata structure = new Builder(metadata).build();
+			final VTLDataSetMetadata structure = new DataStructureBuilder(metadata).build();
 			long lineCount = reader.lines().count();
 			
 			LOGGER.info("Reading {}", fileName);
@@ -303,7 +303,7 @@ public class CSVFileEnvironment implements Environment
 
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
 		{
-			return Optional.of(new Builder(extractMetadata(reader.readLine().split(",")).getKey()).build());
+			return Optional.of(new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build());
 		}
 		catch (IOException e)
 		{

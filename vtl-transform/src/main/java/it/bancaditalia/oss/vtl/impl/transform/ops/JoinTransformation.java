@@ -59,10 +59,10 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.JoinApplyScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -206,7 +206,7 @@ public class JoinTransformation extends TransformationImpl
 			VTLDataSetMetadata totalStructure = Utils.getStream(datasets.values())
 				.map(DataSet::getMetadata)
 				.flatMap(Set::stream)
-				.reduce(new Builder(), Builder::addComponent, Builder::merge)
+				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.build();
 			
 			LOGGER.debug("Joining all datapoints");
@@ -277,7 +277,7 @@ public class JoinTransformation extends TransformationImpl
 			.map(Utils.keepingKey((op, ds) -> {
 				VTLDataSetMetadata newStructure = ds.getComponents().stream()
 						.map(c -> toBeRenamed.contains(c) ? c.rename(op.getId() + "#" + c.getName()) : c)
-						.reduce(new Builder(), Builder::addComponent, Builder::merge)
+						.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 						.build();
 				
 				if (newStructure.equals(ds.getDataStructure()))
@@ -310,7 +310,7 @@ public class JoinTransformation extends TransformationImpl
 		
 		VTLDataSetMetadata applyMetadata = metadata.stream()
 				.filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
-				.reduce(new Builder(), Builder::addComponent, Builder::merge)
+				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(applyComponents)
 				.build();
 		
@@ -373,7 +373,7 @@ public class JoinTransformation extends TransformationImpl
 			
 			result = metadata.stream()
 					.filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
-					.reduce(new Builder(), Builder::addComponent, Builder::merge)
+					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponents(applyComponents)
 					.build();
 		}
@@ -545,7 +545,7 @@ public class JoinTransformation extends TransformationImpl
 			
 			LOGGER.debug("Inner join renames: {}", toBeRenamed);
 			
-			Builder builder = new Builder();
+			DataStructureBuilder builder = new DataStructureBuilder();
 			for (Entry<JoinOperand, VTLDataSetMetadata> e: datasetsMeta.entrySet())
 				for (DataStructureComponent<?, ?, ?> c: e.getValue())
 					if (toBeRenamed.contains(c))

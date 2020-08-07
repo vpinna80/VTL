@@ -180,7 +180,7 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 		}
 		else if (!varName.equals(other.varName))
 			return false;
-		if (items != other.items && !items.equals(other.items))
+		if (!items.equals(other.items))
 			return false;
 
 		return true;

@@ -22,12 +22,15 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 import java.util.stream.Collectors;
+
+import javax.xml.bind.JAXBException;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
@@ -63,9 +66,9 @@ public class StatementFactory implements Serializable
 	
 	private final OpsFactory opsFactory;
 
-	public StatementFactory(OpsFactory opsFactory)
+	public StatementFactory() throws ClassNotFoundException, JAXBException, IOException
 	{
-		this.opsFactory = opsFactory;
+		this.opsFactory = new OpsFactory();
 	}
 
 	public Statement createStatement(StatementContext ctx) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException

@@ -33,9 +33,9 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.ops.BooleanUnaryTransformation.BooleanUnaryOperator;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -142,7 +142,7 @@ public class CheckTransformation extends TransformationImpl
 				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
 
 			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> identifiers = dataset.getComponents(Identifier.class);
-			Builder metadata = new Builder().addComponents(identifiers);
+			DataStructureBuilder metadata = new DataStructureBuilder().addComponents(identifiers);
 			
 			if (imbalanceValue != null)
 			{

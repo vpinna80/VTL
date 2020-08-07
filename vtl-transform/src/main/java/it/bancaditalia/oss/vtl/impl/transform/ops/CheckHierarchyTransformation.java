@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -71,8 +71,8 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	private final Input input;
 	private final AtomicReference<VTLDataSetMetadata> metadata = new AtomicReference<>();
 	
-	private DataStructureComponent<? extends Measure, ?, ?> measure;
-	private DataStructureComponent<?, ?, ?> ruleKey;
+//	private DataStructureComponent<? extends Measure, ?, ?> measure;
+//	private DataStructureComponent<?, ?, ?> ruleKey;
 	
 	public CheckHierarchyTransformation(Transformation operand, VarIDOperand hierarchyId, Hierarchy.CheckMode mode, Input input, Output output)
 	{
@@ -120,15 +120,15 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		if (dataset.getComponents(Measure.class).size() != 1)
 			throw new VTLExpectedComponentException(Measure.class, dataset.getComponents(Measure.class));
 		
-		measure = dataset.getComponents(Measure.class).iterator().next();
-		ruleKey = hierarchy.selectComponent(dataset);
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<?, ?, ?> ruleKey = hierarchy.selectComponent(dataset);
 		
 		LOGGER.trace("Measure is {} and rule key is {}", measure, ruleKey);
 		
 		if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
 			throw new VTLIncompatibleTypesException("check_hierarchy", NUMBERDS, measure.getDomain());
 
-		Builder builder = new Builder(dataset.getComponents(Identifier.class))
+		DataStructureBuilder builder = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent("ruleid",     Identifier.class, Domains.STRINGDS)
 				.addComponent("imbalance",  Measure.class,    measure.getDomain())
 				.addComponent("errorcode",  Measure.class,    Domains.STRINGDS)

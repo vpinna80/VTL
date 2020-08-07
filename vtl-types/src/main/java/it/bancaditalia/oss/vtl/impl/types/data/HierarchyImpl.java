@@ -275,4 +275,9 @@ public abstract class HierarchyImpl implements Hierarchy
 	{
 		return item;
 	}
+
+	public String getCondition(String condition)
+	{
+		return conditions.get(condition);
+	}
 }

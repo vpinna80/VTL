@@ -31,10 +31,10 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointImpl.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureImpl.Builder;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -102,7 +102,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		
 		return Utils.getStream(((StringCodeList) identifier.getDomain()).getCodeItems())
 				.map(i -> new DataStructureComponentImpl<>(i.get(), Measure.class, measure.getDomain()))
-				.reduce(new Builder(), Builder::addComponent, Builder::merge)
+				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(dataset.getComponents(Identifier.class))
 				.removeComponent(identifier)
 				.removeComponent(measure).build();
