@@ -13,9 +13,9 @@ jobs:
       fail-fast: true
       matrix:
         config:
-          - {os: windows-latest, r: 'release'}
-          - {os: macOS-latest, r: 'release'}
-          - {os: ubuntu-18.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest"}
+          - {os: windows-latest, r: '3.6.3'}
+          - {os: macOS-latest, r: '3.6.3'}
+          - {os: ubuntu-18.04, r: '3.6.3', rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest"}
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
@@ -34,6 +34,9 @@ jobs:
       with:
         r-version: ${{ matrix.config.r }}
     
+    - name: Generate RVTL DESCRIPTION file
+      run: mvn -pl .,RVTL -P with-r --file pom.xml -Dgpg.skip=true org.apache.maven.plugins:maven-resources-plugin:3.1.0:resources
+
     - name: Cache Maven packages
       uses: actions/cache@v2
       with:
@@ -49,16 +52,22 @@ jobs:
         key: ${{ runner.os }}-r-${{ matrix.config.r }}-1-${{ hashFiles('.github/depends.Rds') }}
         restore-keys: ${{ runner.os }}-r-${{ matrix.config.r }}-1-
     
+    - name: Install system dependencies
+      if: runner.os == 'Linux'
+      env:
+        RHUB_PLATFORM: linux-x86_64-ubuntu-gcc
+      run: |
+        Rscript -e "install.packages('remotes')"
+        Rscript -e "remotes::install_github('r-hub/sysreqs')"
+        sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('RVTL/target/classes/R/DESCRIPTION'))")
+        sudo -s eval "$sysreqs"
+    
     - name: Install dependencies
       run: |
         try(system("sudo R CMD javareconf"))
         remotes::install_cran("rJava", type = ifelse(tolower(Sys.info()[["sysname"]])=="linux","source","both"))
-        remotes::install_deps(dependencies = TRUE)
-        remotes::install_cran("rcmdcheck")
+        remotes::install_deps(pkgdir = 'RVTL/target/classes/R', dependencies = TRUE)
       shell: Rscript {0}
-        
-    - name: Install R packages
-      run: echo 'install.packages(c("R6", "rjava", "RJSDMX", "roxygen2", "devtools", "shiny", "shinydashboard"), repos = "http://cran.us.r-project.org")' | R --vanilla -q
     
     - name: Build with Maven
       run: mvn -P with-r --file pom.xml -Dgpg.skip=true clean install
