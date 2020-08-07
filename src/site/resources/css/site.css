@@ -2,190 +2,189 @@
  * svg bootstrap color
 */
 .svg-icon {
-    height: 23px;
-    width: 23px
+  height: 23px;
+  width: 23px;
 }
 
 .svg-icon g [fill] {
-    fill: var(--blue)
+  fill: var(--blue);
 }
 
-.svg-icon.svg-icon--brand g [fill] {
-    fill: var(--brand) !important
+.svg-icon .svg-icon--brand g [fill] {
+  fill: var(--brand) !important;
 }
 
-.svg-icon.svg-icon--light g [fill] {
-    fill: var(--light) !important
+.svg-icon .svg-icon--light g [fill] {
+  fill: var(--light) !important;
 }
 
-.svg-icon.svg-icon--dark g [fill] {
-    fill: var(--dark) !important
+.svg-icon .svg-icon--dark g [fill] {
+  fill: var(--dark) !important;
 }
 
-.svg-icon.svg-icon--primary g [fill] {
-    fill: var(--primary) !important
+.svg-icon .svg-icon--primary g [fill] {
+  fill: var(--primary) !important;
 }
 
-.svg-icon.svg-icon--secondary g [fill] {
-    fill: var(--secondary) !important
+.svg-icon .svg-icon--secondary g [fill] {
+  fill: var(--secondary) !important;
 }
 
-.svg-icon.svg-icon--success g [fill] {
-    fill: var(--success) !important
+.svg-icon .svg-icon--success g [fill] {
+  fill: var(--success) !important;
 }
 
-.svg-icon.svg-icon--info g [fill] {
-    fill: var(--info) !important
+.svg-icon .svg-icon--info g [fill] {
+  fill: var(--info) !important;
 }
 
-.svg-icon.svg-icon--warning g [fill] {
-    fill: var(--warning) !important
+.svg-icon .svg-icon--warning g [fill] {
+  fill: var(--warning) !important;
 }
 
-.svg-icon.svg-icon--danger g [fill] {
-    fill: var(--danger) !important
+.svg-icon .svg-icon--danger g [fill] {
+  fill: var(--danger) !important;
 }
 
-.svg-icon.svg-icon--purple g [fill] {
-    fill: var(--purple) !important
+.svg-icon .svg-icon--purple g [fill] {
+  fill: var(--purple) !important;
 }
 
 
-.svg-icon.svg-icon--sm {
-    height: 20px;
-    width: 20px
+.svg-icon .svg-icon--sm {
+  height: 20px;
+  width: 20px;
 }
 
-.svg-icon.svg-icon--md {
-    height: 30px;
-    width: 30px
+.svg-icon .svg-icon--md {
+  height: 30px;
+  width: 30px;
 }
 
-.svg-icon.svg-icon--lg {
-    height: 40px;
-    width: 40px
+.svg-icon .svg-icon--lg {
+  height: 40px;
+  width: 40px;
 }
 
-.svg-icon.svg-icon--xl {
-    height: 50px;
-    width: 50px
+.svg-icon .svg-icon--xl {
+  height: 50px;
+  width: 50px;
 }
 
 /*
  * header
 */
 .header .header__banner h1 {
-    font-size: 3rem;
-    font-weight: bold;
-    letter-spacing: -1px;
-    line-height: 1;
+  font-size: 3rem;
+  font-weight: bold;
+  letter-spacing: -1px;
+  line-height: 1;
 }
 
-.header .header__banner .color-highlight:after {
-    left: -8px;
+.header .header__banner .color-highlight::after {
+  left: -8px;
 }
 
 .header {
-    background: #fff url(../images/wallpaper.jpg) center;
-    background-size: cover;
-    min-height: 20rem;
-    height: auto;
-    border-radius: 0;
-    padding-top: 6rem;
-    padding-bottom: 6rem;
+  background: #fff url(../images/wallpaper.jpg) center;
+  background-size: cover;
+  min-height: 20rem;
+  height: auto;
+  border-radius: 0;
+  padding-top: 6rem;
+  padding-bottom: 6rem;
 }
 
 .header h1 {
-    font-weight: 200;
+  font-weight: 200;
 }
 
 .header p.lead {
-    margin: 2rem auto;
+  margin: 2rem auto;
 }
 
 
 .header .btn {
-    color: #fff;
-    background-color: transparent;
-    border-color: #fff;
-    border-width: 1px;
+  color: #fff;
+  background-color: transparent;
+  border-color: #fff;
+  border-width: 1px;
 }
 
 .header .btn:hover,
 .header .btn:focus,
 .header .btn:active {
-    color: #46484a;
-    background-color: #fff;
+  color: #46484a;
+  background-color: #fff;
 }
 
 .header .btn .btn__link-icon svg g [fill],
 .header .btn .btn__link-icon svg g [fill],
 .header .btn .btn__link-icon svg g [fill] {
-    transition: fill .3s ease;
-    fill: #fff;
+  transition: fill .3s ease;
+  fill: #fff;
 }
 
 
 .header .btn:hover .btn__link-icon svg g [fill],
 .header .btn:focus .btn__link-icon svg g [fill],
 .header .btn:active .btn__link-icon svg g [fill] {
-    transition: fill .3s ease;
-    fill: #46484a;
+  transition: fill .3s ease;
+  fill: #46484a;
 }
 
 
 
 .highlight {
-    padding-top: 45px;
-    margin-bottom: 65px;
-    font-size: 21.6px
+  padding-top: 45px;
+  margin-bottom: 65px;
+  font-size: 21.6px;
 }
 
 .highlight .svg-icon--highlight {
-    height: 80%;
-    width: 80%;
+  height: 80%;
+  width: 80%;
 }
 
 
 .highlight img {
-    max-width: 90%;
+  max-width: 90%;
 }
 
 .highlight h2 {
-    font-size: 46px;
-    border-left: 8px solid var(--secondary);
-    padding: 10px 15px;
-    margin-bottom: 25px
+  font-size: 46px;
+  border-left: 8px solid var(--secondary);
+  padding: 10px 15px;
+  margin-bottom: 25px;
 }
 
 
 .highlight .text-right h2 {
-    border-left: none;
-    border-right: 8px solid var(--secondary);
+  border-left: none;
+  border-right: 8px solid var(--secondary);
 }
 
 
-.highlight.highlight-about {
-    margin-bottom: 0;
+.highlight .highlight-about {
+  margin-bottom: 0;
 }
 
-.highlight.highlight-general {
-    font-size: 18px
+.highlight .highlight-general {
+  font-size: 18px;
 }
 
-.highlight.highlight-general .svg-icon--highlight {
-    height: 100px;
-    width: 100px;
+.highlight .highlight-general .svg-icon--highlight {
+  height: 100px;
+  width: 100px;
 }
 
-.highlight.highlight-general img {
-    max-height: 125px;
-    padding-top: 6.25px;
-    padding-bottom: 16.67px
+.highlight .highlight-general img {
+  max-height: 125px;
+  padding-top: 6.25px;
+  padding-bottom: 16.67px;
 }
 
-.highlight.highlight-responsive-layout {
-    margin-bottom: 0;
-    background-color: #eee
+.highlight .highlight-responsive-layout {
+  margin-bottom: 0;
+  background-color: #eee;
 }
-
