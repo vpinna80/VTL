@@ -47,7 +47,7 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: Cache R packages
+    - name: Cache R packages (MacOS and Linux)
       if: runner.os != 'Windows'
       uses: actions/cache@v2
       with:
@@ -61,7 +61,7 @@ jobs:
     - name: Generate RVTL DESCRIPTION file
       run: mvn -pl ".,RVTL" -P with-r --file pom.xml "-Dgpg.skip=true" "org.apache.maven.plugins:maven-resources-plugin:3.1.0:resources"
 
-    - name: Install R system dependencies
+    - name: Install R system dependencies (Linux)
       if: runner.os == 'Linux'
       env:
         RHUB_PLATFORM: linux-x86_64-ubuntu-gcc
@@ -76,9 +76,12 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
     
+    - name: Link R to Java (MacOS and Linux)
+      if: runner.os != 'Windows'
+      run: sudo -E R CMD javareconf
+
     - name: Install RVTL dependencies
       run: |
-        system("sudo -E R CMD javareconf")
         remotes::install_cran('rJava', type = ifelse(tolower(Sys.info()[["sysname"]])=="linux","source","both"))
         remotes::install_cran(c('devtools', 'roxygen2'))
         remotes::install_deps(pkgdir = 'RVTL/target/classes/R', dependencies = TRUE)
