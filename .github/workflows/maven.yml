@@ -40,9 +40,6 @@ jobs:
       with:
         r-version: ${{ matrix.r }}
     
-    - name: Generate RVTL DESCRIPTION file
-      run: mvn -pl ".,RVTL" -P with-r --file pom.xml "-Dgpg.skip=true" "org.apache.maven.plugins:maven-resources-plugin:3.1.0:resources"
-
     - name: Cache Maven packages
       uses: actions/cache@v2
       with:
@@ -55,13 +52,16 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.R_LIBS_USER }}
-        key: ${{ runner.os }}-r-${{ matrix.r }}-1-${{ hashFiles('.github/depends.Rds') }}
-        restore-keys: ${{ runner.os }}-r-${{ matrix.r }}-1-
+        key: ${{ runner.os }}-R-${{ matrix.r }}-Java-${{ matrix.java }}
+        restore-keys: ${{ runner.os }}-R-${{ matrix.r }}-Java-${{ matrix.java }}
     
     - name: Install R package installer
       run: Rscript -e "install.packages('remotes')"
 
-    - name: Install system dependencies
+    - name: Generate RVTL DESCRIPTION file
+      run: mvn -pl ".,RVTL" -P with-r --file pom.xml "-Dgpg.skip=true" "org.apache.maven.plugins:maven-resources-plugin:3.1.0:resources"
+
+    - name: Install R system dependencies
       if: runner.os == 'Linux'
       env:
         RHUB_PLATFORM: linux-x86_64-ubuntu-gcc
@@ -70,11 +70,11 @@ jobs:
         sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('RVTL/target/classes/R/DESCRIPTION'))")
         sudo -s eval "$sysreqs"
     
-    - name: Install dependencies
+    - name: Install RVTL dependencies
       env:
-        JAVA_CPPFLAGS: "-I$$JAVA_HOME/include -I$$JAVA_HOME/include/linux"
-        JAVA_LIBS: "-L$$JAVA_HOME/jre/lib/amd64/server -ljvm"
-        LD_LIBRARY_PATH: "$$JAVA_HOME/jre/lib/amd64:$$JAVA_HOME/jre/lib/amd64/server"
+        JAVA_CPPFLAGS: "-I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux"
+        JAVA_LIBS: "-L${JAVA_HOME}/jre/lib/amd64/server -ljvm"
+        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:${JAVA_HOME}/jre/lib/amd64:${JAVA_HOME}/jre/lib/amd64/server"
       run: |
         try(system("sudo -E R CMD javareconf"))
         remotes::install_cran('rJava', type = ifelse(tolower(Sys.info()[["sysname"]])=="linux","source","both"))
