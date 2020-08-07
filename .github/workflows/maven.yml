@@ -70,6 +70,11 @@ jobs:
         sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('RVTL/target/classes/R/DESCRIPTION'))")
         sudo -s eval "$sysreqs"
     
+    - name: Restore Java ${{ matrix.java }}
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+    
     - name: Install RVTL dependencies
       env:
         JAVA_CPPFLAGS: "-I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux"
