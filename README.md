@@ -1,6 +1,6 @@
 [![License](https://img.shields.io/badge/license-EUPL-green)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
-
-![Java CI with Maven](https://github.com/vpinna80/VTL/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+![VTL Engine builds](https://github.com/vpinna80/VTL/workflows/VTL%20Engine%20builds/badge.svg)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c20a3a19b6744db191d9dd1b1b3a8cbf)](https://www.codacy.com/manual/valentino.pinna/VTL?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=vpinna80/VTL&amp;utm_campaign=Badge_Grade)
 
 # VTL E&E
 
