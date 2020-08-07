@@ -21,7 +21,7 @@ jobs:
           - os: macOS-latest
           - { os: ubuntu-18.04, rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest" }
         r: [3.6.3, release]
-        java: [1.8, 1.11, 1.14]
+        java: [8, 11, 14]
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
