@@ -41,6 +41,8 @@ VTLSession <- R6Class("VTLSession",
       #' Creates a new VTL session with a given name.
       #' @details 
       #' This method should not be called by the application.
+      #' @param name
+      #' The name to identify this session
       initialize = function (name = character(0)) {
                       if (!is.character(name) || length(name) != 1 || nchar(name) == 0)
                         stop("name must be a non-empty character vector with 1 element")
@@ -69,10 +71,16 @@ VTLSession <- R6Class("VTLSession",
 
       #' @description
       #' Changes the editor text in the session buffer.
+      #' @param code
+      #' The editor code to associate this session
       setText = function(code) { self$text <- code; return(invisible(self)) },
       
       #' @description
       #' Replace or add new VTL statements to this session and updates the session code buffer.
+      #' @param statements
+      #' The code to add to this session
+      #' @param restart
+      #' TRUE if old code must be discarded before adding the new
       addStatements = function(statements, restart = T) { 
                         self$text = paste0(self$text, statements)
                         if (restart)
@@ -99,6 +107,8 @@ VTLSession <- R6Class("VTLSession",
       
       #' @description
       #' Returns a list of data frames containing the values of the named nodes defined in this session.
+      #' @param nodes
+      #' a list of names of nodes to compute from this session
       getValues = function (nodes) {
                     jnodes <- sapply(X = nodes, private$checkInstance()$resolve)
                     nodesdf <- lapply(names(jnodes), FUN = function(x, jnodes, jstructs) {
@@ -125,6 +135,10 @@ VTLSession <- R6Class("VTLSession",
       
       #' @description
       #' Creates a fore network representation of all nodes defined in this VTL session.
+      #' @param distance
+      #' The distance between dots
+      #' @param charge
+      #' The repelling force between dots
       #' @importFrom igraph make_graph
       getTopology = function(distance = 100, charge = -100) {
           if (is.null(private$instance))
