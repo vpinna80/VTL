@@ -28,6 +28,13 @@
 configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
 vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
 
+environments <- list(
+  `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
+  `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
+  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
+  `In-Memory environment` = "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"
+)
+
 shinyServer(function(input, output, session) {
   
   ######
@@ -193,7 +200,7 @@ shinyServer(function(input, output, session) {
   })
 
   observeEvent(input$envs, {
-    vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(paste0(req(input$envs), collapse = ","))
+    vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(paste0(unlist(environments[req(input$envs)]), collapse = ","))
   })
     
   # load vl script

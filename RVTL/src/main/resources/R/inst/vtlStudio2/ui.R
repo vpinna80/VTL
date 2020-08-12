@@ -116,6 +116,14 @@ currentEnvironments <- function() {
   sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
 }
 
+activeEnvs <- function(active) {
+  items <- names(environments[xor(!active, environments %in% currentEnvironments())])
+  if (length(items) > 0)
+    items
+  else
+    NULL
+}
+
 ui <- shinydashboard::dashboardPage(
   
   shinydashboard::dashboardHeader(disable = T),
@@ -213,12 +221,9 @@ ui <- shinydashboard::dashboardPage(
                           fillPage(networkD3::forceNetworkOutput("topology", height = '90vh'))
                  ),
                  tabPanel("Settings",
-                          shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T,
-                            textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
-                            textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
-                            textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy$user),
-                            passwordInput(inputId = 'proxyPassword', label = 'Password:'),
-                            actionButton(inputId = 'setProxy', label = 'Save')
+                          shinydashboard::box(title = 'VTL Engine', status = 'primary', solidHeader = T,
+                            selectInput(inputId = 'engineClass', label = NULL, 
+                                        multiple = F, choices = c("In-Memory engine"), selected = c("In-Memory engine")),
                           ),
                           shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T,
                             selectInput(inputId = 'repoClass', label = NULL, 
@@ -227,7 +232,18 @@ ui <- shinydashboard::dashboardPage(
                             actionButton(inputId = 'setRepo', label = 'Change repository')
                           ),
                           shinydashboard::box(title = 'Environments', status = 'primary', solidHeader = T, 
-                            checkboxGroupInput(inputId = 'envs', label = NULL, choices = environments, selected = currentEnvironments())
+#                            checkboxGroupInput(inputId = 'envs', label = NULL, choices = environments, selected = currentEnvironments())
+                            sortable::bucket_list(header = NULL, 
+                              sortable::add_rank_list(text = tags$label("Available"), labels = activeEnvs(F)),
+                              sortable::add_rank_list(input_id = "envs", text = tags$label("Active"), labels = activeEnvs(T)),
+                              orientation = 'horizontal')
+                          ),
+                          shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T,
+                                              textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
+                                              textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
+                                              textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy$user),
+                                              passwordInput(inputId = 'proxyPassword', label = 'Password:'),
+                                              actionButton(inputId = 'setProxy', label = 'Save')
                           ),
                           shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
                             verbatimTextOutput(outputId = "conf_output", placeholder = T)
