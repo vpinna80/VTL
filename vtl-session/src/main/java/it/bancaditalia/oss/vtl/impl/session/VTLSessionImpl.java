@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
@@ -70,7 +69,7 @@ public class VTLSessionImpl implements VTLSession
 
 	private final ConfigurationManager config = ConfigurationManager.getDefault();
 	private final Engine engine;
-	private final List<Environment> environments = new ArrayList<>();
+	private final List<Environment> environments;
 	private final Workspace workspace;
 	private final Map<String, SoftReference<VTLValue>> cache = new ConcurrentHashMap<>();
 	private final Map<String, SoftReference<VTLValueMetadata>> metacache = new ConcurrentHashMap<>();
@@ -79,17 +78,14 @@ public class VTLSessionImpl implements VTLSession
 
 	public VTLSessionImpl()
 	{
-		Workspace selectedWorkspace = null;
-		for (Environment env: ServiceLoader.load(Environment.class))
-		{
-			environments.add(env);
-			
-			if (env instanceof Workspace)
-				selectedWorkspace = (Workspace) env;
-		}
-		
 		this.repository = config.getMetadataRepository();
 		this.engine = config.getEngine();
+		this.environments = config.getEnvironments();
+
+		Workspace selectedWorkspace = null;
+		for (Environment env: environments)
+			if (env instanceof Workspace)
+				selectedWorkspace = (Workspace) env;
 		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
 	}
 

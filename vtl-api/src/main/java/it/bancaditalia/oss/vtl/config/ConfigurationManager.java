@@ -19,38 +19,15 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.config;
 
+import java.util.List;
+
 import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public interface ConfigurationManager
 {
-	public enum VTLProperty {
-		CONFIG_MANAGER("vtl.config.impl.class", "it.bancaditalia.oss.vtl.config.ConfigurationManagerImpl"),
-		METADATA_REPOSITORY("vtl.metadatarepository.class", "it.bancaditalia.oss.vtl.impl.domains.InMemoryMetadataRepository"),
-		ENGINE_IMPLEMENTATION("vtl.engine.implementation.class", "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine"),
-		SESSION_IMPLEMENTATION("vtl.session.implementation.class", "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl");
-		
-		private final String property;
-		private final String defaultValue;
-		
-		private VTLProperty(String property, String defaultValue)
-		{
-			this.property = property;
-			this.defaultValue = defaultValue;
-		}
-
-		public String getValue()
-		{
-			return System.getProperty(property, defaultValue);
-		}
-
-		public String setValue(String newValue)
-		{
-			return System.setProperty(property, newValue);
-		}
-	}
-	
 	public static ConfigurationManager getDefault()  
 	{
 		return ConfigurationManagerFactory.getInstance();
@@ -61,4 +38,6 @@ public interface ConfigurationManager
 	public VTLSession createSession();
 
 	public Engine getEngine();
+
+	public List<Environment> getEnvironments();
 }

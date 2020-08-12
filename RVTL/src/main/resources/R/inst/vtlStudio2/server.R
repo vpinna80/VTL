@@ -25,6 +25,9 @@
 # Author: Attilio Mattiocco
 ###############################################################################
 
+configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
+vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
+
 shinyServer(function(input, output, session) {
   
   ######
@@ -50,6 +53,7 @@ shinyServer(function(input, output, session) {
   ##### Dynamic Input controls
   #####
 
+  # Upload vtl script button
   output$saveas <- downloadHandler(
       filename = function() {
         req(input$sessionID)
@@ -58,44 +62,21 @@ shinyServer(function(input, output, session) {
         writeLines(currentSession()$text, file)
       })
 
-  output$dsNames<- renderUI({
-    selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, 
-                choices = c('', currentSession()$getNodes()), selected ='')
-  })
-
-  output$proxyHostUI<- renderUI({
-    host = ''
-    proxy = J('it.bancaditalia.oss.sdmx.util.Configuration')$getConfiguration()$getProperty('http.proxy.default')
-    if(!is.null(proxy) && nchar(proxy) > 0){
-      host = unlist(strsplit(proxy, split = ':'))
-      if(length(host) == 2 ){
-        host = host[1]
-      }
-    }
-    textInput(inputId = 'proxyHost', label = 'Proxy Host', value = host)
-  })
-
-  output$proxyPortUI<- renderUI({
-    port = ''
-    proxy = J('it.bancaditalia.oss.sdmx.util.Configuration')$getConfiguration()$getProperty('http.proxy.default')
-    if(!is.null(proxy) && nchar(proxy) > 0){
-      port = unlist(strsplit(proxy, split = ':'))
-      if(length(port) == 2 ){
-        port = port[2]
-      }
-    }
-    textInput(inputId = 'proxyPort', label = 'Proxy Port', value = port)
-  })
-  
-  output$proxyUserUI<- renderUI({
-    user = ''
-    proxy = J('it.bancaditalia.oss.sdmx.util.Configuration')$getConfiguration()$getProperty('http.auth.user')
-    textInput(inputId = 'proxyUser', label = 'Proxy User', value = user)
+  # Repository Properties box
+  output$repoProperties <- renderUI({
+    supportedProperties <- configManager$getSupportedProperties(J(req(input$repoClass))@jobj)
+    supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
+    tags$div(
+      lapply(supportedProperties, function (property) {
+        textInput(inputId = property$getName(), label = property$getDescription(), 
+                  value = property$getValue(), placeholder = property$getPlaceholder())
+      })
+    )
   })
   
   #compile VTL code (action button)
   output$vtl_output <- renderPrint({
-    req(input$compile, cancelOutput = F)
+    req(input$compile)
     shinyjs::disable("compile")
     try({
       vtlSession <- currentSession()
@@ -158,10 +139,23 @@ shinyServer(function(input, output, session) {
     shinyjs::toggleState("createSession", isTruthy(input$newSession))
     shinyjs::toggleState("dupSession", isTruthy(input$newSession))
   })
-
+  
   # Disable proxy button if host and port not specified
   observe({
     shinyjs::toggleState("setProxy", isTruthy(input$proxyHost) && isTruthy(input$proxyPort))
+  })
+  
+  # Disable changing repo if required properties not set
+  observe({
+    canChange <- req(input$repoClass) != vtlProperties$METADATA_REPOSITORY$getValue()
+    if (canChange) {
+      supportedProperties <- configManager$getSupportedProperties(J(input$repoClass)@jobj)
+      supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
+      canChange <- all(sapply(supportedProperties, function (property) {
+        !property$isRequired() || isTruthy(input[[property$getName()]])
+      }))
+    }
+    shinyjs::toggleState("setRepo", canChange)
   })
   
   # Disable navigator and graph if the session was not compiled
@@ -197,7 +191,11 @@ shinyServer(function(input, output, session) {
     session$sendCustomMessage("editor-text", vtlSession$text)
     session$sendCustomMessage("editor-focus", message = '')
   })
-  
+
+  observeEvent(input$envs, {
+    vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(paste0(req(input$envs), collapse = ","))
+  })
+    
   # load vl script
   observeEvent(input$scriptFile, {
     lines = suppressWarnings(readLines(input$scriptFile$datapath))
@@ -233,11 +231,24 @@ shinyServer(function(input, output, session) {
     req(input$proxyHost)
     req(input$proxyPort)
     output$conf_output <- renderPrint({
-      isolate(expr = {
-        J('it.bancaditalia.oss.sdmx.util.Configuration')$setDefaultProxy(input$proxyHost, input$proxyPort, input$proxyUser, input$proxyPassword)
-      })
-      print('OK, done.')
+      J('it.bancaditalia.oss.sdmx.util.Configuration')$setDefaultProxy(input$proxyHost, input$proxyPort, input$proxyUser, input$proxyPassword)
+      J("java.lang.System")$setProperty("http.proxyHost", input$proxyHost)
+      J("java.lang.System")$setProperty("https.proxyHost", input$proxyHost)
+      J("java.lang.System")$setProperty("http.proxyPort", input$proxyPort)
+      J("java.lang.System")$setProperty("https.proxyPort", input$proxyPort)
+      print('OK.')
     })
+  })
+  
+  # configure repository
+  observeEvent(input$setRepo, {
+    supportedProperties <- configManager$getSupportedProperties(J(req(input$repoClass))@jobj)
+    supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
+    sapply(supportedProperties, function (property) {
+      if (isTruthy(input[[property$getName()]]))
+        property$setValue(input[[property$getName()]])
+    })
+    vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
   })
   
   observeEvent(input$editorText, {

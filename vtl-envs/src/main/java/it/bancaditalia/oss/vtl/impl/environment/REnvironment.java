@@ -67,29 +67,16 @@ public class REnvironment implements Environment
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
 	private final Map<String, VTLValue>	values	= new HashMap<>();
-	private final Rengine engine;
+	private final Rengine engine = new Rengine();
 
-	public REnvironment()
-	{
-		engine = isEnabled() ? new Rengine() : null;
-	}
-	
 	public Rengine getEngine()
 	{
 		return engine;
-	}
-
-	private boolean isEnabled()
-	{
-		return !"disable".equalsIgnoreCase(System.getProperty("vtl.r"));
 	}
 	
 	@Override
 	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
-		if (!isEnabled())
-			return Optional.empty();
-		
 		if (values.containsKey(name))
 			return Optional.of(values.get(name).getMetadata());
 
@@ -180,9 +167,6 @@ public class REnvironment implements Environment
 	@Override
 	public Optional<VTLValue> getValue(String name)
 	{
-		if (!isEnabled())
-			return Optional.empty();
-		
 		if (values.containsKey(name))
 			return Optional.of(values.get(name));
 
@@ -226,9 +210,6 @@ public class REnvironment implements Environment
 
 	private DataSet parseDataFrame(String name)
 	{
-		if (!isEnabled())
-			return null;
-		
 		List<String> identifiers = new ArrayList<>();
 		List<String> measures = new ArrayList<>();
 

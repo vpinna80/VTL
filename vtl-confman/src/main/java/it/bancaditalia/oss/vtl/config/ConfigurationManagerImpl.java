@@ -19,11 +19,16 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.config;
 
-import static it.bancaditalia.oss.vtl.config.ConfigurationManager.VTLProperty.ENGINE_IMPLEMENTATION;
-import static it.bancaditalia.oss.vtl.config.ConfigurationManager.VTLProperty.METADATA_REPOSITORY;
-import static it.bancaditalia.oss.vtl.config.ConfigurationManager.VTLProperty.SESSION_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
@@ -31,16 +36,12 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 public class ConfigurationManagerImpl implements ConfigurationManager
 {
 	private final MetadataRepository metadataRepositoryInstance;
-	private final Class<? extends VTLSession> sessionClass;
-	private final Engine engineInstance;
-	
+
 	public ConfigurationManagerImpl() 
 	{
 		try
 		{
 			metadataRepositoryInstance = Class.forName(METADATA_REPOSITORY.getValue()).asSubclass(MetadataRepository.class).newInstance();
-			sessionClass = Class.forName(SESSION_IMPLEMENTATION.getValue()).asSubclass(VTLSession.class);
-			engineInstance = Class.forName(ENGINE_IMPLEMENTATION.getValue()).asSubclass(Engine.class).newInstance();
 		}
 		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
 		{
@@ -57,7 +58,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	@Override
 	public Engine getEngine()
 	{
-		return engineInstance;
+		try
+		{
+			return Class.forName(ENGINE_IMPLEMENTATION.getValue()).asSubclass(Engine.class).newInstance();
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+		{
+			throw new VTLNestedException("Error initializing engine", e);
+		}
 	}
 
 	@Override
@@ -65,11 +73,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	{
 		try
 		{
-			return sessionClass.newInstance();
+			return Class.forName(SESSION_IMPLEMENTATION.getValue()).asSubclass(VTLSession.class).newInstance();
 		}
-		catch (InstantiationException | IllegalAccessException e)
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
 		{
 			throw new VTLNestedException("Error initializing session", e);
+		}
+	}
+
+	@Override
+	public List<Environment> getEnvironments()
+	{
+		try
+		{
+			List<Environment> result = new ArrayList<>();
+
+			String[] envNames = ENVIRONMENT_IMPLEMENTATION.getValue().split(",");
+			for (int i = 0; i < envNames.length; i++)
+				result.add(Class.forName(envNames[i]).asSubclass(Environment.class).newInstance()); 
+
+			return result ;
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+		{
+			throw new VTLNestedException("Error loading implementations", e);
 		}
 	}
 }

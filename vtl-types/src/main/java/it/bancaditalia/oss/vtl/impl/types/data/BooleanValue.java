@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 
@@ -31,7 +32,7 @@ public class BooleanValue extends BaseScalarValue<Boolean, BooleanDomainSubset, 
 	public static final BooleanValue TRUE = new BooleanValue(Boolean.TRUE);
 	
 	private static final long serialVersionUID = 1L;
-	private static final VTLScalarValueMetadata<BooleanDomainSubset> META = () -> Domains.BOOLEANDS;
+	private static final VTLScalarValueMetadata<ValueDomainSubset<?>> META = Domains.BOOLEAN;
 
 	private BooleanValue(Boolean value)
 	{
@@ -56,7 +57,7 @@ public class BooleanValue extends BaseScalarValue<Boolean, BooleanDomainSubset, 
 	}
 	
 	@Override
-	public VTLScalarValueMetadata<BooleanDomainSubset> getMetadata()
+	public VTLScalarValueMetadata<? extends ValueDomainSubset<?>> getMetadata()
 	{
 		return META;
 	}

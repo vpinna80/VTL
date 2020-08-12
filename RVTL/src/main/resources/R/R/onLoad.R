@@ -22,5 +22,11 @@
 #' @import rJava
 #' @import R6
 .onLoad <- function(libname, pkgname) {
-	.jpackage(pkgname, lib.loc = libname)#, morePaths = dir(system.file('java', package='RJSDMX'), full.names = T))
+  .jpackage(pkgname, lib.loc = libname)
+  J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
+      "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
+      "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
+      "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
+      "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl")
+  )
 }

@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.engine.ops;
 
+import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE3;
+import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE4;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator.AND;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator.OR;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator.XOR;
@@ -26,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +37,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.DummySession;
-import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleComponents;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
 import it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator;
 import it.bancaditalia.oss.vtl.impl.transform.ops.VarIDOperand;
@@ -44,7 +47,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public class BooleanTransformationTest
 {
-	private DummySession session = new DummySession();
+	private MockSession session;
 	private VarIDOperand left, right;
 	
 	public static Stream<Arguments> test()
@@ -64,8 +67,10 @@ public class BooleanTransformationTest
 	{
 		left = new VarIDOperand("left");
 		right = new VarIDOperand("right");
-		session.put("left", SampleComponents.getSample3());
-		session.put("right", SampleComponents.getSample4());
+		Map<String, DataSet> map = new HashMap<>();
+		map.put("left", SAMPLE3);
+		map.put("right", SAMPLE4);
+		session = new MockSession(map);
 	}
 	
 	@ParameterizedTest(name = "{0}")

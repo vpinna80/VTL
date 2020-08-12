@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Stream;
 
@@ -32,8 +34,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.DummySession;
-import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleComponents;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets;
 import it.bancaditalia.oss.vtl.impl.transform.ops.ComparisonTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ops.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
@@ -82,9 +84,10 @@ public class ComparisonTransformationTest
 	public synchronized void test(ComparisonOperator operator, String measureDomain, Boolean result[])
 	{
 		VarIDOperand left = new VarIDOperand("left"), right = new VarIDOperand("right");
-		DummySession session = new DummySession();
-		session.put("left", SampleComponents.getSample5(measureDomain, "STRING".equals(measureDomain) ? 2 : 1));
-		session.put("right", SampleComponents.getSample5(measureDomain, "STRING".equals(measureDomain) ? 3 : 2));
+		Map<String, DataSet> map = new HashMap<>();
+		map.put("left", SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 2 : 1));
+		map.put("right", SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 3 : 2));
+		MockSession session = new MockSession(map);
 
 		ComparisonTransformation coTransformation = new ComparisonTransformation(operator, left, right);
 		

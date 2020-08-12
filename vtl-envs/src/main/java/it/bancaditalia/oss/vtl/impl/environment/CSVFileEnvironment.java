@@ -112,13 +112,6 @@ public class CSVFileEnvironment implements Environment
 		PATTERNS.put(Pattern.compile("^([-/ ])(.*)$"), "$1");
 	}
 	
-	private final MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
-	
-	public CSVFileEnvironment() 
-	{
-		
-	}
-
 	@Override
 	public boolean contains(String name)
 	{
@@ -274,6 +267,8 @@ public class CSVFileEnvironment implements Environment
 	private Entry<ValueDomainSubset<? extends ValueDomain>, String> mapVarType(String typeName)
 	{
 		String datePattern = "^[Dd][Aa][Tt][Ee]\\[(.*)\\]$";
+		
+		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 		
 		if ("STRING".equalsIgnoreCase(typeName))
 			return new SimpleEntry<>(STRINGDS, "");

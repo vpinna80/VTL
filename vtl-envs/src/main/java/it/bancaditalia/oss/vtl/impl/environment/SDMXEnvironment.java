@@ -103,7 +103,6 @@ public class SDMXEnvironment implements Environment
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?>>> FORMATTERS = new HashMap<>();
 
 	private final boolean dropIdentifiers = !"true".equalsIgnoreCase(System.getProperty(DROP_ID_PROPERTY, "false"));
-	private final MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 
 	static
 	{
@@ -239,6 +238,7 @@ public class SDMXEnvironment implements Environment
 		if (codelist == null)
 			return new DataStructureComponentImpl<>(meta.getId(), role, STRINGDS);
 
+		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 		StringCodeList domain = repository.defineDomain(codelist.getId(), StringCodeList.class, codelist.keySet());
 		return new DataStructureComponentImpl<>(meta.getId(), role, domain);
 	}

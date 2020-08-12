@@ -152,6 +152,7 @@
 		<log4j.version>2.13.3</log4j.version>
 		<junit.version>5.6.1</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
+		<mockito.version>3.4.6</mockito.version>
 		<build-helper-maven-plugin.version>3.1.0</build-helper-maven-plugin.version>
 		<spring.boot.version>2.3.2.RELEASE</spring.boot.version>
 		<node.version>v10.20.1</node.version>
@@ -211,13 +212,6 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-			    <groupId>org.springframework.boot</groupId>
-			    <artifactId>spring-boot-dependencies</artifactId> 
-			    <version>${spring.boot.version}</version>
-				<type>pom</type>
-			    <scope>import</scope> 
-			</dependency> 
 			<dependency>
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr4</artifactId>
@@ -325,8 +319,15 @@
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-junit-jupiter</artifactId>
-				<version>2.23.0</version>
+				<version>${mockito.version}</version>
 				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring.boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -387,8 +388,8 @@
 					<version>3.1.1</version>
 				</plugin>
 				<plugin>
-				    <artifactId>maven-war-plugin</artifactId>
-				    <version>3.3.1</version>
+					<artifactId>maven-war-plugin</artifactId>
+					<version>3.3.1</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -507,6 +508,24 @@
 		</pluginManagement>
 
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.0.0-M3</version>
+				<executions>
+					<execution>
+						<phase>validate</phase>
+						<configuration>
+							<rules>
+								<dependencyConvergence />
+							</rules>
+						</configuration>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>

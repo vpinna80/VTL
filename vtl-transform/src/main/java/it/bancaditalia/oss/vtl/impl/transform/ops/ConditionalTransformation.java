@@ -32,7 +32,6 @@ import java.util.function.Function;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -70,8 +69,11 @@ public class ConditionalTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue cond = condition.eval(session);
-
-		if (metadata instanceof ScalarValue)
+		
+		if (metadata == null)
+			metadata = getMetadata(session);
+		
+		if (metadata instanceof VTLScalarValueMetadata)
 			return BOOLEANDS.cast((ScalarValue<?, ?, ?>) cond).get() 
 					? thenExpr.eval(session)
 					: elseExpr.eval(session);
@@ -128,26 +130,28 @@ public class ConditionalTransformation extends TransformationImpl
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
-		VTLValueMetadata meta = condition.getMetadata(session);
+		VTLValueMetadata cond = condition.getMetadata(session);
 		VTLValueMetadata left = thenExpr.getMetadata(session);
 		VTLValueMetadata right = elseExpr.getMetadata(session);
 
-		if (meta instanceof VTLScalarValueMetadata && ((VTLScalarValueMetadata<?>) meta).getDomain() instanceof BooleanDomainSubset)
-			if (left instanceof ScalarValue && right instanceof ScalarValue)
+		if (cond instanceof VTLScalarValueMetadata && BOOLEANDS.isAssignableFrom(((VTLScalarValueMetadata<?>) cond).getDomain()))
+			if (left instanceof VTLScalarValueMetadata && right instanceof VTLScalarValueMetadata)
 				return metadata = left;
 			else
 				throw new UnsupportedOperationException("Incompatible types in conditional expression: " + left + ", " + right);
-		else if (meta instanceof VTLDataSetMetadata && (left instanceof VTLDataSetMetadata || right instanceof VTLDataSetMetadata))
+		else // if (cond instanceof VTLDataSetMetadata)
 		{
-			Set<? extends DataStructureComponent<?, ?, ?>> measures = ((VTLDataSetMetadata) meta).getComponents(Measure.class, Domains.BOOLEANDS);
+			if (left instanceof VTLScalarValueMetadata && right instanceof VTLScalarValueMetadata)
+				return metadata = left;
+			Set<? extends DataStructureComponent<?, ?, ?>> measures = ((VTLDataSetMetadata) cond).getComponents(Measure.class, BOOLEANDS);
 			VTLDataSetMetadata dataset = (VTLDataSetMetadata) (left instanceof VTLDataSetMetadata ? left : right);
 			VTLValueMetadata other = left instanceof VTLDataSetMetadata ? right : left;
 
 			if (measures.size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, measures);
+				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
 
-			if (!dataset.getComponents(Identifier.class).equals(((VTLDataSetMetadata) meta).getComponents(Identifier.class)))
-				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getComponents(Identifier.class) + " -- " + ((VTLDataSetMetadata) meta).getComponents(Identifier.class));
+			if (!dataset.getComponents(Identifier.class).equals(((VTLDataSetMetadata) cond).getComponents(Identifier.class)))
+				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getComponents(Identifier.class) + " -- " + ((VTLDataSetMetadata) cond).getComponents(Identifier.class));
 
 			if (other instanceof VTLDataSetMetadata)
 			{
@@ -178,8 +182,6 @@ public class ConditionalTransformation extends TransformationImpl
 
 			return metadata = dataset;
 		}
-		else
-			throw new UnsupportedOperationException("Unsupported conditional expression form.");
 	}
 	
 	@Override

@@ -31,17 +31,26 @@ import java.io.InputStreamReader;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
+import it.bancaditalia.oss.vtl.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 
 public class CSVMetadataRepository extends InMemoryMetadataRepository
 {
 	private static final long serialVersionUID = 1L;
 	
-	public static final String METADATA_CSV_SOURCE = "vtl.metadata.csv.source";
+	public static final VTLProperty METADATA_CSV_SOURCE = 
+			new VTLPropertyImpl("vtl.metadata.csv.source", "Path of a CSV file containing codelists", "C:/metadata.csv", true, false);
+	
+	static
+	{
+		ConfigurationManagerFactory.registerSupportedProperties(CSVMetadataRepository.class, METADATA_CSV_SOURCE);
+	}
 
 	public CSVMetadataRepository() throws IOException
 	{
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(System.getProperty(METADATA_CSV_SOURCE)), UTF_8)))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(METADATA_CSV_SOURCE.getValue()), UTF_8)))
 		{
 			reader.lines()
 				.map(l -> new SimpleEntry<>(l.split(",", 2)[0], l.split(",", 2)[1]))

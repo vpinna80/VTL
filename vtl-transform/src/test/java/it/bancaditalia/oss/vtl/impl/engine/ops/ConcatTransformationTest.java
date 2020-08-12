@@ -22,10 +22,13 @@ package it.bancaditalia.oss.vtl.impl.engine.ops;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.DummySession;
-import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleComponents;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets;
 import it.bancaditalia.oss.vtl.impl.transform.ops.ConcatTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ops.VarIDOperand;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -41,9 +44,10 @@ public class ConcatTransformationTest
 	public void test()
 	{
 		VarIDOperand left = new VarIDOperand("left"), right = new VarIDOperand("right");
-		DummySession session = new DummySession();
-		session.put("left", SampleComponents.getSample5("STRING", 3));
-		session.put("right", SampleComponents.getSample5("STRING", 4));
+		Map<String, DataSet> map = new HashMap<>();
+		map.put("left", SampleDataSets.getCustomSample("STRING", 3));
+		map.put("right", SampleDataSets.getCustomSample("STRING", 4));
+		MockSession session = new MockSession(map);
 
 		ConcatTransformation coTransformation = new ConcatTransformation(left, right);
 		

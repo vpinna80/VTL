@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.engine.ops;
 
+import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE1;
+import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE2;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIV;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.MOD;
@@ -29,7 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,8 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.DummySession;
-import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleComponents;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
 import it.bancaditalia.oss.vtl.impl.transform.ops.ArithmeticTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ops.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
@@ -49,7 +52,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public class ArithmeticTransformationTest
 {
-	private DummySession session = new DummySession();
+	private MockSession session;
 	private VarIDOperand left, right;
 	
 	public static Stream<Arguments> twoDatasetTest()
@@ -74,8 +77,10 @@ public class ArithmeticTransformationTest
 	{
 		left = new VarIDOperand("left");
 		right = new VarIDOperand("right");
-		session.put("left", SampleComponents.getSample2());
-		session.put("right", SampleComponents.getSample1());
+		Map<String, DataSet> map = new HashMap<>();
+		map.put("left", SAMPLE2);
+		map.put("right", SAMPLE1);
+		session = new MockSession(map);
 	}
 	
 	@ParameterizedTest(name = "{0}")

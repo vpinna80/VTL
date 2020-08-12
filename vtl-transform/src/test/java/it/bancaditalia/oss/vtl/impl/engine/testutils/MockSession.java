@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.engine.testutils;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
@@ -32,18 +31,18 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 /**
  * A dummy session used for testing purposes.
- * No statements can be added to it, but it has a {@link #put(String, VTLValue)} method to bind values.
+ * No statements can be added to it, but it has a constructor to bind values.
  * 
  * @author m027907
  *
  */
-public class DummySession implements TransformationScheme
+public class MockSession implements TransformationScheme
 {
-	private Map<String, VTLValue> values = new ConcurrentHashMap<>();
+	private final Map<String, ? extends VTLValue> values;
 
-	public void put(String name, VTLValue value)
+	public MockSession(Map<String, ? extends VTLValue> values)
 	{
-		values.put(name, value);
+		this.values = values;
 	}
 	
 	@Override

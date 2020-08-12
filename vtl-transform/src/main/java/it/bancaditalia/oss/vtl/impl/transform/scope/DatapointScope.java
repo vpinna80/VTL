@@ -66,11 +66,19 @@ public class DatapointScope implements TransformationScheme
 	public VTLValueMetadata getMetadata(String name)
 	{
 		if (Objects.requireNonNull(name, "The name to resolve cannot be null.").matches("'.*'"))
-			return (VTLScalarValueMetadata<?>) () -> Utils.getStream(structure).filter(c -> c.getName().equals(name.replaceAll("'(.*)'", "$1"))).findAny().orElseThrow(() -> new VTLUnboundNameException(name)).getDomain();
+			return (VTLScalarValueMetadata<?>) Utils.getStream(structure)
+					.filter(c -> c.getName().equals(name.replaceAll("'(.*)'", "$1")))
+					.findAny()
+					.orElseThrow(() -> new VTLUnboundNameException(name))
+					::getDomain;
 		else if (THIS.equals(name))
 			return structure;
 		else
-			return (VTLScalarValueMetadata<?>) () -> Utils.getStream(structure).filter(c -> c.getName().equalsIgnoreCase(name)).findAny().orElseThrow(() -> new VTLUnboundNameException(name)).getDomain();
+			return (VTLScalarValueMetadata<?>) Utils.getStream(structure)
+					.filter(c -> c.getName().equalsIgnoreCase(name))
+					.findAny()
+					.orElseThrow(() -> new VTLUnboundNameException(name))
+					::getDomain;
 	}
 
 	@Override

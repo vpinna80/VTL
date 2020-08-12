@@ -19,6 +19,9 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
+import it.bancaditalia.oss.vtl.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -27,12 +30,19 @@ public class SDMXMetadataRepository extends InMemoryMetadataRepository
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXMetadataRepository.class); 
 
-	public static final String METADATA_SDMX_PROVIDER_ENDPOINT = "vtl.metadata.sdmx.provider.endpoint";
-	public static final String METADATA_SDMX_PROVIDER_AGENCY = "vtl.metadata.sdmx.provider.agency";
+	public static final VTLProperty METADATA_SDMX_PROVIDER_ENDPOINT = 
+			new VTLPropertyImpl("vtl.metadata.sdmx.provider.endpoint", "SDMX service provider endpoint", "https://www.myurl.om/service", true);
+	
+	static
+	{
+		ConfigurationManagerFactory.registerSupportedProperties(SDMXMetadataRepository.class, METADATA_SDMX_PROVIDER_ENDPOINT);
+	}
 
 	public SDMXMetadataRepository() throws IOException, SAXException, ParserConfigurationException
 	{
-		String url = System.getProperty(METADATA_SDMX_PROVIDER_ENDPOINT);
+		String url = METADATA_SDMX_PROVIDER_ENDPOINT.getValue();
+		if (url == null)
+			throw new IllegalStateException("No endpoint configured for SDMX metadata repository.");
 		
 		LOGGER.info("Loading metadata from {}", url);
 		url += "/codelist";

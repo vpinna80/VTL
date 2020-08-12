@@ -86,6 +86,36 @@ themes <- list('',
                'yonce',
                'zenburn')
 
+defaultProxy <- (function() {
+  config <- J('it.bancaditalia.oss.sdmx.util.Configuration')$getConfiguration()
+  proxy = config$getProperty('http.proxy.default')
+  if(!is.null(proxy) && nchar(proxy) > 0){
+    parts = unlist(strsplit(proxy, split = ':'))
+    if(length(parts) == 2 ){
+      return(list(host = parts[1], port = parts[2], user = config$getProperty('http.auth.user')))
+    }
+  }
+
+  return(list(host = '', port = '', user = ''))
+})()
+
+defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
+
+repositoryImplementations <- list(`In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.domains.InMemoryMetadataRepository',
+                                  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.domains.CSVMetadataRepository',
+                                  `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.domains.SDMXMetadataRepository')
+
+environments <- list(
+  `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
+  `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
+  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
+  `In-Memory environment` = "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"
+)
+
+currentEnvironments <- function() {
+  sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
+}
+
 ui <- shinydashboard::dashboardPage(
   
   shinydashboard::dashboardHeader(disable = T),
@@ -182,16 +212,26 @@ ui <- shinydashboard::dashboardPage(
                           sliderInput(inputId = 'distance', label = "Nodes distance", min=50, max=500, step=10, value=100),
                           fillPage(networkD3::forceNetworkOutput("topology", height = '90vh'))
                  ),
-                 tabPanel("Network",
-                          h4('Proxy Settings'),
-                          uiOutput(outputId = "proxyHostUI"),
-                          uiOutput(outputId = "proxyPortUI"),
-                          uiOutput(outputId = "proxyUserUI"),
-                          passwordInput(inputId = 'proxyPassword', label = 'Proxy Password'),
-                          actionButton(inputId = 'setProxy', label = 'Save proxy settings'),
-                          h4("Messages"),
-                          wellPanel(id = 'confout', verbatimTextOutput(outputId = "conf_output", placeholder =T), height = "40vh")
-                          
+                 tabPanel("Settings",
+                          shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T,
+                            textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
+                            textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
+                            textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy$user),
+                            passwordInput(inputId = 'proxyPassword', label = 'Password:'),
+                            actionButton(inputId = 'setProxy', label = 'Save')
+                          ),
+                          shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T,
+                            selectInput(inputId = 'repoClass', label = NULL, 
+                                        multiple = F, choices = repositoryImplementations, selected = defaultRepository),
+                            uiOutput(outputId = "repoProperties"),
+                            actionButton(inputId = 'setRepo', label = 'Change repository')
+                          ),
+                          shinydashboard::box(title = 'Environments', status = 'primary', solidHeader = T, 
+                            checkboxGroupInput(inputId = 'envs', label = NULL, choices = environments, selected = currentEnvironments())
+                          ),
+                          shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
+                            verbatimTextOutput(outputId = "conf_output", placeholder = T)
+                          )
                  )
                )                 
   )

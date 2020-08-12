@@ -41,7 +41,7 @@ public interface ScalarValue<R extends Comparable<?> & Serializable, S extends V
 	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o);
 	
 	@Override
-	public VTLScalarValueMetadata<S> getMetadata();
+	public VTLScalarValueMetadata<? extends ValueDomainSubset<? extends ValueDomain>> getMetadata();
 	
 	public S getDomain();
 }

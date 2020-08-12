@@ -38,10 +38,11 @@ public class ConstantOperand<R extends Comparable<?> & Serializable, S extends V
 	private final T value;
 	private final VTLScalarValueMetadata<S> metadata;
 	
+	@SuppressWarnings("unchecked")
 	public ConstantOperand(T value)
 	{
 		this.value = value;
-		metadata = value.getMetadata();
+		metadata = (VTLScalarValueMetadata<S>) value.getMetadata();
 	}
 
 	@Override

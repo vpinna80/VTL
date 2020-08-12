@@ -19,12 +19,10 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
-import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Input.DATASET;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Input.DATASET_PRIORITY;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.INVALID;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.model.data.Hierarchy.CheckMode.NON_NULL;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -76,13 +74,15 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	
 	public CheckHierarchyTransformation(Transformation operand, VarIDOperand hierarchyId, Hierarchy.CheckMode mode, Input input, Output output)
 	{
-		LOGGER.warn("check_hierarchy: Implementation diverges from specification: datapoints outside {} will not be checked.", operand);
+//		LOGGER.warn("check_hierarchy: Implementation diverges from specification: datapoints outside {} will not be checked.", operand);
+//		
+//		this.operand = operand;
+//		this.hierarchyId = hierarchyId;
+//		this.mode = mode == null ? NON_NULL : mode;
+//		this.input = input == null ? DATASET : input;
+//		this.output = output == null ? INVALID : output;
 		
-		this.operand = operand;
-		this.hierarchyId = hierarchyId;
-		this.mode = mode == null ? NON_NULL : mode;
-		this.input = input == null ? DATASET : input;
-		this.output = output == null ? INVALID : output;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
