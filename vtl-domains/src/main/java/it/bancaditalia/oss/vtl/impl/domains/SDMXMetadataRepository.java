@@ -21,7 +21,7 @@ import org.xml.sax.SAXException;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
-import it.bancaditalia.oss.vtl.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.util.Utils;
 

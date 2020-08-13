@@ -1,8 +1,12 @@
 package it.bancaditalia.oss.vtl.config;
 
+import static java.util.stream.Collectors.joining;
+
+import java.util.Arrays;
+
 public enum VTLGeneralProperties implements VTLProperty  
 {
-	CONFIG_MANAGER("vtl.config.impl.class", false, "it.bancaditalia.oss.vtl.config.ConfigurationManagerImpl"),
+	CONFIG_MANAGER("vtl.config.impl.class", false, "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl"),
 	METADATA_REPOSITORY("vtl.metadatarepository.class", false, "it.bancaditalia.oss.vtl.impl.domains.InMemoryMetadataRepository"),
 	ENGINE_IMPLEMENTATION("vtl.engine.implementation.class", false, "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine"),
 	SESSION_IMPLEMENTATION("vtl.session.implementation.class", false, "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl"),
@@ -11,41 +15,47 @@ public enum VTLGeneralProperties implements VTLProperty
 			"it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
 			"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl");
 
-	private final VTLProperty delegate;
+	private final String name;
+	private final boolean multiple;
+	private final String defaultValue;
+	
+	private String value = null;
 
-	private VTLGeneralProperties(String property, boolean multiple, String... defaultValue)
+	private VTLGeneralProperties(String name, boolean multiple, String... defaultValue)
 	{
-		this.delegate = new VTLPropertyImpl(property, "", "", true, multiple, defaultValue);
+		this.name = name;
+		this.multiple = multiple;
+		this.defaultValue = Arrays.stream(defaultValue).collect(joining(","));
 	}
 
 	@Override
 	public String getName()
 	{
-		return delegate.getName();
+		return name;
 	}
 	
 	@Override
 	public String getValue()
 	{
-		return delegate.getValue();
+		return value == null || value.isEmpty() ? System.getProperty(name, defaultValue) : value;
 	}
 
 	@Override
 	public void setValue(String newValue)
 	{
-		delegate.setValue(newValue);
+		value = newValue;
 	}
 
 	@Override
 	public String getDescription()
 	{
-		return delegate.getDescription();
+		return "";
 	}
 
 	@Override
 	public boolean isMultiple()
 	{
-		return delegate.isMultiple();
+		return multiple;
 	}
 	
 	@Override

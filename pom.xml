@@ -329,6 +329,11 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<dependency>
+			    <groupId>org.openjdk.jol</groupId>
+			    <artifactId>jol-core</artifactId>
+			    <version>0.11</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

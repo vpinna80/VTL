@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.config;
+package it.bancaditalia.oss.vtl.impl.config;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEM
 import java.util.ArrayList;
 import java.util.List;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -58,7 +59,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	@Override
 	public Engine getEngine()
 	{
-		try
+		try	
 		{
 			return Class.forName(ENGINE_IMPLEMENTATION.getValue()).asSubclass(Engine.class).newInstance();
 		}

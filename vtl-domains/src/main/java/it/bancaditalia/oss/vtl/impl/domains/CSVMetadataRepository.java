@@ -33,7 +33,7 @@ import java.util.Map.Entry;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
-import it.bancaditalia.oss.vtl.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
 
 public class CSVMetadataRepository extends InMemoryMetadataRepository

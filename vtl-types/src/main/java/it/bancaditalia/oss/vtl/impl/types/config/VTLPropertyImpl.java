@@ -1,8 +1,10 @@
-package it.bancaditalia.oss.vtl.config;
+package it.bancaditalia.oss.vtl.impl.types.config;
 
 import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
+
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 
 public class VTLPropertyImpl implements VTLProperty
 {
