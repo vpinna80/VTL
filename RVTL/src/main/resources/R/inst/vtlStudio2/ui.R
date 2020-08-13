@@ -223,7 +223,7 @@ ui <- shinydashboard::dashboardPage(
                  tabPanel("Settings",
                           shinydashboard::box(title = 'VTL Engine', status = 'primary', solidHeader = T,
                             selectInput(inputId = 'engineClass', label = NULL, 
-                                        multiple = F, choices = c("In-Memory engine"), selected = c("In-Memory engine")),
+                                        multiple = F, choices = c("In-Memory engine"), selected = c("In-Memory engine"))
                           ),
                           shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T,
                             selectInput(inputId = 'repoClass', label = NULL, 
