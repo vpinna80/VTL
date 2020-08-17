@@ -22,28 +22,28 @@ package it.bancaditalia.oss.vtl.model.domain;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
-import it.bancaditalia.oss.vtl.model.data.CodeList;
+import it.bancaditalia.oss.vtl.model.data.CodeListDomain;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
-public interface StringCodeList extends CodeList<StringDomainSubset, StringDomain>, StringDomainSubset
+public interface StringCodeListDomain extends CodeListDomain<StringDomainSubset, StringDomain>, StringDomainSubset
 {
-	public interface StringCodeItem extends CodeItem<String, StringCodeList, StringDomain>
+	public interface StringCodeItem extends CodeItem<String, StringCodeListDomain, StringDomain>
 	{
 
 	}
 	
-	@Override ScalarValue<?, ? extends StringCodeList, StringDomain> cast(ScalarValue<?, ?, ?> value);
+	@Override ScalarValue<?, ? extends StringCodeListDomain, StringDomain> cast(ScalarValue<?, ?, ?> value);
 	
 	@Override
 	public Set<? extends StringCodeItem> getCodeItems();
 	
-	public StringCodeList trim();
+	public StringCodeListDomain trim();
 
-	public StringCodeList ltrim();
+	public StringCodeListDomain ltrim();
 
-	public StringCodeList rtrim();
+	public StringCodeListDomain rtrim();
 
-	public StringCodeList ucase();
+	public StringCodeListDomain ucase();
 	
-	public StringCodeList lcase();
+	public StringCodeListDomain lcase();
 }

@@ -43,7 +43,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -56,7 +56,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	private final String measureName;
 
 	private DataStructureComponent<Measure, ?, ?>                            measure;
-	private DataStructureComponent<Identifier, StringCodeList, StringDomain> identifier;
+	private DataStructureComponent<Identifier, StringCodeListDomain, StringDomain> identifier;
 
 	private static String sanitize(String string)
 	{
@@ -94,13 +94,13 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 			throw new VTLMissingComponentsException(identifierName, dataset.getComponents(Identifier.class));
 		if (measure == null)
 			throw new VTLMissingComponentsException(measureName, dataset.getComponents(Measure.class));
-		if (!(tempIdentifier.getDomain() instanceof StringCodeList))
-			throw new VTLException("pivot: " + identifier + " must be defined on a CodeList of String.");
+		if (!(tempIdentifier.getDomain() instanceof StringCodeListDomain))
+			throw new VTLException("pivot: " + identifier + " must be defined on a CodeListDomain of String.");
 
 		// safe
-		identifier = (DataStructureComponent<Identifier, StringCodeList, StringDomain>) tempIdentifier;
+		identifier = (DataStructureComponent<Identifier, StringCodeListDomain, StringDomain>) tempIdentifier;
 		
-		return Utils.getStream(((StringCodeList) identifier.getDomain()).getCodeItems())
+		return Utils.getStream(((StringCodeListDomain) identifier.getDomain()).getCodeItems())
 				.map(i -> new DataStructureComponentImpl<>(i.get(), Measure.class, measure.getDomain()))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(dataset.getComponents(Identifier.class))

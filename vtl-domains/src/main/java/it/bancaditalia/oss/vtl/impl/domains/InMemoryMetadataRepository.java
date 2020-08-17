@@ -36,7 +36,7 @@ import java.util.function.BiConsumer;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class InMemoryMetadataRepository implements MetadataRepository, Serializable 
@@ -101,8 +101,8 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 
 	private Class<? extends ValueDomainSubset<?>> mapClass(Class<? extends ValueDomain> domainClass)
 	{
-		if (domainClass == StringCodeList.class)
-			return StringCodeListImpl.class;
+		if (domainClass == StringCodeListDomain.class)
+			return StringCodeListDomainImpl.class;
 		else
 			throw new UnsupportedOperationException(domainClass + " does not have a suitable implementation.");
 	}

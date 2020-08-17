@@ -87,7 +87,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
@@ -239,7 +239,7 @@ public class SDMXEnvironment implements Environment
 			return new DataStructureComponentImpl<>(meta.getId(), role, STRINGDS);
 
 		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
-		StringCodeList domain = repository.defineDomain(codelist.getId(), StringCodeList.class, codelist.keySet());
+		StringCodeListDomain domain = repository.defineDomain(codelist.getId(), StringCodeListDomain.class, codelist.keySet());
 		return new DataStructureComponentImpl<>(meta.getId(), role, domain);
 	}
 

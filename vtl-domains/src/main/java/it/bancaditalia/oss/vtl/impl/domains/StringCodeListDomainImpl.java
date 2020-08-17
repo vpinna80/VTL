@@ -33,11 +33,11 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
-public class StringCodeListImpl implements StringCodeList, Serializable
+public class StringCodeListDomainImpl implements StringCodeListDomain, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -45,13 +45,13 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 	private final Set<StringCodeItemImpl> items = new HashSet<>();
 	private final int hashCode;
 
-	public class StringCodeItemImpl extends BaseScalarValue<String, StringCodeList, StringDomain> implements StringCodeItem
+	public class StringCodeItemImpl extends BaseScalarValue<String, StringCodeListDomain, StringDomain> implements StringCodeItem
 	{
 		private static final long serialVersionUID = 1L;
 
 		public StringCodeItemImpl(String value)
 		{
-			super(value, StringCodeListImpl.this);
+			super(value, StringCodeListDomainImpl.this);
 		}
 
 		@Override
@@ -61,7 +61,7 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 		}
 
 		@Override
-		public VTLScalarValueMetadata<StringCodeList> getMetadata()
+		public VTLScalarValueMetadata<StringCodeListDomain> getMetadata()
 		{
 			return this::getDomain; 
 		}
@@ -73,7 +73,7 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 		}
 	}
 	
-	public StringCodeListImpl(String varName, Set<? extends String> items)
+	public StringCodeListDomainImpl(String varName, Set<? extends String> items)
 	{
 		this.varName = varName;
 		this.hashCode = 31 + varName.hashCode();
@@ -130,7 +130,7 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof StringCodeList && varName.equals(other.getVarName());
+		return other instanceof StringCodeListDomain && varName.equals(other.getVarName());
 	}
 
 	@Override
@@ -172,7 +172,7 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		StringCodeListImpl other = (StringCodeListImpl) obj;
+		StringCodeListDomainImpl other = (StringCodeListDomainImpl) obj;
 		if (varName == null)
 		{
 			if (other.varName != null)
@@ -187,37 +187,37 @@ public class StringCodeListImpl implements StringCodeList, Serializable
 	}
 
 	@Override
-	public StringCodeList trim()
+	public StringCodeListDomain trim()
 	{
 		return stringCodeListHelper("TRIM("+varName+")", String::trim);
 	}
 
 	@Override
-	public StringCodeList ltrim()
+	public StringCodeListDomain ltrim()
 	{
 		return stringCodeListHelper("LTRIM("+varName+")", s -> s.replaceAll("^\\s+",""));
 	}
 
 	@Override
-	public StringCodeList rtrim()
+	public StringCodeListDomain rtrim()
 	{
 		return stringCodeListHelper("RTRIM("+varName+")", s -> s.replaceAll("\\s+$",""));
 	}
 
 	@Override
-	public StringCodeList ucase()
+	public StringCodeListDomain ucase()
 	{
 		return stringCodeListHelper("UCASE("+varName+")", String::toUpperCase);
 	}
 
 	@Override
-	public StringCodeList lcase()
+	public StringCodeListDomain lcase()
 	{
 		return stringCodeListHelper("LCASE("+varName+")", String::toLowerCase);
 	}
 
-	private StringCodeList stringCodeListHelper(String newName, UnaryOperator<String> mapper)
+	private StringCodeListDomain stringCodeListHelper(String newName, UnaryOperator<String> mapper)
 	{
-		return new StringCodeListImpl(newName, items.stream().map(StringCodeItem::get).map(mapper).collect(toSet()));
+		return new StringCodeListDomainImpl(newName, items.stream().map(StringCodeItem::get).map(mapper).collect(toSet()));
 	}
 }

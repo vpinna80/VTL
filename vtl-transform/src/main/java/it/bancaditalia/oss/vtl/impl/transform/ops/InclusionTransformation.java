@@ -44,7 +44,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -95,7 +95,7 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		super(operand);
 		this.operator = operator;
-		StringCodeList domain = (StringCodeList) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
+		StringCodeListDomain domain = (StringCodeListDomain) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
 		this.set = domain.getCodeItems();
 	}
 

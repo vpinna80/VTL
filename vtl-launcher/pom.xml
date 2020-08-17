@@ -36,6 +36,10 @@
 
 	<dependencies>
 		<dependency>
+		    <groupId>org.openjdk.jol</groupId>
+		    <artifactId>jol-core</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-api</artifactId>
 		</dependency>

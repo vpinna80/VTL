@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.exceptions;
 import java.util.Collection;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -34,6 +35,11 @@ public class VTLExpectedComponentException extends VTLException
 	private static final long serialVersionUID = 1L;
 
 	public VTLExpectedComponentException(Class<? extends ComponentRole> role, ValueDomainSubset<?> domain, Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	{
+		super("Expected exactly one " + role.getSimpleName() + " of type " + domain + " but found: " + components);
+	}
+
+	public VTLExpectedComponentException(Class<? extends ComponentRole> role, Domains domain, Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		super("Expected exactly one " + role.getSimpleName() + " of type " + domain + " but found: " + components);
 	}

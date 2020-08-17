@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.model.data;
 import java.io.Serializable;
 import java.util.Set;
 
-public interface CodeList<S extends ValueDomainSubset<D>, D extends ValueDomain> extends ValueDomainSubset<D>
+public interface CodeListDomain<S extends ValueDomainSubset<D>, D extends ValueDomain> extends ValueDomainSubset<D>
 {
 	public String getName();
 	
@@ -30,7 +30,7 @@ public interface CodeList<S extends ValueDomainSubset<D>, D extends ValueDomain>
 	
 	public <T extends Comparable<?> & Serializable> CodeItem<? extends Comparable<?>, S, D> getItem(ScalarValue<T, S, D> value);
 	
-	public Set<? extends CodeItem<? extends Comparable<?>, ? extends CodeList<S, D>, D>> getCodeItems();
+	public Set<? extends CodeItem<? extends Comparable<?>, ? extends CodeListDomain<S, D>, D>> getCodeItems();
 	
-	@Override ScalarValue<?, ? extends CodeList<S, D>, ? extends D> cast(ScalarValue<?, ?, ?> value);
+	@Override ScalarValue<?, ? extends CodeListDomain<S, D>, ? extends D> cast(ScalarValue<?, ?, ?> value);
 }

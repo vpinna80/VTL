@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 
 public interface DataSet extends VTLValue
@@ -69,7 +69,7 @@ public interface DataSet extends VTLValue
 		public VTLDataSetMetadata drop(Collection<String> names);
 		
 		@Override
-		public <S extends ValueDomainSubset<D>, D extends ValueDomain> VTLDataSetMetadata pivot(DataStructureComponent<Identifier, StringCodeList, StringDomain> identifier,
+		public <S extends ValueDomainSubset<D>, D extends ValueDomain> VTLDataSetMetadata pivot(DataStructureComponent<Identifier, StringCodeListDomain, StringDomain> identifier,
 				DataStructureComponent<Measure, S, D> measure);
 	}
 	
