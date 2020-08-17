@@ -150,6 +150,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<slf4j.version>1.7.26</slf4j.version>
 		<log4j.version>2.13.3</log4j.version>
+		<jetty.version>9.4.31.v20200723</jetty.version>
 		<junit.version>5.6.1</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
 		<mockito.version>3.4.6</mockito.version>
@@ -176,7 +177,7 @@
 					</reportSet>
 				</reportSets>
 			</plugin>
-			<!-- plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.2.0</version>
@@ -195,7 +196,7 @@
 						</reports>
 					</reportSet>
 				</reportSets>
-			</plugin -->
+			</plugin>
 		</plugins>
 	</reporting>
 
@@ -363,22 +364,22 @@
 						<dependency>
 							<groupId>org.eclipse.jetty</groupId>
 							<artifactId>jetty-server</artifactId>
-							<version>9.4.30.v20200611</version>
+							<version>${jetty.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.eclipse.jetty</groupId>
 							<artifactId>jetty-servlet</artifactId>
-							<version>9.4.29.v20200521</version>
+							<version>${jetty.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.eclipse.jetty</groupId>
 							<artifactId>jetty-util</artifactId>
-							<version>9.4.29.v20200521</version>
+							<version>${jetty.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.eclipse.jetty</groupId>
 							<artifactId>jetty-webapp</artifactId>
-							<version>9.4.29.v20200521</version>
+							<version>${jetty.version}</version>
 						</dependency>
 					</dependencies>
 				</plugin>
