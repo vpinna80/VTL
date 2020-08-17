@@ -24,6 +24,19 @@
 # Author: Attilio Mattiocco
 ###############################################################################
 
+library(RVTL)
+
+labels <- list(
+  sessionID = 'Active VTL session:',
+  compile = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
+  saveas = HTML('<span style="margin-right: 1em">Save as...</span><span style="font-family: monospace">(Ctrl+S)</span>'),
+  newSession = HTML('<span style="margin-right: 1em">New session:</span><span style="font-family: monospace">(Ctrl+N)</span>'), 
+  createSession = HTML('<span style="margin-right: 1em">Create new</span><span style="font-family: monospace">(Enter)</span>'), 
+  dupSession = 'Duplicate session',
+  scriptFile = HTML('<span style="margin-right: 1em">Open...</span><span style="font-family: monospace">(Ctrl+O)</span>'),
+  editorTheme = 'Select editor theme:'
+)
+
 themes <- list('',
                '3024-day',
                '3024-night',
@@ -134,21 +147,17 @@ ui <- shinydashboard::dashboardPage(
           div(style="display:inline-block",titlePanel("VTL Studio!"))
        ),
        hr(),
-       selectInput(inputId = 'sessionID', label = 'Active VTL session:', multiple = F, choices = VTLSessionManager$list(), selected = VTLSessionManager$list()[1]),
-       actionButton(inputId = 'compile', 
-                    label = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
+       selectInput(inputId = 'sessionID', label = labels$sessionID, multiple = F, choices = VTLSessionManager$list(), selected = VTLSessionManager$list()[1]),
+       actionButton(inputId = 'compile', label = labels$compile, 
                     onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());'),
-       downloadButton(outputId = 'saveas', label = HTML('<span style="margin-right: 1em">Save as...</span><span style="font-family: monospace">(Ctrl+S)</span>')),
+       downloadButton(outputId = 'saveas', label = labels$saveas),
        hr(),
-       textInput(inputId = 'newSession',
-                 label = HTML('<span style="margin-right: 1em">New session:</span><span style="font-family: monospace">(Ctrl+N)</span>')), 
-       actionButton(inputId = 'createSession', 
-                    label = HTML('<span style="margin-right: 1em">Create new</span><span style="font-family: monospace">(Enter)</span>')), 
+       textInput(inputId = 'newSession', label = labels$newSession), 
+       actionButton(inputId = 'createSession', label = labels$createSession), 
        actionButton(inputId = 'dupSession', label = 'Duplicate session'),
-       fileInput(inputId = 'scriptFile', label = NULL, accept = 'vtl',
-                 buttonLabel = HTML('<span style="margin-right: 1em">Open...</span><span style="font-family: monospace">(Ctrl+O)</span>')),
+       fileInput(inputId = 'scriptFile', label = NULL, accept = 'vtl', buttonLabel = labels$scriptFile),
        hr(),
-       selectInput(inputId = 'editorTheme', label = 'Select editor theme:', multiple = F, choices = themes),
+       selectInput(inputId = 'editorTheme', label = labels$editorTheme, multiple = F, choices = themes),
        numericInput('editorFontSize', 'Select font size:', 12, min = 8, max = 40, step = 1)
   ),
     
@@ -221,24 +230,23 @@ ui <- shinydashboard::dashboardPage(
                           fillPage(networkD3::forceNetworkOutput("topology", height = '90vh'))
                  ),
                  tabPanel("Settings",
-                          shinydashboard::box(title = 'VTL Engine', status = 'primary', solidHeader = T,
+                          shinydashboard::box(title = 'VTL Engine', status = 'primary', solidHeader = T, collapsible = T,
                             selectInput(inputId = 'engineClass', label = NULL, 
                                         multiple = F, choices = c("In-Memory engine"), selected = c("In-Memory engine"))
                           ),
-                          shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T,
+                          shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T, collapsible = T,
                             selectInput(inputId = 'repoClass', label = NULL, 
                                         multiple = F, choices = repositoryImplementations, selected = defaultRepository),
                             uiOutput(outputId = "repoProperties"),
                             actionButton(inputId = 'setRepo', label = 'Change repository')
                           ),
-                          shinydashboard::box(title = 'Environments', status = 'primary', solidHeader = T, 
-#                            checkboxGroupInput(inputId = 'envs', label = NULL, choices = environments, selected = currentEnvironments())
+                          shinydashboard::box(title = 'VTL Environments', status = 'primary', solidHeader = T, collapsible = T,
                             sortable::bucket_list(header = NULL, 
                               sortable::add_rank_list(text = tags$label("Available"), labels = activeEnvs(F)),
                               sortable::add_rank_list(input_id = "envs", text = tags$label("Active"), labels = activeEnvs(T)),
                               orientation = 'horizontal')
                           ),
-                          shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T,
+                          shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T, collapsible = T,
                                               textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
                                               textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
                                               textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy$user),
@@ -252,4 +260,3 @@ ui <- shinydashboard::dashboardPage(
                )                 
   )
 )
-

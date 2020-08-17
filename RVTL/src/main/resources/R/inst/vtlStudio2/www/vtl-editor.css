@@ -8,6 +8,10 @@
   height: 100%;
 }
 
+.wrapper {
+  overflow-y: hidden;
+}
+
 .vtltoolbar, 
 .vtltoolbar > * {
   height: 25px;
@@ -30,17 +34,18 @@
   height: 45px;
 }
 
-.tab-pane {
+.tab-content .tab-pane {
   height: calc(100vh - 45px);
+  padding: 10px;
+  overflow-y: auto;
 }
 
+/* Code editor tab contents */
 .tab-content .tab-pane.active:first-child {
   display: flex;
   flex-direction: column;
-}
-
-.tab-content .tab-pane:not(:first-child) {
-  margin: 10px;
+  padding: 0;
+  overflow-y: hidden;
 }
 
 #vtl_output {

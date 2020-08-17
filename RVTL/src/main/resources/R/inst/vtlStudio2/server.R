@@ -20,10 +20,7 @@
 #
 ###############################################################################
 
-# Main class for consuming SDMX web services
-#
-# Author: Attilio Mattiocco
-###############################################################################
+library(RVTL)
 
 configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
 vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
@@ -42,8 +39,7 @@ shinyServer(function(input, output, session) {
   ######
   
   currentSession <- reactive({
-    req(input$sessionID)
-    VTLSessionManager$find(input$sessionID)
+    VTLSessionManager$find(req(input$sessionID))
   })
 
   evalNode <- reactive({
@@ -80,59 +76,7 @@ shinyServer(function(input, output, session) {
       })
     )
   })
-  
-  # compile VTL code (action button)
-  output$vtl_output <- renderPrint({
-    req(input$compile)
-    shinyjs::disable("compile")
-    try({
-      vtlSession <- currentSession()
-      statements <- input$vtlStatements
-      print(vtlSession$name)
-      print(statements)
-      withProgress(message = 'Compiling current session', value = 0, {
-        tryCatch({ 
-            vtlSession$addStatements(statements, restart = T) 
-            setProgress(value = 0.5)
-            tryCatch({ 
-              vtlSession$compile()
-              setProgress(value = 1)
-              print("Compilation successful")
-              isCompiled(T)
-            }, error = function(e) {
-              message = conditionMessage(e)
-              if (is.list(e) && !is.null(e[['jobj']]))
-              {
-                e$jobj$printStackTrace()
-                message = e$jobj$getLocalizedMessage()
-              }
-              setProgress(value = 1)
-              print(paste0("Compilation error: ", message))
-            })
-          }, error = function(e) {
-            message = conditionMessage(e)
-            if (is.list(e) && !is.null(e[['jobj']]))
-            {
-              e$jobj$printStackTrace()
-              message = e$jobj$getLocalizedMessage()
-            }
-            setProgress(value = 1)
-            print(paste0("Syntax error: ", message))
-          })
-      })
-      
-      # Update force network
-      output$topology <- networkD3::renderForceNetwork({
-        vtlSession$getTopology(distance = input$distance)
-      })
-      #update list of datasets to be explored
-      updateSelectInput(session = session, inputId = 'selectDatasets',
-                        label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
-    })
-    shinyjs::enable("compile")
-    return(invisible())
-  })
-  
+
   # Select dataset to browse
   output$dsNames<- renderUI({
     selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, 
@@ -286,6 +230,61 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = newName)
   })
   
+  # compile VTL code
+  observeEvent(input$compile, {
+    req(input$compile)
+    shinyjs::disable("compile")
+    output$vtl_output <- renderPrint({
+      try({
+        vtlSession <- currentSession()
+        statements <- input$vtlStatements
+        print(vtlSession$name)
+        print(statements)
+        withProgress(message = 'Compiling current session', value = 0, {
+          tryCatch({ 
+            vtlSession$addStatements(statements, restart = T) 
+            setProgress(value = 0.5)
+            tryCatch({ 
+              vtlSession$compile()
+              setProgress(value = 1)
+              print("Compilation successful")
+              isCompiled(T)
+            }, error = function(e) {
+              message = conditionMessage(e)
+              if (is.list(e) && !is.null(e[['jobj']]))
+              {
+                e$jobj$printStackTrace()
+                message = e$jobj$getLocalizedMessage()
+              }
+              setProgress(value = 1)
+              print(paste0("Compilation error: ", message))
+            })
+          }, error = function(e) {
+            message = conditionMessage(e)
+            if (is.list(e) && !is.null(e[['jobj']]))
+            {
+              e$jobj$printStackTrace()
+              message = e$jobj$getLocalizedMessage()
+            }
+            setProgress(value = 1)
+            print(paste0("Syntax error: ", message))
+          })
+        })
+        
+        # Update force network
+        output$topology <- networkD3::renderForceNetwork({
+          vtlSession$getTopology(distance = input$distance)
+        })
+        #update list of datasets to be explored
+        updateSelectInput(session = session, inputId = 'selectDatasets',
+                          label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
+      })
+      
+      return(invisible())
+    })
+    shinyjs::enable("compile")
+  })
+
   # configure proxy
   observeEvent(input$setProxy, {
     req(input$proxyHost)
