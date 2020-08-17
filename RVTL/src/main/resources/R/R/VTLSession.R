@@ -82,9 +82,11 @@ VTLSession <- R6Class("VTLSession",
       #' @param restart
       #' TRUE if old code must be discarded before adding the new
       addStatements = function(statements, restart = T) { 
-                        self$text = paste0(self$text, statements)
-                        if (restart)
+                        if (restart) {
                           private$instance <- NULL
+                          self$text <- ''
+                        }
+                        self$text = paste0(self$text, statements)
                         private$checkInstance()$addStatements(statements)
                         return(self) 
                       },
