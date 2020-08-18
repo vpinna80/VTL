@@ -180,3 +180,9 @@
   margin-bottom: 0;
   background-color: #eee;
 }
+
+pre.highlight {
+  padding-top: 0.5em;
+  margin-bottom: 1rem;
+  font-size: 85%;
+}

@@ -331,9 +331,14 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
-			    <groupId>org.openjdk.jol</groupId>
-			    <artifactId>jol-core</artifactId>
-			    <version>0.11</version>
+				<groupId>io.rest-assured</groupId>
+				<artifactId>rest-assured-all</artifactId>
+				<version>4.3.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjdk.jol</groupId>
+				<artifactId>jol-core</artifactId>
+				<version>0.11</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -355,6 +360,16 @@
 							<groupId>io.github.devacfr.maven.skins</groupId>
 							<artifactId>reflow-velocity-tools</artifactId>
 							<version>2.3.0</version>
+						</dependency>
+						<dependency>
+							<groupId>org.asciidoctor</groupId>
+							<artifactId>asciidoctor-maven-plugin</artifactId>
+							<version>1.5.6</version>
+						</dependency>
+						<dependency>
+							<groupId>org.springframework.restdocs</groupId>
+							<artifactId>spring-restdocs-asciidoctor</artifactId>
+							<version>2.0.4.RELEASE</version>
 						</dependency>
 						<dependency>
 							<groupId>org.apache.maven.doxia</groupId>
@@ -549,6 +564,11 @@
 				<configuration>
 					<port>18080</port>
 					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
+					<asciidoc>
+						<attributes>
+							<rest-snippets>${project.basedir}/vtl-rest/target/generated-snippets</rest-snippets>
+						</attributes>
+					</asciidoc>
 				</configuration>
 			</plugin>
 			<plugin>

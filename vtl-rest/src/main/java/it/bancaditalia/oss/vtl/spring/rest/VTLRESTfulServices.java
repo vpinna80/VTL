@@ -1,13 +1,15 @@
 package it.bancaditalia.oss.vtl.spring.rest;
-import static java.util.Collections.singletonMap;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,8 +25,10 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 import it.bancaditalia.oss.vtl.spring.rest.exception.VTLInvalidSessionException;
 import it.bancaditalia.oss.vtl.spring.rest.result.ComponentBean;
 import it.bancaditalia.oss.vtl.spring.rest.result.DataSetResultBean;
+import it.bancaditalia.oss.vtl.spring.rest.result.DomainBean;
 import it.bancaditalia.oss.vtl.spring.rest.result.ResultBean;
 import it.bancaditalia.oss.vtl.spring.rest.result.ScalarResultBean;
+import it.bancaditalia.oss.vtl.spring.rest.result.UUIDBean;
 
 @RestController
 @SpringBootApplication
@@ -34,17 +38,17 @@ public class VTLRESTfulServices extends SpringBootServletInitializer
 	@Autowired private VTLSessionManager manager;
 	
 	@PostMapping(path = "/compile", params = "code")
-	public UUID compile(@RequestParam String code) 
+	public @NonNull UUIDBean compile(@RequestParam @NonNull String code) 
 	{
 		UUID uuid = manager.createSession();
 		VTLSession session = manager.getSession(uuid);
 		session.addStatements(code);
 		session.compile();
-		return uuid;
+		return new UUIDBean(uuid);
 	}
 
 	@GetMapping("/resolve")
-	public ResultBean resolve(@RequestParam UUID uuid, @RequestParam String alias) 
+	public @NonNull ResultBean resolve(@RequestParam @NonNull UUID uuid, @RequestParam @NonNull String alias) 
 	{
 		VTLSession session = manager.getSession(uuid);
 		VTLValue value = session.resolve(alias);
@@ -55,7 +59,7 @@ public class VTLRESTfulServices extends SpringBootServletInitializer
 	}
 
 	@GetMapping("/metadata")
-	public Object getMetadata(@RequestParam UUID uuid, @RequestParam String alias) 
+	public @NonNull List<DomainBean> getMetadata(@RequestParam @NonNull UUID uuid, @RequestParam @NonNull String alias) 
 	{
 		if (!manager.containsSession(uuid))
 			throw new VTLInvalidSessionException(uuid); 
@@ -63,7 +67,7 @@ public class VTLRESTfulServices extends SpringBootServletInitializer
 		VTLSession session = manager.getSession(uuid);
 		VTLValueMetadata value = session.getMetadata(alias);
 		if (value instanceof VTLScalarValueMetadata)
-			return singletonMap("domain", ((VTLScalarValueMetadata<?>) value).getDomain().toString());
+			return singletonList(new DomainBean(((VTLScalarValueMetadata<?>) value).getDomain()));
 		else
 			return ((VTLDataSetMetadata) value).stream().map(ComponentBean::new).collect(toList());
 	}

@@ -1,0 +1,42 @@
+=== `/compile` POST Method ===
+
+Compiles a snippet of VTL code in a new session.
+
+Returns the uuid of the created session.
+
+==== HTTP Request ====
+
+===== Request fields =====
+
+include::{rest-snippets}/compile/request-parameters.adoc[]
+
+==== HTTP Response ====
+
+===== Response fields =====
+
+include::{rest-snippets}/compile/response-fields.adoc[]
+
+===== Response cookies =====
+
+include::{rest-snippets}/compile/response-headers.adoc[]
+
+===== Sample response body =====
+
+include::{rest-snippets}/compile/response-body.adoc[]
+
+==== Invocation examples ====
+
+===== Curl command =====
+
+include::{rest-snippets}/compile/curl-request.adoc[]
+
+===== http command =====
+
+include::{rest-snippets}/compile/httpie-request.adoc[]
+
+==== Sample HTTP dump ====
+
+include::{rest-snippets}/compile/http-request.adoc[]
+
+include::{rest-snippets}/compile/http-response.adoc[]
+

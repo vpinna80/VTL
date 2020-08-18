@@ -1,0 +1,40 @@
+=== `/metadata` GET Method ===
+
+Returns the metadata associated with a given object defined in a given session.
+
+==== HTTP Request ====
+
+===== Request fields =====
+
+include::{rest-snippets}/metadata/request-parameters.adoc[]
+
+===== Request cookies =====
+
+include::{rest-snippets}/metadata/request-headers.adoc[]
+
+==== HTTP Response ====
+
+===== Response fields =====
+
+include::{rest-snippets}/metadata/response-fields.adoc[]
+
+===== Sample response body =====
+
+include::{rest-snippets}/metadata/response-body.adoc[]
+
+==== Invocation examples ====
+
+===== Curl command =====
+
+include::{rest-snippets}/metadata/curl-request.adoc[]
+
+===== http command =====
+
+include::{rest-snippets}/metadata/httpie-request.adoc[]
+
+==== Sample request and response dump ====
+
+include::{rest-snippets}/metadata/http-request.adoc[]
+
+include::{rest-snippets}/metadata/http-response.adoc[]
+

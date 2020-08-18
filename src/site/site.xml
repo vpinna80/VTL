@@ -99,14 +99,6 @@
 			<pages>
 				<index type="body" project="vtl"></index>
 
-				<development-documentation type="doc">
-					<menu name="Development Documentation">
-						<item name="Contribute" href="dev/contribute.html" />
-						<item name="Code Conventions" href="dev/code-conventions.html" />
-						<item name="Release Management" href="dev/release-management.html" />
-					</menu>
-				</development-documentation>
-
 				<licenses>
 					<highlightJs>false</highlightJs>
 					<toc>false</toc>
@@ -151,10 +143,17 @@
 
 				<documentation type="doc">
 					<menu name="VTL E&amp;E Documentation" selectFirstOnExpand="true">
-						<item name="Get Started" href="get-started.html" />
-						<item name="VTL Editor Configuration" href="editor-config.html" />
+						<item name="VTL Editor">
+							<item name="Getting Started" href="get-started.html" />
+							<item name="Configuration" href="editor-config.html" />
+						</item>
 						<item name="VTL Examples" href="examples.html" />
-						<item name="CLI interface" href="cli-usage.html" />
+						<item name="VTL command line interface" href="cli-usage.html" />
+						<item name="VTL Engine web services">
+							<item name="/compile" href="compile.html" />
+							<item name="/metadata" href="metadata.html" />
+							<item name="/resolve" href="resolve.html" />
+						</item>
 					</menu>
 				</documentation>
 
@@ -173,6 +172,18 @@
 				<editor-config>
 					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
 				</editor-config>
+
+				<compile>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</compile>
+
+				<metadata>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</metadata>
+
+				<resolve>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</resolve>
 			</pages>
 		</reflowSkin>
 	</custom>

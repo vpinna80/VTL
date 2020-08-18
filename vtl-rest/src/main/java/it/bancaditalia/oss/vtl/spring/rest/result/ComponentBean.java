@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
-public class ComponentBean implements Serializable 
+public class ComponentBean extends DomainBean implements Serializable 
 {
 	private static final long serialVersionUID = 1L;
 	private final String name;
 	private final String role;
-	private final String domain;
 	
 	public ComponentBean(DataStructureComponent<?, ?, ?> component)
 	{
+		super(component.getDomain());
+		
 		name = component.getName();
 		role = component.getRole().getSimpleName();
-		domain = component.getDomain().toString();
 	}
 
 	public String getName()
@@ -26,10 +26,5 @@ public class ComponentBean implements Serializable
 	public String getRole()
 	{
 		return role;
-	}
-
-	public String getDomain()
-	{
-		return domain;
 	}
 }

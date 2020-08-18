@@ -1,0 +1,40 @@
+=== `/resolve` GET Method ===
+
+Returns the value of a given object defined in a given session.
+
+==== HTTP Request ====
+
+===== Request fields =====
+
+include::{rest-snippets}/resolve/request-parameters.adoc[]
+
+===== Request cookies =====
+
+include::{rest-snippets}/resolve/request-headers.adoc[]
+
+==== HTTP Response ====
+
+===== Response fields =====
+
+include::{rest-snippets}/resolve/response-fields.adoc[]
+
+===== Sample response body =====
+
+include::{rest-snippets}/resolve/response-body.adoc[]
+
+==== Invocation examples ====
+
+===== Curl command =====
+
+include::{rest-snippets}/resolve/curl-request.adoc[]
+
+===== http command =====
+
+include::{rest-snippets}/resolve/httpie-request.adoc[]
+
+==== HTTP request and response dump ====
+
+include::{rest-snippets}/resolve/http-request.adoc[]
+
+include::{rest-snippets}/resolve/http-response.adoc[]
+
