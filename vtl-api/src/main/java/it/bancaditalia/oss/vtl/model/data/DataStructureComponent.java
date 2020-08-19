@@ -66,7 +66,7 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	@SuppressWarnings("unchecked")
 	public default <S2 extends ValueDomainSubset<D2>, D2 extends ValueDomain> DataStructureComponent<R, S2, D2> as(S2 domain)
 	{
-		if (getDomain().isAssignableFrom(domain))
+		if (domain.isAssignableFrom(getDomain()))
 			// safe
 			return (DataStructureComponent<R, S2, D2>) this;
 		else

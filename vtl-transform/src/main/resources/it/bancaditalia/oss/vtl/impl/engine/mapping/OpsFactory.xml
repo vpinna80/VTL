@@ -605,6 +605,26 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+	<mapping from="InstrAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.InStrTransformation">
+		<params>
+			<exprparam name="expr" ordinal="0" />
+			<exprparam name="pattern" />
+			<nestedparam name="startParameter">
+				<exprparam name="expr" />
+			</nestedparam>
+			<nestedparam name="occurrenceParameter">
+				<exprparam name="expr" />
+			</nestedparam>
+		</params>
+	</mapping>
+	<mapping from="InstrAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.InStrTransformation">
+		<params>
+			<exprparam name="exprComponent" ordinal="0" />
+			<exprparam name="pattern" />
+			<exprparam name="startParameter" />
+			<exprparam name="occurrenceParameter" />
+		</params>
+	</mapping>
 	<mapping from="ArithmeticExprOrConcatCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.ArithmeticTransformation">
 		<tokens name="op">
 			<value>PLUS</value>
