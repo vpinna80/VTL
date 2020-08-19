@@ -75,9 +75,9 @@ public class SubstrTransformation extends TransformationImpl
 		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?>) startOperand.eval(session));
 		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> len = INTEGERDS.cast((ScalarValue<?, ?, ?>) lenOperand.eval(session));
 		
-		if (start instanceof IntegerValue && (long) len.get() < 1)
+		if (start instanceof IntegerValue && (Long) len.get() < 1)
 			throw new VTLSyntaxException("substr: start parameter must be positive but it is " + start.get());
-		if (len instanceof IntegerValue && (long) len.get() < 1)
+		if (len instanceof IntegerValue && (Long) len.get() < 1)
 			throw new VTLSyntaxException("substr: length parameter must be positive but it is " + len.get());
 		
 		if (expr instanceof DataSet)
@@ -85,7 +85,7 @@ public class SubstrTransformation extends TransformationImpl
 			DataSet dataset = (DataSet) expr;
 			VTLDataSetMetadata structure = dataset.getDataStructure();
 			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
-			int startV = start instanceof NullValue ? 1 : (int) (long) start.get();
+			int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
 			
 			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
 				.map(measure -> {
@@ -96,7 +96,7 @@ public class SubstrTransformation extends TransformationImpl
 					
 					if (startV > string.length())
 						return new SimpleEntry<>(measure, new StringValue(""));
-					Integer lenV = len instanceof NullValue ? null : (int) (long) len.get() + startV - 1;
+					Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get() + startV - 1;
 					if (lenV != null && lenV > string.length())
 						lenV = string.length();
 					
@@ -109,12 +109,12 @@ public class SubstrTransformation extends TransformationImpl
 			ScalarValue<?, ?, ?> scalar = (ScalarValue<?, ?, ?>) expr;
 			if (scalar instanceof NullValue)
 				return NullValue.instance(STRINGDS);
-			int startV = start instanceof NullValue ? 1 : (int) (long) start.get();
+			int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
 			String string = scalar.get().toString();
 			
 			if (startV > string.length())
 				return new StringValue("");
-			Integer lenV = len instanceof NullValue ? null : (int) (long) len.get();
+			Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get();
 			if (lenV != null && lenV + startV - 1 > string.length())
 				lenV = string.length() - startV + 1;
 			

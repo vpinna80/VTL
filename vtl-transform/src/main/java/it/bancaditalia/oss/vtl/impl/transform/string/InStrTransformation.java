@@ -82,8 +82,8 @@ public class InStrTransformation extends TransformationImpl
 		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?>) startOperand.eval(session));
 		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> occurrence = INTEGERDS.cast((ScalarValue<?, ?, ?>) occurrenceOperand.eval(session));
 		
-		int startPos = (int) (long) start.get() - 1;
-		int nOcc = (int) (long) occurrence.get() - 1;
+		int startPos = (int) (long) (Long) start.get() - 1;
+		int nOcc = (int) (long) (Long) occurrence.get() - 1;
 		
 		if (startPos < 0)
 			throw new VTLSyntaxException("instr: start parameter must be positive but it was " + (startPos + 1));
