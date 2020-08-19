@@ -41,7 +41,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String varName; 
+	private final String name; 
 	private final Set<StringCodeItemImpl> items = new HashSet<>();
 	private final int hashCode;
 
@@ -73,10 +73,10 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 		}
 	}
 	
-	public StringCodeListDomainImpl(String varName, Set<? extends String> items)
+	public StringCodeListDomainImpl(String name, Set<? extends String> items)
 	{
-		this.varName = varName;
-		this.hashCode = 31 + varName.hashCode();
+		this.name = name;
+		this.hashCode = 31 + name.hashCode();
 		for (String item: items)
 			this.items.add(new StringCodeItemImpl(item));
 	}
@@ -84,7 +84,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	@Override
 	public String getName()
 	{
-		return varName;
+		return name;
 	}
 
 	@Override
@@ -130,7 +130,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof StringCodeListDomain && varName.equals(other.getVarName());
+		return other instanceof StringCodeListDomain && getVarName().equals(other.getVarName());
 	}
 
 	@Override
@@ -142,7 +142,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	@Override
 	public String getVarName()
 	{
-		return varName;
+		return name + "_var";
 	}
 
 	@Override
@@ -154,7 +154,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	@Override
 	public String toString()
 	{
-		return varName + ":" + Domains.STRINGDS;
+		return name + ":" + Domains.STRINGDS;
 	}
 
 	@Override
@@ -173,12 +173,12 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 		if (getClass() != obj.getClass())
 			return false;
 		StringCodeListDomainImpl other = (StringCodeListDomainImpl) obj;
-		if (varName == null)
+		if (name == null)
 		{
-			if (other.varName != null)
+			if (other.name != null)
 				return false;
 		}
-		else if (!varName.equals(other.varName))
+		else if (!name.equals(other.name))
 			return false;
 		if (!items.equals(other.items))
 			return false;
@@ -189,31 +189,31 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	@Override
 	public StringCodeListDomain trim()
 	{
-		return stringCodeListHelper("TRIM("+varName+")", String::trim);
+		return stringCodeListHelper("TRIM("+name+")", String::trim);
 	}
 
 	@Override
 	public StringCodeListDomain ltrim()
 	{
-		return stringCodeListHelper("LTRIM("+varName+")", s -> s.replaceAll("^\\s+",""));
+		return stringCodeListHelper("LTRIM("+name+")", s -> s.replaceAll("^\\s+",""));
 	}
 
 	@Override
 	public StringCodeListDomain rtrim()
 	{
-		return stringCodeListHelper("RTRIM("+varName+")", s -> s.replaceAll("\\s+$",""));
+		return stringCodeListHelper("RTRIM("+name+")", s -> s.replaceAll("\\s+$",""));
 	}
 
 	@Override
 	public StringCodeListDomain ucase()
 	{
-		return stringCodeListHelper("UCASE("+varName+")", String::toUpperCase);
+		return stringCodeListHelper("UCASE("+name+")", String::toUpperCase);
 	}
 
 	@Override
 	public StringCodeListDomain lcase()
 	{
-		return stringCodeListHelper("LCASE("+varName+")", String::toLowerCase);
+		return stringCodeListHelper("LCASE("+name+")", String::toLowerCase);
 	}
 
 	private StringCodeListDomain stringCodeListHelper(String newName, UnaryOperator<String> mapper)

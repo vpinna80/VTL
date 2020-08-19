@@ -437,7 +437,7 @@
 			
 		</params>
 	</mapping>
-	<mapping from="UnaryStringFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.StringUnaryTransformation">
+	<mapping from="UnaryStringFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation">
 		<tokens name="op">
 			<value>TRIM</value>
 			<value>LTRIM</value>
@@ -450,7 +450,7 @@
 			<exprparam name="expr" />
 		</params>
 	</mapping>
-	<mapping from="UnaryStringFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.StrlenTransformation">
+	<mapping from="UnaryStringFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StrlenTransformation">
 		<tokens name="op">
 			<value>LEN</value>
 		</tokens>
@@ -458,7 +458,7 @@
 			<exprparam name="expr" />
 		</params>
 	</mapping>
-	<mapping from="UnaryStringFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.StringUnaryTransformation">
+	<mapping from="UnaryStringFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation">
 		<tokens name="op">
 			<value>TRIM</value>
 			<value>LTRIM</value>
@@ -471,7 +471,7 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
-	<mapping from="UnaryStringFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.StrlenTransformation">
+	<mapping from="UnaryStringFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StrlenTransformation">
 		<tokens name="op">
 			<value>LEN</value>
 		</tokens>
@@ -605,7 +605,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
-	<mapping from="InstrAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.InStrTransformation">
+	<mapping from="InstrAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.InStrTransformation">
 		<params>
 			<exprparam name="expr" ordinal="0" />
 			<exprparam name="pattern" />
@@ -617,12 +617,34 @@
 			</nestedparam>
 		</params>
 	</mapping>
-	<mapping from="InstrAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.InStrTransformation">
+	<mapping from="InstrAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.InStrTransformation">
 		<params>
 			<exprparam name="exprComponent" ordinal="0" />
 			<exprparam name="pattern" />
-			<exprparam name="startParameter" />
-			<exprparam name="occurrenceParameter" />
+			<nestedparam name="startParameter">
+				<exprparam name="exprComponent" />
+			</nestedparam>
+			<nestedparam name="occurrenceParameter">
+				<exprparam name="exprComponent" />
+			</nestedparam>
+		</params>
+	</mapping>
+	<mapping from="ReplaceAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.ReplaceTransformation">
+		<params>
+			<exprparam name="expr" ordinal="0" />
+			<exprparam name="param" />
+			<nestedparam name="optionalExpr">
+				<exprparam name="expr" />
+			</nestedparam>
+		</params>
+	</mapping>
+	<mapping from="ReplaceAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.ReplaceTransformation">
+		<params>
+			<exprparam name="exprComponent" ordinal="0" />
+			<exprparam name="param" />
+			<nestedparam name="optionalExprComponent">
+				<exprparam name="exprComponent" />
+			</nestedparam>
 		</params>
 	</mapping>
 	<mapping from="ArithmeticExprOrConcatCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.ArithmeticTransformation">

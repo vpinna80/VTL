@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.string;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
@@ -29,7 +29,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
+import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
+import it.bancaditalia.oss.vtl.impl.transform.ops.ConstantOperand;
+import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -129,19 +132,23 @@ public class InStrTransformation extends TransformationImpl
 				start = startOperand.getMetadata(session), occurrence = occurrenceOperand.getMetadata(session);
 		
 		if (!(right instanceof VTLScalarValueMetadata))
-			throw new VTLIncompatibleTypesException("concat: pattern parameter", INTEGER, ((VTLScalarValueMetadata<?>) right).getDomain());
+			throw new VTLInvalidParameterException(right, VTLScalarValueMetadata.class);
 		if (!(start instanceof VTLScalarValueMetadata))
-			throw new VTLIncompatibleTypesException("concat: start parameter", INTEGER, ((VTLScalarValueMetadata<?>) start).getDomain());
+			throw new VTLInvalidParameterException(start, VTLScalarValueMetadata.class);
 		if (!(occurrence instanceof VTLScalarValueMetadata))
-			throw new VTLIncompatibleTypesException("concat: occurrence parameter", STRING, ((VTLScalarValueMetadata<?>) occurrence).getDomain());
+			throw new VTLInvalidParameterException(occurrence, VTLScalarValueMetadata.class);
+		if (!STRINGDS.isAssignableFrom(((VTLScalarValueMetadata<?>) right).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: pattern parameter", STRING, ((VTLScalarValueMetadata<?>) right).getDomain());
+		if (!STRINGDS.isAssignableFrom(((VTLScalarValueMetadata<?>) start).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: start parameter", INTEGER, ((VTLScalarValueMetadata<?>) start).getDomain());
+		if (!STRINGDS.isAssignableFrom(((VTLScalarValueMetadata<?>) occurrence).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: occurrence parameter", INTEGER, ((VTLScalarValueMetadata<?>) occurrence).getDomain());
 		
 		if (left instanceof VTLScalarValueMetadata)
 		{
-			VTLScalarValueMetadata<?> leftV = (VTLScalarValueMetadata<?>) left, rightV = (VTLScalarValueMetadata<?>) right; 
+			VTLScalarValueMetadata<?> leftV = (VTLScalarValueMetadata<?>) left; 
 			if (!(STRING.isAssignableFrom(leftV.getDomain())))
 				throw new VTLIncompatibleTypesException("instr", STRING, leftV.getDomain());
-			else if (!(STRING.isAssignableFrom(rightV.getDomain())))
-				throw new VTLIncompatibleTypesException("instr", STRING, rightV.getDomain());
 			else
 				return INTEGER;
 		}
@@ -155,7 +162,7 @@ public class InStrTransformation extends TransformationImpl
 			
 			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
 			if (measures.size() != 1)
-				throw new VTLSingletonComponentRequiredException(Measure.class, measures);
+				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
 			
 			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
 			if (!STRING.isAssignableFrom(measure.getDomain()))
