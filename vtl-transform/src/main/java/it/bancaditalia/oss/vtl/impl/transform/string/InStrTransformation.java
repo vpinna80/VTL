@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -60,7 +59,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class InStrTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponentImpl<Measure, IntegerDomainSubset, IntegerDomain> INT_MEASURE = new DataStructureComponentImpl<>(INTEGER.getDomain().getVarName(), Measure.class, Domains.INTEGERDS);
+	private static final DataStructureComponentImpl<Measure, IntegerDomainSubset, IntegerDomain> INT_MEASURE = new DataStructureComponentImpl<>(INTEGER.getDomain().getVarName(), Measure.class, INTEGERDS);
 	
 	private final Transformation leftOperand;
 	private final Transformation rightOperand;
@@ -97,7 +96,7 @@ public class InStrTransformation extends TransformationImpl
 			VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getDataStructure().getComponents(Identifier.class))
 					.addComponent(INT_MEASURE)
 					.build();
-			DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, Domains.STRINGDS).iterator().next();
+			DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
 			String pattern = right instanceof NullValue ? null : STRINGDS.cast(right).get().toString();
 			
 			return dataset.mapKeepingKeys(structure, dp -> singletonMap(INT_MEASURE, 

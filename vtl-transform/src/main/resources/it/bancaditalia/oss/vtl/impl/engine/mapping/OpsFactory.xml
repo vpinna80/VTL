@@ -647,6 +647,28 @@
 			</nestedparam>
 		</params>
 	</mapping>
+	<mapping from="SubstrAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.SubstrTransformation">
+		<params>
+			<exprparam name="expr" />
+			<nestedparam name="startParameter">
+				<exprparam name="expr" />
+			</nestedparam>
+			<nestedparam name="endParameter">
+				<exprparam name="expr" />
+			</nestedparam>
+		</params>
+	</mapping>
+	<mapping from="SubstrAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.SubstrTransformation">
+		<params>
+			<exprparam name="exprComponent" />
+			<nestedparam name="startParameter">
+				<exprparam name="exprComponent" />
+			</nestedparam>
+			<nestedparam name="endParameter">
+				<exprparam name="exprComponent" />
+			</nestedparam>
+		</params>
+	</mapping>
 	<mapping from="ArithmeticExprOrConcatCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.ArithmeticTransformation">
 		<tokens name="op">
 			<value>PLUS</value>

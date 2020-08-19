@@ -21,8 +21,8 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static java.util.Collections.singletonMap;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -32,7 +32,6 @@ import it.bancaditalia.oss.vtl.impl.transform.ops.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -47,6 +46,7 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ReplaceTransformation extends TransformationImpl
 {
@@ -74,16 +74,18 @@ public class ReplaceTransformation extends TransformationImpl
 		{
 			DataSet dataset = (DataSet) left;
 			VTLDataSetMetadata structure = dataset.getDataStructure();
-			DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, Domains.STRINGDS).iterator().next();
+			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getComponents(Measure.class);
 			Pattern compiled = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
 			
-			return dataset.mapKeepingKeys(structure, dp -> {
-				ScalarValue<?, ?, ?> scalar = dp.get(measure);
-				if (pattern == null || scalar instanceof NullValue)
-					return singletonMap(measure, NullValue.instance(STRINGDS));
-				
-				return singletonMap(measure, new StringValue(compiled.matcher(scalar.get().toString()).replaceAll(replace.get().toString())));
-			}); 
+			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
+				.map(measure -> {
+					ScalarValue<?, ? extends StringDomainSubset, StringDomain> scalar = STRINGDS.cast(dp.get(measure));
+					if (pattern == null || scalar instanceof NullValue)
+						return new SimpleEntry<>(measure, STRINGDS.cast(NullValue.instance(STRINGDS)));
+					
+					return new SimpleEntry<>(measure, new StringValue(compiled.matcher(scalar.get().toString()).replaceAll(replace.get().toString())));
+				}).collect(Utils.entriesToMap())
+			); 
 		}
 		else
 		{
