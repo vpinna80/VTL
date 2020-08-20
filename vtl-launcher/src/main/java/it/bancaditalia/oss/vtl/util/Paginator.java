@@ -39,9 +39,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 
 public class Paginator implements AutoCloseable
 {

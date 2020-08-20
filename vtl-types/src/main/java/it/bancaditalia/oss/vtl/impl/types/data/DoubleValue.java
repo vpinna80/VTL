@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 

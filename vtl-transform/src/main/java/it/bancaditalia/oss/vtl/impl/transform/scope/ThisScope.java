@@ -21,9 +21,9 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 

@@ -41,8 +41,8 @@ import it.bancaditalia.oss.vtl.impl.transform.bool.ComparisonTransformation;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 
 public class ComparisonTransformationTest
 {

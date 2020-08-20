@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
 /**
@@ -38,41 +37,36 @@ public interface Engine
 {
 	/**
 	 * Parse a string containing VTL Statements.
-	 * @param statements A string containing valid VTL syntax.
+	 * @param statements A {@link String} containing valid VTL syntax.
 	 * @return A stream of statements.
 	 */
 	public Stream<Statement> parseRules(String statements);
 
 	/**
-	 * Parse VTL Statements that will be read from the given reader .
-	 * @param reader A reader containing valid VTL syntax. The reader will be consumed entirely.
+	 * Parse VTL Statements that will be read from the given reader.
+	 * The {@link Reader} will be consumed entirely and closed.
+	 * 
+	 * @param reader A {@link Reader} containing valid VTL syntax. 
 	 * @return A stream of statements.
 	 */
 	public Stream<Statement> parseRules(Reader reader) throws IOException;
 
 	/**
-	 * Parse VTL Statements that will be read from the given input stream.  
-	 * @param inputStream A stream containing valid VTL syntax. The reader will be consumed entirely.
-	 * @param charset The charset to be used to translate characters from the stream.
+	 * Parse VTL Statements that will be read from the given input stream.
+	 * The {@link InputStream} will be consumed entirely and closed.  
+	 * 
+	 * @param inputStream An {@link InputStream} containing valid VTL syntax. 
+	 * @param charset The {@link Charset} to be used to translate characters from the stream.
 	 * @return A stream of statements.
 	 */
 	public Stream<Statement> parseRules(InputStream inputStream, Charset charset) throws IOException;
 
 	/**
-	 * Parse VTL Statements that will be read from the given input stream.  
-	 * @param path A path pointing to a file containing valid VTL syntax.
-	 * @param charset The charset to be used to translate characters from the file contents.
+	 * Parse VTL Statements that will be read from a file pointed by given {@link Path}.  
+	 * 
+	 * @param path A {@link Path} describing a local file containing valid VTL syntax.
+	 * @param charset The {@link Charset} to be used to translate characters from the file contents.
 	 * @return A stream of statements.
 	 */
 	public Stream<Statement> parseRules(Path path, Charset charset) throws IOException;
-	
-	public default Engine init(Object... configuration)
-	{
-		return this;
-	}
-	
-	public static Iterable<Engine> getInstances()
-	{
-		return ServiceLoader.load(Engine.class);
-	}
 }

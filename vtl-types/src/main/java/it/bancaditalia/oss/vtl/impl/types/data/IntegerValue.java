@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.data;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 

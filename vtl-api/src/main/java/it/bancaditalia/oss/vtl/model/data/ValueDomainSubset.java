@@ -19,17 +19,30 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.model.data;
 
+/**
+ * A subset of a {@link ValueDomain} as defined by VTL specification.
+ * 
+ * @author Valentino Pinna
+ *
+ * @param <D> The parent {@link ValueDomain}
+ */
 public interface ValueDomainSubset<D extends ValueDomain> extends ValueDomain
 {
+	/**
+	 * @return A criterion, if defined, to limit the admissible values from the parent {@link ValueDomain}
+	 */
 	public Object getCriterion();
 
+	/**
+	 * @return the parent {@link ValueDomain}
+	 */
 	public D getParentDomain();
 	
+	/**
+	 * Casts the given ScalarValue to this ValueDomainSubset 
+	 * 
+	 * @param value the {@link ScalarValue} to cast
+	 * @return the casted {@link ScalarValue}
+	 */
 	public ScalarValue<?, ? extends ValueDomainSubset<? extends D>, ? extends D> cast(ScalarValue<?, ?, ?> value);
-	
-	@Override
-	public boolean equals(Object obj);
-
-	@Override
-	public int hashCode();
 }

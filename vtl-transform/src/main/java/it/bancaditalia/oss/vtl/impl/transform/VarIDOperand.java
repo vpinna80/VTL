@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform;
 
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 

@@ -21,6 +21,15 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
 
+/**
+ * An interface describing a component of a dataset, as defined by VTL specification.
+ * 
+ * @author Valentino Pinna
+ *
+ * @param <R> the {@link ComponentRole}
+ * @param <S> the {@link ValueDomainSubset}
+ * @param <D> the {@link ValueDomain}
+ */
 public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> extends Serializable
 {
 	public Variable getVariable();

@@ -22,10 +22,14 @@ package it.bancaditalia.oss.vtl.environment;
 import java.util.List;
 import java.util.Optional;
 
+import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
 import it.bancaditalia.oss.vtl.engine.Statement;
 
 /**
  * An environment that is capable of storing and retrieving VTL rules.
+ * 
+ * A class implementing this interface must be listed in the 
+ * {@link VTLGeneralProperties#ENVIRONMENT_IMPLEMENTATION} property for the VTL engine to work. 
  * 
  * @author Valentino Pinna
  *

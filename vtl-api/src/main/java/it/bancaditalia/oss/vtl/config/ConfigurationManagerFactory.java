@@ -30,6 +30,14 @@ import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 
+/**
+ * Used by the application to obtain implementing instances of {@link ConfigurationManager},
+ * and by various classes implementing components to register properties.
+ * 
+ * @author Valentino Pinna
+ *
+ * @see VTLGeneralProperties#CONFIG_MANAGER
+ */
 public class ConfigurationManagerFactory
 {
 	private static final Object CLASS_LOCK = new Object();
@@ -38,6 +46,9 @@ public class ConfigurationManagerFactory
 	
 	private ConfigurationManagerFactory() {}
 	
+	/**
+	 * @return an application-wide {@link ConfigurationManager} instance.
+	 */
 	public static ConfigurationManager getInstance() 
 	{
 		if (INSTANCE != null)
@@ -62,7 +73,12 @@ public class ConfigurationManagerFactory
 		}
 	} 
 
-
+	/**
+	 * Allows you to retrieve the properties registered by the given implementation class.
+	 * 
+	 * @param implementationClass The implementation class to query.
+	 * @return The list of exposed properties, empty if the class does not expose any property.
+	 */
 	public static List<VTLProperty> getSupportedProperties(Class<?> implementationClass)
 	{
 		if (PROPERTIES.containsKey(implementationClass))
@@ -84,16 +100,32 @@ public class ConfigurationManagerFactory
 		return PROPERTIES.get(implementationClass);
 	}
 
+	/**
+	 * Query for a specific property by name, if supported by given class.
+	 *  
+	 * @param implementationClass The implementation class to query.
+	 * @param name The name of the queried property.
+	 * @return The requested {@link VTLProperty} instance, or an empty {@link Optional} if none was found.
+	 */
 	public static Optional<VTLProperty> findSupportedProperty(Class<?> implementationClass, String name)
 	{
 		return getSupportedProperties(implementationClass).stream().filter(p -> p.getName().equals(name)).findAny();
 	}
 
+	/**
+	 * Called by implementation classes to register exposed {@link VTLProperty VTL properties}.
+	 * 
+	 * @param implementationClass The calling implementation class which is registering properties.
+	 * @param classProperties The {@link List} of properties to register.
+	 */
 	public static void registerSupportedProperties(Class<?> implementationClass, List<VTLProperty> classProperties)
 	{
 		PROPERTIES.put(implementationClass, classProperties);
 	}
 
+	/**
+	 * @see #registerSupportedProperties(Class, List)
+	 */
 	public static void registerSupportedProperties(Class<?> implementationClass, VTLProperty... classProperties)
 	{
 		PROPERTIES.put(implementationClass, Arrays.asList(classProperties));

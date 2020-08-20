@@ -20,24 +20,32 @@
 package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
-import java.util.List;
 
+/**
+ * A standard unrestricted VTL valuedomain as defined in VTL specification. 
+ * 
+ * @author Valentino Pinna
+ */
 public interface ValueDomain extends Serializable
 {
-	public default List<Variable> getMeasuredVariables()
-	{
-		throw new UnsupportedOperationException("getMeasuredVariables");
-	}
-
+	/**
+	 * Check if a value of a given ValueDomain can be converted to a value of this ValueDomain
+	 *  
+	 * @param other the other {@link ValueDomain}
+	 * @return true if the conversion is possible
+	 */
 	public boolean isAssignableFrom(ValueDomain other);
 
+	/**
+	 * Check if a value of a given ValueDomain can be compared to a value of this ValueDomain
+	 *  
+	 * @param other the other {@link ValueDomain}
+	 * @return true if the comparison is possible
+	 */
 	public boolean isComparableWith(ValueDomain other);
 
+	/**
+	 * @return the default variable name for {@link DataStructureComponent}s of this ValueDomain
+	 */
 	public String getVarName();
-	
-	@Override
-	public boolean equals(Object obj);
-
-	@Override
-	public int hashCode();
 }

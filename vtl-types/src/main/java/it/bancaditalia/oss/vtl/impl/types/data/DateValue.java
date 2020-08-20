@@ -25,6 +25,7 @@ import java.time.temporal.TemporalAccessor;
 
 import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;

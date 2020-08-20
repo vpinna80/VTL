@@ -41,6 +41,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
@@ -64,11 +65,6 @@ public class NamedDataSet implements DataSet
 		
 		this.alias = alias;
 		this.delegate = delegate;
-	}
-
-	public Stream<DataPoint> concatDataPoints(DataSet other)
-	{
-		return getDelegate().concatDataPoints(other);
 	}
 
 	public VTLDataSetMetadata getMetadata()

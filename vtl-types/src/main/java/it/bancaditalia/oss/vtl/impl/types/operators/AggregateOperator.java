@@ -52,8 +52,8 @@ public enum AggregateOperator
 				int s = c.size();
 				return new DoubleValue(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
 			})),
-	MIN("min", collectingAndThen(minBy(ScalarValue::compare), v -> v.orElse(new DoubleValue(Double.NaN)))),
-	MAX("max", collectingAndThen(maxBy(ScalarValue::compare), v -> v.orElse(new DoubleValue(Double.NaN)))),
+	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
+	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
 	VAR_POP("stddev_pop", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue(), Collector.of( // See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	        () -> new double[3],
 	        (acu, d) -> {

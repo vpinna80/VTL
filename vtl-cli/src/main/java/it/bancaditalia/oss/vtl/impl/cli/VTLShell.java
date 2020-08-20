@@ -28,6 +28,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import picocli.CommandLine;
@@ -56,7 +57,7 @@ public class VTLShell implements Callable<Void>
 
 	public Void call() throws Exception
 	{
-		VTLSession session = VTLSession.getInstances().iterator().next();
+		VTLSession session = ConfigurationManager.getDefault().createSession();
 		try (Reader reader = new InputStreamReader(file != null ? new FileInputStream(file) : System.in, StandardCharsets.UTF_8))
 		{
 			session.addStatements(reader);

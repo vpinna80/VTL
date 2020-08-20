@@ -31,6 +31,7 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
@@ -38,8 +39,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -50,11 +51,12 @@ public class SetTransformation extends TransformationImpl
 
 	public enum SetOperator
 	{
-		UNION((left, right) -> structure -> new LightFDataSet<>(structure, left::concatDataPoints, setDiff(right, left))),
+		UNION((left, right) -> structure -> new LightFDataSet<>(structure, 
+				ds -> Stream.concat(left.stream(), ds.stream()), setDiff(right, left))),
 		INTERSECT((left, right) -> structure -> setDiff(left, setDiff(right, left))), 
 		SETDIFF((left, right) -> structure -> setDiff(left, right)), 
 		SYMDIFF((left, right) -> structure -> new LightFDataSet<>(structure,  
-				setDiff(left, right)::concatDataPoints, setDiff(right, left)));
+				ds -> Stream.concat(setDiff(left, right).stream(), ds.stream()), setDiff(right, left)));
 
 		private final BiFunction<DataSet, DataSet, Function<VTLDataSetMetadata, DataSet>> reducer;
 
@@ -101,7 +103,7 @@ public class SetTransformation extends TransformationImpl
 			else
 			{
 				DataSet setDiff = setDiff(other, accumulator);
-				List<DataPoint> list = accumulator.concatDataPoints(setDiff).collect(toList());
+				List<DataPoint> list = Stream.concat(accumulator.stream(), setDiff.stream()).collect(toList());
 				accumulator = new LightDataSet(metadata, list::stream);
 			}
 		}

@@ -26,18 +26,43 @@ import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 
+/**
+ * Interface for the service used by the application to load and provide implementations
+ * for the various VTL Engine components.
+ * 
+ * Instances of this interface are provided by {@link ConfigurationManagerFactory#getInstance()}.
+ * 
+ * @author Valentino Pinna
+ */
 public interface ConfigurationManager
 {
+	/**
+	 * Same as {@link ConfigurationManagerFactory#getInstance()}.
+	 * 
+	 * @return a default instance of this interface.
+	 */
 	public static ConfigurationManager getDefault()  
 	{
 		return ConfigurationManagerFactory.getInstance();
 	}
-	
+
+	/**
+	 * @return The {@link MetadataRepository} instance
+	 */
 	public MetadataRepository getMetadataRepository();
 
+	/**
+	 * @return The {@link VTLSession} instance
+	 */
 	public VTLSession createSession();
 
+	/**
+	 * @return The {@link Engine} instance
+	 */
 	public Engine getEngine();
 
+	/**
+	 * @return The {@link List} of {@link Environment} instances
+	 */
 	public List<Environment> getEnvironments();
 }

@@ -34,6 +34,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class LightDataSet extends AbstractDataSet

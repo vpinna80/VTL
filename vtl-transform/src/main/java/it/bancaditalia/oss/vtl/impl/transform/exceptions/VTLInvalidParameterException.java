@@ -24,7 +24,7 @@ import static java.util.stream.Collectors.joining;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
 public class VTLInvalidParameterException extends VTLException
 {

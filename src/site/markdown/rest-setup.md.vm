@@ -1,0 +1,90 @@
+#set($h1 = '#')
+#set($h2 = '##')
+#set($h3 = '###')
+#set($h4 = '####')
+#set($h5 = '#####')
+#set($RCODE = '```R')
+#set($CSTART = '```')
+#set($CEND = '```')
+
+$h1 Setting up VTL RESTful services
+
+$h2 Deploying the RESTful services web application
+
+To deploy the application, acquire the war package either by Maven or from the 
+[GitHub releases](https://github.com/vpinna80/VTL/releases/latest) page. 
+
+To download the package with Maven into Tomcat deployment folder, use:
+
+$CSTART
+$ mvn dependency:copy -Dmdep.stripVersion=true \
+        -Dartifact=it.bancaditalia.oss.vtl:vtl-rest:${project.version}:war \ 
+        -DoutputDirectory=/path/to/tomcat/deploy
+$CEND
+
+After the package has been downloaded, Tomcat should unpack and start it automatically.
+
+Tomcat usually deploys applications under a path that starts with the war file name, so, if the
+file was download by Maven, the entry point for the services should be in this case `/vtl-rest/`.  
+
+$h2 System requirements
+
+The requirements of VTL RESTful services are:
+
+*  Java 8+
+*  [Web Container](https://en.wikipedia.org/wiki/Web_container#List_of_Servlet_containers) 
+    compatible with Servlet 3.1 
+*  Internet connection (optional)
+
+Please note that [Jakarta EE technology](https://en.wikipedia.org/wiki/Jakarta_EE) is not required, 
+although the services application could be run in any of the compatible containers.
+
+$h2 Particular configurations
+
+Some of the VTL engine features require an internet connection.
+
+If you are behind a proxy server, you may need additional configuration to enable these features.
+
+$h3 CSV Environment
+
+Please note that CSV Environment accesses files located on the container host.
+
+Although it fails if the requested file is not in a CSV format, it may pose a security risk.
+
+If this would be the case to a production environment, it can be disabled by setting the   
+[Java system property](apidocs/it/bancaditalia/oss/vtl/config/VTLGeneralProperties.html#ENVIRONMENT_IMPLEMENTATION).
+
+This property must be set to a sequence of class names, separated by commas, which must implement
+the [`Environment`](apidocs/it/bancaditalia/oss/vtl/environment/Environment.html) interface.
+
+Available implementation classes are found in the Java package 
+[`it.bancaditalia.oss.vtl.impl.environment`](apidocs/it/bancaditalia/oss/vtl/impl/environment/package-summary.html).
+
+**NOTE**: In order for the engine to work correctly, at least one of the chosen classes must 
+also implement the [`Workspace`](apidocs/it/bancaditalia/oss/vtl/environment/Workspace.html) interface.
+
+$h3 SDMX Environment
+
+To enable the use of SDMX environment by the web services, you must follow 
+[this document](https://github.com/amattioc/SDMX/wiki/System-Configuration#network-settings) 
+to setup a properties file, which should contain your proxy settings, and then link it with an 
+[environment variable](https://github.com/amattioc/SDMX/wiki/System-Configuration#configuration-file-location).
+
+$h3 Choose a VTL metadata repository implementation
+
+This [Java system property](apidocs/it/bancaditalia/oss/vtl/config/VTLGeneralProperties.html#METADATA_REPOSITORY)
+allows you to choose which implementation class you want to use as a metadata repository.
+
+There are three available implementations, [described here](documentation.html#editor-config_toc_metadata-repository).
+
+The default implementation is the In-Memory repository. To choose a different one, you can add 
+a system property in your container configuration.
+
+It must point to a class that implements the [`MetadataRepository`](apidocs/it/bancaditalia/oss/vtl/session/MetadataRepository.html)
+interface, such as:
+
+*  [it.bancaditalia.oss.vtl.impl.domains.CSVMetadataRepository](apidocs/it/bancaditalia/oss/vtl/impl/domains/CSVMetadataRepository.html)
+*  [it.bancaditalia.oss.vtl.impl.domains.SDMXMetadataRepository](apidocs/it/bancaditalia/oss/vtl/impl/domains/CSVMetadataRepository.html)
+
+If you want to use the SDMX Metadata Repository, you might also need to set standard 
+[Java proxy properties](https://docs.oracle.com/javase/8/docs/technotes/guides/net/proxies.html). 

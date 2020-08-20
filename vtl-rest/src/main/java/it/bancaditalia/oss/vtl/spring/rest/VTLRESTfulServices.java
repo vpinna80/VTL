@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import it.bancaditalia.oss.vtl.spring.rest.exception.VTLInvalidSessionException;
 import it.bancaditalia.oss.vtl.spring.rest.result.ComponentBean;

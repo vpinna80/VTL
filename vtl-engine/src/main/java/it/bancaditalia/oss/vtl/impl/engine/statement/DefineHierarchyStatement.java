@@ -29,7 +29,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.ValueDomainHierarchyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.VariableHierarchyImpl;
 import it.bancaditalia.oss.vtl.model.data.Hierarchy;
 import it.bancaditalia.oss.vtl.model.data.Hierarchy.RuleItem;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 

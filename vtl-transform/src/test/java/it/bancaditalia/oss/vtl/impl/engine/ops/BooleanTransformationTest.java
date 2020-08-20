@@ -42,8 +42,8 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 
 public class BooleanTransformationTest
 {

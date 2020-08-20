@@ -20,11 +20,9 @@
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import java.io.Serializable;
-import java.util.List;
 
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 
 public abstract class EntireDomainSubset<S extends Comparable<? super S>, D extends ValueDomain> implements ValueDomainSubset<D>, Serializable
 {
@@ -54,12 +52,6 @@ public abstract class EntireDomainSubset<S extends Comparable<? super S>, D exte
 	public Object getCriterion()
 	{
 		throw new UnsupportedOperationException("getCriterion");
-	}
-
-	@Override
-	public List<Variable> getMeasuredVariables()
-	{
-		return getParentDomain().getMeasuredVariables();
 	}
 
 	@Override

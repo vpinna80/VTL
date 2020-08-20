@@ -150,6 +150,7 @@
 						<item name="VTL Examples" href="examples.html" />
 						<item name="VTL command line interface" href="cli-usage.html" />
 						<item name="VTL Engine web services">
+							<item name="Setup" href="rest-setup.html" />
 							<item name="/compile" href="compile.html" />
 							<item name="/metadata" href="metadata.html" />
 							<item name="/resolve" href="resolve.html" />
@@ -160,6 +161,10 @@
 				<get-started>
 					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
 				</get-started>
+
+				<rest-setup>
+					<toc level="3" autoExpandable="false" expanded="true">sidebar</toc>
+				</rest-setup>
 
 				<examples>
 					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>

@@ -20,13 +20,12 @@
 package it.bancaditalia.oss.vtl.environment;
 
 import java.util.Optional;
-import java.util.ServiceLoader;
 
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
 /**
- * A provider of VTL objects. 
+ * A provider of VTL data objects. 
  * 
  * @author Valentino Pinna
  */
@@ -59,13 +58,15 @@ public interface Environment
 		return getValue(name).map(VTLValue::getMetadata);
 	}
 	
+	/**
+	 * Implementing classes may override this method if they need to use a particular initialization procedure.
+	 * 
+	 * @param configuration Parameters that may be passed to the implementing class.
+	 * 
+	 * @return {@code this} instance, initialized.
+	 */
 	public default Environment init(Object... configuration)
 	{
 		return this;
-	}
-
-	public static Iterable<Environment> getInstances()
-	{
-		return ServiceLoader.load(Environment.class);
 	}
 }

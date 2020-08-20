@@ -22,26 +22,27 @@ package it.bancaditalia.oss.vtl.model.data;
 import java.io.Serializable;
 import java.util.function.Supplier;
 
+/**
+ * An interface describing VTL scalar values, as defined by the specification.
+ * 
+ * @author Valentino Pinna
+ *
+ * @param <R> the Java class that is used to hold the effective value of this ScalarValue for computational 
+ * 			purposes. Usually hidden as an implementation detail.
+ * @param <S> the {@link ValueDomainSubset} of this value. 
+ * @param <D> the basic {@link ValueDomain} as defined by VTL specification.
+ */
 public interface ScalarValue<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<? extends D>, D extends ValueDomain> 
 		extends VTLValue, Comparable<ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain>>, Supplier<R>
 {
-	@FunctionalInterface
-	public interface VTLScalarValueMetadata<S extends ValueDomainSubset<?>> extends VTLValueMetadata
-	{
-		public S getDomain();
-	}
-	
-	public static int compare(ScalarValue<?, ? extends ValueDomainSubset<? extends ValueDomain>, ? extends ValueDomain> v1, 
-			ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> v2)
-	{
-		return v1.compareTo(v2);
-	}
-	
 	@Override
 	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o);
 	
 	@Override
 	public VTLScalarValueMetadata<? extends ValueDomainSubset<? extends ValueDomain>> getMetadata();
-	
+
+	/**
+	 * @return the {@link ValueDomainSubset} of this ScalarValue.
+	 */
 	public S getDomain();
 }

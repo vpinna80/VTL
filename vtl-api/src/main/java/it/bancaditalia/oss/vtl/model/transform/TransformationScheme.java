@@ -20,22 +20,56 @@
 package it.bancaditalia.oss.vtl.model.transform;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
+/**
+ * A Transformation Scheme, as defined by VTL specification, is a collection of VTL statements 
+ * linked together, that are meant to be evaluated within the same scope.
+ * 
+ * @author Valentino Pinna
+ */
 public interface TransformationScheme
 {
+	/**
+	 * @return The {@link MetadataRepository} instance used by this TransformationScheme. 
+	 */
 	public MetadataRepository getRepository();
 
-	public VTLValue resolve(String node);
+	/**
+	 * Searches and retrieves a value, referred by an alias defined in this TransformationScheme.
+	 *  
+	 * @param alias The alias whose value is to be retrieved.
+	 * @return The {@link VTLValue} if the alias is found.
+	 * @throws VTLUnboundNameException if the alias is not defined.
+	 */
+	public VTLValue resolve(String alias);
 
-	public VTLValueMetadata getMetadata(String node);
+	/**
+	 * Searches and retrieves metadata for value, referred by an alias defined in this TransformationScheme.
+	 *  
+	 * @param alias the alias whose value is to be retrieved.
+	 * @return the {@link VTLValueMetadata metadata} of the value if the alias is found.
+	 * @throws VTLUnboundNameException if the alias is not defined.
+	 */
+	public VTLValueMetadata getMetadata(String alias);
 
-	public Statement getRule(String node);
+	/**
+	 * Returns a {@link Statement structure} a rule referred by an alias defined in this TransformationScheme.
+	 * 
+	 * @param alias the alias of the rule whose structure is to be retrieved.
+	 * @return a {@link Statement} instance describing the rule if found.
+	 * @throws VTLUnboundNameException if the alias is not defined.
+	 */
+	public Statement getRule(String alias);
 
-	public default <T extends VTLValue> T resolve(String node, Class<T> expected)
+	/**
+	 * The same as {@code expected.cast(resolve(alias))} 
+	 */
+	public default <T extends VTLValue> T resolve(String alias, Class<T> expected)
 	{
-		return expected.cast(resolve(node));
+		return expected.cast(resolve(alias));
 	}
 }

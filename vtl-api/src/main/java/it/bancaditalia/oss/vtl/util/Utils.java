@@ -55,6 +55,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+/**
+ * This class contains various utility functions used by the VTL Engine implementation.
+ * 
+ * @author m027907 Valentino Pinna
+ */
 public final class Utils
 {
 	public static final boolean SEQUENTIAL = "true".equalsIgnoreCase(System.getProperty("vtl.sequential"));

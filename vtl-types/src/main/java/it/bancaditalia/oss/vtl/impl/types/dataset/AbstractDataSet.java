@@ -25,7 +25,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.lang.ref.SoftReference;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 
 public abstract class AbstractDataSet implements DataSet
 {
@@ -69,12 +69,6 @@ public abstract class AbstractDataSet implements DataSet
 
 	@Override
 	public VTLDataSetMetadata getDataStructure()
-	{
-		return dataStructure;
-	}
-
-	@Override
-	public Collection<? extends DataStructureComponent<?, ?, ?>> getComponents()
 	{
 		return dataStructure;
 	}
