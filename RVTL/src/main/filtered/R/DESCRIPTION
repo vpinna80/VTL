@@ -9,7 +9,7 @@ Description: R wrapper for VTL Engine
     More about VTL (and SDMX) 
 			 can be found at: <https://sdmx.org>.
 Depends: R (>= 3.3.0), rJava (>= 0.8-8), R6
-Imports: RJSDMX (>= 2.3-3), igraph, networkD3, shiny, shinydashboard, shinyjs, jdx, xtable, dplyr, sortable
+Imports: RJSDMX (>= 2.3-3), igraph, networkD3, shiny, shinydashboard, shinyjs, jdx, xtable, dplyr, sortable, DT
 Suggests: testthat
 SystemRequirements: Java (>= 8)
 License: EUPL
