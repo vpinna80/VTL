@@ -1,10 +1,13 @@
 Package: ${project.artifactId}
 Version: ${r.package.version}
 Title: R Wrapper for VTL Engine
-Author: Attilio Mattiocco 
-Maintainer: Attilio Mattiocco <attilio.mattiocco@bancaditalia.it>
+Author: Attilio Mattiocco, Valentino Pinna, Banca d'Italia
+Maintainer: Valentino Pinna <valentino.pinna@bancaditalia.it>, Attilio Mattiocco <attilio.mattiocco@bancaditalia.it>
 Description: R wrapper for VTL Engine
-    More to be added.
+    This package contains functions and a shiny UI for dealing 
+    with the Validation and Transformation Language v2.0.
+    More about VTL (and SDMX) 
+			 can be found at: <https://sdmx.org>.
 Depends: R (>= 3.3.0), rJava (>= 0.8-8), R6
 Imports: RJSDMX (>= 2.3-3), igraph, networkD3, shiny, shinydashboard, shinyjs, jdx, xtable, dplyr, sortable
 Suggests: testthat
