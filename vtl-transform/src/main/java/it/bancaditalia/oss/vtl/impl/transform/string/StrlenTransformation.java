@@ -19,7 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
-import it.bancaditalia.oss.vtl.impl.transform.ops.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;

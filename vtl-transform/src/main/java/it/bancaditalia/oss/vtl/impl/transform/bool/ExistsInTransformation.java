@@ -17,10 +17,10 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.bool;
 
-import static it.bancaditalia.oss.vtl.impl.transform.ops.ExistsInTransformation.ExistsInMode.ALL;
-import static it.bancaditalia.oss.vtl.impl.transform.ops.ExistsInTransformation.ExistsInMode.TRUE;
+import static it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation.ExistsInMode.ALL;
+import static it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation.ExistsInMode.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;

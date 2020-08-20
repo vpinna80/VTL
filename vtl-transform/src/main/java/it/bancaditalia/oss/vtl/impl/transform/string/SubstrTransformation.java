@@ -29,10 +29,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
-import it.bancaditalia.oss.vtl.impl.transform.ops.ConstantOperand;
-import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
@@ -173,5 +173,14 @@ public class SubstrTransformation extends TransformationImpl
 		terminals.addAll(startOperand.getTerminals());
 		terminals.addAll(lenOperand.getTerminals());
 		return terminals;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "substr(" + exprOperand +  
+				(startOperand != null ? ", " + startOperand : "") + 
+				(lenOperand != null ? ", " + lenOperand : "") + 
+				")";
 	}
 }

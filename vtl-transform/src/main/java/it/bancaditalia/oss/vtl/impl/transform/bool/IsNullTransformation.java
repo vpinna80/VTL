@@ -17,19 +17,23 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static java.util.Collections.singletonMap;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
@@ -38,15 +42,17 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue.VTLScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class NotTransformation extends UnaryTransformation
+public class IsNullTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
+	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>(BOOLEAN.getDomain().getVarName(), Measure.class, BOOLEANDS);
 
-	public NotTransformation(Transformation operand)
+	public IsNullTransformation(Transformation operand)
 	{
 		super(operand);
 	}
@@ -54,54 +60,48 @@ public class NotTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
 	{
-		return BooleanValue.of(!BOOLEANDS.cast(scalar).get());
+		return BooleanValue.of(scalar instanceof NullValue);
 	}
 
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
-		
-		return dataset.mapKeepingKeys(dataset.getDataStructure(), dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
-				map.replaceAll((c, v) -> BooleanValue.of(!BOOLEANDS.cast(v).get()));
-				return map;
-			});
+		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+				.addComponent(BOOL_MEASURE)
+				.build();
+
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
+
+		return dataset.mapKeepingKeys(structure, dp -> singletonMap(BOOL_MEASURE, BooleanValue.of(dp.get(measure) instanceof NullValue)));
 	}
 
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
-		
+
 		if (meta instanceof VTLScalarValueMetadata)
-		{
-			ValueDomainSubset<?> domain = ((VTLScalarValueMetadata<?>) meta).getDomain();
-			if (Domains.BOOLEANDS.isAssignableFrom(domain))
+			if (Domains.BOOLEANDS.isAssignableFrom(((VTLScalarValueMetadata<?>) meta).getDomain()))
 				return BOOLEAN;
 			else
-				throw new VTLIncompatibleTypesException("not", BOOLEANDS, domain);
-		}
+				throw new VTLIncompatibleTypesException("isnull", BOOLEANDS, ((VTLScalarValueMetadata<?>) meta).getDomain());
 		else
 		{
 			VTLDataSetMetadata dataset = (VTLDataSetMetadata) meta;
-			
+
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
-			if (measures.size() == 0)
-				throw new VTLMissingComponentsException("measure", dataset);
-			
-			measures.stream().forEach(m -> {
-				if (!BOOLEANDS.isAssignableFrom(m.getDomain()))
-					throw new VTLIncompatibleTypesException(toString(), BOOLEANDS, m.getDomain());
-			});
-			
-			return dataset;
+			if (dataset.getComponents(Measure.class).size() != 1)
+				throw new VTLSingletonComponentRequiredException(Measure.class, measures);
+
+			return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+					.addComponent(BOOL_MEASURE)
+					.build();
 		}
 	}
 	
 	@Override
 	public String toString()
 	{
-		return "not " + operand;
+		return "isnull(" + operand + ")";
 	}
 }

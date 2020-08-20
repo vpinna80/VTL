@@ -17,8 +17,9 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
@@ -26,6 +27,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
+import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -76,8 +78,6 @@ public class BooleanTransformation extends BinaryTransformation
 			return name().toLowerCase();
 		}
 	}
-
-	private static final VTLScalarValueMetadata<BooleanDomainSubset> META = () -> Domains.BOOLEANDS;
 
 	private final BooleanBiOperator operator;
 	private VTLDataSetMetadata    metadata = null;
@@ -166,7 +166,7 @@ public class BooleanTransformation extends BinaryTransformation
 		}
 		else if (left instanceof VTLScalarValueMetadata && ((VTLScalarValueMetadata<?>) left).getDomain() instanceof BooleanDomainSubset && right instanceof VTLScalarValueMetadata
 				&& ((VTLScalarValueMetadata<?>) right).getDomain() instanceof BooleanDomainSubset)
-			return META;
+			return BOOLEAN;
 		else
 		{
 			metadata = (VTLDataSetMetadata) (left instanceof VTLDataSetMetadata ? left : right);

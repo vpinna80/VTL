@@ -17,86 +17,88 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.clause;
+package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toConcurrentMap;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
-public class SubspaceClauseTransformation extends DatasetClauseTransformation
+public class KeepClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final Map<String, ScalarValue<?, ?, ?>> subspace;
+	private final String names[];
 	private VTLDataSetMetadata metadata;
 	
-	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?>> subspace)
+	public KeepClauseTransformation(List<String> names)
 	{
-		this.subspace = subspace;
+		this.names = names.toArray(new String[names.size()]);
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
-		DataSet operand = (DataSet) getThisValue(session);
-		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
-				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().as(Identifier.class), Entry::getValue));
-		
-		return new LightDataSet(metadata, () -> operand.stream()
-				.filter(dp -> subspaceKeyValues.equals(dp.getValues(subspaceKeyValues.keySet(), Identifier.class)))
-				.map(dp -> new DataPointBuilder(dp).delete(subspaceKeyValues.keySet()).build(metadata)));
+		return ((DataSet) getThisValue(session)).mapKeepingKeys(metadata, dp -> {
+				Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+				map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
+				return map;
+			});
 	}
 
 	@Override
 	public VTLDataSetMetadata getMetadata(TransformationScheme session)
 	{
-		if (metadata != null)
-			return metadata;
-		
 		VTLValueMetadata operand = getThisMetadata(session);
 		
 		if (!(operand instanceof VTLDataSetMetadata))
 			throw new VTLInvalidParameterException(operand, VTLDataSetMetadata.class);
 		
-		VTLDataSetMetadata dataset = (VTLDataSetMetadata) operand;
+		VTLDataSetMetadata dsMeta = (VTLDataSetMetadata) operand;
+		List<String> missing = Arrays.stream(names)
+				.filter(n -> !dsMeta.getComponent(n).isPresent())
+				.collect(toList());
 		
-		Set<String> missing = subspace.keySet().stream()
-				.filter(name -> dataset.getComponent(name, Identifier.class) == null)
-				.collect(Collectors.toSet());
+		if (!missing.isEmpty())
+			throw new VTLMissingComponentsException(missing, (DataStructure) operand);
+			
+		Set<DataStructureComponent<Identifier, ?, ?>> namedIDs = Arrays.stream(names)
+				.map(dsMeta::getComponent)
+				.map(o -> o.orElse(null))
+				.filter(Objects::nonNull)
+				.filter(c -> c.is(Identifier.class))
+				.map(c -> c.as(Identifier.class))
+				.collect(toSet());
 		
-		if (missing.size() > 0)
-			throw new VTLMissingComponentsException(missing, dataset);
+		if (!namedIDs.isEmpty())
+			throw new VTLInvariantIdentifiersException("keep", namedIDs);
 
-		// TODO: cast because compiler bug
-		metadata = dataset.subspace(subspace.keySet().stream()
-				.map(name -> (DataStructureComponent<Identifier, ?, ?>) dataset.getComponent(name, Identifier.class)).collect(toSet()));
-		
+		metadata = dsMeta.keep(names);
 		return metadata;
 	}
-	
+
 	@Override
 	public String toString()
 	{
-		return subspace.entrySet().stream()
-				.map(e -> e.getKey() + "=" + e.getValue())
-				.collect(joining(", ", "[sub ", "]"));
+		return Arrays.stream(names).collect(joining(", ", "[keep ", "]"));
 	}
 }

@@ -17,46 +17,42 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import static java.util.Collections.emptySet;
+
+import java.util.Set;
+
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
+import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class ParenthesesTransformation extends UnaryTransformation
+public abstract class DatasetClauseTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 
-	public ParenthesesTransformation(Transformation operand)
+	@Override
+	public boolean isTerminal()
 	{
-		super(operand);
+		return false;
+	}
+	
+	@Override
+	public Set<LeafTransformation> getTerminals()
+	{
+		return emptySet();
 	}
 
-	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValue getThisValue(TransformationScheme session)
 	{
-		return operand.getMetadata(session);
+		return session.resolve(ThisScope.THIS);
 	}
 
-	@Override
-	public String toString()
+	protected VTLDataSetMetadata getThisMetadata(TransformationScheme session)
 	{
-		return "(" + operand + ")";
-	}
-
-	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
-	{
-		return scalar;
-	}
-
-	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
-	{
-		return dataset;
+		return (VTLDataSetMetadata) session.getMetadata(ThisScope.THIS);
 	}
 }

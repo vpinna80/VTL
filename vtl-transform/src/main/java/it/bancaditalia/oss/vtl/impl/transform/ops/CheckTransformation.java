@@ -19,7 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
-import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanUnaryTransformation.BooleanUnaryOperator.CHECK;
+import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator.CHECK;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation.CheckOutput.ALL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
@@ -29,9 +29,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.ops.BooleanUnaryTransformation.BooleanUnaryOperator;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;

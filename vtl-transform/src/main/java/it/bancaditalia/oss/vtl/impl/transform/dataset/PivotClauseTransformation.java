@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.clause;
+package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.toConcurrentMap;

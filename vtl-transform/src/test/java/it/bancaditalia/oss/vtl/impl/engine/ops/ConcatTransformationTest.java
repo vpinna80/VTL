@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
 
 import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
 import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets;
-import it.bancaditalia.oss.vtl.impl.transform.ops.ConcatTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.ops.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.string.ConcatTransformation;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;

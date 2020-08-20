@@ -29,7 +29,7 @@ import static java.util.Collections.singletonMap;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;

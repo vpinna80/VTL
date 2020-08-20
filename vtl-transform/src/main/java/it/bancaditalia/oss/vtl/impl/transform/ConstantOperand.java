@@ -17,54 +17,61 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform;
 
-import static java.util.Collections.emptySet;
-
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public abstract class UnaryTransformation extends TransformationImpl
+public class ConstantOperand<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain, 
+		T extends ScalarValue<R, S, D>> extends TransformationImpl implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
-	protected final Transformation operand;
 
-	public UnaryTransformation(Transformation operand)
-	{
-		this.operand = operand;
-	}
+	private final T value;
+	private final VTLScalarValueMetadata<S> metadata;
 	
-	@Override
-	public final boolean isTerminal()
+	@SuppressWarnings("unchecked")
+	public ConstantOperand(T value)
 	{
-		return operand != null;
-	}
-	
-	@Override
-	public final Set<LeafTransformation> getTerminals()
-	{
-		return operand != null ? operand.getTerminals() : emptySet();
-	}
-	
-	@Override
-	public final VTLValue eval(TransformationScheme session)
-	{
-		VTLValue value = operand == null ? session.resolve(ThisScope.THIS) : operand.eval(session);
-		
-		if (value instanceof DataSet)
-			return evalOnDataset((DataSet) value);
-		else
-			return evalOnScalar((ScalarValue<?, ?, ?>) value);
+		this.value = value;
+		metadata = (VTLScalarValueMetadata<S>) value.getMetadata();
 	}
 
-	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar);
+	@Override
+	public T eval(TransformationScheme session)
+	{
+		return value;
+	}
 
-	protected abstract VTLValue evalOnDataset(DataSet dataset);
+	@Override
+	public String getText()
+	{
+		return value == null ? "null" : value.toString();
+	}
+
+	@Override
+	public Set<LeafTransformation> getTerminals()
+	{
+		return new HashSet<>();
+	}
+
+	@Override
+	public VTLScalarValueMetadata<S> getMetadata(TransformationScheme scheme)
+	{
+		return metadata;
+	}
+
+	@Override
+	public String toString()
+	{
+		return value.toString();
+	}
 }

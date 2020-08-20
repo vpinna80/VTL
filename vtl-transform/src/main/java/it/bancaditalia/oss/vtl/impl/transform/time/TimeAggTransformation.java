@@ -24,7 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import java.util.Map;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.impl.transform.ops.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;

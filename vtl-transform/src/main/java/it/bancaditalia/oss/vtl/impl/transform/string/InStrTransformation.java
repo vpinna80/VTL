@@ -28,11 +28,11 @@ import static java.util.Collections.singletonMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
-import it.bancaditalia.oss.vtl.impl.transform.ops.ConstantOperand;
-import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -188,5 +188,14 @@ public class InStrTransformation extends TransformationImpl
 		terminals.addAll(startOperand.getTerminals());
 		terminals.addAll(occurrenceOperand.getTerminals());
 		return terminals;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "instr(" + leftOperand + ", " + rightOperand + 
+				(startOperand != null ? ", " + startOperand : "") + 
+				(occurrenceOperand != null ? ", " + occurrenceOperand : "") + 
+				")";
 	}
 }

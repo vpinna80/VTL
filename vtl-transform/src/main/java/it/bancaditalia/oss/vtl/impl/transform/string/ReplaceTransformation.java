@@ -27,9 +27,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.ops.ConstantOperand;
-import it.bancaditalia.oss.vtl.impl.transform.ops.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
@@ -149,5 +149,11 @@ public class ReplaceTransformation extends TransformationImpl
 		terminals.addAll(patternOperand.getTerminals());
 		terminals.addAll(replaceOperand.getTerminals());
 		return terminals;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "replace(" + exprOperand + ", " + patternOperand + ", " + replaceOperand + ")"; 
 	}
 }

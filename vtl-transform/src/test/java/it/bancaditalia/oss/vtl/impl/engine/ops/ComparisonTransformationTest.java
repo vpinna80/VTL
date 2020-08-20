@@ -36,8 +36,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
 import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets;
-import it.bancaditalia.oss.vtl.impl.transform.ops.ComparisonTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.ops.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.bool.ComparisonTransformation;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;

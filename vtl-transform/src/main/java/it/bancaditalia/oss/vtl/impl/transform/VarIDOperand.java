@@ -17,14 +17,45 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform;
 
-import java.io.Serializable;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
-
-public abstract class TransformationImpl implements Transformation, Serializable
+public class VarIDOperand extends TransformationImpl implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
 
+	private final String name;
+	
+	public VarIDOperand(String name)
+	{
+		this.name = name;
+	}
+	
+	@Override
+	public VTLValue eval(TransformationScheme session)
+	{
+		return session.resolve(name);
+	}
+
+	@Override
+	public String getText()
+	{
+		return name;
+	}
+
+	@Override
+	public VTLValueMetadata getMetadata(TransformationScheme scheme)
+	{
+		return scheme.getMetadata(name);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name;
+	}
 }

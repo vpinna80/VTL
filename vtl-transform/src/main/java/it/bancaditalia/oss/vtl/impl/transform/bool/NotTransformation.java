@@ -17,18 +17,19 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.bool;
 
-import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanUnaryTransformation.BooleanUnaryOperator.NOT;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -38,36 +39,15 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue.VTLScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
+import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class BooleanUnaryTransformation extends UnaryTransformation
+public class NotTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public enum BooleanUnaryOperator //implements Function<ScalarValue<?, BooleanDomainSubset, BooleanDomain>, ScalarValue<?, BooleanDomainSubset, BooleanDomain>>
-	{
-		NOT(a -> !a), CHECK(a -> a);
-
-		private final Predicate<Boolean> booleanOp;
-
-		private BooleanUnaryOperator(Predicate<Boolean> booleanOp)
-		{
-			this.booleanOp = booleanOp;
-		}
-
-		public ScalarValue<?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, BooleanDomainSubset, BooleanDomain> booleanValue)
-		{
-			return booleanValue instanceof NullValue ? NullValue.instance(BOOLEANDS)
-					: BooleanValue.of(booleanOp.test((Boolean) booleanValue.get()));
-		}
-	}
-
-	private final static BooleanUnaryOperator function = NOT;
-
-	public BooleanUnaryTransformation(Transformation operand)
+	public NotTransformation(Transformation operand)
 	{
 		super(operand);
 	}
@@ -75,44 +55,54 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
 	{
-		return function.apply(BOOLEANDS.cast(scalar));
+		return BooleanValue.of(!BOOLEANDS.cast(scalar).get());
 	}
 
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
-
+		
 		return dataset.mapKeepingKeys(dataset.getDataStructure(), dp -> {
-			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
-			map.replaceAll((c, v) -> function.apply(BOOLEANDS.cast(v)));
-			return map;
-		});
+				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+				map.replaceAll((c, v) -> BooleanValue.of(!BOOLEANDS.cast(v).get()));
+				return map;
+			});
 	}
 
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
-
+		
 		if (meta instanceof VTLScalarValueMetadata)
-			if (((VTLScalarValueMetadata<?>) meta).getDomain() instanceof BooleanDomainSubset)
-				return (VTLScalarValueMetadata<?>) () -> BOOLEANDS;
+		{
+			ValueDomainSubset<?> domain = ((VTLScalarValueMetadata<?>) meta).getDomain();
+			if (Domains.BOOLEANDS.isAssignableFrom(domain))
+				return BOOLEAN;
 			else
-				throw new VTLIncompatibleTypesException(function.toString(), BOOLEANDS, ((VTLScalarValueMetadata<?>) meta).getDomain());
+				throw new VTLIncompatibleTypesException("not", BOOLEANDS, domain);
+		}
 		else
 		{
 			VTLDataSetMetadata dataset = (VTLDataSetMetadata) meta;
-
+			
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
-			if (dataset.getComponents(Measure.class).size() == 0)
-				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
-
-			measures.removeAll(dataset.getComponents(Measure.class, BOOLEANDS));
-			if (measures.size() > 0)
-				throw new UnsupportedOperationException("Expected only numeric measures but found: " + measures);
-
+			if (measures.size() == 0)
+				throw new VTLMissingComponentsException("measure", dataset);
+			
+			measures.stream().forEach(m -> {
+				if (!BOOLEANDS.isAssignableFrom(m.getDomain()))
+					throw new VTLIncompatibleTypesException(toString(), BOOLEANDS, m.getDomain());
+			});
+			
 			return dataset;
 		}
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "not " + operand;
 	}
 }

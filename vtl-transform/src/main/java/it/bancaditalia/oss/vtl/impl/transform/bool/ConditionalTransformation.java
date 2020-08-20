@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -60,8 +61,8 @@ public class ConditionalTransformation extends TransformationImpl
 		this.elseExpr = falseExpr;
 	}
 
-	private final Transformation	condition;
-	private final Transformation	thenExpr, elseExpr;
+	protected final Transformation	condition;
+	protected final Transformation	thenExpr, elseExpr;
 
 	private VTLValueMetadata		metadata;
 

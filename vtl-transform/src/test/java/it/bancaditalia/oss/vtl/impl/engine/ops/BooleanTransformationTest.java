@@ -21,9 +21,9 @@ package it.bancaditalia.oss.vtl.impl.engine.ops;
 
 import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE3;
 import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE4;
-import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator.AND;
-import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator.OR;
-import static it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator.XOR;
+import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.AND;
+import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.OR;
+import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.XOR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -38,9 +38,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
-import it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation.BooleanBiOperator;
-import it.bancaditalia.oss.vtl.impl.transform.ops.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSet.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;

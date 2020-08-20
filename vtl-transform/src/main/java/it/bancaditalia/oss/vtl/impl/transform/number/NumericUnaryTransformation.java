@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.transform.ops;
+package it.bancaditalia.oss.vtl.impl.transform.number;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static java.util.function.DoubleUnaryOperator.identity;
@@ -29,6 +29,7 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.LongFunction;
 import java.util.function.UnaryOperator;
 
+import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
