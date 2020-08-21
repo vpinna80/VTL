@@ -32,7 +32,7 @@
 		<!-- tokenmapping name="SCALAR" value="" / -->
 	</tokenset>
 
-	<tokenset name="StringOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.StringUnaryTransformation$StringOperator">
+	<tokenset name="StringOperator" class="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation$StringOperator">
 		<tokenmapping name="TRIM" value="TRIM" />
 		<tokenmapping name="LTRIM" value="LTRIM" />
 		<tokenmapping name="RTRIM" value="RTRIM" />
@@ -40,7 +40,7 @@
 		<tokenmapping name="LCASE" value="LCASE" />
 	</tokenset>
 	
-	<tokenset name="ExistInMode" class="it.bancaditalia.oss.vtl.impl.transform.ops.ExistsInTransformation$ExistsInMode">
+	<tokenset name="ExistInMode" class="it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation$ExistsInMode">
 		<tokenmapping name="ALL" value="ALL"/>
 		<tokenmapping name="TRUE" value="TRUE"/>
 		<tokenmapping name="FALSE" value="FALSE"/>
@@ -59,7 +59,7 @@
 		<tokenmapping name="STDDEV_SAMP" value="STDDEV_SAMP" />
 	</tokenset>
 
-	<tokenset name="NumericUnaryOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.NumericUnaryTransformation$NumericOperator">
+	<tokenset name="NumericUnaryOperator" class="it.bancaditalia.oss.vtl.impl.transform.number.NumericUnaryTransformation$NumericOperator">
 		<tokenmapping name="PLUS" value="UNARY_PLUS" />
 		<tokenmapping name="MINUS" value="UNARY_MINUS" />
 		<tokenmapping name="CEIL" value="CEIL" />
@@ -86,12 +86,12 @@
 		<tokenmapping name="SYMDIFF" value="SYMDIFF" />
 	</tokenset>
 
-	<tokenset name="DatasetOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.DatasetUnaryTransformation$DatasetOperator">
+	<tokenset name="DatasetOperator" class="it.bancaditalia.oss.vtl.impl.transform.dataset.DatasetUnaryTransformation$DatasetOperator">
 		<tokenmapping name="FLOW_TO_STOCK" value="FLOW_TO_STOCK" />
 		<tokenmapping name="STOCK_TO_FLOW" value="STOCK_TO_FLOW" />
 	</tokenset>
 
-	<tokenset name="InOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.InclusionTransformation$InOperator">
+	<tokenset name="InOperator" class="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation$InOperator">
 		<tokenmapping name="IN" value="IN" />
 		<tokenmapping name="NOT_IN" value="NOTIN" />
 	</tokenset>
@@ -108,7 +108,7 @@
 		<tokenmapping name="LOG" value="LOG" />
 	</tokenset>
 
-	<tokenset name="BooleanOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.BooleanTransformation$BooleanBiOperator">
+	<tokenset name="BooleanOperator" class="it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation$BooleanBiOperator">
 		<tokenmapping name="AND" value="AND" />
 		<tokenmapping name="OR" value="OR" />
 		<tokenmapping name="XOR" value="XOR" />
@@ -209,7 +209,7 @@
 		</params>
 	</mapping>
 
-	<mapping from="AggrFunctionClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.clause.AggrClauseTransformation$AggrClauseItem">
+	<mapping from="AggrFunctionClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.AggrClauseTransformation$AggrClauseItem">
 		<params>
 			<roleparam name="componentRole" />
 			<stringparam name="componentID" />
@@ -261,7 +261,7 @@
 			</listparam>
 		</params>
 	</mapping>
-	<mapping from="CalcClauseItemContext" to="it.bancaditalia.oss.vtl.impl.transform.clause.CalcClauseTransformation$CalcClauseItem">
+	<mapping from="CalcClauseItemContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.CalcClauseTransformation$CalcClauseItem">
 		<params>
 			<roleparam name="componentRole" />
 			<stringparam name="componentID" />
