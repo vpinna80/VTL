@@ -26,7 +26,7 @@
 	<version>${revision}</version>
 	<packaging>pom</packaging>
 
-	<name>VTL</name>
+	<name>VTL Engine</name>
 	<description>VTL prototypal engine</description>
 	<url>${site-url}</url>
 
@@ -142,7 +142,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.0.5-SNAPSHOT</revision>
+		<revision>1.0.5</revision>
 		<sdmx.version>2.3.3</sdmx.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
