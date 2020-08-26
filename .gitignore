@@ -1,8 +1,10 @@
 target
 dependency-reduced-pom.xml
 **/*.tmp
+**/*.ipynb*
 hs_err_*
 **/*.orig
+**/*.pydevproject
 .R*
 .externalToolBuilders
 **/target
