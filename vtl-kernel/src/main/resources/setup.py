@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name="VTL Engine",
+    name="${project.name}",
     version="${python.package.version}",
     author="Valentino Pinna",
     author_email="valentino.pinna@bancaditalia.it",
