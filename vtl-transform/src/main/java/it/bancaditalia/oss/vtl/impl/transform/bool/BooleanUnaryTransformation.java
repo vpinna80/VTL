@@ -85,7 +85,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 
-		return dataset.mapKeepingKeys(dataset.getDataStructure(), dp -> {
+		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> {
 			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 			map.replaceAll((c, v) -> function.apply(BOOLEANDS.cast(v)));
 			return map;

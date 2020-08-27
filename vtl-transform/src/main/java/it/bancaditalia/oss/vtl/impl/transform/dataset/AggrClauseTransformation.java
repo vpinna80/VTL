@@ -165,7 +165,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			List<DataPoint> groupList = group.collect(toList());
 			final DataPointBuilder groupResult = new DataPointBuilder(Utils.getStream(operands)
 					.map(o -> {
-						DataSet groupDataSet = new LightDataSet(operand.getDataStructure(), groupList::stream);
+						DataSet groupDataSet = new LightDataSet(operand.getMetadata(), groupList::stream);
 						DataStructureComponent<?, ?, ?> component = metadata.getComponent(o.getComponent()).get();
 						ScalarValue<?, ?, ?> value = (ScalarValue<?, ?, ?>) o.getOperand().eval(new ThisScope(groupDataSet, session));
 

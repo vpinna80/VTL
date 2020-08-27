@@ -113,7 +113,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 									acc.put(m, dp.get(m));
 								return v; 
 							}))).addAll(dp.getValues(Identifier.class))
-							.build(ds.getDataStructure()));
+							.build(ds.getMetadata()));
 				}).reduce(Stream::concat)
 				.orElse(Stream.empty());
 		}
@@ -137,7 +137,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
-		return new LightF2DataSet<>(dataset.getDataStructure(), operator::apply, dataset, main);
+		return new LightF2DataSet<>(dataset.getMetadata(), operator::apply, dataset, main);
 	}
 	
 	@Override

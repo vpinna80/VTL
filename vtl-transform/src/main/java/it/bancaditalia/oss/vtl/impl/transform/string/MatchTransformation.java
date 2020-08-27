@@ -74,7 +74,7 @@ public class MatchTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> patternV)
 	{
-		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getDataStructure().getComponents(Identifier.class))
+		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
 				.addComponent(BOOL_MEASURE)
 				.build();
 

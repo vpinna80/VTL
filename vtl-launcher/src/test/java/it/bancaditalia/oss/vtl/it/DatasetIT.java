@@ -93,10 +93,10 @@ public class DatasetIT {
 		
 		assertNotNull(dataset, "Null " + description);
 		if (expectedSize > 0)
-			assertEquals(expectedSize, dataset.getDataStructure().size(), "Wrong number of columns for " + description);
+			assertEquals(expectedSize, dataset.getMetadata().size(), "Wrong number of columns for " + description);
 		
-		assertTrue(dataset.getDataStructure().contains("TIME_PERIOD"), "Missing column TIME_PERIOD in " + description);
-		assertTrue(dataset.getDataStructure().contains("OBS_VALUE"), "Missing column OBS_VALUE in " + description);
+		assertTrue(dataset.getMetadata().contains("TIME_PERIOD"), "Missing column TIME_PERIOD in " + description);
+		assertTrue(dataset.getMetadata().contains("OBS_VALUE"), "Missing column OBS_VALUE in " + description);
 		assertTrue(dataset.stream().count() == dataset.stream().map(dp -> dp.get(TIME_PERIOD)).map(StringValue.class::cast).map(StringValue::get).distinct().count(),
 				"TIME_PERIOD not unique in " + description);
 		

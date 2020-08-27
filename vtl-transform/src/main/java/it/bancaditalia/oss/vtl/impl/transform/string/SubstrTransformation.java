@@ -83,7 +83,7 @@ public class SubstrTransformation extends TransformationImpl
 		if (expr instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) expr;
-			VTLDataSetMetadata structure = dataset.getDataStructure();
+			VTLDataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 			int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
 			

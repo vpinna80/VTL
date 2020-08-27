@@ -98,7 +98,7 @@ public class ArithmeticTransformationTest
 		DataStructureComponent<?, ?, ?> numberMeasure = metadata.getComponent("NUMBER_1").get();
 		
 		assertEquals(integerResults.length, computedResult.size());
-		assertEquals(metadata, computedResult.getDataStructure());
+		assertEquals(metadata, computedResult.getMetadata());
 		
 		List<Long> longResults = Arrays.asList(integerResults);
 		List<Long> longComputedResults = computedResult.stream()

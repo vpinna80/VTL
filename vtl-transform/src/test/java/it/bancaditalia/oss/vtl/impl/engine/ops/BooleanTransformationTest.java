@@ -85,7 +85,7 @@ public class BooleanTransformationTest
 		DataSet computedResult = (DataSet) arTransformation.eval(session);
 		
 		assertEquals(booleanResults.length, computedResult.size());
-		assertEquals(metadata, computedResult.getDataStructure());
+		assertEquals(metadata, computedResult.getMetadata());
 		
 		DataStructureComponent<?, ?, ?> id = metadata.getComponent("STRING_1").get();
 		DataStructureComponent<?, ?, ?> measure = metadata.getComponent("BOOLEAN_1").get();

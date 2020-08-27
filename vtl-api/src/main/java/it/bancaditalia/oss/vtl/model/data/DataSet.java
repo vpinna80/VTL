@@ -42,6 +42,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
  */
 public interface DataSet extends VTLValue
 {
+	/**
+	 * @return The {@link VTLDataSetMetadata structure} of this DataSet.
+	 */
 	@Override
 	public VTLDataSetMetadata getMetadata();
 	
@@ -50,11 +53,6 @@ public interface DataSet extends VTLValue
 	 * The stream does not conform to a particular ordering.
 	 */
 	public Stream<DataPoint> stream();
-
-	/**
-	 * @return The {@link VTLDataSetMetadata structure} of this DataSet.
-	 */
-	public VTLDataSetMetadata getDataStructure();
 
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
@@ -160,9 +158,12 @@ public interface DataSet extends VTLValue
 	 * @param names The requested components' names.
 	 * @return The requested components, or an empty set if none was found.
 	 */
-	public default Set<DataStructureComponent<?, ?, ?>> getComponents(String... names)
+	public default Set<DataStructureComponent<?, ?, ?>> getComponents(String name, String... names)
 	{
-		return getDataStructure().getComponents(names);
+		String result[] = new String[names.length + 1];
+		result[0] = name;
+		System.arraycopy(names, 0, result, 1, names.length);
+		return getMetadata().getComponents(result);
 	}
 
 	/**
@@ -176,7 +177,7 @@ public interface DataSet extends VTLValue
 	 */
 	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureComponent<?, S, D> getComponent(String name, S domain)
 	{
-		return getDataStructure().getComponent(name, domain);
+		return getMetadata().getComponent(name, domain);
 	}
 
 
@@ -191,7 +192,7 @@ public interface DataSet extends VTLValue
 	 */
 	public default <R extends ComponentRole> DataStructureComponent<R, ?, ?> getComponent(String name, Class<R> role)
 	{
-		return getDataStructure().getComponent(name, role);
+		return getMetadata().getComponent(name, role);
 	}
 	
 	/**
@@ -207,7 +208,7 @@ public interface DataSet extends VTLValue
 	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureComponent<R, S, D> getComponent(String name,
 			Class<R> role, S domain)
 	{
-		return getDataStructure().getComponent(name, role, domain);
+		return getMetadata().getComponent(name, role, domain);
 	}
 	
 	/**
@@ -225,7 +226,7 @@ public interface DataSet extends VTLValue
 	 */
 	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 	{
-		return getDataStructure().getComponents(typeOfComponent);
+		return getMetadata().getComponents(typeOfComponent);
 	}
 
 	/**
@@ -234,7 +235,7 @@ public interface DataSet extends VTLValue
 	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
 			S domain)
 	{
-		return getDataStructure().getComponents(role, domain);
+		return getMetadata().getComponents(role, domain);
 	}
 
 	/**

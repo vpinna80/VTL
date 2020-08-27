@@ -73,7 +73,7 @@ public class ReplaceTransformation extends TransformationImpl
 		if (left instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) left;
-			VTLDataSetMetadata structure = dataset.getDataStructure();
+			VTLDataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getComponents(Measure.class);
 			Pattern compiled = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
 			

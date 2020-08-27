@@ -72,7 +72,7 @@ public class DataSetResultBean extends ResultBean
 	{
 		super("DATASET");
 		
-		structure = dataset.getComponents().stream().map(ComponentBean::new).collect(toList());
+		structure = dataset.getMetadata().stream().map(ComponentBean::new).collect(toList());
 		datapoints = dataset.stream();
 	}
 

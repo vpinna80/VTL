@@ -93,7 +93,7 @@ public class InStrTransformation extends TransformationImpl
 		if (left instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) left;
-			VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getDataStructure().getComponents(Identifier.class))
+			VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
 					.addComponent(INT_MEASURE)
 					.build();
 			DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();

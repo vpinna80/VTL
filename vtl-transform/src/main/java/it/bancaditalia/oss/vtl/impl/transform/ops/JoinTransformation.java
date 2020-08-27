@@ -24,6 +24,8 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.util.Utils.byKey;
 import static it.bancaditalia.oss.vtl.util.Utils.byValue;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
@@ -269,31 +271,39 @@ public class JoinTransformation extends TransformationImpl
 	{
 		ConcurrentMap<DataStructureComponent<?, ?, ?>, Boolean> unique = new ConcurrentHashMap<>();
 		Set<DataStructureComponent<?, ?, ?>> toBeRenamed = Utils.getStream(datasets.values())
-				.map(DataSet::getDataStructure)
+				.map(DataSet::getMetadata)
 				.flatMap(d -> d.stream())
 				.filter(c -> unique.putIfAbsent(c, TRUE) != null)
 				.filter(c -> usingNames.isEmpty() ? c.is(NonIdentifier.class) : !usingNames.contains(c.getName()))
 				.collect(toSet());
 
 		return Utils.getStream(datasets)
-			.map(Utils.keepingKey((op, ds) -> {
-				VTLDataSetMetadata newStructure = ds.getComponents().stream()
-						.map(c -> toBeRenamed.contains(c) ? c.rename(op.getId() + "#" + c.getName()) : c)
+			.map(keepingKey((op, ds) -> {
+				String qualifier = op.getId() + "#";
+				VTLDataSetMetadata oldStructure = ds.getMetadata();
+				
+				// find components that must be renamed and add 'alias#' in front of their name
+				VTLDataSetMetadata newStructure = Utils.getStream(oldStructure)
+						.map(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c)
 						.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 						.build();
 				
-				if (newStructure.equals(ds.getDataStructure()))
+				if (newStructure.equals(oldStructure))
+				{
+					// no need to change the operand, the structure is the same
+					LOGGER.trace("Structure of dataset {} will be kept", oldStructure);
 					return ds;
+				}
 
-				LOGGER.trace("Structure of dataset {} will be changed to {}", ds, newStructure);
-
+				LOGGER.trace("Structure of dataset {} will be changed to {}", oldStructure, newStructure);
+				
+				// Create the dataset operand renaming components in all its datapoints
 				return new NamedDataSet(op.getId(), new LightFDataSet<>(newStructure, dataset -> dataset.stream()
-						.map(dp -> {
-							return Utils.getStream(dp)
-								.map(Utils.keepingValue(c -> toBeRenamed.contains(c) ? c.rename(op.getId() + "#" + c.getName()) : c))
+						.map(dp -> Utils.getStream(dp)
+								.map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c))
 								.reduce(new DataPointBuilder(), DataPointBuilder::add, DataPointBuilder::merge)
-								.build(newStructure);
-						}), ds));
+								.build(newStructure)
+						), ds));
 			})).collect(entriesToMap());
 	}
 

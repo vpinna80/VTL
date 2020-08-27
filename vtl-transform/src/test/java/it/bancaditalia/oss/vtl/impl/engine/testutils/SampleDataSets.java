@@ -11,7 +11,6 @@ import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleVariables.MEAS
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,24 +85,14 @@ public enum SampleDataSets implements DataSet
 		return createSample(new SampleVariables[] { IDENT_STRING_1, SampleVariables.valueOf("MEASURE_" + domain + "_" + level) });
 	}
 
-	public VTLDataSetMetadata getMetadata()
-	{
-		return dataset.getMetadata();
-	}
-
 	public Stream<DataPoint> stream()
 	{
 		return dataset.stream();
 	}
 
-	public VTLDataSetMetadata getDataStructure()
+	public VTLDataSetMetadata getMetadata()
 	{
-		return dataset.getDataStructure();
-	}
-
-	public Collection<? extends DataStructureComponent<?, ?, ?>> getComponents()
-	{
-		return dataset.getComponents();
+		return dataset.getMetadata();
 	}
 
 	public DataSet membership(String component)

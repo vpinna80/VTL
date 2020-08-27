@@ -35,7 +35,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -58,7 +57,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataStructureBuilder
 {
-	KeySetView<DataStructureComponent<?, ?, ?>, Boolean> components;
+	Set<DataStructureComponent<?, ?, ?>> components;
 
 	public DataStructureBuilder()
 	{

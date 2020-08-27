@@ -66,12 +66,6 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		this.dataStructure = dataStructure;
 	}
-
-	@Override
-	public VTLDataSetMetadata getDataStructure()
-	{
-		return dataStructure;
-	}
 	
 	@Override
 	public DataSet membership(String componentName)
@@ -201,7 +195,7 @@ public abstract class AbstractDataSet implements DataSet
 			result = stream
 					.peek(Objects::requireNonNull)
 					.map(DataPoint::toString)
-					.collect(joining(",\n\t", "(" + getDataStructure() + ") -> {\n\t", "\n}"));
+					.collect(joining(",\n\t", "(" + getMetadata() + ") -> {\n\t", "\n}"));
 		}
 
 		cacheString = new SoftReference<>(result);

@@ -55,7 +55,7 @@ public class Paginator implements AutoCloseable
 		
 	public Paginator(DataSet dataset)
 	{
-		dataStructure = dataset.getDataStructure();
+		dataStructure = dataset.getMetadata();
 		Thread thread = new Thread(() -> {
 			try (Stream<DataPoint> stream = dataset.stream())
 			{

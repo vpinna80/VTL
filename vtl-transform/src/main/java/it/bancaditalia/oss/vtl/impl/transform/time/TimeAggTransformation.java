@@ -72,7 +72,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
 		DataStructureComponent<Measure, TimeDomainSubset<TimeDomain>, TimeDomain> timeMeasure = dataset.getComponents(Measure.class, TIMEDS).iterator().next();
-		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getComponents())
+		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata())
 				.addComponent(periodComponent)
 				.build();
 		

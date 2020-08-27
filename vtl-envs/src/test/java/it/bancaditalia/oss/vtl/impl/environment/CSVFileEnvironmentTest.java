@@ -195,10 +195,10 @@ public class CSVFileEnvironmentTest
 		
 		DataSet dataset = (DataSet) search.get();
 		
-		assertEquals(3, dataset.getDataStructure().size(), "Wrong number of columns");
-		assertTrue(dataset.getDataStructure().contains(IDENTIFIER), "Missing IDENTIFIER Column");
-		assertTrue(dataset.getDataStructure().contains(MEASURE), "Missing MEASURE Column");
-		assertTrue(dataset.getDataStructure().contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
+		assertEquals(3, dataset.getMetadata().size(), "Wrong number of columns");
+		assertTrue(dataset.getMetadata().contains(IDENTIFIER), "Missing IDENTIFIER Column");
+		assertTrue(dataset.getMetadata().contains(MEASURE), "Missing MEASURE Column");
+		assertTrue(dataset.getMetadata().contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
 		
 		assertEquals(7, dataset.stream().count(), "Wrong number of rows");
 	}

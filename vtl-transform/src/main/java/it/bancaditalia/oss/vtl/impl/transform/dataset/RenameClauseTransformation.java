@@ -55,7 +55,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSet operand = (DataSet) getThisValue(session);
 		VTLDataSetMetadata metadata = getMetadata(session);
-		VTLDataSetMetadata oldStructure = operand.getDataStructure();
+		VTLDataSetMetadata oldStructure = operand.getMetadata();
 		
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
 				.collect(Collectors.toMap(name -> name, name -> oldStructure.getComponent(name).get()));

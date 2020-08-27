@@ -112,7 +112,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet dataset = (DataSet) getThisValue(session);
-		VTLDataSetMetadata structure = dataset.getDataStructure().pivot(identifier, measure);
+		VTLDataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
 		
 		return new LightFDataSet<>(structure, ds -> Utils.getStream(ds.stream()

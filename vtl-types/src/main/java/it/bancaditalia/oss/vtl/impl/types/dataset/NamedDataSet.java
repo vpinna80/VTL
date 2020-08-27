@@ -19,11 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.lang.ref.SoftReference;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -67,84 +63,88 @@ public class NamedDataSet implements DataSet
 		this.delegate = delegate;
 	}
 
-	public VTLDataSetMetadata getMetadata()
-	{
-		return getDelegate().getMetadata();
-	}
-
+	@Override
 	public long size()
 	{
 		return getDelegate().size();
 	}
 
+	@Override
 	public Stream<DataPoint> stream()
 	{
-		return delegate.stream();
+		return getDelegate().stream();
 	}
 
-	public VTLDataSetMetadata getDataStructure()
+	@Override
+	public VTLDataSetMetadata getMetadata()
 	{
-		return getDelegate().getDataStructure();
+		return getDelegate().getMetadata();
 	}
 
-	public Collection<? extends DataStructureComponent<?, ?, ?>> getComponents()
-	{
-		return getDelegate().getComponents();
-	}
-
+	@Override
 	public <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 	{
 		return getDelegate().getComponents(typeOfComponent);
 	}
 
+	@Override
 	public <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(
 			Class<R> typeOfComponent, S domain)
 	{
 		return getDelegate().getComponents(typeOfComponent, domain);
 	}
 
+	@Override
 	public DataSet membership(String component)
 	{
 		return getDelegate().membership(component);
 	}
 
+	@Override
 	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name)
 	{
 		return getDelegate().getComponent(name);
 	}
 
+	@Override
 	public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureComponent<?, S, D> getComponent(String name, S domain)
 	{
 		return getDelegate().getComponent(name, domain);
 	}
 
+	@Override
 	public <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureComponent<R, S, D> getComponent(String name,
 			Class<R> typeOfComponent, S domain)
 	{
 		return getDelegate().getComponent(name, typeOfComponent, domain);
 	}
 
+	@Override
 	public Stream<DataPoint> getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
 	{
 		return getDelegate().getMatching(keyValues);
 	}
 
+	@Override
 	public boolean contains(DataPoint datapoint)
 	{
 		return getDelegate().contains(datapoint);
 	}
 
+	@Override
 	public boolean notContains(DataPoint datapoint)
 	{
 		return getDelegate().notContains(datapoint);
 	}
 
+	@Override
 	public DataSet filteredMappedJoin(VTLDataSetMetadata metadata, DataSet rightDataset, BiPredicate<DataPoint, DataPoint> filter,
 			BinaryOperator<DataPoint> mergeOp)
 	{
 		return getDelegate().filteredMappedJoin(metadata, rightDataset, filter, mergeOp);
 	}
 
+	@Override
 	public <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
 			BiFunction<? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, ? super Stream<DataPoint>, T> groupMapper)
@@ -152,17 +152,20 @@ public class NamedDataSet implements DataSet
 		return getDelegate().streamByKeys(keys, filter, groupMapper);
 	}
 
+	@Override
 	public <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
 			BiFunction<? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, ? super Stream<DataPoint>, T> groupMapper)
 	{
 		return getDelegate().streamByKeys(keys, groupMapper);
 	}
 
+	@Override
 	public DataSet filter(Predicate<DataPoint> predicate)
 	{
 		return getDelegate().filter(predicate);
 	}
 
+	@Override
 	public DataSet mapKeepingKeys(VTLDataSetMetadata metadata,
 			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator)
 	{
@@ -174,23 +177,7 @@ public class NamedDataSet implements DataSet
 		return alias;
 	}
 
-	public void streamTo(PrintWriter output)
-	{
-		output.println(alias + " = {");
-		output.print("\t");
-		try (Stream<DataPoint> stream = stream())
-		{
-			stream.forEach(dp -> {
-				String datapoint = dp.toString();
-				output.println(",");
-				output.print("\t");
-				output.print(datapoint);
-			});
-		}
-		output.println();
-		output.println("}");
-	}
-
+	@Override
 	public String toString()
 	{
 		String result = null;
@@ -204,11 +191,6 @@ public class NamedDataSet implements DataSet
 
 		cacheString = new SoftReference<>(result);
 		return result;
-	}
-
-	public void streamTo(PrintStream output)
-	{
-		streamTo(new PrintWriter(new OutputStreamWriter(output)));
 	}
 
 	public DataSet getDelegate()

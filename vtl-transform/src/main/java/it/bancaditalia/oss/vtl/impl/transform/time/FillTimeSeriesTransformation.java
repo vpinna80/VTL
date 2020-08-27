@@ -89,7 +89,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet ds)
 	{
-		final VTLDataSetMetadata structure = ds.getDataStructure();
+		final VTLDataSetMetadata structure = ds.getMetadata();
 		final DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> timeID = ds.getComponents(Identifier.class, TIMEDS).iterator().next();
 		Set<DataStructureComponent<Identifier, ?, ?>> temp = new HashSet<>(ds.getComponents(Identifier.class));
 		temp.remove(timeID);

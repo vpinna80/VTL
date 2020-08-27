@@ -76,7 +76,7 @@ public class ConcatTransformation extends BinaryTransformation
 	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
 	{
 		BinaryOperator<ScalarValue<?, ? extends StringDomainSubset, ? extends StringDomain>> function = Utils.reverseIfBOp(!datasetIsLeftOp, concat);
-		VTLDataSetMetadata structure = dataset.getDataStructure();
+		VTLDataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = structure.getComponents(Measure.class, Domains.STRINGDS).iterator().next();
 		
 		return dataset.mapKeepingKeys(structure, dp -> Collections.singletonMap(measure, 

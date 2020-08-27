@@ -56,7 +56,7 @@ public class ColumnarDataSet extends AbstractDataSet
 		this.columns = columns;
 		nRows = columns.values().iterator().next().length;
 		
-		LOGGER.info("Indexing from source as {}", getDataStructure());
+		LOGGER.info("Indexing from source as {}", getMetadata());
 	}
 
 	@Override
@@ -106,6 +106,6 @@ public class ColumnarDataSet extends AbstractDataSet
 		return Utils.getStream(columns.entrySet())
 				.map(Utils.keepingKey(col -> col[rowIndex]))
 				.reduce(new DataPointBuilder(), DataPointBuilder::add, DataPointBuilder::merge)
-				.build(getDataStructure());
+				.build(getMetadata());
 	}
 }
