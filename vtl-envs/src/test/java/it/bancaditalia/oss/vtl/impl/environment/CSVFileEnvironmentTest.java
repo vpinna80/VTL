@@ -19,8 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.environment;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -31,20 +30,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import it.bancaditalia.oss.vtl.engine.Engine;
-import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.environment.Workspace;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -52,120 +50,23 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.session.VTLSession;
 
+@ExtendWith(MockitoExtension.class)
 public class CSVFileEnvironmentTest
 {
 	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = new DataStructureComponentImpl<>("IDENTIFIER", Identifier.class, DATEDS);
 	private static final DataStructureComponent<?, ?, ?> MEASURE = new DataStructureComponentImpl<>("MEASURE", Measure.class, NUMBERDS);
 	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = new DataStructureComponentImpl<>("ATTRIBUTE", Attribute.class, STRINGDS);
 
-	private static CSVFileEnvironment INSTANCE;
 	private static Path TEMPCSVFILE;
 	private static String CSVALIAS;
 	
-	public static class Mock implements Engine, VTLSession
-	{
-		@Override
-		public Stream<Statement> parseRules(String statements)
-		{
-			throw new UnsupportedOperationException(); 
-		}
+	@Mock
+	ConfigurationManager confman;
 
-		@Override
-		public Stream<Statement> parseRules(Reader reader) throws IOException
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public Stream<Statement> parseRules(InputStream inputStream, Charset charset) throws IOException
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public Stream<Statement> parseRules(Path path, Charset charset) throws IOException
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public MetadataRepository getRepository()
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public VTLValue resolve(String node)
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public VTLValueMetadata getMetadata(String node)
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public Statement getRule(String node)
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public Engine getEngine()
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public Workspace getWorkspace()
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public VTLSession addStatements(String statements)
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public VTLSession addStatements(Reader reader) throws IOException
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public VTLSession addStatements(InputStream inputStream, Charset charset) throws IOException
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public VTLSession addStatements(Path path, Charset charset) throws IOException
-		{
-			throw new UnsupportedOperationException(); 
-		}
-
-		@Override
-		public List<VTLValueMetadata> compile()
-		{
-			throw new UnsupportedOperationException(); 
-		}
-	}
-	
 	@BeforeAll
 	public static void beforeClass() throws IOException
 	{
-		ENGINE_IMPLEMENTATION.setValue(Mock.class.getName());
-		SESSION_IMPLEMENTATION.setValue(Mock.class.getName());
-		
-		INSTANCE = new CSVFileEnvironment();
 		TEMPCSVFILE = Files.createTempFile(null, ".csv").toAbsolutePath();
 		InputStream csv = CSVFileEnvironmentTest.class.getResourceAsStream("test.csv");
 		assertNotNull(csv, "CSV test file not found");
@@ -178,20 +79,32 @@ public class CSVFileEnvironmentTest
 		csv.close();
 		CSVALIAS = "csv:" + TEMPCSVFILE;
 	}
+	
+	@AfterAll
+	public static void afterClass() throws IOException
+	{
+		Files.deleteIfExists(TEMPCSVFILE);
+	}	
+	
+	@BeforeEach
+	public void beforeEach()
+	{
+		CONFIG_MANAGER.setValue(confman.getClass().getName());
+	}
 
 	@Test
 	public void containsTest()
 	{
-		assertTrue(INSTANCE.contains(CSVALIAS));
+		assertTrue(new CSVFileEnvironment().contains(CSVALIAS));
 	}
 
 	@Test
 	public void getValueTest()
 	{
-		Optional<? extends VTLValue> search = INSTANCE.getValue(CSVALIAS);
+		Optional<? extends VTLValue> search = new CSVFileEnvironment().getValue(CSVALIAS);
 		
 		assertTrue(search.isPresent(), "Cannot find " + CSVALIAS);
-		assertTrue(DataSet.class.isInstance(search.get()), "CSVALIAS is not a DataSet");
+		assertTrue(DataSet.class.isInstance(search.get()), CSVALIAS + " is not a DataSet");
 		
 		DataSet dataset = (DataSet) search.get();
 		

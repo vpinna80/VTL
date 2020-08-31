@@ -35,7 +35,7 @@ public interface StringCodeListDomain extends CodeListDomain<StringDomainSubset,
 	@Override ScalarValue<?, ? extends StringCodeListDomain, StringDomain> cast(ScalarValue<?, ?, ?> value);
 	
 	@Override
-	public Set<? extends StringCodeItem> getCodeItems();
+	public Set<StringCodeItem> getCodeItems();
 	
 	public StringCodeListDomain trim();
 

@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import java.util.Objects;
+
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -32,14 +34,14 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	private static final long serialVersionUID = 1L;
 	private final S domain;
 	private final String name;
-	private final Class<R> type;
+	private final Class<R> role;
 	private final transient int hashCode;
 	
-	public DataStructureComponentImpl(String name, Class<R> type, S domain)
+	public DataStructureComponentImpl(String name, Class<R> role, S domain)
 	{
-		this.domain = domain;
-		this.type = type;
-		this.name = name;
+		this.domain = Objects.requireNonNull(domain, "Domain is null");
+		this.role = Objects.requireNonNull(role, "Role is null");
+		this.name = Objects.requireNonNull(name, "Name is null");
 		this.hashCode = hashCodeInit();
 	}
 
@@ -58,13 +60,13 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	@Override
 	public Class<R> getRole()
 	{
-		return type;
+		return role;
 	}
 
 	@Override
 	public DataStructureComponent<R, S, D> rename(String newName)
 	{
-		return new DataStructureComponentImpl<>(newName, type, domain);
+		return new DataStructureComponentImpl<>(newName, role, domain);
 	}
 
 	@Override
@@ -79,7 +81,7 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 		int result = 1;
 		result = prime * result + ((domain == null) ? 0 : domain.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		result = prime * result + ((role == null) ? 0 : role.hashCode());
 		return result;
 	}
 
@@ -107,12 +109,12 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 		}
 		else if (!name.equals(other.name))
 			return false;
-		if (type == null)
+		if (role == null)
 		{
-			if (other.type != null)
+			if (other.role != null)
 				return false;
 		}
-		else if (!type.equals(other.type))
+		else if (!role.equals(other.role))
 			return false;
 		return true;
 	}

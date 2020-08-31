@@ -63,30 +63,19 @@
 		<url>${scm-url}/issues</url>
 	</issueManagement>
 
-	<modules>
-		<module>vtl-api</module>
-		<module>vtl-cli</module>
-		<module>vtl-confman</module>
-		<module>vtl-domains</module>
-		<module>vtl-engine</module>
-		<module>vtl-envs</module>
-		<module>vtl-launcher</module>
-		<module>vtl-parser</module>
-		<module>vtl-rest</module>
-		<module>vtl-session</module>
-		<module>vtl-transform</module>
-		<module>vtl-types</module>
-	</modules>
-
 	<profiles>
 		<profile>
-			<id>with-r</id>
+			<id>default</id>
+			<activation>
+				<property>
+					<name>!vtl.skip.default</name>
+				</property>
+			</activation>
 			<modules>
 				<module>vtl-api</module>
 				<module>vtl-cli</module>
 				<module>vtl-confman</module>
 				<module>vtl-domains</module>
-				<module>vtl-editor</module>
 				<module>vtl-engine</module>
 				<module>vtl-envs</module>
 				<module>vtl-launcher</module>
@@ -95,7 +84,19 @@
 				<module>vtl-session</module>
 				<module>vtl-transform</module>
 				<module>vtl-types</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>with-r</id>
+			<modules>
+				<module>vtl-editor</module>
 				<module>RVTL</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>with-python</id>
+			<modules>
+				<module>vtl-kernel</module>
 			</modules>
 		</profile>
 		<profile>
@@ -142,7 +143,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.0.5</revision>
+		<revision>1.0.6-SNAPSHOT</revision>
 		<sdmx.version>2.3.3</sdmx.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -153,7 +154,7 @@
 		<jetty.version>9.4.31.v20200723</jetty.version>
 		<junit.version>5.6.1</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
-		<mockito.version>3.4.6</mockito.version>
+		<mockito.version>3.5.7</mockito.version>
 		<build-helper-maven-plugin.version>3.1.0</build-helper-maven-plugin.version>
 		<spring.boot.version>2.3.2.RELEASE</spring.boot.version>
 		<node.version>v10.20.1</node.version>
@@ -309,19 +310,26 @@
 				<groupId>org.junit.jupiter</groupId>
 				<artifactId>junit-jupiter</artifactId>
 				<version>${junit.version}</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.junit.jupiter</groupId>
 				<artifactId>junit-jupiter-params</artifactId>
 				<version>${junit.version}</version>
-				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-core</artifactId>
+				<version>${mockito.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-inline</artifactId>
+				<version>${mockito.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-junit-jupiter</artifactId>
 				<version>${mockito.version}</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
@@ -586,10 +594,10 @@
 				<version>0.12</version>
 				<executions>
 					<execution>
+						<phase>site-deploy</phase>
 						<goals>
 							<goal>site</goal>
 						</goals>
-						<phase>site-deploy</phase>
 					</execution>
 				</executions>
 				<configuration>

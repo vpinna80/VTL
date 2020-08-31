@@ -111,6 +111,9 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<excludePackageNames>it.bancaditalia.oss.vtl.impl.engine.mapping.xml</excludePackageNames>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

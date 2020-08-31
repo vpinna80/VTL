@@ -31,9 +31,11 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.util.Utils.byKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
-import static java.util.stream.Collectors.toConcurrentMap;
+import static java.util.stream.Collectors.toSet;
 
+import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
@@ -43,13 +45,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.sdmx.api.BaseObservation;
@@ -63,9 +65,12 @@ import it.bancaditalia.oss.sdmx.client.SdmxClientHandler;
 import it.bancaditalia.oss.sdmx.exceptions.DataStructureException;
 import it.bancaditalia.oss.sdmx.exceptions.SdmxException;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -75,7 +80,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -86,26 +91,32 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class SDMXEnvironment implements Environment
+public class SDMXEnvironment implements Environment, Serializable
 {
-	public static final String DROP_ID_PROPERTY = "vtl.sdmx.keep.identifiers";
-	
-	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(Collectors.toSet());
+	private static final long serialVersionUID = 1L;
+	private static final DataStructureComponentImpl<Measure, NumberDomainSubset<NumberDomain>, NumberDomain> OBS_VALUE_MEASURE = new DataStructureComponentImpl<>(PortableDataSet.OBS_LABEL, Measure.class, NUMBERDS);
+	private static final DataStructureComponentImpl<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> TIME_PERIOD_IDENTIFIER = new DataStructureComponentImpl<>(PortableDataSet.TIME_LABEL, Identifier.class, TIMEDS);
+	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?>>> FORMATTERS = new HashMap<>();
 
-	private final boolean dropIdentifiers = !"true".equalsIgnoreCase(System.getProperty(DROP_ID_PROPERTY, "false"));
+	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = 
+			new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", false, false, "false");
 
 	static
 	{
+		ConfigurationManagerFactory.registerSupportedProperties(SDMXEnvironment.class, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
+		
 		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateValue::new);
 		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateValue::new);
 		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh"), DateValue::new);
@@ -164,7 +175,7 @@ public class SDMXEnvironment implements Environment
 		VTLDataSetMetadata metadata = (VTLDataSetMetadata) getValueMetadata("sdmx:" + name)
 				.orElseThrow(() -> new NullPointerException("Could not retrieve SDMX metadata for " + name));
 
-		ConcurrentMap<PortableTimeSeries<Double>, ? extends ConcurrentMap<String, ? extends ScalarValue<?, ?, ?>>> seriesMeta = Utils.getStream(table)
+		Map<PortableTimeSeries<Double>, Map<String, ScalarValue<?, ?, ?>>> seriesMeta = Utils.getStream(table)
 				.map(toEntry(Function.identity(), PortableTimeSeries::getAttributesMap))
 				.map(e -> {
 					ConcurrentMap<String, String> attrs = new ConcurrentHashMap<>(e.getKey().getAttributesMap());
@@ -174,28 +185,26 @@ public class SDMXEnvironment implements Environment
 				.map(keepingKey(SDMXEnvironment::extractAttrs))
 				.collect(entriesToMap());
 
-		return new LightDataSet(metadata, () -> Utils.getStream(table)
-				.map(s -> s.stream()
-						.map(o -> l1(metadata, seriesMeta, s, o)) //
-						.map(v -> new DataPointBuilder(v).build(metadata))
-				).reduce(Stream::concat)
-				.orElse(Stream.empty()));
+		return new LightFDataSet<>(metadata, t -> Utils.getStream(t) // for each series
+				.map(s -> s.stream() // build a dp
+						.map(o -> obsToCompValues(seriesMeta.get(s), o)
+							.map(keepingValue(k -> (DataStructureComponent<?, ?, ?>) metadata.getComponent(k).get()))
+							.map(keepingKey((k, v) -> k.getDomain().cast(v)))
+							.reduce(new DataPointBuilder(), DataPointBuilder::add, DataPointBuilder::merge)
+							.build(metadata)))
+				.reduce(Stream::concat)
+				.orElse(Stream.empty()), table);
 	}
 
-	private ConcurrentMap<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> l1(VTLDataSetMetadata metadata,
-			ConcurrentMap<? extends PortableTimeSeries<Double>, ? extends ConcurrentMap<String, ? extends ScalarValue<?, ?, ?>>> seriesMeta,
-			PortableTimeSeries<Double> s, BaseObservation<? extends Double> o)
+	private static Stream<Entry<String, ScalarValue<?, ?, ?>>> obsToCompValues(Map<String, ScalarValue<?,?,?>> seriesLevelAttrs, 
+			BaseObservation<? extends Double> o)
 	{
-		return Stream.concat(seriesMeta.get(s).entrySet().stream(),
-				Stream.concat(obsLevelAttrs(s, o),
+		return Stream.concat(Utils.getStream(seriesLevelAttrs), Stream.concat(obsLevelAttrs(o),
 						Stream.of(new SimpleEntry<>(TIME_LABEL, asDate(o)),
-								new SimpleEntry<>(OBS_LABEL, new DoubleValue(o.getValueAsDouble())))))
-				.map(e -> new SimpleEntry<>(metadata.getComponent(e.getKey()).get(), e.getValue()))
-				.map(keepingKey((k, v) -> k.getDomain().cast(v)))
-				.collect(toConcurrentMap(Entry::getKey, Entry::getValue));
+								new SimpleEntry<>(OBS_LABEL, new DoubleValue(o.getValueAsDouble())))));
 	}
 
-	private ScalarValue<?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> asDate(BaseObservation<? extends Double> o)
+	private static ScalarValue<?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> asDate(BaseObservation<? extends Double> o)
 	{
 		DateTimeException last = null;
 		for (DateTimeFormatter formatter : FORMATTERS.keySet())
@@ -215,7 +224,7 @@ public class SDMXEnvironment implements Environment
 			throw new IllegalStateException("this point should not be reached");
 	}
 
-	private static ConcurrentMap<String, ? extends ScalarValue<?, ?, ?>> extractAttrs(Map<String, String> attrs)
+	private static Map<String, ScalarValue<?, ?, ?>> extractAttrs(Map<String, String> attrs)
 	{
 		return Utils.getStream(attrs.entrySet())
 				.filter(e -> !UNSUPPORTED.contains(e.getKey()))
@@ -224,22 +233,23 @@ public class SDMXEnvironment implements Environment
 				.collect(entriesToMap());
 	}
 
-	private static Stream<Entry<String, ScalarValue<?, ?, ?>>> obsLevelAttrs(PortableTimeSeries<Double> series, BaseObservation<? extends Double> observation)
+	private static Stream<Entry<String, ScalarValue<?, ?, ?>>> obsLevelAttrs(BaseObservation<? extends Double> observation)
 	{
-		return Utils.getStream(observation.getAttributes().entrySet())
+		return Utils.getStream(observation.getAttributes())
 				.filter(byKey(k -> !UNSUPPORTED.contains(k)))
 				.map(keepingKey(v -> (ScalarValue<?, ?, ?>) (v != null ? new StringValue(v) : NullValue.instance(STRINGDS))));
 	}
 
-	private <T extends ComponentRole> DataStructureComponentImpl<T, ValueDomainSubset<StringDomain>, StringDomain> elementToComponent(Class<T> role,
+	private static <T extends ComponentRole> DataStructureComponent<T, StringDomainSubset, StringDomain> elementToComponent(Class<T> role,
 			SdmxMetaElement meta)
 	{
 		Codelist codelist = meta.getCodeList();
 		if (codelist == null)
 			return new DataStructureComponentImpl<>(meta.getId(), role, STRINGDS);
-
+		
 		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 		StringCodeListDomain domain = repository.defineDomain(codelist.getId(), StringCodeListDomain.class, codelist.keySet());
+		Objects.requireNonNull(domain, "domain null for " + codelist.getId() + " - " + meta);
 		return new DataStructureComponentImpl<>(meta.getId(), role, domain);
 	}
 
@@ -249,15 +259,16 @@ public class SDMXEnvironment implements Environment
 		{
 			DataFlowStructure dsd = SdmxClientHandler.getDataFlowStructure(provider, dataflow);
 
-			// remove the fixed (not wildcarded) dimensions from the list of identifiers
+			// Load all the codes of each dimension
 			List<Dimension> dimensions = dsd.getDimensions();
-			for (Dimension d : dimensions)
+			for (Dimension d: dimensions)
 				SdmxClientHandler.getCodes(provider, dataflow, d.getId());
 
+			// remove the fixed (not wildcarded) dimensions from the list of identifiers
 			List<SdmxMetaElement> activeAttributes = new ArrayList<>(dsd.getAttributes());
 			List<Dimension> activeDims = new ArrayList<>();
 
-			if (isDropIdentifiers())
+			if (!"true".equals(SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS.getValue()))
 				for (int i = 0; i < tokens.length; i++)
 					if (tokens[i].isEmpty() || tokens[i].indexOf('+') != -1)
 						activeDims.add(dimensions.get(i));
@@ -266,21 +277,19 @@ public class SDMXEnvironment implements Environment
 			else
 				activeDims = dimensions;
 
-			return Optional.of(Stream
+			VTLDataSetMetadata metadata = Stream
 					.concat(activeDims.stream().map(d -> elementToComponent(Identifier.class, d)),
 							activeAttributes.stream().map(a -> elementToComponent(Attribute.class, a)))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-					.addComponent(new DataStructureComponentImpl<>(PortableDataSet.TIME_LABEL, Identifier.class, TIMEDS))
-					.addComponent(new DataStructureComponentImpl<>(PortableDataSet.OBS_LABEL, Measure.class, NUMBERDS)).build());
+					.addComponent(TIME_PERIOD_IDENTIFIER)
+					.addComponent(OBS_VALUE_MEASURE)
+					.build();
+			
+			return Optional.of(metadata);
 		}
 		catch (SdmxException e)
 		{
 			throw new VTLException("SDMX", e);
 		}
-	}
-
-	public boolean isDropIdentifiers()
-	{
-		return dropIdentifiers;
 	}
 }

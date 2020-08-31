@@ -43,7 +43,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	private static final long serialVersionUID = 1L;
 
 	private final String name; 
-	private final Set<StringCodeItemImpl> items = new HashSet<>();
+	private final Set<StringCodeItem> items = new HashSet<>();
 	private final int hashCode;
 
 	public class StringCodeItemImpl extends BaseScalarValue<String, StringCodeListDomain, StringDomain> implements StringCodeItem
@@ -147,7 +147,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	}
 
 	@Override
-	public Set<? extends StringCodeItem> getCodeItems()
+	public Set<StringCodeItem> getCodeItems()
 	{
 		return items;
 	}
