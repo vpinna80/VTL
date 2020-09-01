@@ -77,21 +77,6 @@ public class ColumnarDataSet extends AbstractDataSet
 				.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), toList()));
 		return Utils.getStream(map.entrySet())
 			.map(e -> groupMapper.apply(e.getKey(), Utils.getStream(e.getValue())));
-//		int[] res = index.values().stream().reduce(Utils::catArrays).get();
-//		Arrays.sort(res);
-//		
-//		for (int i = 0; i < res.length; i++)
-//			if (res[i] != i)
-//				throw new IllegalStateException();
-//		
-//		return Utils.getStream(index.keySet())
-//				.filter(indexKey -> indexKey.entrySet().containsAll(filter.entrySet()))
-//				.map(indexKey -> new SimpleEntry<>(indexKey, index.get(indexKey)))
-//				.peek(e -> LOGGER.trace("Retrieving indexes with key {} as {}", e.getKey(), e.getValue()))
-//				.map(Utils.keepingKey(rows -> Utils.getStream(rows)
-//						.mapToObj(this::mapIndexToDataPoint)))
-//				.map(e -> groupMapper.apply(e.getKey(), e.getValue()
-//						.filter(dp -> dp.matches(filter))));
 	}
 
 	@Override

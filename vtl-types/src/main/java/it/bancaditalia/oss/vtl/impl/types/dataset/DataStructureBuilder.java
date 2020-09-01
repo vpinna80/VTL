@@ -70,6 +70,11 @@ public class DataStructureBuilder
 		this.components.addAll(components);
 	}
 
+	public DataStructureBuilder(DataStructureComponent<?, ?, ?>... components)
+	{
+		this(Arrays.asList(components));
+	}
+
 	public DataStructureBuilder merge(DataStructureBuilder other)
 	{
 		return addComponents(other.components);
