@@ -99,32 +99,32 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(VTLDataSetMetadata metadata, DataSet indexed, BiPredicate<DataPoint,DataPoint> predicate, BinaryOperator<DataPoint> mergeOp)
+	public DataSet filteredMappedJoin(VTLDataSetMetadata metadata, DataSet other, BiPredicate<DataPoint,DataPoint> predicate, BinaryOperator<DataPoint> mergeOp)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
-		commonIds.retainAll(indexed.getComponents(Identifier.class));
+		commonIds.retainAll(other.getComponents(Identifier.class));
 		
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, List<DataPoint>> index;
-		try (Stream<DataPoint> stream = indexed.stream())
+		try (Stream<DataPoint> stream = other.stream())
 		{
-			if (commonIds.equals(indexed.getComponents(Identifier.class)))
+			// performance if
+			if (commonIds.equals(other.getComponents(Identifier.class)))
 				index = stream.collect(toConcurrentMap(dp -> dp.getValues(commonIds, Identifier.class), Collections::singletonList));
 			else
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class)));
 		}
 		
-		return new LightDataSet(metadata, () -> stream()
-				.map(dps -> {
-					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> valuesToMatch = dps.getValues(commonIds, Identifier.class);
-					List<DataPoint> group = index.get(valuesToMatch);
-					if (group == null)
+		return new LightFDataSet<>(metadata, d -> d.stream()
+				.map(dpThis -> {
+					List<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
+					if (otherSubGroup == null)
 						return Stream.<DataPoint>empty();
 					else
-						return group.stream()
-							.filter(dpi -> predicate.test(dps, dpi))
-							.map(dpi -> mergeOp.apply(dps, dpi)); 
+						return otherSubGroup.stream()
+							.filter(dpOther -> predicate.test(dpThis, dpOther))
+							.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
 				}).reduce(Stream::concat)
-				.orElse(Stream.empty()));
+				.orElse(Stream.empty()), this);
 	}
 
 	@Override
