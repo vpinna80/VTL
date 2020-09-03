@@ -33,8 +33,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -49,7 +49,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	private final static Logger LOGGER = LoggerFactory.getLogger(FilterClauseTransformation.class);
 
 	private final Transformation filterClause;
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 
 	public FilterClauseTransformation(Transformation filterClause)
 	{
@@ -72,7 +72,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme session)
 	{
 		if (metadata != null)
 			return metadata;
@@ -80,14 +80,14 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		metadata = getThisMetadata(session);
 		VTLValueMetadata filterMetadata = filterClause.getMetadata(session);
 		
-		if (filterMetadata instanceof VTLScalarValueMetadata)
+		if (filterMetadata instanceof ScalarValueMetadata)
 		{
-			if (!BOOLEANDS.isAssignableFrom(((VTLScalarValueMetadata<?>) filterMetadata).getDomain()))
-				throw new VTLIncompatibleTypesException("FILTER", BOOLEANDS, ((VTLScalarValueMetadata<?>) filterMetadata).getDomain());
+			if (!BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?>) filterMetadata).getDomain()))
+				throw new VTLIncompatibleTypesException("FILTER", BOOLEANDS, ((ScalarValueMetadata<?>) filterMetadata).getDomain());
 		}
 		else
 		{
-			VTLDataSetMetadata filterDataset = (VTLDataSetMetadata) filterMetadata;
+			DataSetMetadata filterDataset = (DataSetMetadata) filterMetadata;
 			Set<DataStructureComponent<Measure, ?, ?>> measures = filterDataset.getComponents(Measure.class);
 			if (measures.size() != 1)
 				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);

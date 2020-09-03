@@ -42,7 +42,7 @@ import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class ComparisonTransformationTest
 {
@@ -91,7 +91,7 @@ public class ComparisonTransformationTest
 
 		ComparisonTransformation coTransformation = new ComparisonTransformation(operator, left, right);
 		
-		VTLDataSetMetadata metadata = (VTLDataSetMetadata) coTransformation.getMetadata(session);
+		DataSetMetadata metadata = (DataSetMetadata) coTransformation.getMetadata(session);
 		assertTrue(metadata.contains("bool_var"));
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);

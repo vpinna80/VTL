@@ -44,8 +44,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -62,7 +62,7 @@ public class ComparisonTransformation extends BinaryTransformation
 
 	private final ComparisonOperator operator;
 
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 	private boolean castToLeft = false;
 
 	public ComparisonTransformation(ComparisonOperator operator, Transformation left, Transformation right)
@@ -153,23 +153,23 @@ public class ComparisonTransformation extends BinaryTransformation
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session); 
 		castToLeft = false;
 		
-		if (left instanceof VTLScalarValueMetadata && right instanceof VTLScalarValueMetadata)
+		if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
 		{
-			VTLScalarValueMetadata<?> scalarLeft = (VTLScalarValueMetadata<?>) left;
-			VTLScalarValueMetadata<?> scalarRight = (VTLScalarValueMetadata<?>) right;
+			ScalarValueMetadata<?> scalarLeft = (ScalarValueMetadata<?>) left;
+			ScalarValueMetadata<?> scalarRight = (ScalarValueMetadata<?>) right;
 
 			castToLeft = scalarLeft.getDomain().isAssignableFrom(scalarRight.getDomain()); 
 			if (castToLeft || scalarRight.getDomain().isAssignableFrom(scalarLeft.getDomain())) 
 				return BOOLEAN;
 			else
-				throw new VTLIncompatibleTypesException("comparison branch", scalarLeft.getDomain(), ((VTLScalarValueMetadata<?>) right).getDomain());
+				throw new VTLIncompatibleTypesException("comparison branch", scalarLeft.getDomain(), ((ScalarValueMetadata<?>) right).getDomain());
 		}
-		else if (left instanceof VTLDataSetMetadata && right instanceof VTLScalarValueMetadata ||
-				right instanceof VTLDataSetMetadata && left instanceof VTLScalarValueMetadata)
+		else if (left instanceof DataSetMetadata && right instanceof ScalarValueMetadata ||
+				right instanceof DataSetMetadata && left instanceof ScalarValueMetadata)
 		{
-			boolean leftIsDataset = left instanceof VTLDataSetMetadata;
-			VTLDataSetMetadata ds = leftIsDataset ? (VTLDataSetMetadata) left : (VTLDataSetMetadata) right;
-			ValueDomainSubset<?> scalarDomain = (leftIsDataset ? (VTLScalarValueMetadata<?>) right : (VTLScalarValueMetadata<?>) left).getDomain();
+			boolean leftIsDataset = left instanceof DataSetMetadata;
+			DataSetMetadata ds = leftIsDataset ? (DataSetMetadata) left : (DataSetMetadata) right;
+			ValueDomainSubset<?> scalarDomain = (leftIsDataset ? (ScalarValueMetadata<?>) right : (ScalarValueMetadata<?>) left).getDomain();
 
 			if (ds.getComponents(Measure.class).size() != 1)
 				throw new VTLExpectedComponentException(Measure.class, ds);
@@ -187,9 +187,9 @@ public class ComparisonTransformation extends BinaryTransformation
 			return metadata = new DataStructureBuilder().addComponents(ds.getComponents(Identifier.class))
 					.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS)).build();
 		}
-		else if (left instanceof VTLDataSetMetadata && right instanceof VTLDataSetMetadata)
+		else if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
 		{
-			VTLDataSetMetadata dsLeft = (VTLDataSetMetadata) left, dsRight = (VTLDataSetMetadata) right;
+			DataSetMetadata dsLeft = (DataSetMetadata) left, dsRight = (DataSetMetadata) right;
 			
 			LOGGER.info("Comparing {} to {}", dsLeft, dsRight);
 			

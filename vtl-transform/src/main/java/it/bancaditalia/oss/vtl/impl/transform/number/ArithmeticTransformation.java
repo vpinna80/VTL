@@ -58,8 +58,8 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -76,7 +76,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	private final static Logger LOGGER = LoggerFactory.getLogger(ArithmeticTransformation.class);
 	private final ArithmeticOperator operator;
 
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 	
 	public ArithmeticTransformation(ArithmeticOperator operator, Transformation left, Transformation right)
 	{
@@ -137,7 +137,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			else
 				resultComp = new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS);
 			
-			VTLDataSetMetadata newStructure = new DataStructureBuilder(streamed.getComponents(Identifier.class))
+			DataSetMetadata newStructure = new DataStructureBuilder(streamed.getComponents(Identifier.class))
 					.addComponent(resultComp)
 					.build();
 			
@@ -183,9 +183,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 	{
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
 		
-		if (left instanceof VTLDataSetMetadata && right instanceof VTLDataSetMetadata)
+		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
 		{
-			VTLDataSetMetadata leftData = (VTLDataSetMetadata) left, rightData = (VTLDataSetMetadata) right;
+			DataSetMetadata leftData = (DataSetMetadata) left, rightData = (DataSetMetadata) right;
 			
 			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = leftData.getComponents(Measure.class);
 			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = rightData.getComponents(Measure.class);
@@ -237,10 +237,10 @@ public class ArithmeticTransformation extends BinaryTransformation
 					.addComponents(measures)
 					.build();
 		}
-		else if (left instanceof VTLScalarValueMetadata && right instanceof VTLScalarValueMetadata)
+		else if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
 		{
-			ValueDomainSubset<?> domainLeft = ((VTLScalarValueMetadata<?>) left).getDomain();
-			ValueDomainSubset<?> domainRight = ((VTLScalarValueMetadata<?>) right).getDomain();
+			ValueDomainSubset<?> domainLeft = ((ScalarValueMetadata<?>) left).getDomain();
+			ValueDomainSubset<?> domainRight = ((ScalarValueMetadata<?>) right).getDomain();
 			if (INTEGERDS.isAssignableFrom(domainLeft) && INTEGERDS.isAssignableFrom(domainRight))
 				return INTEGER;
 			else if (NUMBERDS.isAssignableFrom(domainLeft) && NUMBERDS.isAssignableFrom(domainRight))
@@ -252,14 +252,14 @@ public class ArithmeticTransformation extends BinaryTransformation
 		}
 		else 
 		{
-			metadata = (VTLDataSetMetadata)(left instanceof VTLDataSetMetadata ? left : right);
+			metadata = (DataSetMetadata)(left instanceof DataSetMetadata ? left : right);
 			
 			if (metadata.getComponents(Measure.class).size() == 0)
 				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
 			if (metadata.getComponents(Measure.class).stream().anyMatch(c -> !NUMBERDS.isAssignableFrom(c.getDomain())))
 				throw new UnsupportedOperationException("Expected only numeric measures but found: " + metadata.getComponents(Measure.class));
-			if (left instanceof VTLScalarValueMetadata && INTEGERDS.isAssignableFrom(((VTLScalarValueMetadata<?>) left).getDomain())
-					|| right instanceof VTLScalarValueMetadata && INTEGERDS.isAssignableFrom(((VTLScalarValueMetadata<?>) right).getDomain()))
+			if (left instanceof ScalarValueMetadata && INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) left).getDomain())
+					|| right instanceof ScalarValueMetadata && INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) right).getDomain()))
 				return metadata;
 			
 			// Sum to float, convert integer measures to floating point

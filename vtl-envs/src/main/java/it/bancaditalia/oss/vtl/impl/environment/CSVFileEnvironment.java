@@ -77,7 +77,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -131,7 +131,7 @@ public class CSVFileEnvironment implements Environment
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
-			final VTLDataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
+			final DataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
 			
 			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName));
 		}
@@ -148,7 +148,7 @@ public class CSVFileEnvironment implements Environment
 			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
 			List<DataStructureComponent<?, ?, ?>> metadata = headerInfo.getKey();
 			Map<DataStructureComponent<?, ?, ?>, String> masks = headerInfo.getValue();
-			final VTLDataSetMetadata structure = new DataStructureBuilder(metadata).build();
+			final DataSetMetadata structure = new DataStructureBuilder(metadata).build();
 			long lineCount = reader.lines().count();
 			
 			LOGGER.info("Reading {}", fileName);

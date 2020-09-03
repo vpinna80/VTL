@@ -44,7 +44,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -62,7 +62,7 @@ public class ExistsInTransformation extends BinaryTransformation
 	}
 	
 	private final ExistsInMode mode;
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 
 	public ExistsInTransformation(ExistsInMode mode, Transformation left, Transformation right)
 	{
@@ -118,13 +118,13 @@ public class ExistsInTransformation extends BinaryTransformation
 	{
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
 		
-		if (!(left instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(left, VTLDataSetMetadata.class);
-		if (!(right instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(right, VTLDataSetMetadata.class);
+		if (!(left instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(left, DataSetMetadata.class);
+		if (!(right instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(right, DataSetMetadata.class);
 		
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = ((VTLDataSetMetadata) left).getComponents(Measure.class),
-				rightMeasures = ((VTLDataSetMetadata) right).getComponents(Measure.class);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = ((DataSetMetadata) left).getComponents(Measure.class),
+				rightMeasures = ((DataSetMetadata) right).getComponents(Measure.class);
 		
 		if (leftMeasures.size() != 1)
 			throw new VTLSingletonComponentRequiredException(Measure.class, leftMeasures);
@@ -137,7 +137,7 @@ public class ExistsInTransformation extends BinaryTransformation
 		if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()) && !rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
 			throw new VTLIncompatibleMeasuresException("EXISTS_IN", leftMeasure, rightMeasure);
 		
-		DataStructureBuilder builder = new DataStructureBuilder((VTLDataSetMetadata) left)
+		DataStructureBuilder builder = new DataStructureBuilder((DataSetMetadata) left)
 				.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS));
 		
 		if (mode != ALL)

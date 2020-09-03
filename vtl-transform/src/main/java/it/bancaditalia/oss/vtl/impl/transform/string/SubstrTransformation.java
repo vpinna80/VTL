@@ -41,8 +41,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -83,7 +83,7 @@ public class SubstrTransformation extends TransformationImpl
 		if (expr instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) expr;
-			VTLDataSetMetadata structure = dataset.getMetadata();
+			DataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 			int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
 			
@@ -128,18 +128,18 @@ public class SubstrTransformation extends TransformationImpl
 		VTLValueMetadata source = exprOperand.getMetadata(session), start = startOperand.getMetadata(session),
 				len = lenOperand.getMetadata(session);
 		
-		if (!(start instanceof VTLScalarValueMetadata))
-			throw new VTLInvalidParameterException(start, VTLDataSetMetadata.class);
-		if (!(len instanceof VTLScalarValueMetadata))
-			throw new VTLInvalidParameterException(len, VTLDataSetMetadata.class);
-		if (!INTEGERDS.isAssignableFrom(((VTLScalarValueMetadata<?>) start).getDomain()))
-			throw new VTLIncompatibleTypesException("substr: start parameter", STRING, ((VTLScalarValueMetadata<?>) start).getDomain());
-		if (!INTEGERDS.isAssignableFrom(((VTLScalarValueMetadata<?>) len).getDomain()))
-			throw new VTLIncompatibleTypesException("substr: len parameter", STRING, ((VTLScalarValueMetadata<?>) len).getDomain());
+		if (!(start instanceof ScalarValueMetadata))
+			throw new VTLInvalidParameterException(start, DataSetMetadata.class);
+		if (!(len instanceof ScalarValueMetadata))
+			throw new VTLInvalidParameterException(len, DataSetMetadata.class);
+		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) start).getDomain()))
+			throw new VTLIncompatibleTypesException("substr: start parameter", STRING, ((ScalarValueMetadata<?>) start).getDomain());
+		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) len).getDomain()))
+			throw new VTLIncompatibleTypesException("substr: len parameter", STRING, ((ScalarValueMetadata<?>) len).getDomain());
 		
-		if (source instanceof VTLScalarValueMetadata)
+		if (source instanceof ScalarValueMetadata)
 		{
-			VTLScalarValueMetadata<?> scalar = (VTLScalarValueMetadata<?>) source; 
+			ScalarValueMetadata<?> scalar = (ScalarValueMetadata<?>) source; 
 			if (!(STRING.isAssignableFrom(scalar.getDomain())))
 				throw new VTLIncompatibleTypesException("substr", STRING, scalar.getDomain());
 			else
@@ -147,7 +147,7 @@ public class SubstrTransformation extends TransformationImpl
 		}
 		else 
 		{
-			VTLDataSetMetadata metadata = (VTLDataSetMetadata) source;
+			DataSetMetadata metadata = (DataSetMetadata) source;
 			
 			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
 			measures.stream().forEach(c -> {

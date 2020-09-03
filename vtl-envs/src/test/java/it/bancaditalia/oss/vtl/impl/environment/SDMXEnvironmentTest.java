@@ -47,7 +47,7 @@ import it.bancaditalia.oss.sdmx.client.SdmxClientHandler;
 import it.bancaditalia.oss.sdmx.exceptions.SdmxException;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -128,7 +128,9 @@ public class SDMXEnvironmentTest
 
 		try (Input kryoIn = new Input(SDMXEnvironmentTest.class.getResourceAsStream("serialized-series.bin")))
 		{
-			SAMPLE = (List<PortableTimeSeries<Double>>) kryo.readClassAndObject(kryoIn);
+			@SuppressWarnings("unchecked")
+			List<PortableTimeSeries<Double>> temp = (List<PortableTimeSeries<Double>>) kryo.readClassAndObject(kryoIn);
+			SAMPLE = temp;
 		}
 	}
 	
@@ -193,9 +195,9 @@ public class SDMXEnvironmentTest
 		Optional<VTLValueMetadata> search = new SDMXEnvironment().getValueMetadata(SDMX_ALIAS);
 
 		assertTrue(search.isPresent(), "Cannot find " + SDMX_ALIAS);
-		assertTrue(VTLDataSetMetadata.class.isInstance(search.get()), SDMX_ALIAS + " is not a DataSet");
+		assertTrue(DataSetMetadata.class.isInstance(search.get()), SDMX_ALIAS + " is not a DataSet");
 		
-		VTLDataSetMetadata dataset = (VTLDataSetMetadata) search.get();
+		DataSetMetadata dataset = (DataSetMetadata) search.get();
 		assertEquals(31, dataset.size(), "Wrong number of columns");
 	}
 }

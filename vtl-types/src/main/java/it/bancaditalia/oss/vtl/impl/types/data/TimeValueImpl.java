@@ -29,7 +29,7 @@ import java.time.temporal.TemporalUnit;
 
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValueImpl.TimeHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
@@ -92,7 +92,7 @@ public class TimeValueImpl extends TimeValue<TimeHolder, TimeDomainSubset<TimeDo
 	}
 
 	@Override
-	public VTLScalarValueMetadata<TimeDomainSubset<TimeDomain>> getMetadata()
+	public ScalarValueMetadata<TimeDomainSubset<TimeDomain>> getMetadata()
 	{
 		return () -> TIMEDS;
 	}

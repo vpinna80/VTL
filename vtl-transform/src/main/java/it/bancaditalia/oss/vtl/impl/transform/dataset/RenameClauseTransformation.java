@@ -34,7 +34,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -54,8 +54,8 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet operand = (DataSet) getThisValue(session);
-		VTLDataSetMetadata metadata = getMetadata(session);
-		VTLDataSetMetadata oldStructure = operand.getMetadata();
+		DataSetMetadata metadata = getMetadata(session);
+		DataSetMetadata oldStructure = operand.getMetadata();
 		
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
 				.collect(Collectors.toMap(name -> name, name -> oldStructure.getComponent(name).get()));
@@ -75,15 +75,15 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata operand = getThisMetadata(session);
 		
-		if (!(operand instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(operand, VTLDataSetMetadata.class);
+		if (!(operand instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
-		VTLDataSetMetadata dataset = (VTLDataSetMetadata) operand;
-		VTLDataSetMetadata accumulator = dataset;
+		DataSetMetadata dataset = (DataSetMetadata) operand;
+		DataSetMetadata accumulator = dataset;
 		
 		for (Entry<String, String> rename: renames.entrySet())
 		{

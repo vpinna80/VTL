@@ -25,7 +25,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -36,7 +36,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class StrlenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final VTLScalarValueMetadata<IntegerDomainSubset> META = () -> Domains.INTEGERDS;  
+	private static final ScalarValueMetadata<IntegerDomainSubset> META = () -> Domains.INTEGERDS;  
 	
 	public StrlenTransformation(Transformation operand)
 	{
@@ -59,7 +59,7 @@ public class StrlenTransformation extends UnaryTransformation
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata op = operand.getMetadata(session);
-		if (op instanceof VTLScalarValueMetadata && ((VTLScalarValueMetadata<?>) op).getDomain() instanceof StringDomainSubset)
+		if (op instanceof ScalarValueMetadata && ((ScalarValueMetadata<?>) op).getDomain() instanceof StringDomainSubset)
 			return META;
 		else
 			throw new UnsupportedOperationException("String value expected.");

@@ -25,7 +25,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -51,8 +51,8 @@ public abstract class DatasetClauseTransformation extends TransformationImpl
 		return session.resolve(ThisScope.THIS);
 	}
 
-	protected VTLDataSetMetadata getThisMetadata(TransformationScheme session)
+	protected DataSetMetadata getThisMetadata(TransformationScheme session)
 	{
-		return (VTLDataSetMetadata) session.getMetadata(ThisScope.THIS);
+		return (DataSetMetadata) session.getMetadata(ThisScope.THIS);
 	}
 }

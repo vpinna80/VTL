@@ -41,8 +41,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -74,7 +74,7 @@ public class MatchTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> patternV)
 	{
-		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
+		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
 				.addComponent(BOOL_MEASURE)
 				.build();
 
@@ -98,14 +98,14 @@ public class MatchTransformation extends BinaryTransformation
 	{
 		VTLValueMetadata operand = leftOperand.getMetadata(session), pattern = rightOperand.getMetadata(session);
 		
-		if (!(pattern instanceof VTLScalarValueMetadata))
-			throw new VTLInvalidParameterException(pattern, VTLScalarValueMetadata.class);
-		if (!STRINGDS.isAssignableFrom(((VTLScalarValueMetadata<?>) pattern).getDomain()))
-			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRING, ((VTLScalarValueMetadata<?>) pattern).getDomain());
+		if (!(pattern instanceof ScalarValueMetadata))
+			throw new VTLInvalidParameterException(pattern, ScalarValueMetadata.class);
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) pattern).getDomain()))
+			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRING, ((ScalarValueMetadata<?>) pattern).getDomain());
 		
-		if (operand instanceof VTLScalarValueMetadata)
+		if (operand instanceof ScalarValueMetadata)
 		{
-			VTLScalarValueMetadata<?> scalar = (VTLScalarValueMetadata<?>) operand; 
+			ScalarValueMetadata<?> scalar = (ScalarValueMetadata<?>) operand; 
 			if (!(STRING.isAssignableFrom(scalar.getDomain())))
 				throw new VTLIncompatibleTypesException("match_characters", STRING, scalar.getDomain());
 			else
@@ -113,7 +113,7 @@ public class MatchTransformation extends BinaryTransformation
 		}
 		else 
 		{
-			VTLDataSetMetadata metadata = (VTLDataSetMetadata) operand;
+			DataSetMetadata metadata = (DataSetMetadata) operand;
 			
 			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
 			if (measures.size() != 1)

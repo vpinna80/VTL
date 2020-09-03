@@ -38,7 +38,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -56,7 +56,7 @@ public class BetweenTransformation extends UnaryTransformation
 	private final ScalarValue<?, ?, ?> to;
 	private final ValueDomainSubset<?> domain;
 
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 
 	public BetweenTransformation(Transformation operand, Transformation fromT, Transformation toT)
 	{
@@ -82,9 +82,9 @@ public class BetweenTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata op = operand.getMetadata(scheme);
 
-		if (op instanceof VTLDataSetMetadata)
+		if (op instanceof DataSetMetadata)
 		{
-			VTLDataSetMetadata ds = (VTLDataSetMetadata) op;
+			DataSetMetadata ds = (DataSetMetadata) op;
 
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = ds.getComponents(Measure.class);
 

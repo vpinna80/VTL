@@ -40,8 +40,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -80,7 +80,7 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	private final BooleanBiOperator operator;
-	private VTLDataSetMetadata    metadata = null;
+	private DataSetMetadata    metadata = null;
 
 	public BooleanTransformation(BooleanBiOperator operator, Transformation left, Transformation right)
 	{
@@ -132,9 +132,9 @@ public class BooleanTransformation extends BinaryTransformation
 	{
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
 
-		if (left instanceof VTLDataSetMetadata && right instanceof VTLDataSetMetadata)
+		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
 		{
-			VTLDataSetMetadata leftData = (VTLDataSetMetadata) left, rightData = (VTLDataSetMetadata) right;
+			DataSetMetadata leftData = (DataSetMetadata) left, rightData = (DataSetMetadata) right;
 
 			if (!leftData.getComponents(Identifier.class).containsAll(rightData.getComponents(Identifier.class))
 					&& !rightData.getComponents(Identifier.class).containsAll(leftData.getComponents(Identifier.class)))
@@ -164,12 +164,12 @@ public class BooleanTransformation extends BinaryTransformation
 					.addComponent(new DataStructureComponentImpl<>(measureName, Measure.class, BOOLEANDS))
 					.build();
 		}
-		else if (left instanceof VTLScalarValueMetadata && ((VTLScalarValueMetadata<?>) left).getDomain() instanceof BooleanDomainSubset && right instanceof VTLScalarValueMetadata
-				&& ((VTLScalarValueMetadata<?>) right).getDomain() instanceof BooleanDomainSubset)
+		else if (left instanceof ScalarValueMetadata && ((ScalarValueMetadata<?>) left).getDomain() instanceof BooleanDomainSubset && right instanceof ScalarValueMetadata
+				&& ((ScalarValueMetadata<?>) right).getDomain() instanceof BooleanDomainSubset)
 			return BOOLEAN;
 		else
 		{
-			metadata = (VTLDataSetMetadata) (left instanceof VTLDataSetMetadata ? left : right);
+			metadata = (DataSetMetadata) (left instanceof DataSetMetadata ? left : right);
 
 			if (metadata.getComponents(Measure.class, Domains.BOOLEANDS).size() == 0)
 				throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, metadata);

@@ -28,7 +28,7 @@ import java.util.Map;
 import it.bancaditalia.oss.vtl.impl.types.domain.Duration;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
@@ -69,7 +69,7 @@ public class DurationValue extends BaseScalarValue<Duration, DurationDomainSubse
 	}
 
 	@Override
-	public VTLScalarValueMetadata<DurationDomainSubset> getMetadata()
+	public ScalarValueMetadata<DurationDomainSubset> getMetadata()
 	{
 		return () -> DURATIONDS;
 	}

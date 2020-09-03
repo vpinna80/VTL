@@ -32,7 +32,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -95,9 +94,9 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 
 	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Set<DataStructureComponent<R, ?, ?>> components, Class<R> role)
 	{
-		Stream<Entry<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>>> stream = Utils.getStream(getValues(role).entrySet())
+		return Utils.getStream(getValues(role).entrySet())
 				.filter(byKey(components::contains))
-				.map(keepingValue(c -> c.as(role)));
-		return stream.collect(entriesToMap());
+				.map(keepingValue(c -> c.as(role)))
+				.collect(entriesToMap());
 	}
 }

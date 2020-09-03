@@ -97,6 +97,11 @@ public final class Utils
 		return t -> new SimpleEntry<>(keyMapper.apply(t), valueMapper.apply(t));
 	}
 
+	public static <T, V> Function<T, Entry<T, V>> toEntryWithValue(Function<? super T, ? extends V> valueMapper)
+	{
+		return t -> new SimpleEntry<>(t, valueMapper.apply(t));
+	}
+
 	public static <U, V> Collector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
 	{
 		return toConcurrentMap(Entry::getKey, Entry::getValue);

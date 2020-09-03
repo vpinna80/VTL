@@ -30,7 +30,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
@@ -54,20 +54,20 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 	}
 	
 	@Override
-	public final VTLDataSetMetadata getMetadata(TransformationScheme scheme)
+	public final DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata metadata = operand.getMetadata(scheme);
 		
-		if (!(metadata instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(metadata, VTLDataSetMetadata.class);
+		if (!(metadata instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
 		
-		VTLDataSetMetadata ds = (VTLDataSetMetadata) metadata;
+		DataSetMetadata ds = (DataSetMetadata) metadata;
 		Set<DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain>> timeIDs = ds.getComponents(Identifier.class, TIMEDS);
 		if (timeIDs.size() != 1)
 			throw new VTLSingletonComponentRequiredException(Identifier.class, TIMEDS, ds);
 		
-		return checkIsTimeSeriesDataSet((VTLDataSetMetadata) metadata, scheme);
+		return checkIsTimeSeriesDataSet((DataSetMetadata) metadata, scheme);
 	}
 
-	protected abstract VTLDataSetMetadata checkIsTimeSeriesDataSet(VTLDataSetMetadata metadata, TransformationScheme scheme);
+	protected abstract DataSetMetadata checkIsTimeSeriesDataSet(DataSetMetadata metadata, TransformationScheme scheme);
 }

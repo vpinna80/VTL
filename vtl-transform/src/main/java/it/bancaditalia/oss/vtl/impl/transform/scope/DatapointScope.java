@@ -26,8 +26,8 @@ import java.util.Objects;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -37,10 +37,10 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class DatapointScope implements TransformationScheme
 {
 	private final DataPoint dp;
-	private final VTLDataSetMetadata structure;
+	private final DataSetMetadata structure;
 	private final TransformationScheme parent;
 	
-	public DatapointScope(DataPoint dp, VTLDataSetMetadata structure, TransformationScheme parent) 
+	public DatapointScope(DataPoint dp, DataSetMetadata structure, TransformationScheme parent) 
 	{
 		this.dp = dp;
 		this.structure = structure;
@@ -66,7 +66,7 @@ public class DatapointScope implements TransformationScheme
 	public VTLValueMetadata getMetadata(String name)
 	{
 		if (Objects.requireNonNull(name, "The name to resolve cannot be null.").matches("'.*'"))
-			return (VTLScalarValueMetadata<?>) Utils.getStream(structure)
+			return (ScalarValueMetadata<?>) Utils.getStream(structure)
 					.filter(c -> c.getName().equals(name.replaceAll("'(.*)'", "$1")))
 					.findAny()
 					.orElseThrow(() -> new VTLUnboundNameException(name))
@@ -74,7 +74,7 @@ public class DatapointScope implements TransformationScheme
 		else if (THIS.equals(name))
 			return structure;
 		else
-			return (VTLScalarValueMetadata<?>) Utils.getStream(structure)
+			return (ScalarValueMetadata<?>) Utils.getStream(structure)
 					.filter(c -> c.getName().equalsIgnoreCase(name))
 					.findAny()
 					.orElseThrow(() -> new VTLUnboundNameException(name))

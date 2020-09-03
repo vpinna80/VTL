@@ -42,8 +42,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -64,7 +64,7 @@ public class ConcatTransformation extends BinaryTransformation
 		super(left, right);
 	}
 
-	private VTLDataSetMetadata metadata = null;
+	private DataSetMetadata metadata = null;
 
 	@Override
 	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
@@ -76,7 +76,7 @@ public class ConcatTransformation extends BinaryTransformation
 	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
 	{
 		BinaryOperator<ScalarValue<?, ? extends StringDomainSubset, ? extends StringDomain>> function = Utils.reverseIfBOp(!datasetIsLeftOp, concat);
-		VTLDataSetMetadata structure = dataset.getMetadata();
+		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = structure.getComponents(Measure.class, Domains.STRINGDS).iterator().next();
 		
 		return dataset.mapKeepingKeys(structure, dp -> Collections.singletonMap(measure, 
@@ -112,21 +112,21 @@ public class ConcatTransformation extends BinaryTransformation
 	{
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
 		
-		if (left instanceof VTLScalarValueMetadata && right instanceof VTLScalarValueMetadata)
+		if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
 		{
-			VTLScalarValueMetadata<?> leftV = (VTLScalarValueMetadata<?>) left, rightV = (VTLScalarValueMetadata<?>) right; 
+			ScalarValueMetadata<?> leftV = (ScalarValueMetadata<?>) left, rightV = (ScalarValueMetadata<?>) right; 
 			if (!(STRINGDS.isAssignableFrom(leftV.getDomain())))
 				throw new VTLIncompatibleTypesException("concat", STRINGDS, leftV.getDomain());
 			else if (!(STRINGDS.isAssignableFrom(rightV.getDomain())))
 				throw new VTLIncompatibleTypesException("concat", STRINGDS, rightV.getDomain());
 			else
-				return (VTLScalarValueMetadata<StringDomainSubset>) () -> STRINGDS;
+				return (ScalarValueMetadata<StringDomainSubset>) () -> STRINGDS;
 		}
-		else if (left instanceof VTLScalarValueMetadata || right instanceof VTLScalarValueMetadata)
+		else if (left instanceof ScalarValueMetadata || right instanceof ScalarValueMetadata)
 		{
-			boolean leftIsScalar = left instanceof VTLScalarValueMetadata;
-			VTLScalarValueMetadata<?> value = leftIsScalar ? (VTLScalarValueMetadata<?>) left : (VTLScalarValueMetadata<?>) right;
-			VTLDataSetMetadata metadata = leftIsScalar ? (VTLDataSetMetadata) left : (VTLDataSetMetadata) right;
+			boolean leftIsScalar = left instanceof ScalarValueMetadata;
+			ScalarValueMetadata<?> value = leftIsScalar ? (ScalarValueMetadata<?>) left : (ScalarValueMetadata<?>) right;
+			DataSetMetadata metadata = leftIsScalar ? (DataSetMetadata) left : (DataSetMetadata) right;
 			
 			if (!STRINGDS.isAssignableFrom(value.getDomain()))
 				throw new VTLIncompatibleTypesException("concat", STRINGDS, value.getDomain());
@@ -142,7 +142,7 @@ public class ConcatTransformation extends BinaryTransformation
 			return metadata;
 		}
 		else {
-			VTLDataSetMetadata leftD = (VTLDataSetMetadata) left, rightD = (VTLDataSetMetadata) right;
+			DataSetMetadata leftD = (DataSetMetadata) left, rightD = (DataSetMetadata) right;
 			
 			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> leftIds = leftD.getComponents(Identifier.class);
 			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> rightIds = rightD.getComponents(Identifier.class);

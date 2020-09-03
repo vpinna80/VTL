@@ -19,14 +19,13 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static java.util.Collections.unmodifiableCollection;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,19 +34,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataStructure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
@@ -128,23 +122,16 @@ public class DataStructureBuilder
 		return this;
 	}
 
-	public VTLDataSetMetadata build()
+	public DataSetMetadata build()
 	{
 		return new DataStructureImpl(components);
 	}
 
-	private static class DataStructureImpl extends AbstractSet<DataStructureComponent<?, ?, ?>> implements VTLDataSetMetadata, Serializable
+	private static class DataStructureImpl extends AbstractSet<DataStructureComponent<?, ?, ?>> implements DataSetMetadata, Serializable
 	{
 		private static final long serialVersionUID = 1L;
-		
-		private final static Logger LOGGER = LoggerFactory.getLogger(DataStructureImpl.class);
 
-
-		private final Map<String, DataStructureComponent<?, ?, ?>>                 components        = Collections.synchronizedMap(new TreeMap<>());
-		private final Set<Set<? extends DataStructureComponent<Identifier, ?, ?>>> registeredIndexes = new HashSet<>();
-
-		private static final AtomicLong counter = new AtomicLong();
-		public final long              count   = counter.incrementAndGet();
+		private final Map<String, DataStructureComponent<?, ?, ?>>                 components        = new TreeMap<>();
 
 		private DataStructureImpl(Set<? extends DataStructureComponent<?, ?, ?>> components)
 		{
@@ -174,13 +161,13 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public VTLDataSetMetadata swapComponent(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
+		public DataSetMetadata swapComponent(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
 		{
 			return new DataStructureBuilder(this).removeComponent(oldComponent).addComponents(newComponent).build();
 		}
 
 		@Override
-		public VTLDataSetMetadata keep(String... names)
+		public DataSetMetadata keep(String... names)
 		{
 			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(names)
 					.map(components::get)
@@ -196,7 +183,7 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public VTLDataSetMetadata drop(Collection<String> names)
+		public DataSetMetadata drop(Collection<String> names)
 		{
 			final Set<? extends DataStructureComponent<?, ?, ?>> filter = Utils.getStream(names)
 					.map(components::get)
@@ -208,7 +195,7 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public VTLDataSetMetadata membership(String name)
+		public DataSetMetadata membership(String name)
 		{
 			DataStructureComponent<?, ?, ?> component = components.get(name);
 
@@ -223,19 +210,19 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public VTLDataSetMetadata joinForOperators(DataStructure dataStructure)
+		public DataSetMetadata joinForOperators(DataSetMetadata VTLDataSetMetadata)
 		{
-			return new DataStructureBuilder(this).addComponents(dataStructure).build();
+			return new DataStructureBuilder(this).addComponents(VTLDataSetMetadata).build();
 		}
 
 		@Override
-		public VTLDataSetMetadata subspace(Collection<? extends DataStructureComponent<Identifier, ?, ?>> subspace)
+		public DataSetMetadata subspace(Collection<? extends DataStructureComponent<Identifier, ?, ?>> subspace)
 		{
 			return new DataStructureBuilder().addComponents(components.values().parallelStream().filter(c -> !subspace.contains(c)).collect(toSet())).build();
 		}
 
 		@Override
-		public VTLDataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName)
+		public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName)
 		{
 			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.rename(newName)).build();
 		}
@@ -284,7 +271,7 @@ public class DataStructureBuilder
 		@Override
 		public Iterator<DataStructureComponent<?, ?, ?>> iterator()
 		{
-			return Collections.unmodifiableCollection(components.values()).iterator();
+			return unmodifiableCollection(components.values()).iterator();
 		}
 
 		@Override
@@ -294,26 +281,16 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public <S extends ValueDomainSubset<D>, D extends ValueDomain> VTLDataSetMetadata pivot(DataStructureComponent<Identifier, StringCodeListDomain, StringDomain> identifier,
+		public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringCodeListDomain, StringDomain> identifier,
 				DataStructureComponent<Measure, S, D> measure)
 		{
-			return Utils.getStream(identifier.getDomain().getCodeItems()).map(i -> new DataStructureComponentImpl<>(i.get(), Measure.class, measure.getDomain()))
-					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).addComponents(getComponents(Identifier.class)).removeComponent(identifier).removeComponent(measure)
+			return Utils.getStream(identifier.getDomain().getCodeItems())
+					.map(i -> new DataStructureComponentImpl<>(i.get(), Measure.class, measure.getDomain()))
+					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
+					.addComponents(getComponents(Identifier.class))
+					.removeComponent(identifier)
+					.removeComponent(measure)
 					.build();
-		}
-
-		@Override
-		public void registerIndex(Set<? extends DataStructureComponent<Identifier, ?, ?>> keys)
-		{
-			if (!registeredIndexes.contains(keys))
-				registeredIndexes.add(keys);
-			LOGGER.debug("{}: {}", count, components.values());
-		}
-
-		@Override
-		public Set<Set<? extends DataStructureComponent<Identifier, ?, ?>>> getRequestedIndexes()
-		{
-			return registeredIndexes;
 		}
 	}
 }

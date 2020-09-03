@@ -39,16 +39,15 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class Paginator implements AutoCloseable
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Paginator.class);
 	
 	private final BlockingQueue<DataPoint> queue = new ArrayBlockingQueue<>(100);
-	private final VTLDataSetMetadata dataStructure;
+	private final DataSetMetadata dataStructure;
 
 	private boolean closed = false;
 	private RuntimeException lastException = null;
@@ -97,7 +96,7 @@ public class Paginator implements AutoCloseable
 		closed = true;
 	}
 
-	public DataStructure getDataStructure()
+	public DataSetMetadata getDataStructure()
 	{
 		return dataStructure;
 	}

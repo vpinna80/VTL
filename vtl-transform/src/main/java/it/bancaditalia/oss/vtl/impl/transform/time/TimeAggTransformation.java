@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -72,7 +72,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
 		DataStructureComponent<Measure, TimeDomainSubset<TimeDomain>, TimeDomain> timeMeasure = dataset.getComponents(Measure.class, TIMEDS).iterator().next();
-		VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata())
+		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata())
 				.addComponent(periodComponent)
 				.build();
 		
@@ -89,17 +89,17 @@ public class TimeAggTransformation extends UnaryTransformation
 		VTLValueMetadata value;
 		value = operand.getMetadata(session);
 
-		if (value instanceof VTLScalarValueMetadata)
+		if (value instanceof ScalarValueMetadata)
 		{
-			ValueDomainSubset<?> domain = ((VTLScalarValueMetadata<?>) value).getDomain();
+			ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) value).getDomain();
 			if (!TIMEDS.isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("time_agg", TIMEDS, domain);
 			else
-				return (VTLScalarValueMetadata<?>) periodComponent::getDomain;
+				return (ScalarValueMetadata<?>) periodComponent::getDomain;
 		}
 		else
 		{
-			VTLDataSetMetadata ds = (VTLDataSetMetadata) value;
+			DataSetMetadata ds = (DataSetMetadata) value;
 
 //			if (operand == null)
 //			{

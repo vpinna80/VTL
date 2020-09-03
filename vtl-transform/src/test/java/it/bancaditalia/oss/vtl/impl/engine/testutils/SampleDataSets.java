@@ -23,6 +23,7 @@ import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -34,9 +35,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 
 public enum SampleDataSets implements DataSet
 {
@@ -90,7 +91,7 @@ public enum SampleDataSets implements DataSet
 		return dataset.stream();
 	}
 
-	public VTLDataSetMetadata getMetadata()
+	public DataSetMetadata getMetadata()
 	{
 		return dataset.getMetadata();
 	}
@@ -105,22 +106,15 @@ public enum SampleDataSets implements DataSet
 		return dataset.getComponent(name);
 	}
 
-	public Stream<DataPoint> getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
 	{
 		return dataset.getMatching(keyValues);
 	}
 
-	public DataSet filteredMappedJoin(VTLDataSetMetadata metadata, DataSet rightDataset, BiPredicate<DataPoint, DataPoint> filter,
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet rightDataset, BiPredicate<DataPoint, DataPoint> filter,
 			BinaryOperator<DataPoint> mergeOp)
 	{
 		return dataset.filteredMappedJoin(metadata, rightDataset, filter, mergeOp);
-	}
-
-	public <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
-			BiFunction<? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, ? super Stream<DataPoint>, T> groupMapper)
-	{
-		return dataset.streamByKeys(keys, filter, groupMapper);
 	}
 
 	public DataSet filter(Predicate<DataPoint> predicate)
@@ -128,9 +122,17 @@ public enum SampleDataSets implements DataSet
 		return dataset.filter(predicate);
 	}
 
-	public DataSet mapKeepingKeys(VTLDataSetMetadata metadata,
+	public DataSet mapKeepingKeys(DataSetMetadata metadata,
 			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator)
 	{
 		return dataset.mapKeepingKeys(metadata, operator);
+	}
+
+	@Override
+	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter, Collector<DataPoint, A, TT> groupCollector,
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)
+	{
+		return dataset.streamByKeys(keys, filter, groupCollector, finisher);
 	}
 }

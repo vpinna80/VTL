@@ -34,6 +34,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
 class LocalSDMXEnvironment extends SDMXEnvironment
 {
+	private static final long serialVersionUID = 1L;
 	private final String dirPath;
 	private final String provider;
 	

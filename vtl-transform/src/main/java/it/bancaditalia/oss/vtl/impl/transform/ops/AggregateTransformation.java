@@ -37,22 +37,22 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -70,7 +70,9 @@ public class AggregateTransformation extends UnaryTransformation
 	private final List<String> groupBy;
 	private final Transformation having;
 
-	private VTLValueMetadata metadata;
+	private transient VTLValueMetadata metadata;
+	private final String name;
+	private final Class<? extends ComponentRole> role;
 
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, List<String> groupBy, Transformation having)
 	{
@@ -79,21 +81,29 @@ public class AggregateTransformation extends UnaryTransformation
 		this.aggregation = aggregation;
 		this.groupBy = groupBy == null || groupBy.isEmpty() ? null : groupBy;
 		this.having = having;
+		this.name = null;
+		this.role = null;
 
 		if (this.having != null)
 			throw new UnsupportedOperationException(aggregation + "(... having ...) not implemented");
 	}
 
+	// constructor for COUNT operator
 	public AggregateTransformation(List<String> groupBy, Transformation having)
 	{
-		super(null);
-
-		this.aggregation = COUNT;
+		this(COUNT, null, groupBy, having);
+	}
+	
+	// constructor for AGGR clause
+	public AggregateTransformation(AggregateTransformation other, List<String> groupBy, String name, Class<? extends ComponentRole> role)
+	{
+		super(other.operand);
+		
+		this.aggregation = other.aggregation;
 		this.groupBy = groupBy == null || groupBy.isEmpty() ? null : groupBy;
-		this.having = having;
-
-		if (this.having != null)
-			throw new UnsupportedOperationException(aggregation + "(... having ...) not implemented");
+		this.having = null;
+		this.name = name;
+		this.role = role;
 	}
 	
 	@Override
@@ -105,48 +115,32 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
-		Collector<? super ScalarValue<?, ?, ?>, ?, ? extends ScalarValue<?, ?, ?>> reducer = aggregation.getReducer();
+		DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
+		Collector<DataPoint, ?, ScalarValue<?, ?, ?>> reducer = aggregation.getReducer(sourceMeasure);
+		DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
+				? new DataStructureComponentImpl<>(name, role, sourceMeasure.getDomain())
+				: new DataStructureComponentImpl<>(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
+				: sourceMeasure;
 
-		if (groupBy == null) // aggregation group is defined by the caller expression (typically AGGR clause)
-			if (aggregation == COUNT)
-				return dataset.stream().map(dp -> NullValue.instance(INTEGERDS)).collect(reducer);
-			else
+		if (groupBy == null)
+			try (Stream<DataPoint> stream = dataset.stream())
 			{
-				DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
-				return dataset.stream().map(d -> d.get(measure)).collect(reducer);
+				return stream.collect(reducer);
 			}
 		else
-			if (aggregation == COUNT)
-			{
-				Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupBy.stream()
-						.map(dataset::getComponent)
-						.map(Optional::get)
-						.map(c -> c.as(Identifier.class))
-						.collect(toSet());
-				
-				// dataset-level aggregation
-				return new LightFDataSet<>((VTLDataSetMetadata) metadata, ds -> {
-					return ds.streamByKeys(groupIDs, (key, group) -> {
-						return new DataPointBuilder(key)
-								.add(COUNT_MEASURE, group.map(d -> NullValue.instance(INTEGERDS)).collect(reducer))
-								.build((VTLDataSetMetadata) metadata);
-					});
-				}, dataset);
-			}
-			else
-			{
-				DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
-				Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupBy.stream()
-						.map(dataset::getComponent)
-						.map(Optional::get)
-						.map(c -> c.as(Identifier.class))
-						.collect(toSet());
-				
-				// dataset-level aggregation
-				return new LightFDataSet<>((VTLDataSetMetadata) metadata, ds -> ds.streamByKeys(groupIDs, (key, group) -> new DataPointBuilder(key)
-						.add(measure, group.map(d -> d.get(measure)).collect(reducer))
-						.build((VTLDataSetMetadata) metadata)), dataset);
-			}
+		{
+			Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupBy.stream()
+					.map(dataset::getComponent)
+					.map(Optional::get)
+					.map(c -> c.as(Identifier.class))
+					.collect(toSet());
+			
+			// dataset-level aggregation
+			return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(groupIDs, reducer, (v, keyValues) -> 
+					new DataPointBuilder(keyValues)
+						.add(resultComponent, v)
+						.build((DataSetMetadata) metadata)), dataset);
+		}
 	}
 
 	@Override
@@ -156,11 +150,11 @@ public class AggregateTransformation extends UnaryTransformation
 		
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
 		
-		if (opmeta instanceof VTLScalarValueMetadata && ((VTLScalarValueMetadata<?>) opmeta).getDomain() instanceof NumberDomainSubset)
+		if (opmeta instanceof ScalarValueMetadata && ((ScalarValueMetadata<?>) opmeta).getDomain() instanceof NumberDomainSubset)
 			return metadata;
 		else// if (meta instanceof VTLDataSetMetadata)
 		{
-			VTLDataSetMetadata dataset = (VTLDataSetMetadata) opmeta;
+			DataSetMetadata dataset = (DataSetMetadata) opmeta;
 			final Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 
 			if (groupBy == null)
@@ -181,7 +175,7 @@ public class AggregateTransformation extends UnaryTransformation
 			{
 				Set<DataStructureComponent<?, ?, ?>> groupComps = groupBy.stream()
 						.map(dataset::getComponent)
-						.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataStructure) operand, groupBy.toArray(new String[0]))))
+						.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, groupBy.toArray(new String[0]))))
 						.collect(toSet());
 				
 				Optional<DataStructureComponent<?, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();

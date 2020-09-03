@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.config;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,18 +60,10 @@ public class ConfigurationManagerFactory
 			if (INSTANCE != null)
 				return INSTANCE;
 
-			try
-			{
-				INSTANCE = Class.forName(CONFIG_MANAGER.getValue())
-						.asSubclass(ConfigurationManager.class)
-						.newInstance();
-				return INSTANCE;
-			}
-			catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
-			{
-				throw new VTLNestedException("Error loading configuration", e);
-			}
+			INSTANCE = instanceOfClass(CONFIG_MANAGER.getValue(), ConfigurationManager.class, "Error loading configuration");
 		}
+		
+		return INSTANCE;
 	} 
 
 	/**
@@ -129,5 +122,17 @@ public class ConfigurationManagerFactory
 	public static void registerSupportedProperties(Class<?> implementationClass, VTLProperty... classProperties)
 	{
 		PROPERTIES.put(implementationClass, Arrays.asList(classProperties));
+	}
+	
+	public static <T> T instanceOfClass(String className, Class<T> instanceClass, String errorMsg)
+	{
+		try
+		{
+			return Class.forName(className).asSubclass(instanceClass).getDeclaredConstructor().newInstance();
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
+		{
+			throw new VTLNestedException(errorMsg, e);
+		}
 	}
 }

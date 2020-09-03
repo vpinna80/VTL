@@ -88,7 +88,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
@@ -172,7 +172,7 @@ public class SDMXEnvironment implements Environment, Serializable
 
 	protected DataSet parseSDMXTable(String name, List<PortableTimeSeries<Double>> table) throws DataStructureException
 	{
-		VTLDataSetMetadata metadata = (VTLDataSetMetadata) getValueMetadata("sdmx:" + name)
+		DataSetMetadata metadata = (DataSetMetadata) getValueMetadata("sdmx:" + name)
 				.orElseThrow(() -> new NullPointerException("Could not retrieve SDMX metadata for " + name));
 
 		Map<PortableTimeSeries<Double>, Map<String, ScalarValue<?, ?, ?>>> seriesMeta = Utils.getStream(table)
@@ -277,7 +277,7 @@ public class SDMXEnvironment implements Environment, Serializable
 			else
 				activeDims = dimensions;
 
-			VTLDataSetMetadata metadata = Stream
+			DataSetMetadata metadata = Stream
 					.concat(activeDims.stream().map(d -> elementToComponent(Identifier.class, d)),
 							activeAttributes.stream().map(a -> elementToComponent(Attribute.class, a)))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)

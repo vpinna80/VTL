@@ -32,19 +32,23 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
-public enum AggregateOperator 
+public enum AggregateOperator  
 {
+	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::new)),
 	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue()), DoubleValue::new)), 
 	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue()), DoubleValue::new)),
-	COUNT("count", collectingAndThen(counting(), IntegerValue::new)),
 	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, mapping(NumberValue::get, mapping(Number.class::cast, mapping(Number::doubleValue, 
 			toList())))), l -> {
 				List<Double> c = new ArrayList<>(l);
@@ -94,23 +98,42 @@ public enum AggregateOperator
 	RANK = new AggregateOperator("RANK not implemented."),
 	*/;
 
-	private final Collector<? super ScalarValue<?, ?, ?>, ?, ? extends ScalarValue<?, ?, ?>> reductor;
+	private final Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer;
+	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> extractor;
 	private final String name;
 
-	private AggregateOperator(String name, Collector<? super ScalarValue<?, ?, ?>, ?, ? extends ScalarValue<?, ?, ?>> reductor)
+	private AggregateOperator(String name, Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer)
+	{
+		this(name, DataPoint::get, reducer);
+	}
+
+	private AggregateOperator(String name,
+			BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> extractor,
+			Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer)
 	{
 		this.name = name;
-		this.reductor = reductor;
+		this.extractor = extractor;
+		this.reducer = reducer;
+	}
+
+	public Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> getReducer()
+	{
+		return reducer;
 	}
 	
-	public Collector<? super ScalarValue<?, ?, ?>, ?, ? extends ScalarValue<?, ?, ?>> getReducer()
+	public Collector<DataPoint, ?, ScalarValue<?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
-		return reductor;
+		return Collectors.mapping(dp -> extractor.apply(dp, measure), reducer);
 	}
 	
 	@Override
 	public String toString()
 	{
 		return name;
+	}
+	
+	public BiFunction<? super DataPoint, ? super DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?>> getExtractor()
+	{
+		return extractor;
 	}
 }

@@ -44,8 +44,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -93,7 +93,7 @@ public class InStrTransformation extends TransformationImpl
 		if (left instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) left;
-			VTLDataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
+			DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
 					.addComponent(INT_MEASURE)
 					.build();
 			DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
@@ -130,22 +130,22 @@ public class InStrTransformation extends TransformationImpl
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session),
 				start = startOperand.getMetadata(session), occurrence = occurrenceOperand.getMetadata(session);
 		
-		if (!(right instanceof VTLScalarValueMetadata))
-			throw new VTLInvalidParameterException(right, VTLScalarValueMetadata.class);
-		if (!(start instanceof VTLScalarValueMetadata))
-			throw new VTLInvalidParameterException(start, VTLScalarValueMetadata.class);
-		if (!(occurrence instanceof VTLScalarValueMetadata))
-			throw new VTLInvalidParameterException(occurrence, VTLScalarValueMetadata.class);
-		if (!STRINGDS.isAssignableFrom(((VTLScalarValueMetadata<?>) right).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: pattern parameter", STRING, ((VTLScalarValueMetadata<?>) right).getDomain());
-		if (!STRINGDS.isAssignableFrom(((VTLScalarValueMetadata<?>) start).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: start parameter", INTEGER, ((VTLScalarValueMetadata<?>) start).getDomain());
-		if (!STRINGDS.isAssignableFrom(((VTLScalarValueMetadata<?>) occurrence).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: occurrence parameter", INTEGER, ((VTLScalarValueMetadata<?>) occurrence).getDomain());
+		if (!(right instanceof ScalarValueMetadata))
+			throw new VTLInvalidParameterException(right, ScalarValueMetadata.class);
+		if (!(start instanceof ScalarValueMetadata))
+			throw new VTLInvalidParameterException(start, ScalarValueMetadata.class);
+		if (!(occurrence instanceof ScalarValueMetadata))
+			throw new VTLInvalidParameterException(occurrence, ScalarValueMetadata.class);
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) right).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: pattern parameter", STRING, ((ScalarValueMetadata<?>) right).getDomain());
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) start).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: start parameter", INTEGER, ((ScalarValueMetadata<?>) start).getDomain());
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) occurrence).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: occurrence parameter", INTEGER, ((ScalarValueMetadata<?>) occurrence).getDomain());
 		
-		if (left instanceof VTLScalarValueMetadata)
+		if (left instanceof ScalarValueMetadata)
 		{
-			VTLScalarValueMetadata<?> leftV = (VTLScalarValueMetadata<?>) left; 
+			ScalarValueMetadata<?> leftV = (ScalarValueMetadata<?>) left; 
 			if (!(STRING.isAssignableFrom(leftV.getDomain())))
 				throw new VTLIncompatibleTypesException("instr", STRING, leftV.getDomain());
 			else
@@ -153,8 +153,8 @@ public class InStrTransformation extends TransformationImpl
 		}
 		else 
 		{
-			VTLDataSetMetadata metadata = (VTLDataSetMetadata) left;
-			VTLScalarValueMetadata<?> value = (VTLScalarValueMetadata<?>) right;
+			DataSetMetadata metadata = (DataSetMetadata) left;
+			ScalarValueMetadata<?> value = (ScalarValueMetadata<?>) right;
 			
 			if (!STRING.isAssignableFrom(value.getDomain()))
 				throw new VTLIncompatibleTypesException("instr", STRING, value.getDomain());

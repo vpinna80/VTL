@@ -34,7 +34,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 
-public interface DataStructure extends Set<DataStructureComponent<?, ?, ?>>, Serializable
+public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, VTLValueMetadata, Serializable
 {
 	public <T extends ComponentRole> Set<DataStructureComponent<T, ?, ?>> getComponents(Class<T> typeOfComponent);
 
@@ -46,7 +46,7 @@ public interface DataStructure extends Set<DataStructureComponent<?, ?, ?>>, Ser
 				.collect(toSet());
 	}
 
-	public DataStructure swapComponent(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent);
+	public DataSetMetadata swapComponent(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent);
 
 	public boolean contains(String component);
 
@@ -102,19 +102,19 @@ public interface DataStructure extends Set<DataStructureComponent<?, ?, ?>>, Ser
 		return component.orElse(null);
 	}
 
-	public DataStructure subspace(Collection<? extends DataStructureComponent<Identifier, ?, ?>> subspace);
+	public DataSetMetadata subspace(Collection<? extends DataStructureComponent<Identifier, ?, ?>> subspace);
 	
-	public DataStructure keep(String... names);
+	public DataSetMetadata keep(String... names);
 	
-	public DataStructure drop(Collection<String> names);
+	public DataSetMetadata drop(Collection<String> names);
 
-	public DataStructure membership(String name);
+	public DataSetMetadata membership(String name);
 
-	public DataStructure joinForOperators(DataStructure other);
+	public DataSetMetadata joinForOperators(DataSetMetadata other);
 
-	public DataStructure rename(DataStructureComponent<?, ?, ?> component, String newName);
+	public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName);
 
-	public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructure pivot(DataStructureComponent<Identifier, StringCodeListDomain, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
+	public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringCodeListDomain, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
 
 	public boolean containsComponent(String componentName);
 }

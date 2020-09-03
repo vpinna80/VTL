@@ -19,14 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.environment.dataset;
 
-import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.toList;
-
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -35,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -57,26 +49,6 @@ public class ColumnarDataSet extends AbstractDataSet
 		nRows = columns.values().iterator().next().length;
 		
 		LOGGER.info("Indexing from source as {}", getMetadata());
-	}
-
-	@Override
-	public Stream<DataPoint> getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
-	{
-		Set<DataStructureComponent<Identifier, ?, ?>> idsToMatch = keyValues.keySet();
-		return streamDataPoints()
-				.filter(dp -> keyValues.equals(dp.getValues(idsToMatch, Identifier.class)));
-	}
-
-	@Override
-	public <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
-			BiFunction<? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, ? super Stream<DataPoint>, T> groupMapper)
-	{
-		ConcurrentMap<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, List<DataPoint>> map = streamDataPoints()
-				.filter(dp -> filter.entrySet().containsAll(dp.getValues(filter.keySet(), Identifier.class).entrySet()))
-				.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), toList()));
-		return Utils.getStream(map.entrySet())
-			.map(e -> groupMapper.apply(e.getKey(), Utils.getStream(e.getValue())));
 	}
 
 	@Override

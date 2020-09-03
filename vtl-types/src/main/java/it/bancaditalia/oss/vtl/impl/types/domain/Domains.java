@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
@@ -33,7 +33,7 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public enum Domains implements VTLScalarValueMetadata<ValueDomainSubset<?>>
+public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
 {
 	BOOLEAN(new EntireBooleanDomainSubset()),
 	INTEGER(new EntireIntegerDomainSubset()),

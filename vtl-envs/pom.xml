@@ -51,6 +51,12 @@
 			<artifactId>sdmx</artifactId>
 		</dependency>
 		<dependency>
+		    <groupId>org.apache.spark</groupId>
+		    <artifactId>spark-streaming_2.12</artifactId>
+		    <version>3.0.0</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.github.lucarosellini.rJava</groupId>
 			<artifactId>JRI</artifactId>
 			<version>0.9-7</version>

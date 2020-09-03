@@ -22,14 +22,14 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
 public class DoubleValue extends NumberValueImpl<Double, NumberDomainSubset<NumberDomain>, NumberDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final VTLScalarValueMetadata<NumberDomainSubset<NumberDomain>> NUMBER_METADATA = () -> NUMBERDS;
+	private static final ScalarValueMetadata<NumberDomainSubset<NumberDomain>> NUMBER_METADATA = () -> NUMBERDS;
 
 	public DoubleValue(Double value)
 	{
@@ -37,7 +37,7 @@ public class DoubleValue extends NumberValueImpl<Double, NumberDomainSubset<Numb
 	}
 
 	@Override
-	public VTLScalarValueMetadata<NumberDomainSubset<NumberDomain>> getMetadata()
+	public ScalarValueMetadata<NumberDomainSubset<NumberDomain>> getMetadata()
 	{
 		return NUMBER_METADATA;
 	}

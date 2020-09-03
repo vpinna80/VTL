@@ -138,32 +138,40 @@ public class DataPointBuilder
 		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 		
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> dpValues;
-
 		
 		private DataPointImpl(Collection<? extends DataStructureComponent<?, ?, ?>> structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> values)
 		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> filledValues = new ConcurrentHashMap<>(values);
-			Utils.getStream(structure)
-				.filter(c -> !c.is(Identifier.class))
-				.filter(c -> !values.containsKey(c))
-				.forEach(c -> filledValues.put(c, NullValue.instance(c.getDomain())));
+			if (!(values instanceof Serializable))
+				throw new IllegalStateException("The values map must be serializable");
 			
-			this.dpValues = filledValues;
+			if (values.size() != structure.size())
+			{
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> filledValues = new ConcurrentHashMap<>(values);
+				Utils.getStream(structure)
+					.filter(c -> !c.is(Identifier.class) && !values.containsKey(c))
+					.forEach(c -> filledValues.put(c, NullValue.instance(c.getDomain())));
+				this.dpValues = filledValues;
+			}
+			else
+				this.dpValues = values;
 			
-			Utils.getStream(this.dpValues.keySet())
-				.filter(c -> !structure.contains(c))
-				.map(c -> new SimpleEntry<>(c, new IllegalStateException("Component " + c + " has a value but is not defined on " + structure)))
-				.peek(e -> LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", e.getKey(), structure, values, e.getValue()))
-				.map(Map.Entry::getValue)
-				.findAny()
-				.ifPresent(e -> { 
-					throw e; 
-				});
-			
-			Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
-			missing.removeAll(this.dpValues.keySet());
-			if (missing.size() > 0)
-				throw new VTLMissingComponentsException(missing, this.dpValues);
+			if (!structure.equals(dpValues.keySet()))
+			{
+				Utils.getStream(this.dpValues.keySet())
+					.filter(c -> !structure.contains(c))
+					.map(c -> new SimpleEntry<>(c, new IllegalStateException("Component " + c + " has a value but is not defined on " + structure)))
+					.peek(e -> LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", e.getKey(), structure, values, e.getValue()))
+					.map(Map.Entry::getValue)
+					.findAny()
+					.ifPresent(e -> { 
+						throw e; 
+					});
+				
+				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
+				missing.removeAll(this.dpValues.keySet());
+				if (missing.size() > 0)
+					throw new VTLMissingComponentsException(missing, this.dpValues);
+			}
 		}
 
 		@Override

@@ -38,8 +38,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
@@ -91,7 +91,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 	}
 
 	private final StringOperator operator;
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 	
 	public StringUnaryTransformation(StringOperator operator, Transformation operand)
 	{
@@ -123,14 +123,14 @@ public class StringUnaryTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
-		if (meta instanceof VTLScalarValueMetadata)
-			if (((VTLScalarValueMetadata<?>) meta).getDomain() instanceof NumberDomainSubset)
-				return (VTLScalarValueMetadata<?>) () -> STRINGDS;
+		if (meta instanceof ScalarValueMetadata)
+			if (((ScalarValueMetadata<?>) meta).getDomain() instanceof NumberDomainSubset)
+				return (ScalarValueMetadata<?>) () -> STRINGDS;
 			else
-				throw new VTLIncompatibleTypesException(operator.toString(), STRINGDS, ((VTLScalarValueMetadata<?>) meta).getDomain());
+				throw new VTLIncompatibleTypesException(operator.toString(), STRINGDS, ((ScalarValueMetadata<?>) meta).getDomain());
 		else
 		{
-			VTLDataSetMetadata dataset = (VTLDataSetMetadata) meta;
+			DataSetMetadata dataset = (DataSetMetadata) meta;
 			
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> nonstring = dataset.getComponents(Measure.class);
 			if (dataset.getComponents(Measure.class).size() == 0)

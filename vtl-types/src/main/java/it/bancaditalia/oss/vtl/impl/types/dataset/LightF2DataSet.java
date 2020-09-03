@@ -23,7 +23,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class LightF2DataSet<P, Q> extends LightDataSet
 {
@@ -32,7 +32,7 @@ public class LightF2DataSet<P, Q> extends LightDataSet
 	private final P p1;
 	private final Q p2;
 
-	public LightF2DataSet(VTLDataSetMetadata dataStructure, BiFunction<? super P, ? super Q, Stream<DataPoint>> datapoints, P p1, Q p2)
+	public LightF2DataSet(DataSetMetadata dataStructure, BiFunction<? super P, ? super Q, Stream<DataPoint>> datapoints, P p1, Q p2)
 	{
 		super(dataStructure, null);
 		this.function = datapoints;

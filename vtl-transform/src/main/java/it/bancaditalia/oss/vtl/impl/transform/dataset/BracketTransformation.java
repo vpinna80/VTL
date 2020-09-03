@@ -25,7 +25,7 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -77,13 +77,13 @@ public class BracketTransformation extends TransformationImpl
 	{
 		VTLValueMetadata metadata = operand.getMetadata(session);
 		
-		if (!(metadata instanceof VTLDataSetMetadata))
+		if (!(metadata instanceof DataSetMetadata))
 			throw new UnsupportedOperationException("Dataset expected as left operand of []# but found " + metadata);
 
 		if (clause != null)
 			return clause.getMetadata(new ThisScope(operand.getMetadata(session), session));
 		else
-			return ((VTLDataSetMetadata) metadata).membership(component);
+			return ((DataSetMetadata) metadata).membership(component);
 	}
 	
 	@Override

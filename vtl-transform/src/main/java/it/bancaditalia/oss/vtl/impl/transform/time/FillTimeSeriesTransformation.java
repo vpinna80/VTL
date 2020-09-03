@@ -22,16 +22,17 @@ package it.bancaditalia.oss.vtl.impl.transform.time;
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.SINGLE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-import static java.util.stream.Collectors.toList;
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static java.util.stream.Collectors.toCollection;
 
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -45,9 +46,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
@@ -89,13 +90,13 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet ds)
 	{
-		final VTLDataSetMetadata structure = ds.getMetadata();
+		final DataSetMetadata structure = ds.getMetadata();
 		final DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> timeID = ds.getComponents(Identifier.class, TIMEDS).iterator().next();
 		Set<DataStructureComponent<Identifier, ?, ?>> temp = new HashSet<>(ds.getComponents(Identifier.class));
 		temp.remove(timeID);
 		final Set<DataStructureComponent<Identifier, ?, ?>> ids = temp;
-		final ConcurrentMap<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> nullFilling = ds.getComponents(NonIdentifier.class).stream()
-				.collect(Collectors.toConcurrentMap(UnaryOperator.identity(), c -> NullValue.instance(c.getDomain())));
+		final Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> nullFiller = ds.getComponents(NonIdentifier.class).stream()
+				.collect(toMapWithValues(c -> NullValue.instance(c.getDomain())));
 		
 		final Comparator<DataPoint> comparator = (dp1, dp2) -> {
 			for (DataStructureComponent<Identifier, ?, ?> id: ids)
@@ -120,56 +121,63 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			max = ds.stream().map(dp -> (TimeValue<?, ?, ?>) dp.get(timeID)).max(TimeValue::compareTo).orElseThrow(() -> new IllegalStateException("All time series are empty."));
 		}
 
-		return new LightFDataSet<>(structure, dataset -> dataset.streamByKeys(ids, (idValues, group) -> {
-				// Sort each group by time to form a time series
-				List<DataPoint> elements = group.sorted(comparator).collect(toList());
-				LOGGER.debug("Filling group " + idValues);
-				List<DataPoint> additional = new LinkedList<>();
-				
-				// if min == null: do not add leading null datapoints (single mode)
-				TimeValue<?, ?, ?> previous = min; 
-				
-				// leading null elements and current elements
-				for (DataPoint current: elements)
-				{
-					TimeValue<?, ?, ?> lastTime = (TimeValue<?, ?, ?>) current.get(timeID);
-					// find and fill holes
-					if (previous != null)
-					{
-						TimeValue<?, ?, ?> prevTime = previous.increment(1);
-						while (lastTime.compareTo(prevTime) > 0)
-						{
-							LOGGER.debug("Filling space between " + prevTime + " and " + lastTime);
-							DataPoint fillingDataPoint = new DataPointBuilder(idValues)
-								.add(timeID, prevTime)
-								.addAll(nullFilling)
-								.build(structure);
-							additional.add(fillingDataPoint);
-							prevTime = prevTime.increment(1);
-						}
-					}
+		return new LightFDataSet<>(structure, dataset -> dataset.streamByKeys(ids, toCollection(() -> new ConcurrentSkipListMap<>(comparator).keySet()), 
+					(elements, idValues) -> fillSeries(structure, elements, idValues, timeID, nullFiller, min, max))
+				.reduce(Stream::concat)
+				.orElse(Stream.empty()), ds);
+	}
 
-					previous = (TimeValue<?, ?, ?>) current.get(timeID);
-				}
-
-				// fill trailing holes
-				if (mode == ALL)
+	private Stream<DataPoint> fillSeries(final DataSetMetadata structure, NavigableSet<DataPoint> series,
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> seriesID, 
+			DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> timeID, 
+			Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> nullFilling, TimeValue<?, ?, ?> min, TimeValue<?, ?, ?> max)
+	{
+		LOGGER.debug("Filling group " + seriesID);
+		List<DataPoint> additional = new LinkedList<>();
+		
+		// if min == null: do not add leading null datapoints (single mode)
+		TimeValue<?, ?, ?> previous = min; 
+		
+		// leading null elements and current elements
+		for (DataPoint current: series)
+		{
+			TimeValue<?, ?, ?> lastTime = (TimeValue<?, ?, ?>) current.get(timeID);
+			// find and fill holes
+			if (previous != null)
+			{
+				TimeValue<?, ?, ?> prevTime = previous.increment(1);
+				while (lastTime.compareTo(prevTime) > 0)
 				{
-					TimeValue<?, ?, ?> prevTime = previous;
-					while (max.compareTo(prevTime) > 0)
-					{
-						LOGGER.debug("Filling space between " + prevTime + " and " + max);
-						prevTime = prevTime.increment(1);
-						DataPoint fillingDataPoint = new DataPointBuilder(idValues)
-							.add(timeID, prevTime)
-							.addAll(nullFilling)
-							.build(structure);
-						additional.add(fillingDataPoint);
-					}
+					LOGGER.debug("Filling space between " + prevTime + " and " + lastTime);
+					DataPoint fillingDataPoint = new DataPointBuilder(seriesID)
+						.add(timeID, prevTime)
+						.addAll(nullFilling)
+						.build(structure);
+					additional.add(fillingDataPoint);
+					prevTime = prevTime.increment(1);
 				}
-				
-				return Stream.concat(Utils.getStream(elements), Utils.getStream(additional));
-			}).reduce(Stream::concat).orElse(Stream.empty()), ds);
+			}
+
+			previous = (TimeValue<?, ?, ?>) current.get(timeID);
+		}
+
+		// fill trailing holes
+		if (mode == ALL)
+		{
+			TimeValue<?, ?, ?> prevTime = previous;
+			while (max.compareTo(prevTime) > 0)
+			{
+				LOGGER.debug("Filling space between " + prevTime + " and " + max);
+				prevTime = prevTime.increment(1);
+				DataPoint fillingDataPoint = new DataPointBuilder(seriesID)
+					.add(timeID, prevTime)
+					.addAll(nullFilling)
+					.build(structure);
+				additional.add(fillingDataPoint);
+			}
+		}
+		
+		return Stream.concat(Utils.getStream(series), Utils.getStream(additional));
 	}
 	
 	@Override
@@ -179,7 +187,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	}
 
 	@Override
-	protected VTLDataSetMetadata checkIsTimeSeriesDataSet(VTLDataSetMetadata metadata, TransformationScheme scheme)
+	protected DataSetMetadata checkIsTimeSeriesDataSet(DataSetMetadata metadata, TransformationScheme scheme)
 	{
 		return metadata;
 	}

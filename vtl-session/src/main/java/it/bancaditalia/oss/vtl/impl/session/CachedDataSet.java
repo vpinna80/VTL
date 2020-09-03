@@ -43,8 +43,8 @@ public class CachedDataSet extends NamedDataSet
 	private static final Map<VTLSession, Map<String, SoftReference<Queue<DataPoint>>>> SESSION_CACHES = new ConcurrentHashMap<>();
 	private static final Map<VTLSession, Map<String, AtomicBoolean>> SESSION_STATUSES = new ConcurrentHashMap<>();
 
-	private final Map<String, SoftReference<Queue<DataPoint>>> cache;
 	private final Map<String, AtomicBoolean> statuses;
+	private transient final Map<String, SoftReference<Queue<DataPoint>>> cache;
 
 	public CachedDataSet(VTLSession session, String alias, DataSet delegate)
 	{
@@ -60,7 +60,7 @@ public class CachedDataSet extends NamedDataSet
 	}
 
 	@Override
-	public Stream<DataPoint> stream()
+	protected Stream<DataPoint> streamDataPoints()
 	{
 		AtomicBoolean isCompleted = statuses.computeIfAbsent(getAlias(), alias -> new AtomicBoolean(true));
 		synchronized (isCompleted)

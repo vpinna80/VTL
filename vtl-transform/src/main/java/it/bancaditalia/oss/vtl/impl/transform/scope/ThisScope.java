@@ -21,7 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -57,8 +57,8 @@ public class ThisScope implements TransformationScheme
 		else
 		{
 			String stripped = node.replaceAll("^'(.*)'$", "$1");
-			if (thisMetadata instanceof VTLDataSetMetadata && ((VTLDataSetMetadata) thisMetadata).getComponent(stripped).isPresent())
-				return ((VTLDataSetMetadata) thisMetadata).membership(stripped);
+			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(stripped).isPresent())
+				return ((DataSetMetadata) thisMetadata).membership(stripped);
 			else 
 				return parent.getMetadata(node);
 		}

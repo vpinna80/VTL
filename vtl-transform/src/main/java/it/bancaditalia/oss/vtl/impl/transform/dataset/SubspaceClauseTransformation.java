@@ -36,7 +36,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -46,7 +46,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private final Map<String, ScalarValue<?, ?, ?>> subspace;
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 	
 	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?>> subspace)
 	{
@@ -66,17 +66,17 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme session)
 	{
 		if (metadata != null)
 			return metadata;
 		
 		VTLValueMetadata operand = getThisMetadata(session);
 		
-		if (!(operand instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(operand, VTLDataSetMetadata.class);
+		if (!(operand instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
-		VTLDataSetMetadata dataset = (VTLDataSetMetadata) operand;
+		DataSetMetadata dataset = (DataSetMetadata) operand;
 		
 		Set<String> missing = subspace.keySet().stream()
 				.filter(name -> dataset.getComponent(name, Identifier.class) == null)

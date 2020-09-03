@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLNullCompareException;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
@@ -71,7 +71,7 @@ public class NullValue<R extends Comparable<?> & Serializable, S extends ValueDo
 	}
 
 	@Override
-	public VTLScalarValueMetadata<S> getMetadata()
+	public ScalarValueMetadata<S> getMetadata()
 	{
 		return () -> super.getDomain();
 	}

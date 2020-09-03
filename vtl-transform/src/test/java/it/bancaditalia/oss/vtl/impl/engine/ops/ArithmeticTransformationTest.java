@@ -48,7 +48,7 @@ import it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class ArithmeticTransformationTest
 {
@@ -89,7 +89,7 @@ public class ArithmeticTransformationTest
 	{
 		ArithmeticTransformation arTransformation = new ArithmeticTransformation(operator, left, right);
 		
-		VTLDataSetMetadata metadata = (VTLDataSetMetadata) arTransformation.getMetadata(session);
+		DataSetMetadata metadata = (DataSetMetadata) arTransformation.getMetadata(session);
 		assertTrue(metadata.contains("INTEGER_1"));
 		assertTrue(metadata.contains("NUMBER_1"));
 		

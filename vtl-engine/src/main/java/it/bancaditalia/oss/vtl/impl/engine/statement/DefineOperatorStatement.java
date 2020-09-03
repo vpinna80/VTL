@@ -31,8 +31,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -97,15 +97,15 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 			catch (VTLException e)
 			{
 				// actual parameters are not available, don't perform checks
-				return (VTLScalarValueMetadata<?>) () -> expectedResultType;
+				return (ScalarValueMetadata<?>) () -> expectedResultType;
 			}
 				
 			// Check result type if declared
-			if (!(metadata instanceof VTLScalarValueMetadata<?>))
+			if (!(metadata instanceof ScalarValueMetadata<?>))
 				throw new UnsupportedOperationException("non-scalar result of operator not implemented.");
 			else if (expectedResultType != null)
 			{
-				ValueDomainSubset<?> actualResultType = ((VTLScalarValueMetadata<?>) metadata).getDomain();
+				ValueDomainSubset<?> actualResultType = ((ScalarValueMetadata<?>) metadata).getDomain();
 				if (!expectedResultType.isAssignableFrom(actualResultType))
 					throw new VTLIncompatibleTypesException("Expected result of operator of type ", expectedResultType, actualResultType);
 			}
@@ -116,9 +116,9 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 					ComponentParameter<?> compParam = (ComponentParameter<?>) param;
 					VTLValueMetadata actualParamMeta = scheme.getMetadata(param.getName());
 					ValueDomainSubset<?> expectedDomain = compParam.getDomain() == null ? null : repo.getDomain(compParam.getDomain());
-					if (actualParamMeta instanceof VTLDataSetMetadata)
+					if (actualParamMeta instanceof DataSetMetadata)
 					{
-						VTLDataSetMetadata dsMeta = (VTLDataSetMetadata) actualParamMeta;
+						DataSetMetadata dsMeta = (DataSetMetadata) actualParamMeta;
 						if (expectedDomain != null && dsMeta.getComponents(Measure.class, expectedDomain).size() != 1)
 							throw new VTLSingletonComponentRequiredException(Measure.class, expectedDomain, 
 									dsMeta.getComponents(Measure.class, expectedDomain));
@@ -127,7 +127,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 					}
 					else if (expectedDomain != null)
 					{
-						ValueDomainSubset<?> actualDomain = ((VTLScalarValueMetadata<?>) actualParamMeta).getDomain();
+						ValueDomainSubset<?> actualDomain = ((ScalarValueMetadata<?>) actualParamMeta).getDomain();
 						if (!expectedDomain.isAssignableFrom(actualDomain))
 							throw new VTLIncompatibleTypesException("Parameter " + param.getName(), expectedDomain, actualDomain);
 					}
@@ -137,15 +137,15 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 					ScalarParameter scParam = (ScalarParameter) param;
 					VTLValueMetadata actualParamMeta = scheme.getMetadata(param.getName());
 					ValueDomainSubset<?> expectedDomain = repo.getDomain(scParam.getDomain());
-					if (actualParamMeta instanceof VTLDataSetMetadata)
+					if (actualParamMeta instanceof DataSetMetadata)
 					{
-						VTLDataSetMetadata dsMeta = (VTLDataSetMetadata) actualParamMeta;
+						DataSetMetadata dsMeta = (DataSetMetadata) actualParamMeta;
 						if (dsMeta.getComponents(Measure.class, expectedDomain).size() != 1)
 							throw new VTLSingletonComponentRequiredException(Measure.class, expectedDomain, dsMeta);
 					}
 					else 
 					{
-						ValueDomainSubset<?> actualDomain = ((VTLScalarValueMetadata<?>) actualParamMeta).getDomain();
+						ValueDomainSubset<?> actualDomain = ((ScalarValueMetadata<?>) actualParamMeta).getDomain();
 						if (!expectedDomain.isAssignableFrom(actualDomain))
 							throw new VTLIncompatibleTypesException("Parameter " + param.getName(), expectedDomain, actualDomain);
 					}

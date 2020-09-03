@@ -21,14 +21,14 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
 public class StringValue extends BaseScalarValue<String, StringDomainSubset, StringDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final VTLScalarValueMetadata<StringDomainSubset> META = () -> Domains.STRINGDS;
+	private static final ScalarValueMetadata<StringDomainSubset> META = () -> Domains.STRINGDS;
 
 	public StringValue(String value)
 	{
@@ -42,7 +42,7 @@ public class StringValue extends BaseScalarValue<String, StringDomainSubset, Str
 	}
 
 	@Override
-	public VTLScalarValueMetadata<StringDomainSubset> getMetadata()
+	public ScalarValueMetadata<StringDomainSubset> getMetadata()
 	{
 		return META;
 	}

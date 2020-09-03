@@ -40,7 +40,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
@@ -82,10 +82,10 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	{
 		VTLValueMetadata value = getThisMetadata(session);
 
-		if (!(value instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(value, VTLDataSetMetadata.class);
+		if (!(value instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(value, DataSetMetadata.class);
 
-		VTLDataSetMetadata dataset = (VTLDataSetMetadata) value;
+		DataSetMetadata dataset = (DataSetMetadata) value;
 
 		DataStructureComponent<Identifier, ?, ?> tempIdentifier = dataset.getComponent(identifierName, Identifier.class);
 		measure = dataset.getComponent(measureName, Measure.class);
@@ -112,7 +112,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet dataset = (DataSet) getThisValue(session);
-		VTLDataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
+		DataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
 		
 		return new LightFDataSet<>(structure, ds -> Utils.getStream(ds.stream()

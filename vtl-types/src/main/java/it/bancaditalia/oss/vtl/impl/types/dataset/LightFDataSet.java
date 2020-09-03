@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class LightFDataSet<P> extends LightDataSet
 {
@@ -31,7 +31,7 @@ public class LightFDataSet<P> extends LightDataSet
 	private final Function<? super P, ? extends Stream<DataPoint>> function;
 	private final P param;
 
-	public LightFDataSet(VTLDataSetMetadata dataStructure, Function<? super P, ? extends Stream<DataPoint>> datapoints, P param)
+	public LightFDataSet(DataSetMetadata dataStructure, Function<? super P, ? extends Stream<DataPoint>> datapoints, P param)
 	{
 		super(dataStructure, null);
 		this.function = datapoints;

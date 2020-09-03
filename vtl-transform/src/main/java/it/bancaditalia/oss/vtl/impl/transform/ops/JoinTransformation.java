@@ -75,8 +75,8 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -133,7 +133,7 @@ public class JoinTransformation extends TransformationImpl
 	private final Transformation calc;
 	private final Transformation aggr;
 
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 	private JoinOperand referenceDataSet;
 
 	@SuppressWarnings("java:S107")
@@ -207,7 +207,7 @@ public class JoinTransformation extends TransformationImpl
 					}));
 
 			// Structure before applying any clause
-			VTLDataSetMetadata totalStructure = Utils.getStream(datasets.values())
+			DataSetMetadata totalStructure = Utils.getStream(datasets.values())
 				.map(DataSet::getMetadata)
 				.flatMap(Set::stream)
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
@@ -280,10 +280,10 @@ public class JoinTransformation extends TransformationImpl
 		return Utils.getStream(datasets)
 			.map(keepingKey((op, ds) -> {
 				String qualifier = op.getId() + "#";
-				VTLDataSetMetadata oldStructure = ds.getMetadata();
+				DataSetMetadata oldStructure = ds.getMetadata();
 				
 				// find components that must be renamed and add 'alias#' in front of their name
-				VTLDataSetMetadata newStructure = Utils.getStream(oldStructure)
+				DataSetMetadata newStructure = Utils.getStream(oldStructure)
 						.map(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c)
 						.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 						.build();
@@ -316,11 +316,11 @@ public class JoinTransformation extends TransformationImpl
 				.map(c -> c.getName( ).replaceAll("^.*#", ""))
 				.distinct()
 				.map(name -> {
-					ValueDomainSubset<?> domain = ((VTLScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, metadata))).getDomain();
+					ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, metadata))).getDomain();
 					return new DataStructureComponentImpl<>(name, Measure.class, domain);
 				}).collect(toSet());
 		
-		VTLDataSetMetadata applyMetadata = metadata.stream()
+		DataSetMetadata applyMetadata = metadata.stream()
 				.filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(applyComponents)
@@ -331,7 +331,7 @@ public class JoinTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme session)
 	{
 		if (metadata != null)
 			return metadata;
@@ -357,8 +357,8 @@ public class JoinTransformation extends TransformationImpl
 		if (counts.size() > 0)
 			throw new VTLSyntaxException("Duplicate aliases in join: " + counts);
 
-		Map<JoinOperand, VTLDataSetMetadata> datasetsMeta = operands.stream()
-				.collect(toMap(op -> op, op -> (VTLDataSetMetadata) op.getOperand().getMetadata(session)));
+		Map<JoinOperand, DataSetMetadata> datasetsMeta = operands.stream()
+				.collect(toMap(op -> op, op -> (DataSetMetadata) op.getOperand().getMetadata(session)));
 		
 		Optional<JoinOperand> caseAorB1 = isCaseAorB1(datasetsMeta);
 		Optional<JoinOperand> caseB2 = isCaseB2(caseAorB1, datasetsMeta);
@@ -369,17 +369,17 @@ public class JoinTransformation extends TransformationImpl
 				operands.stream().filter(op -> op != referenceDataSet).collect(toMap(JoinOperand::getId, datasetsMeta::get)), 
 				referenceDataSet.getId(), datasetsMeta.get(referenceDataSet));
 			
-		VTLDataSetMetadata result = joinStructures(datasetsMeta, caseAorB1, caseB2);
+		DataSetMetadata result = joinStructures(datasetsMeta, caseAorB1, caseB2);
 		
 		if (filter != null)
-			result = (VTLDataSetMetadata) filter.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result, session));
 		if (apply != null)
 		{
 			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = metadata.getComponents(Measure.class).stream()
 					.map(c -> c.getName( ).replaceAll("^.*#", ""))
 					.distinct()
 					.map(name -> {
-						ValueDomainSubset<?> domain = ((VTLScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, metadata))).getDomain();
+						ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, metadata))).getDomain();
 						return new DataStructureComponentImpl<>(name, Measure.class, domain);
 					}).collect(toSet());
 			
@@ -390,13 +390,13 @@ public class JoinTransformation extends TransformationImpl
 					.build();
 		}
 		if (calc != null)
-			result = (VTLDataSetMetadata) calc.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result, session));
 		if (aggr != null)
-			result = (VTLDataSetMetadata) aggr.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result, session));
 		if (keepOrDrop != null)
-			result = (VTLDataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result, session));
 		if (rename != null)
-			result = (VTLDataSetMetadata) rename.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result, session));
 
 		Optional<String> ambiguousComponent = result.stream()
 			.map(DataStructureComponent::getName)
@@ -412,7 +412,7 @@ public class JoinTransformation extends TransformationImpl
 		return metadata = result;
 	}
 	
-	private Optional<JoinOperand> isCaseAorB1(Map<JoinOperand, VTLDataSetMetadata> datasetsMeta)
+	private Optional<JoinOperand> isCaseAorB1(Map<JoinOperand, DataSetMetadata> datasetsMeta)
 	{
 		// Case A: One dataset must contain the identifiers of all the others
 		Set<DataStructureComponent<Identifier, ?, ?>> allIDs = datasetsMeta.values().stream()
@@ -431,7 +431,7 @@ public class JoinTransformation extends TransformationImpl
 				// In Case A but conditions not fulfilled
 				UnsupportedOperationException e = new UnsupportedOperationException("In inner join without using clause, one dataset identifier set must contain identifiers of all other datasets.");
 				LOGGER.error("Error in " + this, e);
-				for (Entry<JoinOperand, VTLDataSetMetadata> operand: datasetsMeta.entrySet())
+				for (Entry<JoinOperand, DataSetMetadata> operand: datasetsMeta.entrySet())
 					LOGGER.debug("Operand {} is {}", operand.getKey().getId(), operand.getValue().getComponents(Identifier.class).toString());
 				throw e;
 			}
@@ -461,7 +461,7 @@ public class JoinTransformation extends TransformationImpl
 				UnsupportedOperationException e = new UnsupportedOperationException("In inner join with using clause, named ids must be common to all datasets.");
 				LOGGER.error("Error in " + this, e);
 				LOGGER.debug("Using " + using);
-				for (VTLDataSetMetadata dataset: datasetsMeta.values())
+				for (DataSetMetadata dataset: datasetsMeta.values())
 					LOGGER.debug(dataset.getComponents(Identifier.class).toString());
 				throw e;
 			}
@@ -474,7 +474,7 @@ public class JoinTransformation extends TransformationImpl
 			return max;
 	}
 
-	private Optional<JoinOperand> isCaseB2(Optional<JoinOperand> caseAorB1, Map<JoinOperand, VTLDataSetMetadata> datasetsMeta)
+	private Optional<JoinOperand> isCaseB2(Optional<JoinOperand> caseAorB1, Map<JoinOperand, DataSetMetadata> datasetsMeta)
 	{
 		if (caseAorB1.isPresent())
 			return caseAorB1;
@@ -533,7 +533,7 @@ public class JoinTransformation extends TransformationImpl
 //				.findFirst();
 	}
 	
-	private VTLDataSetMetadata joinStructures(Map<JoinOperand,VTLDataSetMetadata> datasetsMeta, Optional<?> caseAorB1, Optional<?> caseB2)
+	private DataSetMetadata joinStructures(Map<JoinOperand,DataSetMetadata> datasetsMeta, Optional<?> caseAorB1, Optional<?> caseB2)
 	{
 //		List<Entry<String, VTLDataSetMetadata>> dataSets = operands.stream()
 //				.map(op -> new SimpleEntry<>(op.getId(), datasetsMeta.get(op)))
@@ -558,7 +558,7 @@ public class JoinTransformation extends TransformationImpl
 			LOGGER.debug("Inner join renames: {}", toBeRenamed);
 			
 			DataStructureBuilder builder = new DataStructureBuilder();
-			for (Entry<JoinOperand, VTLDataSetMetadata> e: datasetsMeta.entrySet())
+			for (Entry<JoinOperand, DataSetMetadata> e: datasetsMeta.entrySet())
 				for (DataStructureComponent<?, ?, ?> c: e.getValue())
 					if (toBeRenamed.contains(c))
 						builder.addComponent(c.rename(e.getKey().getId() + "#" + c.getName()));

@@ -19,6 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
@@ -28,15 +29,19 @@ import java.lang.ref.SoftReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -49,9 +54,10 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public abstract class AbstractDataSet implements DataSet
 {
@@ -59,10 +65,10 @@ public abstract class AbstractDataSet implements DataSet
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
-	private final VTLDataSetMetadata dataStructure;
+	private final DataSetMetadata dataStructure;
 	private SoftReference<String> cacheString  = null;
 
-	protected AbstractDataSet(VTLDataSetMetadata dataStructure)
+	protected AbstractDataSet(DataSetMetadata dataStructure)
 	{
 		this.dataStructure = dataStructure;
 	}
@@ -70,7 +76,7 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public DataSet membership(String componentName)
 	{
-		final VTLDataSetMetadata membershipStructure = dataStructure.membership(componentName);
+		final DataSetMetadata membershipStructure = dataStructure.membership(componentName);
 
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", componentName, dataStructure, membershipStructure);
 
@@ -93,13 +99,13 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata()
+	public DataSetMetadata getMetadata()
 	{
-		return dataStructure instanceof VTLDataSetMetadata ? (VTLDataSetMetadata) dataStructure : null;
+		return dataStructure instanceof DataSetMetadata ? (DataSetMetadata) dataStructure : null;
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(VTLDataSetMetadata metadata, DataSet other, BiPredicate<DataPoint,DataPoint> predicate, BinaryOperator<DataPoint> mergeOp)
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BiPredicate<DataPoint,DataPoint> predicate, BinaryOperator<DataPoint> mergeOp)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
 		commonIds.retainAll(other.getComponents(Identifier.class));
@@ -128,7 +134,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet mapKeepingKeys(VTLDataSetMetadata metadata,
+	public DataSet mapKeepingKeys(DataSetMetadata metadata,
 			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
@@ -150,21 +156,64 @@ public abstract class AbstractDataSet implements DataSet
 			{
 				return AbstractDataSet.this.stream().map(extendingOperator);
 			}
+		};
+	}
+
+	@Override
+	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
+			Collector<DataPoint, A, TT> groupCollector,
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)
+	{
+		class DecoratedCollector implements Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>, A, T> {
+			private Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues = null;
 
 			@Override
-			public Stream<DataPoint> getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+			public Supplier<A> supplier()
 			{
-				return AbstractDataSet.this.getMatching(keyValues).map(extendingOperator);
+				return groupCollector.supplier();
+			}
+
+			@Override
+			public BiConsumer<A, Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>> accumulator()
+			{
+				return (a, e) -> {
+					keyValues = e.getValue();
+					groupCollector.accumulator().accept(a, e.getKey());
+				};
+			}
+
+			@Override
+			public BinaryOperator<A> combiner()
+			{
+				return groupCollector.combiner();
 			}
 			
 			@Override
-			public <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
-					BiFunction<? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, ? super Stream<DataPoint>, T> groupMapper)
+			public Function<A, T> finisher()
 			{
-				return AbstractDataSet.this.streamByKeys(keys, filter, (keyValues, group) -> 
-						groupMapper.apply(keyValues, group.map(extendingOperator)));
+				return groupCollector.finisher().andThen(tt -> {
+					Objects.requireNonNull(keyValues, "streamByKeys: There must be at least one datapoint in a group but there is none.");
+					return finisher.apply(tt, keyValues);
+				});
 			}
-		};
+			
+			@Override
+			public Set<Characteristics> characteristics()
+			{
+				return groupCollector.characteristics();
+			} 
+		}
+		
+		try (Stream<DataPoint> stream = stream())
+		{
+			return Utils.getStream(stream
+					.filter(dp -> dp.matches(filter))
+					.map(toEntryWithValue(dp -> dp.getValues(keys, Identifier.class)))
+					.collect(groupingByConcurrent(e -> e.getValue(), new DecoratedCollector()))
+					.values()
+				);
+		}
 	}
 
 	@Override

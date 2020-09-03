@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -97,14 +97,14 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 
-		if (meta instanceof VTLScalarValueMetadata)
-			if (((VTLScalarValueMetadata<?>) meta).getDomain() instanceof BooleanDomainSubset)
+		if (meta instanceof ScalarValueMetadata)
+			if (((ScalarValueMetadata<?>) meta).getDomain() instanceof BooleanDomainSubset)
 				return BOOLEAN;
 			else
-				throw new VTLIncompatibleTypesException(function.toString(), BOOLEANDS, ((VTLScalarValueMetadata<?>) meta).getDomain());
+				throw new VTLIncompatibleTypesException(function.toString(), BOOLEANDS, ((ScalarValueMetadata<?>) meta).getDomain());
 		else
 		{
-			VTLDataSetMetadata dataset = (VTLDataSetMetadata) meta;
+			DataSetMetadata dataset = (DataSetMetadata) meta;
 
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 			if (dataset.getComponents(Measure.class).size() == 0)

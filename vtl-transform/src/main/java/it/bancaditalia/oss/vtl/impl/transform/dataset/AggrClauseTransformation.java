@@ -19,19 +19,15 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +39,9 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
@@ -57,11 +51,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -72,27 +64,28 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class AggrClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
-
+	
+	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(AggrClauseTransformation.class);
 
 	public static class AggrClauseItem extends TransformationImpl
 	{
 		private static final long serialVersionUID = 1L;
 		
-		private final String                         component;
+		private final String                         name;
 		private final AggregateTransformation        operand;
 		private final Class<? extends ComponentRole> role;
 
-		public AggrClauseItem(Class<? extends ComponentRole> role, String component, AggregateTransformation operand)
+		public AggrClauseItem(Class<? extends ComponentRole> role, String name, AggregateTransformation operand)
 		{
-			this.component = component;
+			this.name = name;
 			this.operand = operand;
 			this.role = role;
 		}
 
 		public String getComponent()
 		{
-			return component;
+			return name;
 		}
 
 		public AggregateTransformation getOperand()
@@ -108,7 +101,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		@Override
 		public String toString()
 		{
-			return (role != null ? role.getSimpleName().toUpperCase() + " " : "") + component + " := " + operand;
+			return (role != null ? role.getSimpleName().toUpperCase() + " " : "") + name + " := " + operand;
 		}
 
 		@Override
@@ -134,17 +127,22 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		{
 			return operand.getMetadata(scheme);
 		}
+
+		public AggrClauseItem withGroupBy(List<String> groupBy)
+		{
+			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupBy, name, role));
+		}
 	}
 
-	private final List<AggrClauseItem> operands;
-	private final List<String>   groupBy;
-	private final Transformation       having;
+	private final List<AggrClauseItem> aggrItems;
+	private final List<String> groupBy;
+	private final Transformation having;
 
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 
 	public AggrClauseTransformation(List<AggrClauseItem> operands, List<String> groupBy, Transformation having)
 	{
-		this.operands = operands;
+		this.aggrItems = operands.stream().map(clause -> clause.withGroupBy(groupBy)).collect(Collectors.toList());
 		this.groupBy = groupBy == null || groupBy.isEmpty() ? null : groupBy;
 		this.having = having;
 	}
@@ -152,62 +150,54 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public Set<LeafTransformation> getTerminals()
 	{
-		return operands.stream().map(AggrClauseItem::getOperand).map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
+		return aggrItems.stream().map(AggrClauseItem::getOperand).map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet operand = (DataSet) getThisValue(session);
-
-		BiFunction<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Stream<DataPoint>, DataPoint> groupMapper = (keyValues, group) -> {
-			LOGGER.trace("Aggregating group {}", keyValues);
-			List<DataPoint> groupList = group.collect(toList());
-			final DataPointBuilder groupResult = new DataPointBuilder(Utils.getStream(operands)
-					.map(o -> {
-						DataSet groupDataSet = new LightDataSet(operand.getMetadata(), groupList::stream);
-						DataStructureComponent<?, ?, ?> component = metadata.getComponent(o.getComponent()).get();
-						ScalarValue<?, ?, ?> value = (ScalarValue<?, ?, ?>) o.getOperand().eval(new ThisScope(groupDataSet, session));
-
-						LOGGER.trace("Computed {} as {}", component, value);
-
-						return new SimpleEntry<>(component, value);
-					}).collect(entriesToMap()));
-			LOGGER.trace("Aggregated result {}", groupResult.addAll(keyValues));
-			return groupResult.build(metadata);
-		};
-
-		return new LightF2DataSet<>(metadata, operand::streamByKeys, metadata.getComponents(Identifier.class), groupMapper);
-
-		/*if (having != null)
+		
+		TransformationScheme thisScope = new ThisScope(operand, session);
+		
+		List<DataSet> resultList = Utils.getStream(aggrItems)
+			.map(item -> (DataSet) item.eval(thisScope))
+			.collect(toList());
+		
+		DataSet result = resultList.get(0);
+		DataSetMetadata currentStructure = result.getMetadata();
+		for (int i = 1; i < resultList.size(); i++)
 		{
-			DataSet dsHaving = (DataSet) having.eval(alias + "$having", new ThisValueEnvironment(result, session).getWrapperSession());
-			DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> havingResult = dsHaving.getComponents(Measure.class, Domains.BOOLEANDS).iterator().next();
+			DataSet other = resultList.get(i);
+			DataSetMetadata otherStructure = result.getMetadata();
+			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
+			result = result.filteredMappedJoin(currentStructure, other, DataPoint::merge);
+		}
 
-			result = result.filteredMappedJoin(alias, metadata, dsHaving, (a, b) -> ((BooleanValue) b.get(havingResult)).get(), (a, b) -> a);
-		}*/
+		if (having != null)
+			result = result.filter(dp -> (BooleanValue) having.eval(new DatapointScope(dp, metadata, session)) == BooleanValue.of(true));
 
-		// return result;
+		return result;
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme session)
 	{
 		if (metadata != null)
 			return metadata;
 
 		VTLValueMetadata meta = getThisMetadata(session);
 
-		if (meta instanceof VTLDataSetMetadata)
+		if (meta instanceof DataSetMetadata)
 		{
-			VTLDataSetMetadata operand = (VTLDataSetMetadata) meta;
+			DataSetMetadata operand = (DataSetMetadata) meta;
 
 			Set<DataStructureComponent<Identifier, ?, ?>> identifiers = emptySet();
 			if (groupBy != null)
 			{
 				Set<DataStructureComponent<?, ?, ?>> groupComps = groupBy.stream()
 						.map(operand::getComponent)
-						.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataStructure) operand, groupBy.toArray(new String[0]))))
+						.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, groupBy.toArray(new String[0]))))
 						.collect(toSet());
 				
 				Optional<DataStructureComponent<?, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
@@ -219,11 +209,11 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 			DataStructureBuilder builder = new DataStructureBuilder().addComponents(identifiers);
 
-			for (AggrClauseItem clause : operands)
+			for (AggrClauseItem clause : aggrItems)
 			{
 				VTLValueMetadata clauseMeta = clause.getOperand().getMetadata(new DatapointScope(null, operand, session));
-				if (!(clauseMeta instanceof VTLScalarValueMetadata) || !Domains.NUMBERDS.isAssignableFrom(((VTLScalarValueMetadata<?>) clauseMeta).getDomain()))
-					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, ((VTLScalarValueMetadata<?>) clauseMeta).getDomain());
+				if (!(clauseMeta instanceof ScalarValueMetadata) || !Domains.NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?>) clauseMeta).getDomain()))
+					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, ((ScalarValueMetadata<?>) clauseMeta).getDomain());
 
 				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getComponent());
 				Class<? extends ComponentRole> requestedRole = clause.getRole() == null ? Measure.class : clause.getRole();
@@ -247,10 +237,10 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			{
 				throw new UnsupportedOperationException("HAVING not implemented.");
 //				VTLValueMetadata vHaving = having.getMetadata(new ThisMetaEnvironment(metadata, session).getWrapperSession());
-//				if (!(vHaving instanceof VTLDataSetMetadata))
+//				if (!(vHaving instanceof DataSetMetadata))
 //					throw new VTLSyntaxException("Having clause must return a dataset.");
 //
-//				VTLDataSetMetadata havingDS = (VTLDataSetMetadata) vHaving;
+//				DataSetMetadata havingDS = (DataSetMetadata) vHaving;
 //				if (havingDS.getComponents(Measure.class, Domains.BOOLEANDS).size() != 1)
 //					throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, havingDS.getComponents(Measure.class));
 			}
@@ -258,13 +248,13 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			return metadata;
 		}
 		else
-			throw new VTLInvalidParameterException(meta, VTLDataSetMetadata.class);
+			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
 	}
 
 	@Override
 	public String toString()
 	{
 		String terminator = (groupBy != null ? groupBy.stream().map(Object::toString).collect(joining(", ", " group by ", "")) : "") + (having != null ? " having " + having : "");
-		return operands.stream().map(Object::toString).collect(joining(", ", "[aggr ", terminator + "]"));
+		return aggrItems.stream().map(Object::toString).collect(joining(", ", "[aggr ", terminator + "]"));
 	}
 }

@@ -69,5 +69,5 @@ public interface Hierarchy extends VTLValue, VTLValueMetadata
 
 	public List<RuleItem> getRuleItems();
 
-	public DataStructureComponent<?, ?, ?> selectComponent(DataStructure structure);
+	public DataStructureComponent<?, ?, ?> selectComponent(DataSetMetadata structure);
 }

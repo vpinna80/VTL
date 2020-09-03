@@ -20,14 +20,14 @@
 package it.bancaditalia.oss.vtl.impl.types.data;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 
 public class IntegerValue extends NumberValueImpl<Long, IntegerDomainSubset, IntegerDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final VTLScalarValueMetadata<IntegerDomainSubset> META = () -> Domains.INTEGERDS;
+	private static final ScalarValueMetadata<IntegerDomainSubset> META = () -> Domains.INTEGERDS;
 
 	public IntegerValue(Long value)
 	{
@@ -40,7 +40,7 @@ public class IntegerValue extends NumberValueImpl<Long, IntegerDomainSubset, Int
 	}
 	
 	@Override
-	public VTLScalarValueMetadata<IntegerDomainSubset> getMetadata()
+	public ScalarValueMetadata<IntegerDomainSubset> getMetadata()
 	{
 		return META;
 	}

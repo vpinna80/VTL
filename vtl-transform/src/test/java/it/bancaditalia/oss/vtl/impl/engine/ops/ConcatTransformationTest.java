@@ -34,7 +34,7 @@ import it.bancaditalia.oss.vtl.impl.transform.string.ConcatTransformation;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class ConcatTransformationTest
 {
@@ -51,7 +51,7 @@ public class ConcatTransformationTest
 
 		ConcatTransformation coTransformation = new ConcatTransformation(left, right);
 		
-		VTLDataSetMetadata metadata = (VTLDataSetMetadata) coTransformation.getMetadata(session);
+		DataSetMetadata metadata = (DataSetMetadata) coTransformation.getMetadata(session);
 		assertTrue(metadata.contains("STRING_2"));
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);

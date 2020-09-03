@@ -8,7 +8,7 @@ package it.bancaditalia.oss.vtl.model.data;
  * @param <S> The {@link ValueDomainSubset} type.
  */
 @FunctionalInterface
-public interface VTLScalarValueMetadata<S extends ValueDomainSubset<?>> extends VTLValueMetadata
+public interface ScalarValueMetadata<S extends ValueDomainSubset<?>> extends VTLValueMetadata
 {
 	/**
 	 * @return the {@link ValueDomainSubset} instance represented by this VTLScalarValueMetadata

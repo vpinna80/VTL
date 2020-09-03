@@ -30,7 +30,7 @@ import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -39,7 +39,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class JoinApplyScope implements TransformationScheme
 {
 	private final Map<String, ScalarValue<?, ?, ?>> joinValues;
-	private final Map<String, VTLScalarValueMetadata<?>> joinMeta;
+	private final Map<String, ScalarValueMetadata<?>> joinMeta;
 	private final TransformationScheme parent;
 
 	public JoinApplyScope(TransformationScheme parent, String measureName, DataPoint joinedDataPoint)
@@ -57,7 +57,7 @@ public class JoinApplyScope implements TransformationScheme
 		this.joinValues = null;
 		this.joinMeta = joinedComponents.stream()
 				.filter(c -> measureName.equals(c.getName().replaceAll("^.*#", "")))
-				.collect(toConcurrentMap(c -> c.getName().replaceAll("#.*", ""), c -> (VTLScalarValueMetadata<?>) c::getDomain));
+				.collect(toConcurrentMap(c -> c.getName().replaceAll("#.*", ""), c -> (ScalarValueMetadata<?>) c::getDomain));
 	}
 
 	@Override

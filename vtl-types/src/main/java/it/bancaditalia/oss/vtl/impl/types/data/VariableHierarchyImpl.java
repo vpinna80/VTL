@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.model.data.DataStructure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VariableHierarchy;
 
 public class VariableHierarchyImpl extends HierarchyImpl implements VariableHierarchy
@@ -37,7 +37,7 @@ public class VariableHierarchyImpl extends HierarchyImpl implements VariableHier
 	}
 
 	@Override
-	public DataStructureComponent<?, ?, ?> selectComponent(DataStructure structure)
+	public DataStructureComponent<?, ?, ?> selectComponent(DataSetMetadata structure)
 	{
 		return structure.getComponent(getItem()).orElseThrow(() -> new VTLMissingComponentsException(getItem(), structure));
 	}

@@ -2,24 +2,14 @@ package it.bancaditalia.oss.vtl.impl.environment.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonMap;
-import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.Serializable;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,9 +25,9 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -51,7 +41,7 @@ public class ColumnarDataSetTest
 	private static final DataStructureComponent<Identifier, IntegerDomainSubset, IntegerDomain> INT_ID = new DataStructureComponentImpl<>("INT_ID", Identifier.class, INTEGERDS);
 	private static final DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain> INT_ME = new DataStructureComponentImpl<>("INT_ME", Measure.class, INTEGERDS);
 	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> BOL_ME = new DataStructureComponentImpl<>("BOL_ME", Measure.class, BOOLEANDS);
-	private static final VTLDataSetMetadata STRUCTURE = new DataStructureBuilder(STR_ID, INT_ID, INT_ME, BOL_ME).build();
+	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(STR_ID, INT_ID, INT_ME, BOL_ME).build();
 	private static final String STR_ID_VAL[] = { "A", "A", "B", "B", "C" }; 
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 
 	private static final Long INT_ME_VAL[] = { 5L, 7L, null, 8L, 4L }; 
@@ -106,42 +96,5 @@ public class ColumnarDataSetTest
 		}
 		for (int i = 1; i < 5; i++)
 			assertTrue(found[i], "Datapoint " + i + " not found");
-	}
-
-	@Test
-	void testGetMatching()
-	{
-		ScalarValue<?, ?, ?>[] STR_ID_SC = arrayToArray(StringValue::new, STR_ID_VAL);
-		ScalarValue<?, ?, ?>[] INT_ID_SC = arrayToArray(IntegerValue::new, INT_ID_VAL);
-		
-		@SuppressWarnings("unchecked")
-		Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Set<DataPoint>> matches[] = 
-				(Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Set<DataPoint>>[]) new Entry[3];
-		
-		// STR_ID = "A"
-		matches[0] = new SimpleEntry<>(singletonMap(STR_ID, STR_ID_SC[0]), Stream.of(DATAPOINTS[0], DATAPOINTS[1]).collect(toSet()));
-		// INT_ID = 2L
-		matches[1] = new SimpleEntry<>(singletonMap(INT_ID, INT_ID_SC[1]), Stream.of(DATAPOINTS[1], DATAPOINTS[4]).collect(toSet()));
-		// STR_ID = "A" && INT_ID = 3L
-		matches[2] = new SimpleEntry<>(Stream.of(new SimpleEntry<>(STR_ID, STR_ID_SC[0]), new SimpleEntry<>(INT_ID, INT_ID_SC[3]))
-				.collect(entriesToMap()), emptySet());
-
-		for (int i = 0; i < matches.length; i++)
-			assertEquals(matches[i].getValue(), INSTANCE.getMatching(matches[i].getKey()).collect(toSet()), "Match " + i + " failed");
-	}
-
-	@Test
-	void testStreamByKeys()
-	{
-		ScalarValue<?, ?, ?>[] STR_ID_SC = arrayToArray(StringValue::new, STR_ID_VAL);
-
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Set<DataPoint>> results = INSTANCE
-			.streamByKeys(singleton(STR_ID), emptyMap(), (k, g) -> new SimpleEntry<>(k, g.collect(toSet())))
-			.collect(entriesToMap());
-		
-		Stream.of(new SimpleEntry<>(singletonMap(STR_ID, STR_ID_SC[0]), Stream.of(DATAPOINTS[0], DATAPOINTS[1]).collect(toSet())),
-				new SimpleEntry<>(singletonMap(STR_ID, STR_ID_SC[2]), Stream.of(DATAPOINTS[2], DATAPOINTS[3]).collect(toSet())),
-				new SimpleEntry<>(singletonMap(STR_ID, STR_ID_SC[4]), singleton(DATAPOINTS[4])))
-			.forEach(e -> assertEquals(e.getValue(), results.get(e.getKey()), "Matching " + e.getKey() + " failed"));
 	}
 }

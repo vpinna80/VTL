@@ -42,7 +42,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Hierarchy;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -69,7 +69,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	private final Output output;
 	private final Hierarchy.CheckMode mode;
 	private final Input input;
-	private final AtomicReference<VTLDataSetMetadata> metadata = new AtomicReference<>();
+	private final AtomicReference<DataSetMetadata> metadata = new AtomicReference<>();
 	
 //	private DataStructureComponent<? extends Measure, ?, ?> measure;
 //	private DataStructureComponent<?, ?, ?> ruleKey;
@@ -111,12 +111,12 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		VTLValueMetadata opValue = operand.getMetadata(session);
 		VTLValueMetadata hierValue = hierarchyId.getMetadata(session);
 		
-		if (!(opValue instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(opValue, VTLDataSetMetadata.class);
+		if (!(opValue instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(opValue, DataSetMetadata.class);
 		if (!(hierValue instanceof Hierarchy))
 			throw new VTLInvalidParameterException(hierValue, Hierarchy.class);
 		
-		VTLDataSetMetadata dataset = (VTLDataSetMetadata) operand.getMetadata(session);
+		DataSetMetadata dataset = (DataSetMetadata) operand.getMetadata(session);
 		Hierarchy hierarchy = (Hierarchy) hierValue;
 
 		if (dataset.getComponents(Measure.class).size() != 1)

@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -62,7 +62,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 		}
 
 		@Override
-		public VTLScalarValueMetadata<StringCodeListDomain> getMetadata()
+		public ScalarValueMetadata<StringCodeListDomain> getMetadata()
 		{
 			return this::getDomain; 
 		}

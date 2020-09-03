@@ -39,8 +39,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -83,7 +83,7 @@ public class InclusionTransformation extends UnaryTransformation
 	private final InOperator operator;
 	private final Set<? extends ScalarValue<?, ?, ?>> set;
 
-	private VTLDataSetMetadata    metadata = null;
+	private DataSetMetadata    metadata = null;
 
 	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?>> list)
 	{
@@ -120,9 +120,9 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata value = operand.getMetadata(session);
 
-		if (value instanceof VTLDataSetMetadata)
+		if (value instanceof DataSetMetadata)
 		{
-			VTLDataSetMetadata ds = (VTLDataSetMetadata) value;
+			DataSetMetadata ds = (DataSetMetadata) value;
 
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = ds.getComponents(Measure.class);
 
@@ -136,7 +136,7 @@ public class InclusionTransformation extends UnaryTransformation
 		}
 		else
 		{
-			return (VTLScalarValueMetadata<BooleanDomainSubset>) () -> BOOLEANDS;
+			return (ScalarValueMetadata<BooleanDomainSubset>) () -> BOOLEANDS;
 		}
 	}
 

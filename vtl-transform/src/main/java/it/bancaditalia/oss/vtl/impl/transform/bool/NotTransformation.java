@@ -35,8 +35,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -75,9 +75,9 @@ public class NotTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
-		if (meta instanceof VTLScalarValueMetadata)
+		if (meta instanceof ScalarValueMetadata)
 		{
-			ValueDomainSubset<?> domain = ((VTLScalarValueMetadata<?>) meta).getDomain();
+			ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) meta).getDomain();
 			if (Domains.BOOLEANDS.isAssignableFrom(domain))
 				return BOOLEAN;
 			else
@@ -85,7 +85,7 @@ public class NotTransformation extends UnaryTransformation
 		}
 		else
 		{
-			VTLDataSetMetadata dataset = (VTLDataSetMetadata) meta;
+			DataSetMetadata dataset = (DataSetMetadata) meta;
 			
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 			if (measures.size() == 0)

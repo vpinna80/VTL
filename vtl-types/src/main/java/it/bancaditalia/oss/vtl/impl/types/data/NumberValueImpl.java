@@ -41,7 +41,7 @@ public abstract class NumberValueImpl<R extends Number & Comparable<? super R>, 
 	public final int compareTo(ScalarValue<?, ?, ?> o)
 	{
 		if (o instanceof NumberValueImpl)
-			return new Double(doubleValue()).compareTo(new Double(((NumberValueImpl<?, ?, ?>) o).doubleValue()));
+			return Double.valueOf(doubleValue()).compareTo(Double.valueOf(((NumberValueImpl<?, ?, ?>) o).doubleValue()));
 		
 		throw new VTLIncompatibleTypesException("comparison", getDomain(), o.getDomain());
 	}

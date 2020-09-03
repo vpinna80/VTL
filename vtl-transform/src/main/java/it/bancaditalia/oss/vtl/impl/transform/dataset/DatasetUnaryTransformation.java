@@ -55,7 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -151,9 +151,9 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata metadata = operand.getMetadata(session);
 		
-		if (metadata instanceof VTLDataSetMetadata)
+		if (metadata instanceof DataSetMetadata)
 		{
-			VTLDataSetMetadata dsmeta = (VTLDataSetMetadata) metadata;
+			DataSetMetadata dsmeta = (DataSetMetadata) metadata;
 
 			if (main != null)
 				return dsmeta;
@@ -181,7 +181,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 			return dsmeta;
 		}
 		else
-			throw new VTLInvalidParameterException(metadata, VTLDataSetMetadata.class);
+			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
 	}
 	
 	@Override

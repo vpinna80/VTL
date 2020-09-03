@@ -43,7 +43,7 @@ import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class BooleanTransformationTest
 {
@@ -79,7 +79,7 @@ public class BooleanTransformationTest
 	{
 		BooleanTransformation arTransformation = new BooleanTransformation(operator, left, right);
 		
-		VTLDataSetMetadata metadata = (VTLDataSetMetadata) arTransformation.getMetadata(session);
+		DataSetMetadata metadata = (DataSetMetadata) arTransformation.getMetadata(session);
 		assertTrue(metadata.contains("BOOLEAN_1"));
 		
 		DataSet computedResult = (DataSet) arTransformation.eval(session);

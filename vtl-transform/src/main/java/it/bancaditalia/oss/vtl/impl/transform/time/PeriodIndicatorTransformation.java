@@ -40,8 +40,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -85,7 +85,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		{
 			DataSet ds = (DataSet) value;
 			
-			VTLDataSetMetadata metadata = new DataStructureBuilder(ds.getComponents(Identifier.class))
+			DataSetMetadata metadata = new DataStructureBuilder(ds.getComponents(Identifier.class))
 					.addComponent(DURATION_MEASURE)
 					.build();
 			
@@ -108,9 +108,9 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		else
 			value = operand.getMetadata(session);
 
-		if (value instanceof VTLScalarValueMetadata)
+		if (value instanceof ScalarValueMetadata)
 		{
-			ValueDomainSubset<?> domain = ((VTLScalarValueMetadata<?>) value).getDomain();
+			ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) value).getDomain();
 			if (!TIME.isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("period_indicator", TIME, domain);
 			else
@@ -118,7 +118,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		}
 		else
 		{
-			VTLDataSetMetadata ds = (VTLDataSetMetadata) value;
+			DataSetMetadata ds = (DataSetMetadata) value;
 
 			if (operand == null)
 			{

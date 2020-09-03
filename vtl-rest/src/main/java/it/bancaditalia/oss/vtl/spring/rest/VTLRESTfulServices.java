@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.VTLSession;
@@ -66,9 +66,9 @@ public class VTLRESTfulServices extends SpringBootServletInitializer
 			
 		VTLSession session = manager.getSession(uuid);
 		VTLValueMetadata value = session.getMetadata(alias);
-		if (value instanceof VTLScalarValueMetadata)
-			return singletonList(new DomainBean(((VTLScalarValueMetadata<?>) value).getDomain()));
+		if (value instanceof ScalarValueMetadata)
+			return singletonList(new DomainBean(((ScalarValueMetadata<?>) value).getDomain()));
 		else
-			return ((VTLDataSetMetadata) value).stream().map(ComponentBean::new).collect(toList());
+			return ((DataSetMetadata) value).stream().map(ComponentBean::new).collect(toList());
 	}
 }

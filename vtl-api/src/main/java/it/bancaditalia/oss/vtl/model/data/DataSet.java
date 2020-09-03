@@ -29,6 +29,7 @@ import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -43,10 +44,10 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 public interface DataSet extends VTLValue
 {
 	/**
-	 * @return The {@link VTLDataSetMetadata structure} of this DataSet.
+	 * @return The {@link DataSetMetadata structure} of this DataSet.
 	 */
 	@Override
-	public VTLDataSetMetadata getMetadata();
+	public DataSetMetadata getMetadata();
 	
 	/**
 	 * @return a {@link Stream} of this dataset's {@link DataPoint}s.
@@ -71,13 +72,16 @@ public interface DataSet extends VTLValue
 	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name);
 
 	/**
-	 * Get a subset of this DataSet {@link DataPoint}s that match the specified values for some identifiers.
+	 * Create a new DataSet by filtering this DataSet's {@link DataPoint}s matching the specified values for some identifiers.
 	 * 
 	 * @param keyValues A {@link Map} containing values for some of this DataSet {@link Identifier}s.
-	 *      If the map is empty, the result is the same as {@link #stream()}.
-	 * @return A {@link Stream} of matching {@link DataPoint}s, eventually empty.
+	 *      If the map is empty, the result is this {@code DataSet}.
+	 * @return A new {@code DataSet} of matching {@link DataPoint}s, eventually empty.
 	 */
-	public Stream<DataPoint> getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues);
+	public default DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	{
+		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)));	
+	}
 
 	/**
 	 * Creates a new DataSet by filtering this DataSet with a given {@link Predicate} on each of its {@link DataPoint}.
@@ -90,50 +94,36 @@ public interface DataSet extends VTLValue
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
 	 * 
-	 * @param metadata The {@link VTLDataSetMetadata structure} the new dataset must conform to.
+	 * @param metadata The {@link DataSetMetadata structure} the new dataset must conform to.
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(VTLDataSetMetadata metadata, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining DataPoints of this and another DataSet by the common identifiers.
 	 * 
-	 * @param metadata The {@link VTLDataSetMetadata structure} the new DataSet must conform to.
+	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
 	 * @param other another DataSet that will be joined to this DataSet.
 	 * @param filter a {@link BiPredicate} used to select only a subset of the joined {@link DataPoint}s.
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @return The new DataSet.
 	 */
-	public DataSet filteredMappedJoin(VTLDataSetMetadata metadata, DataSet other, BiPredicate<DataPoint,DataPoint> filter, BinaryOperator<DataPoint> merge);
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BiPredicate<DataPoint,DataPoint> filter, BinaryOperator<DataPoint> merge);
 
 	/**
 	 * Creates a new DataSet by joining DataPoints of this and another DataSet by the common identifiers.
 	 * The same as {@code filteredMappedJoin(metadata, other, (a,  b) -> true, merge)}.
 	 * 
-	 * @param metadata The {@link VTLDataSetMetadata structure} the new DataSet must conform to.
+	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
 	 * @param other another DataSet that will be joined to this DataSet. 
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @return The new DataSet.
 	 */
-	public default DataSet filteredMappedJoin(VTLDataSetMetadata metadata, DataSet other, BinaryOperator<DataPoint> merge)
+	public default DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BinaryOperator<DataPoint> merge)
 	{
 		return filteredMappedJoin(metadata, other, (a,  b) -> true, merge);
 	}
-
-	/**
-	 * Perform a computation on each of the groups of the {@link DataPoint}s of this DataSet which 
-	 * have the same value for each of (a subset of) its {@link Identifier}s.
-	 * 
-	 * @param <T> the type of the result of the computation.
-	 * @param keys the {@link Identifier}s used to group the keys.
-	 * @param filter a {@link Map} containing values for some of this DataSet {@link Identifier}s.
-	 *      The map will be used to filter out groups from the final computation. 
-	 * @param groupMapper a {@link BiFunction} applied to each group to produce the final result
-	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
-	 */
-	public <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
-			BiFunction<? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, ? super Stream<DataPoint>, T> groupMapper);
 
 	/**
 	 * Perform a computation on each of the groups of the {@link DataPoint}s of this DataSet which 
@@ -143,29 +133,33 @@ public interface DataSet extends VTLValue
 	 * 
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the keys.
-	 * @param groupMapper a {@link BiFunction} applied to each group to produce the final result
+	 * @param groupCollector a {@link Collector} applied to each group to produce the final result
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
-	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			BiFunction<? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, ? super Stream<DataPoint>, T> groupMapper)
+	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
+			Collector<DataPoint, A, TT> groupCollector,
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher);
+	
+	public default <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+			Collector<DataPoint, A, TT> groupCollector,
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)
 	{
-		return streamByKeys(keys, emptyMap(), groupMapper);
+		return streamByKeys(keys, emptyMap(), groupCollector, finisher);
 	}
 	
-	/**
-	 * Obtains multiple components with given names
-	 * 
-	 * @param names The requested components' names.
-	 * @return The requested components, or an empty set if none was found.
-	 */
-	public default Set<DataStructureComponent<?, ?, ?>> getComponents(String name, String... names)
+	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
+			Collector<DataPoint, ?, T> groupCollector)
 	{
-		String result[] = new String[names.length + 1];
-		result[0] = name;
-		System.arraycopy(names, 0, result, 1, names.length);
-		return getMetadata().getComponents(result);
+		return streamByKeys(keys, filter, groupCollector, (a, b) -> a);
 	}
-
+	
+	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, Collector<DataPoint, ?, T> groupCollector)
+	{
+		return streamByKeys(keys, emptyMap(), groupCollector);
+	}
+	
 	/**
 	 * Obtains a component with given name, and checks that it belongs to the specified domain.
 	 * 
@@ -179,7 +173,6 @@ public interface DataSet extends VTLValue
 	{
 		return getMetadata().getComponent(name, domain);
 	}
-
 
 	/**
 	 * Obtains a component with given name, and checks that it belongs to the specified domain.
@@ -222,7 +215,7 @@ public interface DataSet extends VTLValue
 	}
 
 	/**
-	 * @see VTLDataSetMetadata#getComponents(Class) 
+	 * @see DataSetMetadata#getComponents(Class) 
 	 */
 	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 	{
@@ -230,7 +223,7 @@ public interface DataSet extends VTLValue
 	}
 
 	/**
-	 * @see VTLDataSetMetadata#getComponents(Class, ValueDomainSubset) 
+	 * @see DataSetMetadata#getComponents(Class, ValueDomainSubset) 
 	 */
 	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
 			S domain)
@@ -245,11 +238,11 @@ public interface DataSet extends VTLValue
 	 */
 	public default boolean contains(DataPoint datapoint)
 	{
-		return getMatching(datapoint.getValues(Identifier.class)).findAny().isPresent();
+		return getMatching(datapoint.getValues(Identifier.class)).stream().findAny().isPresent();
 	}
 
 	public default boolean notContains(DataPoint datapoint)
 	{
-		return !getMatching(datapoint.getValues(Identifier.class)).findAny().isPresent();
+		return !getMatching(datapoint.getValues(Identifier.class)).stream().findAny().isPresent();
 	}
 }

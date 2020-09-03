@@ -44,8 +44,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -116,7 +116,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	}
 
 	private final List<CalcClauseItem> items;
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 
 	public CalcClauseTransformation(List<CalcClauseItem> items)
 	{
@@ -152,17 +152,17 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme session)
 	{
 		if (metadata != null)
 			return metadata;
 		
 		VTLValueMetadata operand = getThisMetadata(session);
 
-		if (!(operand instanceof VTLDataSetMetadata))
-			throw new VTLInvalidParameterException(operand, VTLDataSetMetadata.class);
+		if (!(operand instanceof DataSetMetadata))
+			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 
-		metadata = (VTLDataSetMetadata) operand;
+		metadata = (DataSetMetadata) operand;
 		DataStructureBuilder builder = new DataStructureBuilder(metadata);
 
 		for (CalcClauseItem item : items)
@@ -171,17 +171,17 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			ValueDomainSubset<?> domain;
 
 			// get the domain of the calculated component
-			if (itemMeta instanceof VTLDataSetMetadata)
+			if (itemMeta instanceof DataSetMetadata)
 			{
 				// calc item expression is a component, check for mono-measure dataset
-				VTLDataSetMetadata value = (VTLDataSetMetadata) itemMeta;
+				DataSetMetadata value = (DataSetMetadata) itemMeta;
 				if (value.getComponents(Measure.class).size() != 1)
 					throw new VTLExpectedComponentException(Measure.class, value);
 
 				domain = value.getComponents(Measure.class).iterator().next().getDomain();
 			} 
 			else
-				domain = ((VTLScalarValueMetadata<?>) itemMeta).getDomain();
+				domain = ((ScalarValueMetadata<?>) itemMeta).getDomain();
 
 			Optional<DataStructureComponent<?, ?, ?>> maybePresent = metadata.getComponent(item.getName());
 			

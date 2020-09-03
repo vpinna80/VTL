@@ -39,7 +39,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -58,14 +58,14 @@ public class SetTransformation extends TransformationImpl
 		SYMDIFF((left, right) -> structure -> new LightFDataSet<>(structure,  
 				ds -> Stream.concat(setDiff(left, right).stream(), ds.stream()), setDiff(right, left)));
 
-		private final BiFunction<DataSet, DataSet, Function<VTLDataSetMetadata, DataSet>> reducer;
+		private final BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer;
 
-		SetOperator(BiFunction<DataSet, DataSet, Function<VTLDataSetMetadata, DataSet>> reducer)
+		SetOperator(BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer)
 		{
 			this.reducer = reducer;
 		}
 		
-		public BinaryOperator<DataSet> getReducer(VTLDataSetMetadata metadata)
+		public BinaryOperator<DataSet> getReducer(DataSetMetadata metadata)
 		{
 			return (left, right) -> reducer.apply(left, right).apply(metadata);
 		}
@@ -81,7 +81,7 @@ public class SetTransformation extends TransformationImpl
 	private final List<Transformation> operands;
 	private final SetOperator setOperator;
 
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 	
 	public SetTransformation(SetOperator setOperator, List<Transformation> operands)
 	{
@@ -112,19 +112,19 @@ public class SetTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLDataSetMetadata getMetadata(TransformationScheme scheme)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
 		List<VTLValueMetadata> meta = operands.stream()
 				.map(t -> t.getMetadata(scheme))
 				.collect(toList());
 		
-		if (!(meta.get(0) instanceof VTLDataSetMetadata))
+		if (!(meta.get(0) instanceof DataSetMetadata))
 			throw new UnsupportedOperationException("In set operation expected all datasets but found a scalar"); 
 			
 		if (meta.stream().distinct().limit(2).count() != 1)
 			throw new UnsupportedOperationException("In set operation expected all datasets with equal structure but found: " + meta); 
 
-		return metadata = (VTLDataSetMetadata) meta.get(0);
+		return metadata = (DataSetMetadata) meta.get(0);
 	}
 	
 	@Override

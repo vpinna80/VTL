@@ -22,8 +22,8 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 import java.util.List;
 import java.util.Map;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainHierarchy;
 
 public class ValueDomainHierarchyImpl extends HierarchyImpl implements ValueDomainHierarchy
@@ -38,7 +38,7 @@ public class ValueDomainHierarchyImpl extends HierarchyImpl implements ValueDoma
 	}
 
 	@Override
-	public DataStructureComponent<?, ?, ?> selectComponent(DataStructure structure)
+	public DataStructureComponent<?, ?, ?> selectComponent(DataSetMetadata structure)
 	{
 		throw new UnsupportedOperationException();
 	}

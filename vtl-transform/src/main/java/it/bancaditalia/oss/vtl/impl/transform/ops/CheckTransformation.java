@@ -44,8 +44,8 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLDataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -75,7 +75,7 @@ public class CheckTransformation extends TransformationImpl
 	private final Transformation errorlevelExpr;
 	private final Transformation imbalanceExpr;
 	private final CheckOutput output;
-	private VTLDataSetMetadata metadata;
+	private DataSetMetadata metadata;
 	
 	public CheckTransformation(Transformation operand, Transformation errorcode, Transformation errorlevel, Transformation imbalance, CheckOutput output)
 	{
@@ -130,13 +130,13 @@ public class CheckTransformation extends TransformationImpl
 		VTLValueMetadata meta = operand.getMetadata(session),
 				imbalanceValue = imbalanceExpr != null ? imbalanceExpr.getMetadata(session) : null;
 
-		if (meta instanceof VTLScalarValueMetadata)
-			throw new VTLInvalidParameterException(meta, VTLDataSetMetadata.class);
-		else if (imbalanceExpr instanceof VTLScalarValueMetadata)
-			throw new VTLInvalidParameterException(imbalanceValue, VTLDataSetMetadata.class);
+		if (meta instanceof ScalarValueMetadata)
+			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
+		else if (imbalanceExpr instanceof ScalarValueMetadata)
+			throw new VTLInvalidParameterException(imbalanceValue, DataSetMetadata.class);
 		else
 		{
-			VTLDataSetMetadata dataset = (VTLDataSetMetadata) meta;
+			DataSetMetadata dataset = (DataSetMetadata) meta;
 
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class, BOOLEANDS);
 			if (measures.size() != 1)
@@ -147,7 +147,7 @@ public class CheckTransformation extends TransformationImpl
 			
 			if (imbalanceValue != null)
 			{
-				VTLDataSetMetadata imbalanceDataset = (VTLDataSetMetadata) imbalanceValue;
+				DataSetMetadata imbalanceDataset = (DataSetMetadata) imbalanceValue;
 				Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> imbalanceIdentifiers = imbalanceDataset.getComponents(Identifier.class);
 
 				if (!identifiers.equals(imbalanceIdentifiers))
