@@ -31,7 +31,7 @@ public class SDMXMetadataRepository extends InMemoryMetadataRepository
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXMetadataRepository.class); 
 
 	public static final VTLProperty METADATA_SDMX_PROVIDER_ENDPOINT = 
-			new VTLPropertyImpl("vtl.metadata.sdmx.provider.endpoint", "SDMX service provider endpoint", "https://www.myurl.om/service", true);
+			new VTLPropertyImpl("vtl.metadata.sdmx.provider.endpoint", "SDMX service provider endpoint", "https://www.myurl.com/service", true);
 	
 	static
 	{

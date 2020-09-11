@@ -25,18 +25,18 @@ import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -52,13 +52,13 @@ public class TimeAggTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private final DataStructureComponentImpl<Measure, TimePeriodDomainSubset, TimePeriodDomain> periodComponent;
-	private final DurationValue frequency;
+	private final DurationDomains frequency;
 
 	public TimeAggTransformation(Transformation operand, String periodTo)
 	{
 		super(operand);
-		frequency = DurationValue.of(periodTo.replaceAll("^\"(.*)\"$", "$1"));
-		TimePeriodDomainSubset periodDomain = frequency.get().getDomain();
+		frequency = DurationDomains.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
+		TimePeriodDomainSubset periodDomain = frequency.getRelatedTimePeriodDomain();
 		periodComponent = new DataStructureComponentImpl<>(periodDomain.getVarName(), Measure.class, periodDomain);
 	}
 

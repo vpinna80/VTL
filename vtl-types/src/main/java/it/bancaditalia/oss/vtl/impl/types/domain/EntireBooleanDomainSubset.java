@@ -40,7 +40,7 @@ class EntireBooleanDomainSubset extends EntireDomainSubset<Boolean, BooleanDomai
 
 	EntireBooleanDomainSubset()
 	{ 
-		super(Domains.BOOLEANDS);
+		super(Domains.BOOLEANDS, "boolean_var");
 	}
 	
 	@Override

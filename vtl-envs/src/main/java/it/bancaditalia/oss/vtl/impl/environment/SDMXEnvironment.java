@@ -52,6 +52,8 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.sdmx.api.BaseObservation;
@@ -86,9 +88,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
@@ -109,6 +111,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?>>> FORMATTERS = new HashMap<>();
+	private static final Pattern SDMX_PATTERN = Pattern.compile("^(.+):(?:(.+)(?:\\((.+)\\))?/(.+)$");
 
 	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = 
 			new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", false, false, "false");
@@ -128,9 +131,10 @@ public class SDMXEnvironment implements Environment, Serializable
 	}
 
 	@Override
-	public boolean contains(String id)
+	public boolean contains(String name)
 	{
-		return id.startsWith("sdmx:") && PROVIDERS.containsKey(id.substring(5).split("\\.")[0]);
+		Matcher matcher = SDMX_PATTERN.matcher(name);
+		return matcher.matches() && PROVIDERS.containsKey(matcher.group(1));
 	}
 
 	@Override
@@ -138,9 +142,10 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		if (contains(name))
 		{
-			name = name.substring(5);
-			String provider = name.split("\\.")[0];
-			String query = name.split("\\.", 2)[1];
+			Matcher matcher = SDMX_PATTERN.matcher(name);
+			String provider = matcher.group(1);
+			String dataflow = matcher.group(2);
+			String query = dataflow + "/" + matcher.group(4);
 			try
 			{
 				List<PortableTimeSeries<Double>> table = SdmxClientHandler.getTimeSeries(provider, query, null, null);

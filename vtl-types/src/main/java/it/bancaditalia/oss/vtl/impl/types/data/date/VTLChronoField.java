@@ -38,9 +38,9 @@ import java.util.stream.Collectors;
 public enum VTLChronoField implements TemporalField
 {
 	SEMESTER_OF_YEAR("SemesterOfYear", SEMESTERS, YEARS, ValueRange.of(1, 2),
-			new Class[] { YearSemesterPeriodHolder.class, YearQuarterPeriodHolder.class, YearMonthPeriodHolder.class }),
+			new Class[] { SemesterPeriodHolder.class, QuarterPeriodHolder.class, MonthPeriodHolder.class }),
 	QUARTER_OF_SEMESTER("QuarterOfSemester", QUARTER_YEARS, SEMESTERS, ValueRange.of(1, 2),
-			new Class[] { YearQuarterPeriodHolder.class, YearMonthPeriodHolder.class });
+			new Class[] { QuarterPeriodHolder.class, MonthPeriodHolder.class });
 
 	private final String name;
 	private final TemporalUnit baseUnit;

@@ -20,28 +20,32 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static java.util.Collections.unmodifiableCollection;
+import static java.util.stream.Collector.Characteristics.CONCURRENT;
+import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
@@ -131,11 +135,13 @@ public class DataStructureBuilder
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final Map<String, DataStructureComponent<?, ?, ?>>                 components        = new TreeMap<>();
+		private final Map<String, DataStructureComponent<?, ?, ?>> components;
 
-		private DataStructureImpl(Set<? extends DataStructureComponent<?, ?, ?>> components)
+		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
-			Utils.getStream(components).forEach(c -> this.components.put(c.getName(), c));
+			this.components = Collections.unmodifiableMap(Utils.getStream(components)
+				.map(Utils.toEntry(DataStructureComponent::getName, c -> c))
+				.collect(Utils.entriesToMap(ConcurrentSkipListMap::new)));
 		}
 		
 		@Override
@@ -292,5 +298,12 @@ public class DataStructureBuilder
 					.removeComponent(measure)
 					.build();
 		}
+	}
+
+	public static Collector<DataStructureComponent<?, ?, ?>, ?, DataSetMetadata> toDataStructure(DataStructureComponent<?, ?, ?>... additionalComponents)
+	{
+		return Collector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
+				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
+				UNORDERED, CONCURRENT);
 	}
 }

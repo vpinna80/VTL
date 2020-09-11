@@ -19,60 +19,50 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.A;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.D;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.M;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.Q;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.S;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.W;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-class EntireTimePeriodDomainSubset<F extends PeriodHolder<?>> extends EntireDomainSubset<F, TimePeriodDomain> implements TimePeriodDomainSubset, Serializable
+public class EntireTimePeriodDomainSubset<P extends PeriodHolder<P>> extends EntireDomainSubset<P, TimePeriodDomain> implements TimePeriodDomainSubset, Serializable
 {
-	public static final TimePeriodDomainSubset DAYSDS;
-	public static final TimePeriodDomainSubset WEEKSDS;
-	public static final TimePeriodDomainSubset MONTHSDS;
-	public static final TimePeriodDomainSubset QUARTERSDS;
-	public static final TimePeriodDomainSubset SEMESTERSDS;
-	public static final TimePeriodDomainSubset YEARSDS;
-
-	private static final Map<Duration, TimePeriodDomainSubset> PERIODSDS = new HashMap<>();
 	private static final long serialVersionUID = 1L;
+	private static final Map<Class<? extends PeriodHolder<?>>, TimePeriodDomainSubset> PARENTS = new HashMap<>();
 	
 	static {
-		for (Duration duration: Duration.values())
-			PERIODSDS.put(duration, new EntireTimePeriodDomainSubset<>(duration));
-		
-		YEARSDS = PERIODSDS.get(A);
-		SEMESTERSDS = PERIODSDS.get(S);
-		QUARTERSDS = PERIODSDS.get(Q);
-		MONTHSDS = PERIODSDS.get(M);
-		WEEKSDS = PERIODSDS.get(W);
-		DAYSDS = PERIODSDS.get(D);
+		PARENTS.put(YearPeriodHolder.clazz(), null);
+		PARENTS.put(SemesterPeriodHolder.class, YEARSDS);
+		PARENTS.put(QuarterPeriodHolder.class, QUARTERSDS);
+		PARENTS.put(MonthPeriodHolder.class, MONTHSDS);
+		PARENTS.put(WeekPeriodHolder.class, WEEKSDS);
+		PARENTS.put(DayPeriodHolder.class, MONTHSDS);
 	}
 	
-	private final Duration frequency;
-
-	private EntireTimePeriodDomainSubset(Duration frequency)
-	{
-		super(PERIODSDS.get(frequency));
-		this.frequency = frequency;
-	}
+	private final Class<P> holder;
 	
-	public static TimePeriodDomainSubset of(Duration frequency)
+	public EntireTimePeriodDomainSubset(Class<P> holder, String defaultVarName)
 	{
-		return PERIODSDS.get(frequency);
+		super(PARENTS.get(holder), defaultVarName);
+		this.holder = holder;
 	}
 
 	@Override
@@ -88,7 +78,7 @@ class EntireTimePeriodDomainSubset<F extends PeriodHolder<?>> extends EntireDoma
 	}
 
 	@Override
-	public TimePeriodValue cast(ScalarValue<?, ?, ?> value)
+	public ScalarValue<?, ? extends ValueDomainSubset<? extends TimePeriodDomain>, ? extends TimePeriodDomain> cast(ScalarValue<?, ?, ?> value)
 	{
 		if (value instanceof TimePeriodValue)
 			return (TimePeriodValue) value;
@@ -99,6 +89,6 @@ class EntireTimePeriodDomainSubset<F extends PeriodHolder<?>> extends EntireDoma
 	@Override
 	public String toString()
 	{
-		return "Time_Period(" + frequency + ")";
+		return "Time_Period(" + PeriodHolder.getQualifier(holder) + ")";
 	}
 }

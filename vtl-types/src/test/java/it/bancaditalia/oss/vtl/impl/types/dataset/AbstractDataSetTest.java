@@ -4,6 +4,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+import static it.bancaditalia.oss.vtl.util.Utils.setOf;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -25,7 +26,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
@@ -54,7 +55,7 @@ public class AbstractDataSetTest
 	private static final DataStructureComponent<Identifier, IntegerDomainSubset, IntegerDomain> INT_ID = new DataStructureComponentImpl<>("INT_ID", Identifier.class, INTEGERDS);
 	private static final DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain> INT_ME = new DataStructureComponentImpl<>("INT_ME", Measure.class, INTEGERDS);
 	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> BOL_ME = new DataStructureComponentImpl<>("BOL_ME", Measure.class, BOOLEANDS);
-	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(STR_ID, INT_ID, INT_ME, BOL_ME).build();
+	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(setOf(STR_ID, INT_ID, INT_ME, BOL_ME)).build();
 	private static final String STR_ID_VAL[] = { "A", "A", "B", "B", "C" }; 
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 
 	private static final Long INT_ME_VAL[] = { 5L, 7L, null, 8L, 4L }; 
@@ -68,12 +69,13 @@ public class AbstractDataSetTest
 		return result;
 	}
 	
-	private AbstractDataSet INSTANCE; 
-	private DataPoint DATAPOINTS[] = new DataPoint[5]; 
+	private static AbstractDataSet INSTANCE; 
+	private static DataPoint DATAPOINTS[] = new DataPoint[5]; 
 
-	@BeforeEach
-	public void beforeEach()
+	@BeforeAll
+	public static void beforeAll()
 	{
+		System.setProperty("vtl.sequential", "true");
 		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>[]> values = new HashMap<>();
 		values.put(STR_ID, arrayToArray(StringValue::new, STR_ID_VAL));
 		values.put(INT_ID, arrayToArray(IntegerValue::new, INT_ID_VAL));

@@ -135,7 +135,7 @@ public class CSVFileEnvironment implements Environment
 			
 			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName));
 		}
-		catch (IOException /*| ReflectiveOperationException */ e)
+		catch (IOException e)
 		{
 			throw new VTLNestedException("Exception while reading " + fileName, e);
 		}

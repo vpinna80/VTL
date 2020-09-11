@@ -19,9 +19,11 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoUnit.SEMESTERS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.S;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.Q;
+import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
+import static java.time.temporal.IsoFields.QUARTER_YEARS;
 
 import java.time.Year;
 import java.time.temporal.Temporal;
@@ -29,52 +31,51 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Duration;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-class YearSemesterPeriodHolder extends PeriodHolder<YearSemesterPeriodHolder>
+public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 {
 	private static final long serialVersionUID = 1L;
 
 	private final Year year;
-	private final int semester;
+	private final int quarter;
 
-	public YearSemesterPeriodHolder(TemporalAccessor other)
+	public QuarterPeriodHolder(TemporalAccessor other)
 	{
-		super(S);
 		this.year = Year.from(other);
-		this.semester = other.get(SEMESTER_OF_YEAR);
+		this.quarter = other.get(QUARTER_OF_YEAR);
 	}
 
-	private YearSemesterPeriodHolder(Year year, int semester)
+	public QuarterPeriodHolder(int year, long quarter)
 	{
-		super(S);
-		this.year = year;
-		this.semester = semester;
+		this.year = Year.of((int) (year + (quarter - 1) / 4));
+		this.quarter = (int) (quarter % 4);
 	}
 
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return SEMESTER_OF_YEAR.equals(field) ? semester : year.getLong(field);
+		return QUARTER_OF_YEAR.equals(field) ? quarter : year.getLong(field);
 	}
 
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return SEMESTER_OF_YEAR.equals(field) || year.isSupported(field);
+		return QUARTER_OF_YEAR.equals(field) || year.isSupported(field);
 	}
 
 	@Override
 	public int compareTo(PeriodHolder<?> other)
 	{
 		int c = year.compareTo(Year.from(other));
-		return c != 0 ? c : Long.compare(semester, ((YearSemesterPeriodHolder) other).semester);
+		return c != 0 ? c : Long.compare(quarter, ((QuarterPeriodHolder) other).quarter);
 	}
 
 	@Override
 	public String toString()
 	{
-		return year.toString() + "-S" + semester;
+		return year.toString() + "-Q" + quarter;
 	}
 
 	@Override
@@ -82,7 +83,7 @@ class YearSemesterPeriodHolder extends PeriodHolder<YearSemesterPeriodHolder>
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + semester;
+		result = prime * result + quarter;
 		result = prime * result + ((year == null) ? 0 : year.hashCode());
 		return result;
 	}
@@ -96,8 +97,8 @@ class YearSemesterPeriodHolder extends PeriodHolder<YearSemesterPeriodHolder>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		YearSemesterPeriodHolder other = (YearSemesterPeriodHolder) obj;
-		if (semester != other.semester)
+		QuarterPeriodHolder other = (QuarterPeriodHolder) obj;
+		if (quarter != other.quarter)
 			return false;
 		if (year == null)
 		{
@@ -108,19 +109,20 @@ class YearSemesterPeriodHolder extends PeriodHolder<YearSemesterPeriodHolder>
 			return false;
 		return true;
 	}
-
+	
 	@Override
-	public TemporalUnit getPeriod()
+	public DurationDomains getPeriod()
 	{
-		return SEMESTERS;
+		return Q;
 	}
 
 	@Override
-	public PeriodHolder<?> wrap(Duration frequency)
+	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
 	{
 		switch (frequency)
 		{
-			case A: return new YearPeriodHolder(this);
+			case A: return new YearPeriodHolder<>(this);
+			case S: return new SemesterPeriodHolder(this);
 		default:
 			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
 		}
@@ -129,15 +131,28 @@ class YearSemesterPeriodHolder extends PeriodHolder<YearSemesterPeriodHolder>
 	@Override
 	public boolean isSupported(TemporalUnit unit)
 	{
-		return SEMESTERS.equals(unit) || year.isSupported(unit);
+		return QUARTER_YEARS.equals(unit) || SEMESTERS.equals(unit) || year.isSupported(unit);
 	}
 
 	@Override
 	public Temporal plus(long amount, TemporalUnit unit)
 	{
-		if (SEMESTERS.equals(unit))
-			return new YearSemesterPeriodHolder(year.plusYears((semester + amount) / 2), (int)(semester + amount) % 2);
-		else
-			return new YearSemesterPeriodHolder(year.plus(amount, unit), semester);
+		if (QUARTER_YEARS.equals(unit))
+			return new QuarterPeriodHolder(year.getValue(), quarter + amount);
+		else if (SEMESTERS.equals(unit))
+			return new QuarterPeriodHolder(year.getValue(), quarter + amount * 2);
+		return null;
+	}
+
+	@Override
+	public TimePeriodDomainSubset getDomain()
+	{
+		return QUARTERSDS;
+	}
+
+	@Override
+	protected TemporalUnit smallestUnit()
+	{
+		return QUARTER_YEARS;
 	}
 }

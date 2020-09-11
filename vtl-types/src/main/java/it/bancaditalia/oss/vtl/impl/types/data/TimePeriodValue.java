@@ -41,7 +41,7 @@ public class TimePeriodValue extends TimeValue<PeriodHolder<?>, TimePeriodDomain
 
 	private TimePeriodValue(PeriodHolder<?> holder)
 	{
-		super(holder, holder.getFrequency().getDomain());
+		super(holder, holder.getDomain());
 	}
 
 	@Override
@@ -54,15 +54,9 @@ public class TimePeriodValue extends TimeValue<PeriodHolder<?>, TimePeriodDomain
 	}
 
 	@Override
-	public ScalarValueMetadata<TimePeriodDomainSubset> getMetadata()
+	public ScalarValueMetadata<? extends TimePeriodDomainSubset> getMetadata()
 	{
-		return () -> get().getFrequency().getDomain();
-	}
-	
-	@Override
-	public DurationValue getPeriodIndicator()
-	{
-		return DurationValue.of(get().getPeriod());
+		return get()::getDomain;
 	}
 
 	@Override
@@ -70,11 +64,5 @@ public class TimePeriodValue extends TimeValue<PeriodHolder<?>, TimePeriodDomain
 	{
 		PeriodHolder<?> holder = get();
 		return new TimePeriodValue(holder.incrementSmallest(amount));
-	}
-
-	@Override
-	public TimePeriodValue wrap(DurationValue frequency)
-	{
-		return new TimePeriodValue(get().wrap(frequency.get()));
 	}
 }

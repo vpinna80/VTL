@@ -21,8 +21,9 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 public class SampleValues
 {
+	public static final int VAR_SAMPLE_LEN = 6; 
 	private static final Map<String, Object[][]> VALUES = new HashMap<>();
-	private static final Map<String, Function<? super Object, ? extends ScalarValue<?, ?, ?>>> WRAPPERS = new HashMap<>(); 
+	private static final Map<String, Function<? super Object, ? extends ScalarValue<?, ?, ?>>> WRAPPERS = new HashMap<>();
 	
 	static {
 		VALUES.put("INTEGER", new Long[][] {

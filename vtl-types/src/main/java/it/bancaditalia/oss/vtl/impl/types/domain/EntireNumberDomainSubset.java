@@ -35,7 +35,7 @@ class EntireNumberDomainSubset extends EntireDomainSubset<Double, NumberDomain> 
 
 	EntireNumberDomainSubset()
 	{
-		super(Domains.NUMBERDS);
+		super(Domains.NUMBERDS, "number_var");
 	}
 
 	@Override

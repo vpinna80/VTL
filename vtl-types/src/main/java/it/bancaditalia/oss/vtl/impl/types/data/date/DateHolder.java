@@ -25,20 +25,21 @@ import static java.time.temporal.ChronoField.YEAR;
 
 import java.io.Serializable;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalUnit;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Duration;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 
-public abstract class DateHolder<T extends TemporalAccessor> implements TemporalAccessor, Comparable<DateHolder<?>>, Serializable
+public abstract class DateHolder<T extends TemporalAccessor> implements TemporalAccessor, Comparable<DateHolder<?>>, Serializable, TimeHolder
 {
 	private static final long serialVersionUID = 1L;
 
 	public static final DateHolder<?> of(TemporalAccessor value)
 	{
 		if (value.isSupported(DAY_OF_MONTH))
-			return new YearMonthDayHolder(value.get(YEAR), value.get(MONTH_OF_YEAR), value.get(DAY_OF_MONTH));
+			return new DayHolder(value.get(YEAR), value.get(MONTH_OF_YEAR), value.get(DAY_OF_MONTH));
 		else if (value.isSupported(MONTH_OF_YEAR)) 
-			return new YearMonthHolder(value.get(YEAR), value.get(MONTH_OF_YEAR));
+			return new MonthHolder(value.get(YEAR), value.get(MONTH_OF_YEAR));
 		else if (value.isSupported(YEAR)) 
 			return new YearHolder(value.get(YEAR));
 		else
@@ -54,9 +55,15 @@ public abstract class DateHolder<T extends TemporalAccessor> implements Temporal
 	@Override
 	public abstract String toString();
 
-	public abstract TemporalUnit getPeriod();
+	@Override
+	public TimePeriodValue wrap(DurationDomains frequency)
+	{
+		return new TimePeriodValue(wrapImpl(frequency));
+	}
+
+	protected abstract PeriodHolder<?> wrapImpl(DurationDomains frequency);
+
+	public abstract DurationDomains getPeriod();
 
 	public abstract DateHolder<?> increment(long amount);
-
-	public abstract PeriodHolder<?> wrap(Duration frequency);
 }

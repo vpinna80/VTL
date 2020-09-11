@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import java.time.temporal.TemporalAccessor;
 
 import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -61,21 +62,14 @@ public class DateValue extends TimeValue<DateHolder<?>, DateDomainSubset, DateDo
 	}
 
 	@Override
-	public DurationValue getPeriodIndicator()
-	{
-		return DurationValue.of(((DateHolder<?>) get()).getPeriod());
-	}
-
-	@Override
 	public DateValue increment(long amount)
 	{
 		return new DateValue(get().increment(amount));
 	}
 
-
 	@Override
-	public TimePeriodValue wrap(DurationValue frequency)
+	public TimePeriodValue wrap(DurationDomains frequency)
 	{
-		return new TimePeriodValue(get().wrap(frequency.get()));
+		return get().wrap(frequency);
 	}
 }

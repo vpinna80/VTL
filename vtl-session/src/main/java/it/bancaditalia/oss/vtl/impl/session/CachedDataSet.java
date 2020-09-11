@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.session;
 
 import java.lang.ref.SoftReference;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -84,15 +85,15 @@ public class CachedDataSet extends NamedDataSet
 			}
 			
 			LOGGER.debug("Cache miss for {}.", getAlias());
-			Queue<DataPoint> newQueue = new ConcurrentLinkedQueue<>();
+			SoftReference<Queue<DataPoint>> newQueue = new SoftReference<>(new ConcurrentLinkedQueue<>());
 			isCompleted.set(false);
 			return getDelegate().stream()
-					.peek(newQueue::offer)
-					.onClose(() -> { 
+					.peek(dp -> Optional.ofNullable(newQueue.get()).ifPresent(queue -> queue.offer(dp)))
+					.onClose(() -> {
 							synchronized (isCompleted)
 							{
-								LOGGER.debug("Caching of {} completed.", getAlias());
-								cache.put(getAlias(), new SoftReference<>(newQueue));
+								LOGGER.debug("Caching of {} finished.", getAlias());
+								cache.put(getAlias(), newQueue);
 								isCompleted.set(true);
 								isCompleted.notifyAll();
 							}

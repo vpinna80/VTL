@@ -24,17 +24,17 @@ import java.io.Serializable;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
-public abstract class EntireDomainSubset<S extends Comparable<? super S>, D extends ValueDomain> implements ValueDomainSubset<D>, Serializable
+public abstract class EntireDomainSubset<S extends Comparable<? super S>, P extends ValueDomain> implements ValueDomainSubset<P>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private final D parentDomain;
+	private final P parentDomain;
 	private final String varName; 
 	
-	public EntireDomainSubset(D parentDomain)
+	public EntireDomainSubset(P parentDomain, String defaultVarName)
 	{
 		this.parentDomain = parentDomain;
-		this.varName = toString().replaceAll("\\(.*\\)", "") + "_var";
+		this.varName = defaultVarName;
 
 		// check no cycles in subsetting
 		ValueDomain parent = parentDomain;
@@ -55,7 +55,7 @@ public abstract class EntireDomainSubset<S extends Comparable<? super S>, D exte
 	}
 
 	@Override
-	public D getParentDomain()
+	public P getParentDomain()
 	{
 		return parentDomain;
 	}

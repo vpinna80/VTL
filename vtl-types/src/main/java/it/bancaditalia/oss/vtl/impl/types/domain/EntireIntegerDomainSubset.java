@@ -35,7 +35,7 @@ class EntireIntegerDomainSubset extends EntireDomainSubset<Long, IntegerDomain> 
 
 	EntireIntegerDomainSubset()
 	{
-		super(Domains.INTEGERDS);
+		super(Domains.INTEGERDS, "integer_var");
 	}
 
 	@Override

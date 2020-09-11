@@ -19,34 +19,34 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.D;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import java.time.LocalDate;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Duration;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-class YearMonthDayHolder extends DateHolder<LocalDate>
+public class DayPeriodHolder extends PeriodHolder<DayPeriodHolder>
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(YearMonthDayHolder.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(DayPeriodHolder.class);
 	private static final long serialVersionUID = 1L;
 
 	private final LocalDate date;
 
-	public YearMonthDayHolder(int year, int month, int day)
+	public DayPeriodHolder(TemporalAccessor other)
 	{
-		date = LocalDate.of(year, month, day);
+		this.date = LocalDate.from(other);
 	}
-	
-	public YearMonthDayHolder(LocalDate date)
-	{
-		this.date = date;
-	}
-	
+
 	@Override
 	public long getLong(TemporalField field)
 	{
@@ -60,17 +60,11 @@ class YearMonthDayHolder extends DateHolder<LocalDate>
 	}
 	
 	@Override
-	public int compareTo(DateHolder<?> other)
+	public int compareTo(PeriodHolder<?> other)
 	{
 		int c = date.compareTo(LocalDate.from(other));
 		LOGGER.trace("Comparing {} and {} yield {}.", date, other, c);
 		return c;
-	}
-	
-	@Override
-	public TemporalUnit getPeriod()
-	{
-		return DAYS;
 	}
 
 	@Override
@@ -91,7 +85,7 @@ class YearMonthDayHolder extends DateHolder<LocalDate>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		YearMonthDayHolder other = (YearMonthDayHolder) obj;
+		DayPeriodHolder other = (DayPeriodHolder) obj;
 		if (date == null)
 		{
 			if (other.date != null)
@@ -101,30 +95,53 @@ class YearMonthDayHolder extends DateHolder<LocalDate>
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public String toString()
 	{
 		return date.toString();
 	}
-
+	
 	@Override
-	public YearMonthDayHolder increment(long amount)
+	public DurationDomains getPeriod()
 	{
-		return new YearMonthDayHolder(date.plusDays(amount));
+		return D;
 	}
 
 	@Override
-	public PeriodHolder<?> wrap(Duration frequency)
+	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
 	{
 		switch (frequency)
 		{
-			case A: return new YearPeriodHolder(this);
-			case S: return new YearSemesterPeriodHolder(this);
-			case Q: return new YearQuarterPeriodHolder(this);
-			case M: return new YearMonthPeriodHolder(this);
+			case A: return new YearPeriodHolder<>(this);
+			case S: return new SemesterPeriodHolder(this);
+			case Q: return new QuarterPeriodHolder(this);
 		default:
 			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
 		}
+	}
+
+	@Override
+	public boolean isSupported(TemporalUnit unit)
+	{
+		return date.isSupported(unit);
+	}
+
+	@Override
+	public Temporal plus(long amount, TemporalUnit unit)
+	{
+		return new DayPeriodHolder(date.plus(amount, unit));
+	}
+
+	@Override
+	public TimePeriodDomainSubset getDomain()
+	{
+		return DAYSDS;
+	}
+
+	@Override
+	protected TemporalUnit smallestUnit()
+	{
+		return DAYS;
 	}
 }

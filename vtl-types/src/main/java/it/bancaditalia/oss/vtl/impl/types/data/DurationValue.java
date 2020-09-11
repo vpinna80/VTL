@@ -19,13 +19,11 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
-
 import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
 import java.util.Map;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Duration;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -34,52 +32,34 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
 
-public class DurationValue extends BaseScalarValue<Duration, DurationDomainSubset, DurationDomain>
+public class DurationValue extends BaseScalarValue<Double, DurationDomainSubset, DurationDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<Duration, DurationValue> DURATIONS = new HashMap<>(); 
-	private static final Map<TemporalUnit, Duration> DURATIONS_BY_UNIT = new HashMap<>(); 
+	private static final Map<TemporalUnit, DurationDomains> DURATIONS_BY_UNIT = new HashMap<>(); 
 
-	static {
-		for (Duration duration: Duration.values())
-		{
-			DURATIONS.put(duration, new DurationValue(duration));
+	static 
+	{
+		for (DurationDomains duration: DurationDomains.values())
 			DURATIONS_BY_UNIT.put(duration.getUnit(), duration);
-		}
 	}
 
-	private DurationValue(Duration duration)
+	private DurationValue(double value, DurationDomains duration)
 	{
-		super(duration, DURATIONDS);
-	}
-
-	public static DurationValue of(Duration duration)
-	{
-		return DURATIONS.get(duration);
-	}
-
-	public static DurationValue of(String duration)
-	{
-		return DURATIONS.get(Duration.valueOf(duration));
-	}
-
-	public static DurationValue of(TemporalUnit unit)
-	{
-		return DURATIONS.get(DURATIONS_BY_UNIT.get(unit));
+		super(value, duration);
 	}
 
 	@Override
 	public ScalarValueMetadata<DurationDomainSubset> getMetadata()
 	{
-		return () -> DURATIONDS;
+		return super::getDomain;
 	}
 
 	@Override
 	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o)
 	{
-		if (o instanceof DurationValue)
-			return get().compareTo((Duration) o.get());
+		if (o instanceof DurationValue && o.getDomain().equals(getDomain()))
+			return get().compareTo((Double) o.get());
 		else
-			throw new VTLCastException(DURATIONDS, o);
+			throw new VTLCastException(getDomain(), o);
 	}
 }

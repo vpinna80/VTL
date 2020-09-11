@@ -25,14 +25,14 @@ import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValueImpl.TimeHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValueImpl.TimeHolderImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-class EntireTimeDomainSubset extends EntireDomainSubset<TimeHolder, TimeDomain> implements TimeDomainSubset<TimeDomain>, Serializable
+class EntireTimeDomainSubset extends EntireDomainSubset<TimeHolderImpl, TimeDomain> implements TimeDomainSubset<TimeDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final TimeDomainSubset<TimeDomain> INSTANCE = new EntireTimeDomainSubset();
@@ -44,7 +44,7 @@ class EntireTimeDomainSubset extends EntireDomainSubset<TimeHolder, TimeDomain> 
 
 	private EntireTimeDomainSubset()
 	{
-		super(TIMEDS);
+		super(TIMEDS, "time_var");
 	}
 
 	@Override

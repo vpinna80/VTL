@@ -19,47 +19,54 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Duration.M;
-import static java.time.temporal.ChronoUnit.MONTHS;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
+import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.M;
 
 import java.time.YearMonth;
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Duration;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 
-public class YearMonthPeriodHolder extends PeriodHolder<YearMonthPeriodHolder>
+/**
+ * @author Valentino Pinna
+ */
+class MonthHolder extends DateHolder<YearMonth>
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(YearMonthHolder.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(MonthHolder.class);
 	private static final long serialVersionUID = 1L;
 
 	private final YearMonth yearMonth;
 
-	public YearMonthPeriodHolder(TemporalAccessor other)
+	public MonthHolder(int year, int month)
 	{
-		super(M);
-		this.yearMonth = YearMonth.from(other);
+		this.yearMonth = YearMonth.of(year, month);
+	}
+
+	private MonthHolder(YearMonth yearMonth)
+	{
+		this.yearMonth = yearMonth;
 	}
 
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return yearMonth.getLong(field);
+		if (SEMESTER_OF_YEAR.equals(field))
+			return (yearMonth.getMonthValue() - 1) / 6 + 1L;
+		else
+			return yearMonth.getLong(field);
 	}
 	
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return yearMonth.isSupported(field);
+		return SEMESTER_OF_YEAR.equals(field) || yearMonth.isSupported(field);
 	}
 	
 	@Override
-	public int compareTo(PeriodHolder<?> other)
+	public int compareTo(DateHolder<?> other)
 	{
 		int c = yearMonth.compareTo(YearMonth.from(other));
 		LOGGER.trace("Comparing {} and {} yield {}.", yearMonth, other, c);
@@ -84,7 +91,7 @@ public class YearMonthPeriodHolder extends PeriodHolder<YearMonthPeriodHolder>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		YearMonthPeriodHolder other = (YearMonthPeriodHolder) obj;
+		MonthHolder other = (MonthHolder) obj;
 		if (yearMonth == null)
 		{
 			if (other.yearMonth != null)
@@ -100,35 +107,35 @@ public class YearMonthPeriodHolder extends PeriodHolder<YearMonthPeriodHolder>
 	{
 		return yearMonth.toString();
 	}
-
+	
 	@Override
-	public TemporalUnit getPeriod()
+	public DurationDomains getPeriod()
 	{
-		return MONTHS;
+		return M;
 	}
 
 	@Override
-	public PeriodHolder<?> wrap(Duration frequency)
+	public MonthHolder increment(long amount)
+	{
+		return new MonthHolder(yearMonth.plusMonths(amount));
+	}
+
+	@Override
+	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
 	{
 		switch (frequency)
 		{
-			case A: return new YearPeriodHolder(this);
-			case S: return new YearSemesterPeriodHolder(this);
-			case Q: return new YearQuarterPeriodHolder(this);
+			case A: return new YearPeriodHolder<>(this);
+			case S: return new SemesterPeriodHolder(this);
+			case Q: return new QuarterPeriodHolder(this);
 		default:
 			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
 		}
 	}
 
 	@Override
-	public boolean isSupported(TemporalUnit unit)
+	public String getPeriodIndicator()
 	{
-		return yearMonth.isSupported(unit);
-	}
-
-	@Override
-	public Temporal plus(long amount, TemporalUnit unit)
-	{
-		return new YearMonthPeriodHolder(yearMonth.plus(amount, unit));
+		return "P1M";
 	}
 }

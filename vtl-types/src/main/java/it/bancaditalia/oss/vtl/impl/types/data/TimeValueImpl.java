@@ -25,9 +25,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
 
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValueImpl.TimeHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValueImpl.TimeHolderImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -35,15 +35,15 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public class TimeValueImpl extends TimeValue<TimeHolder, TimeDomainSubset<TimeDomain>, TimeDomain>
+public class TimeValueImpl extends TimeValue<TimeHolderImpl, TimeDomainSubset<TimeDomain>, TimeDomain>
 {
 	private static final long serialVersionUID = 1L;
 
-	public static class TimeHolder implements Comparable<TimeHolder>, Serializable, TemporalAccessor
+	public static class TimeHolderImpl implements Comparable<TimeHolder>, Serializable, TemporalAccessor, TimeHolder
 	{
 		private static final long serialVersionUID = 1L;
 
-		public TimeHolder(LocalDateTime start, LocalDateTime end)
+		public TimeHolderImpl(LocalDateTime start, LocalDateTime end)
 		{
 
 		}
@@ -71,7 +71,13 @@ public class TimeValueImpl extends TimeValue<TimeHolder, TimeDomainSubset<TimeDo
 			throw new UnsupportedOperationException();
 		}
 
-		public TimePeriodValue wrap(TemporalUnit unit)
+		public TimePeriodValue wrap(DurationDomains frequency)
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public String getPeriodIndicator()
 		{
 			throw new UnsupportedOperationException();
 		}
@@ -79,7 +85,7 @@ public class TimeValueImpl extends TimeValue<TimeHolder, TimeDomainSubset<TimeDo
 	
 	private TimeValueImpl(LocalDateTime start, LocalDateTime end)
 	{
-		super(new TimeHolder(start, end), TIMEDS);
+		super(new TimeHolderImpl(start, end), TIMEDS);
 	}
 
 	@Override
@@ -96,12 +102,6 @@ public class TimeValueImpl extends TimeValue<TimeHolder, TimeDomainSubset<TimeDo
 	{
 		return () -> TIMEDS;
 	}
-	
-	@Override
-	public DurationValue getPeriodIndicator()
-	{
-		return DurationValue.of(get().getPeriod());
-	}
 
 	@Override
 	public TimeValue<?, ?, ?> increment(long amount)
@@ -109,10 +109,9 @@ public class TimeValueImpl extends TimeValue<TimeHolder, TimeDomainSubset<TimeDo
 		throw new UnsupportedOperationException();
 	}
 
-
 	@Override
-	public TimePeriodValue wrap(DurationValue frequency)
+	public TimePeriodValue wrap(DurationDomains frequency)
 	{
-		return get().wrap(frequency.get().getUnit());
+		return get().wrap(frequency);
 	}
 }

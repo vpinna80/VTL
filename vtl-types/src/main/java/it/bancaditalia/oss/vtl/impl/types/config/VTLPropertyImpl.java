@@ -16,6 +16,7 @@ public class VTLPropertyImpl implements VTLProperty
 	private final String defaultValue;
 
 	private String value;
+	private boolean hasValue;
 	
 	public VTLPropertyImpl(String name, String description, String placeholder, boolean required)
 	{
@@ -26,6 +27,7 @@ public class VTLPropertyImpl implements VTLProperty
 		this.multiple = false;
 		this.defaultValue = "";
 		this.value = null;
+		this.hasValue = false;
 	}
 
 	public VTLPropertyImpl(String name, String description, String placeholder, boolean required, boolean multiple, String... defaultValue)
@@ -37,6 +39,7 @@ public class VTLPropertyImpl implements VTLProperty
 		this.multiple = multiple;
 		this.defaultValue = Arrays.stream(defaultValue).collect(joining(","));
 		this.value = null;
+		this.hasValue = !this.defaultValue.isEmpty();
 	}
 
 	@Override
@@ -55,6 +58,7 @@ public class VTLPropertyImpl implements VTLProperty
 	public void setValue(String newValue)
 	{
 		value = newValue;
+		hasValue = true;
 	}
 
 	@Override
@@ -79,5 +83,11 @@ public class VTLPropertyImpl implements VTLProperty
 	public String getPlaceholder()
 	{
 		return placeholder;
+	}
+	
+	@Override
+	public boolean hasValue()
+	{
+		return hasValue || getValue() != null;
 	}
 }

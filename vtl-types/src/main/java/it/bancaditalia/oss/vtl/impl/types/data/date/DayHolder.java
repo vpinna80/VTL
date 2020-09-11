@@ -19,10 +19,9 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.A;
+import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.D;
 
-import java.io.Serializable;
-import java.time.Year;
+import java.time.LocalDate;
 import java.time.temporal.TemporalField;
 
 import org.slf4j.Logger;
@@ -30,47 +29,47 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 
-class YearHolder extends DateHolder<Year> implements Serializable
+class DayHolder extends DateHolder<LocalDate>
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(YearHolder.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(DayHolder.class);
 	private static final long serialVersionUID = 1L;
 
-	private final Year year;
+	private final LocalDate date;
 
-	public YearHolder(int year)
+	public DayHolder(int year, int month, int day)
 	{
-		this.year = Year.of(year);
+		date = LocalDate.of(year, month, day);
 	}
-
-	protected YearHolder(Year year)
+	
+	public DayHolder(LocalDate date)
 	{
-		this.year = year;
+		this.date = date;
 	}
-
+	
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return year.getLong(field);
+		return date.getLong(field);
 	}
-
+	
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return year.isSupported(field);
+		return date.isSupported(field);
 	}
-
+	
 	@Override
 	public int compareTo(DateHolder<?> other)
 	{
-		int c = year.compareTo(Year.from(other));
-		LOGGER.trace("Comparing {} and {} yield {}.", year, other, c);
+		int c = date.compareTo(LocalDate.from(other));
+		LOGGER.trace("Comparing {} and {} yield {}.", date, other, c);
 		return c;
 	}
-
+	
 	@Override
-	public String toString()
+	public DurationDomains getPeriod()
 	{
-		return year.toString();
+		return D;
 	}
 
 	@Override
@@ -78,7 +77,7 @@ class YearHolder extends DateHolder<Year> implements Serializable
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((year == null) ? 0 : year.hashCode());
+		result = prime * result + ((date == null) ? 0 : date.hashCode());
 		return result;
 	}
 
@@ -91,27 +90,27 @@ class YearHolder extends DateHolder<Year> implements Serializable
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		YearHolder other = (YearHolder) obj;
-		if (year == null)
+		DayHolder other = (DayHolder) obj;
+		if (date == null)
 		{
-			if (other.year != null)
+			if (other.date != null)
 				return false;
 		}
-		else if (!year.equals(other.year))
+		else if (!date.equals(other.date))
 			return false;
 		return true;
 	}
 	
 	@Override
-	public DurationDomains getPeriod()
+	public String toString()
 	{
-		return A;
+		return date.toString();
 	}
 
 	@Override
-	public YearHolder increment(long amount)
+	public DayHolder increment(long amount)
 	{
-		return new YearHolder(year.plusYears(amount));
+		return new DayHolder(date.plusDays(amount));
 	}
 
 	@Override
@@ -120,14 +119,17 @@ class YearHolder extends DateHolder<Year> implements Serializable
 		switch (frequency)
 		{
 			case A: return new YearPeriodHolder<>(this);
-			default:
-				throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
+			case S: return new SemesterPeriodHolder(this);
+			case Q: return new QuarterPeriodHolder(this);
+			case M: return new MonthPeriodHolder(this);
+		default:
+			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
 		}
 	}
 
 	@Override
 	public String getPeriodIndicator()
 	{
-		return "P1Y";
+		return "P1D";
 	}
 }

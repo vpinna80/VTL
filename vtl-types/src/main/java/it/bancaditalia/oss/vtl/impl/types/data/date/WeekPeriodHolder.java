@@ -19,11 +19,12 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.A;
-import static java.time.temporal.ChronoUnit.YEARS;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.WEEK_PERIOD_FORMATTER;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.W;
+import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
+import static java.time.temporal.ChronoUnit.WEEKS;
 
-import java.time.Year;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
@@ -35,61 +36,47 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public class YearPeriodHolder<P extends YearPeriodHolder<P>> extends PeriodHolder<P>
+public class WeekPeriodHolder extends YearPeriodHolder<WeekPeriodHolder>
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(YearPeriodHolder.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(WeekPeriodHolder.class);
 	private static final long serialVersionUID = 1L;
 
-	private final Year year;
+	private final long weekOfYear;
 
-	@SuppressWarnings("unchecked")
-	public static <P extends YearPeriodHolder<P>> Class<P> clazz()
+	public WeekPeriodHolder(TemporalAccessor other)
 	{
-		return (Class<P>) (Object) new YearPeriodHolder<>().getClass();
-	}
-	
-	private YearPeriodHolder()
-	{
-		year = null;
-	}
-	
-	public YearPeriodHolder(TemporalAccessor other)
-	{
-		this.year = Year.from(other);
+		super(other);
+		this.weekOfYear = other.getLong(ALIGNED_WEEK_OF_YEAR);
 	}
 
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return year.getLong(field);
+		return field == ALIGNED_WEEK_OF_YEAR ? weekOfYear : super.getLong(field);
 	}
-
+	
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return year.isSupported(field);
+		return field == ALIGNED_WEEK_OF_YEAR || super.isSupported(field);
 	}
-
+	
 	@Override
 	public int compareTo(PeriodHolder<?> other)
 	{
-		int c = year.compareTo(Year.from(other));
-		LOGGER.trace("Comparing {} and {} yield {}.", year, other, c);
+		int c = super.compareTo(other);
+		if (c == 0)
+			c = Integer.compare(get(ALIGNED_WEEK_OF_YEAR), other.get(ALIGNED_WEEK_OF_YEAR));
+		LOGGER.trace("Comparing {} and {} yield {}.", this, other, c);
 		return c;
-	}
-
-	@Override
-	public String toString()
-	{
-		return year.toString();
 	}
 
 	@Override
 	public int hashCode()
 	{
 		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((year == null) ? 0 : year.hashCode());
+		int result = super.hashCode();
+		result = prime * result + (int) (weekOfYear ^ (weekOfYear >>> 32));
 		return result;
 	}
 
@@ -98,54 +85,62 @@ public class YearPeriodHolder<P extends YearPeriodHolder<P>> extends PeriodHolde
 	{
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		YearPeriodHolder<?> other = (YearPeriodHolder<?>) obj;
-		if (year == null)
-		{
-			if (other.year != null)
-				return false;
-		}
-		else if (!year.equals(other.year))
+		WeekPeriodHolder other = (WeekPeriodHolder) obj;
+		if (weekOfYear != other.weekOfYear)
 			return false;
 		return true;
+	}
+
+	@Override
+	public String toString()
+	{
+		return WEEK_PERIOD_FORMATTER.get().format(this);
 	}
 	
 	@Override
 	public DurationDomains getPeriod()
 	{
-		return A;
+		return W;
 	}
 
 	@Override
 	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
 	{
-		throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
+		switch (frequency)
+		{
+			case A: return new YearPeriodHolder<>(this);
+			case S: return new SemesterPeriodHolder(this);
+			case Q: return new QuarterPeriodHolder(this);
+		default:
+			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
+		}
 	}
 
 	@Override
 	public boolean isSupported(TemporalUnit unit)
 	{
-		return year.isSupported(unit);
+		return unit == WEEKS || super.isSupported(unit);
 	}
 
 	@Override
 	public Temporal plus(long amount, TemporalUnit unit)
 	{
-		return new YearPeriodHolder<>(year.plus(amount, unit));
+		throw new UnsupportedOperationException("plus");
 	}
 
 	@Override
 	public TimePeriodDomainSubset getDomain()
 	{
-		return YEARSDS;
+		return WEEKSDS;
 	}
 
 	@Override
 	protected TemporalUnit smallestUnit()
 	{
-		return YEARS;
+		return WEEKS;
 	}
 }

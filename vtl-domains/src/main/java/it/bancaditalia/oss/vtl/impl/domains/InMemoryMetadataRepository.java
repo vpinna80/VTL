@@ -28,12 +28,14 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
@@ -87,9 +89,9 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 							+ domainClass + "' does not have any accessible constructor.");
 				return domainClass.cast(constructors[0].newInstance(alias, arg));
 			} 
-			catch (Exception e) 
+			catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) 
 			{
-				throw new IllegalStateException(e);
+				throw new VTLNestedException("Error defining domain " + alias, e);
 			}
 		}));
 	}

@@ -60,4 +60,9 @@ public interface VTLProperty
 	{
 		return getValue() == null ? null : isMultiple() ? Arrays.asList(getValue().split(",")) : singletonList(getValue());
 	}
+
+	/**
+	 * @return {@code true} if a value was set for this property or it has a default value 
+	 */
+	public boolean hasValue();
 }

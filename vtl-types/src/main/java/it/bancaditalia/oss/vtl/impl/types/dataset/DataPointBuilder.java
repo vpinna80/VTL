@@ -47,15 +47,18 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataPointBuilder 
 {
+	private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
+
 	private final ConcurrentHashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> delegate;
 
-	private boolean built = false;
+	private volatile boolean built = false;
 
 	public DataPointBuilder()
 	{
@@ -71,6 +74,7 @@ public class DataPointBuilder
 	{
 		if (built)
 			throw new IllegalStateException("DataPoint already built.");
+		LOGGER.trace("Datapoint@{} is {}", hashCode(), delegate);
 		return this;
 	}
 
@@ -94,7 +98,8 @@ public class DataPointBuilder
 	
 	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?> value)
 	{
-		delegate.putIfAbsent(component, value);
+		if (delegate.putIfAbsent(component, value) != null)
+			throw new NullPointerException();
 		return checkState();
 	}
 	
@@ -118,12 +123,12 @@ public class DataPointBuilder
 		return checkState();
 	}
 
-	public synchronized DataPoint build(Collection<? extends DataStructureComponent<?, ?, ?>> structure)
+	public synchronized DataPoint build(DataSetMetadata structure)
 	{
 		if (built)
 			throw new IllegalStateException("DataPoint already built");
 		built  = true;
-		return new DataPointImpl(structure, new HashMap<>(delegate));
+		return new DataPointImpl(structure, delegate);
 	}
 	
 	@Override
@@ -139,7 +144,7 @@ public class DataPointBuilder
 		
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> dpValues;
 		
-		private DataPointImpl(Collection<? extends DataStructureComponent<?, ?, ?>> structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> values)
+		private DataPointImpl(DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> values)
 		{
 			if (!(values instanceof Serializable))
 				throw new IllegalStateException("The values map must be serializable");
@@ -157,7 +162,7 @@ public class DataPointBuilder
 			
 			if (!structure.equals(dpValues.keySet()))
 			{
-				Utils.getStream(this.dpValues.keySet())
+				this.dpValues.keySet().stream()
 					.filter(c -> !structure.contains(c))
 					.map(c -> new SimpleEntry<>(c, new IllegalStateException("Component " + c + " has a value but is not defined on " + structure)))
 					.peek(e -> LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", e.getKey(), structure, values, e.getValue()))
@@ -191,7 +196,7 @@ public class DataPointBuilder
 				if (!component.is(Identifier.class))
 					newVals.remove(component);
 			
-			return new DataPointImpl(newVals.keySet(), newVals);
+			return new DataPointImpl(new DataStructureBuilder(newVals.keySet()).build(), newVals);
 		}
 
 		@Override
@@ -207,7 +212,7 @@ public class DataPointBuilder
 					.filter(c -> !thisNames.contains(c.getName()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
 			
-			return new DataPointImpl(finalMap.keySet(), finalMap);
+			return new DataPointImpl(new DataStructureBuilder(finalMap.keySet()).build(), finalMap);
 		}
 
 		@Override
@@ -221,7 +226,7 @@ public class DataPointBuilder
 				else
 					throw new VTLMissingComponentsException(component, keySet()); 
 			
-			return new DataPointImpl(oper.keySet(), oper);
+			return new DataPointImpl(new DataStructureBuilder(oper.keySet()).build(), oper);
 		}
 
 		@Override
@@ -236,7 +241,7 @@ public class DataPointBuilder
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newValues = new HashMap<>(this);
 			ScalarValue<?, ?, ?> value = newValues.remove(oldComponent);
 			newValues.put(newComponent, value);
-			return new DataPointImpl(newValues.keySet(), newValues);
+			return new DataPointImpl(new DataStructureBuilder(newValues.keySet()).build(), newValues);
 		}
 		
 		@Override
@@ -245,7 +250,7 @@ public class DataPointBuilder
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(getValues(Identifier.class));
 			result.putAll(measures);
 			
-			return new DataPointImpl(result.keySet(), result); 
+			return new DataPointImpl(new DataStructureBuilder(result.keySet()).build(), result); 
 		}
 		
 		@Override
@@ -254,7 +259,7 @@ public class DataPointBuilder
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(this);
 			result.keySet().removeAll(subspace);
 			
-			return new DataPointImpl(result.keySet(), result);
+			return new DataPointImpl(new DataStructureBuilder(result.keySet()).build(), result);
 		}
 		
 		@Override
@@ -265,7 +270,7 @@ public class DataPointBuilder
 			
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newValues = new HashMap<>(this);
 			newValues.put(component, value);
-			return new DataPointImpl(keySet(), newValues);
+			return new DataPointImpl(new DataStructureBuilder(keySet()).build(), newValues);
 		}
 
 

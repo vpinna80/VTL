@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -110,6 +111,11 @@ public final class Utils
 	public static <K, V> Collector<K, ?, ConcurrentMap<K, V>> toMapWithValues(Function<? super K, ? extends V> valueMapper)
 	{
 		return toConcurrentMap(identity(), valueMapper);
+	}
+
+	public static <K, V> Collector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(Function<? super V, ? extends K> valueMapper)
+	{
+		return toConcurrentMap(valueMapper, identity());
 	}
 
 	public static <U, V, M extends ConcurrentMap<U, V>> Collector<Entry<U, V>, ?, M> entriesToMap(Supplier<M> mapSupplier)
@@ -217,13 +223,6 @@ public final class Utils
 		return (ORDERED ? stream : stream.unordered());
 	}
 
-	public static <T> Stream<T> getStream(T[] source)
-	{
-		final Stream<T> sourceStream = source != null ? Arrays.stream(source) : Stream.empty();
-		Stream<T> stream = SEQUENTIAL ? sourceStream.sequential() : sourceStream.parallel();
-		return ORDERED ? stream : stream.unordered();
-	}
-
 	public static <T> Stream<T> getStream(Stream<T> stream)
 	{
 		stream = SEQUENTIAL ? stream.sequential() : stream.parallel();
@@ -241,6 +240,14 @@ public final class Utils
 	{
 		@SuppressWarnings("resource")
 		Stream<String> stream = Files.lines(Paths.get(fileName), UTF_8);
+		stream = SEQUENTIAL ? stream.sequential() : stream.parallel();
+		return ORDERED ? stream : stream.unordered();
+	}
+
+	@SafeVarargs
+	public static <T, K extends T> Stream<T> getStream(K... elements)
+	{
+		Stream<T> stream = Stream.of(elements);
 		stream = SEQUENTIAL ? stream.sequential() : stream.parallel();
 		return ORDERED ? stream : stream.unordered();
 	}
@@ -367,5 +374,14 @@ public final class Utils
 	public static <T> T coalesce(T value, T defaultValue)
 	{
 		return value != null ? value : defaultValue;
+	}
+
+	@SafeVarargs
+	public static <T> Set<T> setOf(T... elements)
+	{
+		Set<T> result = new HashSet<>();
+		for (T elem: elements)
+			result.add(elem);
+		return Collections.unmodifiableSet(result);
 	}
 }

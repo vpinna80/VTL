@@ -38,7 +38,7 @@ class EntireStringDomainSubset extends EntireDomainSubset<String, StringDomain> 
 
 	EntireStringDomainSubset()
 	{
-		super(Domains.STRINGDS);
+		super(Domains.STRINGDS, "string_var");
 	}
 
 	@Override

@@ -20,8 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATION;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static java.util.Collections.emptySet;
@@ -30,6 +30,8 @@ import static java.util.Collections.singletonMap;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -38,15 +40,15 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequir
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
-import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -57,8 +59,8 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 
-	private static final DataStructureComponent<Measure, DurationDomainSubset, DurationDomain> DURATION_MEASURE = new DataStructureComponentImpl<>(
-			DURATIONDS.getVarName(), Measure.class, DURATIONDS);
+	private static final DataStructureComponent<Measure, StringDomainSubset, StringDomain> DURATION_MEASURE = new DataStructureComponentImpl<>(
+			STRINGDS.getVarName(), Measure.class, STRINGDS);
 
 	private DataStructureComponent<?, TimeDomainSubset<TimeDomain>, TimeDomain> component = null;
 
@@ -80,7 +82,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			value = operand.eval(session);
 
 		if (value instanceof ScalarValue)
-			return ((TimeValue<?, ?, ?>) value).getPeriodIndicator();
+			return new StringValue(((TimeHolder) ((TimeValue<?, ?, ?>) value).get()).getPeriodIndicator());
 		else
 		{
 			DataSet ds = (DataSet) value;
@@ -95,7 +97,8 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			else
 				component = ds.getComponents(Measure.class, TIMEDS).iterator().next();
 
-			return ds.mapKeepingKeys(metadata, dp -> singletonMap(DURATION_MEASURE, ((TimeValue<?, ?, ?>) dp.get(component)).getPeriodIndicator()));
+			return ds.mapKeepingKeys(metadata, dp -> singletonMap(DURATION_MEASURE,
+					new StringValue(((TimeHolder) ((TimeValue<?, ?, ?>) dp.get(component)).get()).getPeriodIndicator())));
 		}
 	}
 
@@ -114,7 +117,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			if (!TIME.isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("period_indicator", TIME, domain);
 			else
-				return DURATION;
+				return STRING;
 		}
 		else
 		{

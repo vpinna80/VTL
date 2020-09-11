@@ -112,4 +112,10 @@ public enum VTLGeneralProperties implements VTLProperty
 	{
 		return "";
 	}
+	
+	@Override
+	public boolean hasValue()
+	{
+		return true;
+	}
 }
