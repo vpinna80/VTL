@@ -69,12 +69,12 @@ public enum SampleVariables
 			case "BOOLEAN": domain = BOOLEANDS; break;
 		}
 
-		component = new DataStructureComponentImpl<>(elem[1], role, domain);
+		component = new DataStructureComponentImpl<>(elem[1] + "_" + elem[2], role, domain);
 	}
 	
-	public DataStructureComponent<?, ?, ?> getComponent()
+	public DataStructureComponent<?, ?, ?> getComponent(int level)
 	{
-		return component;
+		return component.rename(name -> name.split("_")[0] + "_" + level);
 	}
 	
 	public String getType()

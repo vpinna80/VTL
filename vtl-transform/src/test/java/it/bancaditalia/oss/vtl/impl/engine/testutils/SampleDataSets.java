@@ -9,10 +9,9 @@ import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleVariables.MEAS
 import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleVariables.MEASURE_INTEGER_2;
 import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleVariables.MEASURE_NUMBER_1;
 import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleVariables.MEASURE_NUMBER_2;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
-import static java.util.stream.Collectors.toList;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,10 +24,8 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -38,6 +35,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum SampleDataSets implements DataSet
 {
@@ -53,32 +51,34 @@ public enum SampleDataSets implements DataSet
 		dataset = createSample(components);
 	}
 
-	public static DataSetMetadata createStructure(SampleVariables... components)
+	public static DataSetMetadata createStructure(SampleVariables... variables)
 	{
 		Map<String, AtomicInteger> counts = new HashMap<>(); 
 		
-		for (SampleVariables component: components)
-			counts.put(component.getComponent().getName(), new AtomicInteger(1));
+		for (SampleVariables variable: variables)
+			counts.put(variable.getType(), new AtomicInteger(1));
 		
-		return Arrays.stream(components)
-			.map(SampleVariables::getComponent)
-			.map(c -> c.rename(c.getName() + "_" + counts.get(c.getName()).getAndIncrement()))
+		return Arrays.stream(variables)
+			.map(variable -> variable.getComponent(counts.get(variable.getType()).getAndIncrement()))
 			.collect(DataStructureBuilder.toDataStructure());
 	}
 	
-	private static DataSet createSample(SampleVariables components[])
+	private static DataSet createSample(SampleVariables variables[])
 	{
-		DataSetMetadata structure = createStructure(components);
+		DataSetMetadata structure = createStructure(variables);
 		
-		return new LightDataSet(structure, () -> IntStream.range(0, VAR_SAMPLE_LEN)
-				.mapToObj(i -> IntStream.range(0, components.length)
-						.mapToObj(ci -> SampleValues.getValues(components[ci].getType(), components[ci].getIndex()).stream()
-								.map(v -> new SimpleEntry<>(components[ci].getComponent(), v))
-								.collect(toList()))
-						.map(l -> l.get(i))
-						.collect(entriesToMap()))
-				.map(DataPointBuilder::new)
-				.map(builder -> builder.build(structure)));
+		return new LightDataSet(structure, () -> Utils.getStream(VAR_SAMPLE_LEN)
+				.mapToObj(dpIdx -> {
+					Map<String, AtomicInteger> counts = new HashMap<>(); 
+					for (SampleVariables variable: variables)
+						counts.put(variable.getType(), new AtomicInteger(1));
+					
+					return Arrays.stream(variables)
+						.map(toEntry(
+							var -> var.getComponent(counts.get(var.getType()).getAndIncrement()),
+							var -> SampleValues.getValues(var.getType(), var.getIndex()).get(dpIdx) 
+						)).collect(toDataPoint(structure));
+				}));
 	}
 
 	public static DataSet getCustomSample(String domain, int level)

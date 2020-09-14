@@ -20,6 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static java.util.stream.Collector.Characteristics.CONCURRENT;
+import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
@@ -35,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -78,10 +81,10 @@ public class DataPointBuilder
 		return this;
 	}
 
-	public DataPointBuilder merge(DataPointBuilder other)
+	public static DataPointBuilder merge(DataPointBuilder left, DataPointBuilder right)
 	{
-		other.delegate.forEach(delegate::putIfAbsent);
-		return checkState();
+		right.delegate.forEach(left.delegate::putIfAbsent);
+		return left.checkState();
 	}
 
 	public DataPointBuilder addAll(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> values)
@@ -90,7 +93,13 @@ public class DataPointBuilder
 		return checkState();
 	}
 
-	public DataPointBuilder add(Entry<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> value)
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> 
+		Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(DataSetMetadata structure)
+	{
+		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(structure), CONCURRENT, UNORDERED);
+	}
+	
+	public <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> DataPointBuilder add(Entry<? extends K, ? extends V> value)
 	{
 		delegate.putIfAbsent(value.getKey(), value.getValue());
 		return checkState();

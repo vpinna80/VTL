@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
+import java.util.function.UnaryOperator;
 
 /**
  * An interface describing a component of a dataset, as defined by VTL specification.
@@ -50,6 +51,11 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	public int hashCode();
 
 	public DataStructureComponent<R, S, D> rename(String newName);
+
+	public default DataStructureComponent<R, S, D> rename(UnaryOperator<String> nameMapper)
+	{
+		return rename(nameMapper.apply(getName()));
+	}
 
 	public default boolean is(Class<? extends ComponentRole> type)
 	{

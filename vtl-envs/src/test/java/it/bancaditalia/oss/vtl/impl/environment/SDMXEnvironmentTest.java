@@ -60,8 +60,8 @@ public class SDMXEnvironmentTest
 {
 	private static final String PROVIDER = "ECB";
 	private static final String DATAFLOW = "EXR";
-	private static final String QUERY = DATAFLOW + "." + "A.USD..SP00.A";
-	private static final String SDMX_ALIAS = "sdmx:" + PROVIDER + "." + QUERY;
+	private static final String QUERY = DATAFLOW + "/" + "A.USD..SP00.A";
+	private static final String SDMX_ALIAS = PROVIDER + ":" + QUERY;
 	private static final List<PortableTimeSeries<Double>> SAMPLE;
 	private static final DataFlowStructure DSD;
 	

@@ -98,9 +98,14 @@ public final class Utils
 		return t -> new SimpleEntry<>(keyMapper.apply(t), valueMapper.apply(t));
 	}
 
-	public static <T, V> Function<T, Entry<T, V>> toEntryWithValue(Function<? super T, ? extends V> valueMapper)
+	public static <K, V> Function<K, Entry<K, V>> toEntryWithValue(Function<? super K, ? extends V> keyToValueMapper)
 	{
-		return t -> new SimpleEntry<>(t, valueMapper.apply(t));
+		return k -> new SimpleEntry<>(k, keyToValueMapper.apply(k));
+	}
+
+	public static <K, V> Function<V, Entry<K, V>> toEntryWithKey(Function<? super V, ? extends K> valueToKeyMapper)
+	{
+		return v -> new SimpleEntry<>(valueToKeyMapper.apply(v), v);
 	}
 
 	public static <U, V> Collector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
