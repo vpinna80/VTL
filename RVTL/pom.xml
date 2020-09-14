@@ -30,8 +30,8 @@
 		<version>${revision}</version>
 	</parent>
 
-        <name>RVTL</name>
-        <description>R package interface to VTL Engine</description>
+	<name>RVTL</name>
+	<description>R package interface to VTL Engine</description>
 
 	<profiles>
 		<profile>
@@ -114,6 +114,7 @@
 	<properties>
 		<r.prepend.path></r.prepend.path>
 		<maven.test.skip>false</maven.test.skip>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 	</properties>
 
 	<dependencies>
@@ -221,10 +222,10 @@
 							<regexPropertySettings>
 								<regexPropertySetting>
 									<name>r.package.version</name>
-									<regex>(-SNAPSHOT)?$</regex>
-									<replacement></replacement>
+									<regex>SNAPSHOT$</regex>
+									<replacement>${maven.build.timestamp}</replacement>
 									<value>${project.version}</value>
-									<failIfNoMatch>true</failIfNoMatch>
+									<failIfNoMatch>false</failIfNoMatch>
 								</regexPropertySetting>
 								<regexPropertySetting>
 									<name>RJSDMX.version</name>
