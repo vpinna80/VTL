@@ -157,7 +157,7 @@ test_that('SDMX dataset assignment works', {
   attr(result, 'measures') = c('OBS_VALUE')
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                        statements = "tmp := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';                                                                         
+                                        statements = "tmp := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
                                                       result:= tmp;", 
                                         restartSession = T), label = 'Assignment failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Assignment compile failed')
@@ -176,8 +176,8 @@ test_that('SDMX dataset addition works', {
   result$OBS_VALUE = result$OBS_VALUE + result$OBS_VALUE
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                        statements = "tmp1 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';                                                                         
-                                        tmp2 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';
+                                        statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
+                                        tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
                                         result := tmp1 + tmp2;", 
                                         restartSession = T), label = 'Plus failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Plus compile failed')
@@ -195,8 +195,8 @@ test_that('SDMX dataset subtraction works', {
   result$OBS_VALUE = result$OBS_VALUE - result$OBS_VALUE
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                        statements = "tmp1 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';                                                                         
-                                        tmp2 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';
+                                        statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
+                                        tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
                                         result := tmp1 - tmp2;", 
                                         restartSession = T), label = 'Minus failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Minus compile failed')
@@ -214,8 +214,8 @@ test_that('SDMX dataset division works', {
   result$OBS_VALUE = result$OBS_VALUE / result$OBS_VALUE
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                        statements = "tmp1 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';                                                                         
-                                        tmp2 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';
+                                        statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
+                                        tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
                                         result := tmp1 / tmp2;", 
                                     restartSession = T), label = 'Division failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Division compile failed')
@@ -234,8 +234,8 @@ test_that('SDMX dataset multiplication works', {
   result$OBS_VALUE = result$OBS_VALUE * result$OBS_VALUE
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                    statements = "tmp1 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';                                                                         
-                                    tmp2 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';
+                                    statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
+                                    tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
                                     result := tmp1 * tmp2;", 
                                     restartSession = T), label = 'multiplication failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'multiplication compile failed')

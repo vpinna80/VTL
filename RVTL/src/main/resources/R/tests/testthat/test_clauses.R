@@ -79,7 +79,7 @@ test_that('SDMX dataset clauses work', {
   result10 = result[, c('CURRENCY', 'UNIT', 'TIME_PERIOD')]
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                        statements = 'tmp := \'sdmx:ECB.EXR.A.USD+GBP.EUR.SP00.A\';
+                                        statements = 'tmp := \'ECB:EXR/A.USD+GBP.EUR.SP00.A\';
                                                       result1 :=tmp[filter cast(TIME_PERIOD, string, "YYYY") = "2000"];
                                                       result2 := tmp[sub CURRENCY = "USD"];
                                                       result3 := tmp[filter OBS_VALUE = 0.923612549019608];

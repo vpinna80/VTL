@@ -73,7 +73,7 @@ test_that('dataset comparisons work', {
 
 test_that('SDMX dataset comparisons works', {
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                        statements = "tmp1 := 'sdmx:ECB.EXR.A.USD.EUR.SP00.A';   
+                                        statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';   
                                         tmp2 := tmp1;
                                         equal := tmp1 = tmp2;
                                         not_equal := tmp1 <> tmp2;

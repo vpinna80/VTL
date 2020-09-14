@@ -79,7 +79,7 @@ class LocalSDMXEnvironment extends SDMXEnvironment
 		{
 			String dataflow = tokens[0];
 			if (contains(name)) {
-				return getMetadataSDMX(provider, dataflow, tokens);
+				return Optional.ofNullable(getMetadataSDMX(provider, dataflow, tokens));
 			}
 		}
 		else {

@@ -56,6 +56,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.bancaditalia.oss.sdmx.api.BaseObservation;
 import it.bancaditalia.oss.sdmx.api.Codelist;
 import it.bancaditalia.oss.sdmx.api.DataFlowStructure;
@@ -106,12 +109,13 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class SDMXEnvironment implements Environment, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
 	private static final DataStructureComponentImpl<Measure, NumberDomainSubset<NumberDomain>, NumberDomain> OBS_VALUE_MEASURE = new DataStructureComponentImpl<>(PortableDataSet.OBS_LABEL, Measure.class, NUMBERDS);
 	private static final DataStructureComponentImpl<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> TIME_PERIOD_IDENTIFIER = new DataStructureComponentImpl<>(PortableDataSet.TIME_LABEL, Identifier.class, TIMEDS);
 	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?>>> FORMATTERS = new HashMap<>();
-	private static final Pattern SDMX_PATTERN = Pattern.compile("^(.+):(?:(.+)(?:\\((.+)\\))?/(.+)$");
+	private static final Pattern SDMX_PATTERN = Pattern.compile("^(.+):(?:(.+?)(?:\\((.+)\\))?)/(.+)$");
 
 	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = 
 			new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", false, false, "false");
@@ -133,51 +137,51 @@ public class SDMXEnvironment implements Environment, Serializable
 	@Override
 	public boolean contains(String name)
 	{
-		Matcher matcher = SDMX_PATTERN.matcher(name);
-		return matcher.matches() && PROVIDERS.containsKey(matcher.group(1));
+		return getMatcher(name).isPresent();
+	}
+
+	private Optional<Matcher> getMatcher(String name)
+	{
+		return Optional.of(SDMX_PATTERN.matcher(name))
+				.filter(matcher -> matcher.matches() && PROVIDERS.containsKey(matcher.group(1)));
 	}
 
 	@Override
 	public Optional<VTLValue> getValue(String name)
 	{
-		if (contains(name))
-		{
-			Matcher matcher = SDMX_PATTERN.matcher(name);
-			String provider = matcher.group(1);
-			String dataflow = matcher.group(2);
-			String query = dataflow + "/" + matcher.group(4);
-			try
-			{
-				List<PortableTimeSeries<Double>> table = SdmxClientHandler.getTimeSeries(provider, query, null, null);
-				return Optional.of(parseSDMXTable(name, table));
-			}
-			catch (SdmxException | DataStructureException e)
-			{
-				throw new VTLNestedException("Fatal error contacting SDMX provider '" + provider + "'", e);
-			}
-		}
-
-		return Optional.empty();
+		return getMatcher(name)
+			.map(matcher ->	{
+				String provider = matcher.group(1);
+				String dataflow = matcher.group(2);
+				String query = dataflow + "/" + matcher.group(4);
+				try
+				{
+					List<PortableTimeSeries<Double>> table = SdmxClientHandler.getTimeSeries(provider, query, null, null);
+					return parseSDMXTable(name, table);
+				}
+				catch (SdmxException | DataStructureException e)
+				{
+					throw new VTLNestedException("Fatal error contacting SDMX provider '" + provider + "'", e);
+				}
+			});
 	}
 
 	@Override
 	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
-		if (contains(name))
-		{
-			name = name.substring(5);
-			String provider = name.split("\\.")[0];
-			String dataflow = name.split("\\.")[1];
+		return getMatcher(name)
+			.map(matcher ->	{
+				String provider = matcher.group(1);
+				String dataflow = matcher.group(2);
+				String query = matcher.group(4);
 
-			return getMetadataSDMX(provider, dataflow, name.split("\\.", 3)[2].split("\\.", -1));
-		}
-
-		return Optional.empty();
+				return getMetadataSDMX(provider, dataflow, query.split("\\."));
+			});
 	}
 
 	protected DataSet parseSDMXTable(String name, List<PortableTimeSeries<Double>> table) throws DataStructureException
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getValueMetadata("sdmx:" + name)
+		DataSetMetadata metadata = (DataSetMetadata) getValueMetadata(name)
 				.orElseThrow(() -> new NullPointerException("Could not retrieve SDMX metadata for " + name));
 
 		Map<PortableTimeSeries<Double>, Map<String, ScalarValue<?, ?, ?>>> seriesMeta = Utils.getStream(table)
@@ -258,16 +262,21 @@ public class SDMXEnvironment implements Environment, Serializable
 		return new DataStructureComponentImpl<>(meta.getId(), role, domain);
 	}
 
-	protected Optional<VTLValueMetadata> getMetadataSDMX(String provider, String dataflow, String[] tokens)
+	protected VTLValueMetadata getMetadataSDMX(String provider, String dataflow, String[] tokens)
 	{
 		try
 		{
+			LOGGER.trace("Retrieving DSD for {}:{}", provider, dataflow);
 			DataFlowStructure dsd = SdmxClientHandler.getDataFlowStructure(provider, dataflow);
 
 			// Load all the codes of each dimension
 			List<Dimension> dimensions = dsd.getDimensions();
 			for (Dimension d: dimensions)
-				SdmxClientHandler.getCodes(provider, dataflow, d.getId());
+			{
+				String dimId = d.getId();
+				LOGGER.trace("Retrieving codelist for dimension {} of {}:{}", dimId, provider, dataflow);
+				SdmxClientHandler.getCodes(provider, dataflow, dimId);
+			}
 
 			// remove the fixed (not wildcarded) dimensions from the list of identifiers
 			List<SdmxMetaElement> activeAttributes = new ArrayList<>(dsd.getAttributes());
@@ -282,15 +291,13 @@ public class SDMXEnvironment implements Environment, Serializable
 			else
 				activeDims = dimensions;
 
-			DataSetMetadata metadata = Stream
+			return Stream
 					.concat(activeDims.stream().map(d -> elementToComponent(Identifier.class, d)),
 							activeAttributes.stream().map(a -> elementToComponent(Attribute.class, a)))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponent(TIME_PERIOD_IDENTIFIER)
 					.addComponent(OBS_VALUE_MEASURE)
 					.build();
-			
-			return Optional.of(metadata);
 		}
 		catch (SdmxException e)
 		{

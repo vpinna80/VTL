@@ -127,10 +127,18 @@
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>R/DESCRIPTION</exclude>
+					<exclude>scripts/**</exclude>
+				</excludes>
 				<filtering>false</filtering>
 			</resource>
 			<resource>
-				<directory>src/main/filtered</directory>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>R/DESCRIPTION</include>
+					<include>scripts/**</include>
+				</includes>
 				<filtering>true</filtering>
 			</resource>
 		</resources>
