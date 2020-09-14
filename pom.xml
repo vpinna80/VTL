@@ -152,6 +152,22 @@
 												<ignore>true</ignore>
 											</action>
 										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>org.apache.maven.plugins</groupId>
+												<artifactId>maven-dependency-plugin</artifactId>
+												<versionRange>[3.1.2,)</versionRange>
+												<goals>
+													<goal>properties</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<execute>
+													<runOnIncremental>true</runOnIncremental>
+													<runOnConfiguration>true</runOnConfiguration>
+												</execute>
+											</action>
+										</pluginExecution>
 									</pluginExecutions>
 								</lifecycleMappingMetadata>
 							</configuration>
@@ -418,6 +434,16 @@
 				<artifactId>zookeeper</artifactId>
 				<version>3.4.14</version>
 			</dependency>
+			<dependency>
+				<groupId>com.thoughtworks.paranamer</groupId>
+				<artifactId>paranamer</artifactId>
+				<version>2.8</version>
+			</dependency>
+			<dependency>
+				<groupId>org.objenesis</groupId>
+				<artifactId>objenesis</artifactId>
+				<version>2.5.1</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -458,6 +484,7 @@
 					<configuration>
 						<compilerArgs>
 							<compilerArg>-Xlint:deprecation</compilerArg>
+							<compilerArg>-Xlint:unchecked</compilerArg>
 						</compilerArgs>
 					</configuration>
 				</plugin>

@@ -19,12 +19,12 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.session;
 
+import static java.util.Collections.newSetFromMap;
+
 import java.lang.ref.SoftReference;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -41,11 +41,11 @@ public class CachedDataSet extends NamedDataSet
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedDataSet.class);
-	private static final Map<VTLSession, Map<String, SoftReference<Queue<DataPoint>>>> SESSION_CACHES = new ConcurrentHashMap<>();
+	private static final Map<VTLSession, Map<String, SoftReference<Set<DataPoint>>>> SESSION_CACHES = new ConcurrentHashMap<>();
 	private static final Map<VTLSession, Map<String, AtomicBoolean>> SESSION_STATUSES = new ConcurrentHashMap<>();
 
 	private final Map<String, AtomicBoolean> statuses;
-	private transient final Map<String, SoftReference<Queue<DataPoint>>> cache;
+	private transient final Map<String, SoftReference<Set<DataPoint>>> cache;
 
 	public CachedDataSet(VTLSession session, String alias, DataSet delegate)
 	{
@@ -77,7 +77,7 @@ public class CachedDataSet extends NamedDataSet
 					return Stream.empty();
 				}
 	
-			Queue<DataPoint> maybeCached = cache.computeIfAbsent(getAlias(), alias -> new SoftReference<>(null)).get();
+			Set<DataPoint> maybeCached = cache.computeIfAbsent(getAlias(), alias -> new SoftReference<>(null)).get();
 			if (isCompleted.get() && maybeCached != null)
 			{
 				LOGGER.debug("Cache hit for {}.", getAlias());
@@ -85,15 +85,19 @@ public class CachedDataSet extends NamedDataSet
 			}
 			
 			LOGGER.debug("Cache miss for {}.", getAlias());
-			SoftReference<Queue<DataPoint>> newQueue = new SoftReference<>(new ConcurrentLinkedQueue<>());
+			SoftReference<Set<DataPoint>> setRef = new SoftReference<>(newSetFromMap(new ConcurrentHashMap<>()));
 			isCompleted.set(false);
 			return getDelegate().stream()
-					.peek(dp -> Optional.ofNullable(newQueue.get()).ifPresent(queue -> queue.offer(dp)))
+					.peek(dp -> {
+						Set<DataPoint> set = setRef.get();
+						if (set != null)
+							set.add(dp);
+					})
 					.onClose(() -> {
 							synchronized (isCompleted)
 							{
 								LOGGER.debug("Caching of {} finished.", getAlias());
-								cache.put(getAlias(), newQueue);
+								cache.put(getAlias(), setRef);
 								isCompleted.set(true);
 								isCompleted.notifyAll();
 							}
