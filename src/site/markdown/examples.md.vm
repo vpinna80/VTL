@@ -71,11 +71,11 @@ Note that if you access internet through a proxy server, you may need to configu
 
 $CSTART
 /* Retrieve food and beverages monthly component value */
-compOfBasket := 'sdmx:ECB.ICP.M.U2.N.010000.4.ANR'[keep OBS_VALUE]
+compOfBasket := 'ECB:ICP(1.0)/M.U2.N.010000.4.ANR'[keep OBS_VALUE]
 	[calc identifier YEAR := cast(time_agg("A", TIME_PERIOD), time, "")];
 
 /* Retrieve annual component weight */
-compWeight := 'sdmx:ECB.ICP.A.U2.N.010000.4.INW'
+compWeight := 'ECB:ICP(1.0)/A.U2.N.010000.4.INW'
 	[keep OBS_VALUE]
 	[rename OBS_VALUE to WEIGHT, TIME_PERIOD to YEAR];
 
@@ -88,7 +88,7 @@ monthlyWeight := inner_join(compWeight, compOfBasket)
 calculated := compOfBasket * monthlyWeight;
 
 /* Retrieve contribution from the provider */
-expected := 'sdmx:ECB.ICP.M.U2.N.010000.3.CTG'
+expected := 'ECB:ICP(1.0)M.U2.N.010000.3.CTG'
 	[keep OBS_VALUE]
 	[rename OBS_VALUE to expected_value];
 
