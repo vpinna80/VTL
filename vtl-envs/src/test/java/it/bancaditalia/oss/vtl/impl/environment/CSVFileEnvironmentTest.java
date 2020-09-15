@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,6 +48,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -81,9 +83,16 @@ public class CSVFileEnvironmentTest
 	}
 	
 	@AfterAll
-	public static void afterClass() throws IOException
+	public static void afterClass() throws InterruptedException
 	{
-		Files.deleteIfExists(TEMPCSVFILE);
+		try
+		{
+			Files.deleteIfExists(TEMPCSVFILE);
+		}
+		catch (IOException e)
+		{
+			// ignore
+		}
 	}	
 	
 	@BeforeEach
@@ -113,6 +122,9 @@ public class CSVFileEnvironmentTest
 		assertTrue(dataset.getMetadata().contains(MEASURE), "Missing MEASURE Column");
 		assertTrue(dataset.getMetadata().contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
 		
-		assertEquals(7, dataset.stream().count(), "Wrong number of rows");
+		try (Stream<DataPoint> stream = dataset.stream())
+		{
+			assertEquals(7, stream.count(), "Wrong number of rows");
+		}
 	}
 }

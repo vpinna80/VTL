@@ -75,6 +75,7 @@
 				<module>vtl-api</module>
 				<module>vtl-cli</module>
 				<module>vtl-confman</module>
+				<module>vtl-coverage</module>
 				<module>vtl-domains</module>
 				<module>vtl-engine</module>
 				<module>vtl-envs</module>
@@ -208,9 +209,20 @@
 				<version>3.1.0</version>
 				<reportSets>
 					<reportSet>
-						<configuration>
-							<skip>true</skip>
-						</configuration>
+						<reports>
+							<report>ci-management</report>
+							<report>dependencies</report>
+							<report>dependency-convergence</report>
+							<report>dependency-info</report>
+							<report>index</report>
+							<report>issue-management</report>
+							<report>licenses</report>
+							<report>plugin-management</report>
+							<report>plugins</report>
+							<report>scm</report>
+							<report>summary</report>
+							<report>team</report>
+						</reports>
 					</reportSet>
 				</reportSets>
 			</plugin>
@@ -284,6 +296,17 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-envs</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-rest</artifactId>
+				<type>war</type>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-cli</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -373,6 +396,21 @@
 				<version>${spring.boot.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-test</artifactId>
+				<version>${spring.boot.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>junit</groupId>
+						<artifactId>junit</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.junit.vintage</groupId>
+						<artifactId>junit-vintage-engine</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>io.rest-assured</groupId>
@@ -570,6 +608,23 @@
 					<version>3.1.0</version>
 				</plugin>
 				<plugin>
+					<groupId>org.jacoco</groupId>
+					<artifactId>jacoco-maven-plugin</artifactId>
+					<version>0.8.5</version>
+					<executions>
+						<execution>
+							<phase>test-compile</phase>
+							<goals>
+								<goal>prepare-agent</goal>
+							</goals>
+							<configuration>
+								<inclNoLocationClasses>false</inclNoLocationClasses>
+								<includes>it.bancaditalia.oss.vtl.*</includes>
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-gpg-plugin</artifactId>
 					<version>1.6</version>
@@ -662,11 +717,6 @@
 						<autoReleaseAfterClose>true</autoReleaseAfterClose>
 					</configuration>
 				</plugin>
-				<plugin>
-					<groupId>org.jacoco</groupId>
-					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.5</version>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -704,7 +754,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
 				<configuration>
-					<port>18080</port>
+					<port>18881</port>
 					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
 					<asciidoc>
 						<attributes>
