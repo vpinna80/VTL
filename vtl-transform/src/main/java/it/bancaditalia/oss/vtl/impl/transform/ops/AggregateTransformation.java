@@ -69,11 +69,11 @@ public class AggregateTransformation extends UnaryTransformation
 	private final AggregateOperator	aggregation;
 	private final List<String> groupBy;
 	private final Transformation having;
-
-	private transient VTLValueMetadata metadata;
 	private final String name;
 	private final Class<? extends ComponentRole> role;
 
+	private transient VTLValueMetadata metadata;
+	
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, List<String> groupBy, Transformation having)
 	{
 		super(operand);
@@ -185,9 +185,14 @@ public class AggregateTransformation extends UnaryTransformation
 				Set<DataStructureComponent<Identifier, ?, ?>> keys = groupComps.stream().map(c -> c.as(Identifier.class)).collect(toSet());
 				if (aggregation == COUNT && measures.isEmpty())
 					measures.add(COUNT_MEASURE);
+
+				DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
+				DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
+						? new DataStructureComponentImpl<>(name, role, sourceMeasure.getDomain())
+						: new DataStructureComponentImpl<>(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
+						: sourceMeasure;
 				
-				metadata = new DataStructureBuilder().addComponents(keys).addComponents(measures).build();
-				return metadata;
+				return metadata = new DataStructureBuilder().addComponents(keys).addComponents(resultComponent).build();
 			}
 		}
 	}

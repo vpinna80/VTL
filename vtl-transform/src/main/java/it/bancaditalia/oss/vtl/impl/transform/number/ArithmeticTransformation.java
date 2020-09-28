@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.reverseIf;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -55,10 +55,10 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -106,7 +106,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				&& INTEGERDS.isAssignableFrom(scalar.getDomain());
 		
 		// must remember which is the left operand because some operators are not commutative
-		BiFunction<? super DataPoint, ? super String, ScalarValue<?, ?, ?>> finalOperator = (dp, name) -> 
+		BiFunction<? super DataPoint, ? super String, ScalarValue<?, ?, ?>> finisher = (dp, name) -> 
 			reverseIf(!datasetIsLeftOp, bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsDouble)
 				.apply(dp.get(dataset.getComponent(name)
 						.map(c -> c.as(NUMBERDS))
@@ -114,9 +114,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 						), scalar);
 		
 		return dataset.mapKeepingKeys(metadata, dp -> Utils.getStream(measureNames)
-				.collect(Collectors.toConcurrentMap(name -> metadata.getComponent(name)
+				.collect(toConcurrentMap(name -> metadata.getComponent(name)
 						.map(c -> c.as(Measure.class))
-						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata)), name -> finalOperator.apply(dp, name))));
+						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata)), name -> finisher.apply(dp, name))));
 	}
 
 	@Override

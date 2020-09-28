@@ -34,7 +34,7 @@ import java.util.Map.Entry;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 
 public class CSVMetadataRepository extends InMemoryMetadataRepository
 {
@@ -55,7 +55,7 @@ public class CSVMetadataRepository extends InMemoryMetadataRepository
 			reader.lines()
 				.map(l -> new SimpleEntry<>(l.split(",", 2)[0], l.split(",", 2)[1]))
 				.collect(groupingByConcurrent(Entry::getKey, mapping(Entry::getValue, toSet())))
-				.forEach(defineDomainOf(StringCodeListDomain.class));
+				.forEach(defineDomainOf(StringEnumeratedDomainSubset.class));
 		}
 	}
 }

@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.engine.ops;
+package it.bancaditalia.oss.vtl.impl.engine.string;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,14 +27,15 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
 import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.string.ConcatTransformation;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ConcatTransformationTest
 {
@@ -47,7 +48,7 @@ public class ConcatTransformationTest
 		Map<String, DataSet> map = new HashMap<>();
 		map.put("left", SampleDataSets.getCustomSample("STRING", 3));
 		map.put("right", SampleDataSets.getCustomSample("STRING", 4));
-		MockSession session = new MockSession(map);
+		TransformationScheme session = TestUtils.mockSession(map);
 
 		ConcatTransformation coTransformation = new ConcatTransformation(left, right);
 		
@@ -55,7 +56,6 @@ public class ConcatTransformationTest
 		assertTrue(metadata.contains("STRING_2"));
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
-		
 		DataStructureComponent<?, ?, ?> id = metadata.getComponent("STRING_1").get();		
 		DataStructureComponent<?, ?, ?> res = metadata.getComponent("STRING_2").get();		
 		

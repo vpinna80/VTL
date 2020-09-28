@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright 2020, Bank Of Italy
+   
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+   
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+   
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+   
+    See the License for the specific language governing
+    permissions and limitations under the License.
+ -->
+
+<Configuration status="info" strict="true" name="it.bancaditalia.oss.vtl"  
+	xmlns="http://logging.apache.org/log4j/2.0/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://logging.apache.org/log4j/2.0/config log4j2.xsd">
+               
+	<Appenders>
+		<Appender name="STDERR1" type="Console">
+			<Layout type="PatternLayout" pattern="%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n" />
+			<Filters>
+ 				<Filter type="ThresholdFilter" level="TRACE"/>
+    			<Filter type="ThresholdFilter" level="INFO" onMatch="DENY" onMismatch="NEUTRAL"/>
+   			</Filters>
+		</Appender>
+		<Appender name="STDERR2" type="Console" target="SYSTEM_ERR">
+			<Layout type="PatternLayout">
+				<Pattern>%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%t] - %m%n</Pattern>
+			</Layout>
+			<Filters>
+ 				<Filter type="ThresholdFilter" level="INFO"/>
+   			</Filters>
+		</Appender>
+	</Appenders>
+
+	<Loggers>
+		<Logger name="it.bancaditalia.oss.vtl" level="debug" additivity="false">
+			<AppenderRef ref="STDERR1" />
+			<AppenderRef ref="STDERR2" />
+		</Logger>
+
+		<Root level="warn">
+			<AppenderRef ref="STDERR1" />
+			<AppenderRef ref="STDERR2" />
+		</Root>
+	</Loggers>
+</Configuration>

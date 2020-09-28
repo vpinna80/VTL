@@ -22,28 +22,28 @@ package it.bancaditalia.oss.vtl.model.domain;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
-import it.bancaditalia.oss.vtl.model.data.CodeListDomain;
+import it.bancaditalia.oss.vtl.model.data.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
-public interface StringCodeListDomain extends CodeListDomain<StringDomainSubset, StringDomain>, StringDomainSubset
+public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<StringDomainSubset, StringDomain>, StringDomainSubset
 {
-	public interface StringCodeItem extends CodeItem<String, StringCodeListDomain, StringDomain>
+	public interface StringCodeItem extends CodeItem<String, StringEnumeratedDomainSubset, StringDomain>
 	{
 
 	}
 	
-	@Override ScalarValue<?, ? extends StringCodeListDomain, StringDomain> cast(ScalarValue<?, ?, ?> value);
+	@Override ScalarValue<?, ? extends StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?> value);
 	
 	@Override
 	public Set<StringCodeItem> getCodeItems();
 	
-	public StringCodeListDomain trim();
+	public StringEnumeratedDomainSubset trim();
 
-	public StringCodeListDomain ltrim();
+	public StringEnumeratedDomainSubset ltrim();
 
-	public StringCodeListDomain rtrim();
+	public StringEnumeratedDomainSubset rtrim();
 
-	public StringCodeListDomain ucase();
+	public StringEnumeratedDomainSubset ucase();
 	
-	public StringCodeListDomain lcase();
+	public StringEnumeratedDomainSubset lcase();
 }

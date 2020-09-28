@@ -33,15 +33,15 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -165,52 +165,33 @@ public abstract class AbstractDataSet implements DataSet
 			Collector<DataPoint, A, TT> groupCollector,
 			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)
 	{
-		class DecoratedCollector implements Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>, A, T> {
-			private Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues = null;
-
-			@Override
-			public Supplier<A> supplier()
-			{
-				return groupCollector.supplier();
-			}
-
-			@Override
-			public BiConsumer<A, Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>> accumulator()
-			{
-				return (a, e) -> {
-					keyValues = e.getValue();
+		// key group holder
+		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
+		Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>, A, T> decoratedCollector = Collector.of(
+				// supplier
+				groupCollector.supplier(),
+				// accumulator
+				(a, e) -> {
+					keyValues.putIfAbsent(a, e.getValue());
 					groupCollector.accumulator().accept(a, e.getKey());
-				};
-			}
-
-			@Override
-			public BinaryOperator<A> combiner()
-			{
-				return groupCollector.combiner();
-			}
-			
-			@Override
-			public Function<A, T> finisher()
-			{
-				return groupCollector.finisher().andThen(tt -> {
-					Objects.requireNonNull(keyValues, "streamByKeys: There must be at least one datapoint in a group but there is none.");
-					return finisher.apply(tt, keyValues);
-				});
-			}
-			
-			@Override
-			public Set<Characteristics> characteristics()
-			{
-				return groupCollector.characteristics();
-			} 
-		}
+				}, // combiner
+				(a, b) -> {
+					A combined = groupCollector.combiner().apply(a, b);
+					keyValues.putIfAbsent(combined, keyValues.get(a));
+					keyValues.putIfAbsent(combined, keyValues.get(b));
+					return combined;
+				},
+				// finisher
+				a -> groupCollector.finisher().andThen(tt -> finisher.apply(tt, keyValues.get(a))).apply(a),
+				// characteristics
+				groupCollector.characteristics().toArray(new Characteristics[0]));
 		
 		try (Stream<DataPoint> stream = stream())
 		{
 			return Utils.getStream(stream
 					.filter(dp -> dp.matches(filter))
 					.map(toEntryWithValue(dp -> dp.getValues(keys, Identifier.class)))
-					.collect(groupingByConcurrent(e -> e.getValue(), new DecoratedCollector()))
+					.collect(groupingByConcurrent(e -> e.getValue(), decoratedCollector))
 					.values()
 				);
 		}

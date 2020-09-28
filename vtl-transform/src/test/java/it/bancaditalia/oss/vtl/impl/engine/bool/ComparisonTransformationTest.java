@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.engine.ops;
+package it.bancaditalia.oss.vtl.impl.engine.bool;
 
 import static java.lang.Double.isNaN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,15 +34,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
 import it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.bool.ComparisonTransformation;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ComparisonTransformationTest
 {
@@ -87,7 +88,7 @@ public class ComparisonTransformationTest
 		Map<String, DataSet> map = new HashMap<>();
 		map.put("left", SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 2 : 1));
 		map.put("right", SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 3 : 2));
-		MockSession session = new MockSession(map);
+		TransformationScheme session = TestUtils.mockSession(map);
 
 		ComparisonTransformation coTransformation = new ComparisonTransformation(operator, left, right);
 		

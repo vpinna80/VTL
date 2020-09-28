@@ -27,7 +27,6 @@ import static java.util.stream.Collectors.toSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +44,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -142,7 +142,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 	public AggrClauseTransformation(List<AggrClauseItem> operands, List<String> groupBy, Transformation having)
 	{
-		this.aggrItems = operands.stream().map(clause -> clause.withGroupBy(groupBy)).collect(Collectors.toList());
+		this.aggrItems = operands.stream().map(clause -> clause.withGroupBy(groupBy)).collect(toList());
 		this.groupBy = groupBy == null || groupBy.isEmpty() ? null : groupBy;
 		this.having = having;
 	}
@@ -211,7 +211,16 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 			for (AggrClauseItem clause : aggrItems)
 			{
-				VTLValueMetadata clauseMeta = clause.getOperand().getMetadata(new DatapointScope(null, operand, session));
+				VTLValueMetadata clauseMeta = clause.getOperand().getMetadata(session);
+				
+				if (clauseMeta instanceof DataSetMetadata)
+				{
+					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) clauseMeta).getComponents(Measure.class);
+					if (measures.size() != 1)
+						throw new VTLSingletonComponentRequiredException(Measure.class, measures);
+					clauseMeta = (ScalarValueMetadata<?>) measures.iterator().next()::getDomain;
+				}
+
 				if (!(clauseMeta instanceof ScalarValueMetadata) || !Domains.NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?>) clauseMeta).getDomain()))
 					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, ((ScalarValueMetadata<?>) clauseMeta).getDomain());
 

@@ -34,11 +34,11 @@ import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
-public class StringCodeListDomainImpl implements StringCodeListDomain, Serializable
+public class StringCodeList implements StringEnumeratedDomainSubset, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -46,13 +46,13 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	private final Set<StringCodeItem> items = new HashSet<>();
 	private final int hashCode;
 
-	public class StringCodeItemImpl extends BaseScalarValue<String, StringCodeListDomain, StringDomain> implements StringCodeItem
+	public class StringCodeItemImpl extends BaseScalarValue<String, StringEnumeratedDomainSubset, StringDomain> implements StringCodeItem
 	{
 		private static final long serialVersionUID = 1L;
 
 		public StringCodeItemImpl(String value)
 		{
-			super(value, StringCodeListDomainImpl.this);
+			super(value, StringCodeList.this);
 		}
 
 		@Override
@@ -62,7 +62,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 		}
 
 		@Override
-		public ScalarValueMetadata<StringCodeListDomain> getMetadata()
+		public ScalarValueMetadata<StringEnumeratedDomainSubset> getMetadata()
 		{
 			return this::getDomain; 
 		}
@@ -74,7 +74,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 		}
 	}
 	
-	public StringCodeListDomainImpl(String name, Set<? extends String> items)
+	public StringCodeList(String name, Set<? extends String> items)
 	{
 		this.name = name;
 		this.hashCode = 31 + name.hashCode();
@@ -131,7 +131,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof StringCodeListDomain && getVarName().equals(other.getVarName());
+		return other instanceof StringEnumeratedDomainSubset && getVarName().equals(other.getVarName());
 	}
 
 	@Override
@@ -173,7 +173,7 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		StringCodeListDomainImpl other = (StringCodeListDomainImpl) obj;
+		StringCodeList other = (StringCodeList) obj;
 		if (name == null)
 		{
 			if (other.name != null)
@@ -188,37 +188,37 @@ public class StringCodeListDomainImpl implements StringCodeListDomain, Serializa
 	}
 
 	@Override
-	public StringCodeListDomain trim()
+	public StringEnumeratedDomainSubset trim()
 	{
 		return stringCodeListHelper("TRIM("+name+")", String::trim);
 	}
 
 	@Override
-	public StringCodeListDomain ltrim()
+	public StringEnumeratedDomainSubset ltrim()
 	{
 		return stringCodeListHelper("LTRIM("+name+")", s -> s.replaceAll("^\\s+",""));
 	}
 
 	@Override
-	public StringCodeListDomain rtrim()
+	public StringEnumeratedDomainSubset rtrim()
 	{
 		return stringCodeListHelper("RTRIM("+name+")", s -> s.replaceAll("\\s+$",""));
 	}
 
 	@Override
-	public StringCodeListDomain ucase()
+	public StringEnumeratedDomainSubset ucase()
 	{
 		return stringCodeListHelper("UCASE("+name+")", String::toUpperCase);
 	}
 
 	@Override
-	public StringCodeListDomain lcase()
+	public StringEnumeratedDomainSubset lcase()
 	{
 		return stringCodeListHelper("LCASE("+name+")", String::toLowerCase);
 	}
 
-	private StringCodeListDomain stringCodeListHelper(String newName, UnaryOperator<String> mapper)
+	private StringEnumeratedDomainSubset stringCodeListHelper(String newName, UnaryOperator<String> mapper)
 	{
-		return new StringCodeListDomainImpl(newName, items.stream().map(StringCodeItem::get).map(mapper).collect(toSet()));
+		return new StringCodeList(newName, items.stream().map(StringCodeItem::get).map(mapper).collect(toSet()));
 	}
 }

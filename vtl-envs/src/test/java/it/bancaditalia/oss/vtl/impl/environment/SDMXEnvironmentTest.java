@@ -51,7 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -148,11 +148,11 @@ public class SDMXEnvironmentTest
 		HashMap<Object, Object> domains = new HashMap<>();
 		MetadataRepository mockRepo = mock(MetadataRepository.class);
 		when(mockConfman.getMetadataRepository()).thenReturn(mockRepo);
-		when(mockRepo.defineDomain(anyString(), any(StringCodeListDomain.class.getClass()), any(Set.class)))
+		when(mockRepo.defineDomain(anyString(), any(StringEnumeratedDomainSubset.class.getClass()), any(Set.class)))
 			.then(answer((String id, Class<? extends ValueDomain> cls, Set<String> set) -> {
 				if (domains.containsKey(id))
 					return domains.get(id);
-				StringCodeListDomain domainMock = mock(StringCodeListDomain.class, id + ":string");
+				StringEnumeratedDomainSubset domainMock = mock(StringEnumeratedDomainSubset.class, id + ":string");
 				domains.put(id, domainMock);
 				when(domainMock.getName()).thenReturn(id);
 				when(domainMock.cast(any())).then(answer(v -> v));

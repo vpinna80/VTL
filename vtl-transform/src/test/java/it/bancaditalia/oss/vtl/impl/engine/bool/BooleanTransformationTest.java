@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.engine.ops;
+package it.bancaditalia.oss.vtl.impl.engine.bool;
 
 import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE3;
 import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE4;
@@ -37,17 +37,18 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.MockSession;
+import it.bancaditalia.oss.vtl.impl.engine.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class BooleanTransformationTest
 {
-	private MockSession session;
+	private TransformationScheme session;
 	private VarIDOperand left, right;
 	
 	public static Stream<Arguments> test()
@@ -70,7 +71,7 @@ public class BooleanTransformationTest
 		Map<String, DataSet> map = new HashMap<>();
 		map.put("left", SAMPLE3);
 		map.put("right", SAMPLE4);
-		session = new MockSession(map);
+		session = TestUtils.mockSession(map);
 	}
 	
 	@ParameterizedTest(name = "{0}")

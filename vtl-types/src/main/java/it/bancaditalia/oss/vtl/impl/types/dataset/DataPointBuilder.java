@@ -137,7 +137,7 @@ public class DataPointBuilder
 		if (built)
 			throw new IllegalStateException("DataPoint already built");
 		built  = true;
-		return new DataPointImpl(structure, delegate);
+		return new DataPointImpl(Objects.requireNonNull(structure, "DataSet structure is null for " + delegate), delegate);
 	}
 	
 	@Override

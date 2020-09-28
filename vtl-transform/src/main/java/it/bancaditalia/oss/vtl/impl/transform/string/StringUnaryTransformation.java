@@ -43,7 +43,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -55,17 +55,17 @@ public class StringUnaryTransformation extends UnaryTransformation
 
 	public enum StringOperator implements Function<ScalarValue<?, ? extends StringDomainSubset,StringDomain>, StringValue>
 	{
-		TRIM("TRIM", String::trim, StringCodeListDomain::trim),
-		LTRIM("LTRIM", s -> s.replaceAll("^\\s+",""), StringCodeListDomain::ltrim),
-		RTRIM("RTRIM", s -> s.replaceAll("\\s+$",""), StringCodeListDomain::rtrim),
-		UCASE("UCASE", String::toUpperCase, StringCodeListDomain::ucase),
-		LCASE("LCASE", String::toLowerCase, StringCodeListDomain::lcase);
+		TRIM("TRIM", String::trim, StringEnumeratedDomainSubset::trim),
+		LTRIM("LTRIM", s -> s.replaceAll("^\\s+",""), StringEnumeratedDomainSubset::ltrim),
+		RTRIM("RTRIM", s -> s.replaceAll("\\s+$",""), StringEnumeratedDomainSubset::rtrim),
+		UCASE("UCASE", String::toUpperCase, StringEnumeratedDomainSubset::ucase),
+		LCASE("LCASE", String::toLowerCase, StringEnumeratedDomainSubset::lcase);
 
 		private final String name;
-		private final UnaryOperator<StringCodeListDomain> codeListMapper;
+		private final UnaryOperator<StringEnumeratedDomainSubset> codeListMapper;
 		private final Function<ScalarValue<?, ? extends StringDomainSubset,StringDomain>, StringValue> function;
 
-		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<StringCodeListDomain> codeListMapper)
+		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<StringEnumeratedDomainSubset> codeListMapper)
 		{
 			this.name = name;
 			this.codeListMapper = codeListMapper;
@@ -78,7 +78,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 			return name;
 		}
 		
-		public UnaryOperator<StringCodeListDomain> getCodeListMapper()
+		public UnaryOperator<StringEnumeratedDomainSubset> getCodeListMapper()
 		{
 			return codeListMapper;
 		}
@@ -141,8 +141,8 @@ public class StringUnaryTransformation extends UnaryTransformation
 				throw new UnsupportedOperationException("Expected only string measures but found: " + nonstring);
 			
 			Set<DataStructureComponent<? extends Measure, ? extends StringDomainSubset, ? extends StringDomain>> measures = dataset.getComponents(Measure.class, STRINGDS).stream()
-					.map(m -> m.getDomain() instanceof StringCodeListDomain
-							? new DataStructureComponentImpl<>(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringCodeListDomain) m.getDomain()))
+					.map(m -> m.getDomain() instanceof StringEnumeratedDomainSubset
+							? new DataStructureComponentImpl<>(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringEnumeratedDomainSubset) m.getDomain()))
 							: m
 					).collect(toSet());
 			

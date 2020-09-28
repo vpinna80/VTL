@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.domain.StringCodeListDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 
 public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, VTLValueMetadata, Serializable
@@ -114,7 +114,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 
 	public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName);
 
-	public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringCodeListDomain, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
+	public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
 
 	public boolean containsComponent(String componentName);
 }
