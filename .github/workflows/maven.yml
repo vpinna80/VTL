@@ -88,4 +88,9 @@ jobs:
       shell: Rscript {0}
     
     - name: Build with Maven
-      run: mvn -P with-r --file pom.xml "-Dgpg.skip=true" clean install
+      run: mvn -P with-r --file pom.xml "-Dgpg.skip=true" clean verify
+
+    - name: Run codacy-coverage-reporter
+      uses: codacy/codacy-coverage-reporter-action@master
+      with:
+        project-token: f795441a8a9a4071ae00ab0485c413f0
