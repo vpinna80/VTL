@@ -25,9 +25,13 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.util.ThreadUtils;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -35,7 +39,9 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public abstract class BinaryTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
+	
 	protected final Transformation leftOperand, rightOperand;
+	private transient VTLValueMetadata metadata = null;
 
 	public BinaryTransformation(Transformation left, Transformation right)
 	{
@@ -50,11 +56,37 @@ public abstract class BinaryTransformation extends TransformationImpl
 	}
 	
 	@Override
-	public final VTLValue eval(TransformationScheme session)
+	public final VTLValue eval(TransformationScheme scheme)
 	{
-		VTLValue left = leftOperand.eval(session);
-		VTLValue right = rightOperand.eval(session);
-		
+		return ThreadUtils.evalFuture(false, scheme, this, this::evalFinisher, Transformation::eval, leftOperand, rightOperand);
+	}
+	
+	@Override
+	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
+	{
+		return metadata == null ? metadata = ThreadUtils.evalFuture(false, scheme, this, this::getMetadataFinisher, Transformation::getMetadata, leftOperand, rightOperand) : metadata;
+	}
+	
+	protected abstract VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right);
+
+	protected abstract VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar);
+
+	protected abstract VTLValue evalTwoDatasets(DataSet left, DataSet right);
+
+	protected abstract VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right);
+
+	protected abstract VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar);
+
+	protected abstract VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right);
+
+	@Override
+	public Set<LeafTransformation> getTerminals()
+	{
+		return Stream.concat(leftOperand.getTerminals().stream(), rightOperand.getTerminals().stream()).collect(toSet()); 
+	}
+
+	private VTLValue evalFinisher(VTLValue left, VTLValue right) 
+	{
 		if (left instanceof DataSet && right instanceof DataSet)
 			return evalTwoDatasets((DataSet) left, (DataSet) right);
 		else if (left instanceof DataSet && right instanceof ScalarValue)
@@ -68,16 +100,25 @@ public abstract class BinaryTransformation extends TransformationImpl
 		else
 			throw new VTLInvalidParameterException(left, DataSet.class, ScalarValue.class);
 	}
-	
-	protected abstract VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right);
 
-	protected abstract VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar);
-
-	protected abstract VTLValue evalTwoDatasets(DataSet left, DataSet right);
-
-	@Override
-	public Set<LeafTransformation> getTerminals()
+	private VTLValueMetadata getMetadataFinisher(VTLValueMetadata left, VTLValueMetadata right) 
 	{
-		return Stream.concat(leftOperand.getTerminals().stream(), rightOperand.getTerminals().stream()).collect(toSet()); 
+		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
+			return getMetadataTwoDatasets((DataSetMetadata) left, (DataSetMetadata) right);
+		else if (left instanceof DataSetMetadata && right instanceof ScalarValueMetadata)
+			return getMetadataDatasetWithScalar(true, (DataSetMetadata) left, (ScalarValueMetadata<?>) right);
+		else if (left instanceof ScalarValueMetadata && right instanceof DataSetMetadata)
+			return getMetadataDatasetWithScalar(false, (DataSetMetadata) right, (ScalarValueMetadata<?>) left);
+		else if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
+			return getMetadataTwoScalars((ScalarValueMetadata<?>) left, (ScalarValueMetadata<?>) right);
+		else if (left instanceof DataSetMetadata || left instanceof ScalarValueMetadata)
+			throw new VTLInvalidParameterException(right, DataSetMetadata.class, ScalarValueMetadata.class);
+		else
+			throw new VTLInvalidParameterException(left, DataSetMetadata.class, ScalarValueMetadata.class);
+	}
+
+	public VTLValueMetadata getMetadata()
+	{
+		return metadata;
 	}
 }

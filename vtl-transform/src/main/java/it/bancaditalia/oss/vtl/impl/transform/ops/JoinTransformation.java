@@ -1,22 +1,3 @@
-/*******************************************************************************
- * Copyright 2020, Bank Of Italy
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.INNER_JOIN;
@@ -41,7 +22,6 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -73,9 +52,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -166,15 +145,15 @@ public class JoinTransformation extends TransformationImpl
 				.collect(toSet());
 	}
 
+
 	@Override
 	@SuppressWarnings("java:S3864")
 	public DataSet eval(TransformationScheme session)
 	{
 		LOGGER.debug("Preparing renamed datasets for join");
 		
-		Map<JoinOperand, DataSet> values = new HashMap<>();
-		for (JoinOperand operand: operands)
-			values.put(operand, (DataSet) operand.getOperand().eval(session));
+		Map<JoinOperand, DataSet> values = Utils.getStream(operands)
+			.collect(toMapWithValues(operand -> (DataSet) operand.getOperand().eval(session)));
 		
 		DataSet result;
 		
@@ -312,7 +291,7 @@ public class JoinTransformation extends TransformationImpl
 		if (apply == null)
 			return dataset;
 		
-		Set<DataStructureComponent<Measure, ?, ?>> applyComponents = metadata.getComponents(Measure.class).stream()
+		Set<DataStructureComponent<Measure, ?, ?>> applyComponents = dataset.getComponents(Measure.class).stream()
 				.map(c -> c.getName( ).replaceAll("^.*#", ""))
 				.distinct()
 				.map(name -> {
@@ -320,11 +299,9 @@ public class JoinTransformation extends TransformationImpl
 					return new DataStructureComponentImpl<>(name, Measure.class, domain);
 				}).collect(toSet());
 		
-		DataSetMetadata applyMetadata = metadata.stream()
+		DataSetMetadata applyMetadata = dataset.getMetadata().stream()
 				.filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
-				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-				.addComponents(applyComponents)
-				.build();
+				.collect(DataStructureBuilder.toDataStructure(applyComponents));
 		
 		return dataset.mapKeepingKeys(applyMetadata, dp -> applyComponents.stream()
 				.collect(toConcurrentMap(c -> c, c -> (ScalarValue<?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
@@ -375,15 +352,16 @@ public class JoinTransformation extends TransformationImpl
 			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result, session));
 		if (apply != null)
 		{
-			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = metadata.getComponents(Measure.class).stream()
+			DataSetMetadata applyResult = result; 
+			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = applyResult.getComponents(Measure.class).stream()
 					.map(c -> c.getName( ).replaceAll("^.*#", ""))
 					.distinct()
 					.map(name -> {
-						ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, metadata))).getDomain();
+						ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, applyResult))).getDomain();
 						return new DataStructureComponentImpl<>(name, Measure.class, domain);
 					}).collect(toSet());
 			
-			result = metadata.stream()
+			result = applyResult.stream()
 					.filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponents(applyComponents)
@@ -417,10 +395,10 @@ public class JoinTransformation extends TransformationImpl
 		// Case A: One dataset must contain the identifiers of all the others
 		Set<DataStructureComponent<Identifier, ?, ?>> allIDs = datasetsMeta.values().stream()
 				.flatMap(ds -> ds.getComponents(Identifier.class).stream())
-				.collect(Collectors.toSet());
+				.collect(toSet());
 		
 		Optional<JoinOperand> max = datasetsMeta.entrySet().stream()
-				.filter(Utils.byValue(ds -> ds.containsAll(allIDs)))
+				.filter(byValue(ds -> ds.containsAll(allIDs)))
 				.map(Entry::getKey)
 				.findFirst();
 		

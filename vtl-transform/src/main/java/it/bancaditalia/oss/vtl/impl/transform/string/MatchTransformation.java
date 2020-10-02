@@ -39,9 +39,9 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequir
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -50,7 +50,6 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class MatchTransformation extends BinaryTransformation
 {
@@ -94,39 +93,43 @@ public class MatchTransformation extends BinaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> pattern, ScalarValueMetadata<?> scalar)
 	{
-		VTLValueMetadata operand = leftOperand.getMetadata(session), pattern = rightOperand.getMetadata(session);
-		
 		if (!(pattern instanceof ScalarValueMetadata))
+			throw new VTLInvalidParameterException(pattern, ScalarValueMetadata.class);
+		else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) pattern).getDomain()))
+			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRING, ((ScalarValueMetadata<?>) pattern).getDomain());
+		else if (!(STRING.isAssignableFrom(scalar.getDomain())))
+			throw new VTLIncompatibleTypesException("match_characters", STRING, scalar.getDomain());
+		else
+			return BOOLEAN;
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> pattern)
+	{
+		if (!datasetIsLeftOp)
 			throw new VTLInvalidParameterException(pattern, ScalarValueMetadata.class);
 		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) pattern).getDomain()))
 			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRING, ((ScalarValueMetadata<?>) pattern).getDomain());
+
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+		if (measures.size() != 1)
+			throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
 		
-		if (operand instanceof ScalarValueMetadata)
-		{
-			ScalarValueMetadata<?> scalar = (ScalarValueMetadata<?>) operand; 
-			if (!(STRING.isAssignableFrom(scalar.getDomain())))
-				throw new VTLIncompatibleTypesException("match_characters", STRING, scalar.getDomain());
-			else
-				return BOOLEAN;
-		}
-		else 
-		{
-			DataSetMetadata metadata = (DataSetMetadata) operand;
-			
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
-			if (measures.size() != 1)
-				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
-			
-			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-			if (!STRING.isAssignableFrom(measure.getDomain()))
-				throw new VTLExpectedComponentException(Measure.class, STRING, measures);
-			
-			return new DataStructureBuilder(metadata.getComponents(Identifier.class))
-					.addComponent(BOOL_MEASURE)
-					.build();
-		}
+		DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
+		if (!STRING.isAssignableFrom(measure.getDomain()))
+			throw new VTLExpectedComponentException(Measure.class, STRING, measures);
+		
+		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+				.addComponent(BOOL_MEASURE)
+				.build();
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	{
+		throw new VTLInvalidParameterException(left, ScalarValueMetadata.class);
 	}
 
 	@Override

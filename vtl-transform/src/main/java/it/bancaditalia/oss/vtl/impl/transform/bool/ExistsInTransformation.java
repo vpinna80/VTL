@@ -42,15 +42,15 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ExistsInTransformation extends BinaryTransformation
 {
@@ -62,7 +62,6 @@ public class ExistsInTransformation extends BinaryTransformation
 	}
 	
 	private final ExistsInMode mode;
-	private DataSetMetadata metadata;
 
 	public ExistsInTransformation(ExistsInMode mode, Transformation left, Transformation right)
 	{
@@ -86,6 +85,7 @@ public class ExistsInTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
 	{
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getComponents(Measure.class).iterator().next(),
 				rightMeasure = right.getComponents(Measure.class).iterator().next();
 		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> boolMeasure = metadata.getComponent("bool_var", Measure.class, BOOLEANDS); 
@@ -114,15 +114,20 @@ public class ExistsInTransformation extends BinaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
 	{
-		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
-		
-		if (!(left instanceof DataSetMetadata))
-			throw new VTLInvalidParameterException(left, DataSetMetadata.class);
-		if (!(right instanceof DataSetMetadata))
-			throw new VTLInvalidParameterException(right, DataSetMetadata.class);
-		
+		throw new VTLInvalidParameterException(left, DataSetMetadata.class);	
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar)
+	{
+		throw new VTLInvalidParameterException(scalar, DataSetMetadata.class);
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	{
 		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = ((DataSetMetadata) left).getComponents(Measure.class),
 				rightMeasures = ((DataSetMetadata) right).getComponents(Measure.class);
 		
@@ -143,7 +148,7 @@ public class ExistsInTransformation extends BinaryTransformation
 		if (mode != ALL)
 			builder.removeComponent(leftMeasure);
 		
-		return metadata = builder.build();
+		return builder.build();
 	}
 
 	@Override

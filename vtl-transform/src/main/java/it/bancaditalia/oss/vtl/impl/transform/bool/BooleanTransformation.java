@@ -35,19 +35,19 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class BooleanTransformation extends BinaryTransformation
 {
@@ -80,7 +80,6 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	private final BooleanBiOperator operator;
-	private DataSetMetadata    metadata = null;
 
 	public BooleanTransformation(BooleanBiOperator operator, Transformation left, Transformation right)
 	{
@@ -98,7 +97,9 @@ public class BooleanTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
 	{
-		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
+		
+		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, operator.apply((BooleanValue) dp.get(datasetMeasure), (BooleanValue) scalar)));
@@ -108,10 +109,11 @@ public class BooleanTransformation extends BinaryTransformation
 	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
 	{
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
@@ -128,54 +130,57 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
 	{
-		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
-
-		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
-		{
-			DataSetMetadata leftData = (DataSetMetadata) left, rightData = (DataSetMetadata) right;
-
-			if (!leftData.getComponents(Identifier.class).containsAll(rightData.getComponents(Identifier.class))
-					&& !rightData.getComponents(Identifier.class).containsAll(leftData.getComponents(Identifier.class)))
-				throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
-
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = leftData.getComponents(Measure.class);
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = rightData.getComponents(Measure.class);
-
-			if (leftMeasures.size() != 1)
-				throw new UnsupportedOperationException("Expected single boolean measure but found: " + leftMeasures);
-			if (rightMeasures.size() != 1)
-				throw new UnsupportedOperationException("Expected single boolean measure but found: " + rightMeasures);
-
-			DataStructureComponent<? extends Measure, ?, ?> leftMeasure = leftMeasures.iterator().next();
-			DataStructureComponent<? extends Measure, ?, ?> rightMeasure = rightMeasures.iterator().next();
-
-			if (!BOOLEANDS.isAssignableFrom(leftMeasure.getDomain()))
-				throw new UnsupportedOperationException("Expected boolean measure but found: " + leftMeasure);
-			if (!BOOLEANDS.isAssignableFrom(rightMeasure.getDomain()))
-				throw new UnsupportedOperationException("Expected boolean measure but found: " + rightMeasure);
-
-			String measureName = leftMeasure.getName().equals(rightMeasure.getName()) ? leftMeasure.getName() : "bool_var";
-			
-			return metadata = new DataStructureBuilder()
-					.addComponents(leftData.getComponents(Identifier.class))
-					.addComponents(rightData.getComponents(Identifier.class))
-					.addComponent(new DataStructureComponentImpl<>(measureName, Measure.class, BOOLEANDS))
-					.build();
-		}
-		else if (left instanceof ScalarValueMetadata && ((ScalarValueMetadata<?>) left).getDomain() instanceof BooleanDomainSubset && right instanceof ScalarValueMetadata
-				&& ((ScalarValueMetadata<?>) right).getDomain() instanceof BooleanDomainSubset)
-			return BOOLEAN;
+		if (!BOOLEANDS.isAssignableFrom(left.getDomain()))
+			throw new VTLIncompatibleTypesException(operator.toString(), left.getDomain(), BOOLEANDS);
+		else if (!BOOLEANDS.isAssignableFrom(right.getDomain()))
+			throw new VTLIncompatibleTypesException(operator.toString(), right.getDomain(), BOOLEANDS);
 		else
-		{
-			metadata = (DataSetMetadata) (left instanceof DataSetMetadata ? left : right);
+			return BOOLEAN;
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean b, DataSetMetadata dataset, ScalarValueMetadata<?> right)
+	{
+		if (!BOOLEANDS.isAssignableFrom(right.getDomain()))
+			throw new VTLIncompatibleTypesException(operator.toString(), right.getDomain(), BOOLEANDS);
+		else if (dataset.getComponents(Measure.class, Domains.BOOLEANDS).size() == 0)
+			throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, dataset);
+		else
+			return dataset;
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	{
+		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class))
+				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
+			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
 
-			if (metadata.getComponents(Measure.class, Domains.BOOLEANDS).size() == 0)
-				throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, metadata);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getComponents(Measure.class);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getComponents(Measure.class);
 
-			return metadata;
-		}
+		if (leftMeasures.size() != 1)
+			throw new UnsupportedOperationException("Expected single boolean measure but found: " + leftMeasures);
+		if (rightMeasures.size() != 1)
+			throw new UnsupportedOperationException("Expected single boolean measure but found: " + rightMeasures);
+
+		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = leftMeasures.iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> rightMeasure = rightMeasures.iterator().next();
+
+		if (!BOOLEANDS.isAssignableFrom(leftMeasure.getDomain()))
+			throw new UnsupportedOperationException("Expected boolean measure but found: " + leftMeasure);
+		if (!BOOLEANDS.isAssignableFrom(rightMeasure.getDomain()))
+			throw new UnsupportedOperationException("Expected boolean measure but found: " + rightMeasure);
+
+		String measureName = leftMeasure.getName().equals(rightMeasure.getName()) ? leftMeasure.getName() : "bool_var";
+		
+		return new DataStructureBuilder()
+				.addComponents(left.getComponents(Identifier.class))
+				.addComponents(right.getComponents(Identifier.class))
+				.addComponent(new DataStructureComponentImpl<>(measureName, Measure.class, BOOLEANDS))
+				.build();
 	}
 
 	@Override

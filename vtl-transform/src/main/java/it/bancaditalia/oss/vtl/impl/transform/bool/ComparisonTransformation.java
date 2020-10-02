@@ -42,9 +42,9 @@ import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -52,7 +52,6 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ComparisonTransformation extends BinaryTransformation
@@ -61,8 +60,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	private static final long serialVersionUID = 1L;
 
 	private final ComparisonOperator operator;
-
-	private DataSetMetadata metadata;
+	
 	private boolean castToLeft = false;
 
 	public ComparisonTransformation(ComparisonOperator operator, Transformation left, Transformation right)
@@ -89,9 +87,11 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
 	{
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
+
 		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
-
+		
 		final ScalarValue<?, ?, ?> castedScalar;
 		if (castToLeft && datasetIsLeftOp)
 			castedScalar = measure.cast(scalar);
@@ -113,6 +113,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
 	{
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
@@ -137,87 +138,64 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
 	{
-		// TODO: BETTER CHECKS
+		castToLeft = left.getDomain().isAssignableFrom(right.getDomain()); 
+		if (castToLeft || right.getDomain().isAssignableFrom(left.getDomain())) 
+			return BOOLEAN;
+		else
+			throw new VTLIncompatibleTypesException("comparison branch", left.getDomain(), right.getDomain());
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar)
+	{
+		ValueDomainSubset<?> scalarDomain = scalar.getDomain();
 
-		// else if (!l.getDomain().isAssignableFrom(r.getDomain()) && !r.getDomain().isAssignableFrom(l.getDomain()))
-		// return BooleanValue.FALSE;
-		// else if (op != VTL.EQUAL && op != VTL.DIAMOND && !l.getDomain().isComparableWith(r.getDomain()))
-		// throw new UnsupportedOperationException("Operators are of incompatible domains in comparison: " + l.getDomain() + ",
-		// " + r.getDomain());
-
-		if (metadata != null)
-			return metadata;
+		if (dataset.getComponents(Measure.class).size() != 1)
+			throw new VTLExpectedComponentException(Measure.class, dataset);
+		DataStructureComponent<?, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
 		
-		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session); 
-		castToLeft = false;
+		if (datasetIsLeftOp)
+			castToLeft = measure.getDomain().isAssignableFrom(scalarDomain);
+		else
+			castToLeft = scalarDomain.isAssignableFrom(measure.getDomain());
+
+		if (!castToLeft && (datasetIsLeftOp && !scalarDomain.isAssignableFrom(measure.getDomain())
+				|| !datasetIsLeftOp && !measure.getDomain().isAssignableFrom(scalarDomain)))
+			throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
 		
-		if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
-		{
-			ScalarValueMetadata<?> scalarLeft = (ScalarValueMetadata<?>) left;
-			ScalarValueMetadata<?> scalarRight = (ScalarValueMetadata<?>) right;
+		return new DataStructureBuilder().addComponents(dataset.getComponents(Identifier.class))
+				.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS)).build();
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	{
+		LOGGER.info("Comparing {} to {}", left, right);
+		
+		if (left.getComponents(Measure.class).size() != 1)
+			throw new VTLExpectedComponentException(Measure.class, left.getComponents(Measure.class));
+		if (right.getComponents(Measure.class).size() != 1)
+			throw new VTLExpectedComponentException(Measure.class, right.getComponents(Measure.class));
+		
+		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class)) 
+				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
+			throw new UnsupportedOperationException("One operand of comparison must contain all identifiers of the other.");
 
-			castToLeft = scalarLeft.getDomain().isAssignableFrom(scalarRight.getDomain()); 
-			if (castToLeft || scalarRight.getDomain().isAssignableFrom(scalarLeft.getDomain())) 
-				return BOOLEAN;
-			else
-				throw new VTLIncompatibleTypesException("comparison branch", scalarLeft.getDomain(), ((ScalarValueMetadata<?>) right).getDomain());
-		}
-		else if (left instanceof DataSetMetadata && right instanceof ScalarValueMetadata ||
-				right instanceof DataSetMetadata && left instanceof ScalarValueMetadata)
-		{
-			boolean leftIsDataset = left instanceof DataSetMetadata;
-			DataSetMetadata ds = leftIsDataset ? (DataSetMetadata) left : (DataSetMetadata) right;
-			ValueDomainSubset<?> scalarDomain = (leftIsDataset ? (ScalarValueMetadata<?>) right : (ScalarValueMetadata<?>) left).getDomain();
+		final DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getComponents(Measure.class).iterator().next(),
+				rightMeasure = left.getComponents(Measure.class).iterator().next();
+		
+		if (leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()))
+			castToLeft = true;
+		else if (!rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
+			throw new VTLIncompatibleMeasuresException("comparison", leftMeasure, rightMeasure);
 
-			if (ds.getComponents(Measure.class).size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, ds);
-			DataStructureComponent<?, ?, ?> measure = ds.getComponents(Measure.class).iterator().next();
-			
-			if (leftIsDataset)
-				castToLeft = measure.getDomain().isAssignableFrom(scalarDomain);
-			else
-				castToLeft = scalarDomain.isAssignableFrom(measure.getDomain());
-
-			if (!castToLeft && (leftIsDataset && !scalarDomain.isAssignableFrom(measure.getDomain())
-					|| !leftIsDataset && !measure.getDomain().isAssignableFrom(scalarDomain)))
-				throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
-			
-			return metadata = new DataStructureBuilder().addComponents(ds.getComponents(Identifier.class))
-					.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS)).build();
-		}
-		else if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
-		{
-			DataSetMetadata dsLeft = (DataSetMetadata) left, dsRight = (DataSetMetadata) right;
-			
-			LOGGER.info("Comparing {} to {}", dsLeft, dsRight);
-			
-			if (dsLeft.getComponents(Measure.class).size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, dsLeft.getComponents(Measure.class));
-			if (dsRight.getComponents(Measure.class).size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, dsRight.getComponents(Measure.class));
-			
-			if (!dsLeft.getComponents(Identifier.class).containsAll(dsRight.getComponents(Identifier.class)) 
-					&& !dsRight.getComponents(Identifier.class).containsAll(dsLeft.getComponents(Identifier.class)))
-				throw new UnsupportedOperationException("One operand of comparison must contain all identifiers of the other.");
-
-			final DataStructureComponent<? extends Measure, ?, ?> leftMeasure = dsLeft.getComponents(Measure.class).iterator().next(),
-					rightMeasure = dsLeft.getComponents(Measure.class).iterator().next();
-			
-			if (leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()))
-				castToLeft = true;
-			else if (!rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
-				throw new VTLIncompatibleMeasuresException("comparison", leftMeasure, rightMeasure);
-
-			return metadata = new DataStructureBuilder()
-					.addComponents(dsLeft.getComponents(Identifier.class))
-					.addComponents(dsRight.getComponents(Identifier.class))
-					.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))
-					.build();
-		}
-
-		throw new UnsupportedOperationException("Found invalid parameters in comparison: " + left + ", " + right);
+		return new DataStructureBuilder()
+				.addComponents(left.getComponents(Identifier.class))
+				.addComponents(right.getComponents(Identifier.class))
+				.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))
+				.build();
 	}
 	
 	@Override

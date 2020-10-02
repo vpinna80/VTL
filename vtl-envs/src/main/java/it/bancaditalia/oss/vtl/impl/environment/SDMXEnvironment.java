@@ -33,14 +33,17 @@ import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
+import java.security.InvalidParameterException;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,9 +101,9 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -271,12 +274,16 @@ public class SDMXEnvironment implements Environment, Serializable
 
 			// Load all the codes of each dimension
 			List<Dimension> dimensions = dsd.getDimensions();
+			if (tokens.length != dimensions.size())
+				throw new InvalidParameterException("Query items " + Arrays.toString(tokens) + " do not match the dimensions of " 
+						+ dataflow + " " + dimensions.stream().map(Dimension::getId).collect(toList()));
 			for (Dimension d: dimensions)
 			{
 				String dimId = d.getId();
 				LOGGER.trace("Retrieving codelist for dimension {} of {}:{}", dimId, provider, dataflow);
 				SdmxClientHandler.getCodes(provider, dataflow, dimId);
 			}
+			
 
 			// remove the fixed (not wildcarded) dimensions from the list of identifiers
 			List<SdmxMetaElement> activeAttributes = new ArrayList<>(dsd.getAttributes());

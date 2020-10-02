@@ -48,8 +48,8 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.util.Triple;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -301,6 +301,13 @@ public class DataStructureBuilder
 	}
 
 	public static Collector<DataStructureComponent<?, ?, ?>, ?, DataSetMetadata> toDataStructure(DataStructureComponent<?, ?, ?>... additionalComponents)
+	{
+		return Collector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
+				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
+				UNORDERED, CONCURRENT);
+	}
+
+	public static Collector<DataStructureComponent<?, ?, ?>, ?, DataSetMetadata> toDataStructure(Collection<? extends DataStructureComponent<?, ?, ?>> additionalComponents)
 	{
 		return Collector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
 				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 

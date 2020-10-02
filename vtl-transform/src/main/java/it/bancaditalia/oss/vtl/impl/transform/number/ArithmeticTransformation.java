@@ -62,11 +62,11 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ArithmeticTransformation extends BinaryTransformation
@@ -75,8 +75,6 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(ArithmeticTransformation.class);
 	private final ArithmeticOperator operator;
-
-	private DataSetMetadata metadata;
 	
 	public ArithmeticTransformation(ArithmeticOperator operator, Transformation left, Transformation right)
 	{
@@ -97,6 +95,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
 	{
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		Set<String> measureNames = dataset.getComponents(Measure.class, NUMBERDS).stream().map(DataStructureComponent::getName).collect(toSet());
 
 		Predicate<String> bothIntegers = name -> metadata.getComponent(name)
@@ -122,6 +121,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
 	{
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		// index (as right operand) the one with less keys and stream the other (as left operand)
 		boolean swap = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
 		DataSet streamed = swap ? right : left;
@@ -179,96 +179,91 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
 	{
-		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
+		ValueDomain domainLeft = left.getDomain();
+		ValueDomain domainRight = right.getDomain();
 		
-		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
-		{
-			DataSetMetadata leftData = (DataSetMetadata) left, rightData = (DataSetMetadata) right;
-			
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = leftData.getComponents(Measure.class);
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = rightData.getComponents(Measure.class);
-			
-			if (leftMeasures.size() == 0)
-				throw new VTLExpectedComponentException(Measure.class, NUMBERDS, leftMeasures);
-			if (rightMeasures.size() == 0)
-				throw new VTLExpectedComponentException(Measure.class, NUMBERDS, rightMeasures);
-
-			DataStructureComponent<? extends Measure, ?, ?> firstLeft = leftMeasures.iterator().next();
-			DataStructureComponent<? extends Measure, ?, ?> firstRight = rightMeasures.iterator().next();
-			
-			ValueDomainSubset<?> firstLeftDomain = firstLeft.getDomain();
-			ValueDomainSubset<?> firstRightDomain = firstRight.getDomain();
-			
-			boolean areFirstCompatible = !firstLeft.getName().equals(firstRight.getName()) && 
-					(firstLeftDomain.isAssignableFrom(firstRightDomain) || firstRight.getDomain().isAssignableFrom(firstLeft.getDomain()));
-			
-			if (areFirstCompatible && leftMeasures.size() == 1 && rightMeasures.size() == 1)
-				return NUMBER;
-
-			if (!leftData.getComponents(Identifier.class).containsAll(rightData.getComponents(Identifier.class))
-					&& !rightData.getComponents(Identifier.class).containsAll(leftData.getComponents(Identifier.class)))
-				throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
-
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = Utils.getStream(leftMeasures).collect(toMap(DataStructureComponent::getName, identity()));
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = Utils.getStream(rightMeasures).collect(toMap(DataStructureComponent::getName, identity()));
-			
-			Set<DataStructureComponent<? extends Measure, ?, ?>> measures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
-				.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))
-				.peek(splittingConsumer((lm, rm) -> 
-					{
-						if (lm == null)
-							throw new VTLMissingComponentsException(rm, leftMeasures);
-						if (rm == null)
-							throw new VTLMissingComponentsException(lm, rightMeasures);
-						if (!NUMBERDS.isAssignableFrom(lm.getDomain()))
-							throw new UnsupportedOperationException("Expected numeric measure but found: " + lm);
-						if (!NUMBERDS.isAssignableFrom(rm.getDomain()))
-							throw new UnsupportedOperationException("Expected numeric measure but found: " + rm);
-					}))
-				.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
-						? INTEGERDS.isAssignableFrom(rm.getDomain())
-						? lm : rm : lm))
-				.collect(toSet());
-			
-			return metadata = new DataStructureBuilder().addComponents(leftData.getComponents(Identifier.class))
-					.addComponents(rightData.getComponents(Identifier.class))
-					.addComponents(measures)
-					.build();
-		}
-		else if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
-		{
-			ValueDomainSubset<?> domainLeft = ((ScalarValueMetadata<?>) left).getDomain();
-			ValueDomainSubset<?> domainRight = ((ScalarValueMetadata<?>) right).getDomain();
-			if (INTEGERDS.isAssignableFrom(domainLeft) && INTEGERDS.isAssignableFrom(domainRight))
-				return INTEGER;
-			else if (NUMBERDS.isAssignableFrom(domainLeft) && NUMBERDS.isAssignableFrom(domainRight))
-				return NUMBER;
-			else if (!NUMBERDS.isAssignableFrom(domainLeft))
-				throw new VTLIncompatibleTypesException(getOperator().toString(), NUMBERDS, domainLeft);
-			else 
-				throw new VTLIncompatibleTypesException(getOperator().toString(), NUMBERDS, domainRight);
-		}
+		if (INTEGERDS.isAssignableFrom(domainLeft) && INTEGERDS.isAssignableFrom(domainRight))
+			return INTEGER;
+		else if (NUMBERDS.isAssignableFrom(domainLeft) && NUMBERDS.isAssignableFrom(domainRight))
+			return NUMBER;
+		else if (!NUMBERDS.isAssignableFrom(domainLeft))
+			throw new VTLIncompatibleTypesException(getOperator().toString(), NUMBERDS, domainLeft);
 		else 
-		{
-			metadata = (DataSetMetadata)(left instanceof DataSetMetadata ? left : right);
-			
-			if (metadata.getComponents(Measure.class).size() == 0)
-				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
-			if (metadata.getComponents(Measure.class).stream().anyMatch(c -> !NUMBERDS.isAssignableFrom(c.getDomain())))
-				throw new UnsupportedOperationException("Expected only numeric measures but found: " + metadata.getComponents(Measure.class));
-			if (left instanceof ScalarValueMetadata && INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) left).getDomain())
-					|| right instanceof ScalarValueMetadata && INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) right).getDomain()))
-				return metadata;
-			
-			// Sum to float, convert integer measures to floating point
-			return metadata = metadata.stream()
-					.map(c -> c.is(Measure.class) && INTEGERDS.isAssignableFrom(c.getDomain()) 
-							? new DataStructureComponentImpl<>(c.getName(), Measure.class, NUMBERDS) : c)
-					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-					.build();
-		}
+			throw new VTLIncompatibleTypesException(getOperator().toString(), NUMBERDS, domainRight);
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar)
+	{
+		if (dataset.getComponents(Measure.class).size() == 0)
+			throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
+		if (dataset.getComponents(Measure.class).stream().anyMatch(c -> !NUMBERDS.isAssignableFrom(c.getDomain())))
+			throw new UnsupportedOperationException("Expected only numeric measures but found: " + dataset.getComponents(Measure.class));
+		if (INTEGERDS.isAssignableFrom(scalar.getDomain()))
+			return dataset;
+		
+		// Sum to float, convert integer measures to floating point
+		return dataset.stream()
+				.map(c -> c.is(Measure.class) && INTEGERDS.isAssignableFrom(c.getDomain()) 
+						? new DataStructureComponentImpl<>(c.getName(), Measure.class, NUMBERDS) : c)
+				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
+				.build();
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	{
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getComponents(Measure.class);
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getComponents(Measure.class);
+		
+		if (leftMeasures.size() == 0)
+			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, leftMeasures);
+		if (rightMeasures.size() == 0)
+			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, rightMeasures);
+
+		DataStructureComponent<? extends Measure, ?, ?> firstLeft = leftMeasures.iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> firstRight = rightMeasures.iterator().next();
+		
+		ValueDomainSubset<?> firstLeftDomain = firstLeft.getDomain();
+		ValueDomainSubset<?> firstRightDomain = firstRight.getDomain();
+		
+		boolean areFirstCompatible = !firstLeft.getName().equals(firstRight.getName()) && 
+				(firstLeftDomain.isAssignableFrom(firstRightDomain) || firstRight.getDomain().isAssignableFrom(firstLeft.getDomain()));
+		
+		if (areFirstCompatible && leftMeasures.size() == 1 && rightMeasures.size() == 1)
+			return NUMBER;
+
+		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class))
+				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
+			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
+
+		Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = Utils.getStream(leftMeasures).collect(toMap(DataStructureComponent::getName, identity()));
+		Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = Utils.getStream(rightMeasures).collect(toMap(DataStructureComponent::getName, identity()));
+		
+		Set<DataStructureComponent<? extends Measure, ?, ?>> measures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
+			.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))
+			.peek(splittingConsumer((lm, rm) -> 
+				{
+					if (lm == null)
+						throw new VTLMissingComponentsException(rm, leftMeasures);
+					if (rm == null)
+						throw new VTLMissingComponentsException(lm, rightMeasures);
+					if (!NUMBERDS.isAssignableFrom(lm.getDomain()))
+						throw new UnsupportedOperationException("Expected numeric measure but found: " + lm);
+					if (!NUMBERDS.isAssignableFrom(rm.getDomain()))
+						throw new UnsupportedOperationException("Expected numeric measure but found: " + rm);
+				}))
+			.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
+					? INTEGERDS.isAssignableFrom(rm.getDomain())
+					? lm : rm : lm))
+			.collect(toSet());
+		
+		return new DataStructureBuilder().addComponents(left.getComponents(Identifier.class))
+				.addComponents(right.getComponents(Identifier.class))
+				.addComponents(measures)
+				.build();
 	}
 	
 	@Override

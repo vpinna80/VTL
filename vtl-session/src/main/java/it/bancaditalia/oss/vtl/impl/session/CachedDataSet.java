@@ -20,11 +20,16 @@
 package it.bancaditalia.oss.vtl.impl.session;
 
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -35,6 +40,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.session.VTLSession;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CachedDataSet extends NamedDataSet
 {
@@ -42,10 +48,39 @@ public class CachedDataSet extends NamedDataSet
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedDataSet.class);
 	private static final Map<VTLSession, Map<String, SoftReference<Set<DataPoint>>>> SESSION_CACHES = new ConcurrentHashMap<>();
-	private static final Map<VTLSession, Map<String, AtomicBoolean>> SESSION_STATUSES = new ConcurrentHashMap<>();
+	private static final Map<VTLSession, Map<String, Semaphore>> SESSION_STATUSES = new ConcurrentHashMap<>();
+	private static final ReferenceQueue<Set<DataPoint>> REF_QUEUE = new ReferenceQueue<>();
+	private static final Map<Reference<Set<DataPoint>>, String> REF_NAMES = new ConcurrentHashMap<>();
 
-	private final Map<String, AtomicBoolean> statuses;
-	private transient final Map<String, SoftReference<Set<DataPoint>>> cache;
+	private final Map<String, Semaphore> statuses;
+	private final Map<String, SoftReference<Set<DataPoint>>> cache;
+	
+	static {
+		new Thread() {
+			
+			{
+				setName("CachedDataSet watcher");
+				setDaemon(true);
+			}
+			
+			@Override
+			public void run() 
+			{
+				while (!Thread.interrupted())
+					try 
+					{
+						String name = REF_NAMES.remove(REF_QUEUE.remove());
+						if (name != null)
+							LOGGER.debug("Cleaned cache of {}", name);
+					}
+					catch (InterruptedException e)
+					{
+						Thread.currentThread().interrupt();
+					}
+			}
+			
+		}.start();
+	}
 
 	public CachedDataSet(VTLSession session, String alias, DataSet delegate)
 	{
@@ -63,45 +98,59 @@ public class CachedDataSet extends NamedDataSet
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		AtomicBoolean isCompleted = statuses.computeIfAbsent(getAlias(), alias -> new AtomicBoolean(true));
-		synchronized (isCompleted)
+		Semaphore isCompleted = statuses.computeIfAbsent(getAlias(), alias -> new Semaphore(1));
+		
+		try
 		{
-			while (!isCompleted.get())
-				try
-				{
-					isCompleted.wait();
-				}
-				catch (InterruptedException e)
-				{
-					Thread.currentThread().interrupt();
-					return Stream.empty();
-				}
-	
-			Set<DataPoint> maybeCached = cache.computeIfAbsent(getAlias(), alias -> new SoftReference<>(null)).get();
-			if (isCompleted.get() && maybeCached != null)
-			{
-				LOGGER.debug("Cache hit for {}.", getAlias());
-				return maybeCached.stream();
-			}
-			
-			LOGGER.debug("Cache miss for {}.", getAlias());
-			SoftReference<Set<DataPoint>> setRef = new SoftReference<>(newSetFromMap(new ConcurrentHashMap<>()));
-			isCompleted.set(false);
-			return getDelegate().stream()
-					.peek(dp -> {
-						Set<DataPoint> set = setRef.get();
-						if (set != null)
-							set.add(dp);
-					})
-					.onClose(() -> {
-							synchronized (isCompleted)
-							{
-								LOGGER.debug("Caching of {} finished.", getAlias());
-								cache.put(getAlias(), setRef);
-								isCompleted.set(true);
-								isCompleted.notifyAll();
-							}
-					});
+			while (!isCompleted.tryAcquire(500, MILLISECONDS))
+				LOGGER.debug("Waiting cache completion for {}.", getAlias());
 		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			return Stream.empty();
+		}
+	
+		return Stream.of(getAlias())
+				.map(v -> cache.computeIfAbsent(v, alias -> new SoftReference<>(null)))
+				.map(SoftReference::get)
+				.filter(Objects::nonNull)
+				.map(Utils::getStream)
+				.peek(cache -> {
+					isCompleted.release();
+					LOGGER.debug("Cache hit for {}.", getAlias());
+				}).findAny()
+				.orElseGet(() -> createCache(isCompleted));
+	}
+
+	private Stream<DataPoint> createCache(Semaphore isCompleted)
+	{
+		AtomicBoolean alreadyInterrupted = new AtomicBoolean(false);
+		LOGGER.debug("Caching started for {}.", getAlias());
+		
+		// reference to cache holder 
+		SoftReference<Set<DataPoint>> setRef = new SoftReference<>(newSetFromMap(new ConcurrentHashMap<>()), REF_QUEUE);
+		return getDelegate().stream()
+			.peek(dp -> {
+				// enqueue datapoint if reference was not gced
+				Set<DataPoint> set = setRef.get();
+				if (set != null)
+					set.add(dp);
+				else if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
+				{
+					LOGGER.debug("Caching interrupted for {}.", getAlias());
+					isCompleted.release();
+				}
+			}).onClose(() -> {
+				if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
+				{
+					LOGGER.debug("Caching finished for {}.", getAlias());
+					// register the cache
+					cache.put(getAlias(), setRef);
+					// remember the name
+					REF_NAMES.put(setRef, getAlias());
+				}
+				isCompleted.release();
+			});
 	}
 }

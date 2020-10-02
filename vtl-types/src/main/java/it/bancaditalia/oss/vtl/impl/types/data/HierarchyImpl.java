@@ -244,7 +244,6 @@ public abstract class HierarchyImpl implements Hierarchy
 
 	private final String item;
 	private final List<RuleItem> rules;
-	@SuppressWarnings("unused")
 	private final Map<String, String> conditions;
 
 	public HierarchyImpl(String item, List<? extends RuleItem> rules, Map<String, String> conditions)

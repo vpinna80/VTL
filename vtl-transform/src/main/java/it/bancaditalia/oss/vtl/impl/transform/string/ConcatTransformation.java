@@ -40,16 +40,15 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequir
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ConcatTransformation extends BinaryTransformation
@@ -63,8 +62,6 @@ public class ConcatTransformation extends BinaryTransformation
 	{
 		super(left, right);
 	}
-
-	private DataSetMetadata metadata = null;
 
 	@Override
 	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
@@ -86,6 +83,7 @@ public class ConcatTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
 	{
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
 
 		DataSet streamed = leftHasMoreIdentifiers ? right: left;
@@ -108,65 +106,58 @@ public class ConcatTransformation extends BinaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
 	{
-		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session);
+		if (!(STRINGDS.isAssignableFrom(left.getDomain())))
+			throw new VTLIncompatibleTypesException("concat", STRINGDS, left.getDomain());
+		else if (!(STRINGDS.isAssignableFrom(right.getDomain())))
+			throw new VTLIncompatibleTypesException("concat", STRINGDS, right.getDomain());
+		else
+			return Domains.STRING;
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar)
+	{
+		if (!STRINGDS.isAssignableFrom(scalar.getDomain()))
+			throw new VTLIncompatibleTypesException("concat", STRINGDS, scalar.getDomain());
 		
-		if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
-		{
-			ScalarValueMetadata<?> leftV = (ScalarValueMetadata<?>) left, rightV = (ScalarValueMetadata<?>) right; 
-			if (!(STRINGDS.isAssignableFrom(leftV.getDomain())))
-				throw new VTLIncompatibleTypesException("concat", STRINGDS, leftV.getDomain());
-			else if (!(STRINGDS.isAssignableFrom(rightV.getDomain())))
-				throw new VTLIncompatibleTypesException("concat", STRINGDS, rightV.getDomain());
-			else
-				return (ScalarValueMetadata<StringDomainSubset>) () -> STRINGDS;
-		}
-		else if (left instanceof ScalarValueMetadata || right instanceof ScalarValueMetadata)
-		{
-			boolean leftIsScalar = left instanceof ScalarValueMetadata;
-			ScalarValueMetadata<?> value = leftIsScalar ? (ScalarValueMetadata<?>) left : (ScalarValueMetadata<?>) right;
-			DataSetMetadata metadata = leftIsScalar ? (DataSetMetadata) left : (DataSetMetadata) right;
-			
-			if (!STRINGDS.isAssignableFrom(value.getDomain()))
-				throw new VTLIncompatibleTypesException("concat", STRINGDS, value.getDomain());
-			
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
-			if (measures.size() != 1)
-				throw new VTLSingletonComponentRequiredException(Measure.class, measures);
-			
-			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-			if (!STRINGDS.isAssignableFrom(measure.getDomain()))
-				throw new VTLExpectedComponentException(Measure.class, STRINGDS, measures);
-			
-			return metadata;
-		}
-		else {
-			DataSetMetadata leftD = (DataSetMetadata) left, rightD = (DataSetMetadata) right;
-			
-			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> leftIds = leftD.getComponents(Identifier.class);
-			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> rightIds = rightD.getComponents(Identifier.class);
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+		if (measures.size() != 1)
+			throw new VTLSingletonComponentRequiredException(Measure.class, measures);
+		
+		DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
+		if (!STRINGDS.isAssignableFrom(measure.getDomain()))
+			throw new VTLExpectedComponentException(Measure.class, STRINGDS, measures);
+		
+		return dataset;
+	}
+	
+	@Override
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	{
+		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> leftIds = left.getComponents(Identifier.class);
+		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> rightIds = right.getComponents(Identifier.class);
 
-			if (!leftIds.containsAll(rightIds) && !rightIds.containsAll(leftIds))
-				throw new VTLException("One dataset must have at least all the identifiers of the other.");
-			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = leftD.getComponents(Measure.class);
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = rightD.getComponents(Measure.class);
-			
-			if (!leftMeasures.equals(rightMeasures))
-				throw new VTLException("The two datasets must have the same measures.");
-			
-			leftMeasures.stream()
-					.forEach(m -> {
-						if (!STRINGDS.isAssignableFrom(m.getDomain()))
-							throw new VTLIncompatibleTypesException("concat", STRINGDS, m.getDomain());
-					});
-			
-			return metadata = new DataStructureBuilder()
-					.addComponents(leftIds)
-					.addComponents(rightIds)
-					.addComponents(leftMeasures)
-					.build();
-		}
+		if (!leftIds.containsAll(rightIds) && !rightIds.containsAll(leftIds))
+			throw new VTLException("One dataset must have at least all the identifiers of the other.");
+		
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getComponents(Measure.class);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getComponents(Measure.class);
+		
+		if (!leftMeasures.equals(rightMeasures))
+			throw new VTLException("The two datasets must have the same measures.");
+		
+		leftMeasures.stream()
+				.forEach(m -> {
+					if (!STRINGDS.isAssignableFrom(m.getDomain()))
+						throw new VTLIncompatibleTypesException("concat", STRINGDS, m.getDomain());
+				});
+		
+		return new DataStructureBuilder()
+				.addComponents(leftIds)
+				.addComponents(rightIds)
+				.addComponents(leftMeasures)
+				.build();
 	}
 }
