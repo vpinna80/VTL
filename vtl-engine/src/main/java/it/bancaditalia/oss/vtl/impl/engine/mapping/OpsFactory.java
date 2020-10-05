@@ -395,7 +395,7 @@ public class OpsFactory implements Serializable
 			result = contextParser.apply(ctx, level, param);
 
 			if (param.getName() != null)
-				LOGGER.trace("|{}<< {}: {} from rule '{}' yield {}", tabs, ctx.getClass().getSimpleName(), paramClass.getSimpleName(), param.getName(), result);
+				LOGGER.trace("|{}<< {}: {} from subrule '{}' yield {}", tabs, ctx.getClass().getSimpleName(), paramClass.getSimpleName(), param.getName(), result);
 			else
 				LOGGER.trace("|{}<< {}: {} from same context yield {}", tabs, ctx.getClass().getSimpleName(), paramClass.getSimpleName(), result);
 
@@ -416,12 +416,19 @@ public class OpsFactory implements Serializable
 		try
 		{
 			Object result;
-			List<Nonnullparam> innerParams = customParam.getStringparamOrExprparamOrValueparam();
+			// get the nested context by looking up the name attribute of nestedparam in current context
 			ParserRuleContext customCtx = getFieldOrMethod(customParam, ctx, ParserRuleContext.class, level);
-			Class<?> customClass = Class.forName(customParam.getClazz());
+			
+			if (customCtx == null)
+				return null;
+			
+			List<Nonnullparam> innerParams = customParam.getStringparamOrExprparamOrValueparam();
+
 			List<Object> resultList = new ArrayList<>(innerParams.size());
 			for (Nonnullparam child : innerParams)
 				resultList.add(createParam(customCtx, child, level + 1));
+			
+			Class<?> customClass = Class.forName(customParam.getClazz());
 			if (customParam.getMethod() != null)
 				result = Arrays.stream(customClass.getMethods())
 						.filter(m -> m.getName().equals(customParam.getMethod()))
@@ -442,8 +449,11 @@ public class OpsFactory implements Serializable
 	private Object parseNestedParam(ParserRuleContext ctx, int level, Nestedparam nestedParam)
 	{
 		Object result;
+		// get the nested context by looking up the name attribute of nestedparam in current context
 		ParserRuleContext nestedCtx = getFieldOrMethod(nestedParam, ctx, ParserRuleContext.class, level);
+		// iteratively resolve any parameters inside the nested context 
 		List<Nonnullparam> innerParams = nestedParam.getStringparamOrExprparamOrValueparam();
+		// map each parameter to a constructed mapped object and collect the results into a list
 		List<Object> resultList = new ArrayList<>(innerParams.size());
 		for (Nonnullparam child : innerParams)
 			resultList.add(nestedCtx == null ? null : createParam(nestedCtx, child, level + 1));
@@ -550,7 +560,10 @@ public class OpsFactory implements Serializable
 			case Vtl.BOOLEAN_CONSTANT: return BooleanValue.of(Boolean.parseBoolean(token.getText()));
 			case Vtl.STRING_CONSTANT: return new StringValue(token.getText());
 			case Vtl.NULL_CONSTANT: return NullValue.instance(UNKNOWNDS);
-			default: throw new VTLUnmappedTokenException(token.toString(), null);
+			// These are specific values for analytic invocations to determine the sliding window size
+			case Vtl.UNBOUNDED: return new IntegerValue((long) (Integer.MAX_VALUE));
+			case Vtl.CURRENT: return new IntegerValue(0L);
+			default: throw new VTLUnmappedTokenException(token.getText(), param);
 		}
 	}
 

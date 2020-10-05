@@ -20,6 +20,21 @@
  -->
 
 <parserconfig xmlns="http://oss.bancaditalia.it/vtl">
+	<tokenset name="WindowDirection" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowDirection">
+		<tokenmapping name="PRECEDING" value="PRECEDING" />
+		<tokenmapping name="FOLLOWING" value="FOLLOWING" />
+	</tokenset>
+	
+	<tokenset name="WindowRangeType" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowRangeType">
+		<tokenmapping name="RANGE" value="RANGE" />
+		<tokenmapping name="DATA" value="DATAPOINTS" />
+	</tokenset>
+	
+	<tokenset name="OrderingMethod" class="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation$OrderingMethod">
+		<tokenmapping name="ASC" value="ASC" />
+		<tokenmapping name="DESC" value="DESC" />
+	</tokenset>
+
 	<tokenset name="ValueDomainType" class="it.bancaditalia.oss.vtl.impl.types.domain.Domains">
 		<tokenmapping name="STRING" value="STRING" />
 		<tokenmapping name="INTEGER" value="INTEGER" />
@@ -57,6 +72,21 @@
 		<tokenmapping name="VAR_SAMP" value="VAR_SAMP" />
 		<tokenmapping name="STDDEV_POP" value="STDDEV_POP" />
 		<tokenmapping name="STDDEV_SAMP" value="STDDEV_SAMP" />
+	</tokenset>
+
+	<tokenset name="AnalyticOperator" class="it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator">
+		<tokenmapping name="SUM" value="SUM" />
+		<tokenmapping name="COUNT" value="COUNT" />
+		<tokenmapping name="MAX" value="MAX" />
+		<tokenmapping name="MIN" value="MIN" />
+		<tokenmapping name="MEDIAN" value="MEDIAN" />
+		<tokenmapping name="AVG" value="AVG" />
+		<tokenmapping name="VAR_POP" value="VAR_POP" />
+		<tokenmapping name="VAR_SAMP" value="VAR_SAMP" />
+		<tokenmapping name="STDDEV_POP" value="STDDEV_POP" />
+		<tokenmapping name="STDDEV_SAMP" value="STDDEV_SAMP" />
+		<tokenmapping name="FIRST_VALUE" value="FIRST_VALUE" />
+		<tokenmapping name="LAST_VALUE" value="LAST_VALUE" />
 	</tokenset>
 
 	<tokenset name="NumericUnaryOperator" class="it.bancaditalia.oss.vtl.impl.transform.number.NumericUnaryTransformation$NumericOperator">
@@ -129,26 +159,59 @@
 	<recursivecontexts>
 		<context name="AggregateFunctionsContext" />
 		<context name="AggregateFunctionsComponentsContext" />
+		<context name="AnalyticFunctionsContext" />
+		<context name="AnalyticFunctionsComponentsContext" />
+		<context name="CompIdContext" />
+		<context name="ComparisonFunctionsContext" />
+		<context name="ComparisonFunctionsComponentsContext" />
+		<context name="DatasetClauseContext" />
 		<context name="FunctionsExpressionContext" />
 		<context name="FunctionsExpressionCompContext" />
 		<context name="GenericFunctionsContext" />
 		<context name="GenericFunctionsComponentsContext" />
-		<context name="NumericFunctionsContext" />
-		<context name="NumericFunctionsComponentsContext" />
-		<context name="DatasetClauseContext" />
 		<context name="HavingClauseContext" />
-		<context name="CompIdContext" />
 		<context name="JoinFunctionsContext" />
 		<context name="JoinApplyClauseContext" />
-		<context name="SetFunctionsContext" />
-		<context name="TimeFunctionsContext" />
-		<context name="TimeFunctionsComponentsContext" />
+		<context name="NumericFunctionsContext" />
+		<context name="NumericFunctionsComponentsContext" />
 		<context name="ParameterComponentContext" />
+		<context name="SetFunctionsContext" />
 		<context name="StringFunctionsContext" />
 		<context name="StringFunctionsComponentsContext" />
-		<context name="ComparisonFunctionsContext" />
-		<context name="ComparisonFunctionsComponentsContext" />
+		<context name="TimeFunctionsContext" />
+		<context name="TimeFunctionsComponentsContext" />
 	</recursivecontexts>
+
+	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation">
+		<params>
+			<tokensetparam name="op" tokenset="AnalyticOperator" />
+			<exprparam name="expr" />
+			<nestedparam name="partitionByClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+			<nestedparam name="orderByClause">
+				<listparam name="orderByItem">
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation$OrderByItem">
+						<stringparam name="componentID" />
+						<tokensetparam tokenset="OrderingMethod" />
+					</customparam>
+				</listparam>
+			</nestedparam>
+			<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowClause">
+				<tokensetparam tokenset="WindowRangeType" />
+				<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam />
+				</customparam>
+				<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam />
+				</customparam>
+			</customparam>
+		</params>
+	</mapping>
 
 	<mapping from="AggrDatasetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
 		<params>

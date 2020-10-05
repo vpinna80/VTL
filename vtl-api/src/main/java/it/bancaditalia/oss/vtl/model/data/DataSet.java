@@ -133,6 +133,7 @@ public interface DataSet extends VTLValue
 	 * 
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the keys.
+	 * @param filter a {@code Map} of {@link Identifier}'s values used to exclude matching groups from the computation.
 	 * @param groupCollector a {@link Collector} applied to each group to produce the final result
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
@@ -141,6 +142,17 @@ public interface DataSet extends VTLValue
 			Collector<DataPoint, A, TT> groupCollector,
 			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher);
 	
+	/**
+	 * Perform a computation on each of the groups of the {@link DataPoint}s of this DataSet which 
+	 * have the same value for each of (a subset of) its {@link Identifier}s.
+	 * 
+	 * The same as {@code streamByKeys(keys, Collections.emptyMap(), groupMapper)}.
+	 * 
+	 * @param <T> the type of the result of the computation.
+	 * @param keys the {@link Identifier}s used to group the keys.
+	 * @param groupCollector a {@link Collector} applied to each group to produce the final result
+	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
+	 */
 	public default <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Collector<DataPoint, A, TT> groupCollector,
 			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)

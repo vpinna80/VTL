@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Tokenmapping;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Tokenset;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Valueparam;
 
 public class VTLUnmappedTokenException extends RuntimeException
 {
@@ -36,6 +37,14 @@ public class VTLUnmappedTokenException extends RuntimeException
 		
 		this.sourceToken = sourceToken;
 		this.tokenset = tokenset;
+	}
+	
+	public VTLUnmappedTokenException(String sourceToken, Valueparam param)
+	{
+		super("In valueparam " + param.getName() + ", token '" + sourceToken + "' cannot be mapped to a ScalarValue type.");
+
+		this.sourceToken = sourceToken;
+		this.tokenset = null;
 	}
 	
 	public String getSourceToken()

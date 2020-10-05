@@ -381,6 +381,11 @@ public final class Utils
 		return value != null ? value : defaultValue;
 	}
 
+	public static <T> T coalesceSwapped(T defaultValue, T value)
+	{
+		return value != null ? value : defaultValue;
+	}
+
 	@SafeVarargs
 	public static <T> Set<T> setOf(T... elements)
 	{

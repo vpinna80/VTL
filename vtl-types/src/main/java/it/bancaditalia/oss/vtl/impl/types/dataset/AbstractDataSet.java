@@ -21,12 +21,14 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.lang.ref.SoftReference;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
@@ -167,33 +170,36 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		// key group holder
 		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
+		final Set<Characteristics> characteristics = new HashSet<>(groupCollector.characteristics());
+		characteristics.remove(IDENTITY_FINISH);
 		Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>, A, T> decoratedCollector = Collector.of(
 				// supplier
 				groupCollector.supplier(),
 				// accumulator
-				(a, e) -> {
-					keyValues.putIfAbsent(a, e.getValue());
-					groupCollector.accumulator().accept(a, e.getKey());
+				(acc, entry) -> {
+					groupCollector.accumulator().accept(acc, entry.getKey());
+					keyValues.putIfAbsent(acc, entry.getValue());
 				}, // combiner
-				(a, b) -> {
-					A combined = groupCollector.combiner().apply(a, b);
-					keyValues.putIfAbsent(combined, keyValues.get(a));
-					keyValues.putIfAbsent(combined, keyValues.get(b));
-					return combined;
+				(accLeft, accRight) -> {
+					A combinedAcc = groupCollector.combiner().apply(accLeft, accRight);
+					keyValues.putIfAbsent(combinedAcc, keyValues.get(accLeft));
+					keyValues.putIfAbsent(combinedAcc, keyValues.get(accRight));
+					return combinedAcc;
 				},
 				// finisher
-				a -> groupCollector.finisher().andThen(tt -> finisher.apply(tt, keyValues.get(a))).apply(a),
+				acc -> groupCollector.finisher().andThen(tt -> finisher.apply(tt, keyValues.get(acc))).apply(acc),
 				// characteristics
-				groupCollector.characteristics().toArray(new Characteristics[0]));
+				characteristics.toArray(new Characteristics[0]));
 		
 		try (Stream<DataPoint> stream = stream())
 		{
-			return Utils.getStream(stream
+			ConcurrentMap<Object, T> result = stream
 					.filter(dp -> dp.matches(filter))
 					.map(toEntryWithValue(dp -> dp.getValues(keys, Identifier.class)))
 					.collect(groupingByConcurrent(e -> e.getValue(), decoratedCollector))
-					.values()
-				);
+					;
+			
+			return Utils.getStream(result.values());
 		}
 	}
 

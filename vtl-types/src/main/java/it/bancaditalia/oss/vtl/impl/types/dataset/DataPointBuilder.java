@@ -94,11 +94,18 @@ public class DataPointBuilder
 	}
 
 	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> 
-		Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(DataSetMetadata structure)
+			Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(DataSetMetadata structure, 
+			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> startingValues)
+	{
+		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(structure), CONCURRENT, UNORDERED);
+	}
+
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> 
+			Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(DataSetMetadata structure)
 	{
 		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(structure), CONCURRENT, UNORDERED);
 	}
-	
+
 	public <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> DataPointBuilder add(Entry<? extends K, ? extends V> value)
 	{
 		delegate.putIfAbsent(value.getKey(), value.getValue());

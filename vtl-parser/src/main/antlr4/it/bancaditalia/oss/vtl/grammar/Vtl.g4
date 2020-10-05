@@ -395,11 +395,11 @@ signedInteger:
 ;
 
 limitClauseItem:
-    INTEGER_CONSTANT PRECEDING
-    | INTEGER_CONSTANT FOLLOWING
+    INTEGER_CONSTANT dir=PRECEDING
+    | INTEGER_CONSTANT dir=FOLLOWING
     | CURRENT DATA POINT
-    | UNBOUNDED PRECEDING
-    | UNBOUNDED FOLLOWING
+    | UNBOUNDED dir=PRECEDING
+    | UNBOUNDED dir=FOLLOWING
 ;
 
 /*--------------------------------------------END ANALYTIC CLAUSE -----------------------------------------------*/
