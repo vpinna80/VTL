@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toData
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
@@ -39,7 +40,6 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -227,6 +227,10 @@ public class AnalyticTransformation extends UnaryTransformation
 	@Override
 	public String toString()
 	{
-		return aggregation + "(" + operand + ")" + (partitionBy != null ? partitionBy.stream().collect(Collectors.joining(", ", " GROUP BY ", "")) : "");
+		return aggregation + "(" + operand + " over (" 
+				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
+				+ (orderByClause != null ? orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")) : "")
+				+ (windowClause != UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT ? windowClause : "")
+				+ ")";
 	}
 }
