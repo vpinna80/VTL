@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
+import java.util.SortedSet;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -122,12 +123,12 @@ public class WindowView
 				
 		windows = Utils.getStream(ordered)
 				.map(dp -> {
-					final NavigableSet<DataPoint> precedingSet = ordered.descendingSet().tailSet(dp, false).descendingSet();
-					final int skipHeadLength = precedingSet.size() < preceding ? precedingSet.size() : precedingSet.size() - preceding;
+					final SortedSet<DataPoint> precedingSet = ordered.headSet(dp);
+					final int skipHeadLength = precedingSet.size() < preceding ? 0 : precedingSet.size() - preceding;
 					return new SimpleEntry<>(dp.getValues(Identifier.class), Stream.concat(
-								precedingSet.stream().skip(skipHeadLength),
-								ordered.tailSet(dp).stream().limit(following + 1)
-							).collect(toList()));
+							precedingSet.stream().skip(skipHeadLength),
+							ordered.tailSet(dp).stream().limit(following + 1)
+						).collect(toList()));
 				});
 	}
 	

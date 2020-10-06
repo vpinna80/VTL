@@ -213,6 +213,37 @@
 		</params>
 	</mapping>
 
+	<mapping from="AnSimpleFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation">
+		<params>
+			<tokensetparam name="op" tokenset="AnalyticOperator" />
+			<exprparam name="exprComponent" />
+			<nestedparam name="partitionByClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+			<nestedparam name="orderByClause">
+				<listparam name="orderByItem">
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation$OrderByItem">
+						<stringparam name="componentID" />
+						<tokensetparam tokenset="OrderingMethod" />
+					</customparam>
+				</listparam>
+			</nestedparam>
+			<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowClause">
+				<tokensetparam tokenset="WindowRangeType" />
+				<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam />
+				</customparam>
+				<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam />
+				</customparam>
+			</customparam>
+		</params>
+	</mapping>
+
 	<mapping from="AggrDatasetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AggregateOperator" />

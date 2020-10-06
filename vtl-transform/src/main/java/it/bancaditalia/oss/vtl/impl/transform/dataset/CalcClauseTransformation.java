@@ -19,18 +19,23 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -42,9 +47,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -113,51 +118,100 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			return calcClause.getMetadata(scheme);
 		}
 
+		public boolean isAnalytic()
+		{
+			return calcClause instanceof AnalyticTransformation;
+		}
 	}
 
-	private final List<CalcClauseItem> items;
+	private final List<CalcClauseItem> calcClauses;
 	private DataSetMetadata metadata;
 
 	public CalcClauseTransformation(List<CalcClauseItem> items)
 	{
-		this.items = items;
+		this.calcClauses = items;
 	}
 
 	@Override
 	public Set<LeafTransformation> getTerminals()
 	{
-		return items.stream().map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
+		return calcClauses.stream().map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSet operand = (DataSet) getThisValue(session);
+		DataSet operand = (DataSet) getThisValue(scheme);
 
-		return new LightFDataSet<>(metadata, ds -> ds.stream()
+		Map<Boolean, List<CalcClauseItem>> partitionedClauses = Utils.getStream(calcClauses)
+			.collect(Collectors.partitioningBy(CalcClauseItem::isAnalytic));
+		final List<CalcClauseItem> nonAnalyticClauses = partitionedClauses.get(false);
+		final List<CalcClauseItem> analyticClauses = partitionedClauses.get(true);
+		
+		DataSetMetadata nonAnalyticResultMetadata = new DataStructureBuilder(metadata)
+				.removeComponents(analyticClauses.stream().map(CalcClauseItem::getName).collect(toSet()))
+				.build();
+		
+		// preserve original dataset if no nonAnalyticsClauses are present
+		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
+			? operand
+			: new LightFDataSet<>(nonAnalyticResultMetadata, ds -> ds.stream()
 				.map(dp -> {
-					DatapointScope dpSession = new DatapointScope(dp, metadata, session);
-					// place original non-overriden components 
-					DataPointBuilder builder = new DataPointBuilder(dp).delete(Utils.getStream(items)
-									.map(CalcClauseItem::getName)
-									.collect(toList())
-							.toArray(new String[0]));
+					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata, scheme);
 					
-					// place calculated components 
-					Utils.getStream(items)
-						.forEach(item -> builder.add(metadata.getComponent(item.getName()).get(), item.eval(dpSession)));
+					// place calculated components (eventually overriding existing ones 
+					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> calcValues = 
+						Utils.getStream(nonAnalyticClauses)
+							.collect(toConcurrentMap(
+								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),
+								clause -> clause.eval(dpSession))
+							);
 					
-					return builder.build(metadata);
+					return new DataPointBuilder(calcValues).addAll(dp).build(nonAnalyticResultMetadata);
 				}), operand);
+
+		// TODO: more efficient way to compute this instead of reduction by joining
+		return Utils.getStream(analyticClauses)
+			.map(calcAndRename(metadata, scheme))
+			.reduce(CalcClauseTransformation::joinByIDs)
+			.map(anResult -> joinByIDs(anResult, nonAnalyticResult))
+			.orElse(nonAnalyticResult);
+	}
+	
+	private static Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme)
+	{
+		return clause -> {
+			DataSet clauseValue = (DataSet) clause.calcClause.eval(scheme);
+			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getComponents(Measure.class).iterator().next();
+	
+			String newName = coalesce(clause.getName(), measure.getName());
+			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
+			
+			DataSetMetadata newStructure = new DataStructureBuilder(clauseValue.getMetadata())
+				.removeComponent(measure)
+				.addComponent(newComponent)
+				.build();
+				
+			return new LightFDataSet<>(newStructure, ds -> ds.stream()
+					.map(dp -> new DataPointBuilder(dp)
+							.delete(measure)
+							.add(newComponent, dp.get(measure))
+							.build(newStructure)), clauseValue);
+		};
+	}
+	
+	private static DataSet joinByIDs(DataSet left, DataSet right)
+	{
+		return left.filteredMappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, (dpl, dpr) -> dpl.merge(dpr));
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
 		if (metadata != null)
 			return metadata;
 		
-		VTLValueMetadata operand = getThisMetadata(session);
+		VTLValueMetadata operand = getThisMetadata(scheme);
 
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
@@ -165,9 +219,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		metadata = (DataSetMetadata) operand;
 		DataStructureBuilder builder = new DataStructureBuilder(metadata);
 
-		for (CalcClauseItem item : items)
+		for (CalcClauseItem item : calcClauses)
 		{
-			VTLValueMetadata itemMeta = item.getMetadata(session);
+			VTLValueMetadata itemMeta = item.getMetadata(scheme);
 			ValueDomainSubset<?> domain;
 
 			// get the domain of the calculated component
@@ -217,6 +271,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public String toString()
 	{
-		return items.stream().map(Object::toString).collect(joining(", ", "[calc ", "]"));
+		return calcClauses.stream().map(Object::toString).collect(joining(", ", "[calc ", "]"));
 	}
 }

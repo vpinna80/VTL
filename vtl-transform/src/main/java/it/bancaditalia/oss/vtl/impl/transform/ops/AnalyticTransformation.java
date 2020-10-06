@@ -57,7 +57,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -178,7 +177,8 @@ public class AnalyticTransformation extends UnaryTransformation
 		return new WindowView(partition, windowClause)
 				.getWindows()
 				.map(window -> measures.stream()
-					.map(toEntryWithValue(measure -> Utils.getStream(window.getValue()).collect(aggregation.getReducer(measure))))
+					.map(toEntryWithValue(measure -> Utils.getStream(window.getValue())
+							.collect(aggregation.getReducer(measure))))
 					.collect(toDataPoint((DataSetMetadata) metadata, window.getKey()))
 				);
 	}
@@ -201,30 +201,27 @@ public class AnalyticTransformation extends UnaryTransformation
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
-		
 		if (opmeta instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
-		else
-		{
-			DataSetMetadata dataset = (DataSetMetadata) opmeta;
-			final Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+		
+		DataSetMetadata dataset = (DataSetMetadata) opmeta;
+		
+		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
+		for (OrderByItem orderByComponent: orderByClause)
+			ordering.put(dataset.getComponent(orderByComponent.getName()).get(), DESC != orderByComponent.getMethod());
 
-			Set<DataStructureComponent<?, ?, ?>> groupComps = partitionBy.stream()
-					.map(dataset::getComponent)
-					.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, partitionBy.toArray(new String[0]))))
-					.collect(toSet());
-			
-			Optional<DataStructureComponent<?, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
-			if (nonID.isPresent())
-				throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
-			
-//			if (aggregation == COUNT && measures.isEmpty())
-//				measures.add(COUNT_MEASURE);
-			
-			return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
-					.addComponents(measures)
-					.build();
-		}
+		if (partitionBy != null)
+			partitionBy.stream()
+				.map(toEntryWithValue(dataset::getComponent))
+				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
+				.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
+				.peek(c -> { if (ordering.containsKey(c)) throw new VTLException("Partitioning component " + c + " cannot be used in order by"); })
+				.map(c -> c.as(Identifier.class))
+				.collect(toSet());
+		
+		return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+				.addComponents(dataset.getComponents(Measure.class))
+				.build();
 	}
 	
 	@Override

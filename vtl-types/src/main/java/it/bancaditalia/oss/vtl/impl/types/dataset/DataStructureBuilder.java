@@ -113,10 +113,18 @@ public class DataStructureBuilder
 		this.components.remove(component);
 		return this;
 	}
+
 	public DataStructureBuilder removeComponents(DataStructureComponent<?, ?, ?>... components)
-	
 	{
 		this.components.removeAll(Arrays.asList(components));
+		return this;
+	}
+
+	public DataStructureBuilder removeComponents(Set<String> componentNames)
+	{
+		this.components.stream()
+			.filter(c -> componentNames.contains(c.getName()))
+			.forEach(this.components::remove);
 		return this;
 	}
 
