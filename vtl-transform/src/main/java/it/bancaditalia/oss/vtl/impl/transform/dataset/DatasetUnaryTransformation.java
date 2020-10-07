@@ -96,13 +96,21 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 		public Stream<DataPoint> apply(DataSet ds, DataStructureComponent<Identifier, ?, ?> timeid)
 		{
 			Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getComponents(Identifier.class));
-			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getComponents(Measure.class));
 			ids.remove(timeid);
+
+			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getComponents(Measure.class));
+
 			Function<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>> classifier = dp -> dp.getValues(ids, Identifier.class);
 			Comparator<DataPoint> comparator = (dp1, dp2) -> dp1.get(timeid).compareTo(dp2.get(timeid));
+			
+			// TODO: performance checks here
+			// don't use streamByKeys because it would create two copies of the dataset
 			Collection<TreeSet<DataPoint>> groups = ds.stream()
 					.collect(groupingByConcurrent(classifier, toCollection(() -> new TreeSet<>(comparator))))
 					.values();
+			
+			final DataSetMetadata metadata = ds.getMetadata();
+			
 			return Utils.getStream(groups)
 				.map(group -> {
 					Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> acc = new ConcurrentHashMap<>();
@@ -113,7 +121,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 									acc.put(m, dp.get(m));
 								return v; 
 							}))).addAll(dp.getValues(Identifier.class))
-							.build(ds.getMetadata()));
+							.build(metadata));
 				}).reduce(Stream::concat)
 				.orElse(Stream.empty());
 		}
