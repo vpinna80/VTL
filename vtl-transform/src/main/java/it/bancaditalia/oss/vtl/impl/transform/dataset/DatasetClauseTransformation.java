@@ -19,6 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Collections.emptySet;
 
 import java.util.Set;
@@ -33,6 +34,8 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public abstract class DatasetClauseTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
+
+	private transient DataSetMetadata operandMetadata = null;
 
 	@Override
 	public boolean isTerminal()
@@ -53,6 +56,9 @@ public abstract class DatasetClauseTransformation extends TransformationImpl
 
 	protected DataSetMetadata getThisMetadata(TransformationScheme session)
 	{
-		return (DataSetMetadata) session.getMetadata(ThisScope.THIS);
+		if (operandMetadata != null)
+			return operandMetadata;
+		else
+			return operandMetadata = (DataSetMetadata) session.getMetadata(THIS);
 	}
 }

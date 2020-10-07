@@ -19,7 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.session;
 
-import static it.bancaditalia.oss.vtl.util.Utils.byValue;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -168,7 +168,7 @@ public class VTLSessionImpl implements VTLSession
 		if (lock.isHeldByCurrentThread())
 		{
 			String cycleNames = Utils.getStream(cacheLocks.entrySet())
-				.filter(byValue(ReentrantLock::isHeldByCurrentThread))
+				.filter(entryByValue(ReentrantLock::isHeldByCurrentThread))
 				.map(Entry::getKey)
 				.collect(joining(", "));
 			throw new IllegalStateException("Found a cycle between rules " + cycleNames);

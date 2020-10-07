@@ -2,8 +2,8 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.INNER_JOIN;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
-import static it.bancaditalia.oss.vtl.util.Utils.byKey;
-import static it.bancaditalia.oss.vtl.util.Utils.byValue;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
@@ -165,14 +165,14 @@ public class JoinTransformation extends TransformationImpl
 			// Case A: join all to reference ds
 			LOGGER.debug("Collecting all identifiers");
 			Map<DataSet, Set<DataStructureComponent<Identifier, ?, ?>>> ids = Utils.getStream(datasets)
-					.filter(byKey(op -> op != referenceDataSet))
+					.filter(entryByKey(op -> op != referenceDataSet))
 					.map(Entry::getValue)
 					.collect(toConcurrentMap(ds -> ds, ds -> ds.getComponents(Identifier.class)));
 
 			// TODO: Memory hungry!!! Find some way to stream instead of building this big index collection 
 			LOGGER.debug("Indexing all datapoints");
 			Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier,?,?>, ScalarValue<?,?,?>>, DataPoint>> indexes = Utils.getStream(datasets)
-					.filter(byKey(op -> op != referenceDataSet))
+					.filter(entryByKey(op -> op != referenceDataSet))
 					.map(Entry::getValue)
 					.collect(toMapWithValues(ds -> {
 						// needed to close the stream after usage
@@ -199,7 +199,7 @@ public class JoinTransformation extends TransformationImpl
 				.map(refDP -> {
 					// Get all datapoints from other datasets (there is no more than 1 for each dataset)
 					List<DataPoint> otherDPs = Utils.getStream(datasets)
-							.filter(byKey(op -> op != referenceDataSet))
+							.filter(entryByKey(op -> op != referenceDataSet))
 							.map(Entry::getValue)
 							.map(ds -> indexes.get(ds).get(refDP.getValues(ids.get(ds), Identifier.class)))
 							.filter(Objects::nonNull)
@@ -398,7 +398,7 @@ public class JoinTransformation extends TransformationImpl
 				.collect(toSet());
 		
 		Optional<JoinOperand> max = datasetsMeta.entrySet().stream()
-				.filter(byValue(ds -> ds.containsAll(allIDs)))
+				.filter(entryByValue(ds -> ds.containsAll(allIDs)))
 				.map(Entry::getKey)
 				.findFirst();
 		
@@ -425,7 +425,7 @@ public class JoinTransformation extends TransformationImpl
 					.flatMap(ds -> ds.getComponents(Identifier.class).stream())
 					.collect(groupingByConcurrent(c -> c, counting()))
 					.entrySet().stream()
-					.filter(byValue(howMany::equals))
+					.filter(entryByValue(howMany::equals))
 					.map(Entry::getKey)
 					.collect(toSet());
 

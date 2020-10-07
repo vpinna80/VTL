@@ -997,4 +997,13 @@
 			<stringparam name="mea" />
 		</params>
 	</mapping>
+	<mapping from="PivotOrUnpivotClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.UnpivotClauseTransformation">
+		<tokens name="op">
+			<value>UNPIVOT</value>
+		</tokens>
+		<params>
+			<stringparam name="id_" />
+			<stringparam name="mea" />
+		</params>
+	</mapping>
 </parserconfig>

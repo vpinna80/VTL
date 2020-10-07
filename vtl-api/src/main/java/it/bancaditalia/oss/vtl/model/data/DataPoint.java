@@ -19,9 +19,9 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.model.data;
 
-import static it.bancaditalia.oss.vtl.util.Utils.byKey;
-import static it.bancaditalia.oss.vtl.util.Utils.byKeyValue;
-import static it.bancaditalia.oss.vtl.util.Utils.byValue;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByKeyValue;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
@@ -67,14 +67,14 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	public default boolean matches(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?>> identifierValues)
 	{
 		return !Utils.getStream(identifierValues.entrySet())
-				.filter(byKeyValue((k, v) -> !get(k).equals(k.cast(v))))
+				.filter(entryByKeyValue((k, v) -> !get(k).equals(k.cast(v))))
 				.findAny()
 				.isPresent();
 	}
 
 	public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role);
 
-	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> getValues(Set<DataStructureComponent<?, ?, ?>> components)
+	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> getValues(Set<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		return Utils.getStream(components)
 				.filter(this::containsKey)
@@ -85,7 +85,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	{
 		return Utils.getStream(keySet())
 				.map(c -> new SimpleEntry<>(c, c.getName()))
-				.filter(byValue(components::contains))
+				.filter(entryByValue(components::contains))
 				.map(Entry::getKey)
 				.filter(c -> c.is(role))
 				.map(c -> c.as(role))
@@ -95,7 +95,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Set<DataStructureComponent<R, ?, ?>> components, Class<R> role)
 	{
 		return Utils.getStream(getValues(role).entrySet())
-				.filter(byKey(components::contains))
+				.filter(entryByKey(components::contains))
 				.map(keepingValue(c -> c.as(role)))
 				.collect(entriesToMap());
 	}

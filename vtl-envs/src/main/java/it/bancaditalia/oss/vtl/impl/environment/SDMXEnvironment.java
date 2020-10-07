@@ -28,7 +28,7 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatte
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-import static it.bancaditalia.oss.vtl.util.Utils.byKey;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
@@ -248,7 +248,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static Stream<Entry<String, ScalarValue<?, ?, ?>>> obsLevelAttrs(BaseObservation<? extends Double> observation)
 	{
 		return Utils.getStream(observation.getAttributes())
-				.filter(byKey(k -> !UNSUPPORTED.contains(k)))
+				.filter(entryByKey(k -> !UNSUPPORTED.contains(k)))
 				.map(keepingKey(v -> (ScalarValue<?, ?, ?>) (v != null ? new StringValue(v) : NullValue.instance(STRINGDS))));
 	}
 

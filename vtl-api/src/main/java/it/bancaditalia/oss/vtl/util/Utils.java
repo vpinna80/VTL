@@ -165,17 +165,17 @@ public final class Utils
 		return accumulator;
 	}
 
-	public static <K, V> Predicate<Entry<K, V>> byValue(Predicate<V> valuePredicate)
+	public static <K, V> Predicate<Entry<K, V>> entryByValue(Predicate<V> valuePredicate)
 	{
 		return e -> valuePredicate.test(e.getValue());
 	}
 
-	public static <K, V> Predicate<Entry<K, V>> byKey(Predicate<K> keyPredicate)
+	public static <K, V> Predicate<Entry<K, V>> entryByKey(Predicate<K> keyPredicate)
 	{
 		return e -> keyPredicate.test(e.getKey());
 	}
 
-	public static <K, V> Predicate<? super Entry<K, V>> byKeyValue(BiPredicate<? super K, ? super V> entryPredicate)
+	public static <K, V> Predicate<? super Entry<K, V>> entryByKeyValue(BiPredicate<? super K, ? super V> entryPredicate)
 	{
 		return e -> entryPredicate.test(e.getKey(), e.getValue());
 	}

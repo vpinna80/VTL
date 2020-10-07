@@ -19,7 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
-import static it.bancaditalia.oss.vtl.util.Utils.byKey;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.util.Map;
@@ -46,7 +46,7 @@ public class JoinApplyScope implements TransformationScheme
 	{
 		this.parent = parent;
 		this.joinValues = joinedDataPoint.entrySet().stream()
-				.filter(byKey(c -> measureName.equals(c.getName().replaceAll("^.*#", ""))))
+				.filter(entryByKey(c -> measureName.equals(c.getName().replaceAll("^.*#", ""))))
 				.collect(toConcurrentMap(e -> e.getKey().getName().replaceAll("#.*", ""), Entry::getValue));
 		this.joinMeta = null;
 	}
