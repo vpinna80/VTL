@@ -154,8 +154,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 						final List<DataPoint> value = window.getValue();
 						final Stream<DataPoint> stream = Utils.getStream(value);
 						final Collector<DataPoint, ?, ScalarValue<?, ?, ?>> reducer = aggregation.getReducer(measure);
-						return stream
-							.collect(reducer);
+						return (ScalarValue<?, ?, ?>) stream.collect(reducer);
 					}))
 					.collect(toDataPoint(metadata, window.getKey()))
 				);

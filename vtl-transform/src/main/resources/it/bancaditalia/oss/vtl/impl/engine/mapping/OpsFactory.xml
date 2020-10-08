@@ -49,7 +49,6 @@
 		<tokenmapping name="TIME" value="TIME" />
 		<tokenmapping name="TIME_PERIOD" value="TIME_PERIOD" />
 		<tokenmapping name="DURATION" value="DURATION" />
-		<!-- tokenmapping name="SCALAR" value="" / -->
 	</tokenset>
 
 	<tokenset name="StringOperator" class="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation$StringOperator">
