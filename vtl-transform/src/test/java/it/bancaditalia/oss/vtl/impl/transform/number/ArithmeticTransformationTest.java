@@ -17,10 +17,10 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  *******************************************************************************/
-package it.bancaditalia.oss.vtl.impl.engine.number;
+package it.bancaditalia.oss.vtl.impl.transform.number;
 
-import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE1;
-import static it.bancaditalia.oss.vtl.impl.engine.testutils.SampleDataSets.SAMPLE2;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE1;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE2;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIV;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.MOD;
@@ -42,9 +42,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.engine.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;

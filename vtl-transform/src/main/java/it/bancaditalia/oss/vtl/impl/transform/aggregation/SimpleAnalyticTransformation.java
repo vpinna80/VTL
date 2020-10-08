@@ -40,6 +40,7 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -80,7 +81,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	private final List<OrderByItem> orderByClause;
 	private final WindowClause windowClause;
 
-	private transient VTLValueMetadata metadata;
+	private transient DataSetMetadata metadata;
 
 	public SimpleAnalyticTransformation(AnalyticOperator aggregation, Transformation operand, List<String> partitionBy, List<OrderByItem> orderByClause, WindowClause windowClause)
 	{
@@ -134,7 +135,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(
+		return new LightFDataSet<>(metadata, ds -> ds.streamByKeys(
 				partitionIDs, 
 				toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
 				(partition, keyValues) -> aggregateWindows(measures, partition, keyValues)
@@ -149,9 +150,14 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		return new WindowView(partition, windowClause)
 				.getWindows()
 				.map(window -> measures.stream()
-					.map(toEntryWithValue(measure -> Utils.getStream(window.getValue())
-							.collect(aggregation.getReducer(measure))))
-					.collect(toDataPoint((DataSetMetadata) metadata, window.getKey()))
+					.map(toEntryWithValue(measure -> {
+						final List<DataPoint> value = window.getValue();
+						final Stream<DataPoint> stream = Utils.getStream(value);
+						final Collector<DataPoint, ?, ScalarValue<?, ?, ?>> reducer = aggregation.getReducer(measure);
+						return stream
+							.collect(reducer);
+					}))
+					.collect(toDataPoint(metadata, window.getKey()))
 				);
 	}
 	

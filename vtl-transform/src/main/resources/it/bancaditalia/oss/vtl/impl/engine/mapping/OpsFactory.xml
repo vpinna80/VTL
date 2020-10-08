@@ -35,7 +35,7 @@
 		<tokenmapping name="DATA" value="DATAPOINTS" />
 	</tokenset>
 	
-	<tokenset name="OrderingMethod" class="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation$OrderingMethod">
+	<tokenset name="OrderingMethod" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderingMethod">
 		<tokenmapping name="ASC" value="ASC" />
 		<tokenmapping name="DESC" value="DESC" />
 	</tokenset>

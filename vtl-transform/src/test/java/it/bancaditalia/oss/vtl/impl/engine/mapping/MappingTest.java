@@ -36,6 +36,7 @@ public class MappingTest
 					catch (ClassNotFoundException e)
 					{
 						LOGGER.error(matcher.group(1));
+						System.err.println(e.getMessage());
 						failed = true;
 					}
 			}

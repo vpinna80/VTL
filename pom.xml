@@ -732,7 +732,7 @@
 							<rules>
 								<dependencyConvergence />
 								<requireJavaVersion>
-                  					<version>1.8.0_242</version>
+                  					<version>[1.8.0-242,)</version>
                 				</requireJavaVersion>
 							</rules>
 						</configuration>
