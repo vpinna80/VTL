@@ -21,16 +21,17 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation.OrderingMethod.DESC;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
-import static it.bancaditalia.oss.vtl.impl.transform.util.WindowView.UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT;
-import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,14 +48,14 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.util.WindowView;
-import it.bancaditalia.oss.vtl.impl.transform.util.WindowView.WindowClause;
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -65,42 +66,34 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class SimpleAnalyticTransformation extends UnaryTransformation implements AnalyticTransformation
+public class RankTransformation extends TransformationImpl implements AnalyticTransformation, LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
-//	private static final DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain> COUNT_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
-	private final static Logger LOGGER = LoggerFactory.getLogger(SimpleAnalyticTransformation.class);
+	private static final DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain> RANK_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
+	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
 
-	private final AnalyticOperator	aggregation;
 	private final List<String> partitionBy;
 	private final List<OrderByItem> orderByClause;
-	private final WindowClause windowClause;
 
-	private transient VTLValueMetadata metadata;
+	private transient DataSetMetadata metadata;
 
-	public SimpleAnalyticTransformation(AnalyticOperator aggregation, Transformation operand, List<String> partitionBy, List<OrderByItem> orderByClause, WindowClause windowClause)
+	public RankTransformation(List<String> partitionBy, List<OrderByItem> orderByClause)
 	{
-		super(operand);
-
-		this.aggregation = aggregation;
 		this.partitionBy = coalesce(partitionBy, emptyList());
 		this.orderByClause = coalesce(orderByClause, emptyList());
-		this.windowClause = coalesce(windowClause, UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT);
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	public VTLValue eval(TransformationScheme session)
 	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
-	{
+		DataSet dataset = (DataSet) session.resolve(THIS); 
+				
 		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
 		
 		if (orderByClause.isEmpty())
@@ -128,8 +121,6 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 			if (partitionIDs.contains(orderingComponent))
 				throw new VTLException("Cannot order by " + orderingComponent.getName() + " because the component is used in partition by " + partitionBy);
 
-		// The measures to aggregate
-		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 		// The ordering of the dataset
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
@@ -137,22 +128,37 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(
 				partitionIDs, 
 				toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
-				(partition, keyValues) -> aggregateWindows(measures, partition, keyValues)
+				(partition, keyValues) -> rankPartition(partition, keyValues)
 			).reduce(Stream::concat)
 			.orElse(Stream.empty()), dataset);
 	}
 	
-	private Stream<DataPoint> aggregateWindows(Set<DataStructureComponent<Measure, ?, ?>> measures, NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	private Stream<DataPoint> rankPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
-		// for each window, compute aggregations for each measure and create a new datapoint with them
-		return new WindowView(partition, windowClause)
-				.getWindows()
-				.map(window -> measures.stream()
-					.map(toEntryWithValue(measure -> Utils.getStream(window.getValue())
-							.collect(aggregation.getReducer(measure))))
-					.collect(toDataPoint((DataSetMetadata) metadata, window.getKey()))
-				);
+		long rank = 1, position = 1;
+		Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> oldValues, measureValues = emptyMap();
+		List<DataPoint> result = new ArrayList<>(partition.size());
+		
+		for (DataPoint dp: partition)
+		{
+			oldValues = measureValues;
+			measureValues = dp.getValues(Measure.class);
+			
+			IntegerValue rankResult;
+			if (measureValues.equals(oldValues))
+				rankResult = new IntegerValue(rank);
+			else
+				// update rank if the new measures are different from the old
+				rankResult = new IntegerValue(rank = position);
+			position++;
+				
+			result.add(new DataPointBuilder(dp.getValues(Identifier.class))
+				.add(RANK_MEASURE, rankResult)
+				.build(metadata));
+		}
+		
+		return result.stream();
 	}
 	
 	
@@ -173,7 +179,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
-		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
+		VTLValueMetadata opmeta = session.getMetadata(THIS);
 		if (opmeta instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
 		
@@ -193,17 +199,22 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.collect(toSet());
 		
 		return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
-				.addComponents(dataset.getComponents(Measure.class))
+				.addComponent(RANK_MEASURE)
 				.build();
 	}
 	
 	@Override
 	public String toString()
 	{
-		return aggregation + "(" + operand + " over (" 
+		return "rank(over (" 
 				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
 				+ (orderByClause != null ? orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")) : "")
-				+ (windowClause != UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT ? windowClause : "")
 				+ ")";
+	}
+
+	@Override
+	public String getText()
+	{
+		return toString();
 	}
 }

@@ -25,6 +25,11 @@
 		<tokenmapping name="FOLLOWING" value="FOLLOWING" />
 	</tokenset>
 	
+	<tokenset name="OffsetDirection" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation$OffsetDirection">
+		<tokenmapping name="LAG" value="LAG" />
+		<tokenmapping name="LEAD" value="LEAD" />
+	</tokenset>
+	
 	<tokenset name="WindowRangeType" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowRangeType">
 		<tokenmapping name="RANGE" value="RANGE" />
 		<tokenmapping name="DATA" value="DATAPOINTS" />
@@ -182,7 +187,7 @@
 		<context name="TimeFunctionsComponentsContext" />
 	</recursivecontexts>
 
-	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation">
+	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AnalyticOperator" />
 			<exprparam name="expr" />
@@ -193,7 +198,7 @@
 			</nestedparam>
 			<nestedparam name="orderByClause">
 				<listparam name="orderByItem">
-					<customparam class="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation$OrderByItem">
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
 						<stringparam name="componentID" />
 						<tokensetparam tokenset="OrderingMethod" />
 					</customparam>
@@ -213,7 +218,73 @@
 		</params>
 	</mapping>
 
-	<mapping from="AnSimpleFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation">
+	<mapping from="LagOrLeadAnContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation">
+		<params>
+			<tokensetparam name="op" tokenset="OffsetOperator" />
+			<exprparam name="expr" />
+			<valueparam name="signedInteger" />
+			<valueparam name="constant" />
+			<nestedparam name="partitionByClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+			<nestedparam name="orderByClause">
+				<listparam name="orderByItem">
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
+						<stringparam name="componentID" />
+						<tokensetparam tokenset="OrderingMethod" />
+					</customparam>
+				</listparam>
+			</nestedparam>
+		</params>
+	</mapping>
+
+	<mapping from="LagOrLeadAnComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation">
+		<params>
+			<tokensetparam name="op" tokenset="OffsetDirection" />
+			<exprparam name="exprComponent" />
+			<valueparam name="signedInteger" />
+			<valueparam name="constant" />
+			<nestedparam name="partitionByClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+			<nestedparam name="orderByClause">
+				<listparam name="orderByItem">
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
+						<stringparam name="componentID" />
+						<tokensetparam tokenset="OrderingMethod" />
+					</customparam>
+				</listparam>
+			</nestedparam>
+		</params>
+	</mapping>
+
+	<mapping from="RatioToReportAnContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.RatioToReportTransformation">
+		<params>
+			<exprparam name="expr" />
+			<nestedparam name="partitionByClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+		</params>
+	</mapping>
+
+	<mapping from="RatioToReportAnComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.RatioToReportTransformation">
+		<params>
+			<exprparam name="exprComponent" />
+			<nestedparam name="partitionByClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+		</params>
+	</mapping>
+
+	<mapping from="AnSimpleFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AnalyticOperator" />
 			<exprparam name="exprComponent" />
@@ -224,7 +295,7 @@
 			</nestedparam>
 			<nestedparam name="orderByClause">
 				<listparam name="orderByItem">
-					<customparam class="it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation$OrderByItem">
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
 						<stringparam name="componentID" />
 						<tokensetparam tokenset="OrderingMethod" />
 					</customparam>
@@ -244,7 +315,25 @@
 		</params>
 	</mapping>
 
-	<mapping from="AggrDatasetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+	<mapping from="RankAnComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.RankTransformation">
+		<params>
+			<nestedparam name="partitionByClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+			<nestedparam name="orderByClause">
+				<listparam name="orderByItem">
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
+						<stringparam name="componentID" />
+						<tokensetparam tokenset="OrderingMethod" />
+					</customparam>
+				</listparam>
+			</nestedparam>
+		</params>
+	</mapping>
+
+	<mapping from="AggrDatasetContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AggregateOperator" />
 			<exprparam name="expr" />
@@ -257,7 +346,7 @@
 		</params>
 	</mapping>
 
-	<!-- mapping from="AggrOperatorsGroupingContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+	<!-- mapping from="AggrOperatorsGroupingContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AggregateOperator" />
 			<exprparam name="exprComponent" />
@@ -266,7 +355,7 @@
 		</params>
 	</mapping -->
 
-	<mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+	<mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
 		<tokens name="op">
 			<value>SUM</value>
 			<value>MAX</value>
@@ -286,7 +375,7 @@
 		</params>
 	</mapping>
 
-	<!-- mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+	<!-- mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
 		<tokens name="op">
 			<value>COUNT</value>
 		</tokens>
@@ -296,7 +385,7 @@
 		</params>
 	</mapping -->
 
-	<mapping from="CountAggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation">
+	<mapping from="CountAggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
 		<params>
 			<nullparam />
 			<nullparam />

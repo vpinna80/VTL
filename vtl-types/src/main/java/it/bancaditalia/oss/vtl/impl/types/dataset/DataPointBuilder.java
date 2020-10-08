@@ -38,7 +38,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,11 +217,17 @@ public class DataPointBuilder
 		@Override
 		public DataPoint merge(DataPoint other)
 		{
+			throw new UnsupportedOperationException();
+		}
+		
+		@Override
+		public DataPoint combine(DataPoint other)
+		{
 			Objects.requireNonNull(other);
 			
 			Set<String> thisNames = keySet().stream()
 					.map(DataStructureComponent::getName)
-					.collect(Collectors.toSet());
+					.collect(toSet());
 			
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> finalMap = other.keySet().stream()
 					.filter(c -> !thisNames.contains(c.getName()))

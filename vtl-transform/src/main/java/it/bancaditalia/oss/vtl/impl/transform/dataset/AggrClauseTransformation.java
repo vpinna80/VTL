@@ -33,9 +33,9 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.ops.AggregateTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;

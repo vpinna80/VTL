@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -30,12 +31,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.ops.AnalyticTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -107,9 +107,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		}
 
 		@Override
-		public ScalarValue<?, ?, ?> eval(TransformationScheme session)
+		public ScalarValue<?, ?, ?> eval(TransformationScheme sscheme)
 		{
-			return (ScalarValue<?, ?, ?>) calcClause.eval(session);
+			return (ScalarValue<?, ?, ?>) calcClause.eval(sscheme);
 		}
 
 		@Override
@@ -117,7 +117,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		{
 			return calcClause.getMetadata(scheme);
 		}
-
+		
 		public boolean isAnalytic()
 		{
 			return calcClause instanceof AnalyticTransformation;
@@ -143,8 +143,8 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
 
-		Map<Boolean, List<CalcClauseItem>> partitionedClauses = Utils.getStream(calcClauses)
-			.collect(Collectors.partitioningBy(CalcClauseItem::isAnalytic));
+		final Map<Boolean, List<CalcClauseItem>> partitionedClauses = Utils.getStream(calcClauses)
+			.collect(partitioningBy(CalcClauseItem::isAnalytic));
 		final List<CalcClauseItem> nonAnalyticClauses = partitionedClauses.get(false);
 		final List<CalcClauseItem> analyticClauses = partitionedClauses.get(true);
 		
@@ -202,7 +202,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	
 	private static DataSet joinByIDs(DataSet left, DataSet right)
 	{
-		return left.filteredMappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, (dpl, dpr) -> dpl.merge(dpr));
+		return left.filteredMappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, (dpl, dpr) -> dpl.combine(dpr));
 	}
 
 	@Override

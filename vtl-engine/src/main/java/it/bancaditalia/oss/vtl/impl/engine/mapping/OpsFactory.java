@@ -261,7 +261,7 @@ public class OpsFactory implements Serializable
 		if (constructors.length < 1)
 			throw new IllegalStateException("Expected at least one public constructor but found none for " + target.getSimpleName());
 
-		List<Class<?>> argsClasses = args.stream().map(p -> p != null ? p.getClass() : null).collect(toList());
+		List<Class<?>> argsClasses = args.stream().map(arg -> arg != null ? arg.getClass() : null).collect(toList());
 
 		for (Constructor<?> constr : constructors)
 			if (checkConstructor(constr, target, argsClasses, args, level))
@@ -551,7 +551,11 @@ public class OpsFactory implements Serializable
 	private ScalarValue<?, ?, ?> parseValueParam(ParserRuleContext ctx, int level, Valueparam param)
 	{
 		// lookup actual token
-		Token token = (Token) (getFieldOrMethod(param, ctx, ParserRuleContext.class, level)).getChild(TerminalNode.class, 0).getPayload();
+		ParserRuleContext element = getFieldOrMethod(param, ctx, ParserRuleContext.class, level);
+		if (element == null)
+			return null;
+		
+		Token token = (Token) element.getChild(TerminalNode.class, 0).getPayload();
 		int tokenType = token.getType();
 		switch (tokenType)
 		{

@@ -49,6 +49,8 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 
 	public DataPoint alter(Map<? extends DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?>> measures);
 
+	public DataPoint combine(DataPoint other);
+	
 	@SuppressWarnings("unchecked")
 	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> ScalarValue<?, S, D> getValue(DataStructureComponent<?, S, D> component)
 	{
