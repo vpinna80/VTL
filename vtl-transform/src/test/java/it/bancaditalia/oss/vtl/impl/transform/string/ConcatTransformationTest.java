@@ -28,7 +28,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.string.ConcatTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;

@@ -25,6 +25,9 @@ import static java.util.stream.Collectors.toList;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.bancaditalia.oss.vtl.engine.NamedOperator;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -43,7 +46,8 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 {
-	//private final static Logger LOGGER = LoggerFactory.getLogger(AssignStatement.class);
+	@SuppressWarnings("unused")
+	private final static Logger LOGGER = LoggerFactory.getLogger(DefineOperatorStatement.class);
 	private static final long serialVersionUID = 1L;
 
 	private final Transformation	expression;
@@ -89,7 +93,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 		{
 			VTLValueMetadata metadata;
 			MetadataRepository repo = scheme.getRepository();
-			ValueDomainSubset<?> expectedResultType = resultType == null ? null : (ValueDomainSubset<?>) repo.getDomain(resultType);
+			ValueDomainSubset<?> expectedResultType = resultType == null ? null : repo.getDomain(resultType);
 			try
 			{
 				metadata = expression.getMetadata(scheme);

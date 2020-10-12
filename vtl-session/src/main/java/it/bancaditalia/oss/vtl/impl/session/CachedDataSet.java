@@ -71,7 +71,7 @@ public class CachedDataSet extends NamedDataSet
 					{
 						String name = REF_NAMES.remove(REF_QUEUE.remove());
 						if (name != null)
-							LOGGER.debug("Cleaned cache of {}", name);
+							LOGGER.trace("Cleaned cache of {}", name);
 					}
 					catch (InterruptedException e)
 					{
@@ -118,7 +118,7 @@ public class CachedDataSet extends NamedDataSet
 				.map(Utils::getStream)
 				.peek(cache -> {
 					isCompleted.release();
-					LOGGER.debug("Cache hit for {}.", getAlias());
+					LOGGER.trace("Cache hit for {}.", getAlias());
 				}).findAny()
 				.orElseGet(() -> createCache(isCompleted));
 	}
@@ -126,7 +126,7 @@ public class CachedDataSet extends NamedDataSet
 	private Stream<DataPoint> createCache(Semaphore isCompleted)
 	{
 		AtomicBoolean alreadyInterrupted = new AtomicBoolean(false);
-		LOGGER.debug("Caching started for {}.", getAlias());
+		LOGGER.debug("Cache miss for {}, start caching.", getAlias());
 		
 		// reference to cache holder 
 		SoftReference<Set<DataPoint>> setRef = new SoftReference<>(newSetFromMap(new ConcurrentHashMap<>()), REF_QUEUE);
@@ -138,13 +138,13 @@ public class CachedDataSet extends NamedDataSet
 					set.add(dp);
 				else if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
 				{
-					LOGGER.debug("Caching interrupted for {}.", getAlias());
+					LOGGER.trace("Caching interrupted for {}.", getAlias());
 					isCompleted.release();
 				}
 			}).onClose(() -> {
 				if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
 				{
-					LOGGER.debug("Caching finished for {}.", getAlias());
+					LOGGER.trace("Caching finished for {}.", getAlias());
 					// register the cache
 					cache.put(getAlias(), setRef);
 					// remember the name

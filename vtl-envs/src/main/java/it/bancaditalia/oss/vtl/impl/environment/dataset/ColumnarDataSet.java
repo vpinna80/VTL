@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.environment.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
+
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -26,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -62,7 +63,6 @@ public class ColumnarDataSet extends AbstractDataSet
 	{
 		return Utils.getStream(columns.entrySet())
 				.map(Utils.keepingKey(col -> col[rowIndex]))
-				.reduce(new DataPointBuilder(), DataPointBuilder::add, DataPointBuilder::merge)
-				.build(getMetadata());
+				.collect(toDataPoint(getMetadata()));
 	}
 }

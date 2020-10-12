@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -32,18 +33,30 @@ public class ThreadUtils
 
 		final String what = isMeta ? "metadata" : "value";
 	
-		LOGGER.debug("Asking computing {} of {}:{}", what, hashHex(reducingExpr), reducingExpr);
+		LOGGER.trace("Asking computing {} of {}:{}", what, hashHex(reducingExpr), reducingExpr);
 		Future<? extends T> leftTask = POOL.submit(() -> extractor.apply(leftExpr, scheme));
 		Future<? extends T> rightTask = POOL.submit(() -> extractor.apply(rightExpr, scheme));
 
+		final T left, right;
 		try 
 		{
-			return finisher.apply(leftTask.get(), rightTask.get());
+			left = leftTask.get();
 		}
 		catch (InterruptedException | ExecutionException e) 
 		{
-			throw new IllegalStateException(e);
+			throw new VTLNestedException("Error executing subrule " + leftExpr, e);
 		}
+		
+		try 
+		{
+			right = rightTask.get();
+		}
+		catch (InterruptedException | ExecutionException e) 
+		{
+			throw new VTLNestedException("Error executing subrule " + rightExpr, e);
+		}
+
+		return finisher.apply(left, right);
 	}
 
 	private static String hashHex(Transformation expr) 

@@ -50,6 +50,7 @@ public class WindowView
 		{
 			if (rangeType == RANGE)
 				throw new UnsupportedOperationException("range sliding windows are not implemented in analytic invocation");
+
 			this.rangeType = rangeType;
 			this.preceding = preceding;
 			this.following = following;
@@ -63,6 +64,11 @@ public class WindowView
 		public LimitClause getFollowing()
 		{
 			return following;
+		}
+		
+		public WindowRangeType getRangeType()
+		{
+			return rangeType;
 		}
 		
 		@Override
@@ -132,7 +138,7 @@ public class WindowView
 				});
 	}
 	
-	public Stream<Entry<Map<DataStructureComponent<Identifier,?,?>,ScalarValue<?,?,?>>,List<DataPoint>>> getWindows()
+	public Stream<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, List<DataPoint>>> getWindows()
 	{
 		return windows;
 	}

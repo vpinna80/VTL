@@ -54,7 +54,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class DataPointBuilder 
+public class DataPointBuilder
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
@@ -64,14 +64,14 @@ public class DataPointBuilder
 
 	public DataPointBuilder()
 	{
-		 delegate = new ConcurrentHashMap<>();
+		delegate = new ConcurrentHashMap<>();
 	}
-	
+
 	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> keys)
 	{
-		 delegate = new ConcurrentHashMap<>(keys);
+		delegate = new ConcurrentHashMap<>(keys);
 	}
-	
+
 	private synchronized DataPointBuilder checkState()
 	{
 		if (built)
@@ -80,7 +80,19 @@ public class DataPointBuilder
 		return this;
 	}
 
-	public static DataPointBuilder merge(DataPointBuilder left, DataPointBuilder right)
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+			DataSetMetadata structure, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> startingValues)
+	{
+		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(structure), CONCURRENT, UNORDERED);
+	}
+
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+			DataSetMetadata structure)
+	{
+		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(structure), CONCURRENT, UNORDERED);
+	}
+
+	private static DataPointBuilder merge(DataPointBuilder left, DataPointBuilder right)
 	{
 		right.delegate.forEach(left.delegate::putIfAbsent);
 		return left.checkState();
@@ -92,32 +104,19 @@ public class DataPointBuilder
 		return checkState();
 	}
 
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> 
-			Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(DataSetMetadata structure, 
-			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> startingValues)
-	{
-		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(structure), CONCURRENT, UNORDERED);
-	}
-
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> 
-			Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(DataSetMetadata structure)
-	{
-		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(structure), CONCURRENT, UNORDERED);
-	}
-
 	public <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> DataPointBuilder add(Entry<? extends K, ? extends V> value)
 	{
 		delegate.putIfAbsent(value.getKey(), value.getValue());
 		return checkState();
 	}
-	
+
 	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?> value)
 	{
 		if (delegate.putIfAbsent(component, value) != null)
 			throw new NullPointerException();
 		return checkState();
 	}
-	
+
 	public DataPointBuilder delete(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		delegate.keySet().removeAll(components);
@@ -142,10 +141,10 @@ public class DataPointBuilder
 	{
 		if (built)
 			throw new IllegalStateException("DataPoint already built");
-		built  = true;
+		built = true;
 		return new DataPointImpl(Objects.requireNonNull(structure, "DataSet structure is null for " + delegate), delegate);
 	}
-	
+
 	@Override
 	public String toString()
 	{
@@ -156,37 +155,33 @@ public class DataPointBuilder
 	{
 		private static final long serialVersionUID = 1L;
 		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
-		
+
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> dpValues;
-		
+
 		private DataPointImpl(DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> values)
 		{
 			if (!(values instanceof Serializable))
 				throw new IllegalStateException("The values map must be serializable");
-			
+
 			if (values.size() != structure.size())
 			{
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> filledValues = new ConcurrentHashMap<>(values);
-				Utils.getStream(structure)
-					.filter(c -> !c.is(Identifier.class) && !values.containsKey(c))
-					.forEach(c -> filledValues.put(c, NullValue.instance(c.getDomain())));
+				Utils.getStream(structure).filter(c -> !c.is(Identifier.class) && !values.containsKey(c))
+						.forEach(c -> filledValues.put(c, NullValue.instance(c.getDomain())));
 				this.dpValues = filledValues;
-			}
-			else
+			} else
 				this.dpValues = values;
-			
+
 			if (!structure.equals(dpValues.keySet()))
 			{
-				this.dpValues.keySet().stream()
-					.filter(c -> !structure.contains(c))
-					.map(c -> new SimpleEntry<>(c, new IllegalStateException("Component " + c + " has a value but is not defined on " + structure)))
-					.peek(e -> LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", e.getKey(), structure, values, e.getValue()))
-					.map(Map.Entry::getValue)
-					.findAny()
-					.ifPresent(e -> { 
-						throw e; 
-					});
-				
+				this.dpValues.keySet().stream().filter(c -> !structure.contains(c))
+						.map(c -> new SimpleEntry<>(c, new IllegalStateException("Component " + c + " has a value but is not defined on " + structure)))
+						.peek(e -> LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", e.getKey(), structure, values,
+								e.getValue()))
+						.map(Map.Entry::getValue).findAny().ifPresent(e -> {
+							throw e;
+						});
+
 				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
 				missing.removeAll(this.dpValues.keySet());
 				if (missing.size() > 0)
@@ -197,20 +192,17 @@ public class DataPointBuilder
 		@Override
 		public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role)
 		{
-			return Utils.getStream(dpValues.keySet())
-					.filter(k -> k.is(role))
-					.map(k -> k.as(role))
-					.collect(toMapWithValues(dpValues::get));
+			return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(toMapWithValues(dpValues::get));
 		}
-		
+
 		@Override
 		public DataPoint dropComponents(Set<DataStructureComponent<?, ?, ?>> components)
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newVals = new HashMap<>(this);
-			for (DataStructureComponent<?, ?, ?> component: components)
+			for (DataStructureComponent<?, ?, ?> component : components)
 				if (!component.is(Identifier.class))
 					newVals.remove(component);
-			
+
 			return new DataPointImpl(new DataStructureBuilder(newVals.keySet()).build(), newVals);
 		}
 
@@ -219,20 +211,17 @@ public class DataPointBuilder
 		{
 			throw new UnsupportedOperationException();
 		}
-		
+
 		@Override
 		public DataPoint combine(DataPoint other)
 		{
 			Objects.requireNonNull(other);
-			
-			Set<String> thisNames = keySet().stream()
-					.map(DataStructureComponent::getName)
-					.collect(toSet());
-			
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> finalMap = other.keySet().stream()
-					.filter(c -> !thisNames.contains(c.getName()))
+
+			Set<String> thisNames = keySet().stream().map(DataStructureComponent::getName).collect(toSet());
+
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> finalMap = other.keySet().stream().filter(c -> !thisNames.contains(c.getName()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
-			
+
 			return new DataPointImpl(new DataStructureBuilder(finalMap.keySet()).build(), finalMap);
 		}
 
@@ -240,13 +229,13 @@ public class DataPointBuilder
 		public DataPoint keep(Collection<? extends DataStructureComponent<?, ?, ?>> components) throws VTLMissingComponentsException
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> oper = new HashMap<>(getValues(Identifier.class));
-			
-			for (DataStructureComponent<?, ?, ?> component: components)
+
+			for (DataStructureComponent<?, ?, ?> component : components)
 				if (containsKey(component))
 					oper.put(component, get(component));
 				else
-					throw new VTLMissingComponentsException(component, keySet()); 
-			
+					throw new VTLMissingComponentsException(component, keySet());
+
 			return new DataPointImpl(new DataStructureBuilder(oper.keySet()).build(), oper);
 		}
 
@@ -255,45 +244,44 @@ public class DataPointBuilder
 		{
 			if (!containsKey(oldComponent))
 				throw new VTLMissingComponentsException(oldComponent, keySet());
-			
+
 			if (newComponent == null)
 				throw new VTLException("rename: new omponent cannot be null");
-			
+
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newValues = new HashMap<>(this);
 			ScalarValue<?, ?, ?> value = newValues.remove(oldComponent);
 			newValues.put(newComponent, value);
 			return new DataPointImpl(new DataStructureBuilder(newValues.keySet()).build(), newValues);
 		}
-		
+
 		@Override
 		public DataPoint alter(Map<? extends DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?>> measures)
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(getValues(Identifier.class));
 			result.putAll(measures);
-			
-			return new DataPointImpl(new DataStructureBuilder(result.keySet()).build(), result); 
+
+			return new DataPointImpl(new DataStructureBuilder(result.keySet()).build(), result);
 		}
-		
+
 		@Override
 		public DataPoint subspace(Set<? extends DataStructureComponent<Identifier, ?, ?>> subspace)
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(this);
 			result.keySet().removeAll(subspace);
-			
+
 			return new DataPointImpl(new DataStructureBuilder(result.keySet()).build(), result);
 		}
-		
+
 		@Override
 		public DataPoint replaceComponent(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?> value)
 		{
 			if (!containsKey(component))
 				throw new VTLMissingComponentsException(component, keySet());
-			
+
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newValues = new HashMap<>(this);
 			newValues.put(component, value);
 			return new DataPointImpl(new DataStructureBuilder(keySet()).build(), newValues);
 		}
-
 
 		@Override
 		public boolean containsKey(Object key)
@@ -340,10 +328,7 @@ public class DataPointBuilder
 		@Override
 		public String toString()
 		{
-			return entrySet().stream()
-					.peek(e -> Objects.nonNull(e.getKey()))
-					.peek(e -> Objects.nonNull(e.getValue()))
-					.map(Entry::toString)
+			return entrySet().stream().peek(e -> Objects.nonNull(e.getKey())).peek(e -> Objects.nonNull(e.getValue())).map(Entry::toString)
 					.collect(joining(", ", "{ ", " }"));
 		}
 	}

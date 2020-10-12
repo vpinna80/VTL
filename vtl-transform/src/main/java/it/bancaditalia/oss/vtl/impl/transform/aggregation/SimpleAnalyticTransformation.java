@@ -27,8 +27,9 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.Comparator;
@@ -36,11 +37,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Collector;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -135,27 +134,23 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new LightFDataSet<>(metadata, ds -> ds.streamByKeys(
-				partitionIDs, 
-				toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
-				(partition, keyValues) -> aggregateWindows(measures, partition, keyValues)
+		return new LightFDataSet<>(metadata, ds -> ds.streamByKeys(partitionIDs, toConcurrentMap(identity(), dp -> TRUE), 
+				(partition, keyValues) -> aggregateWindows(measures, comparator, partition.keySet(), keyValues)
 			).reduce(Stream::concat)
 			.orElse(Stream.empty()), dataset);
 	}
 	
-	private Stream<DataPoint> aggregateWindows(Set<DataStructureComponent<Measure, ?, ?>> measures, NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	private Stream<DataPoint> aggregateWindows(Set<DataStructureComponent<Measure, ?, ?>> measures, Comparator<DataPoint> comparator, Set<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
+		
+		TreeSet<DataPoint> orderedPartition = new TreeSet<>(comparator);
+		orderedPartition.addAll(partition);
 		// for each window, compute aggregations for each measure and create a new datapoint with them
-		return new WindowView(partition, windowClause)
+		return new WindowView(orderedPartition, windowClause)
 				.getWindows()
 				.map(window -> measures.stream()
-					.map(toEntryWithValue(measure -> {
-						final List<DataPoint> value = window.getValue();
-						final Stream<DataPoint> stream = Utils.getStream(value);
-						final Collector<DataPoint, ?, ScalarValue<?, ?, ?>> reducer = aggregation.getReducer(measure);
-						return (ScalarValue<?, ?, ?>) stream.collect(reducer);
-					}))
+					.map(toEntryWithValue(measure -> (ScalarValue<?, ?, ?>) Utils.getStream(window.getValue()).collect(aggregation.getReducer(measure))))
 					.collect(toDataPoint(metadata, window.getKey()))
 				);
 	}

@@ -2,6 +2,7 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.INNER_JOIN;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
@@ -280,8 +281,7 @@ public class JoinTransformation extends TransformationImpl
 				return new NamedDataSet(op.getId(), new LightFDataSet<>(newStructure, dataset -> dataset.stream()
 						.map(dp -> Utils.getStream(dp)
 								.map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c))
-								.reduce(new DataPointBuilder(), DataPointBuilder::add, DataPointBuilder::merge)
-								.build(newStructure)
+								.collect(toDataPoint(newStructure))
 						), ds));
 			})).collect(entriesToMap());
 	}

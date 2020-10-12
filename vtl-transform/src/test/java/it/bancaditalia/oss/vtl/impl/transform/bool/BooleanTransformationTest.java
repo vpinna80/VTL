@@ -38,7 +38,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
