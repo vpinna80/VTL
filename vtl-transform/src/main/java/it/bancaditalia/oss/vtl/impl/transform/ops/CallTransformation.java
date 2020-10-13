@@ -19,6 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -86,13 +87,22 @@ public class CallTransformation extends TransformationImpl
 		{
 			NamedOperator op = (NamedOperator) statement;
 			List<String> parNames = op.getParameterNames();
+			
 			if (params.size() != parNames.size())
 				throw new UnsupportedOperationException(operator + " requires " + parNames.size() + " parameters but " + params.size() + " were provided.");
+			
 			Map<String, Transformation> paramValues = IntStream.range(0, params.size()).boxed()
 					.collect(toMap(i -> parNames.get(i), i -> params.get(i)));
+			
 			return op.getMetadata(new ParamScope(scheme, paramValues));
 		}
 		else
 			throw new UnsupportedOperationException("Operator " + operator + " is not defined.");
+	}
+	
+	@Override
+	public String toString()
+	{
+		return operator + params.stream().map(Transformation::toString).collect(joining(", ", "(", ")"));
 	}
 }

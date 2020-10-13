@@ -21,7 +21,7 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.util.stream.Stream;
 
-public interface DataSetComponent<I extends Comparable<?>, R extends ComponentRole, S extends ValueDomainSubset<D>, D  extends ValueDomain>
+public interface DataSetComponent<I extends Comparable<?>, R extends Component, S extends ValueDomainSubset<D>, D  extends ValueDomain>
 		extends DataStructureComponent<R, S, D>, VTLValue
 {
 	public Stream<ScalarValue<?, S, D>> streamValues();

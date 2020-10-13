@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -87,7 +87,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 
 		// TODO: cast because compiler bug
 		metadata = dataset.subspace(subspace.keySet().stream()
-				.map(name -> (DataStructureComponent<Identifier, ?, ?>) dataset.getComponent(name, Identifier.class)).collect(toSet()));
+				.map(name -> dataset.getComponent(name, Identifier.class).get()).collect(toSet()));
 		
 		return metadata;
 	}

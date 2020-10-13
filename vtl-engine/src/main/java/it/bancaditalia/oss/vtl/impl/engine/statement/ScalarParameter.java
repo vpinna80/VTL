@@ -19,6 +19,10 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+
 class ScalarParameter extends Parameter
 {
 	private static final long serialVersionUID = 1L;
@@ -40,5 +44,17 @@ class ScalarParameter extends Parameter
 	public String toString()
 	{
 		return getName() + (domainName != null ? " " + domainName : "");
+	}
+
+	@Override
+	public boolean matches(VTLValueMetadata metadata)
+	{
+		return metadata instanceof ScalarValueMetadata || metadata instanceof UnknownValueMetadata;
+	}
+	
+	@Override
+	public String getMetaString()
+	{
+		return domainName;
 	}
 }

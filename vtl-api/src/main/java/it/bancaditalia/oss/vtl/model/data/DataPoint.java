@@ -33,8 +33,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>>, Serializable
@@ -74,7 +74,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.isPresent();
 	}
 
-	public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role);
+	public <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role);
 
 	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> getValues(Set<? extends DataStructureComponent<?, ?, ?>> components)
 	{
@@ -83,7 +83,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.collect(toMapWithValues(this::get));
 	}
 
-	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role, Collection<String> components)
+	public default <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role, Collection<String> components)
 	{
 		return Utils.getStream(keySet())
 				.map(c -> new SimpleEntry<>(c, c.getName()))
@@ -94,7 +94,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.collect(toMapWithValues(this::get));
 	}
 
-	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Set<DataStructureComponent<R, ?, ?>> components, Class<R> role)
+	public default <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Set<DataStructureComponent<R, ?, ?>> components, Class<R> role)
 	{
 		return Utils.getStream(getValues(role).entrySet())
 				.filter(entryByKey(components::contains))

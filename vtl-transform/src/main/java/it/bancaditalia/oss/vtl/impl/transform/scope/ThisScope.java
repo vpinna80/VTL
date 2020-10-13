@@ -50,6 +50,12 @@ public class ThisScope implements TransformationScheme
 	}
 
 	@Override
+	public boolean contains(String alias)
+	{
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public VTLValueMetadata getMetadata(String node)
 	{
 		if (THIS.equals(node))
@@ -60,7 +66,7 @@ public class ThisScope implements TransformationScheme
 			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(stripped).isPresent())
 				return ((DataSetMetadata) thisMetadata).membership(stripped);
 			else 
-				return parent.getMetadata(node);
+				return getParent().getMetadata(node);
 		}
 	}
 
@@ -75,19 +81,25 @@ public class ThisScope implements TransformationScheme
 			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(node).isPresent())
 				return ((DataSet) thisValue).membership(stripped);
 			else 
-				return parent.resolve(node);
+				return getParent().resolve(node);
 		}
 	}
 
 	@Override
 	public Statement getRule(String node)
 	{
-		return parent.getRule(node);
+		return getParent().getRule(node);
 	}
 
 	@Override
 	public MetadataRepository getRepository()
 	{
-		return parent.getRepository();
+		return getParent().getRepository();
+	}
+
+	@Override
+	public TransformationScheme getParent()
+	{
+		return parent;
 	}
 }

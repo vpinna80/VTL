@@ -19,14 +19,20 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
+import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.ANY;
+import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.AT_LEAST_ONE;
+import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.MAX_ONE;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -40,11 +46,14 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.grammar.Vtl;
+import it.bancaditalia.oss.vtl.grammar.Vtl.CompConstraintContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentTypeContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.DatasetTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorsContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefineExpressionContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.InputParameterTypeContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.MultModifierContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.OutputParameterTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ParameterItemContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.PersistAssignmentContext;
@@ -53,11 +62,12 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.TemporaryAssignmentContext;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
+import it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class StatementFactory implements Serializable
@@ -113,7 +123,7 @@ public class StatementFactory implements Serializable
 				List<Parameter> params = coalesce(defineOp.parameterItem(), emptyList()).stream()
 						.map(this::buildParam)
 						.collect(Collectors.toList());
-				String outputType = buildParamType(defineOp.outputParameterType());
+				Parameter outputType = buildParamType(defineOp.outputParameterType());
 				
 				return new DefineOperatorStatement(defineOp.operatorID().getText(), params, outputType, buildExpr(defineOp.expr()));
 			}
@@ -137,82 +147,122 @@ public class StatementFactory implements Serializable
 //			throw new UnsupportedOperationException("Parameter type not implemented: " + param.inputParameterType().getText());
 	}
 
-	private Parameter buildParamType(String name, ParserRuleContext type)
+	private static Parameter buildParamType(String name, ParserRuleContext type)
 	{
 		ScalarTypeContext scalarType = null;
 		ComponentTypeContext compType = null;
+		DatasetTypeContext datasetType = null;
+
 		if (type instanceof InputParameterTypeContext)
 		{
 			InputParameterTypeContext inputParameterTypeContext = (InputParameterTypeContext) type;
 			scalarType = inputParameterTypeContext.scalarType();
 			compType = inputParameterTypeContext.componentType();
+			datasetType = inputParameterTypeContext.datasetType();
 		}
 		else if (type instanceof ScalarTypeContext)
-		{
 			scalarType = (ScalarTypeContext) type;
-		}
 		else
 			throw new UnsupportedOperationException(type.getClass().getName());
 		
+		// check kind of each parameter used in the operator definition and generate constraints
 		if (scalarType != null)
-		{
-			ParserRuleContext scalarTypeName = coalesce(scalarType.basicScalarType(), scalarType.valueDomainName());
-			if (scalarType.scalarTypeConstraint() != null)
-				throw new UnsupportedOperationException("Domain constraint not implemented.");
-			if (scalarType.NULL_CONSTANT() != null)
-				throw new UnsupportedOperationException("NULL/NOT NULL constraint not implemented.");
-			return new ScalarParameter(name, scalarTypeName.getText());
-		}
+			return new ScalarParameter(name, generateDomainName(scalarType));
 		else if (compType != null)
 		{
-			String domain = null;
-			scalarType = compType.scalarType();
-			if (scalarType != null)
-				domain = ((ScalarParameter) buildParamType(name, scalarType)).getDomain();
-
-			ParseTree roleCtx = compType.componentRole();
-			Stack<ParseTree> stack = new Stack<>();
-			List<Token> resultList = new ArrayList<>();
-			stack.push(roleCtx);
-			while (!stack.isEmpty())
-			{
-				ParseTree current = stack.pop();
-				if (current instanceof TerminalNode)
-					resultList.add((Token) current.getPayload());
-				else if (current instanceof RuleContext)
-					for (int i = 0; i < current.getChildCount(); i++)
-						stack.push(current.getChild(i));
-				else if (current != null)
-					throw new IllegalStateException("Unexpected ParseTree of " + current.getClass());
-			}
-
-			Class<? extends ComponentRole> role;
-			if (resultList.size() == 0)
-				role = null;
-			else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.MEASURE)
-				role = Measure.class;
-			else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.DIMENSION)
-				role = Identifier.class;
-			else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.ATTRIBUTE)
-				role = Attribute.class;
-			else if (resultList.size() == 2 && resultList.get(0).getType() == Vtl.VIRAL && resultList.get(1).getType() == Vtl.ATTRIBUTE)
-				role = ViralAttribute.class;
-			else
-			{
-				Token token = resultList.get(0);
-				throw new IllegalStateException("Unrecognized role token " + Vtl.VOCABULARY.getSymbolicName(token.getType()) + " containing " + token.getText());
-			}
-			
-			return new ComponentParameter<>(name, domain, role);
+			Entry<Class<? extends Component>, String> metadata = generateComponentMetadata(compType);
+			return new ComponentParameter<>(name, metadata.getValue(), metadata.getKey());
 		}
+		else if (datasetType != null)
+			return new DataSetParameter(name, datasetType.compConstraint().stream()
+					.map(StatementFactory::generateComponentConstraint)
+					.collect(toList()));
 		else
 			throw new UnsupportedOperationException("Parameter of type " + type.getText() + " not implemented.");
 	}
 
-	private String buildParamType(OutputParameterTypeContext type)
+	private static String generateDomainName(ScalarTypeContext scalarType)
+	{
+		ParserRuleContext scalarTypeName = coalesce(scalarType.basicScalarType(), scalarType.valueDomainName());
+		if (scalarType.scalarTypeConstraint() != null)
+			throw new UnsupportedOperationException("Domain constraint not implemented.");
+		if (scalarType.NULL_CONSTANT() != null)
+			throw new UnsupportedOperationException("NULL/NOT NULL constraint not implemented.");
+		final String domainName = scalarTypeName.getText();
+		return domainName;
+	}
+
+	private static DataSetComponentConstraint generateComponentConstraint(CompConstraintContext constraint)
+	{
+		final Entry<Class<? extends Component>, String> metadata = generateComponentMetadata(constraint.componentType());
+		
+		if (constraint.componentID() != null)
+			return new NamedComponentConstraint(constraint.componentID().getText(), metadata.getKey(), metadata.getValue());
+		else
+			return new AnonymousComponentConstraint(metadata.getKey(), metadata.getValue(), generateMultConstraint(constraint.multModifier()));			
+	}
+
+	private static QuantifierConstraints generateMultConstraint(MultModifierContext multModifier)
+	{
+		if (multModifier.PLUS() != null)
+			return AT_LEAST_ONE;
+		else if (multModifier.MUL() != null)
+			return ANY;
+		else
+			return MAX_ONE;
+	}
+
+	private static Entry<Class<? extends Component>, String> generateComponentMetadata(ComponentTypeContext compType)
+	{
+		ScalarTypeContext scalarType;
+		String domain = null;
+		scalarType = compType.scalarType();
+		if (scalarType != null)
+			domain = generateDomainName(scalarType);
+
+		ParseTree roleCtx = compType.componentRole();
+		Stack<ParseTree> stack = new Stack<>();
+		List<Token> resultList = new ArrayList<>();
+		stack.push(roleCtx);
+		while (!stack.isEmpty())
+		{
+			ParseTree current = stack.pop();
+			if (current instanceof TerminalNode)
+				resultList.add((Token) current.getPayload());
+			else if (current instanceof RuleContext)
+				for (int i = 0; i < current.getChildCount(); i++)
+					stack.push(current.getChild(i));
+			else if (current != null)
+				throw new IllegalStateException("Unexpected ParseTree of " + current.getClass());
+		}
+
+		Class<? extends Component> role;
+		if (resultList.size() == 0)
+			role = null;
+		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.COMPONENT)
+			role = Component.class;
+		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.MEASURE)
+			role = Measure.class;
+		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.DIMENSION)
+			role = Identifier.class;
+		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.ATTRIBUTE)
+			role = Attribute.class;
+		else if (resultList.size() == 2 && resultList.get(0).getType() == Vtl.VIRAL && resultList.get(1).getType() == Vtl.ATTRIBUTE)
+			role = ViralAttribute.class;
+		else
+		{
+			Token token = resultList.get(0);
+			throw new IllegalStateException("Unrecognized role token " + Vtl.VOCABULARY.getSymbolicName(token.getType()) + " containing " + token.getText());
+		}
+		
+		return new SimpleEntry<>(role, domain);
+	}
+
+	private Parameter buildParamType(OutputParameterTypeContext type)
 	{
 		if (type == null)
 			return null;
+		
 		else if (type.scalarType() != null)
 		{
 			ScalarTypeContext scalarType = type.scalarType();
@@ -221,7 +271,7 @@ public class StatementFactory implements Serializable
 				throw new UnsupportedOperationException("Domain constraint not implemented.");
 			if (scalarType.NULL_CONSTANT() != null)
 				throw new UnsupportedOperationException("NULL/NOT NULL constraint not implemented.");
-			return scalarTypeName.getText();
+			return new ScalarParameter(null, scalarTypeName.getText());
 		}
 		else
 			throw new UnsupportedOperationException("Parameter of type " + type.getText() + " not implemented.");

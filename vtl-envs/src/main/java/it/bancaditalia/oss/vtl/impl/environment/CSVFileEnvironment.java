@@ -70,10 +70,10 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -327,9 +327,9 @@ public class CSVFileEnvironment implements Environment
 			
 			Entry<ValueDomainSubset<? extends ValueDomain>, String> mappedType = mapVarType(typeName);
 			ValueDomainSubset<? extends ValueDomain> domain = mappedType.getKey();
-			Class<? extends ComponentRole> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
+			Class<? extends Component> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
 			cname = cname.replaceAll("^[$#]", "");
-			DataStructureComponentImpl<? extends ComponentRole, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
+			DataStructureComponentImpl<? extends Component, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain)

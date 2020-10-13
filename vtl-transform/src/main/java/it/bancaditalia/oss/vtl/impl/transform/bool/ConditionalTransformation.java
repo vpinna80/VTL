@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
@@ -33,15 +34,16 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -137,7 +139,9 @@ public class ConditionalTransformation extends TransformationImpl
 		VTLValueMetadata left = thenExpr.getMetadata(session);
 		VTLValueMetadata right = elseExpr.getMetadata(session);
 
-		if (cond instanceof ScalarValueMetadata && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?>) cond).getDomain()))
+		if (cond instanceof UnknownValueMetadata || left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
+			return INSTANCE;
+		else if (cond instanceof ScalarValueMetadata && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?>) cond).getDomain()))
 			if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
 				return metadata = left;
 			else
@@ -190,6 +194,6 @@ public class ConditionalTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return "IF " + condition + " THEN " + thenExpr + " ELSE " + elseExpr;
+		return "if " + condition + " then " + thenExpr + " else " + elseExpr;
 	}
 }

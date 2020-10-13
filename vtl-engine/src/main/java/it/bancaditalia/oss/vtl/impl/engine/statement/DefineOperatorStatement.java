@@ -23,19 +23,22 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.NamedOperator;
+import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -43,6 +46,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 {
@@ -52,14 +56,17 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 
 	private final Transformation	expression;
 	private final List<Parameter> params;
-	private final String resultType;
+	private final Parameter resultType;
+	private final Map<String, Parameter> paramMap;
 
-	public DefineOperatorStatement(String name, List<Parameter> params, String resultType, Transformation expression)
+	public DefineOperatorStatement(String name, List<Parameter> params, Parameter resultType, Transformation expression)
 	{
 		super(name);
+		
 		this.expression = expression;
 		this.params = params;
 		this.resultType = resultType;
+		this.paramMap = params.stream().collect(Utils.toMapWithKeys(Parameter::getName));
 	}
 
 	public Transformation getExpression()
@@ -74,11 +81,11 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
 		try
 		{
-			return expression.eval(session);
+			return expression.eval(scheme);
 		}
 		catch (VTLException e)
 		{
@@ -89,79 +96,99 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		try
-		{
-			VTLValueMetadata metadata;
-			MetadataRepository repo = scheme.getRepository();
-			ValueDomainSubset<?> expectedResultType = resultType == null ? null : repo.getDomain(resultType);
-			try
-			{
-				metadata = expression.getMetadata(scheme);
-			}
-			catch (VTLException e)
-			{
-				// actual parameters are not available, don't perform checks
-				return (ScalarValueMetadata<?>) () -> expectedResultType;
-			}
+		MetadataRepository repo = scheme.getRepository();
+
+		TransformationScheme decoratedScheme = Utils.getStream(params).map(Parameter::getName).allMatch(scheme::contains)
+			? scheme
+			: new TransformationScheme() {
 				
-			// Check result type if declared
-			if (!(metadata instanceof ScalarValueMetadata<?>))
-				throw new UnsupportedOperationException("non-scalar result of operator not implemented.");
-			else if (expectedResultType != null)
-			{
-				ValueDomainSubset<?> actualResultType = ((ScalarValueMetadata<?>) metadata).getDomain();
-				if (!expectedResultType.isAssignableFrom(actualResultType))
-					throw new VTLIncompatibleTypesException("Expected result of operator of type ", expectedResultType, actualResultType);
-			}
-			
-			for (Parameter param: params)
-				if (param instanceof ComponentParameter)
+				@Override
+				public VTLValue resolve(String alias)
 				{
-					ComponentParameter<?> compParam = (ComponentParameter<?>) param;
-					VTLValueMetadata actualParamMeta = scheme.getMetadata(param.getName());
-					ValueDomainSubset<?> expectedDomain = compParam.getDomain() == null ? null : repo.getDomain(compParam.getDomain());
-					if (actualParamMeta instanceof DataSetMetadata)
-					{
-						DataSetMetadata dsMeta = (DataSetMetadata) actualParamMeta;
-						if (expectedDomain != null && dsMeta.getComponents(Measure.class, expectedDomain).size() != 1)
-							throw new VTLSingletonComponentRequiredException(Measure.class, expectedDomain, 
-									dsMeta.getComponents(Measure.class, expectedDomain));
-						else if (expectedDomain == null && dsMeta.getComponents(Measure.class).size() != 1)
-							throw new VTLSingletonComponentRequiredException(Measure.class, dsMeta.getComponents(Measure.class));
-					}
-					else if (expectedDomain != null)
-					{
-						ValueDomainSubset<?> actualDomain = ((ScalarValueMetadata<?>) actualParamMeta).getDomain();
-						if (!expectedDomain.isAssignableFrom(actualDomain))
-							throw new VTLIncompatibleTypesException("Parameter " + param.getName(), expectedDomain, actualDomain);
-					}
+					return scheme.resolve(alias);
 				}
-				else if (param instanceof ScalarParameter)
+				
+				@Override
+				public Statement getRule(String alias)
 				{
-					ScalarParameter scParam = (ScalarParameter) param;
-					VTLValueMetadata actualParamMeta = scheme.getMetadata(param.getName());
-					ValueDomainSubset<?> expectedDomain = repo.getDomain(scParam.getDomain());
-					if (actualParamMeta instanceof DataSetMetadata)
-					{
-						DataSetMetadata dsMeta = (DataSetMetadata) actualParamMeta;
-						if (dsMeta.getComponents(Measure.class, expectedDomain).size() != 1)
-							throw new VTLSingletonComponentRequiredException(Measure.class, expectedDomain, dsMeta);
-					}
+					return scheme.getRule(alias);
+				}
+				
+				@Override
+				public MetadataRepository getRepository()
+				{
+					return scheme.getRepository();
+				}
+				
+				@Override
+				public VTLValueMetadata getMetadata(String alias)
+				{
+					return paramMap.containsKey(alias) ? UnknownValueMetadata.INSTANCE : scheme.getMetadata(alias);
+				}
+				
+				@Override
+				public boolean contains(String alias)
+				{
+					return paramMap.containsKey(alias) || scheme.contains(alias);
+				}
+			};
+		
+		// check if each parameter metadata matches its definition			
+		for (Parameter param: params)
+		{
+			VTLValueMetadata actualParamMeta = decoratedScheme.getMetadata(param.getName());
+			
+			if (param instanceof ScalarParameter)
+			{
+				String declaredDomain = ((ScalarParameter) param).getDomain();
+
+				// Scalar or component parameter
+				if (param.matches(actualParamMeta))
+					matchDomains(param.getName(), declaredDomain, (ScalarValueMetadata<?>) actualParamMeta, repo);
+				// when inside a bracket expression, a component is a monomeasure dataset
+				else if (decoratedScheme.getParent().getParent() != null)
+				{
+					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) actualParamMeta).getComponents(Measure.class);
+					// This condition should never happen, but better to have a check
+					if (measures.size() != 1)
+						throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" 
+								+ param.getName() + "' but " + actualParamMeta + " was found.");
 					else 
-					{
-						ValueDomainSubset<?> actualDomain = ((ScalarValueMetadata<?>) actualParamMeta).getDomain();
-						if (!expectedDomain.isAssignableFrom(actualDomain))
-							throw new VTLIncompatibleTypesException("Parameter " + param.getName(), expectedDomain, actualDomain);
-					}
+						matchDomains(param.getName(), declaredDomain, measures.iterator().next()::getDomain, repo);
 				}
 				else
-					throw new UnsupportedOperationException(param.getClass().getSimpleName() + " not implemented.");
-			
-			return metadata;
+					throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" 
+							+ param.getName() + "' but " + actualParamMeta + " was found.");
+			}
+			else if (param instanceof DataSetParameter)
+			{
+				if (!param.matches(actualParamMeta))
+					throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" + param.getName() 
+					+ "' but " + actualParamMeta + " was found.");
+					
+			}
+			else
+				throw new UnsupportedOperationException(param.getClass().getSimpleName() + " not implemented.");
 		}
-		catch (VTLException e)
+		
+		// get the actual result type of the expression
+		VTLValueMetadata metadata = expression.getMetadata(decoratedScheme);
+		
+		if (!resultType.matches(metadata))
+			throw new VTLException(getId() + ": a result of type " + resultType.getMetaString() + " was expected but "
+					+ metadata + " was found.");
+
+		return metadata;
+	}
+
+	private void matchDomains(String paramName, String expectedDomainName, ScalarValueMetadata<?> actualParamMeta, MetadataRepository repo)
+	{
+		ValueDomainSubset<?> expectedDomain = expectedDomainName == null ? null : repo.getDomain(expectedDomainName);
+		if (expectedDomain != null)
 		{
-			throw new VTLNestedException("Error evaluating statement '" + this + "'. Error: " + e.getMessage(), e);
+			ValueDomainSubset<?> actualDomain = ((ScalarValueMetadata<?>) actualParamMeta).getDomain();
+			if (!expectedDomain.isAssignableFrom(actualDomain))
+				throw new VTLIncompatibleTypesException("Parameter " + paramName, expectedDomain, actualDomain);
 		}
 	}
 
@@ -181,8 +208,6 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 	public String toString()
 	{
 		return "define operator " + getId() + "(" + params.stream().map(Parameter::toString).collect(joining(", ")) + ")"
-				+ (resultType != null ? " returns " + resultType : "") + " is" + System.lineSeparator()
-				+ "\t" + expression + System.lineSeparator()
-				+ "end operator;";
+				+ (resultType != null ? " returns " + resultType : "") + " is " + expression + " end operator;";
 	}
 }

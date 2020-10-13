@@ -38,8 +38,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -88,7 +88,7 @@ public class ExistsInTransformation extends BinaryTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getComponents(Measure.class).iterator().next(),
 				rightMeasure = right.getComponents(Measure.class).iterator().next();
-		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> boolMeasure = metadata.getComponent("bool_var", Measure.class, BOOLEANDS); 
+		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> boolMeasure = metadata.getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
 		
 		Set<? extends ScalarValue<?, ?, ?>> values = right.stream().map(dp -> dp.get(rightMeasure)).collect(toSet());
 		Predicate<DataPoint> filter;

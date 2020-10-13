@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+
 public abstract class Parameter implements Serializable
 {
 	private static final long serialVersionUID = 1L;
@@ -36,4 +38,8 @@ public abstract class Parameter implements Serializable
 	{
 		return name;
 	}
+	
+	public abstract boolean matches(VTLValueMetadata metadata);
+
+	public abstract String getMetaString();
 }

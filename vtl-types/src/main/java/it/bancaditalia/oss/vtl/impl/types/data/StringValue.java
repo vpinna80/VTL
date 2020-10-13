@@ -19,6 +19,8 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.types.data;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
+
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -28,7 +30,6 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 public class StringValue extends BaseScalarValue<String, StringDomainSubset, StringDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final ScalarValueMetadata<StringDomainSubset> META = () -> Domains.STRINGDS;
 
 	public StringValue(String value)
 	{
@@ -41,10 +42,11 @@ public class StringValue extends BaseScalarValue<String, StringDomainSubset, Str
 		return get().compareTo((String) Domains.STRINGDS.cast(o).get());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public ScalarValueMetadata<StringDomainSubset> getMetadata()
 	{
-		return META;
+		return (ScalarValueMetadata<StringDomainSubset>) (ScalarValueMetadata<?>) STRING;
 	}
 	
 	@Override

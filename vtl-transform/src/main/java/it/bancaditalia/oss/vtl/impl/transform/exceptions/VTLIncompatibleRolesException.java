@@ -20,14 +20,14 @@
 package it.bancaditalia.oss.vtl.impl.transform.exceptions;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public class VTLIncompatibleRolesException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLIncompatibleRolesException(String operation, DataStructureComponent<?, ?, ?> component, Class<? extends ComponentRole> expectedRole)
+	public VTLIncompatibleRolesException(String operation, DataStructureComponent<?, ?, ?> component, Class<? extends Component> expectedRole)
 	{
 		super("In " + operation + ", component " + component.getName() + " is a " + component.getRole().getSimpleName() 
 				+ ", but it should be " + expectedRole.getSimpleName() + ".");

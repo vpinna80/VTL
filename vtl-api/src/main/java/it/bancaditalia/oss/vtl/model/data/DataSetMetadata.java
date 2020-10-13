@@ -29,16 +29,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 
 public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, VTLValueMetadata, Serializable
 {
-	public <T extends ComponentRole> Set<DataStructureComponent<T, ?, ?>> getComponents(Class<T> typeOfComponent);
+	public <T extends Component> Set<DataStructureComponent<T, ?, ?>> getComponents(Class<T> typeOfComponent);
 
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role, S domain)
+	public default <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role, S domain)
 	{
 		return getComponents(role).stream()
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
@@ -65,7 +65,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 		return getComponents(names.toArray(new String[0]));
 	}
 
-	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Collection<String> names, Class<R> role)
+	public default <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Collection<String> names, Class<R> role)
 	{
 		return getComponents(names.toArray(new String[0])).stream()
 				.filter(c -> c.is(role))
@@ -82,24 +82,20 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 		return component.orElse(null);
 	}
 
-	public default <R extends ComponentRole> DataStructureComponent<R, ?, ?> getComponent(String name, Class<R> role)
+	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
 	{
-		Optional<DataStructureComponent<R, ?, ?>> component = getComponent(name)
+		return getComponent(name)
 				.filter(c -> c.is(role))
 				.map(c -> c.as(role));
-			
-		return component.orElse(null);
 	}
 
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureComponent<R, S, D> getComponent(String name, Class<R> role, S domain)
+	public default <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name, Class<R> role, S domain)
 	{
-		Optional<DataStructureComponent<R, S, D>> component = getComponent(name)
+		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
 				.filter(c -> c.is(role))
 				.map(c -> c.as(domain))
 				.map(c -> c.as(role));
-		
-		return component.orElse(null);
 	}
 
 	public DataSetMetadata subspace(Collection<? extends DataStructureComponent<Identifier, ?, ?>> subspace);

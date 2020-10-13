@@ -89,11 +89,11 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.TriFunction;
@@ -505,7 +505,7 @@ public class OpsFactory implements Serializable
 		return result;
 	}
 
-	private Class<? extends ComponentRole> parseRoleParam(ParserRuleContext ctx, int level, Roleparam param)
+	private Class<? extends Component> parseRoleParam(ParserRuleContext ctx, int level, Roleparam param)
 	{
 		// lookup actual token
 		ParseTree roleCtx = getFieldOrMethod(param, ctx, ParseTree.class, level);

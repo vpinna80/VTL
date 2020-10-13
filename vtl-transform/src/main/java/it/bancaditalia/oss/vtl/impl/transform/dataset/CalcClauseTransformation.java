@@ -19,6 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
@@ -43,14 +44,15 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -68,10 +70,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		private static final long serialVersionUID = 1L;
 
 		private final String name;
-		private final Class<? extends ComponentRole> role;
+		private final Class<? extends Component> role;
 		private final Transformation calcClause;
 
-		public CalcClauseItem(Class<? extends ComponentRole> role, String name, Transformation calcClause)
+		public CalcClauseItem(Class<? extends Component> role, String name, Transformation calcClause)
 		{
 			this.name = name;
 			this.calcClause = calcClause;
@@ -83,7 +85,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			return name;
 		}
 
-		public Class<? extends ComponentRole> getRole()
+		public Class<? extends Component> getRole()
 		{
 			return role;
 		}
@@ -163,7 +165,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> calcValues = 
 						Utils.getStream(nonAnalyticClauses)
 							.collect(toConcurrentMap(
-								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),
+								clause -> {
+									final Optional<DataStructureComponent<?, ?, ?>> component = nonAnalyticResultMetadata.getComponent(clause.getName());
+									return component.get();
+								},
 								clause -> clause.eval(dpSession))
 							);
 					
@@ -206,7 +211,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
+	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
 		if (metadata != null)
 			return metadata;
@@ -225,7 +230,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			ValueDomainSubset<?> domain;
 
 			// get the domain of the calculated component
-			if (itemMeta instanceof DataSetMetadata)
+			if (itemMeta instanceof UnknownValueMetadata)
+				return INSTANCE;
+			else if (itemMeta instanceof DataSetMetadata)
 			{
 				// calc item expression is a component, check for mono-measure dataset
 				DataSetMetadata value = (DataSetMetadata) itemMeta;
@@ -260,7 +267,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else
 			{
 				// new component
-				Class<? extends ComponentRole> newComponent = item.getRole() == null ? Measure.class : item.getRole();
+				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
 				builder = builder.addComponent(new DataStructureComponentImpl<>(item.getName(), newComponent, domain));
 			}
 		}

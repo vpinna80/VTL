@@ -30,9 +30,18 @@ package it.bancaditalia.oss.vtl.exceptions;
 public class VTLUnboundNameException extends VTLException {
 
 	private static final long serialVersionUID = 1L;
+	
+	private final String name;
 
 	public VTLUnboundNameException(String name) 
 	{
-		super("Symbolic name '" + name + "' is not bound to this VTL session");
+		super("Alias '" + name + "' is not bound to this transformation scheme.");
+	
+		this.name = name;
+	}
+
+	public String getName()
+	{
+		return name;
 	}
 }

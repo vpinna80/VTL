@@ -136,7 +136,8 @@ public class VTLSessionImpl implements VTLSession
 				return acquireResult(statement, name);
 		}
 		else
-			return cacheHelper(name, cache, n -> acquireValue(name, Environment::getValue));
+			return cacheHelper(name, cache, n -> acquireValue(name, Environment::getValue)
+					.orElseThrow(() -> new VTLUnboundNameException(name)));
 	}
 
 	@Override
@@ -158,7 +159,25 @@ public class VTLSessionImpl implements VTLSession
 				return statement.getMetadata(this);
 		}
 		else
-			return cacheHelper(name, metacache, n -> this.acquireValue(n, Environment::getValueMetadata));
+			return cacheHelper(name, metacache, n -> acquireValue(n, Environment::getValueMetadata)
+					.orElseThrow(() -> new VTLUnboundNameException(name)));
+	}
+
+
+	@Override
+	public boolean contains(String name2)
+	{
+		final String name;
+		if (name2.matches("'.*'"))
+			name = name2.replaceAll("'(.*)'", "$1");
+		else
+			name = name2.toLowerCase();
+
+		Optional<? extends Statement> rule = workspace.getRule(name);
+		if (rule.isPresent())
+			return true;
+		else
+			return cacheHelper(name, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
 	}
 
 	private <T> T cacheHelper(final String name, Map<String, SoftReference<T>> cache, Function<? super String, ? extends T> mapper)
@@ -199,26 +218,29 @@ public class VTLSessionImpl implements VTLSession
 		}
 	}
 
-	private <T> T acquireValue(final String name, BiFunction<? super Environment, ? super String, ? extends Optional<? extends T>> mapper)
+	private <T> Optional<T> acquireValue(final String name, BiFunction<? super Environment, ? super String, ? extends Optional<T>> mapper)
 	{
 		LOGGER.info("Resolving value of {}", name);
 
-		T result = environments.stream()
+		Optional<T> maybeResult = environments.stream()
 				.map(env -> mapper.apply(env, name))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.findFirst()
-				.orElseThrow(() -> new VTLUnboundNameException(name));
-
-		if (result instanceof DataSet && !(result instanceof CachedDataSet))
-		{
-			@SuppressWarnings("unchecked")
-			T tempResult = (T) new CachedDataSet(this, name, (DataSet) result);
-			result = tempResult;
-		}
+				.findAny()
+				.map(result -> {
+					if (result instanceof DataSet && !(result instanceof CachedDataSet))
+					{
+						@SuppressWarnings("unchecked")
+						T tempResult = (T) new CachedDataSet(this, name, (DataSet) result);
+						return tempResult;
+					}
+					else
+						return result;
+				});
+		
 
 		LOGGER.trace("Finished resolving {}", name);
-		return result;
+		return maybeResult;
 	}
 
 	private VTLValue acquireResult(Statement statement, String alias)

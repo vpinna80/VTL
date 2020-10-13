@@ -32,8 +32,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 
 /**
  * The base interface describing a dataset
@@ -195,7 +195,7 @@ public interface DataSet extends VTLValue
 	 * 
 	 * @throws NullPointerException if domain is null.
 	 */
-	public default <R extends ComponentRole> DataStructureComponent<R, ?, ?> getComponent(String name, Class<R> role)
+	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
 	{
 		return getMetadata().getComponent(name, role);
 	}
@@ -210,7 +210,7 @@ public interface DataSet extends VTLValue
 	 * 
 	 * @throws NullPointerException if domain is null.
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureComponent<R, S, D> getComponent(String name,
+	public default <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name,
 			Class<R> role, S domain)
 	{
 		return getMetadata().getComponent(name, role, domain);
@@ -229,7 +229,7 @@ public interface DataSet extends VTLValue
 	/**
 	 * @see DataSetMetadata#getComponents(Class) 
 	 */
-	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
+	public default <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 	{
 		return getMetadata().getComponents(typeOfComponent);
 	}
@@ -237,7 +237,7 @@ public interface DataSet extends VTLValue
 	/**
 	 * @see DataSetMetadata#getComponents(Class, ValueDomainSubset) 
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
+	public default <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
 			S domain)
 	{
 		return getMetadata().getComponents(role, domain);

@@ -19,9 +19,9 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.Component;
 
-class ComponentParameter<T extends ComponentRole> extends ScalarParameter
+class ComponentParameter<T extends Component> extends ScalarParameter
 {
 	private static final long serialVersionUID = 1L;
 
@@ -41,6 +41,11 @@ class ComponentParameter<T extends ComponentRole> extends ScalarParameter
 	@Override
 	public String toString()
 	{
-		return getName() + " " + role.getSimpleName().toLowerCase() + (domainName != null ? "<" + domainName + ">" : "");
+		return getName() + " " + getMetaString();
+	}
+	
+	public String getMetaString()
+	{
+		return role.getSimpleName().toLowerCase() + (domainName != null ? "<" + domainName + ">" : "");
 	}
 }

@@ -45,10 +45,10 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -74,9 +74,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		
 		private final String                         name;
 		private final AggregateTransformation        operand;
-		private final Class<? extends ComponentRole> role;
+		private final Class<? extends Component> role;
 
-		public AggrClauseItem(Class<? extends ComponentRole> role, String name, AggregateTransformation operand)
+		public AggrClauseItem(Class<? extends Component> role, String name, AggregateTransformation operand)
 		{
 			this.name = name;
 			this.operand = operand;
@@ -93,7 +93,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			return operand;
 		}
 
-		public Class<? extends ComponentRole> getRole()
+		public Class<? extends Component> getRole()
 		{
 			return role;
 		}
@@ -225,7 +225,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, ((ScalarValueMetadata<?>) clauseMeta).getDomain());
 
 				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getComponent());
-				Class<? extends ComponentRole> requestedRole = clause.getRole() == null ? Measure.class : clause.getRole();
+				Class<? extends Component> requestedRole = clause.getRole() == null ? Measure.class : clause.getRole();
 				if (maybeExistingComponent.isPresent())
 				{
 					DataStructureComponent<?, ?, ?> existingComponent = maybeExistingComponent.get();

@@ -20,13 +20,19 @@
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -48,37 +54,50 @@ public class DatapointScope implements TransformationScheme
 	}
 
 	@Override
-	public VTLValue resolve(String name) 
+	public boolean contains(String alias)
 	{
-		if (dp == null)
-			throw new IllegalStateException("Can't resolve values during compilation.");
-//		if (alias.equals(name))
-//			return Optional.of(new LightDataSet(alias, structure, () -> Stream.of(dp)));
-//		else if (THIS.equals(name))
-//			return new LightDataSet(THIS, new Builder(dp.keySet()).build(), () -> Stream.of(dp));
-		else if (Objects.requireNonNull(name, "The name to resolve cannot be null.").matches("'.*'"))
-			return Utils.getStream(dp.keySet()).filter(c -> c.getName().equals(name.replaceAll("'(.*)'", "$1"))).findAny().map(dp::get).orElseThrow(() -> new VTLUnboundNameException(name));
-		else
-			return Utils.getStream(dp.keySet()).filter(c -> c.getName().equalsIgnoreCase(name)).findAny().map(dp::get).orElseThrow(() -> new VTLUnboundNameException(name));
+		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
+			return true;
+		
+		Predicate<? super DataStructureComponent<?, ?, ?>> filter = alias.matches("'.*'")
+				? c -> c.getName().equals(alias.replaceAll("'(.*)'", "$1"))
+				: c -> c.getName().equalsIgnoreCase(alias);
+
+		return maybeMeta(structure, filter, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
+			.isPresent();
 	}
 
 	@Override
+	public VTLValue resolve(String alias) 
+	{
+		Predicate<? super DataStructureComponent<?, ?, ?>> filter = Objects.requireNonNull(alias, "The name to resolve cannot be null.").matches("'.*'")
+				? c -> c.getName().equals(alias.replaceAll("'(.*)'", "$1"))
+				: c -> c.getName().equalsIgnoreCase(alias);
+
+		return maybeMeta(Objects.requireNonNull(dp, "Can't resolve values during compilation.").keySet(), filter, dp::get)
+			.orElseThrow(() -> new VTLUnboundNameException(alias));
+	}
+	
+	@Override
 	public VTLValueMetadata getMetadata(String name)
 	{
-		if (Objects.requireNonNull(name, "The name to resolve cannot be null.").matches("'.*'"))
-			return (ScalarValueMetadata<?>) Utils.getStream(structure)
-					.filter(c -> c.getName().equals(name.replaceAll("'(.*)'", "$1")))
-					.findAny()
-					.orElseThrow(() -> new VTLUnboundNameException(name))
-					::getDomain;
-		else if (THIS.equals(name))
+		if (THIS.equals(requireNonNull(name, "The name to resolve cannot be null.")))
 			return structure;
-		else
-			return (ScalarValueMetadata<?>) Utils.getStream(structure)
-					.filter(c -> c.getName().equalsIgnoreCase(name))
-					.findAny()
-					.orElseThrow(() -> new VTLUnboundNameException(name))
-					::getDomain;
+		
+		Predicate<? super DataStructureComponent<?, ?, ?>> filter = name.matches("'.*'")
+				? c -> c.getName().equals(name.replaceAll("'(.*)'", "$1"))
+				: c -> c.getName().equalsIgnoreCase(name);
+		
+		return maybeMeta(structure, filter, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
+			.orElseThrow(() -> new VTLUnboundNameException(name));
+	}
+
+	private static <T> Optional<T> maybeMeta(Set<DataStructureComponent<?, ?, ?>> components, Predicate<? super DataStructureComponent<?, ?, ?>> filter, Function<? super DataStructureComponent<?, ?, ?>, T> mapper)
+	{
+		return Utils.getStream(components)
+			.filter(filter)
+			.findAny()
+			.map(mapper);
 	}
 
 	@Override

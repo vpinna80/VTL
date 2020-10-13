@@ -66,10 +66,28 @@ public interface TransformationScheme
 	public Statement getRule(String alias);
 
 	/**
+	 * Determine if an alias is defined in this TransformationScheme.
+	 *  
+	 * @param alias the alias whose value is to be retrieved.
+	 * @return whether the alias is defined or not.
+	 */
+	public boolean contains(String alias);
+
+	/**
 	 * The same as {@code expected.cast(resolve(alias))} 
 	 */
 	public default <T extends VTLValue> T resolve(String alias, Class<T> expected)
 	{
 		return expected.cast(resolve(alias));
+	}
+	
+	/**
+	 * Checks if this transformation scheme is nested inside another one and return it.
+	 * 
+	 * @return The TransformationScheme encompassing this one, if any.
+	 */
+	public default TransformationScheme getParent()
+	{
+		return null;
 	}
 }

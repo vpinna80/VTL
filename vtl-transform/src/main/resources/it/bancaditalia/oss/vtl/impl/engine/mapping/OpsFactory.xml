@@ -179,11 +179,13 @@
 		<context name="NumericFunctionsContext" />
 		<context name="NumericFunctionsComponentsContext" />
 		<context name="ParameterComponentContext" />
+		<context name="ParameterContext" />
 		<context name="SetFunctionsContext" />
 		<context name="StringFunctionsContext" />
 		<context name="StringFunctionsComponentsContext" />
 		<context name="TimeFunctionsContext" />
 		<context name="TimeFunctionsComponentsContext" />
+		<context name="VarIdExprContext" />
 	</recursivecontexts>
 
 	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation">
@@ -610,15 +612,25 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="CallComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CallTransformation">
 		<params>
 			<stringparam name="operatorID" />
 			<listparam name="parameterComponent">
 				<exprparam />
 			</listparam>
-			
 		</params>
 	</mapping>
+
+	<mapping from="CallDatasetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CallTransformation">
+		<params>
+			<stringparam name="operatorID" />
+			<listparam name="parameter">
+				<exprparam />
+			</listparam>
+		</params>
+	</mapping>
+
 	<mapping from="UnaryStringFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation">
 		<tokens name="op">
 			<value>TRIM</value>
@@ -668,11 +680,19 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+	
 	<mapping from="ConstantExprContext" to="it.bancaditalia.oss.vtl.impl.transform.ConstantOperand">
 		<params>
 			<valueparam name="constant" />
 		</params>
 	</mapping>
+
+	<mapping from="ConstantContext" to="it.bancaditalia.oss.vtl.impl.transform.ConstantOperand">
+		<params>
+			<valueparam />
+		</params>
+	</mapping>
+	
 	<mapping from="ConstantExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ConstantOperand">
 		<params>
 			<valueparam name="constant" />
@@ -1038,11 +1058,13 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
-	<mapping from="VarIdExprContext" to="it.bancaditalia.oss.vtl.impl.transform.VarIDOperand">
+
+	<mapping from="VarIDContext" to="it.bancaditalia.oss.vtl.impl.transform.VarIDOperand">
 		<params>
-			<stringparam name="varID" />
+			<stringparam />
 		</params>
 	</mapping>
+
 	<mapping from="ComponentIDContext" to="it.bancaditalia.oss.vtl.impl.transform.VarIDOperand">
 		<params>
 			<stringparam name="IDENTIFIER" ordinal="0" />

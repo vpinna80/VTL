@@ -27,11 +27,11 @@ import java.util.function.UnaryOperator;
  * 
  * @author Valentino Pinna
  *
- * @param <R> the {@link ComponentRole}
+ * @param <R> the {@link Component}
  * @param <S> the {@link ValueDomainSubset}
  * @param <D> the {@link ValueDomain}
  */
-public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> extends Serializable
+public interface DataStructureComponent<R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> extends Serializable
 {
 	public Variable getVariable();
 	
@@ -57,13 +57,13 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 		return rename(nameMapper.apply(getName()));
 	}
 
-	public default boolean is(Class<? extends ComponentRole> type)
+	public default boolean is(Class<? extends Component> type)
 	{
 		return type.isAssignableFrom(getRole());
 	}
 	
 	@SuppressWarnings("unchecked")
-	public default <R2 extends ComponentRole> DataStructureComponent<R2, S, D> as(Class<R2> type)
+	public default <R2 extends Component> DataStructureComponent<R2, S, D> as(Class<R2> type)
 	{
 		if (is(type))
 			// safe

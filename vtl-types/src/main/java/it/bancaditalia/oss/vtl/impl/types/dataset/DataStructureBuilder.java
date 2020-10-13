@@ -41,9 +41,9 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -84,13 +84,13 @@ public class DataStructureBuilder
 		return this;
 	}
 
-	public <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureBuilder addComponent(String name, Class<R> type, S domain)
+	public <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureBuilder addComponent(String name, Class<R> type, S domain)
 	{
 		this.components.add(new DataStructureComponentImpl<>(name, type, domain));
 		return this;
 	}
 
-	public <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureBuilder addComponent(Triple<String, Class<? extends R>, S> characteristics)
+	public <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureBuilder addComponent(Triple<String, Class<? extends R>, S> characteristics)
 	{
 		this.components.add(new DataStructureComponentImpl<>(characteristics.first(), characteristics.second(), characteristics.third()));
 		return this;
@@ -153,7 +153,7 @@ public class DataStructureBuilder
 		}
 		
 		@Override
-		public <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
+		public <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 		{
 			return Utils.getStream(components.values())
 					.filter(c -> c.is(typeOfComponent))

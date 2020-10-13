@@ -87,6 +87,12 @@ public class JoinApplyScope implements TransformationScheme
 	}
 
 	@Override
+	public boolean contains(String alias)
+	{
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public Statement getRule(String node)
 	{
 		return parent.getRule(node);

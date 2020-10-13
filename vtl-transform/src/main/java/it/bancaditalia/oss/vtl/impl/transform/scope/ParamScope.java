@@ -19,19 +19,28 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+
 import java.util.Map;
+import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ParamScope implements TransformationScheme
 {
 	private final TransformationScheme parent;
 	private final Map<String, Transformation> params;
+
+	private volatile transient Map<String, VTLValueMetadata> parametersMeta;
 
 	public ParamScope(TransformationScheme parent, Map<String, Transformation> params)
 	{
@@ -43,29 +52,60 @@ public class ParamScope implements TransformationScheme
 	public VTLValue resolve(String node)
 	{
 		if (params.containsKey(node))
-			return params.get(node).eval(parent);
+			return params.get(node).eval(getParent());
 		else
-			return parent.resolve(node);
+			return getParent().resolve(node);
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(String node)
+	public VTLValueMetadata getMetadata(String alias)
 	{
-		if (params.containsKey(node))
-			return params.get(node).getMetadata(parent);
+		initParams();
+
+		if (parametersMeta.containsKey(alias))
+			return parametersMeta.get(alias);
 		else
-			return parent.getMetadata(node);
+			return Utils.getStream(parametersMeta.values())
+				.filter(DataSetMetadata.class::isInstance)
+				.map(DataSetMetadata.class::cast)
+				.map(dataset -> dataset.getComponent(alias))
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.map(component -> (VTLValueMetadata) (ScalarValueMetadata<?>) component::getDomain)
+				.findAny()
+				.orElseGet(() -> getParent().getMetadata(alias));
 	}
 
 	@Override
 	public Statement getRule(String node)
 	{
-		return parent.getRule(node);
+		return getParent().getRule(node);
 	}
 
 	@Override
 	public MetadataRepository getRepository()
 	{
-		return parent.getRepository();
+		return getParent().getRepository();
+	}
+
+	public TransformationScheme getParent()
+	{
+		return parent;
+	}
+
+	@Override
+	public boolean contains(String alias)
+	{
+		initParams();
+
+		return parametersMeta.containsKey(alias);
+	}
+
+	private synchronized void initParams()
+	{
+		if (parametersMeta == null)
+			parametersMeta = Utils.getStream(params)
+				.map(keepingKey(transformation -> transformation.getMetadata(parent)))
+				.collect(entriesToMap());
 	}
 }

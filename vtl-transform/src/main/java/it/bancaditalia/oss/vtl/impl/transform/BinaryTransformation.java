@@ -19,6 +19,7 @@
  *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.Set;
@@ -30,6 +31,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -103,6 +105,8 @@ public abstract class BinaryTransformation extends TransformationImpl
 
 	private VTLValueMetadata getMetadataFinisher(VTLValueMetadata left, VTLValueMetadata right) 
 	{
+		if (left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
+			return INSTANCE;
 		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
 			return getMetadataTwoDatasets((DataSetMetadata) left, (DataSetMetadata) right);
 		else if (left instanceof DataSetMetadata && right instanceof ScalarValueMetadata)
