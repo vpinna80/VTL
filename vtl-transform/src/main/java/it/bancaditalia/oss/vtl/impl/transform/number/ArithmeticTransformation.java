@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.reverseIf;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
@@ -158,7 +159,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 						.map(compToCalc -> new SimpleEntry<>(compToCalc, compute(swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
 								dpl.get(streamed.getComponent(compToCalc.getName()).get()), 
 								dpr.get(indexed.getComponent(compToCalc.getName()).get()))))
-						.collect(Utils.entriesToMap()))		
+						.collect(entriesToMap()))		
 					.addAll(dpl.getValues(Identifier.class))
 					.addAll(dpr.getValues(Identifier.class))
 					//.add(resultMeasure, finalOperator.apply(dp1.get(indexedMeasure), dp2.get(streamedMeasure)))

@@ -49,11 +49,15 @@ public class CachedDataSet extends NamedDataSet
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedDataSet.class);
 	private static final Map<VTLSession, Map<String, SoftReference<Set<DataPoint>>>> SESSION_CACHES = new ConcurrentHashMap<>();
 	private static final Map<VTLSession, Map<String, Semaphore>> SESSION_STATUSES = new ConcurrentHashMap<>();
+	private static final Map<VTLSession, Map<String, Long>> SESSION_TIMES = new ConcurrentHashMap<>();
+	private static final Map<VTLSession, Map<String, IllegalStateException>> SESSION_STACKS = new ConcurrentHashMap<>();
 	private static final ReferenceQueue<Set<DataPoint>> REF_QUEUE = new ReferenceQueue<>();
 	private static final Map<Reference<Set<DataPoint>>, String> REF_NAMES = new ConcurrentHashMap<>();
 
 	private final Map<String, Semaphore> statuses;
 	private final Map<String, SoftReference<Set<DataPoint>>> cache;
+	private final Map<String, Long> times;
+	private final Map<String, IllegalStateException> stacks;
 	
 	static {
 		new Thread() {
@@ -88,6 +92,8 @@ public class CachedDataSet extends NamedDataSet
 		
 		cache = SESSION_CACHES.computeIfAbsent(session, s -> new ConcurrentHashMap<>());
 		statuses = SESSION_STATUSES.computeIfAbsent(session, s -> new ConcurrentHashMap<>());
+		times = SESSION_TIMES.computeIfAbsent(session, s -> new ConcurrentHashMap<>());
+		stacks = SESSION_STACKS.computeIfAbsent(session, s -> new ConcurrentHashMap<>());
 	}
 
 	public CachedDataSet(VTLSession session, NamedDataSet delegate)
@@ -102,8 +108,12 @@ public class CachedDataSet extends NamedDataSet
 		
 		try
 		{
-			while (!isCompleted.tryAcquire(500, MILLISECONDS))
-				LOGGER.debug("Waiting cache completion for {}.", getAlias());
+			while (!isCompleted.tryAcquire(1000, MILLISECONDS))
+			{
+				LOGGER.trace("Waiting cache completion for {}.", getAlias());
+				if (System.currentTimeMillis() - times.get(getAlias()) > 10000)
+					throw stacks.get(getAlias());
+			}
 		}
 		catch (InterruptedException e)
 		{
@@ -130,12 +140,18 @@ public class CachedDataSet extends NamedDataSet
 		
 		// reference to cache holder 
 		SoftReference<Set<DataPoint>> setRef = new SoftReference<>(newSetFromMap(new ConcurrentHashMap<>()), REF_QUEUE);
+		stacks.put(getAlias(), new IllegalStateException("A deadlock may have happened in the cache mechanism. Caching for dataset " 
+				+ getAlias() + " never completed."));
 		return getDelegate().stream()
 			.peek(dp -> {
 				// enqueue datapoint if reference was not gced
 				Set<DataPoint> set = setRef.get();
 				if (set != null)
+				{
+					LOGGER.trace("Caching a datapoint for {}.", getAlias());
+					times.merge(getAlias(), System.currentTimeMillis(), Math::max);
 					set.add(dp);
+				}
 				else if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
 				{
 					LOGGER.trace("Caching interrupted for {}.", getAlias());
@@ -144,7 +160,7 @@ public class CachedDataSet extends NamedDataSet
 			}).onClose(() -> {
 				if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
 				{
-					LOGGER.trace("Caching finished for {}.", getAlias());
+					LOGGER.debug("Caching finished for {}.", getAlias());
 					// register the cache
 					cache.put(getAlias(), setRef);
 					// remember the name

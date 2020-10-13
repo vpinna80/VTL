@@ -123,17 +123,21 @@ public abstract class AbstractDataSet implements DataSet
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class)));
 		}
 		
-		return new LightFDataSet<>(metadata, d -> d.stream()
-				.map(dpThis -> {
-					List<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
-					if (otherSubGroup == null)
-						return Stream.<DataPoint>empty();
-					else
-						return otherSubGroup.stream()
-							.filter(dpOther -> predicate.test(dpThis, dpOther))
-							.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
-				}).reduce(Stream::concat)
-				.orElse(Stream.empty()), this);
+		return new LightFDataSet<>(metadata, d -> {
+				final Stream<DataPoint> stream = d.stream();
+				return stream
+					.map(dpThis -> {
+						List<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
+						if (otherSubGroup == null)
+							return Stream.<DataPoint>empty();
+						else
+							return otherSubGroup.stream()
+								.filter(dpOther -> predicate.test(dpThis, dpOther))
+								.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
+					}).reduce(Stream::concat)
+					.orElse(Stream.empty())
+					.onClose(stream::close);
+			}, this);
 	}
 
 	@Override
