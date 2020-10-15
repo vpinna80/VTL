@@ -83,6 +83,16 @@ public final class Utils
 		return e -> valueMapper.accept(e.getValue());
 	}
 
+	public static <R> UnaryOperator<R> onlyIf(Predicate<? super R> condition, UnaryOperator<R> mapper)
+	{
+		return v -> condition.test(v) ? mapper.apply(v) : v;
+	}
+
+	public static <T, R> Predicate<T> afterMapping(Function<? super T, ? extends R> mapper, Predicate<? super R> condition)
+	{
+		return t -> condition.test(mapper.apply(t));
+	}
+	
 	public static <K1, K2, V> Function<Entry<K1, V>, Entry<K2, V>> keepingValue(Function<? super K1, ? extends K2> keyMapper)
 	{
 		return e -> new SimpleEntry<>(keyMapper.apply(e.getKey()), e.getValue());

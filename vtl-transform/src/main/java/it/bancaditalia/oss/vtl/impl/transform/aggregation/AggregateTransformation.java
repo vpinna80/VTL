@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
+import static it.bancaditalia.oss.vtl.util.Utils.afterMapping;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
@@ -37,6 +38,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
+import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -57,7 +59,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -129,11 +130,7 @@ public class AggregateTransformation extends UnaryTransformation
 			}
 		else
 		{
-			Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupBy.stream()
-					.map(dataset::getComponent)
-					.map(Optional::get)
-					.map(c -> c.as(Identifier.class))
-					.collect(toSet());
+			Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = getGroupByComponents(dataset.getMetadata());
 			
 			// dataset-level aggregation
 			return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(groupIDs, reducer, (v, keyValues) -> 
@@ -146,13 +143,11 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
-		metadata = NUMBER;
-		
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
 		
-		if (opmeta instanceof ScalarValueMetadata && ((ScalarValueMetadata<?>) opmeta).getDomain() instanceof NumberDomainSubset)
-			return metadata;
-		else// if (meta instanceof VTLDataSetMetadata)
+		if (opmeta instanceof ScalarValueMetadata && NUMBER.isAssignableFrom(((ScalarValueMetadata<?>) opmeta).getDomain()))
+			return metadata = NUMBER;
+		else if (opmeta instanceof DataSetMetadata)
 		{
 			DataSetMetadata dataset = (DataSetMetadata) opmeta;
 			final Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
@@ -173,12 +168,9 @@ public class AggregateTransformation extends UnaryTransformation
 			}
 			else
 			{
-				Set<DataStructureComponent<?, ?, ?>> groupComps = groupBy.stream()
-						.map(dataset::getComponent)
-						.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, groupBy.toArray(new String[0]))))
-						.collect(toSet());
+				Set<DataStructureComponent<Identifier,?,?>> groupComps = getGroupByComponents(dataset);
 				
-				Optional<DataStructureComponent<?, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
+				Optional<DataStructureComponent<Identifier,?,?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
 				if (nonID.isPresent())
 					throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
 				
@@ -195,6 +187,23 @@ public class AggregateTransformation extends UnaryTransformation
 				return metadata = new DataStructureBuilder().addComponents(keys).addComponents(resultComponent).build();
 			}
 		}
+		else
+			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class, ScalarValueMetadata.class);
+	}
+
+	private Set<DataStructureComponent<Identifier, ?, ?>> getGroupByComponents(DataSetMetadata dataset)
+	{
+		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = groupBy.stream()
+				.map(name -> name.matches("'.*'")
+						? dataset.getComponent(name.replaceAll("'(.*)'", "$1"))
+						: dataset.stream().filter(afterMapping(DataStructureComponent::getName, name::equalsIgnoreCase)).findAny()
+				).map(o -> o.orElseThrow(() -> new VTLMissingComponentsException(dataset, groupBy.toArray(new String[0]))))
+				.peek(component -> {
+					if (!component.is(Identifier.class))
+						throw new VTLIncompatibleRolesException("aggregation group by", component, Identifier.class);
+				}).map(component -> component.as(Identifier.class))
+				.collect(toSet());
+		return groupComps;
 	}
 	
 	@Override

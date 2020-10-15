@@ -3,9 +3,11 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.INNER_JOIN;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.onlyIf;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
@@ -17,12 +19,14 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,6 +50,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -190,8 +195,7 @@ public class JoinTransformation extends TransformationImpl
 			DataSetMetadata totalStructure = Utils.getStream(datasets.values())
 				.map(DataSet::getMetadata)
 				.flatMap(Set::stream)
-				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-				.build();
+				.collect(toDataStructure());
 			
 			LOGGER.debug("Joining all datapoints");
 			
@@ -212,8 +216,8 @@ public class JoinTransformation extends TransformationImpl
 						case LEFT_JOIN:
 							if (otherDPs.size() != indexes.size())
 								return operator == INNER_JOIN ? null : new DataPointBuilder(refDP)
-										.addAll(metadata.stream().collect(toMapWithValues(NullValue::instanceFrom)))
-										.build(metadata);
+										.addAll(totalStructure.stream().collect(toMapWithValues(NullValue::instanceFrom)))
+										.build(totalStructure);
 							else
 							{
 								// Join all datapoints
@@ -242,7 +246,20 @@ public class JoinTransformation extends TransformationImpl
 		if (keepOrDrop != null)
 			result = (DataSet) keepOrDrop.eval(new ThisScope(result, session));
 		if (rename != null)
+		{
 			result = (DataSet) rename.eval(new ThisScope(result, session));
+
+			// unalias all remaining components that have not been already unaliased 
+			Set<DataStructureComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
+			remaining.removeAll(metadata);
+			
+			DataSet finalResult = result;
+			result = new LightDataSet(metadata, () -> finalResult.stream()
+				.map(dp -> Utils.getStream(dp)
+						.map(keepingValue(onlyIf(comp -> comp.getName().contains("#"), 
+								comp -> comp.rename(comp.getName().split("#", 2)[1])))
+						).collect(toDataPoint(metadata))));
+		}
 		
 		return result;
 	}
@@ -316,23 +333,26 @@ public class JoinTransformation extends TransformationImpl
 		if (operator != INNER_JOIN && operator != LEFT_JOIN)
 			throw new UnsupportedOperationException("Not implemented: " + operator.toString());
 		
-		Set<Transformation> unaliased = operands.stream()
+		// check if expressions have aliases
+		operands.stream()
 				.filter(o -> o.getId() == null)
 				.map(JoinOperand::getOperand)
-				.collect(toSet());
+				.findAny()
+				.ifPresent(unaliased -> {
+					throw new VTLSyntaxException("Join expressions must be aliased: " + unaliased + ".", null);
+				});
 		
-		if (unaliased.size() > 0)
-			throw new VTLSyntaxException("Join expressions must be aliased: " + unaliased + ".", null);
-		
-		Set<String> counts = operands.stream()
+		// check for duplicate aliases
+		operands.stream()
 				.map(JoinOperand::getId)
 				.collect(groupingBy(identity(), counting()))
 				.entrySet().stream()
 				.filter(e -> e.getValue() > 1)
 				.map(Entry::getKey)
-				.collect(toSet());
-		if (counts.size() > 0)
-			throw new VTLSyntaxException("Duplicate aliases in join: " + counts);
+				.findAny()
+				.ifPresent(alias -> {
+					throw new VTLSyntaxException("Join aliases must be unique: " + alias);
+				});
 
 		Map<JoinOperand, DataSetMetadata> datasetsMeta = operands.stream()
 				.collect(toMap(op -> op, op -> (DataSetMetadata) op.getOperand().getMetadata(session)));
@@ -348,6 +368,7 @@ public class JoinTransformation extends TransformationImpl
 			
 		DataSetMetadata result = joinStructures(datasetsMeta, caseAorB1, caseB2);
 		
+		// modify the result structure as needed
 		if (filter != null)
 			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result, session));
 		if (apply != null)
@@ -374,18 +395,35 @@ public class JoinTransformation extends TransformationImpl
 		if (keepOrDrop != null)
 			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result, session));
 		if (rename != null)
+		{
 			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result, session));
+			// check if rename has made some components unambiguous
+			Map<String, List<String>> sameUnaliasedName = Utils.getStream(result)
+				.map(DataStructureComponent::getName)
+				.filter(name -> name.contains("#"))
+				.map(name -> name.split("#", 2))
+				.collect(groupingByConcurrent(name -> name[1], mapping(name -> name[0], toList())));
+			// unalias the unambiguous components and add them to the renaming list
+			result = Utils.getStream(result)
+				.map(comp -> comp.getName().contains("#") && sameUnaliasedName.get(comp.getName().split("#", 2)[1]).size() <= 1 
+					? comp.rename(comp.getName().split("#", 2)[1])
+					: comp
+				).collect(toDataStructure());
+		}
 
-		Optional<String> ambiguousComponent = result.stream()
+		// find components with the same name from different aliases
+		DataSetMetadata finalResult = result;
+		result.stream()
 			.map(DataStructureComponent::getName)
-			.filter(n -> n.contains("#"))
+			.filter(name -> name.contains("#"))
 			.findAny()
-			.map(n -> n.replaceAll("^.*#", ""));
-		
-		if (ambiguousComponent.isPresent())
-			throw new VTLAmbiguousComponentException(ambiguousComponent.get(), result.stream()
-					.filter(c -> c.getName().endsWith("#" + ambiguousComponent.get()))
-					.collect(toSet()));
+			.map(name -> name.replaceAll("^.*#", ""))
+			.ifPresent(ambiguousComponent -> {
+				final Set<DataStructureComponent<?, ?, ?>> sameUnaliasedName = finalResult.stream()
+						.filter(c -> c.getName().endsWith("#" + ambiguousComponent))
+						.collect(toSet());
+				throw new VTLAmbiguousComponentException(ambiguousComponent, sameUnaliasedName);
+			});
 		
 		return metadata = result;
 	}

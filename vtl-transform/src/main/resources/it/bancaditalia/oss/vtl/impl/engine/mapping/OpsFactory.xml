@@ -188,7 +188,7 @@
 		<context name="VarIdExprContext" />
 	</recursivecontexts>
 
-	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation">
+	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.SimpleAnalyticTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AnalyticOperator" />
 			<exprparam name="expr" />
@@ -285,7 +285,7 @@
 		</params>
 	</mapping>
 
-	<mapping from="AnSimpleFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation">
+	<mapping from="AnSimpleFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.SimpleAnalyticTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AnalyticOperator" />
 			<exprparam name="exprComponent" />

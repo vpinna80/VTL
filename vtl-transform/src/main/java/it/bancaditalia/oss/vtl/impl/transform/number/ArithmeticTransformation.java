@@ -27,6 +27,8 @@ import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.reverseIf;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static java.util.Collections.singleton;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toMap;
@@ -64,7 +66,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -151,19 +152,35 @@ public class ArithmeticTransformation extends BinaryTransformation
 		}
 		else
 		{
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> resultMeasures = metadata.getComponents(Measure.class);
-			// Scan the dataset with less identifiers and find the matches
+			Set<DataStructureComponent<Measure, ?, ?>> resultMeasures = metadata.getComponents(Measure.class);
 			
-			return streamed.filteredMappedJoin(metadata, indexed, (dpl, dpr) -> true /* no filter */,
-				(dpl, dpr) -> new DataPointBuilder(resultMeasures.stream()
-						.map(compToCalc -> new SimpleEntry<>(compToCalc, compute(swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
-								dpl.get(streamed.getComponent(compToCalc.getName()).get()), 
-								dpr.get(indexed.getComponent(compToCalc.getName()).get()))))
-						.collect(entriesToMap()))		
-					.addAll(dpl.getValues(Identifier.class))
-					.addAll(dpr.getValues(Identifier.class))
-					//.add(resultMeasure, finalOperator.apply(dp1.get(indexedMeasure), dp2.get(streamedMeasure)))
-					.build(metadata));
+			if (resultMeasures.size() == 1)
+			{
+				DataStructureComponent<Measure, ?, ?> resultMeasure = resultMeasures.iterator().next(); 
+				DataStructureComponent<Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next(); 
+				DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next(); 
+				
+				// at component level, source measures can have different names but there is only 1 for each operand
+				return streamed.filteredMappedJoin(metadata, indexed, (dpl, dpr) -> true /* no filter */,
+						(dpl, dpr) -> new DataPointBuilder()
+							.add(resultMeasure, compute(swap, INTEGERDS.isAssignableFrom(resultMeasure.getDomain()), 
+									dpl.get(streamedMeasure), 
+									dpr.get(indexedMeasure))
+							).addAll(dpl.getValues(Identifier.class))
+							.addAll(dpr.getValues(Identifier.class))
+							.build(metadata));
+			}
+			else
+				// Scan the dataset with less identifiers and find the matches
+				return streamed.filteredMappedJoin(metadata, indexed, (dpl, dpr) -> true /* no filter */,
+					(dpl, dpr) -> new DataPointBuilder(resultMeasures.stream()
+							.map(toEntryWithValue(compToCalc -> compute(swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
+									dpl.get(streamed.getComponent(compToCalc.getName()).get()), 
+									dpr.get(indexed.getComponent(compToCalc.getName()).get()))
+							)).collect(entriesToMap()))		
+						.addAll(dpl.getValues(Identifier.class))
+						.addAll(dpr.getValues(Identifier.class))
+						.build(metadata));
 		}
 	}
 
@@ -224,46 +241,54 @@ public class ArithmeticTransformation extends BinaryTransformation
 		if (rightMeasures.size() == 0)
 			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, rightMeasures);
 
-		DataStructureComponent<? extends Measure, ?, ?> firstLeft = leftMeasures.iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> firstRight = rightMeasures.iterator().next();
-		
-		ValueDomainSubset<?> firstLeftDomain = firstLeft.getDomain();
-		ValueDomainSubset<?> firstRightDomain = firstRight.getDomain();
-		
-		boolean areFirstCompatible = !firstLeft.getName().equals(firstRight.getName()) && 
-				(firstLeftDomain.isAssignableFrom(firstRightDomain) || firstRight.getDomain().isAssignableFrom(firstLeft.getDomain()));
-		
-		if (areFirstCompatible && leftMeasures.size() == 1 && rightMeasures.size() == 1)
-			return NUMBER;
+//		DataStructureComponent<? extends Measure, ?, ?> firstLeft = leftMeasures.iterator().next();
+//		DataStructureComponent<? extends Measure, ?, ?> firstRight = rightMeasures.iterator().next();
+//		
+//		ValueDomainSubset<?> firstLeftDomain = firstLeft.getDomain();
+//		ValueDomainSubset<?> firstRightDomain = firstRight.getDomain();
+//		
+//		boolean areFirstCompatible = !firstLeft.getName().equals(firstRight.getName()) && 
+//				(firstLeftDomain.isAssignableFrom(firstRightDomain) || firstRight.getDomain().isAssignableFrom(firstLeft.getDomain()));
+//		
+//		if (areFirstCompatible && leftMeasures.size() == 1 && rightMeasures.size() == 1)
+//			return NUMBER;
 
 		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class))
 				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
 
-		Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = Utils.getStream(leftMeasures).collect(toMap(DataStructureComponent::getName, identity()));
-		Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = Utils.getStream(rightMeasures).collect(toMap(DataStructureComponent::getName, identity()));
-		
-		Set<DataStructureComponent<? extends Measure, ?, ?>> measures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
-			.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))
-			.peek(splittingConsumer((lm, rm) -> 
-				{
-					if (lm == null)
-						throw new VTLMissingComponentsException(rm, leftMeasures);
-					if (rm == null)
-						throw new VTLMissingComponentsException(lm, rightMeasures);
-					if (!NUMBERDS.isAssignableFrom(lm.getDomain()))
-						throw new UnsupportedOperationException("Expected numeric measure but found: " + lm);
-					if (!NUMBERDS.isAssignableFrom(rm.getDomain()))
-						throw new UnsupportedOperationException("Expected numeric measure but found: " + rm);
-				}))
-			.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
-					? INTEGERDS.isAssignableFrom(rm.getDomain())
-					? lm : rm : lm))
-			.collect(toSet());
+		// check if measures are the same, unless we are at component level
+		Set<DataStructureComponent<? extends Measure, ?, ?>> resultMeasures;
+		if (leftMeasures.size() == 1 || rightMeasures.size() == 1)
+			resultMeasures = singleton(new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS));
+		else
+		{
+			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = Utils.getStream(leftMeasures).collect(toMap(DataStructureComponent::getName, identity()));
+			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = Utils.getStream(rightMeasures).collect(toMap(DataStructureComponent::getName, identity()));
+			
+			resultMeasures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
+				.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))
+				.peek(splittingConsumer((lm, rm) -> 
+					{
+						if (lm == null)
+							throw new VTLMissingComponentsException(rm, leftMeasures);
+						if (rm == null)
+							throw new VTLMissingComponentsException(lm, rightMeasures);
+						if (!NUMBERDS.isAssignableFrom(lm.getDomain()))
+							throw new UnsupportedOperationException("Expected numeric measure but found: " + lm);
+						if (!NUMBERDS.isAssignableFrom(rm.getDomain()))
+							throw new UnsupportedOperationException("Expected numeric measure but found: " + rm);
+					}))
+				// if at least one components is floating point, use floating point otherwise integer
+				.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
+						? INTEGERDS.isAssignableFrom(rm.getDomain())
+						? lm : rm : lm))
+				.collect(toSet());
+		}
 		
 		return new DataStructureBuilder().addComponents(left.getComponents(Identifier.class))
 				.addComponents(right.getComponents(Identifier.class))
-				.addComponents(measures)
+				.addComponents(resultMeasures)
 				.build();
 	}
 	
