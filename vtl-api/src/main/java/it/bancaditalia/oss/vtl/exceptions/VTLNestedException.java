@@ -26,7 +26,7 @@ public class VTLNestedException extends VTLException
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLNestedException(String message, Exception cause)
+	public VTLNestedException(String message, Throwable cause)
 	{
 		super(message, cause);
 	}

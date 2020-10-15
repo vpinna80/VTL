@@ -51,9 +51,13 @@ public class ThreadUtils
 		{
 			right = rightTask.get();
 		}
-		catch (InterruptedException | ExecutionException e) 
+		catch (InterruptedException e) 
 		{
 			throw new VTLNestedException("Error executing subrule " + rightExpr, e);
+		}
+		catch (ExecutionException e) 
+		{
+			throw new VTLNestedException("Error executing subrule " + rightExpr, e.getCause());
 		}
 
 		return finisher.apply(left, right);

@@ -23,7 +23,7 @@ public class VTLException extends RuntimeException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLException(String message, Exception cause) 
+	public VTLException(String message, Throwable cause) 
 	{
 		super(message, cause);
 	}
