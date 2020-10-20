@@ -1,23 +1,26 @@
 <!--
-    Copyright 2020, Bank Of Italy
-   
+
+    Copyright © 2020 Banca D'Italia
+
     Licensed under the EUPL, Version 1.2 (the "License");
     You may not use this work except in compliance with the
     License.
     You may obtain a copy of the License at:
-   
+
     https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
-   
+
     Unless required by applicable law or agreed to in
     writing, software distributed under the License is
     distributed on an "AS IS" basis,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
     express or implied.
-   
+
     See the License for the specific language governing
     permissions and limitations under the License.
- -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -30,12 +33,19 @@
 	<description>VTL prototypal engine</description>
 	<url>${site-url}</url>
 
+	<inceptionYear>2020</inceptionYear>
+
 	<licenses>
 		<license>
 			<name>European Union Public Licence v1.2 (EUPL)</name>
 			<url>${license-url}</url>
 		</license>
 	</licenses>
+
+	<organization>
+		<name>Banca D'Italia</name>
+		<url>https://www.bancaditalia.it</url>
+	</organization>
 
 	<developers>
 		<developer>
@@ -167,6 +177,23 @@
 													<runOnIncremental>true</runOnIncremental>
 													<runOnConfiguration>true</runOnConfiguration>
 												</execute>
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>com.mycila</groupId>
+												<artifactId>
+													license-maven-plugin
+												</artifactId>
+												<versionRange>
+													[3.0,)
+												</versionRange>
+												<goals>
+													<goal>check</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore></ignore>
 											</action>
 										</pluginExecution>
 									</pluginExecutions>
@@ -717,6 +744,46 @@
 						<autoReleaseAfterClose>true</autoReleaseAfterClose>
 					</configuration>
 				</plugin>
+				<plugin>
+					<groupId>com.mycila</groupId>
+					<artifactId>license-maven-plugin</artifactId>
+					<version>3.0</version>
+					<executions>
+						<execution>
+							<phase>validate</phase>
+							<goals>
+								<goal>check</goal>
+							</goals>
+						</execution>
+					</executions>
+					<configuration>
+						<mapping>
+							<R>JAVADOC_STYLE</R>
+							<adoc>ASCIIDOC_STYLE</adoc>
+							<vtl>VTL_STYLE</vtl>
+							<xjb>XML_STYLE</xjb>
+						</mapping>
+						<header>license-files/LICENSE-HEADER.txt</header>
+						<failIfUnknown>true</failIfUnknown>
+						<excludes>
+							<exclude>**/LICENSE*</exclude>
+							<exclude>**/NOTICE</exclude>
+							<exclude>**/DESCRIPTION</exclude>
+							<exclude>**/*.in</exclude>
+							<exclude>**/*.csv</exclude>
+							<exclude>**/*.g4</exclude>
+							<exclude>**/*.bin</exclude>
+							<exclude>**/.factorypath</exclude>
+						</excludes>
+						<headerDefinitions>
+							<headerDefinition>license-files/asciidoc-format.xml</headerDefinition>
+							<headerDefinition>license-files/vtl-format.xml</headerDefinition>
+						</headerDefinitions>
+						<properties>
+							<owner>${project.organization.name}</owner>
+						</properties>
+					</configuration>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -732,8 +799,8 @@
 							<rules>
 								<dependencyConvergence />
 								<requireJavaVersion>
-                  					<version>[1.8.0-242,)</version>
-                				</requireJavaVersion>
+									<version>[1.8.0-242,)</version>
+								</requireJavaVersion>
 							</rules>
 						</configuration>
 						<goals>
@@ -787,6 +854,10 @@
 					<message>Update documentation</message>
 					<merge>true</merge>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>

@@ -1,3 +1,23 @@
+@REM
+@REM Copyright © 2020 Banca D'Italia
+@REM
+@REM Licensed under the EUPL, Version 1.2 (the "License");
+@REM You may not use this work except in compliance with the
+@REM License.
+@REM You may obtain a copy of the License at:
+@REM
+@REM https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+@REM
+@REM Unless required by applicable law or agreed to in
+@REM writing, software distributed under the License is
+@REM distributed on an "AS IS" basis,
+@REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+@REM express or implied.
+@REM
+@REM See the License for the specific language governing
+@REM permissions and limitations under the License.
+@REM
+
 @rem ***************************************************************************
 @rem Copyright 2020, Bank Of Italy
 @rem

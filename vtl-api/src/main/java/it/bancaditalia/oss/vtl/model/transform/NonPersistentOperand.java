@@ -1,5 +1,5 @@
-/*******************************************************************************
- * Copyright 2020, Bank Of Italy
+/**
+ * Copyright © 2020 Banca D'Italia
  *
  * Licensed under the EUPL, Version 1.2 (the "License");
  * You may not use this work except in compliance with the
@@ -16,7 +16,7 @@
  *
  * See the License for the specific language governing
  * permissions and limitations under the License.
- *******************************************************************************/
+ */
 package it.bancaditalia.oss.vtl.model.transform;
 
 public interface NonPersistentOperand<R> extends Operand<R>
