@@ -16,6 +16,8 @@ written in Java, Javascript and R.
 Usage info, documentation and examples are available at the
 [project site](http://vpinna80.github.io/VTL/).
 
+Now you can try the VTLStudio live on ShinyApps: [VTLStudio](https://vpinna80.shinyapps.io/vtlStudio/).
+
 ## Contributing to the project
 
 All contributions are welcome!

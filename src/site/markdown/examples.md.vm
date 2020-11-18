@@ -38,10 +38,10 @@ First prepare the data inside your R session:
 
 $RSTART
 # retrieve gbp and usd rates from the ECB SDMX web service
-usd <- getTimeSeriesTable('ECB', 'EXR.A.USD+GBP.EUR.SP00.A')
+rates <- getTimeSeriesTable('ECB', 'EXR.A.USD+GBP.EUR.SP00.A')
 # set needed metadata for VTL engine (identifiers and measures)
-attr(usd, 'measures') <- 'OBS_VALUE'
-attr(usd, 'identifiers') <- c('TIME_PERIOD', 'CURRENCY')
+attr(rates, 'measures') <- 'OBS_VALUE'
+attr(rates, 'identifiers') <- c('TIME_PERIOD', 'CURRENCY')
 $CEND
 
 Note that if you access internet through a proxy server, you may need to configure it to replicate this example.
