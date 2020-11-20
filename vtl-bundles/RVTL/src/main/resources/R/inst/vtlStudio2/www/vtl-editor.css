@@ -1,0 +1,87 @@
+/**
+ * Copyright © 2020 Banca D'Italia
+ *
+ * Licensed under the EUPL, Version 1.2 (the "License");
+ * You may not use this work except in compliance with the
+ * License.
+ * You may obtain a copy of the License at:
+ *
+ * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the License is
+ * distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied.
+ *
+ * See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+.antlr-editor {
+  position: relative;
+  height: 70vh;
+  resize: vertical;
+}
+
+.CodeMirror {
+  height: 100%;
+}
+
+.wrapper {
+  overflow-y: hidden;
+}
+
+.vtltoolbar, 
+.vtltoolbar > * {
+  height: 25px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.vtlLogo {
+  max-height: 20%;
+  max-width: 20%;
+}
+
+.tab-content, 
+.content, 
+.content > div {
+  padding: 0 !important;
+}
+
+.nav-tabs {
+  height: 45px;
+}
+
+.tab-content .tab-pane {
+  height: calc(100vh - 45px);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+/* Code editor tab contents */
+.tab-content .tab-pane.active:first-child {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-y: hidden;
+}
+
+#vtl_output {
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 1;
+  flex-grow: 1;
+}
+
+#saveas {
+  margin: 6px 5px 6px 15px;
+  color: #444;
+}
+
+.tab-disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+

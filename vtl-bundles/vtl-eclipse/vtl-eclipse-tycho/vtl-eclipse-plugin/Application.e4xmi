@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="ASCII"?>
+<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_Wo1SUBndEeuNtb3JRqLn7Q" elementId="vtl-eclipse-plugin.application">
+  <children xsi:type="basic:TrimmedWindow" xmi:id="_YAbXYBndEeuNtb3JRqLn7Q" elementId="vtl-eclipse-app.mainwindow" selectedElement="_EHA78BnoEeuNtb3JRqLn7Q" label="VTL Engine &amp; Editor" x="0" y="0" width="1024" height="768">
+    <children xsi:type="basic:PartSashContainer" xmi:id="_EHA78BnoEeuNtb3JRqLn7Q" elementId="vtl-eclipse-app.partsashcontainer.main" horizontal="true">
+      <children xsi:type="basic:PartStack" xmi:id="_ADvxsCWXEeul1-PLR-oBdQ" elementId="vtl-eclipse-app.partstack.0">
+        <tags>vtl-editors</tags>
+      </children>
+    </children>
+    <mainMenu xmi:id="_emKxACfuEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.menu.0">
+      <children xsi:type="menu:Menu" xmi:id="_jN3U4CfuEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.menu.file" label="&amp;File">
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_z5dvgCfuEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.menu.file.new" label="&amp;New..." command="_4yTtwCfuEeu_1MIzWUrv-A"/>
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_rNWXICfyEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.menu.file.open" label="&amp;Open..." command="_s_89MCfyEeu_1MIzWUrv-A"/>
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_SNPg8Cf4Eeu_1MIzWUrv-A" elementId="vtl-eclipse-app.menu.file.close" label="&amp;Close" enabled="false" command="_E-TacCf4Eeu_1MIzWUrv-A"/>
+      </children>
+      <children xsi:type="menu:Menu" xmi:id="_lJrhUCfuEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.menu.edit" label="&amp;Edit"/>
+    </mainMenu>
+  </children>
+  <handlers xmi:id="_CRjZ8CfwEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.handler.menu.file.new" contributionURI="bundleclass://vtl-eclipse-plugin/it.bancaditalia.oss.vtl.eclipse.menus.MenuFileNew" command="_4yTtwCfuEeu_1MIzWUrv-A"/>
+  <handlers xmi:id="_vHi70CfyEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.handler.menu.file.open" contributionURI="bundleclass://vtl-eclipse-plugin/it.bancaditalia.oss.vtl.eclipse.menus.MenuFileOpen" command="_s_89MCfyEeu_1MIzWUrv-A"/>
+  <handlers xmi:id="_DM7jcCf4Eeu_1MIzWUrv-A" elementId="vtl-eclipse-app.handler.menu.file.close" contributionURI="bundleclass://vtl-eclipse-plugin/it.bancaditalia.oss.vtl.eclipse.menus.MenuFileClose" command="_E-TacCf4Eeu_1MIzWUrv-A"/>
+  <bindingTables xmi:id="_XAeqoCfxEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.bindingtable.0" bindingContext="_dw_8MCfxEeu_1MIzWUrv-A">
+    <bindings xmi:id="_X-EUQCfxEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.keybinding.new" keySequence="CTRL+N" command="_4yTtwCfuEeu_1MIzWUrv-A"/>
+    <bindings xmi:id="_zjTVcCfyEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.keybinding.0" keySequence="CTRL+O" command="_s_89MCfyEeu_1MIzWUrv-A"/>
+  </bindingTables>
+  <rootContext xmi:id="_dw_8MCfxEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.bindingcontext.everywhere" name="GlobalContext">
+    <children xmi:id="_tEpEYCf8Eeu_1MIzWUrv-A" elementId="vtl-eclipse-app.bindingcontext.ineditor" name="InEditor"/>
+  </rootContext>
+  <descriptors xmi:id="_4HRpMCftEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.editor.template" label="New VTL Script" allowMultiple="true" category="vtl-editors" closeable="true" contributionURI="bundleclass://vtl-eclipse-plugin/it.bancaditalia.oss.vtl.eclipse.parts.EditorPart">
+    <tags>REMOVE_ON_HIDE</tags>
+  </descriptors>
+  <commands xmi:id="_4yTtwCfuEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.command.new" commandName="New"/>
+  <commands xmi:id="_s_89MCfyEeu_1MIzWUrv-A" elementId="vtl-eclipse-app.command.open" commandName="Open"/>
+  <commands xmi:id="_E-TacCf4Eeu_1MIzWUrv-A" elementId="vtl-eclipse-app.command.close" commandName="Close"/>
+  <addons xmi:id="_Wo15YBndEeuNtb3JRqLn7Q" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
+  <addons xmi:id="_Wo15YRndEeuNtb3JRqLn7Q" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>
+  <addons xmi:id="_Wo15YhndEeuNtb3JRqLn7Q" elementId="org.eclipse.e4.ui.bindings.service" contributionURI="bundleclass://org.eclipse.e4.ui.bindings/org.eclipse.e4.ui.bindings.BindingServiceAddon"/>
+  <addons xmi:id="_Wo15YxndEeuNtb3JRqLn7Q" elementId="org.eclipse.e4.ui.workbench.commands.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.CommandProcessingAddon"/>
+  <addons xmi:id="_Wo15ZBndEeuNtb3JRqLn7Q" elementId="org.eclipse.e4.ui.workbench.contexts.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.ContextProcessingAddon"/>
+  <addons xmi:id="_Wo15ZRndEeuNtb3JRqLn7Q" elementId="org.eclipse.e4.ui.workbench.bindings.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench.swt/org.eclipse.e4.ui.workbench.swt.util.BindingProcessingAddon"/>
+  <addons xmi:id="_Wo15ZhndEeuNtb3JRqLn7Q" elementId="org.eclipse.e4.ui.workbench.handler.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.HandlerProcessingAddon"/>
+</application:Application>

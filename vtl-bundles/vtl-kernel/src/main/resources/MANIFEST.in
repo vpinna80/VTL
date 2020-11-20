@@ -1,0 +1,2 @@
+recursive-include vtl-kernel/libs *.jar
+include vtl-kernel/kernelspec/*

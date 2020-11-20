@@ -64,5 +64,5 @@ public interface ConfigurationManager
 	/**
 	 * @return The {@link List} of {@link Environment} instances
 	 */
-	public List<Environment> getEnvironments();
+	public List<? extends Environment> getEnvironments();
 }

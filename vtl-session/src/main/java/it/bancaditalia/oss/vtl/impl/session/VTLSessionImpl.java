@@ -69,7 +69,7 @@ public class VTLSessionImpl implements VTLSession
 
 	private final ConfigurationManager config = ConfigurationManager.getDefault();
 	private final Engine engine;
-	private final List<Environment> environments;
+	private final List<? extends Environment> environments;
 	private final Workspace workspace;
 	private final Map<String, SoftReference<VTLValue>> cache = new ConcurrentHashMap<>();
 	private final Map<String, SoftReference<VTLValueMetadata>> metacache = new ConcurrentHashMap<>();

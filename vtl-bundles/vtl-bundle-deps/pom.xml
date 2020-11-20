@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>vtl-bundle-deps</artifactId>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>it.bancaditalia.oss.vtl</groupId>
+		<artifactId>vtl-bundles</artifactId>
+		<version>${revision}</version>
+	</parent>
+
+	<name>vtl-bundle-deps</name>
+	<description>Aggregator for various VTL bundles</description>
+
+	<dependencies>
+			<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-types</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-confman</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-engine</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-envs</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-domains</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-session</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-transform</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+		</dependency>
+			<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+	</dependencies>
+</project>

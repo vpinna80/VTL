@@ -1,0 +1,6 @@
+.project
+.settings
+target
+.Rhistory
+.Rproj.user
+**/hs_err_*
