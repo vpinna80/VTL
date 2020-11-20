@@ -107,13 +107,13 @@ monthlyWeight := inner_join(compWeight, compOfBasket)
 calculated := compOfBasket * monthlyWeight;
 
 /* Retrieve contribution from the provider */
-expected := 'ECB:ICP(1.0)M.U2.N.010000.3.CTG'
+expected := 'ECB:ICP(1.0)/M.U2.N.010000.3.CTG'
 	[keep OBS_VALUE]
 	[rename OBS_VALUE to expected_value];
 
 /* Join to compare and calculate percentual error for easy comparison */
 errors := inner_join(calculated, expected)
-	[calc errorPerc := abs((OBS_VALUE - expected_value) / expected_value) * 100];
+	[calc errorPerc := abs((number_var - expected_value) / expected_value) * 100];
 $CEND
 
 $h2 Loading CSV data from file system
