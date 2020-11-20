@@ -54,7 +54,14 @@ public class BooleanValue extends BaseScalarValue<Boolean, BooleanDomainSubset, 
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?> o)
 	{
-		throw new VTLIncompatibleTypesException("comparison", this, o);
+		if (o == this)
+			return 0;
+		else if (this == TRUE && o == FALSE)
+			return 1;
+		else if (this == FALSE && o == TRUE)
+			return -1;
+		else
+			throw new VTLIncompatibleTypesException("comparison", this, o);
 	}
 	
 	@Override
