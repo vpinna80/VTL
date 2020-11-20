@@ -774,6 +774,8 @@
 							<exclude>**/*.g4</exclude>
 							<exclude>**/*.bin</exclude>
 							<exclude>**/.factorypath</exclude>
+							<exclude>R</exclude>
+							<exclude>init.properties</exclude>
 						</excludes>
 						<headerDefinitions>
 							<headerDefinition>license-files/asciidoc-format.xml</headerDefinition>
