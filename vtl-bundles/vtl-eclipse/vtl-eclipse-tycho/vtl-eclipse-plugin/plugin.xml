@@ -1,22 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <plugin>
-
    <extension
-         id="product"
+         id="vtl_eclipse_app"
          point="org.eclipse.core.runtime.products">
       <product
             application="org.eclipse.e4.ui.workbench.swt.E4Application"
-            name="vtl-eclipse-app">
+            name="VTL Editor">
          <property
                name="appName"
-               value="vtl-eclipse-app">
+               value="VTL Editor">
          </property>
          <property
-     name="applicationCSS"
-     value="platform:/plugin/vtl-eclipse-plugin/css/default.css">
-     </property>
+               name="cssTheme"
+               value="default">
+         </property>
       </product>
    </extension>
+   <extension
+         point="org.eclipse.e4.ui.css.swt.theme">
+      <theme
+            basestylesheeturi="css/default.css"
+            id="default"
+            label="default">
+      </theme>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            class="it.bancaditalia.oss.vtl.eclipse.menus.View1"
+            id="it.bancaditalia.oss.vtl.eclipse.menus.View1"
+            name="New ViewPart">
+      </view>
+   </extension>
+
 
 </plugin>

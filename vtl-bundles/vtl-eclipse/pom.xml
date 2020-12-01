@@ -12,8 +12,16 @@
 		<version>${revision}</version>
 	</parent>
 
+	<profiles>
+		<profile>
+			<id>with-eclipse</id>
+			<modules>
+				<module>vtl-eclipse-tycho</module>
+			</modules>
+		</profile>
+	</profiles>
+
 	<modules>
 		<module>vtl-eclipse-update-site</module>
-		<module>vtl-eclipse-tycho</module>
 	</modules>
 </project>

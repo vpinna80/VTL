@@ -90,13 +90,18 @@
 				<module>vtl-confman</module>
 				<module>vtl-coverage</module>
 				<module>vtl-domains</module>
-				<module>vtl-editor</module>
 				<module>vtl-engine</module>
 				<module>vtl-envs</module>
 				<module>vtl-parser</module>
 				<module>vtl-session</module>
 				<module>vtl-transform</module>
 				<module>vtl-types</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>with-r</id>
+			<modules>
+				<module>vtl-editor</module>
 			</modules>
 		</profile>
 		<profile>

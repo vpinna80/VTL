@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
-import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;

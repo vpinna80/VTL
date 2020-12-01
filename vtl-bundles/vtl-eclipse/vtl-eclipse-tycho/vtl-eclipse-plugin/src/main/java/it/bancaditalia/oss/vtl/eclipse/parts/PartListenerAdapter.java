@@ -1,5 +1,6 @@
 package it.bancaditalia.oss.vtl.eclipse.parts;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.eclipse.e4.core.commands.ECommandService;
@@ -9,6 +10,7 @@ import org.eclipse.e4.ui.workbench.modeling.IPartListener;
 
 @SuppressWarnings("restriction")
 @Singleton
+@Named
 public class PartListenerAdapter implements IPartListener
 {
 	private static final String CLOSE_COMMAND = "vtl-eclipse-app.command.close";

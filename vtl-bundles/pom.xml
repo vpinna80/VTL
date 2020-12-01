@@ -71,8 +71,7 @@
 		<profile>
 			<id>with-r</id>
 			<modules>
-				<module>vtl-editor</module>
-				<module>RVTL</module>
+				<module>vtl-r</module>
 			</modules>
 			<dependencies>
 				<dependency>
@@ -97,16 +96,11 @@
 				</dependency>
 			</dependencies>
 		</profile>
-		<profile>
-			<id>with-eclipse</id>
-			<modules>
-				<module>vtl-eclipse</module>
-			</modules>
-		</profile>
 	</profiles>
 
 	<modules>
 		<module>vtl-bundle-deps</module>
+		<module>vtl-eclipse</module>
 	</modules>
 
 </project>

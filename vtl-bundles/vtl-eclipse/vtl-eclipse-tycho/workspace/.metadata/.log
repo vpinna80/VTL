@@ -1,0 +1,72 @@
+!SESSION 2020-12-01 11:43:01.252 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=11.0.6
+java.vendor=AdoptOpenJDK
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=it_IT
+Framework arguments:  -eclipse.keyring C:\Users\m027907\AppData\Local\Temp\1\tycho18300012862088042994secure_storage
+Command-line arguments:  -eclipse.keyring C:\Users\m027907\AppData\Local\Temp\1\tycho18300012862088042994secure_storage
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 11:43:01.252
+!MESSAGE System property http.proxyHost is not set but should be itaca-prod.
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 11:43:01.256
+!MESSAGE System property http.proxyPort is not set but should be 8080.
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 11:43:01.313
+!MESSAGE System property https.proxyHost is not set but should be itaca-prod.
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 11:43:01.316
+!MESSAGE System property https.proxyPort is not set but should be 8080.
+
+!ENTRY org.eclipse.equinox.p2.director 4 10053 2020-12-01 11:49:57.441
+!MESSAGE Cannot complete the install because one or more required items could not be found.
+!SUBENTRY 1 org.eclipse.equinox.p2.director 4 0 2020-12-01 11:49:57.441
+!MESSAGE Software being installed: VTL Editor 1.0.7.202012011042 (vtl-eclipse-app 1.0.7.202012011042)
+!SUBENTRY 1 org.eclipse.equinox.p2.director 4 0 2020-12-01 11:49:57.441
+!MESSAGE Missing requirement: toolinggtk.linux.x86_64org.eclipse.equinox.simpleconfigurator 1.0.7.202012011042 requires 'osgi.bundle; org.eclipse.equinox.simpleconfigurator 1.3.600.v20200721-1308' but it could not be found
+!SUBENTRY 1 org.eclipse.equinox.p2.director 4 1 2020-12-01 11:49:57.441
+!MESSAGE Cannot satisfy dependency:
+!SUBENTRY 2 org.eclipse.equinox.p2.director 4 0 2020-12-01 11:49:57.441
+!MESSAGE From: toolingvtl-eclipse-app.configuration 1.0.7.202012011042
+!SUBENTRY 2 org.eclipse.equinox.p2.director 4 0 2020-12-01 11:49:57.441
+!MESSAGE To: org.eclipse.equinox.p2.iu; toolinggtk.linux.x86_64org.eclipse.equinox.simpleconfigurator [1.0.7.202012011042,1.0.7.202012011042]
+!SUBENTRY 1 org.eclipse.equinox.p2.director 4 1 2020-12-01 11:49:57.441
+!MESSAGE Cannot satisfy dependency:
+!SUBENTRY 2 org.eclipse.equinox.p2.director 4 0 2020-12-01 11:49:57.441
+!MESSAGE From: VTL Editor 1.0.7.202012011042 (vtl-eclipse-app 1.0.7.202012011042)
+!SUBENTRY 2 org.eclipse.equinox.p2.director 4 0 2020-12-01 11:49:57.441
+!MESSAGE To: org.eclipse.equinox.p2.iu; toolingvtl-eclipse-app.configuration [1.0.7.202012011042,1.0.7.202012011042]
+!SESSION 2020-12-01 12:24:56.884 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=11.0.6
+java.vendor=AdoptOpenJDK
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=it_IT
+Framework arguments:  -eclipse.keyring C:\Users\m027907\AppData\Local\Temp\1\tycho13715553969464045384secure_storage
+Command-line arguments:  -eclipse.keyring C:\Users\m027907\AppData\Local\Temp\1\tycho13715553969464045384secure_storage
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 12:24:56.886
+!MESSAGE System property http.proxyHost is not set but should be itaca-prod.
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 12:24:56.891
+!MESSAGE System property http.proxyPort is not set but should be 8080.
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 12:24:56.938
+!MESSAGE System property https.proxyHost is not set but should be itaca-prod.
+
+!ENTRY org.eclipse.core.net 1 0 2020-12-01 12:24:56.941
+!MESSAGE System property https.proxyPort is not set but should be 8080.
+
+!ENTRY org.eclipse.equinox.p2.director 0 0 2020-12-01 12:25:57.118
+!MESSAGE Overall install request is satisfiable
+!SUBENTRY 1 org.eclipse.equinox.p2.director 0 0 2020-12-01 12:25:57.118
+!MESSAGE Add request for VTL Editor 1.0.7.202012011124 (vtl-eclipse-app 1.0.7.202012011124) is satisfiable
+
+!ENTRY org.eclipse.equinox.p2.director 0 0 2020-12-01 12:26:07.090
+!MESSAGE Overall install request is satisfiable
+!SUBENTRY 1 org.eclipse.equinox.p2.director 0 0 2020-12-01 12:26:07.090
+!MESSAGE Add request for VTL Editor 1.0.7.202012011124 (vtl-eclipse-app 1.0.7.202012011124) is satisfiable
+
+!ENTRY org.eclipse.equinox.p2.director 0 0 2020-12-01 12:26:14.233
+!MESSAGE Overall install request is satisfiable
+!SUBENTRY 1 org.eclipse.equinox.p2.director 0 0 2020-12-01 12:26:14.233
+!MESSAGE Add request for VTL Editor 1.0.7.202012011124 (vtl-eclipse-app 1.0.7.202012011124) is satisfiable

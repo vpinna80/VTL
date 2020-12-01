@@ -1,0 +1,26 @@
+{
+	"name": "vtl-editor",
+	"version": "${project.version}",
+	"description": "A web editor for VTL based on CodeMirror",
+	"main": "index.js",
+	"scripts": {
+		"gen-editor": "antlr4-editor -o src -r start grammar/Vtl.g4",
+		"browserify": "browserify --standalone vtl -o bundle.js integration.js",
+		"beautify": "js-beautify -f bundle.js -o bundle-pretty.js"
+	},
+	"author": {
+		"name": "Valentino Pinna",
+		"email": "valentino.pinna@bancaditalia.it",
+		"url": "www.bancaditalia.it"
+	},
+	"license": "EUPL-1.2",
+	"dependencies": {
+		"codemirror": "^5.49.0",
+		"lodash.merge": "^4.6.2"
+	},
+	"devDependencies": {
+		"antlr4-editor": "1.0.77",
+		"browserify": "^16.5.0",
+		"js-beautify": "^1.10.2"
+	}
+}

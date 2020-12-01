@@ -4,7 +4,6 @@ import static java.util.Collections.emptyList;
 import static org.eclipse.e4.ui.workbench.modeling.EModelService.IN_MAIN_MENU;
 import static org.eclipse.jface.text.ITextOperationTarget.REDO;
 import static org.eclipse.jface.text.ITextOperationTarget.UNDO;
-import static org.eclipse.swt.SWT.CONTROL;
 
 import java.io.File;
 import java.io.FileReader;
@@ -27,8 +26,6 @@ import org.eclipse.jface.text.source.CompositeRuler;
 import org.eclipse.jface.text.source.LineNumberRulerColumn;
 import org.eclipse.jface.text.source.SourceViewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
@@ -80,17 +77,6 @@ public class EditorPart
 		editor.addTextListener(event -> part.setDirty(true));
 		editor.setUndoManager(new TextViewerUndoManager(500));
 		editor.getUndoManager().connect(editor);
-		editor.getTextWidget().addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent e)
-			{
-				if ((e.stateMask & CONTROL) > 0)
-					if (e.keyCode == 'y' || e.keyCode == 'Y')
-						editor.doOperation(REDO);
-					else if (e.keyCode == 'z' || e.keyCode == 'Z')
-						editor.doOperation(UNDO);
-			}
-		});
 	}
 
 	@Persist
@@ -135,5 +121,15 @@ public class EditorPart
 			}
 		else
 			return new Document();
+	}
+
+	public void redo()
+	{
+		Display.getDefault().syncExec(() -> editor.doOperation(REDO));
+	}
+
+	public void undo()
+	{
+		Display.getDefault().syncExec(() -> editor.doOperation(UNDO));
 	}
 }

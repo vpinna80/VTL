@@ -7,6 +7,8 @@ import org.eclipse.jface.text.rules.DefaultDamagerRepairer;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.SourceViewerConfiguration;
 
+import it.bancaditalia.oss.vtl.eclipse.impl.grammar.EditorAntlrTokenizer;
+
 public class EditorConfigurator extends SourceViewerConfiguration 
 {
     public IPresentationReconciler getPresentationReconciler(ISourceViewer viewer)
