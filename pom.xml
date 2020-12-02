@@ -188,7 +188,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<slf4j.version>1.7.26</slf4j.version>
 		<log4j.version>2.13.3</log4j.version>
-		<jetty.version>9.4.31.v20200723</jetty.version>
+		<jetty.version>9.4.35.v20201120</jetty.version>
 		<junit.version>5.6.1</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
 		<mockito.version>3.5.7</mockito.version>
