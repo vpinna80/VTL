@@ -38,7 +38,7 @@
 	<description>Aggregator for various VTL bundles</description>
 
 	<dependencies>
-			<dependency>
+		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-api</artifactId>
 		</dependency>

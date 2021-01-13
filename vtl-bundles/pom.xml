@@ -73,28 +73,12 @@
 			<modules>
 				<module>vtl-r</module>
 			</modules>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-bundle-deps</artifactId>
-					<version>${project.version}</version>
-					<type>pom</type>
-				</dependency>
-			</dependencies>
 		</profile>
 		<profile>
 			<id>with-python</id>
 			<modules>
 				<module>vtl-kernel</module>
 			</modules>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-bundle-deps</artifactId>
-					<version>${project.version}</version>
-					<type>pom</type>
-				</dependency>
-			</dependencies>
 		</profile>
 	</profiles>
 
@@ -102,5 +86,4 @@
 		<module>vtl-bundle-deps</module>
 		<module>vtl-eclipse</module>
 	</modules>
-
 </project>

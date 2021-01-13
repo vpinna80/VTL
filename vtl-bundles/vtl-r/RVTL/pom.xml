@@ -35,6 +35,15 @@
 	<name>RVTL</name>
 	<description>R package interface to VTL Engine</description>
 
+	<dependencies>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-bundle-deps</artifactId>
+			<version>${project.version}</version>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
+
 	<profiles>
 		<profile>
 			<id>unix</id>
