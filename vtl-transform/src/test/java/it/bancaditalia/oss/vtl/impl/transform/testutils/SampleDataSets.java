@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.M
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_3;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_1;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_2;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_3;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_1;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_2;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
@@ -58,10 +59,12 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum SampleDataSets implements DataSet
 {
+	SAMPLE3(new SampleVariables[] { IDENT_STRING_1, MEASURE_BOOLEAN_2 }),
 	SAMPLE1(new SampleVariables[] { IDENT_STRING_1, IDENT_BOOLEAN_1, MEASURE_NUMBER_1, MEASURE_INTEGER_1}),
 	SAMPLE2(new SampleVariables[] { IDENT_STRING_1, MEASURE_NUMBER_2, MEASURE_INTEGER_2 }),
-	SAMPLE3(new SampleVariables[] { IDENT_STRING_1, MEASURE_BOOLEAN_2 }),
-	SAMPLE4(new SampleVariables[] { IDENT_STRING_1, MEASURE_BOOLEAN_3 });
+	SAMPLE4(new SampleVariables[] { IDENT_STRING_1, MEASURE_BOOLEAN_3 }),
+	SAMPLE5(new SampleVariables[] { IDENT_STRING_1, MEASURE_INTEGER_2 }),
+	SAMPLE6(new SampleVariables[] { IDENT_STRING_1, MEASURE_INTEGER_3 });
 
 	private final DataSet dataset;
 

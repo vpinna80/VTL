@@ -34,14 +34,16 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
+import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -86,17 +88,16 @@ public class ConditionalTransformation extends TransformationImpl
 			Set<DataStructureComponent<Identifier, ?, ?>> keys = ((DataSetMetadata) metadata).getComponents(Identifier.class);
 			VTLValue thenV = thenExpr.eval(session);
 			VTLValue elseV = elseExpr.eval(session);
-			DataStructureComponent<Identifier, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getComponents(Identifier.class, BOOLEANDS).iterator().next();
+			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 			Function<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> lambda;
 
 			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
-				lambda = dc -> ((DataSet) ((Boolean) dc.get(booleanConditionMeasure).get() ? thenV : elseV))
-						.getMatching(dc.getValues(keys, Identifier.class))
-						.stream()
-						.findFirst()
-						.get()
-						.getValues(NonIdentifier.class);
+			{
+				DataSet joinedThen = condD.filteredMappedJoin((DataSetMetadata) metadata, (DataSet) thenV, (dpCond, dpThen) -> checkCondition(dpCond.get(booleanConditionMeasure)), (dpCond, dpThen) -> dpThen);
+				DataSet joinedElse = condD.filteredMappedJoin((DataSetMetadata) metadata, (DataSet) elseV, (dpCond, dpElse) -> !checkCondition(dpCond.get(booleanConditionMeasure)), (dpCond, dpElse) -> dpElse);
+				return new LightF2DataSet<>((DataSetMetadata) metadata, (dsThen, dsElse) -> concat(dsThen.stream(), dsElse.stream()), joinedThen, joinedElse);
+			}
 			else // One dataset and one scalar
 			{
 				DataSet dataset = ((DataSet) (thenV instanceof DataSet ? thenV : elseV));
@@ -104,9 +105,9 @@ public class ConditionalTransformation extends TransformationImpl
 						.getComponents(NonIdentifier.class).stream()
 						.collect(toMapWithValues(k -> (ScalarValue<?, ?, ?>) (thenV instanceof ScalarValue ? thenV : elseV)));
 
-				lambda = dc -> (BOOLEANDS.cast(dc.get(booleanConditionMeasure)).get() ^ thenV != dataset)
+				lambda = dpCond -> (checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV != dataset)
 						// condition true and 'then' is a dataset or condition false and 'else' is a dataset 
-						? dataset.getMatching(dc.getValues(keys, Identifier.class))
+						? dataset.getMatching(dpCond.getValues(keys, Identifier.class))
 								.stream()
 								.findFirst()
 								.get()
@@ -116,6 +117,11 @@ public class ConditionalTransformation extends TransformationImpl
 
 			return condD.mapKeepingKeys((DataSetMetadata) metadata, lambda);
 		}
+	}
+
+	private boolean checkCondition(ScalarValue<?, ?, ?> value)
+	{
+		return value instanceof BooleanValue && (boolean) (Boolean) value.get();
 	}
 
 	@Override
