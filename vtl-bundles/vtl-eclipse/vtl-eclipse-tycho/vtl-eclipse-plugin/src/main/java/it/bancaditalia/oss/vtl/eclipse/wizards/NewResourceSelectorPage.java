@@ -107,6 +107,8 @@ public abstract class NewResourceSelectorPage extends WizardPage
 		fileName = new Text(container, SWT.BORDER);
 		fileName.addModifyListener(e -> getWizard().getContainer().updateButtons());
 		fileName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		fileName.setFocus();
 	}
 
 	public String getFileName()

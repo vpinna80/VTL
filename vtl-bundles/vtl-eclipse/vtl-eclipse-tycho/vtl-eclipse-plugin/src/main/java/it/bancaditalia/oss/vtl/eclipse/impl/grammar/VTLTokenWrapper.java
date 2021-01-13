@@ -1,6 +1,5 @@
 package it.bancaditalia.oss.vtl.eclipse.impl.grammar;
 
-import org.antlr.v4.runtime.Token;
 import org.eclipse.jface.text.TextAttribute;
 import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.swt.SWT;
@@ -13,11 +12,13 @@ public class VTLTokenWrapper implements IToken
 	private static final TextAttribute BLUE = new TextAttribute(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
 	private static final TextAttribute RED = new TextAttribute(Display.getCurrent().getSystemColor(SWT.COLOR_RED), null, SWT.BOLD);
 	private static final TextAttribute GREEN = new TextAttribute(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
-	private final Token token;
+	private final int channel;
+	private final int type;
 
-	public VTLTokenWrapper(Token token)
+	public VTLTokenWrapper(int channel, int type)
 	{
-		this.token = token;
+		this.channel = channel;
+		this.type = type;
 	}
 
 	@Override
@@ -29,39 +30,42 @@ public class VTLTokenWrapper implements IToken
 	@Override
 	public boolean isWhitespace()
 	{
-		return token.getChannel() == VtlTokens.HIDDEN;
+		return channel == VtlTokens.HIDDEN;
 	}
 
 	@Override
 	public boolean isEOF()
 	{
-		return token.getType() == VtlTokens.EOF;
+		return type == VtlTokens.EOF;
 	}
 
 	@Override
 	public boolean isOther()
 	{
-		return false;
+		return channel != VtlTokens.HIDDEN && type != VtlTokens.EOF;
 	}
 
 	@Override
 	public Object getData()
 	{
-		switch (token.getType())
-		{
-			case VtlTokens.ASSIGN:
-			case VtlTokens.PLUS:
-			case VtlTokens.MINUS:
-			case VtlTokens.MUL:
-			case VtlTokens.DIV:
-				return RED;
-			case VtlTokens.IDENTIFIER:
-				return BLUE;
-			case VtlTokens.ML_COMMENT:
-			case VtlTokens.SL_COMMENT:
-				return GREEN;
-			default:
-				return null;
-		}
+		if (isOther())
+			switch (type)
+			{
+				case VtlTokens.ASSIGN:
+				case VtlTokens.PLUS:
+				case VtlTokens.MINUS:
+				case VtlTokens.MUL:
+				case VtlTokens.DIV:
+					return RED;
+				case VtlTokens.IDENTIFIER:
+					return BLUE;
+				case VtlTokens.ML_COMMENT:
+				case VtlTokens.SL_COMMENT:
+					return GREEN;
+				default:
+					return null;
+			}
+		else
+			return null;
 	}
 }
