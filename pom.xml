@@ -205,7 +205,7 @@
 		<mockito.version>3.5.7</mockito.version>
 		<build-helper-maven-plugin.version>3.1.0</build-helper-maven-plugin.version>
 		<spring.boot.version>2.3.2.RELEASE</spring.boot.version>
-		<node.version>v14.15.4</node.version>
+		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.7.2</antlr4.version>
 		<scm-url>https://github.com/vpinna80/VTL</scm-url>
 		<site-url>https://vpinna80.github.io/VTL</site-url>
@@ -748,6 +748,7 @@
 									<exclude>**/*.bin</exclude>
 									<exclude>**/.factorypath</exclude>
 									<exclude>init.properties</exclude>
+									<exclude>/R</exclude>
 								</excludes>
 							</licenseSet>
 						</licenseSets>
