@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2020 Banca D'Italia
  *
  * Licensed under the EUPL, Version 1.2 (the "License");

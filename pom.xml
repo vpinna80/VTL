@@ -725,7 +725,7 @@
 				<plugin>
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
-					<version>3.0</version>
+					<version>4.0.rc2</version>
 					<executions>
 						<execution>
 							<phase>validate</phase>
@@ -735,26 +735,29 @@
 						</execution>
 					</executions>
 					<configuration>
+						<licenseSets>
+							<licenseSet>
+								<header>license-files/LICENSE-HEADER.txt</header>
+								<excludes>
+									<exclude>**/LICENSE*</exclude>
+									<exclude>**/NOTICE</exclude>
+									<exclude>**/DESCRIPTION</exclude>
+									<exclude>**/*.in</exclude>
+									<exclude>**/*.csv</exclude>
+									<exclude>**/*.g4</exclude>
+									<exclude>**/*.bin</exclude>
+									<exclude>**/.factorypath</exclude>
+									<exclude>init.properties</exclude>
+								</excludes>
+							</licenseSet>
+						</licenseSets>
 						<mapping>
-							<R>JAVADOC_STYLE</R>
+							<R>SCRIPT_STYLE</R>
 							<adoc>ASCIIDOC_STYLE</adoc>
 							<vtl>VTL_STYLE</vtl>
 							<xjb>XML_STYLE</xjb>
 						</mapping>
-						<header>license-files/LICENSE-HEADER.txt</header>
 						<failIfUnknown>true</failIfUnknown>
-						<excludes>
-							<exclude>**/LICENSE*</exclude>
-							<exclude>**/NOTICE</exclude>
-							<exclude>**/DESCRIPTION</exclude>
-							<exclude>**/*.in</exclude>
-							<exclude>**/*.csv</exclude>
-							<exclude>**/*.g4</exclude>
-							<exclude>**/*.bin</exclude>
-							<exclude>**/.factorypath</exclude>
-							<exclude>R</exclude>
-							<exclude>init.properties</exclude>
-						</excludes>
 						<headerDefinitions>
 							<headerDefinition>license-files/asciidoc-format.xml</headerDefinition>
 							<headerDefinition>license-files/vtl-format.xml</headerDefinition>
