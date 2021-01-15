@@ -120,7 +120,7 @@ public interface DataSet extends VTLValue
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @return The new DataSet.
 	 */
-	public default DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BinaryOperator<DataPoint> merge)
+	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet other, BinaryOperator<DataPoint> merge)
 	{
 		return filteredMappedJoin(metadata, other, (a,  b) -> true, merge);
 	}

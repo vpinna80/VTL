@@ -207,7 +207,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	
 	private static DataSet joinByIDs(DataSet left, DataSet right)
 	{
-		return left.filteredMappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, (dpl, dpr) -> dpl.combine(dpr));
+		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, (dpl, dpr) -> dpl.combine(dpr));
 	}
 
 	@Override

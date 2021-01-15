@@ -113,6 +113,8 @@ public abstract class AbstractDataSet implements DataSet
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
 		commonIds.retainAll(other.getComponents(Identifier.class));
 		
+		System.out.println(other);
+		
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, List<DataPoint>> index;
 		try (Stream<DataPoint> stream = other.stream())
 		{

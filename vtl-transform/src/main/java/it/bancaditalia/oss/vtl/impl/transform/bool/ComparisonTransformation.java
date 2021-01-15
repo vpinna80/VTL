@@ -133,7 +133,7 @@ public class ComparisonTransformation extends BinaryTransformation
 						(dps, dpi) -> new DataPointBuilder()
 								.addAll(dps.getValues(Identifier.class))
 								.addAll(dpi.getValues(Identifier.class))
-								.add(resultMeasure, function.apply(dps.get(indexedMeasure), dpi.get(streamedMeasure)))
+								.add(resultMeasure, function.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
 								.build(metadata));
 	}
 

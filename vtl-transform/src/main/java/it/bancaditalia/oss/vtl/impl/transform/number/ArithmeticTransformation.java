@@ -144,7 +144,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 					.build();
 			
 			boolean intResult = INTEGERDS.isAssignableFrom(resultComp.getDomain());
-			return streamed.filteredMappedJoin(newStructure, indexed, (dpl, dpr) -> true /* no filter */, (dpl, dpr) -> new DataPointBuilder()
+			return streamed.mappedJoin(newStructure, indexed,  
+					(dpl, dpr) -> new DataPointBuilder()
 						.add(resultComp, compute(swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
@@ -161,7 +162,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next(); 
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
-				return streamed.filteredMappedJoin(metadata, indexed, (dpl, dpr) -> true /* no filter */,
+				return streamed.mappedJoin(metadata, indexed, 
 						(dpl, dpr) -> new DataPointBuilder()
 							.add(resultMeasure, compute(swap, INTEGERDS.isAssignableFrom(resultMeasure.getDomain()), 
 									dpl.get(streamedMeasure), 
@@ -172,7 +173,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			}
 			else
 				// Scan the dataset with less identifiers and find the matches
-				return streamed.filteredMappedJoin(metadata, indexed, (dpl, dpr) -> true /* no filter */,
+				return streamed.mappedJoin(metadata, indexed, 
 					(dpl, dpr) -> new DataPointBuilder(resultMeasures.stream()
 							.map(toEntryWithValue(compToCalc -> compute(swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
 									dpl.get(streamed.getComponent(compToCalc.getName()).get()), 

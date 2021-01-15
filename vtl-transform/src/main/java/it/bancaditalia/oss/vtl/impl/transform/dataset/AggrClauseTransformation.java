@@ -171,7 +171,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			DataSet other = resultList.get(i);
 			DataSetMetadata otherStructure = result.getMetadata();
 			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
-			result = result.filteredMappedJoin(currentStructure, other, DataPoint::merge);
+			result = result.mappedJoin(currentStructure, other, DataPoint::merge);
 		}
 
 		if (having != null)
