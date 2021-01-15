@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>vtl-integration-tests</artifactId>
+	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>it.bancaditalia.oss.vtl</groupId>
+		<artifactId>vtl-bundles</artifactId>
+		<version>${revision}</version>
+	</parent>
+
+	<name>vtl-integration-tests</name>
+	<description>Module for integration tests of the VTL Engine</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-bundle-deps</artifactId>
+			<version>1.0.7-SNAPSHOT</version>
+			<type>pom</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
