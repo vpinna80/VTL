@@ -42,6 +42,11 @@
 			<version>${project.version}</version>
 			<type>pom</type>
 		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-java2r</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 	</dependencies>
 
 	<profiles>

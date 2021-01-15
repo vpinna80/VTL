@@ -39,6 +39,7 @@
 
 	<modules>
 		<module>vtl-editor</module>
+		<module>vtl-java2r</module>
 		<module>RVTL</module>
 	</modules>
 </project>
