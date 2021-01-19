@@ -20,10 +20,12 @@
 package it.bancaditalia.oss.vtl.impl.transform.testutils;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -60,7 +63,10 @@ public class SampleValues
 			new String[] { "A", "B", "C", "D", "E", "F" },
 			new String[] { "H", "I", "J", "K", "L", "M" },
 			new String[] { "A", "C", "E", "G", "I", "K" },
-			new String[] { "K", "C", "G", null, "A", "E" }
+			new String[] { "K", "C", "G", null, "A", "E" },
+			new String[] { "A", "A", "A", "A", "A", "A" },
+			new String[] { "B", "B", "B", "B", "B", "B" },
+			new String[] { "C", "C", "C", "C", "C", "C" }
 		});
 		VALUES.put("BOOLEAN", new Boolean[][] {
 			new Boolean[] { true, false, true, false, true, false },
@@ -68,11 +74,17 @@ public class SampleValues
 			new Boolean[] { true, false, false, false, true, null },
 			new Boolean[] { true, false, false, false, true, null }
 		});
+		VALUES.put("DATE", new LocalDate[][] {
+			{ LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 2), LocalDate.of(2020, 1, 3), LocalDate.of(2020, 1, 4), LocalDate.of(2020, 1, 5), LocalDate.of(2020, 1, 6) },
+			{ LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 3), LocalDate.of(2020, 1, 5), LocalDate.of(2020, 1, 7), LocalDate.of(2020, 1, 9), LocalDate.of(2020, 1, 11) },
+			{ LocalDate.of(2020, 1, 3), LocalDate.of(2020, 1, 4), LocalDate.of(2020, 1, 5), LocalDate.of(2020, 1, 7), LocalDate.of(2020, 1, 8), LocalDate.of(2020, 1, 10) }
+		});
 
 		WRAPPERS.put("INTEGER", v -> v == null ? NullValue.instance(INTEGERDS) : new IntegerValue((Long) v));
 		WRAPPERS.put("NUMBER", v -> v == null ? NullValue.instance(NUMBERDS) : new DoubleValue((Double) v));
 		WRAPPERS.put("STRING", v -> v == null ? NullValue.instance(STRINGDS) : new StringValue((String) v));
 		WRAPPERS.put("BOOLEAN", v -> v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of((Boolean) v));
+		WRAPPERS.put("DATE", v -> v == null ? NullValue.instance(DATEDS) : new DateValue((LocalDate) v));
 	}
 
 	private SampleValues() { }

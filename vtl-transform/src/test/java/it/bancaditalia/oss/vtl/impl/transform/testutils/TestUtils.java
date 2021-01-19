@@ -23,17 +23,22 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class TestUtils {
-	
-	public static TransformationScheme mockSession(Map<String, DataSet> map) {
+public class TestUtils
+{
+	public static TransformationScheme mockSession(Map<String, DataSet> map) 
+	{
 		TransformationScheme session = mock(TransformationScheme.class);
 		
 		// Mock getMetadata(alias)
@@ -49,5 +54,21 @@ public class TestUtils {
 		});
 		
 		return session; 
+	}
+
+	public static DataSet concat(DataSet... samples)
+	{
+		return new AbstractDataSet(samples[0].getMetadata()) {
+			private static final long serialVersionUID = 1L;
+	
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return Arrays.stream(samples)
+						.map(DataSet::stream)
+						.reduce(Stream::concat)
+						.get();
+			}
+		};
 	}
 }
