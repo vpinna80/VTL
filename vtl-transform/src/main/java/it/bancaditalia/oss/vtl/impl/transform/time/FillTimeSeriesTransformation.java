@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -121,7 +121,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			max = ds.stream().map(dp -> (TimeValue<?, ?, ?>) dp.get(timeID)).max(TimeValue::compareTo).orElseThrow(() -> new IllegalStateException("All time series are empty."));
 		}
 
-		return new LightFDataSet<>(structure, dataset -> dataset.streamByKeys(ids, toCollection(() -> new ConcurrentSkipListMap<>(comparator).keySet()), 
+		return new LightFDataSet<>(structure, dataset -> dataset.streamByKeys(ids, toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
 					(elements, idValues) -> fillSeries(structure, elements, idValues, timeID, nullFiller, min, max))
 				.reduce(Stream::concat)
 				.orElse(Stream.empty()), ds);
@@ -136,12 +136,13 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		List<DataPoint> additional = new LinkedList<>();
 		
 		// if min == null: do not add leading null datapoints (single mode)
-		TimeValue<?, ?, ?> previous = min; 
+		TimeValue<?, ?, ?> previous = min != null ? min.increment(-1) : null; 
 		
 		// leading null elements and current elements
 		for (DataPoint current: series)
 		{
 			TimeValue<?, ?, ?> lastTime = (TimeValue<?, ?, ?>) current.get(timeID);
+			
 			// find and fill holes
 			if (previous != null)
 			{
