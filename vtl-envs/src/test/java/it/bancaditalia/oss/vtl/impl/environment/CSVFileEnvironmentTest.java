@@ -32,7 +32,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
@@ -51,6 +54,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,7 +63,18 @@ public class CSVFileEnvironmentTest
 	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = new DataStructureComponentImpl<>("IDENTIFIER", Identifier.class, DATEDS);
 	private static final DataStructureComponent<?, ?, ?> MEASURE = new DataStructureComponentImpl<>("MEASURE", Measure.class, NUMBERDS);
 	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = new DataStructureComponentImpl<>("ATTRIBUTE", Attribute.class, STRINGDS);
-
+	private static final DataStructureComponent<?, ?, ?> QUOTED = new DataStructureComponentImpl<>("QUOTED", Attribute.class, STRINGDS);
+	private static final String QUOTED_RESULTS[] = {
+			" Hello, \"World\"! ",
+			"Test with",
+			"",
+			"Dummy",
+			"Dummy",
+			" Dummy",
+			"Dummy"
+		};
+	
+	
 	private static Path TEMPCSVFILE;
 	private static String CSVALIAS;
 	
@@ -70,7 +85,7 @@ public class CSVFileEnvironmentTest
 	public static void beforeClass() throws IOException
 	{
 		TEMPCSVFILE = Files.createTempFile(null, ".csv").toAbsolutePath();
-		InputStream csv = CSVFileEnvironmentTest.class.getResourceAsStream("test.csv");
+		InputStream csv = CSVFileEnvironment.class.getResourceAsStream("test.csv");
 		assertNotNull(csv, "CSV test file not found");
 		FileOutputStream fos = new FileOutputStream(TEMPCSVFILE.toString());
 		int c;
@@ -117,14 +132,21 @@ public class CSVFileEnvironmentTest
 		
 		DataSet dataset = (DataSet) search.get();
 		
-		assertEquals(3, dataset.getMetadata().size(), "Wrong number of columns");
+		assertEquals(4, dataset.getMetadata().size(), "Wrong number of columns");
 		assertTrue(dataset.getMetadata().contains(IDENTIFIER), "Missing IDENTIFIER Column");
 		assertTrue(dataset.getMetadata().contains(MEASURE), "Missing MEASURE Column");
 		assertTrue(dataset.getMetadata().contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
+		assertTrue(dataset.getMetadata().contains(QUOTED), "Missing ATTRIBUTE Column");
 		
+		Set<String> results = new HashSet<>(Arrays.asList(QUOTED_RESULTS));
 		try (Stream<DataPoint> stream = dataset.stream())
 		{
-			assertEquals(7, stream.count(), "Wrong number of rows");
+			long count = stream.map(dp -> dp.get(QUOTED))
+				.map(ScalarValue::get)
+				.map(Object::toString)
+				.peek(s -> assertTrue(results.contains(s), "Result '" + s + "' not found."))
+				.count();
+			assertEquals(7, count, "Wrong number of rows");
 		}
 	}
 }

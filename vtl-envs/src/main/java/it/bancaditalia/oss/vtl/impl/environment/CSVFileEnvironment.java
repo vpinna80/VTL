@@ -29,6 +29,7 @@ import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.util.Objects.isNull;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -75,9 +76,9 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -94,6 +95,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CSVFileEnvironment implements Environment
 {
+	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?:,|\n|^)(\"(?:(?:\"\")*[^\"]*)*\"|([^\",\n]*)|(?:\n|$))");
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
 	private static final Map<Pattern, String> PATTERNS = new LinkedHashMap<>();
 	
@@ -162,23 +164,37 @@ public class CSVFileEnvironment implements Environment
 			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Boolean> set = new ConcurrentHashMap<>();
 			
 			return ProgressWindow.of("Loading CSV", lineCount, Utils.getStream(innerReader.lines()))
-				.filter(l -> !l.trim().isEmpty())
-				.map(l -> {
+				// Skip empty lines
+				.filter(line -> !line.trim().isEmpty())
+				.map(line -> {
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>();
-					int beginIndex = 0;
-					for (int i = 0; i < metadata.size(); i++)
-					{
-						DataStructureComponent<?, ?, ?> component = metadata.get(i);
-						if (beginIndex >= l.length())
-							throw new IllegalStateException("Expected value for " + component + " but row ended before: " + l);
-							
-						int endIndex = l.indexOf(',', beginIndex);
-						if (endIndex < 0)
-							endIndex = l.length();
-						result.put(component, mapValue(component, l.substring(beginIndex, endIndex), masks.get(component)));
-						beginIndex = endIndex + 1;
-					}
-	
+
+					// Perform split by repeatedly matching the line against the regex
+					int count = 0;
+					Matcher tokenizer = TOKEN_PATTERN.matcher(line);
+					// match only the declared components, skip remaining values
+					while (count < metadata.size())
+						if (tokenizer.find())
+						{
+							// 1 is the matched token
+							String token = tokenizer.group(1);
+							// group 2 is matched if the string field is not quoted
+							if (isNull(tokenizer.group(2)))
+								// dequote quoted string and replace ""
+								token = token.replaceAll("^\"(.*)\"$", "$1").replaceAll("\"\"", "\"");
+							else
+								// trim unquoted string
+								token = token.trim();
+							// parse field value into a VTL scalar 
+							DataStructureComponent<?, ?, ?> component = metadata.get(count);
+							result.put(component, mapValue(component, token, masks.get(component)));
+							count++;
+						}
+						else
+							throw new IllegalStateException("Expected value for " + metadata.get(count) + " but the row ended before it:\n" + line);
+					if (tokenizer.end() < line.length() - 1)
+						LOGGER.warn("Skipped trailing characters in line: " + line.substring(tokenizer.end() + 1));
+					
 					return result;
 				})
 				.map(m -> new DataPointBuilder(m).build(structure))
