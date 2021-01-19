@@ -82,7 +82,7 @@ public class ConditionalTransformation extends TransformationImpl
 			return BOOLEANDS.cast((ScalarValue<?, ?, ?>) cond).get() 
 					? thenExpr.eval(session)
 					: elseExpr.eval(session);
-		else // if (metadata instanceof VTLDataSetMetadata)
+		else
 		{
 			DataSet condD = (DataSet) cond;
 			Set<DataStructureComponent<Identifier, ?, ?>> keys = ((DataSetMetadata) metadata).getComponents(Identifier.class);
@@ -94,8 +94,8 @@ public class ConditionalTransformation extends TransformationImpl
 
 			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
 			{
-				DataSet joinedThen = condD.filteredMappedJoin((DataSetMetadata) metadata, (DataSet) thenV, (dpCond, dpThen) -> checkCondition(dpCond.get(booleanConditionMeasure)), (dpCond, dpThen) -> dpThen);
-				DataSet joinedElse = condD.filteredMappedJoin((DataSetMetadata) metadata, (DataSet) elseV, (dpCond, dpElse) -> !checkCondition(dpCond.get(booleanConditionMeasure)), (dpCond, dpElse) -> dpElse);
+				DataSet joinedThen = condD.filter(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, (DataSet) thenV, (dpCond, dpThen) -> dpThen);
+				DataSet joinedElse = condD.filter(dpCond -> !checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, (DataSet) elseV, (dpCond, dpElse) -> dpElse);
 				return new LightF2DataSet<>((DataSetMetadata) metadata, (dsThen, dsElse) -> concat(dsThen.stream(), dsElse.stream()), joinedThen, joinedElse);
 			}
 			else // One dataset and one scalar
