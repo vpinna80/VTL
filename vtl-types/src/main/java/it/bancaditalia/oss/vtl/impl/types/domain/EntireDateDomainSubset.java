@@ -30,7 +30,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
 public class EntireDateDomainSubset extends EntireDomainSubset<LocalDateTime, DateDomain> implements DateDomainSubset, Serializable
 {
@@ -50,7 +49,7 @@ public class EntireDateDomainSubset extends EntireDomainSubset<LocalDateTime, Da
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NumberDomainSubset;
+		return other instanceof DateDomainSubset;
 	}
 
 	@Override
