@@ -198,7 +198,8 @@ test_that('SDMX dataset addition works', {
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
                                         tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
-                                        result := tmp1 + tmp2;", 
+                                        result := (tmp1 + tmp2)[rename number_var to OBS_VALUE];
+                                        ", 
                                         restartSession = T), label = 'Plus failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Plus compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), label = 'Plus value correct')
@@ -217,7 +218,7 @@ test_that('SDMX dataset subtraction works', {
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
                                         tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
-                                        result := tmp1 - tmp2;", 
+                                        result := (tmp1 - tmp2)[rename number_var to OBS_VALUE];", 
                                         restartSession = T), label = 'Minus failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Minus compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), label = 'Minus value correct')
@@ -236,7 +237,7 @@ test_that('SDMX dataset division works', {
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
                                         tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
-                                        result := tmp1 / tmp2;", 
+                                        result := (tmp1 / tmp2)[rename number_var to OBS_VALUE];", 
                                     restartSession = T), label = 'Division failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Division compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), 
@@ -256,7 +257,7 @@ test_that('SDMX dataset multiplication works', {
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                     statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
                                     tmp2 := 'ECB:EXR/A.USD.EUR.SP00.A';
-                                    result := tmp1 * tmp2;", 
+                                    result := (tmp1 * tmp2)[rename number_var to OBS_VALUE];", 
                                     restartSession = T), label = 'multiplication failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'multiplication compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), 
@@ -303,7 +304,7 @@ test_that('CSV dataset addition works', {
                                                             find.package(package = 'RVTL'), 
                                                             "/vtlStudio2/test_data/ecbexrusd_vtl.csv" , "';                                                                        
                                         tmp2 := tmp1;
-                                        result := tmp1 + tmp2;"), 
+                                        result := (tmp1 + tmp2)[rename number_var to OBS_VALUE];"), 
                                         restartSession = T), label = 'Plus failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Plus compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), label = 'Plus value correct')
@@ -327,7 +328,7 @@ test_that('CSV dataset subtraction works', {
                                                             find.package(package = 'RVTL'), 
                                                             "/vtlStudio2/test_data/ecbexrusd_vtl.csv" , "';                                                                        
                                         tmp2 := tmp1;
-                                        result := tmp1 - tmp2;"), 
+                                        result := (tmp1 - tmp2)[rename number_var to OBS_VALUE];"), 
                                         restartSession = T), label = 'Minus failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Minus compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), label = 'Minus value correct')
@@ -351,7 +352,7 @@ test_that('CSV dataset division works', {
                                                             find.package(package = 'RVTL'), 
                                                             "/vtlStudio2/test_data/ecbexrusd_vtl.csv" , "';                                                                        
                                         tmp2 := tmp1;
-                                        result := tmp1 / tmp2;"), 
+                                        result := (tmp1 / tmp2)[rename number_var to OBS_VALUE];"), 
                                         restartSession = T), label = 'Division failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Division compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), 
@@ -376,7 +377,7 @@ test_that('CSV dataset multiplication works', {
                                                             find.package(package = 'RVTL'), 
                                                             "/vtlStudio2/test_data/ecbexrusd_vtl.csv" , "';                                                                        
                                         tmp2 := tmp1;
-                                        result := tmp1 * tmp2;"), 
+                                        result := (tmp1 * tmp2)[rename number_var to OBS_VALUE];"), 
                                         restartSession = T), label = 'multiplication failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'multiplication compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), 
