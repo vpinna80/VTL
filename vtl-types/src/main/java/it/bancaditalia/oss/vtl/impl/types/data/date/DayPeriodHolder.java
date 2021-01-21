@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.D;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
@@ -99,7 +100,7 @@ public class DayPeriodHolder extends PeriodHolder<DayPeriodHolder>
 	@Override
 	public String toString()
 	{
-		return date.toString();
+		return DateTimeFormatter.ofPattern("yyyy'P'DDD").format(date);
 	}
 	
 	@Override

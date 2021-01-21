@@ -176,6 +176,8 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		// key group holder
 		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
+		
+		// Decorated collector that keeps track of grouping key values for the finisher
 		final Set<Characteristics> characteristics = new HashSet<>(groupCollector.characteristics());
 		characteristics.remove(IDENTITY_FINISH);
 		Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>, A, T> decoratedCollector = Collector.of(
@@ -199,7 +201,7 @@ public abstract class AbstractDataSet implements DataSet
 		
 		try (Stream<DataPoint> stream = stream())
 		{
-			ConcurrentMap<Object, T> result = stream
+			ConcurrentMap<?, T> result = stream
 					.filter(dp -> dp.matches(filter))
 					.map(toEntryWithValue(dp -> dp.getValues(keys, Identifier.class)))
 					.collect(groupingByConcurrent(e -> e.getValue(), decoratedCollector))

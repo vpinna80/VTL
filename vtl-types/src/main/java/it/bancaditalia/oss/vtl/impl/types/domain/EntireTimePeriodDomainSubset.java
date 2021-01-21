@@ -43,7 +43,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public class EntireTimePeriodDomainSubset<P extends PeriodHolder<P>> extends EntireDomainSubset<P, TimePeriodDomain> implements TimePeriodDomainSubset, Serializable
+public class EntireTimePeriodDomainSubset extends EntireDomainSubset<PeriodHolder<?>, TimePeriodDomain> implements TimePeriodDomainSubset, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Map<Class<? extends PeriodHolder<?>>, TimePeriodDomainSubset> PARENTS = new HashMap<>();
@@ -57,12 +57,9 @@ public class EntireTimePeriodDomainSubset<P extends PeriodHolder<P>> extends Ent
 		PARENTS.put(DayPeriodHolder.class, MONTHSDS);
 	}
 	
-	private final Class<P> holder;
-	
-	public EntireTimePeriodDomainSubset(Class<P> holder, String defaultVarName)
+	public EntireTimePeriodDomainSubset(Class<? extends PeriodHolder<?>> holder, String defaultVarName)
 	{
 		super(PARENTS.get(holder), defaultVarName);
-		this.holder = holder;
 	}
 
 	@Override
@@ -89,6 +86,6 @@ public class EntireTimePeriodDomainSubset<P extends PeriodHolder<P>> extends Ent
 	@Override
 	public String toString()
 	{
-		return "Time_Period(" + PeriodHolder.getQualifier(holder) + ")";
+		return "time_period";
 	}
 }

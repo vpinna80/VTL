@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKeyValue;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 
@@ -30,6 +30,7 @@ import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,6 +40,11 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>>, Serializable
 {
+	public static Comparator<DataPoint> compareBy(DataStructureComponent<Identifier, ?, ?> component)
+	{
+		return (dp1, dp2) -> dp1.get(component).compareTo(dp2.get(component));
+	}
+
 	public DataPoint dropComponents(Set<DataStructureComponent<?, ?, ?>> components);
 
 	public DataPoint merge(DataPoint other);

@@ -22,20 +22,15 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.SUM;
-import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toConcurrentMap;
 
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -52,10 +47,10 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -95,23 +90,13 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 		@Override
 		public Stream<DataPoint> apply(DataSet ds, DataStructureComponent<Identifier, ?, ?> timeid)
 		{
+			final DataSetMetadata metadata = ds.getMetadata();
+			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getComponents(Measure.class));
 			Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getComponents(Identifier.class));
 			ids.remove(timeid);
 
-			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getComponents(Measure.class));
-
-			Function<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>> classifier = dp -> dp.getValues(ids, Identifier.class);
-			Comparator<DataPoint> comparator = (dp1, dp2) -> dp1.get(timeid).compareTo(dp2.get(timeid));
-			
-			// TODO: performance checks here
-			// don't use streamByKeys because it would create two copies of the dataset
-			Collection<TreeSet<DataPoint>> groups = ds.stream()
-					.collect(groupingByConcurrent(classifier, toCollection(() -> new TreeSet<>(comparator))))
-					.values();
-			
-			final DataSetMetadata metadata = ds.getMetadata();
-			
-			return Utils.getStream(groups)
+			return ds.streamByKeys(ids, toConcurrentMap(i -> i, i -> true, (a, b) -> a, () -> new ConcurrentSkipListMap<>(DataPoint.compareBy(timeid))))
+				.map(Map::keySet)
 				.map(group -> {
 					Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> acc = new ConcurrentHashMap<>();
 					return group.stream().map(dp -> new DataPointBuilder(Utils.getStream(measures)

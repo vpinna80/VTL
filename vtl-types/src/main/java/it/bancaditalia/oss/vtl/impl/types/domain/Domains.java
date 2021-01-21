@@ -47,12 +47,11 @@ public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
 	NUMBER(new EntireNumberDomainSubset()),
 	DATE(new EntireDateDomainSubset()),
 	TIME(EntireTimeDomainSubset.getInstance()), 
-	DAYS(new EntireTimePeriodDomainSubset<>(DayPeriodHolder.class, "time_period_days_var")),
-	WEEKS(new EntireTimePeriodDomainSubset<>(WeekPeriodHolder.class, "time_period_weeks_var")),
-	MONTHS(new EntireTimePeriodDomainSubset<>(MonthPeriodHolder.class, "time_period_months_var")),
-	QUARTERS(new EntireTimePeriodDomainSubset<>(QuarterPeriodHolder.class, "time_period_quarters_var")),
-	SEMESTERS(new EntireTimePeriodDomainSubset<>(SemesterPeriodHolder.class, "time_period_semesters_var")),
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	DAYS(new EntireTimePeriodDomainSubset(DayPeriodHolder.class, "time_period_days_var")),
+	WEEKS(new EntireTimePeriodDomainSubset(WeekPeriodHolder.class, "time_period_weeks_var")),
+	MONTHS(new EntireTimePeriodDomainSubset(MonthPeriodHolder.class, "time_period_months_var")),
+	QUARTERS(new EntireTimePeriodDomainSubset(QuarterPeriodHolder.class, "time_period_quarters_var")),
+	SEMESTERS(new EntireTimePeriodDomainSubset(SemesterPeriodHolder.class, "time_period_semesters_var")),
 	YEARS(new EntireTimePeriodDomainSubset(YearPeriodHolder.clazz(), "time_period_years_var"));
 
 	private final ValueDomainSubset<?> valueDomain;

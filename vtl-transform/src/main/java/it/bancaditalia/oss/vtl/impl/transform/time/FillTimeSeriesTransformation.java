@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.ALL;
-import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.SINGLE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.stream.Collectors.toCollection;
@@ -33,6 +32,7 @@ import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -110,15 +110,23 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		};
 		
 		TimeValue<?, ?, ?> min, max;
-		if (mode == SINGLE)
+		if (mode == ALL && !ids.isEmpty())
+			try (Stream<DataPoint> stream = ds.stream())
+			{
+				AtomicReference<TimeValue<?, ?, ?>> minR = new AtomicReference<>();
+				AtomicReference<TimeValue<?, ?, ?>> maxR = new AtomicReference<>();
+				stream.forEach(dp -> {
+					minR.accumulateAndGet((TimeValue<?, ?, ?>) dp.get(timeID), (acc, tv) -> acc == null || tv.compareTo(acc) < 0 ? tv : acc);
+					maxR.accumulateAndGet((TimeValue<?, ?, ?>) dp.get(timeID), (acc, tv) -> acc == null || tv.compareTo(acc) > 0 ? tv : acc);
+				});
+				
+				min = minR.get();
+				max = maxR.get();
+			}
+		else
 		{
 			min = null;
 			max = null;
-		}
-		else
-		{
-			min = ds.stream().map(dp -> (TimeValue<?, ?, ?>) dp.get(timeID)).min(TimeValue::compareTo).orElseThrow(() -> new IllegalStateException("All time series are empty."));
-			max = ds.stream().map(dp -> (TimeValue<?, ?, ?>) dp.get(timeID)).max(TimeValue::compareTo).orElseThrow(() -> new IllegalStateException("All time series are empty."));
 		}
 
 		return new LightFDataSet<>(structure, dataset -> dataset.streamByKeys(ids, toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 

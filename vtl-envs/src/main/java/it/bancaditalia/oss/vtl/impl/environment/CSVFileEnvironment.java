@@ -19,28 +19,34 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static java.time.format.SignStyle.NOT_NEGATIVE;
+import static java.time.format.TextStyle.NARROW;
+import static java.time.format.TextStyle.SHORT;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
+import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.YEAR;
+import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 import static java.util.Objects.isNull;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.TemporalAccessor;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,6 +56,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -67,6 +74,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -89,6 +97,8 @@ import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -97,21 +107,26 @@ public class CSVFileEnvironment implements Environment
 {
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?:,|\n|^)(\"(?:(?:\"\")*[^\"]*)*\"|([^\",\n]*)|(?:\n|$))");
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
-	private static final Map<Pattern, String> PATTERNS = new LinkedHashMap<>();
+	private static final Map<Pattern, UnaryOperator<DateTimeFormatterBuilder>> PATTERNS = new LinkedHashMap<>();
+	private static final Pattern DATE_LITERAL_ELEMENT = Pattern.compile("^([-/ ]|\\\\.)(.*)$");
+	private static final String DATE_DOMAIN_PATTERN = "^[Dd][Aa][Tt][Ee]\\[(.*)\\]$";
+	private static final String PERIOD_DOMAIN_PATTERN = "^[Tt][Ii][Mm][Ee]_[Pp][Ee][Rr][Ii][Oo][Dd]\\[(.*)\\]$";
 	
 	static {
-		PATTERNS.put(Pattern.compile("^(YYYY)(.*)$"), "yyyy");
-		PATTERNS.put(Pattern.compile("^(YYY)(.*)$"), "yyy");
-		PATTERNS.put(Pattern.compile("^(YY)(.*)$"), "yy");
-		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]3)(.*)$"), "LLL");
-		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]1)(.*)$"), "LLLLL");
-		PATTERNS.put(Pattern.compile("^(D[Aa][Yy]3)(.*)$"), "ccc");
-		PATTERNS.put(Pattern.compile("^(D[Aa][Yy]1)(.*)$"), "ccccc");
-		PATTERNS.put(Pattern.compile("^(MM)(.*)$"), "MM");
-		PATTERNS.put(Pattern.compile("^(M)(.*)$"), "M");
-		PATTERNS.put(Pattern.compile("^(DD)(.*)$"), "dd");
-		PATTERNS.put(Pattern.compile("^(D)(.*)$"), "d");
-		PATTERNS.put(Pattern.compile("^([-/ ])(.*)$"), "$1");
+		PATTERNS.put(Pattern.compile("^(YYYY)(.*)$"), dtf -> dtf.appendValue(YEAR, 4));
+		PATTERNS.put(Pattern.compile("^(YYY)(.*)$"), dtf -> dtf.appendValue(YEAR, 3));
+		PATTERNS.put(Pattern.compile("^(YY)(.*)$"), dtf -> dtf.appendValue(YEAR, 2));
+		PATTERNS.put(Pattern.compile("^(H)(.*)$"), dtf -> dtf.appendValue(SEMESTER_OF_YEAR, 1));
+		PATTERNS.put(Pattern.compile("^(Q)(.*)$"), dtf -> dtf.appendValue(QUARTER_OF_YEAR, 1));
+		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]3)(.*)$"), dtf -> dtf.appendText(MONTH_OF_YEAR, SHORT));
+		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]1)(.*)$"), dtf -> dtf.appendText(MONTH_OF_YEAR, NARROW));
+		PATTERNS.put(Pattern.compile("^(D[Aa][Yy]3)(.*)$"), dtf -> dtf.appendText(DAY_OF_WEEK, SHORT));
+		PATTERNS.put(Pattern.compile("^(D[Aa][Yy]1)(.*)$"), dtf -> dtf.appendText(DAY_OF_WEEK, NARROW));
+		PATTERNS.put(Pattern.compile("^(MM)(.*)$"), dtf -> dtf.appendValue(MONTH_OF_YEAR, 2));
+		PATTERNS.put(Pattern.compile("^(M)(.*)$"), dtf -> dtf.appendValue(MONTH_OF_YEAR, 1, 2, NOT_NEGATIVE));
+		PATTERNS.put(Pattern.compile("^(PPP)(.*)$"), dtf -> dtf.appendValue(DAY_OF_YEAR, 3));
+		PATTERNS.put(Pattern.compile("^(DD)(.*)$"), dtf -> dtf.appendValue(DAY_OF_MONTH, 2));
+		PATTERNS.put(Pattern.compile("^(D)(.*)$"), dtf -> dtf.appendValue(DAY_OF_MONTH, 1, 2, NOT_NEGATIVE));
 	}
 	
 	@Override
@@ -143,6 +158,7 @@ public class CSVFileEnvironment implements Environment
 		}
 	}
 	
+	@SuppressWarnings("resource")
 	private Stream<DataPoint> streamFileName(String fileName)
 	{
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
@@ -155,14 +171,13 @@ public class CSVFileEnvironment implements Environment
 			
 			LOGGER.info("Reading {}", fileName);
 	
-			// Do not close!
-			@SuppressWarnings("resource")
+			// Do not close here!
 			BufferedReader innerReader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8));
+			
 			// Skip header
 			innerReader.readLine();
 			
 			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Boolean> set = new ConcurrentHashMap<>();
-			
 			return ProgressWindow.of("Loading CSV", lineCount, Utils.getStream(innerReader.lines()))
 				// Skip empty lines
 				.filter(line -> !line.trim().isEmpty())
@@ -204,6 +219,15 @@ public class CSVFileEnvironment implements Environment
 					Boolean a = set.putIfAbsent(values, true);
 					if (a != null)
 						throw new IllegalStateException("Identifiers are not unique: " + values);
+				}).onClose(() -> {
+					try
+					{
+						innerReader.close();
+					}
+					catch (IOException e)
+					{
+						throw new UncheckedIOException(e);
+					}
 				});
 		}
 		catch (IOException e)
@@ -244,9 +268,10 @@ public class CSVFileEnvironment implements Environment
 			}
 		else if (component.getDomain() instanceof BooleanDomainSubset)
 			return BooleanValue.of(Boolean.parseBoolean(value));
-		else if (component.getDomain() instanceof DateDomainSubset)
+		else if (component.getDomain() instanceof DateDomainSubset || component.getDomain() instanceof TimePeriodDomainSubset)
 		{
-			StringBuilder maskBuilder = new StringBuilder();
+			// Transform the VTL date mask into a DateTimeFormatter
+			DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
 			while (!mask.isEmpty())
 			{
 				boolean found = false;
@@ -256,34 +281,34 @@ public class CSVFileEnvironment implements Environment
 						Matcher matcher = pattern.matcher(mask);
 						if (matcher.find())
 						{
-							maskBuilder.append(matcher.replaceFirst(PATTERNS.get(pattern)));
+							builder = PATTERNS.get(pattern).apply(builder);
 							mask = matcher.group(2);
 							found = true;
 						}
 					}
 				
 				if (!found)
-					throw new IllegalStateException("Unrecognized mask in cast operator: " + mask);
+				{
+					Matcher matcher = DATE_LITERAL_ELEMENT.matcher(mask);
+					if (matcher.find())
+					{
+						builder = builder.appendLiteral(matcher.group(1).replaceAll("\\\\", ""));
+						mask = matcher.group(2);
+					}
+					else
+						throw new IllegalStateException("Unrecognized mask in csv header: " + mask);
+				}
 			}
 
-			DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-				.appendPattern(maskBuilder.toString())
-				.parseDefaulting(MONTH_OF_YEAR, 1)
-				.parseDefaulting(DAY_OF_MONTH, 1)
-				.parseDefaulting(HOUR_OF_DAY, 0)
-	            .parseDefaulting(MINUTE_OF_HOUR, 0)
-	            .parseDefaulting(SECOND_OF_MINUTE, 0)
-	            .toFormatter();
-			return new DateValue(LocalDateTime.parse(value, formatter));
+			TemporalAccessor parsed = builder.toFormatter().parse(value);
+			return component.getDomain() instanceof DateDomainSubset ? new DateValue(parsed) : new TimePeriodValue(parsed);
 		}
 
-		throw new IllegalStateException("ValueDomain not supported in CSV: " + component.getDomain());
+		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getDomain());
 	}
 
 	private Entry<ValueDomainSubset<? extends ValueDomain>, String> mapVarType(String typeName)
 	{
-		String datePattern = "^[Dd][Aa][Tt][Ee]\\[(.*)\\]$";
-		
 		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 		
 		if ("STRING".equalsIgnoreCase(typeName))
@@ -294,8 +319,10 @@ public class CSVFileEnvironment implements Environment
 			return new SimpleEntry<>(INTEGERDS, "");
 		else if ("BOOL".equalsIgnoreCase(typeName))
 			return new SimpleEntry<>(BOOLEANDS, "");
-		else if (typeName.matches(datePattern))
-			return new SimpleEntry<>(DATEDS, typeName.replaceAll(datePattern, "$1"));
+		else if (typeName.matches(DATE_DOMAIN_PATTERN))
+			return new SimpleEntry<>(DATEDS, typeName.replaceAll(DATE_DOMAIN_PATTERN, "$1"));
+		else if (typeName.matches(PERIOD_DOMAIN_PATTERN))
+			return new SimpleEntry<>(DAYSDS, typeName.replaceAll(PERIOD_DOMAIN_PATTERN, "$1"));
 		else if (repository.isDomainDefined(typeName))
 			return new SimpleEntry<>(repository.getDomain(typeName), typeName);
 
@@ -348,176 +375,10 @@ public class CSVFileEnvironment implements Environment
 			DataStructureComponentImpl<? extends Component, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
 			metadata.add(component);
 
-			if (domain instanceof DateDomain)
+			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)
 				masks.put(component, mappedType.getValue());
 		}
 		
 		return new SimpleEntry<>(metadata, masks);
 	}
-	
-	/*private static class MemoryMapper implements Spliterator<String>
-	{
-		private static final long MAXSIZE = Integer.MAX_VALUE; // 64MB
-		private static final Logger LOGGER = LoggerFactory.getLogger(MemoryMapper.class);
-		
-		private final CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
-		private final FileChannel channel;
-		private final long size;
-		private final CharBuffer out = CharBuffer.allocate(1024 * 1024);
-		private final BlockingQueue<String> queue = new LinkedBlockingQueue<>(10000);
-		private final AtomicInteger counter = new AtomicInteger();
-		private final int lines;
-		
-		private MappedByteBuffer buffer = null;
-		private long lastPosition = 0;
-		private CoderResult lastDecodeResult = null;
-		private int splits = 1;
-
-		@SuppressWarnings("resource")
-		public MemoryMapper(String name, int lines) throws IOException
-		{
-			this.lines = lines;
-			this.channel = new RandomAccessFile(name, "r").getChannel();
-			size = channel.size();
-			fill();
-			final Thread producer = new Thread(this::producer, "Reader thread for " + name);
-			producer.setDaemon(true);
-			producer.start();
-		}
-		
-		private void fill() throws IOException 
-		{
-			long toRead = size - lastPosition;
-			if (buffer != null && buffer.hasRemaining())
-			{
-				out.clear();
-				lastDecodeResult = decoder.decode(buffer, out, false);
-				if (lastDecodeResult.isError())
-					lastDecodeResult.throwException();
-				out.flip();
-			}
-			else if (toRead > 0)
-			{
-				if (toRead > MAXSIZE)
-					toRead = MAXSIZE;
-				
-				buffer = channel.map(FileChannel.MapMode.READ_ONLY, lastPosition, toRead);
-				lastPosition += toRead;
-				LOGGER.trace("Read {} bytes", toRead);
-				out.clear();
-				lastDecodeResult = decoder.decode(buffer, out, false);
-				out.flip();
-				if (lastDecodeResult.isError())
-					lastDecodeResult.throwException();
-			}
-			else if (lastPosition >= size)
-			{
-				out.clear();
-				lastDecodeResult = decoder.decode(ByteBuffer.allocate(0), out, true);
-				decoder.flush(out);
-				if (lastDecodeResult.isError())
-					lastDecodeResult.throwException();
-				out.flip();
-			}
-		}
-		
-		private static int indexOf(char[] array, int beginIndex)
-		{
-			int i = beginIndex;
-			while (i < array.length)
-				if (array[i++] == '\n')
-					return i - beginIndex;
-			
-			return -1;
-		}
-
-		public void producer()
-		{
-			char elements[] = out.toString().toCharArray();
-			String residual = "";
-			int beginIndex = 0;
-			
-			try
-			{
-				while (beginIndex < elements.length)
-				{
-					int nl = indexOf(elements, beginIndex);
-					
-					if (nl >= 0)
-					{
-						String element = new String(elements, beginIndex, nl - 1);
-						beginIndex += nl;
-						if (!residual.isEmpty())
-						{
-							element = residual + element;
-							residual = "";
-						}
-							
-						final int length = element.length();
-						if (element.charAt(length - 1) == '\r')
-							element = element.substring(0, length - 1);
-						//LOGGER.trace("Read line from csv: {}", element);
-						queue.put(element);
-					}
-					else
-					{
-						fill();
-						
-						if (out.hasRemaining())
-						{
-							if (beginIndex < elements.length)
-								residual += new String(elements, beginIndex, elements.length - beginIndex);
-							elements = out.toString().toCharArray();
-							beginIndex = 0;
-						}
-						else
-							queue.put(residual + new String(elements));
-					}
-				}
-			}
-			catch (IOException | InterruptedException e)
-			{
-				LOGGER.error("Error while reading CSV: ", e);
-				throw new RuntimeException(e);
-			}
-			
-			LOGGER.debug("Finished reading CSV");
-		}
-
-		@Override
-		public boolean tryAdvance(Consumer<? super String> action)
-		{
-			if (counter.getAndIncrement() >= lines)
-				return false;
-			
-			try
-			{
-				action.accept(queue.take());
-				return true;
-			}
-			catch (InterruptedException e)
-			{
-				return false;
-			}
-		}
-		
-		@Override
-		public Spliterator<String> trySplit()
-		{
-			splits++;
-			return this;
-		}
-		
-		@Override
-		public int characteristics()
-		{
-			return Spliterator.IMMUTABLE + Spliterator.CONCURRENT + Spliterator.SIZED + Spliterator.NONNULL;
-		}
-
-		@Override
-		public long estimateSize()
-		{
-			return (lines - counter.get()) / splits;
-		}
-	}*/
 }
