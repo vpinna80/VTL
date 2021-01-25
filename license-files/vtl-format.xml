@@ -22,11 +22,11 @@
 -->
 <additionalHeaders>
     <vtl_style>
-        <firstLine>#################################</firstLine>
-        <beforeEachLine># </beforeEachLine>
-        <endLine>#################################</endLine>
-        <firstLineDetectionPattern>^#################################$</firstLineDetectionPattern>
-        <lastLineDetectionPattern>^#################################$</lastLineDetectionPattern>
+        <firstLine>/*********************************</firstLine>
+        <beforeEachLine>* </beforeEachLine>
+        <endLine>*********************************/</endLine>
+        <firstLineDetectionPattern>^/*********************************$</firstLineDetectionPattern>
+        <lastLineDetectionPattern>^*********************************/$</lastLineDetectionPattern>
         <allowBlankLines>false</allowBlankLines>
         <isMultiline>false</isMultiline>
     </vtl_style>
