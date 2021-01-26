@@ -755,13 +755,12 @@
 						<mapping>
 							<R>SCRIPT_STYLE</R>
 							<adoc>ASCIIDOC_STYLE</adoc>
-							<vtl>VTL_STYLE</vtl>
+							<vtl>JAVADOC_STYLE</vtl>
 							<xjb>XML_STYLE</xjb>
 						</mapping>
 						<failIfUnknown>true</failIfUnknown>
 						<headerDefinitions>
 							<headerDefinition>license-files/asciidoc-format.xml</headerDefinition>
-							<headerDefinition>license-files/vtl-format.xml</headerDefinition>
 						</headerDefinitions>
 						<properties>
 							<owner>${project.organization.name}</owner>
