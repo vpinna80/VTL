@@ -26,7 +26,7 @@ Please take a moment to read the [Guideline](CONTRIBUTING.md).
 
 ## Build information
 
-A complete description of the project modules and the build process will be aailable soon.
+A complete description of the project modules and the build process will be available soon.
 
 To build this project, you will need:
 
@@ -42,15 +42,24 @@ To build this project, you will need:
 
 To build the project, launch the command:
 
-    mvn [-P with-r,with-python] [-Dsdmx.version=x.x.x] clean package
-
+    mvn [-P with-r,with-python,with-cli,with-rest] [-Dsdmx.version=x.x.x] clean package
 
 Each artifact will be generated inside the `target` folder of each module.
+The optional maven profiles allow you to build any of the provided VTL bundles for
+the different front-ends capable of communicating with the VTL engine.
 
 If you want to build the editor and the R package along with the engine, activate the 
 `with-r` maven profile; you may need to configure your internet connection in 
 Maven. The R package, ready for installation in R (with install.packages), will 
 be located there.
+
+If you want to build the RESTful web services for VTL along with the engine, activate the
+`with-rest` maven profile. A WAR file ready to be deployed in your application server
+will be packaged during the `package` maven lifecycle phase in your build.
+
+If you want to build the command line interface to VTL along with the engine, activate the
+`with-cli` maven profile. An executable JAR file ready to be deployed in your platform 
+will be packaged during the `package` maven lifecycle phase in your build.
 
 If you want to build the Jupyter notebook kernel along with the engine, also activate the 
 `with-python` maven profile; you may need to install the prerequisite packages for the
