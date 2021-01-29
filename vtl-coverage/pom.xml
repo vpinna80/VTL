@@ -35,6 +35,38 @@
 	<name>vtl-coverage</name>
 	<description>Coverage report aggregator</description>
 
+	<profiles>
+		<profile>
+			<id>with-rest</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-rest</artifactId>
+					<type>war</type>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>with-cli</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-cli</artifactId>
+					<type>jar</type>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
+	<dependencies>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-bundle-deps</artifactId>
+			<version>1.0.7-SNAPSHOT</version>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
+	
 	<reporting>
 		<plugins>
 			<plugin>
@@ -53,26 +85,6 @@
 			</plugin>
 		</plugins>
 	</reporting>
-
-	<dependencies>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-envs</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-rest</artifactId>
-			<type>war</type>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-transform</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-types</artifactId>
-		</dependency>
-	</dependencies>
 
 	<build>
 		<plugins>
