@@ -147,7 +147,11 @@
 							<item name="Getting Started" href="get-started.html" />
 							<item name="Configuration" href="editor-config.html" />
 						</item>
-						<item name="VTL Examples" href="examples.html" />
+						<item name="VTL Language usage">
+							<item name="Importing data from CSV"  href="reading-csv.html" />
+							<item name="Usage of temporal data"  href="datetime-handling.html" />
+							<item name="VTL examples" href="examples.html" />
+						</item>
 						<item name="VTL command line interface" href="cli-usage.html" />
 						<item name="VTL Engine web services">
 							<item name="Setup" href="rest-setup.html" />
