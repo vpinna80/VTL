@@ -94,6 +94,7 @@ public class CSVFileEnvironment implements Environment
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?:,|\n|^)(\"(?:(?:\"\")*[^\"]*)*\"|([^\",\n]*)|(?:\n|$))");
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
 	private static final String DATE_DOMAIN_PATTERN = "^[Dd][Aa][Tt][Ee]\\[(.*)\\]$";
+	private static final String BOOLEAN_DOMAIN_PATTERN = "^[Bb][Oo][Oo][Ll](?:[Ee][Aa][Nn])?$";
 	private static final String PERIOD_DOMAIN_PATTERN = "^[Tt][Ii][Mm][Ee]_[Pp][Ee][Rr][Ii][Oo][Dd]\\[(.*)\\]$";
 	
 	@Override
@@ -253,7 +254,7 @@ public class CSVFileEnvironment implements Environment
 			return new SimpleEntry<>(NUMBERDS, "");
 		else if ("INT".equalsIgnoreCase(typeName))
 			return new SimpleEntry<>(INTEGERDS, "");
-		else if ("BOOL".equalsIgnoreCase(typeName))
+		else if (typeName.matches(BOOLEAN_DOMAIN_PATTERN))
 			return new SimpleEntry<>(BOOLEANDS, "");
 		else if (typeName.matches(DATE_DOMAIN_PATTERN))
 			return new SimpleEntry<>(DATEDS, typeName.replaceAll(DATE_DOMAIN_PATTERN, "$1"));
