@@ -19,29 +19,18 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.date.TimePatterns.parseString;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.TimePatterns.parseTemporal;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
-import static java.time.format.SignStyle.NOT_NEGATIVE;
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.DAY_OF_WEEK;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.YEAR;
 import static java.util.Collections.singletonMap;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
@@ -50,16 +39,18 @@ import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -69,34 +60,16 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class CastTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final static Map<Pattern, UnaryOperator<DateTimeFormatterBuilder>> PATTERNS = new LinkedHashMap<>();
-	
-	static {
-		PATTERNS.put(Pattern.compile("^(YYYY)(.*)"), b -> b.appendValue(YEAR, 4));
-		PATTERNS.put(Pattern.compile("^(YYY)(.*)$"), b -> b.appendValue(YEAR, 3));
-		PATTERNS.put(Pattern.compile("^(YY)(.*)$"), b -> b.appendValue(YEAR, 2));
-		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]3)(.*)$"), b -> b.appendValue(MONTH_OF_YEAR, 3));
-		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]1)(.*)$"), b -> b.appendValue(MONTH_OF_YEAR, 5));
-		PATTERNS.put(Pattern.compile("^(D[Aa][Yy]3)(.*)$"), b -> b.appendValue(DAY_OF_WEEK, 3));
-		PATTERNS.put(Pattern.compile("^(D[Aa][Yy]1)(.*)$"), b -> b.appendValue(DAY_OF_WEEK, 5));
-		PATTERNS.put(Pattern.compile("^(MM)(.*)$"), b -> b.appendValue(MONTH_OF_YEAR, 2));
-		PATTERNS.put(Pattern.compile("^(M)(.*)$"), b -> b.appendValue(MONTH_OF_YEAR, 1, 2, NOT_NEGATIVE));
-		PATTERNS.put(Pattern.compile("^(DD)(.*)$"), b -> b.appendValue(DAY_OF_MONTH, 2));
-		PATTERNS.put(Pattern.compile("^(D)(.*)$"), b -> b.appendValue(DAY_OF_MONTH, 1, 2, NOT_NEGATIVE));
-		PATTERNS.put(Pattern.compile("^(-)(.*)$"), b -> b.appendLiteral("-"));
-		PATTERNS.put(Pattern.compile("^(/)(.*)$"), b -> b.appendLiteral("/"));
-		PATTERNS.put(Pattern.compile("^( )(.*)$"), b -> b.appendLiteral(" "));
-	}
 	
 	private final ValueDomainSubset<?> target;
 	private final String mask;
-	private transient DateTimeFormatter dateTimeFormatter;
 	private transient DecimalFormat numberFormatter;
 
 	public CastTransformation(Transformation operand, Domains target, String mask)
@@ -153,8 +126,8 @@ public class CastTransformation extends UnaryTransformation
 
 		if (domain instanceof StringDomainSubset && target instanceof DateDomainSubset)
 			return DATE;
-//			else if (scalarmeta.getDomain() instanceof StringDomainSubset && target instanceof TimeDomainSubset)
-//				return TIME;
+		else if (domain instanceof StringDomainSubset && target instanceof TimePeriodDomainSubset)
+			return DAYS;
 		else if (domain instanceof StringDomainSubset && target instanceof IntegerDomainSubset)
 			return INTEGER;
 		else if (domain instanceof StringDomainSubset && target instanceof NumberDomainSubset)
@@ -163,8 +136,6 @@ public class CastTransformation extends UnaryTransformation
 			return STRING;
 		else if (domain instanceof TimeDomainSubset && target instanceof TimeDomainSubset)
 			return (ScalarValueMetadata<?>) () -> target;
-//			else if (scalarmeta.getDomain() instanceof TimeDomainSubset && target instanceof StringDomainSubset)
-//				return STRING;
 		else
 			throw new UnsupportedOperationException();
 	}
@@ -183,65 +154,24 @@ public class CastTransformation extends UnaryTransformation
 		}
 	}
 
-	private synchronized DateTimeFormatter getDateFormatter()
-	{
-		if (dateTimeFormatter != null)
-			return dateTimeFormatter;
-		
-		synchronized (this)
-		{
-			if (dateTimeFormatter != null)
-				return dateTimeFormatter;
-			
-			DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
-			String maskRemaining = mask;
-			while (!maskRemaining.isEmpty())
-			{
-				boolean found = false;
-				for (Pattern pattern: PATTERNS.keySet())
-					if (!found)
-					{
-						Matcher matcher = pattern.matcher(maskRemaining);
-						if (matcher.find())
-						{
-							builder = PATTERNS.get(pattern).apply(builder);
-							maskRemaining = matcher.group(2);
-							found = true;
-						}
-					}
-				
-				if (!found)
-					throw new IllegalStateException("Unrecognized mask characters in cast operator: " + maskRemaining);
-			}
-			
-			return dateTimeFormatter = builder.toFormatter();
-		}
-	}
-
 	private ScalarValue<?, ?, ?> castScalar(ScalarValue<?, ?, ?> scalar)
 	{
 		try
 		{
 			if (scalar instanceof StringValue && target instanceof DateDomainSubset)
-				return new DateValue(LocalDateTime.parse((String) scalar.get(), getDateFormatter()));
-//				else if (scalar instanceof StringValue && target instanceof TimeDomainSubset)
-//					return new TimeValue(LocalTime.parse((String) scalar.get(), mask));
+				return new DateValue(parseString(scalar.get().toString(), mask));
+			else if (scalar instanceof StringValue && target instanceof TimePeriodDomainSubset)
+				return new TimePeriodValue(parseString(scalar.get().toString(), mask));
+			else if (scalar instanceof DateValue && target instanceof StringDomainSubset)
+				return new StringValue(parseTemporal((DateHolder<?>) scalar.get(), mask));
+			else if (scalar instanceof TimePeriodValue && target instanceof StringDomainSubset)
+				return new StringValue(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
 			else if (scalar instanceof StringValue && target instanceof IntegerDomainSubset)
 				return new IntegerValue(Long.parseLong((String) scalar.get()));
 			else if (scalar instanceof StringValue && target instanceof NumberDomainSubset)
 				return new DoubleValue(getNumberFormatter().parse((String) scalar.get()).doubleValue());
-			else if (scalar instanceof TimeValue && target instanceof TimeDomainSubset)
-				return target.cast(scalar);
-			else if (scalar instanceof TimeValue && target instanceof StringDomainSubset)
-				return new StringValue(getDateFormatter().format(((TimeValue<?, ?, ?>) scalar).get()));
-//				else if (scalar instanceof TimeValueImpl && target instanceof StringDomainSubset)
-//					return new StringValue(dateFormatter.format((LocalTime) scalar.get()));
 			else
 				throw new UnsupportedOperationException(scalar.getClass() + " " + target.getClass() + " " + scalar);
-		}
-		catch (DateTimeParseException e)
-		{
-			throw new VTLNestedException("Date/time '" + scalar.get() + "' unparseable with mask '" + getDateFormatter() + "'", e);
 		}
 		catch (ParseException e)
 		{
