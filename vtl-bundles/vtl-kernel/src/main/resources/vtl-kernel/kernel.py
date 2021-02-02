@@ -41,6 +41,24 @@ def startJVM():
         jpype.addClassPath(classpath)
 
 
+def parseValue(value):
+    import jpype.imports
+    from java.lang import String, Long, Double, Boolean
+    it = JPackage('it')
+    if value == None:
+        return None
+    elif isinstance(value, String):
+        return str(value)
+    elif isinstance(value, Long):
+        return value.longValue()
+    elif isinstance(value, Double):
+        return value.doubleValue()
+    elif isinstance(value, Boolean):
+        return value.booleanValue()
+    else:
+        return str(value.toString())
+
+
 def convertDataSet(dataset):
     from java.util.stream import Collectors
     stream = dataset.stream()
@@ -58,25 +76,10 @@ def convertDataSet(dataset):
 
 
 def convertScalar(alias, value):
-    return DataFrame(data = [ parseValue(value.get()) ], index = alias, columns = ['scalar(' + str(value.getDomain().toString()) + ')']).to_html()
-
-
-def parseValue(value):
-    import jpype.imports
-    from java.lang import String, Long, Double, Boolean
-    it = JPackage('it')
-    if value == None:
-        return None
-    elif isinstance(value, String):
-        return str(value)
-    elif isinstance(value, Long):
-        return value.longValue()
-    elif isinstance(value, Double):
-        return value.doubleValue()
-    elif isinstance(value, Boolean):
-        return value.booleanValue()
-    else:
-        return str(value.toString())
+    if type(alias) == str:
+        alias = [ alias ]
+    return DataFrame(data = [ parseValue(value.get()) ], index = alias,                 \
+            columns = ['scalar(' + str(value.getDomain().toString()) + ')']).to_html()
 
 
 def mapDomain(domain):
