@@ -154,7 +154,7 @@ class VTLKernel(Kernel):
                 self.sendData(name, self.VTLSession.resolve(name))
                 self.sendLog()
             else:
-                statements = self.VTLSession.addStatements(code)
+                statements = self.VTLSession.addStatements(code).getWorkspace().getRules()
                 self.sendLog()
                 self.VTLSession.compile()
                 self.sendLog()
