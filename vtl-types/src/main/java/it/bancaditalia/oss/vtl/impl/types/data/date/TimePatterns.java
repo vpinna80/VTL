@@ -80,7 +80,7 @@ public class TimePatterns
 
 	private static DateTimeFormatter getFormatter(final String mask)
 	{
-		DateTimeFormatter formatter = getFormatter(mask);
+		DateTimeFormatter formatter = FORMATTERS_CACHE.get(mask);
 		
 		if (formatter == null)
 		{
