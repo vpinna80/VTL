@@ -203,7 +203,7 @@
 		<junit.version>5.6.1</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
 		<mockito.version>3.5.7</mockito.version>
-		<build-helper-maven-plugin.version>3.1.0</build-helper-maven-plugin.version>
+		<build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
 		<spring.boot.version>2.3.2.RELEASE</spring.boot.version>
 		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.7.2</antlr4.version>
@@ -841,7 +841,7 @@
 					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
 					<asciidoc>
 						<attributes>
-							<rest-snippets>${project.basedir}/vtl-rest/target/generated-snippets</rest-snippets>
+							<rest-snippets>${project.basedir}/vtl-bundles/vtl-rest/target/generated-snippets</rest-snippets>
 						</attributes>
 					</asciidoc>
 				</configuration>
@@ -871,6 +871,36 @@
 			<plugin>
 				<groupId>com.mycila</groupId>
 				<artifactId>license-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>format-version</id>
+						<phase>pre-site</phase>
+						<goals>
+							<goal>parse-version</goal>
+						</goals>
+						<configuration>
+							<propertyPrefix>version</propertyPrefix>
+						</configuration>
+					</execution>
+					<execution>
+						<id>gen-wheel-version</id>
+						<phase>pre-site</phase>
+						<goals>
+							<goal>regex-property</goal>
+						</goals>
+						<configuration>
+							<name>wheel-version</name>
+							<value>${version.majorVersion}.${version.minorVersion}.${version.qualifier}${version.incrementalVersion}</value>
+							<regex>SNAPSHOT</regex>
+							<replacement>dev</replacement>
+							<failIfNoMatch>false</failIfNoMatch>
+  						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

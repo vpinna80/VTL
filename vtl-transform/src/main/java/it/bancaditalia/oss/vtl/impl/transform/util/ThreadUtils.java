@@ -19,16 +19,20 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -44,7 +48,7 @@ public class ThreadUtils
 	
 	private ThreadUtils() {}
 
-	public static <T> T evalFuture(boolean isMeta, TransformationScheme scheme, Transformation reducingExpr, BiFunction<? super T, ? super T, ? extends T> finisher, 
+	public static <T> T evalFuture(boolean isMeta, TransformationScheme scheme, BinaryTransformation reducingExpr, BiFunction<? super T, ? super T, ? extends T> finisher, 
 			BiFunction<? super Transformation, ? super TransformationScheme, ? extends T> extractor, Transformation leftExpr, Transformation rightExpr) 
 	{
 		if (Utils.SEQUENTIAL)
@@ -52,38 +56,38 @@ public class ThreadUtils
 
 		final String what = isMeta ? "metadata" : "value";
 	
-		LOGGER.trace("Asking computing {} of {}:{}", what, hashHex(reducingExpr), reducingExpr);
+		LOGGER.trace("Asking computing {} of {}:{}", what, reducingExpr.getClass().getSimpleName(), reducingExpr);
 		Future<? extends T> leftTask = POOL.submit(() -> extractor.apply(leftExpr, scheme));
 		Future<? extends T> rightTask = POOL.submit(() -> extractor.apply(rightExpr, scheme));
 
-		final T left, right;
+		T left = null, right = null;
 		try 
 		{
-			left = leftTask.get();
+			try
+			{
+				left = leftTask.get(500, MILLISECONDS);
+			}
+			catch (TimeoutException e)
+			{
+				LOGGER.trace("Thread starvation querying for {}:{}", reducingExpr.getLeftOperand().getClass().getSimpleName(), reducingExpr.getLeftOperand());
+				left = extractor.apply(leftExpr, scheme);
+			}
+
+			try
+			{
+				right = rightTask.get(500, MILLISECONDS);
+			}
+			catch (TimeoutException e)
+			{
+				LOGGER.trace("Thread starvation querying for {}:{}", reducingExpr.getRightOperand().getClass().getSimpleName(), reducingExpr.getRightOperand());
+				right = extractor.apply(rightExpr, scheme);
+			}
 		}
 		catch (InterruptedException | ExecutionException e) 
 		{
 			throw new VTLNestedException("Error executing subrule " + leftExpr, e);
 		}
-		
-		try 
-		{
-			right = rightTask.get();
-		}
-		catch (InterruptedException e) 
-		{
-			throw new VTLNestedException("Error executing subrule " + rightExpr, e);
-		}
-		catch (ExecutionException e) 
-		{
-			throw new VTLNestedException("Error executing subrule " + rightExpr, e.getCause());
-		}
 
 		return finisher.apply(left, right);
-	}
-
-	private static String hashHex(Transformation expr) 
-	{
-		return String.format("%08X", expr.hashCode());
 	}
 }
