@@ -60,13 +60,13 @@ public abstract class BinaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValue eval(TransformationScheme scheme)
 	{
-		return ThreadUtils.evalFuture(false, scheme, this, this::evalFinisher, Transformation::eval, leftOperand, rightOperand);
+		return ThreadUtils.evalFuture(scheme, this, this::evalFinisher, Transformation::eval);
 	}
 	
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return metadata == null ? metadata = ThreadUtils.evalFuture(false, scheme, this, this::getMetadataFinisher, Transformation::getMetadata, leftOperand, rightOperand) : metadata;
+		return metadata == null ? metadata = ThreadUtils.evalFuture(scheme, this, this::getMetadataFinisher, Transformation::getMetadata) : metadata;
 	}
 	
 	protected abstract VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right);

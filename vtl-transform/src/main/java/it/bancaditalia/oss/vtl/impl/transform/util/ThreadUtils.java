@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.function.BiFunction;
@@ -27,14 +29,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
+import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.ops.ParenthesesTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
+/**
+ * Helper class to parallelize over the two sides of a {@link BinaryTransformation}
+ * 
+ * @author m027907
+ *
+ */
 public class ThreadUtils 
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(ThreadUtils.class);
 	private final static ForkJoinPool POOL;
+	private final static Set<Class<? extends Transformation>> SIMPLE_TRANSFORMATIONS = new HashSet<>();
 	
 	static {
 		// Compensate for few cores available and avoid starvation
@@ -43,25 +56,45 @@ public class ThreadUtils
 			POOL = new ForkJoinPool(32 - parallelism);
 		else
 			POOL = ForkJoinPool.commonPool();
+		
+		SIMPLE_TRANSFORMATIONS.add(ParenthesesTransformation.class);
+		SIMPLE_TRANSFORMATIONS.add(ConstantOperand.class);
+		SIMPLE_TRANSFORMATIONS.add(VarIDOperand.class);
+		SIMPLE_TRANSFORMATIONS.add(IsNullTransformation.class);
 	}
 	
 	private ThreadUtils() {}
 
-	public static <T> T evalFuture(boolean isMeta, TransformationScheme scheme, BinaryTransformation reducingExpr, BiFunction<? super T, ? super T, ? extends T> finisher, 
-			BiFunction<? super Transformation, ? super TransformationScheme, ? extends T> extractor, Transformation leftExpr, Transformation rightExpr) 
+	/**
+	 * @param <T> The type returned by the extractor
+	 * 
+	 * @param scheme The {@link TransformationScheme}
+	 * @param expr The binary expression being computed
+	 * @param extractor a function that extracts the value from the result of each subexpression
+	 * @param combiner a function that combines the results of the two subexpressions 
+	 * @return
+	 */
+	public static <T> T evalFuture(TransformationScheme scheme, BinaryTransformation expr,
+			BiFunction<? super T, ? super T, ? extends T> combiner, 
+			BiFunction<? super Transformation, ? super TransformationScheme, ? extends T> extractor) 
 	{
-		if (Utils.SEQUENTIAL)
-			return finisher.apply(extractor.apply(leftExpr, scheme), extractor.apply(rightExpr, scheme));
-
-		final String what = isMeta ? "metadata" : "value";
-	
-		LOGGER.trace("Asking computing {} of {}:{}", what, reducingExpr.getClass().getSimpleName(), reducingExpr);
-		ForkJoinTask<? extends T> leftTask = POOL.submit(() -> extractor.apply(leftExpr, scheme));
-		ForkJoinTask<? extends T> rightTask = POOL.submit(() -> extractor.apply(rightExpr, scheme));
+		Transformation leftExpr = expr.getLeftOperand();
+		Transformation rightExpr = expr.getRightOperand();
 		
-		T left = leftTask.join(); 
-		T right = rightTask.join();
+		if (Utils.SEQUENTIAL)
+			return combiner.apply(extractor.apply(leftExpr, scheme), extractor.apply(rightExpr, scheme));
 
-		return finisher.apply(left, right);
+		LOGGER.trace("Asking computation of {}:{}", expr.getClass().getSimpleName(), expr);
+		
+		ForkJoinTask<? extends T> leftTask = null, rightTask = null;
+		if (!SIMPLE_TRANSFORMATIONS.contains(leftExpr.getClass()))
+			leftTask = POOL.submit(() -> extractor.apply(leftExpr, scheme));
+		if (!SIMPLE_TRANSFORMATIONS.contains(rightExpr.getClass()))
+			rightTask = POOL.submit(() -> extractor.apply(rightExpr, scheme));
+		
+		T left = leftTask != null ? leftTask.join() : extractor.apply(leftExpr, scheme); 
+		T right = rightTask != null ? rightTask.join() : extractor.apply(rightExpr, scheme); 
+
+		return combiner.apply(left, right);
 	}
 }
