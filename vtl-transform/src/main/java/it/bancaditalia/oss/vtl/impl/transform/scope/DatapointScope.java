@@ -28,6 +28,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -42,13 +45,16 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DatapointScope implements TransformationScheme
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(DatapointScope.class); 
 	private final DataPoint dp;
 	private final DataSetMetadata structure;
 	private final TransformationScheme parent;
+	private final Set<DataStructureComponent<?, ?, ?>> keys;
 	
 	public DatapointScope(DataPoint dp, DataSetMetadata structure, TransformationScheme parent) 
 	{
 		this.dp = dp;
+		this.keys = dp.keySet();
 		this.structure = structure;
 		this.parent = parent;
 	}
@@ -59,45 +65,41 @@ public class DatapointScope implements TransformationScheme
 		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
 			return true;
 		
-		Predicate<? super DataStructureComponent<?, ?, ?>> filter = alias.matches("'.*'")
-				? c -> c.getName().equals(alias.replaceAll("'(.*)'", "$1"))
-				: c -> c.getName().equalsIgnoreCase(alias);
-
-		return maybeMeta(structure, filter, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
+		return maybeMeta(structure, alias, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
 			.isPresent();
 	}
 
 	@Override
 	public VTLValue resolve(String alias) 
 	{
-		Predicate<? super DataStructureComponent<?, ?, ?>> filter = Objects.requireNonNull(alias, "The name to resolve cannot be null.").matches("'.*'")
-				? c -> c.getName().equals(alias.replaceAll("'(.*)'", "$1"))
-				: c -> c.getName().equalsIgnoreCase(alias);
-
-		return maybeMeta(Objects.requireNonNull(dp, "Can't resolve values during compilation.").keySet(), filter, dp::get)
+		LOGGER.trace("Querying {} for {}:{}", alias, dp.hashCode(), dp);
+		return maybeMeta(structure, alias, dp::get)
 			.orElseThrow(() -> new VTLUnboundNameException(alias));
 	}
 	
 	@Override
-	public VTLValueMetadata getMetadata(String name)
+	public VTLValueMetadata getMetadata(String alias)
 	{
-		if (THIS.equals(requireNonNull(name, "The name to resolve cannot be null.")))
+		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
 			return structure;
 		
-		Predicate<? super DataStructureComponent<?, ?, ?>> filter = name.matches("'.*'")
-				? c -> c.getName().equals(name.replaceAll("'(.*)'", "$1"))
-				: c -> c.getName().equalsIgnoreCase(name);
-		
-		return maybeMeta(structure, filter, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
-			.orElseThrow(() -> new VTLUnboundNameException(name));
+		LOGGER.trace("Querying {} for {}:{}", alias, structure.hashCode(), structure);
+		return maybeMeta(structure, alias, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
+			.orElseThrow(() -> new VTLUnboundNameException(alias));
 	}
 
-	private static <T> Optional<T> maybeMeta(Set<DataStructureComponent<?, ?, ?>> components, Predicate<? super DataStructureComponent<?, ?, ?>> filter, Function<? super DataStructureComponent<?, ?, ?>, T> mapper)
+	private <T> Optional<T> maybeMeta(Set<DataStructureComponent<?, ?, ?>> components, String alias, Function<? super DataStructureComponent<?, ?, ?>, T> mapper)
 	{
-		return Utils.getStream(components)
+		Predicate<? super DataStructureComponent<?, ?, ?>> filter = Objects.requireNonNull(alias, "The name to resolve cannot be null.").matches("'.*'")
+				? c -> c.getName().equals(alias.replaceAll("'(.*)'", "$1"))
+				: c -> c.getName().equalsIgnoreCase(alias);
+
+		Optional<T> result = Utils.getStream(components)
 			.filter(filter)
 			.findAny()
 			.map(mapper);
+		LOGGER.trace("Computed {} for {}:{}", alias, components.hashCode(), components);
+		return result;
 	}
 
 	@Override

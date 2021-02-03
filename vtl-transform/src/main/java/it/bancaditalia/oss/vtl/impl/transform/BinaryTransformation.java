@@ -42,7 +42,7 @@ public abstract class BinaryTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 	
-	protected final Transformation leftOperand, rightOperand;
+	private final Transformation leftOperand, rightOperand;
 	private transient VTLValueMetadata metadata = null;
 
 	public BinaryTransformation(Transformation left, Transformation right)
@@ -124,5 +124,15 @@ public abstract class BinaryTransformation extends TransformationImpl
 	public VTLValueMetadata getMetadata()
 	{
 		return metadata;
+	}
+
+	public Transformation getLeftOperand()
+	{
+		return leftOperand;
+	}
+
+	public Transformation getRightOperand()
+	{
+		return rightOperand;
 	}
 }

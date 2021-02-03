@@ -165,11 +165,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> calcValues = 
 						Utils.getStream(nonAnalyticClauses)
 							.collect(toConcurrentMap(
-								clause -> {
-									final Optional<DataStructureComponent<?, ?, ?>> component = nonAnalyticResultMetadata.getComponent(clause.getName());
-									return component.get();
-								},
-								clause -> clause.eval(dpSession))
+								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),
+								clause -> 
+								clause.eval(dpSession))
 							);
 					
 					return new DataPointBuilder(calcValues).addAll(dp).build(nonAnalyticResultMetadata);

@@ -201,6 +201,6 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	public String toString()
 	{
-		return leftOperand + " " + operator + " " + rightOperand;
+		return getLeftOperand() + " " + operator + " " + getRightOperand();
 	}
 }

@@ -74,7 +74,6 @@ public enum VTLGeneralProperties implements VTLProperty
 	 */
 	ENVIRONMENT_IMPLEMENTATION("vtl.environment.implementation.classes", true, 
 			"it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
-			"it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
 			"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl");
 
 	private final String name;

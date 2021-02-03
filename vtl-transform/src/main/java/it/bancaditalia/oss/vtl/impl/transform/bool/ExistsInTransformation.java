@@ -154,6 +154,6 @@ public class ExistsInTransformation extends BinaryTransformation
 	@Override
 	public String toString()
 	{
-		return "exists_in(" + leftOperand + ", " + rightOperand + ", " + mode + ")";
+		return "exists_in(" + getLeftOperand() + ", " + getRightOperand() + ", " + mode + ")";
 	}
 }

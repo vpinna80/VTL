@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.config;
 
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
 import java.util.List;
@@ -78,6 +79,16 @@ public interface VTLProperty
 	public default List<String> getValues()
 	{
 		return getValue() == null ? null : isMultiple() ? Arrays.asList(getValue().split(",")) : singletonList(getValue());
+	}
+
+	/**
+	 * Change the values for this property. If the property is not multiple, behaviour is undefined
+	 * 
+	 * @param newValues The new values for this property
+	 */
+	public default void setValues(String... newValues)
+	{
+		setValue(Arrays.stream(newValues).collect(joining(",")));
 	}
 
 	/**

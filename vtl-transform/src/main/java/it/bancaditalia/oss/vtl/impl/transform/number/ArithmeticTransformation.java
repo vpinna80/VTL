@@ -297,9 +297,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 	public String toString()
 	{
 		if (getOperator().isInfix())
-			return leftOperand.toString() + getOperator() + rightOperand;
+			return getLeftOperand().toString() + getOperator() + getRightOperand();
 		else
-			return getOperator() + "(" + leftOperand.toString() + ", " + rightOperand + ")";
+			return getOperator() + "(" + getLeftOperand().toString() + ", " + getRightOperand() + ")";
 	}
 
 	public ArithmeticOperator getOperator()

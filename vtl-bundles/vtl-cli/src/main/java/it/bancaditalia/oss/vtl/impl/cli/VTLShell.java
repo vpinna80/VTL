@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.cli;
 
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static java.util.stream.Collectors.toList;
 
 import java.io.File;
@@ -57,7 +58,13 @@ public class VTLShell implements Callable<Void>
 
 	public Void call() throws Exception
 	{
-		VTLSession session = ConfigurationManager.getDefault().createSession();
+		ConfigurationManager manager = ConfigurationManager.getDefault();
+		ENVIRONMENT_IMPLEMENTATION.setValues(
+				"it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
+				"it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment", 
+				"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl");
+		
+		VTLSession session = manager.createSession();
 		try (Reader reader = new InputStreamReader(file != null ? new FileInputStream(file) : System.in, StandardCharsets.UTF_8))
 		{
 			session.addStatements(reader);

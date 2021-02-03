@@ -20,11 +20,9 @@
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
@@ -34,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -53,7 +50,7 @@ public class SetTransformation extends TransformationImpl
 	{
 		UNION((left, right) -> structure -> new LightFDataSet<>(structure, 
 				ds -> Stream.concat(left.stream(), ds.stream()), setDiff(right, left))),
-		INTERSECT((left, right) -> structure -> setDiff(left, setDiff(right, left))), 
+		INTERSECT((left, right) -> structure -> setDiff(left, setDiff(left, right))), 
 		SETDIFF((left, right) -> structure -> setDiff(left, right)), 
 		SYMDIFF((left, right) -> structure -> new LightFDataSet<>(structure,  
 				ds -> Stream.concat(setDiff(left, right).stream(), ds.stream()), setDiff(right, left)));
@@ -73,16 +70,18 @@ public class SetTransformation extends TransformationImpl
 
 	private static DataSet setDiff(DataSet a, DataSet b)
 	{
-		Map<?, ?> leftValues = b.stream().collect(toMap(dp -> dp.getValues(Identifier.class), dp -> dp));
-		
-		return a.filter(dp -> !leftValues.containsKey(dp.getValues(Identifier.class)));
+		try (Stream<DataPoint> stream = b.stream())
+		{
+			Set<?> leftValues = stream
+					.map(dp -> dp.getValues(Identifier.class))
+					.collect(toSet());
+			return a.filter(dp -> !leftValues.contains(dp.getValues(Identifier.class)));
+		}
 	}
 
 	private final List<Transformation> operands;
 	private final SetOperator setOperator;
 
-	private DataSetMetadata metadata;
-	
 	public SetTransformation(SetOperator setOperator, List<Transformation> operands)
 	{
 		this.operands = operands;
@@ -101,11 +100,7 @@ public class SetTransformation extends TransformationImpl
 			if (first.getAndSet(false))
 				accumulator = other;
 			else
-			{
-				DataSet setDiff = setDiff(other, accumulator);
-				List<DataPoint> list = Stream.concat(accumulator.stream(), setDiff.stream()).collect(toList());
-				accumulator = new LightDataSet(metadata, list::stream);
-			}
+				accumulator = setOperator.getReducer(accumulator.getMetadata()).apply(accumulator, other);
 		}
 		
 		return accumulator;
@@ -124,7 +119,7 @@ public class SetTransformation extends TransformationImpl
 		if (meta.stream().distinct().limit(2).count() != 1)
 			throw new UnsupportedOperationException("In set operation expected all datasets with equal structure but found: " + meta); 
 
-		return metadata = (DataSetMetadata) meta.get(0);
+		return (DataSetMetadata) meta.get(0);
 	}
 	
 	@Override

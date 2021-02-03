@@ -160,6 +160,6 @@ public class MatchTransformation extends BinaryTransformation
 	@Override
 	public String toString()
 	{
-		return "match_characters(" + leftOperand + ", " + rightOperand + ")";
+		return "match_characters(" + getLeftOperand() + ", " + getRightOperand() + ")";
 	}
 }
