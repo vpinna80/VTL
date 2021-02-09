@@ -27,7 +27,7 @@ public class NvlTransformation extends ConditionalTransformation
 	
 	public NvlTransformation(Transformation operand, Transformation defaultValue)
 	{
-		super(new IsNullTransformation(operand), defaultValue, operand);
+		super(new IsNullOperand(operand), defaultValue, operand);
 	}
 	
 	@Override

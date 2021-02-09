@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.ops.ParenthesesTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullOperand;
+import it.bancaditalia.oss.vtl.impl.transform.time.CurrentDateOperand;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -59,7 +59,8 @@ public class ThreadUtils
 		
 		SIMPLE_TRANSFORMATIONS.add(ConstantOperand.class);
 		SIMPLE_TRANSFORMATIONS.add(VarIDOperand.class);
-		SIMPLE_TRANSFORMATIONS.add(IsNullTransformation.class);
+		SIMPLE_TRANSFORMATIONS.add(CurrentDateOperand.class);
+		SIMPLE_TRANSFORMATIONS.add(IsNullOperand.class);
 	}
 	
 	private ThreadUtils() {}

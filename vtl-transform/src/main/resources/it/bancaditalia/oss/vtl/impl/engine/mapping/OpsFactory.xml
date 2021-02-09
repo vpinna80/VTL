@@ -190,6 +190,10 @@
 		<context name="VarIdExprContext" />
 	</recursivecontexts>
 
+	<mapping from="CurrentDateAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.CurrentDateOperand">
+		<params />
+	</mapping>
+	
 	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.SimpleAnalyticTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="AnalyticOperator" />
