@@ -223,7 +223,7 @@
 
 	<mapping from="LagOrLeadAnContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation">
 		<params>
-			<tokensetparam name="op" tokenset="OffsetOperator" />
+			<tokensetparam name="op" tokenset="OffsetDirection" />
 			<exprparam name="expr" />
 			<valueparam name="signedInteger" />
 			<valueparam name="constant" />
