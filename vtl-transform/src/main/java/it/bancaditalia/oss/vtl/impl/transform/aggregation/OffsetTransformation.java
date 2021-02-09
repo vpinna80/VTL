@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation.OrderingMethod.DESC;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation.OffsetDirection.LEAD;
-import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Boolean.TRUE;
@@ -155,7 +154,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 		return Utils.getStream(partition)
 				.map(dp -> {
 					DataPoint offsetDatapoint = dp;
-					UnaryOperator<DataPoint> op = direction == LEAD ? partition::lower : partition::higher;
+					UnaryOperator<DataPoint> op = direction == LEAD ? partition::higher : partition::lower;
 					for (int i = 0; i < offset && offsetDatapoint != null; i++)
 						offsetDatapoint = op.apply(offsetDatapoint);
 
