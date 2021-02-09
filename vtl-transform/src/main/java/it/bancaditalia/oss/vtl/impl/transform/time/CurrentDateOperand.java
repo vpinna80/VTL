@@ -46,8 +46,14 @@ public class CurrentDateOperand extends TransformationImpl implements LeafTransf
 	}
 
 	@Override
-	public String getText()
+	public String toString()
 	{
 		return "current_date()";
+	}
+	
+	@Override
+	public String getText()
+	{
+		return toString();
 	}
 }
