@@ -87,8 +87,6 @@ public class FillTimeSeriesTransformationTest
 		FillTimeSeriesTransformation ftsTransformation = new FillTimeSeriesTransformation(new VarIDOperand("operand"), mode);
 		
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
-		if (expectedSize != computedResult.size())
-			System.out.println(computedResult.toString());
 		assertEquals(expectedSize, computedResult.size(), "Dataset size");
 		
 		DataStructureComponent<Identifier, DateDomainSubset, DateDomain> time_id = computedResult.getComponent("DATE_1", Identifier.class, DATEDS).get();

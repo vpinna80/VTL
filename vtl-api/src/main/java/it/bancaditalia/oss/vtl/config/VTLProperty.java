@@ -95,4 +95,14 @@ public interface VTLProperty
 	 * @return {@code true} if a value was set for this property or it has a default value 
 	 */
 	public boolean hasValue();
+
+	/**
+	 * Add new values to this property. If the property is not multiple, behaviour is undefined
+	 * 
+	 * @param newValues The new values to add to existing values of this property
+	 */
+	public default void addValues(String... newValues)
+	{
+		setValue(getValue() + "," + Arrays.stream(newValues).collect(joining(",")));
+	}
 }

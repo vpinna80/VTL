@@ -127,11 +127,7 @@ public enum AnalyticOperator
 		@Override
 		public BiConsumer<AtomicReference<ScalarValue<?, ?, ?>>, ScalarValue<?, ?, ?>> accumulator()
 		{
-			return (acc, value) -> acc.accumulateAndGet(value,(a, b) -> {
-				final ScalarValue<?, ?, ?> res = valueCombiner.apply(a, b);
-				System.out.println("(" + a + ", " + b + ") -> " + res);
-				return res;
-			});
+			return (acc, value) -> acc.accumulateAndGet(value,(a, b) -> valueCombiner.apply(a, b));
 		}
 
 		@Override

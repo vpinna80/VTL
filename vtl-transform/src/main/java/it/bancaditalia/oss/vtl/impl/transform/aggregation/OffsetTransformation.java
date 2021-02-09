@@ -193,7 +193,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
-		VTLValueMetadata opmeta = session.getMetadata(THIS);
+		VTLValueMetadata opmeta = operand.getMetadata(session);
 		if (opmeta instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
 		
@@ -218,7 +218,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	@Override
 	public String toString()
 	{
-		return "rank(over (" 
+		return direction.toString().toLowerCase() + "(" + operand + ", " + offset + ", " + defaultValue + " over (" 
 				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
 				+ (orderByClause != null ? orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")) : "")
 				+ ")";
