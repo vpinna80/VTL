@@ -57,7 +57,6 @@ public class ThreadUtils
 		else
 			POOL = ForkJoinPool.commonPool();
 		
-		SIMPLE_TRANSFORMATIONS.add(ParenthesesTransformation.class);
 		SIMPLE_TRANSFORMATIONS.add(ConstantOperand.class);
 		SIMPLE_TRANSFORMATIONS.add(VarIDOperand.class);
 		SIMPLE_TRANSFORMATIONS.add(IsNullTransformation.class);

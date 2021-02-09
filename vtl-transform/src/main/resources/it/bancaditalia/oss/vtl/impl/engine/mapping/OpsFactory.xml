@@ -180,7 +180,8 @@
 		<context name="NumericFunctionsContext" />
 		<context name="NumericFunctionsComponentsContext" />
 		<context name="ParameterComponentContext" />
-		<context name="ParameterContext" />
+		<context name="ParenthesisExprCompContext" />
+		<context name="ParenthesisExprContext" />
 		<context name="SetFunctionsContext" />
 		<context name="StringFunctionsContext" />
 		<context name="StringFunctionsComponentsContext" />
@@ -1047,16 +1048,6 @@
 			<tokensetparam name="op" tokenset="InOperator" />
 			<exprparam name="left" />
 			<stringparam name="right" />
-		</params>
-	</mapping>
-	<mapping from="ParenthesisExprContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.ParenthesesTransformation">
-		<params>
-			<exprparam name="expr" />
-		</params>
-	</mapping>
-	<mapping from="ParenthesisExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.ParenthesesTransformation">
-		<params>
-			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
 
