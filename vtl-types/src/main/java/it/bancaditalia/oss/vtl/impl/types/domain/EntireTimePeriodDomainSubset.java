@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
@@ -36,7 +37,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;

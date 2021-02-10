@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -35,7 +35,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Class<? extends Component> role;
+	private final Class<? extends ComponentRole> role;
 	private final String domainName;
 	private final QuantifierConstraints quantifier;
 	
@@ -44,7 +44,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 		MAX_ONE, AT_LEAST_ONE, ANY
 	}
 
-	public AnonymousComponentConstraint(Class<? extends Component> role, String domainName, QuantifierConstraints quantifier)
+	public AnonymousComponentConstraint(Class<? extends ComponentRole> role, String domainName, QuantifierConstraints quantifier)
 	{
 		super(null);
 

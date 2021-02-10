@@ -19,6 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.model.transform;
 
+/**
+ * TODO
+ * @author Valentino Pinna
+ *
+ * @param <R>
+ */
 public interface PersistentOperand<R> extends Persistent, Operand<R>
 {
 

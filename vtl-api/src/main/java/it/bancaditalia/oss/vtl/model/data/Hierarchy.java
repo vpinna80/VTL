@@ -22,13 +22,20 @@ package it.bancaditalia.oss.vtl.model.data;
 import java.util.List;
 import java.util.Map;
 
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
+/**
+ * Representation of a hierarchy rule.
+ * TODO
+ * 
+ * @author Valentino Pinna
+ *
+ */
 public interface Hierarchy extends VTLValue, VTLValueMetadata
 {
 	enum CheckMode

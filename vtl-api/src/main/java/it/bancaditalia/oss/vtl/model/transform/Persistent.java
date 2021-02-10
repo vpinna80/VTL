@@ -19,7 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.model.transform;
 
+/**
+ * TODO Representation of a persistent VTL object.
+ * @author Valentino Pinna
+ *
+ */
 public interface Persistent
 {
+	/**
+	 * @return The {@link IdentifiableArtifact} that references this object.
+	 */
 	public IdentifiableArtifact getIdentifiableArtifact();
 }

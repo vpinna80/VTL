@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -36,12 +36,12 @@ public class VTLSingletonComponentRequiredException extends VTLException
 		this(structure, Arrays.asList(components));
 	}
 
-	public VTLSingletonComponentRequiredException(Class<? extends Component> role, Set<? extends DataStructureComponent<?, ?, ?>> components)
+	public VTLSingletonComponentRequiredException(Class<? extends ComponentRole> role, Set<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		super("Required exactly one " + role.getSimpleName() + " component but found: " + components);
 	}
 
-	public VTLSingletonComponentRequiredException(Class<? extends Component> role, ValueDomain domain, Set<? extends DataStructureComponent<?, ?, ?>> components)
+	public VTLSingletonComponentRequiredException(Class<? extends ComponentRole> role, ValueDomain domain, Set<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		super("Required exactly one " + role.getSimpleName() + " of domain " + domain + " but found: " + components);
 	}

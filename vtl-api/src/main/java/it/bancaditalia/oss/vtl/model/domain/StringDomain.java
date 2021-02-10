@@ -21,6 +21,11 @@ package it.bancaditalia.oss.vtl.model.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 
+/**
+ * Representation of the VTL "String" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface StringDomain extends ValueDomain
 {
 	@Override

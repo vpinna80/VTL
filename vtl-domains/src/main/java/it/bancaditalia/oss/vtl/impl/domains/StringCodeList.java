@@ -26,17 +26,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.BaseScalarValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 
 public class StringCodeList implements StringEnumeratedDomainSubset, Serializable
 {
@@ -92,13 +91,6 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	public StringDomainSubset getDomain()
 	{
 		return Domains.STRINGDS;
-	}
-
-	@Override
-	public <T extends Comparable<?> & Serializable> CodeItem<? extends Comparable<?>, StringDomainSubset, StringDomain> getItem(
-			ScalarValue<T, StringDomainSubset, StringDomain> value)
-	{
-		throw new UnsupportedOperationException("getItem");
 	}
 
 	@Override

@@ -89,10 +89,10 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -251,7 +251,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				.map(keepingKey(v -> (ScalarValue<?, ?, ?>) (v != null ? new StringValue(v) : NullValue.instance(STRINGDS))));
 	}
 
-	private static <T extends Component> DataStructureComponent<T, StringDomainSubset, StringDomain> elementToComponent(Class<T> role,
+	private static <T extends ComponentRole> DataStructureComponent<T, StringDomainSubset, StringDomain> elementToComponent(Class<T> role,
 			SdmxMetaElement meta)
 	{
 		Codelist codelist = meta.getCodeList();

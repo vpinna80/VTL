@@ -40,7 +40,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 /**
  * Helper class to parallelize over the two sides of a {@link BinaryTransformation}
  * 
- * @author m027907
+ * @author Valentino Pinna
  *
  */
 public class ThreadUtils 

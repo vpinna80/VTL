@@ -58,8 +58,13 @@ import java.util.stream.StreamSupport;
 
 /**
  * This class contains various utility functions used by the VTL Engine implementation.
+ * Most of the functions are wrappers of the standard packages in Java 8.
  * 
- * @author m027907 Valentino Pinna
+ * @see java.util.function
+ * @see java.util.stream
+ * @see java.util
+ * 
+ * @author Valentino Pinna
  */
 public final class Utils
 {

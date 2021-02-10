@@ -45,9 +45,9 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -190,13 +190,13 @@ public class DataPointBuilder
 		}
 
 		@Override
-		public <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role)
+		public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role)
 		{
 			return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(toMapWithValues(dpValues::get));
 		}
 
 		@Override
-		public DataPoint dropComponents(Set<DataStructureComponent<?, ?, ?>> components)
+		public DataPoint dropComponents(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components)
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newVals = new HashMap<>(this);
 			for (DataStructureComponent<?, ?, ?> component : components)
@@ -204,12 +204,6 @@ public class DataPointBuilder
 					newVals.remove(component);
 
 			return new DataPointImpl(new DataStructureBuilder(newVals.keySet()).build(), newVals);
-		}
-
-		@Override
-		public DataPoint merge(DataPoint other)
-		{
-			throw new UnsupportedOperationException();
 		}
 
 		@Override
@@ -226,7 +220,7 @@ public class DataPointBuilder
 		}
 
 		@Override
-		public DataPoint keep(Collection<? extends DataStructureComponent<?, ?, ?>> components) throws VTLMissingComponentsException
+		public DataPoint keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components) throws VTLMissingComponentsException
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> oper = new HashMap<>(getValues(Identifier.class));
 
@@ -252,35 +246,6 @@ public class DataPointBuilder
 			ScalarValue<?, ?, ?> value = newValues.remove(oldComponent);
 			newValues.put(newComponent, value);
 			return new DataPointImpl(new DataStructureBuilder(newValues.keySet()).build(), newValues);
-		}
-
-		@Override
-		public DataPoint alter(Map<? extends DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?>> measures)
-		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(getValues(Identifier.class));
-			result.putAll(measures);
-
-			return new DataPointImpl(new DataStructureBuilder(result.keySet()).build(), result);
-		}
-
-		@Override
-		public DataPoint subspace(Set<? extends DataStructureComponent<Identifier, ?, ?>> subspace)
-		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(this);
-			result.keySet().removeAll(subspace);
-
-			return new DataPointImpl(new DataStructureBuilder(result.keySet()).build(), result);
-		}
-
-		@Override
-		public DataPoint replaceComponent(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?> value)
-		{
-			if (!containsKey(component))
-				throw new VTLMissingComponentsException(component, keySet());
-
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newValues = new HashMap<>(this);
-			newValues.put(component, value);
-			return new DataPointImpl(new DataStructureBuilder(keySet()).build(), newValues);
 		}
 
 		@Override

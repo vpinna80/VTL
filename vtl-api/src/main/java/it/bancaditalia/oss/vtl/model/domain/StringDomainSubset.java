@@ -22,6 +22,11 @@ package it.bancaditalia.oss.vtl.model.domain;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
+/**
+ * Representation of a subset of the VTL "String" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface StringDomainSubset extends ValueDomainSubset<StringDomain>, StringDomain
 {
 	@Override ScalarValue<?, ? extends StringDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?> value);

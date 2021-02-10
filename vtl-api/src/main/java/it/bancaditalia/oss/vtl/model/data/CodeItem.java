@@ -21,6 +21,15 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
 
+/**
+ * Representation of an item in an {@link EnumeratedDomainSubset}
+ * 
+ * @author Valentino Pinna
+ *
+ * @param <I> Implementation type
+ * @param <S> The domain subset of the item
+ * @param <D> The domain of the type
+ */
 public interface CodeItem<I extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> extends ScalarValue<I, S, D>
 {
 

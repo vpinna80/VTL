@@ -19,7 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-public interface Component 
+/**
+ * Representation of a component role
+ * 
+ * @author Valentino Pinna
+ */
+public interface ComponentRole 
 {
 	public enum Roles
 	{
@@ -28,26 +33,26 @@ public interface Component
 		ATTRIBUTE(Attribute.class),
 		VIRAL_ATTRIBUTE(ViralAttribute.class);
 		
-		private final Class<? extends Component> clazz;
+		private final Class<? extends ComponentRole> clazz;
 
-		Roles(Class<? extends Component> clazz)
+		Roles(Class<? extends ComponentRole> clazz)
 		{
 			this.clazz = clazz;
 		}
 
-		public Class<? extends Component> getClazz()
+		public Class<? extends ComponentRole> getClazz()
 		{
 			return clazz;
 		}
 	}
 
-	public interface Identifier extends Component {};
+	public interface Identifier extends ComponentRole {};
 
-	public interface NonIdentifier extends Component {};
+	public interface NonIdentifier extends ComponentRole {};
 
-	public interface Attribute extends Component.NonIdentifier {};
+	public interface Attribute extends ComponentRole.NonIdentifier {};
 
-	public interface ViralAttribute extends Component.Attribute {};
+	public interface ViralAttribute extends ComponentRole.Attribute {};
 
-	public interface Measure extends Component.NonIdentifier {};
+	public interface Measure extends ComponentRole.NonIdentifier {};
 }

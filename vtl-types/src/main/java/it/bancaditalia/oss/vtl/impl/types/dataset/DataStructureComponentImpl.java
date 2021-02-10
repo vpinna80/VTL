@@ -21,15 +21,15 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import java.util.Objects;
 
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 
-public class DataStructureComponentImpl<R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
+public class DataStructureComponentImpl<R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
 {
 	private static final long serialVersionUID = 1L;
 	private final S domain;

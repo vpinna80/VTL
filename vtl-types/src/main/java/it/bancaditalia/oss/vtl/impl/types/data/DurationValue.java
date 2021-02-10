@@ -23,8 +23,8 @@ import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
 import java.util.Map;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;

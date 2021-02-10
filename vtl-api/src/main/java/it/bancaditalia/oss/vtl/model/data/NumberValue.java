@@ -22,6 +22,15 @@ package it.bancaditalia.oss.vtl.model.data;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
+/**
+ * Representation of a value of the VTL "Number" domain.
+ * 
+ * @author Valentino Pinna
+ *
+ * @param <R>
+ * @param <S>
+ * @param <D>
+ */
 public interface NumberValue<R extends Number & Comparable<? super R>, S extends NumberDomainSubset<D>, D extends NumberDomain> extends ScalarValue<R, S, D> 
 {
 	@Override
