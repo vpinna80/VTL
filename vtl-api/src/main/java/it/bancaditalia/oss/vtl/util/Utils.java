@@ -143,6 +143,11 @@ public final class Utils
 		return toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> a, mapSupplier);
 	}
 
+	public static <U, V> Collector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap(BinaryOperator<V> combiner)
+	{
+		return toConcurrentMap(Entry::getKey, Entry::getValue, combiner);
+	}
+
 	public static <U, V, R> Collector<Entry<U, V>, ?, ConcurrentMap<U, R>> mappingValues(Function<? super V, ? extends R> valueMapper)
 	{
 		return toConcurrentMap(Entry::getKey, valueMapper.compose(Entry::getValue));
@@ -400,7 +405,7 @@ public final class Utils
 	{
 		return value != null ? value : defaultValue;
 	}
-
+	
 	@SafeVarargs
 	public static <T> Set<T> setOf(T... elements)
 	{
