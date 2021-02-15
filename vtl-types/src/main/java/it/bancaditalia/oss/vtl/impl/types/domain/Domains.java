@@ -76,7 +76,7 @@ public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
 		return getDomain().isAssignableFrom(other);
 	}
 
-	public static class UnknownDomainSubset implements ValueDomainSubset<ValueDomain> 
+	public static class NullDomain implements ValueDomainSubset<ValueDomain> 
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -130,5 +130,5 @@ public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
 	public static final TimePeriodDomainSubset QUARTERSDS = (TimePeriodDomainSubset) QUARTERS.getDomain();
 	public static final TimePeriodDomainSubset SEMESTERSDS = (TimePeriodDomainSubset) SEMESTERS.getDomain();
 	public static final TimePeriodDomainSubset YEARSDS = (TimePeriodDomainSubset) YEARS.getDomain();
-	public static final ValueDomainSubset<? extends ValueDomain> UNKNOWNDS = new UnknownDomainSubset();
+	public static final ValueDomainSubset<? extends ValueDomain> UNKNOWNDS = new NullDomain();
 }

@@ -78,7 +78,7 @@ public class ConditionalTransformation extends TransformationImpl
 		if (metadata == null)
 			metadata = getMetadata(session);
 		
-		if (metadata instanceof ScalarValueMetadata)
+		if (cond instanceof ScalarValue)
 			return BOOLEANDS.cast((ScalarValue<?, ?, ?>) cond).get() 
 					? thenExpr.eval(session)
 					: elseExpr.eval(session);
@@ -189,9 +189,8 @@ public class ConditionalTransformation extends TransformationImpl
 				}
 			}
 			else 
-				if (!dataset.getComponents(Measure.class).stream()
-						.allMatch(c -> ((ScalarValueMetadata<?>) other).getDomain().isAssignableFrom(c.getDomain())))
-				throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
+				if (!dataset.getComponents(Measure.class).stream().allMatch(c -> c.getDomain().isAssignableFrom(((ScalarValueMetadata<?>) other).getDomain())))
+					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
 
 			return metadata = dataset;
 		}

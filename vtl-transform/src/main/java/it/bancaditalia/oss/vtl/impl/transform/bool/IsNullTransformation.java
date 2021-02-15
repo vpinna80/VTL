@@ -47,12 +47,12 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class IsNullOperand extends UnaryTransformation
+public class IsNullTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>(BOOLEAN.getDomain().getVarName(), Measure.class, BOOLEANDS);
 
-	public IsNullOperand(Transformation operand)
+	public IsNullTransformation(Transformation operand)
 	{
 		super(operand);
 	}

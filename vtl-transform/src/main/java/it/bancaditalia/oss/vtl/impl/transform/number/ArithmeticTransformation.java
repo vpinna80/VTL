@@ -86,9 +86,14 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	protected ScalarValue<?, ?, ?> evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
 	{
-		if (left instanceof IntegerValue && right instanceof IntegerValue)
+		if (left instanceof NullValue || right instanceof NullValue)
+			if (INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(left.getDomain()))
+				return NullValue.instance(INTEGERDS);
+			else
+				return NullValue.instance(NUMBERDS);
+		else if (left instanceof IntegerValue && right instanceof IntegerValue)
 			return getOperator().applyAsInt((NumberValue<?, ?, ?>) left, (NumberValue<?, ?, ?>) right);
 		else
 			return getOperator().applyAsDouble((NumberValue<?, ?, ?>) left, (NumberValue<?, ?, ?>) right);

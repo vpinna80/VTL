@@ -38,6 +38,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentExc
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
@@ -45,6 +46,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains.NullDomain;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -136,7 +138,9 @@ public class CastTransformation extends UnaryTransformation
 			return STRING;
 		else if (domain instanceof TimeDomainSubset && target instanceof TimeDomainSubset)
 			return (ScalarValueMetadata<?>) () -> target;
-		else
+		else if (domain instanceof NullDomain)
+			return (ScalarValueMetadata<?>) () -> target;
+		else 
 			throw new UnsupportedOperationException();
 	}
 
@@ -158,7 +162,9 @@ public class CastTransformation extends UnaryTransformation
 	{
 		try
 		{
-			if (scalar instanceof StringValue && target instanceof DateDomainSubset)
+			if (scalar instanceof NullValue)
+				return NullValue.instance(target);
+			else if (scalar instanceof StringValue && target instanceof DateDomainSubset)
 				return new DateValue(parseString(scalar.get().toString(), mask));
 			else if (scalar instanceof StringValue && target instanceof TimePeriodDomainSubset)
 				return new TimePeriodValue(parseString(scalar.get().toString(), mask));
