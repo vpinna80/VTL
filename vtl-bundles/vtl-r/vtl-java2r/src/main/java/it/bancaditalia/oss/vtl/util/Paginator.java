@@ -151,7 +151,7 @@ public class Paginator implements AutoCloseable
 				result.get(c.getName()).set(i, value);
 			}
 		
-		result.values().removeIf(l -> Utils.getStream(l).allMatch(Objects::isNull));
+		//result.values().removeIf(l -> Utils.getStream(l).allMatch(Objects::isNull));
 
 		return result;
 	}
