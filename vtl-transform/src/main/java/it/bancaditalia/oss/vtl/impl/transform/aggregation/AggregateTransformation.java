@@ -45,10 +45,10 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -71,7 +71,7 @@ public class AggregateTransformation extends UnaryTransformation
 	private final List<String> groupBy;
 	private final Transformation having;
 	private final String name;
-	private final Class<? extends Component> role;
+	private final Class<? extends ComponentRole> role;
 
 	private transient VTLValueMetadata metadata;
 	
@@ -96,7 +96,7 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 	
 	// constructor for AGGR clause
-	public AggregateTransformation(AggregateTransformation other, List<String> groupBy, String name, Class<? extends Component> role)
+	public AggregateTransformation(AggregateTransformation other, List<String> groupBy, String name, Class<? extends ComponentRole> role)
 	{
 		super(other.operand);
 		

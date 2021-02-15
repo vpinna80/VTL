@@ -19,6 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+/**
+ * TODO a hierarchy rule over variables.
+ * 
+ * @author Valentino Pinna
+ */
 public interface VariableHierarchy extends Hierarchy
 {
 

@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
@@ -32,15 +33,14 @@ import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
 import it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation;
-import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -74,7 +74,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
-			return BooleanValue.FALSE;
+			return FALSE;
 
 		if (castToLeft)
 			right = left.getDomain().cast(right);

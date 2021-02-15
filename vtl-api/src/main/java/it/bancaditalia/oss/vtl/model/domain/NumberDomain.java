@@ -21,6 +21,11 @@ package it.bancaditalia.oss.vtl.model.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 
+/**
+ * Representation of the VTL "Number" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface NumberDomain extends ValueDomain
 {
 	@Override

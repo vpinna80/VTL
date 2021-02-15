@@ -22,6 +22,11 @@ package it.bancaditalia.oss.vtl.model.domain;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
+/**
+ * Representation of a subset of the VTL "Number" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface NumberDomainSubset<T extends NumberDomain> extends ValueDomainSubset<T>, NumberDomain
 {
 	@Override ScalarValue<?, ? extends NumberDomainSubset<T>, ? extends T> cast(ScalarValue<?, ?, ?> value);

@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.exceptions;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public class VTLIncompatibleMeasuresException extends VTLException

@@ -90,7 +90,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 			DataStructureComponent<?, ?, ?> componentFrom = dataset.getComponent(rename.getKey())
 					.orElseThrow(() -> new VTLMissingComponentsException(rename.getKey(), dataset));
 			
-			if (accumulator.containsComponent(rename.getValue()))
+			if (accumulator.contains(rename.getValue()))
 				throw new VTLException("rename from " + componentFrom + " cannot override existing component " + dataset.getComponent(rename.getValue()));
 				
 			accumulator = accumulator.rename(componentFrom, rename.getValue());

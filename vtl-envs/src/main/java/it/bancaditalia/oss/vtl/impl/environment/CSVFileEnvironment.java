@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
 
 import java.io.BufferedReader;
@@ -33,7 +34,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
@@ -66,10 +66,10 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -113,7 +113,7 @@ public class CSVFileEnvironment implements Environment
 		
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8)))
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
 			final DataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
@@ -129,7 +129,7 @@ public class CSVFileEnvironment implements Environment
 	@SuppressWarnings("resource")
 	private Stream<DataPoint> streamFileName(String fileName)
 	{
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8)))
 		{
 			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
 			List<DataStructureComponent<?, ?, ?>> metadata = headerInfo.getKey();
@@ -140,7 +140,7 @@ public class CSVFileEnvironment implements Environment
 			LOGGER.info("Reading {}", fileName);
 	
 			// Do not close here!
-			BufferedReader innerReader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8));
+			BufferedReader innerReader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8));
 			
 			// Skip header
 			innerReader.readLine();
@@ -276,7 +276,7 @@ public class CSVFileEnvironment implements Environment
 
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8)))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8)))
 		{
 			return Optional.of(new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build());
 		}
@@ -307,9 +307,9 @@ public class CSVFileEnvironment implements Environment
 			
 			Entry<ValueDomainSubset<? extends ValueDomain>, String> mappedType = mapVarType(typeName);
 			ValueDomainSubset<? extends ValueDomain> domain = mappedType.getKey();
-			Class<? extends Component> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
+			Class<? extends ComponentRole> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
 			cname = cname.replaceAll("^[$#]", "");
-			DataStructureComponentImpl<? extends Component, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
+			DataStructureComponentImpl<? extends ComponentRole, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)

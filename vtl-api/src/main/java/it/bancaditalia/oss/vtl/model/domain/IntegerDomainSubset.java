@@ -21,6 +21,11 @@ package it.bancaditalia.oss.vtl.model.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
+/**
+ * Representation of a subset of the VTL "Integer" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface IntegerDomainSubset extends NumberDomainSubset<IntegerDomain>, IntegerDomain
 {
 	@Override

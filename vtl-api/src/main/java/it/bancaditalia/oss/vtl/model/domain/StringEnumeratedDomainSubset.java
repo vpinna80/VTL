@@ -25,25 +25,66 @@ import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
+/**
+ * Representation of a finite enumerated subset of the VTL "String" domain (essentially, a code list).
+ * 
+ * @author Valentino Pinna
+ */
 public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<StringDomainSubset, StringDomain>, StringDomainSubset
 {
+	/**
+	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading and 
+	 * trailing whitespace from each code item of this {@link StringEnumeratedDomainSubset}.
+	 *  
+	 * @return the new domain.
+	 */
+	public StringEnumeratedDomainSubset trim();
+
+	/**
+	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading 
+	 * whitespace from each code item of this {@link StringEnumeratedDomainSubset}.
+	 *  
+	 * @return the new domain.
+	 */
+	public StringEnumeratedDomainSubset ltrim();
+
+	/**
+	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all trailing 
+	 * whitespace from each code item of this {@link StringEnumeratedDomainSubset}.
+	 *  
+	 * @return the new domain.
+	 */
+	public StringEnumeratedDomainSubset rtrim();
+
+	/**
+	 * Creates a new {@link StringEnumeratedDomainSubset} by converting in upper 
+	 * case each code item of this {@link StringEnumeratedDomainSubset}.
+	 *  
+	 * @return the new domain.
+	 */
+	public StringEnumeratedDomainSubset ucase();
+	
+	/**
+	 * Creates a new {@link StringEnumeratedDomainSubset} by converting in lower
+	 * case each code item of this {@link StringEnumeratedDomainSubset}.
+	 *  
+	 * @return the new domain.
+	 */
+	public StringEnumeratedDomainSubset lcase();
+
+	/**
+	 * A {@link CodeItem} having a String value that is allowed in a {@link StringEnumeratedDomainSubset}.
+	 * 
+	 * @author Valentino Pinna
+	 */
 	public interface StringCodeItem extends CodeItem<String, StringEnumeratedDomainSubset, StringDomain>
 	{
 
 	}
 	
-	@Override ScalarValue<?, ? extends StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?> value);
+	@Override
+	ScalarValue<?, ? extends StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?> value);
 	
 	@Override
 	public Set<StringCodeItem> getCodeItems();
-	
-	public StringEnumeratedDomainSubset trim();
-
-	public StringEnumeratedDomainSubset ltrim();
-
-	public StringEnumeratedDomainSubset rtrim();
-
-	public StringEnumeratedDomainSubset ucase();
-	
-	public StringEnumeratedDomainSubset lcase();
 }

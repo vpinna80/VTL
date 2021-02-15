@@ -58,8 +58,13 @@ import java.util.stream.StreamSupport;
 
 /**
  * This class contains various utility functions used by the VTL Engine implementation.
+ * Most of the functions are wrappers of the standard packages in Java 8.
  * 
- * @author m027907 Valentino Pinna
+ * @see java.util.function
+ * @see java.util.stream
+ * @see java.util
+ * 
+ * @author Valentino Pinna
  */
 public final class Utils
 {
@@ -136,6 +141,11 @@ public final class Utils
 	public static <U, V, M extends ConcurrentMap<U, V>> Collector<Entry<U, V>, ?, M> entriesToMap(Supplier<M> mapSupplier)
 	{
 		return toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> a, mapSupplier);
+	}
+
+	public static <U, V> Collector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap(BinaryOperator<V> combiner)
+	{
+		return toConcurrentMap(Entry::getKey, Entry::getValue, combiner);
 	}
 
 	public static <U, V, R> Collector<Entry<U, V>, ?, ConcurrentMap<U, R>> mappingValues(Function<? super V, ? extends R> valueMapper)
@@ -395,7 +405,7 @@ public final class Utils
 	{
 		return value != null ? value : defaultValue;
 	}
-
+	
 	@SafeVarargs
 	public static <T> Set<T> setOf(T... elements)
 	{

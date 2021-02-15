@@ -19,6 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+/**
+ * TODO a hierarchy rule over domains
+ * 
+ * @author Valentino Pinna
+ */
 public interface ValueDomainHierarchy extends Hierarchy
 {
 

@@ -63,11 +63,11 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.TemporaryAssignmentContext;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class StatementFactory implements Serializable
@@ -170,7 +170,7 @@ public class StatementFactory implements Serializable
 			return new ScalarParameter(name, generateDomainName(scalarType));
 		else if (compType != null)
 		{
-			Entry<Class<? extends Component>, String> metadata = generateComponentMetadata(compType);
+			Entry<Class<? extends ComponentRole>, String> metadata = generateComponentMetadata(compType);
 			return new ComponentParameter<>(name, metadata.getValue(), metadata.getKey());
 		}
 		else if (datasetType != null)
@@ -194,7 +194,7 @@ public class StatementFactory implements Serializable
 
 	private static DataSetComponentConstraint generateComponentConstraint(CompConstraintContext constraint)
 	{
-		final Entry<Class<? extends Component>, String> metadata = generateComponentMetadata(constraint.componentType());
+		final Entry<Class<? extends ComponentRole>, String> metadata = generateComponentMetadata(constraint.componentType());
 		
 		if (constraint.componentID() != null)
 			return new NamedComponentConstraint(constraint.componentID().getText(), metadata.getKey(), metadata.getValue());
@@ -212,7 +212,7 @@ public class StatementFactory implements Serializable
 			return MAX_ONE;
 	}
 
-	private static Entry<Class<? extends Component>, String> generateComponentMetadata(ComponentTypeContext compType)
+	private static Entry<Class<? extends ComponentRole>, String> generateComponentMetadata(ComponentTypeContext compType)
 	{
 		ScalarTypeContext scalarType;
 		String domain = null;
@@ -236,11 +236,11 @@ public class StatementFactory implements Serializable
 				throw new IllegalStateException("Unexpected ParseTree of " + current.getClass());
 		}
 
-		Class<? extends Component> role;
+		Class<? extends ComponentRole> role;
 		if (resultList.size() == 0)
 			role = null;
 		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.COMPONENT)
-			role = Component.class;
+			role = ComponentRole.class;
 		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.MEASURE)
 			role = Measure.class;
 		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.DIMENSION)

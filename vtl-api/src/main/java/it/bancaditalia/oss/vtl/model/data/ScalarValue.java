@@ -35,14 +35,14 @@ import java.util.function.Supplier;
 public interface ScalarValue<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<? extends D>, D extends ValueDomain> 
 		extends VTLValue, Comparable<ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain>>, Supplier<R>
 {
+	/**
+	 * @return the {@link ValueDomainSubset} of this ScalarValue.
+	 */
+	public S getDomain();
+
 	@Override
 	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o);
 	
 	@Override
 	public ScalarValueMetadata<? extends ValueDomainSubset<? extends ValueDomain>> getMetadata();
-
-	/**
-	 * @return the {@link ValueDomainSubset} of this ScalarValue.
-	 */
-	public S getDomain();
 }

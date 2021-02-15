@@ -19,6 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.model.transform;
 
+/**
+ * TODO
+ * 
+ * @author Valentino Pinna
+ *
+ */
 public interface Parameter
 {
 	public String getName();

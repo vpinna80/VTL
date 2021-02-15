@@ -22,62 +22,96 @@ package it.bancaditalia.oss.vtl.model.data;
 import java.io.Serializable;
 import java.util.function.UnaryOperator;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+
 /**
- * An interface describing a component of a dataset, as defined by VTL specification.
+ * The immutable representation of a component of a dataset.
  * 
  * @author Valentino Pinna
  *
- * @param <R> the {@link Component}
+ * @param <R> the {@link ComponentRole}
  * @param <S> the {@link ValueDomainSubset}
  * @param <D> the {@link ValueDomain}
  */
-public interface DataStructureComponent<R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> extends Serializable
+public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> extends Serializable
 {
+	/**
+	 * @return The dataset variable for this {@link DataStructureComponent}.
+	 */
 	public Variable getVariable();
 	
+	/**
+	 * @return The domain subset of this {@link DataStructureComponent}.
+	 */
 	public S getDomain();
 	
+	/**
+	 * @return The role of this {@link DataStructureComponent}.
+	 */
 	public Class<R> getRole(); 
 	
+	/**
+	 * @return The name of this {@link DataStructureComponent}.
+	 */
 	public default String getName()
 	{
 		return getVariable().getName();
 	}
-	
-	@Override
-	public boolean equals(Object obj);
-	
-	@Override
-	public int hashCode();
 
-	public DataStructureComponent<R, S, D> rename(String newName);
+	/**
+	 * Creates a new component by renaming this {@link DataStructureComponent}.
+	 *  
+	 * @param name The name to assign to the new component
+	 * @return the new component.
+	 */
+	public DataStructureComponent<R, S, D> rename(String name);
 
+	/**
+	 * Creates a new component by renaming this {@link DataStructureComponent}.
+	 *  
+	 * @param nameMapper a functions that returns the new name given the name of this {@link DataStructureComponent} 
+	 * @return the new component.
+	 */
 	public default DataStructureComponent<R, S, D> rename(UnaryOperator<String> nameMapper)
 	{
 		return rename(nameMapper.apply(getName()));
 	}
 
-	public default boolean is(Class<? extends Component> type)
+	/**
+	 * Checks if this {@link DataStructureComponent} has the specified role.
+	 * 
+	 * @param role the role
+	 * @return true if this {@link DataStructureComponent} has the specified role.
+	 */
+	public default boolean is(Class<? extends ComponentRole> role)
 	{
-		return type.isAssignableFrom(getRole());
+		return role.isAssignableFrom(getRole());
 	}
 	
+	/**
+	 * Narrows the role of this {@link DataStructureComponent} to the specified role if possible.
+	 * 
+	 * @param role the role to narrow to
+	 * @return this component with the narrowed role.
+	 * @throws ClassCastException if the role cannot be narrowed.
+	 */
 	@SuppressWarnings("unchecked")
-	public default <R2 extends Component> DataStructureComponent<R2, S, D> as(Class<R2> type)
+	public default <R2 extends ComponentRole> DataStructureComponent<R2, S, D> as(Class<R2> role)
 	{
-		if (is(type))
+		if (is(role))
 			// safe
 			return (DataStructureComponent<R2, S, D>) this;
 		else
-			throw new ClassCastException("In component " + this + ", cannot cast " + getRole().getSimpleName() + " to " + type.getSimpleName());
+			throw new ClassCastException("In component " + this + ", cannot cast " + getRole().getSimpleName() + " to " + role.getSimpleName());
 	}
 	
-	@SuppressWarnings("unchecked")
-	public default ScalarValue<?, S, D> cast(ScalarValue<?, ?, ?> value)
-	{
-		return (ScalarValue<?, S, D>) getDomain().cast(value);
-	}
-
+	/**
+	 * Narrows the domain of this {@link DataStructureComponent} to the specified domain if possible.
+	 * 
+	 * @param domain the domain to narrow to
+	 * @return this component with the narrowed domain.
+	 * @throws ClassCastException if the domain cannot be narrowed.
+	 */
 	@SuppressWarnings("unchecked")
 	public default <S2 extends ValueDomainSubset<D2>, D2 extends ValueDomain> DataStructureComponent<R, S2, D2> as(S2 domain)
 	{
@@ -87,4 +121,23 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 		else
 			throw new ClassCastException("Cannot cast component " + this + " from " + getDomain() + " to " + domain);
 	}
+
+	/**
+	 * Casts a given value to the domain subset of this {@link DataStructureComponent} if possible.
+	 * 
+	 * @param value the value to cast
+	 * @return the casted value.
+	 * @throws VTLCastException if the value cannot be casted to the domain of this component.
+	 */
+	@SuppressWarnings("unchecked")
+	public default ScalarValue<?, S, D> cast(ScalarValue<?, ?, ?> value)
+	{
+		return (ScalarValue<?, S, D>) getDomain().cast(value);
+	}
+
+	@Override
+	public boolean equals(Object obj);
+	
+	@Override
+	public int hashCode();
 }

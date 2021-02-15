@@ -19,7 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-public interface DescribedValueDomain<T extends ValueDomain> extends ValueDomain
+/**
+ * Representation of a described domain subset.
+ * TODO
+ * 
+ * @author Valentino Pinna
+ *
+ * @param <D> the original domain
+ */
+public interface DescribedDomainSubset<D extends ValueDomain> extends ValueDomainSubset<D>
 {
 
 }
