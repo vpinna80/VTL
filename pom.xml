@@ -744,6 +744,8 @@
 									<exclude>**/DESCRIPTION</exclude>
 									<exclude>**/*.in</exclude>
 									<exclude>**/*.csv</exclude>
+									<exclude>**/*.whl</exclude>
+									<exclude>**/*.war</exclude>
 									<exclude>**/*.g4</exclude>
 									<exclude>**/*.bin</exclude>
 									<exclude>**/.factorypath</exclude>
