@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
@@ -71,10 +70,10 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	protected ScalarValue<?, BooleanDomainSubset, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
-			return FALSE;
+			return NullValue.instance(BOOLEANDS);
 
 		if (castToLeft)
 			right = left.getDomain().cast(right);
@@ -85,7 +84,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
+	protected DataSet evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 
@@ -111,7 +110,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
+	protected DataSet evalTwoDatasets(DataSet left, DataSet right)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));

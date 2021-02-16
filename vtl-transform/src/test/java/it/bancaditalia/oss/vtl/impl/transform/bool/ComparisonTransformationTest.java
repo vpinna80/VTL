@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static java.lang.Double.isNaN;
+import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,7 +28,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,9 +42,11 @@ import it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ComparisonTransformationTest
@@ -102,17 +107,20 @@ public class ComparisonTransformationTest
 		DataSet leftD = (DataSet) left.eval(session), 
 				rightD = (DataSet) right.eval(session);
 		
-		computedResult.stream()
-			.forEach(dp -> assertEquals(result[dp.get(id).get().toString().charAt(0) - 'A'], dp.get(bool_var).get(), 
-					dp.get(id).get().toString() + "(" + leftD.stream()
-						.filter(dpl -> dpl.get(id).equals(dp.get(id)))
-						.map(dpl -> dpl.getValues(Measure.class).values().iterator().next().toString())
-						.findFirst()
-						.get() + operator + 
-					rightD.stream()
-						.filter(dpr -> dpr.get(id).equals(dp.get(id)))
-						.map(dpr -> dpr.getValues(Measure.class).values().iterator().next().toString())
-						.findFirst()
-						.get() + ")"));
+		for (DataPoint dp: computedResult)
+		{
+			final int index = dp.get(id).get().toString().charAt(0) - 'A';
+			final ScalarValue<?, ?, ?> idValue = dp.get(id);
+
+			final String message = Stream.of(leftD, rightD)
+					.map(DataSet::stream)
+					.map(st -> st.filter(dp2 -> dp2.get(id).equals(idValue)))
+					.map(Stream::findFirst)
+					.map(Optional::get)
+					.map(dp2 -> dp2.getValues(Measure.class).values().iterator().next().toString())
+					.collect(joining(operator.toString(), dp.get(id).get().toString(), ")"));
+
+			assertEquals(result[index], dp.get(bool_var).get(), message);
+		}
 	}
 }

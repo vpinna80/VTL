@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import static java.util.Collections.emptyMap;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -41,7 +42,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
  * @author Valentino Pinna
  *
  */
-public interface DataSet extends VTLValue
+public interface DataSet extends VTLValue, Iterable<DataPoint>
 {
 	/**
 	 * @return The {@link DataSetMetadata structure} of this DataSet.
@@ -54,6 +55,16 @@ public interface DataSet extends VTLValue
 	 * The stream does not conform to a particular ordering.
 	 */
 	public Stream<DataPoint> stream();
+
+	/**
+	 * @return an {@link Iterator} of this dataset's {@link DataPoint}s.
+	 * The iterating order is undefined and may change on subsequent invocations.
+	 */
+	@Override
+	public default Iterator<DataPoint> iterator()
+	{
+		return stream().iterator();
+	}
 
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset

@@ -33,6 +33,6 @@ public class NvlTransformation extends ConditionalTransformation
 	@Override
 	public String toString()
 	{
-		return "nvl(" + thenExpr + ", " + elseExpr + ")";
+		return "nvl(" + elseExpr + ", " + thenExpr + ")";
 	}
 }
