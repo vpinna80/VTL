@@ -195,8 +195,8 @@ public class REnvironment implements Environment
 						result = new IntegerValue((long) data.asIntArray()[0]);
 						break;
 					case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
-						result = data.asBool().isNA() ? NullValue.instance(BOOLEANDS) : BooleanValue.of(data.asBool().isTRUE());
-						break;
+						result = BooleanValue.of(data.asBool().isTRUE());
+					break;
 					default:
 						throw new IllegalStateException("Node: " + name + " of scalar type: " + REXP.xtName(data.getType()) + ". This is not supported.");
 				}
@@ -251,19 +251,21 @@ public class REnvironment implements Environment
 			{
 				case REXP.XT_ARRAY_DOUBLE:
 					domain = NUMBERDS;
-					values = Utils.getStream(columnData.asDoubleArray()).mapToObj(DoubleValue::new);
+					values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
 					break;
 				case REXP.XT_ARRAY_INT:
-					domain = INTEGERDS;
-					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(IntegerValue::new);
+					// we use Number for integers because from R ints are not handled well 
+					// in particular, if NAs are present, they should be transformed into NaNs before passing into VTL
+					domain = NUMBERDS;
+					values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
 					break;
 				case REXP.XT_ARRAY_STR:
 					domain = STRINGDS;
-					values = Utils.getStream(columnData.asStringArray()).map(StringValue::new);
+					values = Utils.getStream(columnData.asStringArray()).map(val -> (ScalarValue<?, ?, ?>) (val == null ? NullValue.instance(STRINGDS) : new StringValue(val)));
 					break;
 				case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
 					domain = BOOLEANDS;
-					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (val == 2 ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
+					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) ((val != 1 && val != 0) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
 					break;
 				default:
 					throw new IllegalStateException(
