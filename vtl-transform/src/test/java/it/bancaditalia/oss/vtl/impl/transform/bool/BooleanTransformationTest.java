@@ -77,12 +77,12 @@ public class BooleanTransformationTest
 	@MethodSource
 	public void test(BooleanBiOperator operator, Boolean[] booleanResults)
 	{
-		BooleanTransformation arTransformation = new BooleanTransformation(operator, left, right);
+		BooleanTransformation bt = new BooleanTransformation(operator, left, right);
 		
-		DataSetMetadata metadata = (DataSetMetadata) arTransformation.getMetadata(session);
+		DataSetMetadata metadata = (DataSetMetadata) bt.getMetadata(session);
 		assertTrue(metadata.contains("BOOLEAN_1"));
 		
-		DataSet computedResult = (DataSet) arTransformation.eval(session);
+		DataSet computedResult = (DataSet) bt.eval(session);
 		
 		assertEquals(booleanResults.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
@@ -93,6 +93,5 @@ public class BooleanTransformationTest
 		computedResult.stream()
 			.map(dp -> new SimpleEntry<>(dp.get(id).get().toString().charAt(0) - 'A', dp.get(measure).get()))
 			.forEach(e -> assertEquals(booleanResults[e.getKey()], e.getValue(), "" + (char)(e.getKey() + 'A')));
-
 	}
 }
