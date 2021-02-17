@@ -232,12 +232,14 @@ public abstract class AbstractDataSet implements DataSet
 		if (result != null)
 			return result;
 
+		final DataSetMetadata metadata = getMetadata();
+
 		try (Stream<DataPoint> stream = stream())
 		{
 			result = stream
 					.peek(Objects::requireNonNull)
 					.map(DataPoint::toString)
-					.collect(joining(",\n\t", "(" + getMetadata() + ") -> {\n\t", "\n}"));
+					.collect(joining(",\n\t", "(" + metadata + ") -> {\n\t", "\n}"));
 		}
 
 		cacheString = new SoftReference<>(result);
