@@ -90,33 +90,38 @@ public class ConditionalTransformation extends TransformationImpl
 			VTLValue elseV = elseExpr.eval(session);
 			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-			Function<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> lambda;
-
 			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
-			{
-				DataSet joinedThen = condD.filter(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, (DataSet) thenV, (dpCond, dpThen) -> dpThen);
-				DataSet joinedElse = condD.filter(dpCond -> !checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, (DataSet) elseV, (dpCond, dpElse) -> dpElse);
-				return new LightF2DataSet<>((DataSetMetadata) metadata, (dsThen, dsElse) -> concat(dsThen.stream(), dsElse.stream()), joinedThen, joinedElse);
-			}
+				return evalTwoDatasets(condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
 			else // One dataset and one scalar
-			{
-				DataSet dataset = ((DataSet) (thenV instanceof DataSet ? thenV : elseV));
-				Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>> scalar = ((DataSetMetadata) metadata)
-						.getComponents(NonIdentifier.class).stream()
-						.collect(toMapWithValues(k -> (ScalarValue<?, ?, ?>) (thenV instanceof ScalarValue ? thenV : elseV)));
-
-				lambda = dpCond -> (checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV != dataset)
-						// condition true and 'then' is a dataset or condition false and 'else' is a dataset 
-						? dataset.getMatching(dpCond.getValues(keys, Identifier.class))
-								.stream()
-								.findFirst()
-								.get()
-								.getValues(NonIdentifier.class)
-						: scalar;
-			}
-
-			return condD.mapKeepingKeys((DataSetMetadata) metadata, lambda);
+				return condD.mapKeepingKeys((DataSetMetadata) metadata, evalDatasetAndScalar(keys, thenV, elseV, booleanConditionMeasure));
 		}
+	}
+
+	private Function<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> evalDatasetAndScalar(
+			Set<DataStructureComponent<Identifier, ?, ?>> keys, VTLValue thenV, VTLValue elseV,
+			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
+	{
+		DataSet dataset = ((DataSet) (thenV instanceof DataSet ? thenV : elseV));
+		Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>> scalar = ((DataSetMetadata) metadata)
+				.getComponents(NonIdentifier.class).stream()
+				.collect(toMapWithValues(k -> (ScalarValue<?, ?, ?>) (thenV instanceof ScalarValue ? thenV : elseV)));
+
+		return dpCond -> (checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV != dataset)
+				// condition true and 'then' is a dataset or condition false and 'else' is a dataset 
+				? dataset.getMatching(dpCond.getValues(keys, Identifier.class))
+						.stream()
+						.findFirst()
+						.get()
+						.getValues(NonIdentifier.class)
+				: scalar;
+	}
+
+	private VTLValue evalTwoDatasets(DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
+	{
+		DataSet joinedThen = condD.filter(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, thenD, (dpCond, dpThen) -> dpThen);
+		DataSet joinedElse = condD.filter(dpCond -> !checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, elseD, (dpCond, dpElse) -> dpElse);
+		
+		return new LightF2DataSet<>((DataSetMetadata) metadata, (dsThen, dsElse) -> concat(dsThen.stream(), dsElse.stream()), joinedThen, joinedElse);
 	}
 
 	private boolean checkCondition(ScalarValue<?, ?, ?> value)
