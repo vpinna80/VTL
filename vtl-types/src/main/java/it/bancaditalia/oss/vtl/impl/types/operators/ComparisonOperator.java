@@ -47,9 +47,7 @@ public enum ComparisonOperator implements BiFunction<ScalarValue<?, ?, ?>, Scala
 	@Override
 	public ScalarValue<?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, ?> l, ScalarValue<?, ?, ?> r)
 	{
-		return (l instanceof NullValue || r instanceof NullValue)
-				? NullValue.instance(BOOLEANDS)
-				: BooleanValue.of(lambda.test(l.compareTo(r)));
+		return (l instanceof NullValue || r instanceof NullValue) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(lambda.test(l.compareTo(r)));
 	}
 	
 	@Override

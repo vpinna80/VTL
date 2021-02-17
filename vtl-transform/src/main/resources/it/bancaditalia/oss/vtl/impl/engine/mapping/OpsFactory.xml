@@ -168,6 +168,7 @@
 		<context name="AnalyticFunctionsComponentsContext" />
 		<context name="CompIdContext" />
 		<context name="ComparisonFunctionsContext" />
+		<context name="ComparisonFunctionsComponentsContext" />
 		<context name="ConditionalFunctionsContext" />
 		<context name="ConditionalFunctionsComponentsContext" />
 		<context name="DatasetClauseContext" />
