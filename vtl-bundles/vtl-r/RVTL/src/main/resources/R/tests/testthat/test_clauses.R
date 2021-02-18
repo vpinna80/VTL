@@ -155,12 +155,13 @@ test_that('CSV dataset clauses works', {
   result1 = result[result$TIME_PERIOD=='2000',]
   result2 = result[result$TIME_PERIOD=='2000',]
   result2 = within(result2, rm(TIME_PERIOD))
-  result3 = result[result$OBS_VALUE==0.923612549019608,]
+  result3 = result[result$OBS_VALUE==0.923612549019608 & !is.na(result$OBS_VALUE),]
   result4 = result[result$UNIT=='USD',]
   result5 = result
   result5$OBS_VALUE2 = result5$OBS_VALUE*2
-  result6 = aggregate(result$OBS_VALUE, by = list(result$CURRENCY), FUN = 'sum')
-  names(result6) = c('CURRENCY', 'OBS_AGG')
+  result6 = data.frame('CURRENCY'=logical(0), 'OBS_AGG'=logical(0))
+  result6_2 = aggregate(result[result$TIME_PERIOD != '2017','OBS_VALUE'], by = list(result[result$TIME_PERIOD != '2017','CURRENCY']), FUN = 'sum')
+  names(result6_2) = c('CURRENCY', 'OBS_AGG')
   result7 = within(result, rm(OBS_VALUE))
   result8 = within(result, rm(UNIT))
   result9 = result[, c('CURRENCY', 'CURRENCY_DENOM', 'EXR_SUFFIX', 'FREQ', 'OBS_VALUE', 'TIME_PERIOD', 'EXR_TYPE')]
@@ -176,6 +177,7 @@ test_that('CSV dataset clauses works', {
                                                             result4:= tmp[filter UNIT = \"USD\"];
                                                             result5:= tmp[calc OBS_VALUE2 := OBS_VALUE * 2];
                                                             result6 := tmp[aggr OBS_AGG := sum(OBS_VALUE) group by CURRENCY];
+                                                            result6_2 := tmp[filter TIME_PERIOD <> \"2017\"][aggr OBS_AGG := sum(OBS_VALUE) group by CURRENCY];
                                                             result7 := tmp[drop OBS_VALUE];
                                                             result8 := tmp[drop UNIT];
                                                             result9 := tmp[keep OBS_VALUE];
@@ -188,6 +190,7 @@ test_that('CSV dataset clauses works', {
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result4')$result4, target = result4), label = 'filter attribute value correct')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result5')$result5, target = result5), label = 'calc value correct')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result6')$result6, target = result6), label = 'aggr value correct')
+  expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result6_2')$result6_2, target = result6_2), label = 'aggr value correct')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result7')$result7, target = result7), label = 'drop measure value correct')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result8')$result8, target = result8), label = 'drop attr value correct')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result9')$result9, target = result9), label = 'keep measure value correct')
