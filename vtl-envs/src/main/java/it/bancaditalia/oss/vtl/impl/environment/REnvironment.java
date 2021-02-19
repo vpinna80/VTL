@@ -250,14 +250,14 @@ public class REnvironment implements Environment
 			switch (columnData.getType())
 			{
 				case REXP.XT_ARRAY_DOUBLE:
+					// NAs are mapped to something that retrns true to is.NaN()
 					domain = NUMBERDS;
 					values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
 					break;
 				case REXP.XT_ARRAY_INT:
-					// we use Number for integers because from R ints are not handled well 
-					// in particular, if NAs are present, they should be transformed into NaNs before passing into VTL
-					domain = NUMBERDS;
-					values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
+					// NAs are mapped to Integer.MIN_VALUE
+					domain = INTEGERDS;
+					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(val -> (ScalarValue<?, ?, ?>) (val == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : new IntegerValue(val)));
 					break;
 				case REXP.XT_ARRAY_STR:
 					domain = STRINGDS;
