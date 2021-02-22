@@ -22,12 +22,15 @@ package it.bancaditalia.oss.vtl.impl.environment;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.environment.dataset.ColumnarDataSet;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -212,13 +216,20 @@ public class REnvironment implements Environment
 	{
 		List<String> identifiers = new ArrayList<>();
 		List<String> measures = new ArrayList<>();
-
+		List<String> dateColumns = new ArrayList<>();
+ 
 		// transform factors into strings
 		getEngine().eval("if(any(sapply(" + name + ", is.factor))) " + name + "[which(sapply(" + name + ", is.factor))] <- sapply(" + name + "[which(sapply(" + name
 				+ ", is.factor))], as.character)");
 
-		LOGGER.info("Migrating dataset {} from R", name);
-		
+		// transform dates into strings for now, otherwise they'll be interpreted as numbers
+		if (getEngine().eval("any(sapply(names(" + name + "), function(x, y) class(y[,x]), y=" + name + ") == 'Date')").asBool().isTRUE()){
+			REXP dates = getEngine().eval("names(which(sapply(names(" + name + "), function(x, y) class(y[,x]), y=" + name + ") == 'Date'))");
+			if(dates != null) {
+				dateColumns = Arrays.asList(dates.asStringArray());
+			}
+		}
+		System.err.println(dateColumns);
 		REXP data = getEngine().eval(name);
 		RList dataFrame = data.asList();
 
@@ -250,9 +261,18 @@ public class REnvironment implements Environment
 			switch (columnData.getType())
 			{
 				case REXP.XT_ARRAY_DOUBLE:
-					// NAs are mapped to something that retrns true to is.NaN()
-					domain = NUMBERDS;
-					values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
+					if(dateColumns.contains(key)){
+						// this is a date, not a number...
+						domain = DATEDS;
+						//now transform in date
+						// NAs are mapped to something that retrns true to is.NaN()
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  new DateValue(LocalDate.of(1970, 1, 1).plus((long) val  , ChronoUnit.DAYS) )));   
+					}
+					else {
+						// NAs are mapped to something that retrns true to is.NaN()
+						domain = NUMBERDS;
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
+					}
 					break;
 				case REXP.XT_ARRAY_INT:
 					// NAs are mapped to Integer.MIN_VALUE
