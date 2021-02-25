@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 
@@ -28,6 +30,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
@@ -122,10 +125,28 @@ public class ConditionalTransformation extends TransformationImpl
 
 	private VTLValue evalTwoDatasets(DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
 	{
-		DataSet joinedThen = condD.filter(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, thenD, (dpCond, dpThen) -> dpThen);
-		DataSet joinedElse = condD.filter(dpCond -> !checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, elseD, (dpCond, dpElse) -> dpElse);
+		Map<Boolean, Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>> partitions;
+		Set<DataStructureComponent<Identifier, ?, ?>> valueIDs = thenD.getComponents(Identifier.class);
 		
-		return new LightF2DataSet<>((DataSetMetadata) metadata, (dsThen, dsElse) -> concat(dsThen.stream(), dsElse.stream()), joinedThen, joinedElse);
+		try (Stream<DataPoint> stream = condD.stream())
+		{
+			partitions = stream.collect(partitioningBy(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure)),
+					mapping(dp -> dp.getValues(valueIDs, Identifier.class), toSet())));
+		}
+		
+		DataSet thenFiltered = thenD.filter(dp -> partitions.get(true).contains(dp.getValues(Identifier.class)));
+		DataSet elseFiltered = elseD.filter(dp -> partitions.get(false).contains(dp.getValues(Identifier.class)));
+		
+		return new LightF2DataSet<>((DataSetMetadata) metadata, 
+				(dsThen, dsElse) -> {
+					final Stream<DataPoint> thenStream = dsThen.stream();
+					final Stream<DataPoint> elseStream = dsElse.stream();
+					return concat(thenStream, elseStream)
+							.onClose(() -> {
+								thenStream.close();
+								elseStream.close();
+							});
+				}, thenFiltered, elseFiltered);
 	}
 
 	private boolean checkCondition(ScalarValue<?, ?, ?> value)

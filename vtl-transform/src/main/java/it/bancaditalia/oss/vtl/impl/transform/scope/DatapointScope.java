@@ -49,12 +49,10 @@ public class DatapointScope implements TransformationScheme
 	private final DataPoint dp;
 	private final DataSetMetadata structure;
 	private final TransformationScheme parent;
-	private final Set<DataStructureComponent<?, ?, ?>> keys;
 	
 	public DatapointScope(DataPoint dp, DataSetMetadata structure, TransformationScheme parent) 
 	{
 		this.dp = dp;
-		this.keys = dp.keySet();
 		this.structure = structure;
 		this.parent = parent;
 	}

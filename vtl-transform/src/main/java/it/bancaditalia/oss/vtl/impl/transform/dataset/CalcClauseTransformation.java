@@ -166,8 +166,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 						Utils.getStream(nonAnalyticClauses)
 							.collect(toConcurrentMap(
 								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),
-								clause -> 
-								clause.eval(dpSession))
+								clause -> clause.eval(dpSession))
 							);
 					
 					return new DataPointBuilder(calcValues).addAll(dp).build(nonAnalyticResultMetadata);

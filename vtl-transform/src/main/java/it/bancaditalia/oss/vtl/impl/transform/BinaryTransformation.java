@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.util.ThreadUtils;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -60,7 +61,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValue eval(TransformationScheme scheme)
 	{
-		return ThreadUtils.evalFuture(scheme, this, this::evalFinisher, Transformation::eval);
+		// Optimization, avoid parallelization of simple scalar operations
+		if (scheme instanceof DatapointScope)
+			return evalFinisher(leftOperand.eval(scheme), rightOperand.eval(scheme));
+		else
+			return ThreadUtils.evalFuture(scheme, this, this::evalFinisher, Transformation::eval);
 	}
 	
 	@Override
