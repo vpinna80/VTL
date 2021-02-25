@@ -121,6 +121,22 @@ VTLSession <- R6Class("VTLSession",
                                        .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"))
                         df <- convertToDF(tryCatch({ pager$more(-1L) }, finally = { pager$close() }))
                         role <- J("it.bancaditalia.oss.vtl.model.data.ComponentRole")
+                        # handle the explicit conversions for data types that are not well supported by jri
+                        if(pager$isToBeCast()){
+                          casting = pager$getToBeCast()
+                          if(!is.null(casting)){
+                            casting = jdx::convertToR(casting)
+                            for(x in names(casting)){
+                              toType = casting[[x]]
+                              if(toType == 'boolean'){
+                                df[, x] = as.logical(df[, x])
+                              }
+                              else  if(toType == 'date'){
+                                df[, x] = as.Date(df[, x])
+                              }
+                            }
+                          }
+                        }
                         attr(df, 'measures') <- sapply(jnode$getComponents(attr(role$Measure, 'jobj')), function(x) { x$getName() })
                         attr(df, 'identifiers') <- sapply(jnode$getComponents(attr(role$Identifier, 'jobj')), function(x) { x$getName() })
                       }

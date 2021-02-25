@@ -58,6 +58,6 @@ convertToDF <- function(jnode) {
     }
   }
   
-  return(as.data.frame(node, strings.as.factors = F))
+  return(as.data.frame(node, stringsAsFactors = F))
 }
 

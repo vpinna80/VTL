@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,8 +40,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public class Paginator implements AutoCloseable
 {
@@ -51,7 +52,8 @@ public class Paginator implements AutoCloseable
 
 	private boolean closed = false;
 	private RuntimeException lastException = null;
-		
+	private Map<String, String> toBeCast = new HashMap<String, String>(); 
+	
 	public Paginator(DataSet dataset)
 	{
 		dataStructure = dataset.getMetadata();
@@ -146,13 +148,39 @@ public class Paginator implements AutoCloseable
 			for (int i = 0; i < datapoints.size(); i++)
 			{
 				Comparable<?> value = datapoints.get(i).get(c).get();
-				if (value instanceof DateHolder || value instanceof PeriodHolder)
+				if (value instanceof PeriodHolder){
+					// period is just cast to string for now. Users will have the responsibility to cast it to the 
+					// suitable time structure in R
 					value = value.toString();
+				}
+				if (value instanceof DateHolder || value instanceof PeriodHolder){
+					// dates are cast to string in standard date format and will be cast back to Date in R
+					value = value.toString();
+					if(i == 0){
+						toBeCast.put(c.getName(), "date");
+					}
+				}
+				else if(value instanceof Boolean){
+					// booleans are cast to integer because jri does not manage nulls correctly
+					// they will be cast back to logical in R 
+					value = new Integer(((Boolean)value) ? 1 : 0);
+					if(i == 0){
+						toBeCast.put(c.getName(), "boolean");
+					}
+				}
 				result.get(c.getName()).set(i, value);
 			}
 		
 		//result.values().removeIf(l -> Utils.getStream(l).allMatch(Objects::isNull));
 
 		return result;
+	}
+	
+	public boolean isToBeCast(){
+		return toBeCast != null;
+	}
+	
+	public Map<String, String> getToBeCast(){
+		return toBeCast;
 	}
 }
