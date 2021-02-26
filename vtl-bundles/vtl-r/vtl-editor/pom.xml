@@ -65,6 +65,7 @@
 					<outputDirectory>${project.build.directory}/generated-grammar</outputDirectory>
 					<includeArtifactIds>vtl-parser</includeArtifactIds>
 					<classifier>grammar</classifier>
+					<version>${project.version}</version>
 					<type>zip</type>
 				</configuration>
 			</plugin>
