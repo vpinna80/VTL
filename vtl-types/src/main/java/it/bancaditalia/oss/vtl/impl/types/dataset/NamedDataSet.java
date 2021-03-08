@@ -26,7 +26,7 @@ import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;

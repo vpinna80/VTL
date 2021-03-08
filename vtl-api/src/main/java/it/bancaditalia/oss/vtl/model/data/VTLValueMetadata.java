@@ -24,7 +24,6 @@ package it.bancaditalia.oss.vtl.model.data;
  * 
  * @author Valentino Pinna
  */
-
 public interface VTLValueMetadata
 {
 	

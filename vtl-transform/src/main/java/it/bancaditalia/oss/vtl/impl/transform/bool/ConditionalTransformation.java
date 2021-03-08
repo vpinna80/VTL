@@ -21,24 +21,27 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -78,50 +81,77 @@ public class ConditionalTransformation extends TransformationImpl
 		if (metadata == null)
 			metadata = getMetadata(session);
 		
-		if (metadata instanceof ScalarValueMetadata)
+		if (cond instanceof ScalarValue)
 			return BOOLEANDS.cast((ScalarValue<?, ?, ?>) cond).get() 
 					? thenExpr.eval(session)
 					: elseExpr.eval(session);
 		else
 		{
 			DataSet condD = (DataSet) cond;
-			Set<DataStructureComponent<Identifier, ?, ?>> keys = ((DataSetMetadata) metadata).getComponents(Identifier.class);
 			VTLValue thenV = thenExpr.eval(session);
 			VTLValue elseV = elseExpr.eval(session);
 			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-			Function<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> lambda;
-
 			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
-			{
-				DataSet joinedThen = condD.filter(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, (DataSet) thenV, (dpCond, dpThen) -> dpThen);
-				DataSet joinedElse = condD.filter(dpCond -> !checkCondition(dpCond.get(booleanConditionMeasure))).mappedJoin((DataSetMetadata) metadata, (DataSet) elseV, (dpCond, dpElse) -> dpElse);
-				return new LightF2DataSet<>((DataSetMetadata) metadata, (dsThen, dsElse) -> concat(dsThen.stream(), dsElse.stream()), joinedThen, joinedElse);
-			}
+				return evalTwoDatasets(condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
 			else // One dataset and one scalar
 			{
-				DataSet dataset = ((DataSet) (thenV instanceof DataSet ? thenV : elseV));
-				Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>> scalar = ((DataSetMetadata) metadata)
-						.getComponents(NonIdentifier.class).stream()
-						.collect(toMapWithValues(k -> (ScalarValue<?, ?, ?>) (thenV instanceof ScalarValue ? thenV : elseV)));
-
-				lambda = dpCond -> (checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV != dataset)
-						// condition true and 'then' is a dataset or condition false and 'else' is a dataset 
-						? dataset.getMatching(dpCond.getValues(keys, Identifier.class))
-								.stream()
-								.findFirst()
-								.get()
-								.getValues(NonIdentifier.class)
-						: scalar;
+				DataSet dataset = thenV instanceof DataSet ? (DataSet) thenV : (DataSet) elseV;
+				ScalarValue<?, ?, ?> scalar = thenV instanceof ScalarValue ? (ScalarValue<?, ?, ?>) thenV : (ScalarValue<?, ?, ?>) elseV;
+				return condD.mappedJoin((DataSetMetadata) metadata, dataset, (dpCond, dp) -> 
+						evalDatasetAndScalar(checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV == dataset, dp, scalar, booleanConditionMeasure));
 			}
-
-			return condD.mapKeepingKeys((DataSetMetadata) metadata, lambda);
 		}
+	}
+
+	private DataPoint evalDatasetAndScalar(boolean cond, DataPoint dp, ScalarValue<?, ?, ?> scalar, 
+			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
+	{
+		if (cond)
+		{
+			// condition is true and 'then' is the scalar or condition is false and 'else' is the scalar
+			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> nonIdValues = new ConcurrentHashMap<>(dp.getValues(Measure.class));
+			// replace all measures values in the datapoint with the scalar 
+			nonIdValues.replaceAll((c, v) -> scalar);
+			
+			return new DataPointBuilder(dp.getValues(Identifier.class))
+					.addAll(dp.getValues(Attribute.class))
+					.addAll(nonIdValues)
+					.build((DataSetMetadata) metadata);
+		}
+		else
+			return dp;
+	}
+
+	private VTLValue evalTwoDatasets(DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
+	{
+		Map<Boolean, Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>> partitions;
+		Set<DataStructureComponent<Identifier, ?, ?>> valueIDs = thenD.getComponents(Identifier.class);
+		
+		try (Stream<DataPoint> stream = condD.stream())
+		{
+			partitions = stream.collect(partitioningBy(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure)),
+					mapping(dp -> dp.getValues(valueIDs, Identifier.class), toSet())));
+		}
+		
+		DataSet thenFiltered = thenD.filter(dp -> partitions.get(true).contains(dp.getValues(Identifier.class)));
+		DataSet elseFiltered = elseD.filter(dp -> partitions.get(false).contains(dp.getValues(Identifier.class)));
+		
+		return new LightF2DataSet<>((DataSetMetadata) metadata, 
+				(dsThen, dsElse) -> {
+					final Stream<DataPoint> thenStream = dsThen.stream();
+					final Stream<DataPoint> elseStream = dsElse.stream();
+					return concat(thenStream, elseStream)
+							.onClose(() -> {
+								thenStream.close();
+								elseStream.close();
+							});
+				}, thenFiltered, elseFiltered);
 	}
 
 	private boolean checkCondition(ScalarValue<?, ?, ?> value)
 	{
-		return value instanceof BooleanValue && (boolean) (Boolean) value.get();
+		return value instanceof BooleanValue && ((BooleanValue) value).get();
 	}
 
 	@Override
@@ -154,22 +184,27 @@ public class ConditionalTransformation extends TransformationImpl
 				throw new UnsupportedOperationException("Incompatible types in conditional expression: " + left + ", " + right);
 		else // if (cond instanceof VTLDataSetMetadata)
 		{
+			// both 'then' and 'else' are scalar
 			if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
 				return metadata = left;
-			Set<? extends DataStructureComponent<?, ?, ?>> measures = ((DataSetMetadata) cond).getComponents(Measure.class, BOOLEANDS);
+			
+			// one is a dataset, first check it
+			Set<? extends DataStructureComponent<?, ?, ?>> condMeasures = ((DataSetMetadata) cond).getComponents(Measure.class, BOOLEANDS);
 			DataSetMetadata dataset = (DataSetMetadata) (left instanceof DataSetMetadata ? left : right);
 			VTLValueMetadata other = left instanceof DataSetMetadata ? right : left;
 
-			if (measures.size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
+			if (condMeasures.size() != 1)
+				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, condMeasures);
 
 			if (!dataset.getComponents(Identifier.class).equals(((DataSetMetadata) cond).getComponents(Identifier.class)))
 				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getComponents(Identifier.class) + " -- " + ((DataSetMetadata) cond).getComponents(Identifier.class));
 
 			if (other instanceof DataSetMetadata)
 			{
+				// the other is a dataset too, check structures are equal
 				if (!dataset.equals(other))
 				{
+					// check that they have same structure
 					Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(dataset);
 				    missing.addAll((DataSetMetadata) other);
 				    Set<DataStructureComponent<?, ?, ?>> tmp = new HashSet<>(dataset);
@@ -189,9 +224,9 @@ public class ConditionalTransformation extends TransformationImpl
 				}
 			}
 			else 
-				if (!dataset.getComponents(Measure.class).stream()
-						.allMatch(c -> ((ScalarValueMetadata<?>) other).getDomain().isAssignableFrom(c.getDomain())))
-				throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
+				// the other is a scalar, all measures in dataset must be assignable from the scalar
+				if (!dataset.getComponents(Measure.class).stream().allMatch(c -> c.getDomain().isAssignableFrom(((ScalarValueMetadata<?>) other).getDomain())))
+					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
 
 			return metadata = dataset;
 		}

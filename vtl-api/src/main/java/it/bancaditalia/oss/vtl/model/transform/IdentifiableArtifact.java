@@ -19,6 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.model.transform;
 
+/**
+ * TODO representation of an identifiable artifact
+ * 
+ * @author Valentino Pinna
+ *
+ */
 public interface IdentifiableArtifact
 {
 

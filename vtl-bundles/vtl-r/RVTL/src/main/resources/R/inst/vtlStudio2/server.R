@@ -208,6 +208,43 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = input$scriptFile$name)
   })
   
+  # load CSV file to GlobalEnv
+  observeEvent(input$datafile, {
+    datasetName = basename(input$datafile$name)
+    data = readLines(con = input$datafile$datapath)
+    if(length(data > 1)){
+      header = as.character(read.csv(text = data[1], header = F))
+      ids1 = which(startsWith(header, prefix = '$'))
+      ids2 = which(!startsWith(header, prefix = '#') & !grepl(x = header, pattern = '=', fixed = T))
+      ids = c(ids1, ids2)
+      measures = which(!startsWith(header, prefix = '#') & !startsWith(header, prefix = '$') & grepl(x = header, pattern = '=', fixed = T))
+      names = sub(x=
+                    sub(x = 
+                          sub(x = header, pattern = '\\#', replacement = '')
+                    , pattern = '\\$', replacement = '')
+              , pattern = '\\=.*', replacement = '')
+      body = read.csv(text = data[-1], header = F, stringsAsFactors = F)
+      body = setNames(object = body, nm = names)
+      
+      #type handling very raw for now, to be refined
+      # force strings (some cols could be cast to numeric by R)
+      stringTypes = which(grepl(x = header, pattern = 'String', fixed = T))
+      body[, stringTypes] = as.character(body[, stringTypes])
+      
+      attr(x = body, which = 'identifiers') = names[ids]
+      attr(x = body, which = 'measures') = names[measures]
+      assign(x = datasetName, value = body, envir = .GlobalEnv)
+      output$vtl_output <- renderPrint({
+        print(paste('File ', input$datafile$name, 'correctly loaded into R Environment. Dataset name to be used:', datasetName))
+      })
+    }
+    else{
+      output$vtl_output <- renderPrint({
+        print(paste('Error: file ', input$datafile$name, 'is malformed.'))
+      })
+    }
+  })
+  
   # create new session
   observeEvent(input$createSession, {
     name <- req(input$newSession)

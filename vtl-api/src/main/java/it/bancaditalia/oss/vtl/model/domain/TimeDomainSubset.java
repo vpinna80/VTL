@@ -21,6 +21,11 @@ package it.bancaditalia.oss.vtl.model.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
+/**
+ * Representation of a subset of the VTL "Time" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface TimeDomainSubset<T extends TimeDomain> extends TimeDomain, ValueDomainSubset<T>
 {
 

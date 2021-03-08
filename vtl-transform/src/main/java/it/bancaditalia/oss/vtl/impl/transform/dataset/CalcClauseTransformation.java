@@ -44,9 +44,9 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -70,10 +70,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		private static final long serialVersionUID = 1L;
 
 		private final String name;
-		private final Class<? extends Component> role;
+		private final Class<? extends ComponentRole> role;
 		private final Transformation calcClause;
 
-		public CalcClauseItem(Class<? extends Component> role, String name, Transformation calcClause)
+		public CalcClauseItem(Class<? extends ComponentRole> role, String name, Transformation calcClause)
 		{
 			this.name = name;
 			this.calcClause = calcClause;
@@ -85,7 +85,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			return name;
 		}
 
-		public Class<? extends Component> getRole()
+		public Class<? extends ComponentRole> getRole()
 		{
 			return role;
 		}
@@ -166,8 +166,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 						Utils.getStream(nonAnalyticClauses)
 							.collect(toConcurrentMap(
 								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),
-								clause -> 
-								clause.eval(dpSession))
+								clause -> clause.eval(dpSession))
 							);
 					
 					return new DataPointBuilder(calcValues).addAll(dp).build(nonAnalyticResultMetadata);
@@ -265,7 +264,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else
 			{
 				// new component
-				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
+				Class<? extends ComponentRole> newComponent = item.getRole() == null ? Measure.class : item.getRole();
 				builder = builder.addComponent(new DataStructureComponentImpl<>(item.getName(), newComponent, domain));
 			}
 		}

@@ -140,8 +140,10 @@ public class CachedDataSet extends NamedDataSet
 		
 		// reference to cache holder 
 		SoftReference<Set<DataPoint>> setRef = new SoftReference<>(newSetFromMap(new ConcurrentHashMap<>()), REF_QUEUE);
-		stacks.put(getAlias(), new IllegalStateException("A deadlock may have happened in the cache mechanism. Caching for dataset " 
-				+ getAlias() + " never completed."));
+		IllegalStateException exception = new IllegalStateException("A deadlock may have happened in the cache mechanism. Caching for dataset " 
+				+ getAlias() + " never completed.");
+		exception.getStackTrace();
+		stacks.put(getAlias(), exception);
 		return getDelegate().stream()
 			.peek(dp -> {
 				// enqueue datapoint if reference was not gced

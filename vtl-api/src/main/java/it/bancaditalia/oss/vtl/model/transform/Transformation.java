@@ -22,16 +22,46 @@ package it.bancaditalia.oss.vtl.model.transform;
 import java.io.Serializable;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
+/**
+ * The representation of a VTL transformation.
+ * @author Valentino Pinna
+ *
+ */
 public interface Transformation extends Serializable
 {
+	/**
+	 * True if this {@link Transformation} do not require previous computations before returning a result.
+	 * @return
+	 */
 	public boolean isTerminal();
 	
+	/**
+	 * A set of all the {@link LeafTransformation}s recursively referenced by this {@link Transformation}.
+	 * 
+	 * The set is empty if {@link #isTerminal()} is true.
+	 * 
+	 * @return the set
+	 */
 	public Set<LeafTransformation> getTerminals();
 	
-	public VTLValue eval(TransformationScheme session);
+	/**
+	 * Evaluates this transformation in the context of the given {@link TransformationScheme}.
+	 * 
+	 * @param scheme the transformation scheme
+	 * @return the result of the computation of this {@link Transformation}.
+	 */
+	public VTLValue eval(TransformationScheme scheme);
 	
+	/**
+	 * Checks and returns the metadata of this {@link Transformation} within the given {@link TransformationScheme}.
+	 * 
+	 * @param scheme the transformation scheme
+	 * @return the metadata of this {@link Transformation}.
+	 * @throws VTLException if the metadata is incoherent within the given {@link TransformationScheme}.
+	 */
 	public VTLValueMetadata getMetadata(TransformationScheme scheme);
 }

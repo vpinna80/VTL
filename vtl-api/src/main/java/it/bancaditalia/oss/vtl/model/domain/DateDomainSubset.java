@@ -19,6 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
+/**
+ * Representation of a subset of the VTL "Date" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface DateDomainSubset extends DateDomain, TimeDomainSubset<DateDomain>
 {
 

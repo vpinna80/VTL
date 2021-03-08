@@ -32,21 +32,19 @@ import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
 import it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation;
-import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -71,10 +69,10 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	protected ScalarValue<?, BooleanDomainSubset, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
-			return BooleanValue.FALSE;
+			return NullValue.instance(BOOLEANDS);
 
 		if (castToLeft)
 			right = left.getDomain().cast(right);
@@ -85,7 +83,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
+	protected DataSet evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 
@@ -111,7 +109,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
+	protected DataSet evalTwoDatasets(DataSet left, DataSet right)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));

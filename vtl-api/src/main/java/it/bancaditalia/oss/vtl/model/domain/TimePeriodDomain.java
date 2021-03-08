@@ -19,6 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
+/**
+ * Representation of the VTL "Time Period" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface TimePeriodDomain extends TimeDomain
 {
 

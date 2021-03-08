@@ -21,9 +21,9 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;

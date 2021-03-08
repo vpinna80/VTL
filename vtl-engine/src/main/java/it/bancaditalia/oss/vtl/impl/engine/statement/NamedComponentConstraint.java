@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -32,10 +32,10 @@ public class NamedComponentConstraint extends DataSetComponentConstraint
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Class<? extends Component> role;
+	private final Class<? extends ComponentRole> role;
 	private final String domainName;
 	
-	public NamedComponentConstraint(String name, Class<? extends Component> role, String domainName)
+	public NamedComponentConstraint(String name, Class<? extends ComponentRole> role, String domainName)
 	{
 		super(name);
 

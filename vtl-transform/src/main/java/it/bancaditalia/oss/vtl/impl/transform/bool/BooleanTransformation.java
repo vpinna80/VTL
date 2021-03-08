@@ -26,6 +26,7 @@ import static java.util.Collections.singletonMap;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
@@ -36,8 +37,9 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -91,7 +93,10 @@ public class BooleanTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
 	{
-		return operator.apply((BooleanValue) left, (BooleanValue) right);
+		if (left instanceof NullValue || right instanceof NullValue)
+			return NullValue.instance(BOOLEANDS);
+		else
+			return operator.apply((BooleanValue) left, (BooleanValue) right);
 	}
 
 	@Override
@@ -102,7 +107,15 @@ public class BooleanTransformation extends BinaryTransformation
 		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, operator.apply((BooleanValue) dp.get(datasetMeasure), (BooleanValue) scalar)));
+		final Function<DataPoint, ScalarValue<?, BooleanDomainSubset, BooleanDomain>> lambda = dp -> {
+			final ScalarValue<?, ?, ?> value = dp.get(datasetMeasure);
+			if (value instanceof NullValue)
+				return NullValue.instance(BOOLEANDS);
+			else
+				return operator.apply((BooleanValue) value, (BooleanValue) scalar);
+		};
+
+		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, lambda.apply(dp)));
 	}
 
 	@Override
@@ -118,8 +131,7 @@ public class BooleanTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		// Scan the dataset with less identifiers and find the matches
-		return indexed.filteredMappedJoin(metadata, streamed,
-				(dp1, dp2) -> true,
+		return indexed.mappedJoin(metadata, streamed,
 				(dp1, dp2) -> new DataPointBuilder()
 					.addAll(dp1.getValues(Identifier.class))
 					.addAll(dp2.getValues(Identifier.class))

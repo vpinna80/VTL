@@ -21,6 +21,11 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
 
+/**
+ * TODO Representation of a VTL variable
+ * @author Valentino Pinna
+ *
+ */
 public interface Variable extends Serializable
 {
 	public String getName();

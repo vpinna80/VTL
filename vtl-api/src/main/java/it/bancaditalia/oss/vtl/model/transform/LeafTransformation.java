@@ -22,6 +22,11 @@ package it.bancaditalia.oss.vtl.model.transform;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * An elementary VTL transformation that has no other transformations inside it.
+ * 
+ * @author Valentino Pinna
+ */
 public interface LeafTransformation extends Transformation
 {
 	@Override

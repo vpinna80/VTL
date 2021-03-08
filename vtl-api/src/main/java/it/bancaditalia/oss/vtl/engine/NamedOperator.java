@@ -21,6 +21,12 @@ package it.bancaditalia.oss.vtl.engine;
 
 import java.util.List;
 
+/**
+ * TODO: Specification unclear
+ * 
+ * @author Valentino Pinna
+ *
+ */
 public interface NamedOperator extends Statement
 {
 	public List<String> getParameterNames();

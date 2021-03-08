@@ -189,7 +189,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.0.7-SNAPSHOT</revision>
+		<revision>1.0.7</revision>
 		<sdmx.version>2.3.3</sdmx.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -744,6 +744,8 @@
 									<exclude>**/DESCRIPTION</exclude>
 									<exclude>**/*.in</exclude>
 									<exclude>**/*.csv</exclude>
+									<exclude>**/*.whl</exclude>
+									<exclude>**/*.war</exclude>
 									<exclude>**/*.g4</exclude>
 									<exclude>**/*.bin</exclude>
 									<exclude>**/.factorypath</exclude>

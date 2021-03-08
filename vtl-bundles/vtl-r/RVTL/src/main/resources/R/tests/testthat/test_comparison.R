@@ -135,18 +135,30 @@ test_that('CSV dataset comparisons works', {
                                         less_eq := tmp1 <= tmp2;"), 
                                     restartSession = T), label = 'CSV comparison syntax')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'CSV comparison compile')
-  expect_true(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'equal')$equal$bool_var),  
+  expect_true(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'equal')$equal$bool_var, na.rm = T),  
               label = 'equal value correct')
+  expect_true(object = any(is.na(vtlEvalNodes(sessionID = 'test_session', nodes = 'equal')$equal$bool_var)),  
+              label = 'equal value NA correct')
   expect_false(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'not_equal')$not_equal$bool_var),
               label = 'not_equal value correct')
+  expect_true(object = any(is.na(vtlEvalNodes(sessionID = 'test_session', nodes = 'not_equal')$not_equal$bool_var)),  
+              label = 'not equal value NA correct')
   expect_false(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'greater')$greater$bool_var),
               label = 'greater value correct')
-  expect_true(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'greater_eq')$greater_eq$bool_var),
+  expect_true(object = any(is.na(vtlEvalNodes(sessionID = 'test_session', nodes = 'greater')$greater$bool_var)),  
+              label = 'greater value NA correct')
+  expect_true(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'greater_eq')$greater_eq$bool_var, na.rm = T),
               label = 'greater_eq value correct')
+  expect_true(object = any(is.na(vtlEvalNodes(sessionID = 'test_session', nodes = 'greater_eq')$greater_eq$bool_var)),  
+              label = 'greater eq value NA correct')
   expect_false(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'less')$less$bool_var),
               label = 'less value correct')
-  expect_true(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'less_eq')$less_eq$bool_var),
+  expect_true(object = any(is.na(vtlEvalNodes(sessionID = 'test_session', nodes = 'less')$less$bool_var)),  
+              label = 'less value NA correct')
+  expect_true(object = all(vtlEvalNodes(sessionID = 'test_session', nodes = 'less_eq')$less_eq$bool_var, na.rm = T),
               label = 'equal value correct')
+  expect_true(object = any(is.na(vtlEvalNodes(sessionID = 'test_session', nodes = 'less_eq')$less_eq$bool_var)),  
+              label = 'less eq value NA correct')
 })
 
 ###

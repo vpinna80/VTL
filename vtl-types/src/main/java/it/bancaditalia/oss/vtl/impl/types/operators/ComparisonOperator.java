@@ -47,19 +47,8 @@ public enum ComparisonOperator implements BiFunction<ScalarValue<?, ?, ?>, Scala
 	@Override
 	public ScalarValue<?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, ?> l, ScalarValue<?, ?, ?> r)
 	{
-		return (l instanceof NullValue || r instanceof NullValue)
-				? NullValue.instance(BOOLEANDS)
-				: BooleanValue.of(lambda.test(l.compareTo(r)));
+		return (l instanceof NullValue || r instanceof NullValue) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(lambda.test(l.compareTo(r)));
 	}
-//	
-//	public BiFunction<ScalarValue<?, ?, ?>, ScalarValue<?, ?, ?>, ScalarValue<?, BooleanDomainSubset, BooleanDomain>> getAutoFunction()
-//	{
-//		return (l, r) -> (l instanceof NullValue || r instanceof NullValue)
-//				? NullValue.instance(BOOLEANDS)
-//				: l.getDomain().isAssignableFrom(r.getDomain())
-//				? BooleanValue.of(lambda.test(l.compareTo(l.getDomain().cast(r)))) 
-//				: BooleanValue.of(lambda.test(r.getDomain().cast(l).compareTo(r)));
-//	}
 	
 	@Override
 	public String toString()

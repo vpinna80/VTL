@@ -146,6 +146,7 @@ ui <- shinydashboard::dashboardPage(
           div(style="display:inline-block",titlePanel("VTL Studio!"))
        ),
        hr(),
+       fileInput(inputId = 'datafile', label = 'Load CSV', accept = 'csv'),
        selectInput(inputId = 'sessionID', label = labels$sessionID, multiple = F, choices = VTLSessionManager$list(), selected = VTLSessionManager$list()[1]),
        actionButton(inputId = 'compile', label = labels$compile, 
                     onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());'),

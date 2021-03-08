@@ -17,12 +17,17 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.model.data;
+package it.bancaditalia.oss.vtl.exceptions;
 
-import java.util.stream.Stream;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
-public interface DataSetComponent<I extends Comparable<?>, R extends Component, S extends ValueDomainSubset<D>, D  extends ValueDomain>
-		extends DataStructureComponent<R, S, D>, VTLValue
+public class VTLCastException extends VTLException
 {
-	public Stream<ScalarValue<?, S, D>> streamValues();
+	private static final long serialVersionUID = 1L;
+
+	public VTLCastException(ValueDomainSubset<?> domain, ScalarValue<?, ?, ?> value)
+	{
+		super("Cannot cast " + value + "[" + value.getDomain() + "] to type " + domain + ".");
+	}
 }

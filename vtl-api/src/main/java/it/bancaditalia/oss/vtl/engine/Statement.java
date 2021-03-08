@@ -47,9 +47,21 @@ public interface Statement
 	 */
 	public VTLValueMetadata getMetadata(TransformationScheme scheme);
 
+	/**
+	 * Computes this statement in the context of the provided scheme and returns the result.
+	 * 
+	 * @param scheme the context scheme
+	 * @return the result of the computation.
+	 */
 	public VTLValue eval(TransformationScheme scheme);
 
+	/**
+	 * @return a list of primitive nodes, such as aliases or constants, on which this statement depends on
+	 */
 	public Set<LeafTransformation> getTerminals();
 
+	/**
+	 * @return true if it makes sense to cache the result of evaluating this statement.
+	 */
 	public boolean isCacheable();
 }

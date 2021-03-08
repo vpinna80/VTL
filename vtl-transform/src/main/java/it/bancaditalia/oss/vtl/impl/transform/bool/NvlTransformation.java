@@ -27,12 +27,12 @@ public class NvlTransformation extends ConditionalTransformation
 	
 	public NvlTransformation(Transformation operand, Transformation defaultValue)
 	{
-		super(new IsNullOperand(operand), defaultValue, operand);
+		super(new IsNullTransformation(operand), defaultValue, operand);
 	}
 	
 	@Override
 	public String toString()
 	{
-		return "nvl(" + thenExpr + ", " + elseExpr + ")";
+		return "nvl(" + elseExpr + ", " + thenExpr + ")";
 	}
 }

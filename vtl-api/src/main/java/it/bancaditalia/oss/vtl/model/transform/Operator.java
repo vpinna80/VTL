@@ -21,6 +21,12 @@ package it.bancaditalia.oss.vtl.model.transform;
 
 import java.util.List;
 
+/**
+ * TODO
+ * 
+ * @author Valentino Pinna
+ *
+ */
 public interface Operator
 {
 	public List<Parameter> getParameters();

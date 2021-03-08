@@ -52,9 +52,9 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -232,12 +232,14 @@ public abstract class AbstractDataSet implements DataSet
 		if (result != null)
 			return result;
 
+		final DataSetMetadata metadata = getMetadata();
+
 		try (Stream<DataPoint> stream = stream())
 		{
 			result = stream
 					.peek(Objects::requireNonNull)
 					.map(DataPoint::toString)
-					.collect(joining(",\n\t", "(" + getMetadata() + ") -> {\n\t", "\n}"));
+					.collect(joining(",\n\t", "(" + metadata + ") -> {\n\t", "\n}"));
 		}
 
 		cacheString = new SoftReference<>(result);

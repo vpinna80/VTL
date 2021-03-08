@@ -23,6 +23,12 @@ import java.util.function.Supplier;
 
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 
+/**
+ * TODO
+ * @author Valentino Pinna
+ *
+ * @param <R>
+ */
 public interface Result<R> extends Supplier<R>
 {
 	public ValueDomain getDomain();

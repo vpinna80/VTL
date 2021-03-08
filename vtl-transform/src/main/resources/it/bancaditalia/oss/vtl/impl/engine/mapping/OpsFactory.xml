@@ -169,6 +169,8 @@
 		<context name="CompIdContext" />
 		<context name="ComparisonFunctionsContext" />
 		<context name="ComparisonFunctionsComponentsContext" />
+		<context name="ConditionalFunctionsContext" />
+		<context name="ConditionalFunctionsComponentsContext" />
 		<context name="DatasetClauseContext" />
 		<context name="FunctionsExpressionContext" />
 		<context name="FunctionsExpressionCompContext" />
@@ -857,6 +859,18 @@
 	<mapping from="IsNullAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation">
 		<params>
 			<exprparam name="exprComponent" />
+		</params>
+	</mapping>
+	<mapping from="NvlAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.NvlTransformation">
+		<params>
+			<exprparam name="left" />
+			<exprparam name="right" />
+		</params>
+	</mapping>
+	<mapping from="NvlAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.NvlTransformation">
+		<params>
+			<exprparam name="left" />
+			<exprparam name="right" />
 		</params>
 	</mapping>
 	<mapping from="ReplaceAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.ReplaceTransformation">

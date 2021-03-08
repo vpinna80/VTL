@@ -173,6 +173,21 @@ test_that('dataset multiplication works', {
 test_that('SDMX dataset assignment works', {
   result = getTimeSeriesTable('ECB', 'EXR.A.USD.EUR.SP00.A')
   result = within(result, rm(action, validFromDate, CONNECTORS_AUTONAME, ID))
+  result$PUBL_PUBLIC = rep(NA, nrow(result))
+  result$COVERAGE = rep(NA, nrow(result))
+  result$SOURCE_PUB = rep(NA, nrow(result))
+  result$NAT_TITLE = rep(NA, nrow(result))
+  result$BREAKS = rep(NA, nrow(result))
+  result$COMPILING_ORG = rep(NA, nrow(result))
+  result$OBS_PRE_BREAK = rep(NA, nrow(result))
+  result$PUBL_MU = rep(NA, nrow(result))
+  result$DOM_SER_IDS = rep(NA, nrow(result))
+  result$COMPILATION = rep(NA, nrow(result))
+  result$OBS_COM = rep(NA, nrow(result))
+  result$OBS_CONF = rep(NA, nrow(result))
+  result$UNIT_INDEX_BASE = rep(NA, nrow(result))
+  result$DISS_ORG = rep(NA, nrow(result))
+  result$PUBL_ECB = rep(NA, nrow(result))
   attr(result, 'identifiers') = c('TIME_PERIOD')
   attr(result, 'measures') = c('OBS_VALUE')
 
@@ -182,7 +197,7 @@ test_that('SDMX dataset assignment works', {
                                         restartSession = T), label = 'Assignment failed')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Assignment compile failed')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'tmp')$tmp, target = result), label = 'Assignment value correct')
-  expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result')$result, target = result), label = 'Assignment value correct')
+  expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result, target = result), label = 'Assignment value correct')
 })
 
 test_that('SDMX dataset addition works', {

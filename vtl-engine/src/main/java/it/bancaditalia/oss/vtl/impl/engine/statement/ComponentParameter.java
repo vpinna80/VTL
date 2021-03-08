@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 
-class ComponentParameter<T extends Component> extends ScalarParameter
+class ComponentParameter<T extends ComponentRole> extends ScalarParameter
 {
 	private static final long serialVersionUID = 1L;
 

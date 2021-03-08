@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullOperand;
+import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.time.CurrentDateOperand;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -40,7 +40,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 /**
  * Helper class to parallelize over the two sides of a {@link BinaryTransformation}
  * 
- * @author m027907
+ * @author Valentino Pinna
  *
  */
 public class ThreadUtils 
@@ -60,7 +60,7 @@ public class ThreadUtils
 		SIMPLE_TRANSFORMATIONS.add(ConstantOperand.class);
 		SIMPLE_TRANSFORMATIONS.add(VarIDOperand.class);
 		SIMPLE_TRANSFORMATIONS.add(CurrentDateOperand.class);
-		SIMPLE_TRANSFORMATIONS.add(IsNullOperand.class);
+		SIMPLE_TRANSFORMATIONS.add(IsNullTransformation.class);
 	}
 	
 	private ThreadUtils() {}

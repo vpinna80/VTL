@@ -44,7 +44,7 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;

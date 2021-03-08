@@ -21,6 +21,11 @@ package it.bancaditalia.oss.vtl.model.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
+/**
+ * Representation of a subset of the VTL "Duration" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface DurationDomainSubset extends DurationDomain, ValueDomainSubset<DurationDomain>
 {
 

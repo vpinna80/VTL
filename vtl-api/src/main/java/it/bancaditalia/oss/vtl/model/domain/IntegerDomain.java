@@ -19,6 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
+/**
+ * Representation of the VTL "Integer" domain.
+ * 
+ * @author Valentino Pinna
+ */
 public interface IntegerDomain extends NumberDomain
 {
 

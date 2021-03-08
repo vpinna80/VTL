@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import static java.util.Collections.emptyMap;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -32,8 +33,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 
 /**
  * The base interface describing a dataset
@@ -41,7 +42,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
  * @author Valentino Pinna
  *
  */
-public interface DataSet extends VTLValue
+public interface DataSet extends VTLValue, Iterable<DataPoint>
 {
 	/**
 	 * @return The {@link DataSetMetadata structure} of this DataSet.
@@ -54,6 +55,16 @@ public interface DataSet extends VTLValue
 	 * The stream does not conform to a particular ordering.
 	 */
 	public Stream<DataPoint> stream();
+
+	/**
+	 * @return an {@link Iterator} of this dataset's {@link DataPoint}s.
+	 * The iterating order is undefined and may change on subsequent invocations.
+	 */
+	@Override
+	public default Iterator<DataPoint> iterator()
+	{
+		return stream().iterator();
+	}
 
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
@@ -126,15 +137,15 @@ public interface DataSet extends VTLValue
 	}
 
 	/**
-	 * Perform a computation on each of the groups of the {@link DataPoint}s of this DataSet which 
-	 * have the same value for each of (a subset of) its {@link Identifier}s.
-	 * 
-	 * The same as {@code streamByKeys(keys, Collections.emptyMap(), groupMapper)}.
+	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
+	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
+	 * over each of a chosen subset of the groups, and applying a final transformation.
 	 * 
 	 * @param <T> the type of the result of the computation.
-	 * @param keys the {@link Identifier}s used to group the keys.
-	 * @param filter a {@code Map} of {@link Identifier}'s values used to exclude matching groups from the computation.
-	 * @param groupCollector a {@link Collector} applied to each group to produce the final result
+	 * @param keys the {@link Identifier}s used to group the datapoints
+	 * @param filter a {@code Map} of {@link Identifier}'s values used to exclude matching groups
+	 * @param groupCollector a {@link Collector} applied to each group to produce the result
+	 * @param finisher a {@link BiFunction} to apply to the group key and result to produce the final result
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
@@ -143,14 +154,16 @@ public interface DataSet extends VTLValue
 			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher);
 	
 	/**
-	 * Perform a computation on each of the groups of the {@link DataPoint}s of this DataSet which 
-	 * have the same value for each of (a subset of) its {@link Identifier}s.
+	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
+	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
+	 * over each of the groups, and applying a final transformation.
 	 * 
-	 * The same as {@code streamByKeys(keys, Collections.emptyMap(), groupMapper)}.
+	 * The same as {@link #streamByKeys(Set, Map, Collector, BiFunction)} with an empty filter.
 	 * 
 	 * @param <T> the type of the result of the computation.
-	 * @param keys the {@link Identifier}s used to group the keys.
-	 * @param groupCollector a {@link Collector} applied to each group to produce the final result
+	 * @param keys the {@link Identifier}s used to group the datapoints
+	 * @param groupCollector a {@link Collector} applied to each group to produce the result
+	 * @param finisher a {@link BiFunction} to apply to the group key and result to produce the final result
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
 	public default <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
@@ -160,6 +173,19 @@ public interface DataSet extends VTLValue
 		return streamByKeys(keys, emptyMap(), groupCollector, finisher);
 	}
 	
+	/**
+	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
+	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
+	 * over each of a chosen subset of the groups.
+	 * 
+	 * The same as {@link #streamByKeys(Set, Map, Collector, BiFunction)} with an identity finisher.
+	 *
+	 * @param <T> the type of the result of the computation.
+	 * @param keys the {@link Identifier}s used to group the datapoints
+	 * @param filter a {@code Map} of {@link Identifier}'s values used to exclude matching groups
+	 * @param groupCollector a {@link Collector} applied to each group to produce the result
+	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
+	 */
 	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
 			Collector<DataPoint, ?, T> groupCollector)
@@ -167,6 +193,18 @@ public interface DataSet extends VTLValue
 		return streamByKeys(keys, filter, groupCollector, (a, b) -> a);
 	}
 	
+	/**
+	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
+	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
+	 * over each of the groups.
+	 * 
+	 * The same as {@link #streamByKeys(Set, Map, Collector, BiFunction)} with an empty filter and an identity finisher.
+	 *
+	 * @param <T> the type of the result of the computation.
+	 * @param keys the {@link Identifier}s used to group the datapoints
+	 * @param groupCollector a {@link Collector} applied to each group to produce the result
+	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
+	 */
 	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, Collector<DataPoint, ?, T> groupCollector)
 	{
 		return streamByKeys(keys, emptyMap(), groupCollector);
@@ -177,11 +215,11 @@ public interface DataSet extends VTLValue
 	 * 
 	 * @param name The requested component's name.
 	 * @param domain A non-null instance of a domain.
-	 * @return The requested component, or null if no one was found.
+	 * @return An {@link Optional} containing the requested component if it exists.
 	 * 
 	 * @throws NullPointerException if domain is null.
 	 */
-	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureComponent<?, S, D> getComponent(String name, S domain)
+	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<?, S, D>> getComponent(String name, S domain)
 	{
 		return getMetadata().getComponent(name, domain);
 	}
@@ -195,7 +233,7 @@ public interface DataSet extends VTLValue
 	 * 
 	 * @throws NullPointerException if domain is null.
 	 */
-	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
+	public default <R extends ComponentRole> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
 	{
 		return getMetadata().getComponent(name, role);
 	}
@@ -210,7 +248,7 @@ public interface DataSet extends VTLValue
 	 * 
 	 * @throws NullPointerException if domain is null.
 	 */
-	public default <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name,
+	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name,
 			Class<R> role, S domain)
 	{
 		return getMetadata().getComponent(name, role, domain);
@@ -229,7 +267,7 @@ public interface DataSet extends VTLValue
 	/**
 	 * @see DataSetMetadata#getComponents(Class) 
 	 */
-	public default <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
+	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 	{
 		return getMetadata().getComponents(typeOfComponent);
 	}
@@ -237,7 +275,7 @@ public interface DataSet extends VTLValue
 	/**
 	 * @see DataSetMetadata#getComponents(Class, ValueDomainSubset) 
 	 */
-	public default <R extends Component, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
+	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
 			S domain)
 	{
 		return getMetadata().getComponents(role, domain);

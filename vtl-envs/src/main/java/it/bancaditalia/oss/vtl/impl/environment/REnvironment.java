@@ -22,12 +22,15 @@ package it.bancaditalia.oss.vtl.impl.environment;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,16 +48,17 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.environment.dataset.ColumnarDataSet;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -107,7 +111,7 @@ public class REnvironment implements Environment
 				{
 					REXP columnData = dataFrame.at(key);
 
-					Class<? extends Component> type;
+					Class<? extends ComponentRole> type;
 					if (measures.contains(key))
 						type = Measure.class;
 					else if (identifiers.contains(key))
@@ -195,8 +199,8 @@ public class REnvironment implements Environment
 						result = new IntegerValue((long) data.asIntArray()[0]);
 						break;
 					case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
-						result = data.asBool().isNA() ? NullValue.instance(BOOLEANDS) : BooleanValue.of(data.asBool().isTRUE());
-						break;
+						result = BooleanValue.of(data.asBool().isTRUE());
+					break;
 					default:
 						throw new IllegalStateException("Node: " + name + " of scalar type: " + REXP.xtName(data.getType()) + ". This is not supported.");
 				}
@@ -212,13 +216,20 @@ public class REnvironment implements Environment
 	{
 		List<String> identifiers = new ArrayList<>();
 		List<String> measures = new ArrayList<>();
-
+		List<String> dateColumns = new ArrayList<>();
+ 
 		// transform factors into strings
 		getEngine().eval("if(any(sapply(" + name + ", is.factor))) " + name + "[which(sapply(" + name + ", is.factor))] <- sapply(" + name + "[which(sapply(" + name
 				+ ", is.factor))], as.character)");
 
-		LOGGER.info("Migrating dataset {} from R", name);
-		
+		// transform dates into strings for now, otherwise they'll be interpreted as numbers
+		if (getEngine().eval("any(sapply(names(" + name + "), function(x, y) class(y[,x]), y=" + name + ") == 'Date')").asBool().isTRUE()){
+			REXP dates = getEngine().eval("names(which(sapply(names(" + name + "), function(x, y) class(y[,x]), y=" + name + ") == 'Date'))");
+			if(dates != null) {
+				dateColumns = Arrays.asList(dates.asStringArray());
+			}
+		}
+		System.err.println(dateColumns);
 		REXP data = getEngine().eval(name);
 		RList dataFrame = data.asList();
 
@@ -237,7 +248,7 @@ public class REnvironment implements Environment
 		{
 			REXP columnData = dataFrame.at(key);
 
-			Class<? extends Component> type;
+			Class<? extends ComponentRole> type;
 			if (measures.contains(key))
 				type = Measure.class;
 			else if (identifiers.contains(key))
@@ -250,20 +261,31 @@ public class REnvironment implements Environment
 			switch (columnData.getType())
 			{
 				case REXP.XT_ARRAY_DOUBLE:
-					domain = NUMBERDS;
-					values = Utils.getStream(columnData.asDoubleArray()).mapToObj(DoubleValue::new);
+					if(dateColumns.contains(key)){
+						// this is a date, not a number...
+						domain = DATEDS;
+						//now transform in date
+						// NAs are mapped to something that retrns true to is.NaN()
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  new DateValue(LocalDate.of(1970, 1, 1).plus((long) val  , ChronoUnit.DAYS) )));   
+					}
+					else {
+						// NAs are mapped to something that retrns true to is.NaN()
+						domain = NUMBERDS;
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
+					}
 					break;
 				case REXP.XT_ARRAY_INT:
+					// NAs are mapped to Integer.MIN_VALUE
 					domain = INTEGERDS;
-					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(IntegerValue::new);
+					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(val -> (ScalarValue<?, ?, ?>) (val == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : new IntegerValue(val)));
 					break;
 				case REXP.XT_ARRAY_STR:
 					domain = STRINGDS;
-					values = Utils.getStream(columnData.asStringArray()).map(StringValue::new);
+					values = Utils.getStream(columnData.asStringArray()).map(val -> (ScalarValue<?, ?, ?>) (val == null ? NullValue.instance(STRINGDS) : new StringValue(val)));
 					break;
 				case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
 					domain = BOOLEANDS;
-					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (val == 2 ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
+					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) ((val != 1 && val != 0) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
 					break;
 				default:
 					throw new IllegalStateException(
