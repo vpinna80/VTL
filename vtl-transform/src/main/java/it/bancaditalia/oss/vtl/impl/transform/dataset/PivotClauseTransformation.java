@@ -95,7 +95,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		if (measure == null)
 			throw new VTLMissingComponentsException(measureName, dataset.getComponents(Measure.class));
 		if (!(tempIdentifier.getDomain() instanceof StringEnumeratedDomainSubset))
-			throw new VTLException("pivot: " + identifier + " must be defined on a CodeListDomain of String.");
+			throw new VTLException("pivot: " + tempIdentifier.getName() + " is of type " + tempIdentifier.getDomain() + " but should be of a StringEnumeratedDomainSubset.");
 
 		// safe
 		identifier = (DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain>) tempIdentifier;
