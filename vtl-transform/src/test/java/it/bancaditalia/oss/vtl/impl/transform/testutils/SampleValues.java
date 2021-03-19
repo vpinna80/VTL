@@ -72,7 +72,7 @@ public class SampleValues
 			new Boolean[] { true, false, true, false, true, false },
 			new Boolean[] { true, true, null, false, false, true },
 			new Boolean[] { true, false, false, false, true, null },
-			new Boolean[] { true, false, false, false, true, null }
+			new Boolean[] { true, null, null, false, true, null }
 		});
 		VALUES.put("DATE", new LocalDate[][] {
 			{ LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 2), LocalDate.of(2020, 1, 3), LocalDate.of(2020, 1, 4), LocalDate.of(2020, 1, 5), LocalDate.of(2020, 1, 6) },

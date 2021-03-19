@@ -29,8 +29,10 @@ import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.I
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_5;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_6;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_7;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_1;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_2;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_3;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_4;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_1;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_2;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_3;
@@ -66,20 +68,22 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum SampleDataSets implements DataSet
 {
-	SAMPLE3(new SampleVariables[] { IDENT_STRING_1, MEASURE_BOOLEAN_2 }),
-	SAMPLE1(new SampleVariables[] { IDENT_STRING_1, IDENT_BOOLEAN_1, MEASURE_NUMBER_1, MEASURE_INTEGER_1}),
-	SAMPLE2(new SampleVariables[] { IDENT_STRING_1, MEASURE_NUMBER_2, MEASURE_INTEGER_2 }),
-	SAMPLE4(new SampleVariables[] { IDENT_STRING_1, MEASURE_BOOLEAN_3 }),
-	SAMPLE5(new SampleVariables[] { IDENT_STRING_1, MEASURE_INTEGER_2 }),
-	SAMPLE6(new SampleVariables[] { IDENT_STRING_1, MEASURE_INTEGER_3 }),
-	SAMPLE7(new SampleVariables[] { IDENT_DATE_1, IDENT_STRING_5, MEASURE_INTEGER_2 }),
-	SAMPLE8(new SampleVariables[] { IDENT_DATE_2, IDENT_STRING_6, MEASURE_INTEGER_2 }),
-	SAMPLE9(new SampleVariables[] { IDENT_DATE_3, IDENT_STRING_7, MEASURE_INTEGER_2 }),
-	SAMPLE10(new SampleVariables[] { IDENT_STRING_3, MEASURE_INTEGER_3 });
+	SAMPLE1(IDENT_STRING_1, IDENT_BOOLEAN_1, MEASURE_NUMBER_1, MEASURE_INTEGER_1),
+	SAMPLE2(IDENT_STRING_1, MEASURE_NUMBER_2, MEASURE_INTEGER_2),
+	SAMPLE3(IDENT_STRING_1, MEASURE_BOOLEAN_2),
+	SAMPLE4(IDENT_STRING_1, MEASURE_BOOLEAN_3),
+	SAMPLE5(IDENT_STRING_1, MEASURE_INTEGER_2),
+	SAMPLE6(IDENT_STRING_1, MEASURE_INTEGER_3),
+	SAMPLE7(IDENT_DATE_1, IDENT_STRING_5, MEASURE_INTEGER_2),
+	SAMPLE8(IDENT_DATE_2, IDENT_STRING_6, MEASURE_INTEGER_2),
+	SAMPLE9(IDENT_DATE_3, IDENT_STRING_7, MEASURE_INTEGER_2),
+	SAMPLE10(IDENT_STRING_3, MEASURE_INTEGER_3),
+	SAMPLE11(IDENT_STRING_1, MEASURE_BOOLEAN_1),
+	SAMPLE12(IDENT_STRING_1, MEASURE_BOOLEAN_4);
 
 	private final DataSet dataset;
 
-	private SampleDataSets(SampleVariables components[])
+	private SampleDataSets(SampleVariables... components)
 	{
 		dataset = createSample(components);
 	}
