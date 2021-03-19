@@ -1,5 +1,5 @@
 /*
-* Copyright © 2020 Banca D'Italia
+ * Copyright © 2020 Banca D'Italia
  *
  * Licensed under the EUPL, Version 1.2 (the "License");
  * You may not use this work except in compliance with the
@@ -19,20 +19,19 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.AND;
-import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.OR;
-import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.XOR;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE4;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE11;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE12;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE3;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE4;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap.SimpleEntry;
-import java.util.stream.Stream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,12 +39,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class FilterClauseTransformationTest
@@ -55,11 +56,17 @@ public class FilterClauseTransformationTest
 	
 	public static Stream<Arguments> test()
 	{
+		/*	
+			{ true, true, null, false, false, true },
+			{ true, false, false, false, true, null },
+			{ true, false, true, false, true, false },
+			{ true, null, null, false, true, null }
+		*/
 		return Stream.of(
-				Arguments.of(SAMPLE3, 3),
-				Arguments.of(SAMPLE4, 2),
-				Arguments.of(SAMPLE11, 3),
-				Arguments.of(SAMPLE12, 2)
+				Arguments.of(SAMPLE3, new String[]{"A", "B", "F"}),
+				Arguments.of(SAMPLE4, new String[]{"A", "E"}),
+				Arguments.of(SAMPLE11, new String[]{"A", "C", "E"}),
+				Arguments.of(SAMPLE12, new String[]{"A", "E"})
 			);
 	}
 
@@ -73,7 +80,7 @@ public class FilterClauseTransformationTest
 	
 	@ParameterizedTest(name = "{0}")
 	@MethodSource
-	public void test(DataSet sample, int resultSize)
+	public void test(DataSet sample, String[] expectedResult)
 	{
 		session = new ThisScope(sample, session);
 		FilterClauseTransformation fct = new FilterClauseTransformation(condition);
@@ -83,7 +90,17 @@ public class FilterClauseTransformationTest
 		
 		DataSet computedResult = (DataSet) fct.eval(session);
 		
-		assertEquals(resultSize, computedResult.size());
+		assertEquals(expectedResult.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
+
+		DataStructureComponent<Identifier, StringDomainSubset, StringDomain> id = metadata.getComponent("STRING_1", Identifier.class, STRINGDS).get();
+		
+		String[] arrayResult = computedResult.stream()
+			.map(dp -> dp.get(id).get())
+			.sorted()
+			.collect(toList())
+			.toArray(new String[0]);
+		
+		assertArrayEquals(expectedResult, arrayResult, "Filtered values");
 	}
 }
