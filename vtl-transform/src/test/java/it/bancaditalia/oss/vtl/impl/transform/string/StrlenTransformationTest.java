@@ -52,7 +52,7 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class LengthTransformationTest
+public class StrlenTransformationTest
 {
 	public static Stream<Arguments> test()
 	{
