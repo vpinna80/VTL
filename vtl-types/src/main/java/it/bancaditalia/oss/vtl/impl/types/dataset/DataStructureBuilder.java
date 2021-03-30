@@ -92,7 +92,7 @@ public class DataStructureBuilder
 
 	public <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureBuilder addComponent(Triple<String, Class<? extends R>, S> characteristics)
 	{
-		this.components.add(new DataStructureComponentImpl<>(characteristics.first(), characteristics.second(), characteristics.third()));
+		this.components.add(new DataStructureComponentImpl<>(characteristics.getFirst(), characteristics.getSecond(), characteristics.getThird()));
 		return this;
 	}
 

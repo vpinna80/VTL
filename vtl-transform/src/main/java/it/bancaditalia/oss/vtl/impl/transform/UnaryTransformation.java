@@ -61,10 +61,10 @@ public abstract class UnaryTransformation extends TransformationImpl
 		if (value instanceof DataSet)
 			return evalOnDataset((DataSet) value);
 		else
-			return evalOnScalar((ScalarValue<?, ?, ?>) value);
+			return evalOnScalar((ScalarValue<?, ?, ?, ?>) value);
 	}
 
-	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar);
+	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar);
 
 	protected abstract VTLValue evalOnDataset(DataSet dataset);
 }

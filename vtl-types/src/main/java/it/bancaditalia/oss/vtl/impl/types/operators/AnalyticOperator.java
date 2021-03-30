@@ -56,8 +56,8 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public enum AnalyticOperator  
 {
 	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::new)),
-	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue()), DoubleValue::new)), 
-	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue()), DoubleValue::new)),
+	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::new)), 
+	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::new)),
 	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, mapping(NumberValue::get, mapping(Number.class::cast, mapping(Number::doubleValue, 
 			toList())))), l -> {
 				List<Double> c = new ArrayList<>(l);
@@ -68,7 +68,7 @@ public enum AnalyticOperator
 	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
 	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-	VAR_POP("var_pop", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue(), Collector.of(
+	VAR_POP("var_pop", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), Collector.of(
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -86,7 +86,7 @@ public enum AnalyticOperator
 	        },
 	        acu -> acu[2] / acu[0], UNORDERED)), DoubleValue::new)),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-	VAR_SAMP("var_samp", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?>) v).get().doubleValue(), Collector.of( 
+	VAR_SAMP("var_samp", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>) v).get().doubleValue(), Collector.of( 
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -109,29 +109,29 @@ public enum AnalyticOperator
 	LAST_VALUE("last_value", new PositionCollector(Utils::coalesceSwapped, (a, b) -> b));
 	/* TODO: LAG, LEAD, RANK */
 	
-	private static class PositionCollector implements Collector<ScalarValue<?, ?, ?>, AtomicReference<ScalarValue<?, ?, ?>>, ScalarValue<?, ?, ?>>
+	private static class PositionCollector implements Collector<ScalarValue<?, ?, ?, ?>, AtomicReference<ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
 	{
-		private final BinaryOperator<ScalarValue<?, ?, ?>> valueCombiner;
+		private final BinaryOperator<ScalarValue<?, ?, ?, ?>> valueCombiner;
 
-		public PositionCollector(BinaryOperator<ScalarValue<?, ?, ?>> valueCombiner, BinaryOperator<AtomicReference<ScalarValue<?, ?, ?>>> combinerFunction)
+		public PositionCollector(BinaryOperator<ScalarValue<?, ?, ?, ?>> valueCombiner, BinaryOperator<AtomicReference<ScalarValue<?, ?, ?, ?>>> combinerFunction)
 		{
 			this.valueCombiner = valueCombiner;
 		}
 		
 		@Override
-		public Supplier<AtomicReference<ScalarValue<?, ?, ?>>> supplier()
+		public Supplier<AtomicReference<ScalarValue<?, ?, ?, ?>>> supplier()
 		{
 			return AtomicReference::new;
 		}
 
 		@Override
-		public BiConsumer<AtomicReference<ScalarValue<?, ?, ?>>, ScalarValue<?, ?, ?>> accumulator()
+		public BiConsumer<AtomicReference<ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> accumulator()
 		{
 			return (acc, value) -> acc.accumulateAndGet(value,(a, b) -> valueCombiner.apply(a, b));
 		}
 
 		@Override
-		public BinaryOperator<AtomicReference<ScalarValue<?, ?, ?>>> combiner()
+		public BinaryOperator<AtomicReference<ScalarValue<?, ?, ?, ?>>> combiner()
 		{
 			return (left, right) -> {
 				left.accumulateAndGet(right.get(), (a, b) -> a);
@@ -140,7 +140,7 @@ public enum AnalyticOperator
 		}
 
 		@Override
-		public Function<AtomicReference<ScalarValue<?, ?, ?>>, ScalarValue<?, ?, ?>> finisher()
+		public Function<AtomicReference<ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> finisher()
 		{
 			return acc -> acc.get() != null ? acc.get() : NullValue.instance(NUMBERDS);
 		}
@@ -152,30 +152,30 @@ public enum AnalyticOperator
 		}
 	}
 
-	private final Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer;
-	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> extractor;
+	private final Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
+	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
 
-	private AnalyticOperator(String name, Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer)
+	private AnalyticOperator(String name, Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this(name, DataPoint::get, reducer);
 	}
 
 	private AnalyticOperator(String name,
-			BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> extractor,
-			Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer)
+			BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor,
+			Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this.name = name;
 		this.extractor = extractor;
 		this.reducer = reducer;
 	}
 
-	public Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> getReducer()
+	public Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer()
 	{
 		return reducer;
 	}
 	
-	public Collector<DataPoint, ?, ScalarValue<?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
+	public Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
 		return Collectors.mapping(dp -> extractor.apply(dp, measure), reducer);
 	}
@@ -186,7 +186,7 @@ public enum AnalyticOperator
 		return name;
 	}
 	
-	public BiFunction<? super DataPoint, ? super DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?>> getExtractor()
+	public BiFunction<? super DataPoint, ? super DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> getExtractor()
 	{
 		return extractor;
 	}

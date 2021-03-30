@@ -89,7 +89,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 *      If the map is empty, the result is this {@code DataSet}.
 	 * @return A new {@code DataSet} of matching {@link DataPoint}s, eventually empty.
 	 */
-	public default DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	public default DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)));	
 	}
@@ -109,7 +109,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining DataPoints of this and another DataSet by the common identifiers.
@@ -149,9 +149,9 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
 			Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher);
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher);
 	
 	/**
 	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
@@ -168,7 +168,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public default <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
 		return streamByKeys(keys, emptyMap(), groupCollector, finisher);
 	}
@@ -187,7 +187,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
 	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
 			Collector<DataPoint, ?, T> groupCollector)
 	{
 		return streamByKeys(keys, filter, groupCollector, (a, b) -> a);

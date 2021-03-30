@@ -88,7 +88,7 @@ public class CastTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return castScalar(scalar);
 	}
@@ -158,7 +158,7 @@ public class CastTransformation extends UnaryTransformation
 		}
 	}
 
-	private ScalarValue<?, ?, ?> castScalar(ScalarValue<?, ?, ?> scalar)
+	private ScalarValue<?, ?, ?, ?> castScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		try
 		{

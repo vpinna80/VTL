@@ -105,7 +105,7 @@ public class NamedDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		return delegate.getMatching(keyValues);
 	}

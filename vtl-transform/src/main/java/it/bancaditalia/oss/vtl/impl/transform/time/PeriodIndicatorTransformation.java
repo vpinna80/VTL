@@ -82,7 +82,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			value = operand.eval(session);
 
 		if (value instanceof ScalarValue)
-			return new StringValue(((TimeHolder) ((TimeValue<?, ?, ?>) value).get()).getPeriodIndicator());
+			return new StringValue(((TimeHolder) ((TimeValue<?, ?, ?, ?>) value).get()).getPeriodIndicator());
 		else
 		{
 			DataSet ds = (DataSet) value;
@@ -98,7 +98,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 				component = ds.getComponents(Measure.class, TIMEDS).iterator().next();
 
 			return ds.mapKeepingKeys(metadata, dp -> singletonMap(DURATION_MEASURE,
-					new StringValue(((TimeHolder) ((TimeValue<?, ?, ?>) dp.get(component)).get()).getPeriodIndicator())));
+					new StringValue(((TimeHolder) ((TimeValue<?, ?, ?, ?>) dp.get(component)).get()).getPeriodIndicator())));
 		}
 	}
 

@@ -145,12 +145,12 @@ public class CSVFileEnvironment implements Environment
 			// Skip header
 			innerReader.readLine();
 			
-			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, Boolean> set = new ConcurrentHashMap<>();
+			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Boolean> set = new ConcurrentHashMap<>();
 			return ProgressWindow.of("Loading CSV", lineCount, Utils.getStream(innerReader.lines()))
 				// Skip empty lines
 				.filter(line -> !line.trim().isEmpty())
 				.map(line -> {
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>();
+					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
 
 					// Perform split by repeatedly matching the line against the regex
 					int count = 0;
@@ -183,7 +183,7 @@ public class CSVFileEnvironment implements Environment
 				.map(m -> new DataPointBuilder(m).build(structure))
 				.peek(dp -> LOGGER.trace("Read: {}", dp))
 				.peek(dp -> {
-					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> values = dp.getValues(Identifier.class);
+					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> values = dp.getValues(Identifier.class);
 					Boolean a = set.putIfAbsent(values, true);
 					if (a != null)
 						throw new IllegalStateException("Identifiers are not unique: " + values);
@@ -204,7 +204,7 @@ public class CSVFileEnvironment implements Environment
 		}
 	}
 
-	private ScalarValue<?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String value, String mask)
+	private ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String value, String mask)
 	{
 		if (component.getDomain() instanceof StringDomainSubset)
 			return new StringValue(value.matches("^\".*\"$") ? value.substring(1, value.length() - 1) : value);

@@ -86,7 +86,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?> evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			if (INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(left.getDomain()))
@@ -94,13 +94,13 @@ public class ArithmeticTransformation extends BinaryTransformation
 			else
 				return NullValue.instance(NUMBERDS);
 		else if (left instanceof IntegerValue && right instanceof IntegerValue)
-			return getOperator().applyAsInt((NumberValue<?, ?, ?>) left, (NumberValue<?, ?, ?>) right);
+			return getOperator().applyAsInt((NumberValue<?, ?, ?, ?>) left, (NumberValue<?, ?, ?, ?>) right);
 		else
-			return getOperator().applyAsDouble((NumberValue<?, ?, ?>) left, (NumberValue<?, ?, ?>) right);
+			return getOperator().applyAsDouble((NumberValue<?, ?, ?, ?>) left, (NumberValue<?, ?, ?, ?>) right);
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		Set<String> measureNames = dataset.getComponents(Measure.class, NUMBERDS).stream().map(DataStructureComponent::getName).collect(toSet());
@@ -112,7 +112,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				&& INTEGERDS.isAssignableFrom(scalar.getDomain());
 		
 		// must remember which is the left operand because some operators are not commutative
-		BiFunction<? super DataPoint, ? super String, ScalarValue<?, ?, ?>> finisher = (dp, name) -> 
+		BiFunction<? super DataPoint, ? super String, ScalarValue<?, ?, ?, ?>> finisher = (dp, name) -> 
 			reverseIf(!datasetIsLeftOp, bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsDouble)
 				.apply(dp.get(dataset.getComponent(name)
 						.map(c -> c.as(NUMBERDS))
@@ -191,7 +191,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	// take account of the order of parameters because some operators are not commutative 
-	private ScalarValue<?, ?, ?> compute(boolean swap, boolean intResult, ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	private ScalarValue<?, ?, ?, ?> compute(boolean swap, boolean intResult, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance((NumberDomainSubset<? extends NumberDomain>)(intResult ? INTEGERDS : NUMBERDS));
@@ -199,7 +199,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		return reverseIf(swap, intResult
 					? getOperator()::applyAsInt 
 					: getOperator()::applyAsDouble)
-			.apply((NumberValue<?, ?, ?>) left, (NumberValue<?, ?, ?>) right);
+			.apply((NumberValue<?, ?, ?, ?>) left, (NumberValue<?, ?, ?, ?>) right);
 	}
 
 	@Override

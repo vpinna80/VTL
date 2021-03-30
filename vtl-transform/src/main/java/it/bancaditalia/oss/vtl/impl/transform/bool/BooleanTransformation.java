@@ -91,7 +91,7 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(BOOLEANDS);
@@ -100,15 +100,15 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		
 		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-		final Function<DataPoint, ScalarValue<?, BooleanDomainSubset, BooleanDomain>> lambda = dp -> {
-			final ScalarValue<?, ?, ?> value = dp.get(datasetMeasure);
+		final Function<DataPoint, ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain>> lambda = dp -> {
+			final ScalarValue<?, ?, ?, ?> value = dp.get(datasetMeasure);
 			if (value instanceof NullValue)
 				return NullValue.instance(BOOLEANDS);
 			else

@@ -72,7 +72,7 @@ public class DataSetResultBean extends ResultBean
 	    	{
 	    		gen.writeStartObject();
 	    		
-		    	for (Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> entry: dp.entrySet())
+		    	for (Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> entry: dp.entrySet())
 		    	{
 		    		gen.writeFieldName(entry.getKey().getName());
 		    		gen.writeRawValue(entry.getValue().toString());

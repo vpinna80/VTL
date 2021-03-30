@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static java.util.stream.Collectors.toList;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -31,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
@@ -45,7 +45,7 @@ public class SampleValues
 {
 	public static final int VAR_SAMPLE_LEN = 6; 
 	private static final Map<String, Object[][]> VALUES = new HashMap<>();
-	private static final Map<String, Function<? super Object, ? extends ScalarValue<?, ?, ?>>> WRAPPERS = new HashMap<>();
+	private static final Map<String, Function<? super Object, ? extends ScalarValue<?, ?, ?, ?>>> WRAPPERS = new HashMap<>();
 	
 	static {
 		VALUES.put("INTEGER", new Long[][] {
@@ -66,7 +66,8 @@ public class SampleValues
 			new String[] { "K", "C", "G", null, "A", "E" },
 			new String[] { "A", "A", "A", "A", "A", "A" },
 			new String[] { "B", "B", "B", "B", "B", "B" },
-			new String[] { "C", "C", "C", "C", "C", "C" }
+			new String[] { "C", "C", "C", "C", "C", "C" },
+			new String[] { "Filled String", "    Leading spaces", "Trailing spaces    ", "    Leading and trailing     ", "\"Quoted\" 'String'", "\t\b \n\r\f" }
 		});
 		VALUES.put("BOOLEAN", new Boolean[][] {
 			new Boolean[] { true, false, true, false, true, false },
@@ -89,13 +90,13 @@ public class SampleValues
 
 	private SampleValues() { }
 	
-	public static List<ScalarValue<?, ?, ?>> getValues(String type, int index)
+	public static List<ScalarValue<?, ?, ?, ?>> getValues(String type, int index)
 	{
 		Object values[] = VALUES.get(type)[index - 1];
-		Function<? super Object, ? extends ScalarValue<?, ?, ?>> wrapper = WRAPPERS.get(type);
+		Function<? super Object, ? extends ScalarValue<?, ?, ?, ?>> wrapper = WRAPPERS.get(type);
 		
 		return Arrays.stream(values)
 				.map(wrapper)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 }

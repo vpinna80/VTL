@@ -29,5 +29,5 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
  */
 public interface NumberDomainSubset<T extends NumberDomain> extends ValueDomainSubset<T>, NumberDomain
 {
-	@Override ScalarValue<?, ? extends NumberDomainSubset<T>, ? extends T> cast(ScalarValue<?, ?, ?> value);
+	@Override ScalarValue<?, ?, ? extends NumberDomainSubset<T>, ? extends T> cast(ScalarValue<?, ?, ?, ?> value);
 }

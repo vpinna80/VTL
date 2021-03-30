@@ -77,14 +77,14 @@ public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<Str
 	 * 
 	 * @author Valentino Pinna
 	 */
-	public interface StringCodeItem extends CodeItem<String, StringEnumeratedDomainSubset, StringDomain>
+	public interface StringCodeItem<T extends StringCodeItem<T>> extends CodeItem<T, String, StringEnumeratedDomainSubset, StringDomain>
 	{
 
 	}
 	
 	@Override
-	ScalarValue<?, ? extends StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?> value);
+	ScalarValue<?, ?, ? extends StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value);
 	
 	@Override
-	public Set<StringCodeItem> getCodeItems();
+	public Set<StringCodeItem<?>> getCodeItems();
 }

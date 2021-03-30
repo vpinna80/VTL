@@ -60,7 +60,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 			this.booleanOp = booleanOp;
 		}
 
-		public ScalarValue<?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, BooleanDomainSubset, BooleanDomain> booleanValue)
+		public ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain> booleanValue)
 		{
 			return booleanValue instanceof NullValue ? NullValue.instance(BOOLEANDS)
 					: BooleanValue.of(booleanOp.test((Boolean) booleanValue.get()));
@@ -75,7 +75,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return function.apply(BOOLEANDS.cast(scalar));
 	}
@@ -86,7 +86,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 
 		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> {
-			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 			map.replaceAll((c, v) -> function.apply(BOOLEANDS.cast(v)));
 			return map;
 		});

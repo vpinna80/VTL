@@ -38,7 +38,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class JoinApplyScope implements TransformationScheme
 {
-	private final Map<String, ScalarValue<?, ?, ?>> joinValues;
+	private final Map<String, ScalarValue<?, ?, ?, ?>> joinValues;
 	private final Map<String, ScalarValueMetadata<?>> joinMeta;
 	private final TransformationScheme parent;
 

@@ -27,12 +27,10 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
 
-public class DurationValue extends BaseScalarValue<Double, DurationDomainSubset, DurationDomain>
+public class DurationValue extends BaseScalarValue<DurationValue, Double, DurationDomainSubset, DurationDomain>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Map<TemporalUnit, DurationDomains> DURATIONS_BY_UNIT = new HashMap<>(); 
@@ -55,7 +53,7 @@ public class DurationValue extends BaseScalarValue<Double, DurationDomainSubset,
 	}
 
 	@Override
-	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o)
+	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof DurationValue && o.getDomain().equals(getDomain()))
 			return get().compareTo((Double) o.get());

@@ -117,7 +117,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final DataStructureComponentImpl<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> TIME_PERIOD_IDENTIFIER = new DataStructureComponentImpl<>(PortableDataSet.TIME_LABEL, Identifier.class, TIMEDS);
 	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
-	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?>>> FORMATTERS = new HashMap<>();
+	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?, ?>>> FORMATTERS = new HashMap<>();
 	private static final Pattern SDMX_PATTERN = Pattern.compile("^(.+):(?:(.+?)(?:\\((.+)\\))?)/(.+)$");
 
 	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = 
@@ -187,7 +187,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		DataSetMetadata metadata = (DataSetMetadata) getValueMetadata(name)
 				.orElseThrow(() -> new NullPointerException("Could not retrieve SDMX metadata for " + name));
 
-		Map<PortableTimeSeries<Double>, Map<String, ScalarValue<?, ?, ?>>> seriesMeta = Utils.getStream(table)
+		Map<PortableTimeSeries<Double>, Map<String, ScalarValue<?, ?, ?, ?>>> seriesMeta = Utils.getStream(table)
 				.map(toEntry(Function.identity(), PortableTimeSeries::getAttributesMap))
 				.map(e -> {
 					ConcurrentMap<String, String> attrs = new ConcurrentHashMap<>(e.getKey().getAttributesMap());
@@ -207,7 +207,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				.orElse(Stream.empty()), table);
 	}
 
-	private static Stream<Entry<String, ScalarValue<?, ?, ?>>> obsToCompValues(Map<String, ScalarValue<?,?,?>> seriesLevelAttrs, 
+	private static Stream<Entry<String, ScalarValue<?, ?, ?, ?>>> obsToCompValues(Map<String, ScalarValue<?, ?, ?, ?>> seriesLevelAttrs, 
 			BaseObservation<? extends Double> o)
 	{
 		return Stream.concat(Utils.getStream(seriesLevelAttrs), Stream.concat(obsLevelAttrs(o),
@@ -215,7 +215,7 @@ public class SDMXEnvironment implements Environment, Serializable
 								new SimpleEntry<>(OBS_LABEL, new DoubleValue(o.getValueAsDouble())))));
 	}
 
-	private static ScalarValue<?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> asDate(BaseObservation<? extends Double> o)
+	private static ScalarValue<?, ?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> asDate(BaseObservation<? extends Double> o)
 	{
 		DateTimeException last = null;
 		for (DateTimeFormatter formatter : FORMATTERS.keySet())
@@ -235,20 +235,20 @@ public class SDMXEnvironment implements Environment, Serializable
 			throw new IllegalStateException("this point should not be reached");
 	}
 
-	private static Map<String, ScalarValue<?, ?, ?>> extractAttrs(Map<String, String> attrs)
+	private static Map<String, ScalarValue<?, ?, ?, ?>> extractAttrs(Map<String, String> attrs)
 	{
 		return Utils.getStream(attrs.entrySet())
 				.filter(e -> !UNSUPPORTED.contains(e.getKey()))
 				.map(keepingKey(StringValue::new))
-				.map(keepingKey(v -> (ScalarValue<?, ?, ?>) v))
+				.map(keepingKey(v -> (ScalarValue<?, ?, ?, ?>) v))
 				.collect(entriesToMap());
 	}
 
-	private static Stream<Entry<String, ScalarValue<?, ?, ?>>> obsLevelAttrs(BaseObservation<? extends Double> observation)
+	private static Stream<Entry<String, ScalarValue<?, ?, ?, ?>>> obsLevelAttrs(BaseObservation<? extends Double> observation)
 	{
 		return Utils.getStream(observation.getAttributes())
 				.filter(entryByKey(k -> !UNSUPPORTED.contains(k)))
-				.map(keepingKey(v -> (ScalarValue<?, ?, ?>) (v != null ? new StringValue(v) : NullValue.instance(STRINGDS))));
+				.map(keepingKey(v -> (ScalarValue<?, ?, ?, ?>) (v != null ? new StringValue(v) : NullValue.instance(STRINGDS))));
 	}
 
 	private static <T extends ComponentRole> DataStructureComponent<T, StringDomainSubset, StringDomain> elementToComponent(Class<T> role,

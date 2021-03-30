@@ -62,7 +62,7 @@
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr4-maven-plugin</artifactId>
 				<version>${antlr4.version}</version>
-			<executions>
+				<executions>
 					<execution>
 						<phase>generate-sources</phase>
 						<goals>

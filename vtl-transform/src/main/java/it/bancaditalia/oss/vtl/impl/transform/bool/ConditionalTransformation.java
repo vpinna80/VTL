@@ -82,7 +82,7 @@ public class ConditionalTransformation extends TransformationImpl
 			metadata = getMetadata(session);
 		
 		if (cond instanceof ScalarValue)
-			return BOOLEANDS.cast((ScalarValue<?, ?, ?>) cond).get() 
+			return BOOLEANDS.cast((ScalarValue<?, ?, ?, ?>) cond).get() 
 					? thenExpr.eval(session)
 					: elseExpr.eval(session);
 		else
@@ -97,20 +97,20 @@ public class ConditionalTransformation extends TransformationImpl
 			else // One dataset and one scalar
 			{
 				DataSet dataset = thenV instanceof DataSet ? (DataSet) thenV : (DataSet) elseV;
-				ScalarValue<?, ?, ?> scalar = thenV instanceof ScalarValue ? (ScalarValue<?, ?, ?>) thenV : (ScalarValue<?, ?, ?>) elseV;
+				ScalarValue<?, ?, ?, ?> scalar = thenV instanceof ScalarValue ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
 				return condD.mappedJoin((DataSetMetadata) metadata, dataset, (dpCond, dp) -> 
 						evalDatasetAndScalar(checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV == dataset, dp, scalar, booleanConditionMeasure));
 			}
 		}
 	}
 
-	private DataPoint evalDatasetAndScalar(boolean cond, DataPoint dp, ScalarValue<?, ?, ?> scalar, 
+	private DataPoint evalDatasetAndScalar(boolean cond, DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, 
 			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
 	{
 		if (cond)
 		{
 			// condition is true and 'then' is the scalar or condition is false and 'else' is the scalar
-			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> nonIdValues = new ConcurrentHashMap<>(dp.getValues(Measure.class));
+			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIdValues = new ConcurrentHashMap<>(dp.getValues(Measure.class));
 			// replace all measures values in the datapoint with the scalar 
 			nonIdValues.replaceAll((c, v) -> scalar);
 			
@@ -125,7 +125,7 @@ public class ConditionalTransformation extends TransformationImpl
 
 	private VTLValue evalTwoDatasets(DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
 	{
-		Map<Boolean, Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>> partitions;
+		Map<Boolean, Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> partitions;
 		Set<DataStructureComponent<Identifier, ?, ?>> valueIDs = thenD.getComponents(Identifier.class);
 		
 		try (Stream<DataPoint> stream = condD.stream())
@@ -149,7 +149,7 @@ public class ConditionalTransformation extends TransformationImpl
 				}, thenFiltered, elseFiltered);
 	}
 
-	private boolean checkCondition(ScalarValue<?, ?, ?> value)
+	private boolean checkCondition(ScalarValue<?, ?, ?, ?> value)
 	{
 		return value instanceof BooleanValue && ((BooleanValue) value).get();
 	}

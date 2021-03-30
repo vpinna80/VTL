@@ -68,7 +68,7 @@ public class TimePatterns
 		PATTERNS.put(Pattern.compile("^(D)(?!D)(.*)$"), dtf -> dtf.appendValue(DAY_OF_MONTH, 1, 2, NOT_NEGATIVE));
 	}
 
-	public static <T extends TimeValue<?, ?, ?>> TemporalAccessor parseString(String string, String mask)
+	public static <T extends TimeValue<?, ?, ?, ?>> TemporalAccessor parseString(String string, String mask)
 	{
 		return getFormatter(mask).parse(string);
 	}

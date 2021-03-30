@@ -51,7 +51,7 @@ class EntireNumberDomainSubset extends EntireDomainSubset<Double, NumberDomain> 
 	}
 
 	@Override
-	public ScalarValue<?, ? extends NumberDomainSubset<NumberDomain>, ? extends NumberDomain> cast(ScalarValue<?, ?, ?> value)
+	public ScalarValue<?, ?, ? extends NumberDomainSubset<NumberDomain>, ? extends NumberDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()))
 		{

@@ -31,7 +31,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ConstantOperand<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain, 
-		T extends ScalarValue<R, S, D>> extends TransformationImpl implements LeafTransformation
+		T extends ScalarValue<?, ?, ?, ?>> extends TransformationImpl implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
 

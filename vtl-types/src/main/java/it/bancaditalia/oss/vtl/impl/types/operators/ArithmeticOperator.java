@@ -62,7 +62,7 @@ public enum ArithmeticOperator
 		this.opInteger = opInteger;
 	}
 
-	public ScalarValue<?, NumberDomainSubset<NumberDomain>, NumberDomain> applyAsDouble(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	public ScalarValue<?, ?, NumberDomainSubset<NumberDomain>, NumberDomain> applyAsDouble(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(NUMBERDS);
@@ -70,7 +70,7 @@ public enum ArithmeticOperator
 				(((Number) NUMBERDS.cast(right).get()).doubleValue())));
 	}
 
-	public ScalarValue<?, IntegerDomainSubset, IntegerDomain> applyAsInt(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	public ScalarValue<?, ?, IntegerDomainSubset, IntegerDomain> applyAsInt(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(INTEGERDS);

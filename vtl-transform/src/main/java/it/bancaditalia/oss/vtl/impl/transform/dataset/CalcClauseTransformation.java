@@ -109,9 +109,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		}
 
 		@Override
-		public ScalarValue<?, ?, ?> eval(TransformationScheme sscheme)
+		public ScalarValue<?, ?, ?, ?> eval(TransformationScheme sscheme)
 		{
-			return (ScalarValue<?, ?, ?>) calcClause.eval(sscheme);
+			return (ScalarValue<?, ?, ?, ?>) calcClause.eval(sscheme);
 		}
 
 		@Override
@@ -162,7 +162,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata, scheme);
 					
 					// place calculated components (eventually overriding existing ones 
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> calcValues = 
+					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
 						Utils.getStream(nonAnalyticClauses)
 							.collect(toConcurrentMap(
 								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),

@@ -42,10 +42,10 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	private static final long serialVersionUID = 1L;
 
 	private final String name; 
-	private final Set<StringCodeItem> items = new HashSet<>();
+	private final Set<StringCodeItem<?>> items = new HashSet<>();
 	private final int hashCode;
 
-	public class StringCodeItemImpl extends BaseScalarValue<String, StringEnumeratedDomainSubset, StringDomain> implements StringCodeItem
+	public class StringCodeItemImpl extends BaseScalarValue<StringCodeItemImpl, String, StringEnumeratedDomainSubset, StringDomain> implements StringCodeItem<StringCodeItemImpl>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -55,7 +55,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 		}
 
 		@Override
-		public int compareTo(ScalarValue<?, ?, ?> o)
+		public int compareTo(ScalarValue<?, ?, ?, ?> o)
 		{
 			return get().compareTo((String) getDomain().cast(o).get());
 		}
@@ -106,13 +106,13 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	}
 
 	@Override
-	public StringCodeItem cast(ScalarValue<?, ?, ?> value)
+	public StringCodeItemImpl cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof StringCodeItem && items.contains(value))
-			return (StringCodeItem) value;
+			return (StringCodeItemImpl) value;
 		else if (value instanceof StringValue)
 		{
-			StringCodeItem item = new StringCodeItemImpl((String) value.get());
+			StringCodeItemImpl item = new StringCodeItemImpl((String) value.get());
 			if (items.contains(item))
 				return item;
 		}
@@ -139,7 +139,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	}
 
 	@Override
-	public Set<StringCodeItem> getCodeItems()
+	public Set<StringCodeItem<?>> getCodeItems()
 	{
 		return items;
 	}

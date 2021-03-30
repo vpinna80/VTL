@@ -63,10 +63,10 @@ public class FilterClauseTransformationTest
 			{ true, null, null, false, true, null }
 		*/
 		return Stream.of(
-				Arguments.of(SAMPLE3, new String[]{"A", "B", "F"}),
-				Arguments.of(SAMPLE4, new String[]{"A", "E"}),
-				Arguments.of(SAMPLE11, new String[]{"A", "C", "E"}),
-				Arguments.of(SAMPLE12, new String[]{"A", "E"})
+				Arguments.of("1 of 4", SAMPLE3, new String[]{"A", "B", "F"}),
+				Arguments.of("2 of 4", SAMPLE4, new String[]{"A", "E"}),
+				Arguments.of("3 of 4", SAMPLE11, new String[]{"A", "C", "E"}),
+				Arguments.of("4 of 4", SAMPLE12, new String[]{"A", "E"})
 			);
 	}
 
@@ -80,7 +80,7 @@ public class FilterClauseTransformationTest
 	
 	@ParameterizedTest(name = "{0}")
 	@MethodSource
-	public void test(DataSet sample, String[] expectedResult)
+	public void test(String name, DataSet sample, String[] expectedResult)
 	{
 		session = new ThisScope(sample, session);
 		FilterClauseTransformation fct = new FilterClauseTransformation(condition);

@@ -41,7 +41,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	private static final long serialVersionUID = 1L;
 	private final long amount;
 
-	public TimeShiftTransformation(Transformation operand, ScalarValue<?, ?, ?> amount)
+	public TimeShiftTransformation(Transformation operand, ScalarValue<?, ?, ?, ?> amount)
 	{
 		super(operand);
 		
@@ -57,7 +57,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 		return new LightFDataSet<>(structure, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
 					.delete(timeID)
-					.add(timeID, ((TimeValue<?, ?, ?>) dp.get(timeID)).increment(amount))
+					.add(timeID, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).increment(amount))
 					.build(structure)
 				), dataset);
 	}

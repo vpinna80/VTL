@@ -108,7 +108,7 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 	
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return Stream.of(scalar).collect(aggregation.getReducer());
 	}
@@ -117,7 +117,7 @@ public class AggregateTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
-		Collector<DataPoint, ?, ScalarValue<?, ?, ?>> reducer = aggregation.getReducer(sourceMeasure);
+		Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> reducer = aggregation.getReducer(sourceMeasure);
 		DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
 				? new DataStructureComponentImpl<>(name, role, sourceMeasure.getDomain())
 				: new DataStructureComponentImpl<>(name, sourceMeasure.getRole(), sourceMeasure.getDomain())

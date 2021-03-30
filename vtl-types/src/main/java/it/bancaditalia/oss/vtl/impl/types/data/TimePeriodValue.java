@@ -25,12 +25,10 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public class TimePeriodValue extends TimeValue<PeriodHolder<?>, TimePeriodDomainSubset, TimePeriodDomain>
+public class TimePeriodValue extends TimeValue<TimePeriodValue, PeriodHolder<?>, TimePeriodDomainSubset, TimePeriodDomain>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -45,7 +43,7 @@ public class TimePeriodValue extends TimeValue<PeriodHolder<?>, TimePeriodDomain
 	}
 
 	@Override
-	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o)
+	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof TimePeriodValue)
 			return this.get().compareTo(((TimePeriodValue) o).get());

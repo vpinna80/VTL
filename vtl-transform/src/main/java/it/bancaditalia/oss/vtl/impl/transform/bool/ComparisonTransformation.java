@@ -69,7 +69,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, BooleanDomainSubset, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	protected ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(BOOLEANDS);
@@ -83,14 +83,14 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected DataSet evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
+	protected DataSet evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 
 		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
 		
-		final ScalarValue<?, ?, ?> castedScalar;
+		final ScalarValue<?, ?, ?, ?> castedScalar;
 		if (castToLeft && datasetIsLeftOp)
 			castedScalar = measure.cast(scalar);
 		else
@@ -121,8 +121,9 @@ public class ComparisonTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
-		BiFunction<ScalarValue<?, ?, ?>, ScalarValue<?, ?, ?>, ScalarValue<?, BooleanDomainSubset, BooleanDomain>> casted = (a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
-		BiFunction<ScalarValue<?, ?, ?>, ScalarValue<?, ?, ?>, ScalarValue<?, BooleanDomainSubset, BooleanDomain>> function =
+		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain>> casted = 
+				(a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
+		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain>> function =
 				Utils.reverseIf(leftHasMoreIdentifiers, casted);
 
 		// Scan the dataset with less identifiers and find the matches

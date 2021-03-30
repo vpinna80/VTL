@@ -75,7 +75,7 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<PeriodHolde
 	}
 
 	@Override
-	public ScalarValue<?, ? extends ValueDomainSubset<? extends TimePeriodDomain>, ? extends TimePeriodDomain> cast(ScalarValue<?, ?, ?> value)
+	public ScalarValue<?, ?, ? extends ValueDomainSubset<? extends TimePeriodDomain>, ? extends TimePeriodDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof TimePeriodValue)
 			return (TimePeriodValue) value;

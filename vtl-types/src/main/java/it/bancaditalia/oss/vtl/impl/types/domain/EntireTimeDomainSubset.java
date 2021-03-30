@@ -60,12 +60,12 @@ class EntireTimeDomainSubset extends EntireDomainSubset<TimeHolderImpl, TimeDoma
 	}
 
 	@Override
-	public ScalarValue<?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> cast(ScalarValue<?, ?, ?> value)
+	public ScalarValue<?, ?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()) && value instanceof NullValue)
 			return NullValue.instance(this);
 		else if (value instanceof TimeValue)
-			return (TimeValue<?, ?, ?>) value;
+			return (TimeValue<?, ?, ?, ?>) value;
 		throw new UnsupportedOperationException("Cast to time from " + value.getClass());
 	}
 

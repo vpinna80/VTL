@@ -139,7 +139,7 @@ public class WindowView
 		}
 	}
 	
-	private final Stream<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, List<DataPoint>>> windows;
+	private final Stream<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, List<DataPoint>>> windows;
 
 	public WindowView(NavigableSet<DataPoint> ordered, WindowClause windowClause)
 	{
@@ -157,7 +157,7 @@ public class WindowView
 				});
 	}
 	
-	public Stream<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, List<DataPoint>>> getWindows()
+	public Stream<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, List<DataPoint>>> getWindows()
 	{
 		return windows;
 	}

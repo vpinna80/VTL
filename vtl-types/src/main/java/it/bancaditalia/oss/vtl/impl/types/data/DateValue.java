@@ -27,12 +27,10 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 
-public class DateValue extends TimeValue<DateHolder<?>, DateDomainSubset, DateDomain>
+public class DateValue extends TimeValue<DateValue, DateHolder<?>, DateDomainSubset, DateDomain>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -47,7 +45,7 @@ public class DateValue extends TimeValue<DateHolder<?>, DateDomainSubset, DateDo
 	}
 
 	@Override
-	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o)
+	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof DateValue)
 			return get().compareTo(((DateValue) o).get());

@@ -242,7 +242,7 @@ public class REnvironment implements Environment
 		if (idAttr != null && (idAttr.getType() == REXP.XT_ARRAY_STR || idAttr.getType() == REXP.XT_STR))
 			identifiers = Arrays.asList(idAttr.asStringArray());
 
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>[]> dataContainer = new HashMap<>();
+		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> dataContainer = new HashMap<>();
 		// get column data
 		for (String key: dataFrame.keys())
 		{
@@ -256,7 +256,7 @@ public class REnvironment implements Environment
 			else
 				type = Attribute.class;
 
-			Stream<? extends ScalarValue<?, ?, ?>> values;
+			Stream<? extends ScalarValue<?, ?, ?, ?>> values;
 			ValueDomainSubset<?> domain;
 			switch (columnData.getType())
 			{
@@ -266,33 +266,33 @@ public class REnvironment implements Environment
 						domain = DATEDS;
 						//now transform in date
 						// NAs are mapped to something that retrns true to is.NaN()
-						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  new DateValue(LocalDate.of(1970, 1, 1).plus((long) val  , ChronoUnit.DAYS) )));   
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  new DateValue(LocalDate.of(1970, 1, 1).plus((long) val  , ChronoUnit.DAYS) )));   
 					}
 					else {
 						// NAs are mapped to something that retrns true to is.NaN()
 						domain = NUMBERDS;
-						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
 					}
 					break;
 				case REXP.XT_ARRAY_INT:
 					// NAs are mapped to Integer.MIN_VALUE
 					domain = INTEGERDS;
-					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(val -> (ScalarValue<?, ?, ?>) (val == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : new IntegerValue(val)));
+					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (val == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : new IntegerValue(val)));
 					break;
 				case REXP.XT_ARRAY_STR:
 					domain = STRINGDS;
-					values = Utils.getStream(columnData.asStringArray()).map(val -> (ScalarValue<?, ?, ?>) (val == null ? NullValue.instance(STRINGDS) : new StringValue(val)));
+					values = Utils.getStream(columnData.asStringArray()).map(val -> (ScalarValue<?, ?, ?, ?>) (val == null ? NullValue.instance(STRINGDS) : new StringValue(val)));
 					break;
 				case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
 					domain = BOOLEANDS;
-					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?>) ((val != 1 && val != 0) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
+					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) ((val != 1 && val != 0) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
 					break;
 				default:
 					throw new IllegalStateException(
 							"In node: " + name + " there is a column (" + key + ") of type " + REXP.xtName(columnData.getType()) + ". This is not supported.");
 			}
 			
-			dataContainer.put(new DataStructureComponentImpl<>(key, type, domain), values.toArray(ScalarValue<?, ?, ?>[]::new));
+			dataContainer.put(new DataStructureComponentImpl<>(key, type, domain), values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
 		}
 		
 		return new ColumnarDataSet(dataContainer);

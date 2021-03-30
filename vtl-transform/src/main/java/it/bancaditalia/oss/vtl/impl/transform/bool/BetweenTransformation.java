@@ -52,8 +52,8 @@ public class BetweenTransformation extends UnaryTransformation
 	private static final long serialVersionUID = 1L;
 	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS);
 	
-	private final ScalarValue<?, ?, ?> from;
-	private final ScalarValue<?, ?, ?> to;
+	private final ScalarValue<?, ?, ?, ?> from;
+	private final ScalarValue<?, ?, ?, ?> to;
 	private final ValueDomainSubset<?> domain;
 
 	private DataSetMetadata metadata;
@@ -106,7 +106,7 @@ public class BetweenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?> evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return scalar instanceof NullValue ? NullValue.instance(BOOLEANDS) : BooleanValue.of(scalar.compareTo(from) >= 0 && scalar.compareTo(to) <= 0);
 	}

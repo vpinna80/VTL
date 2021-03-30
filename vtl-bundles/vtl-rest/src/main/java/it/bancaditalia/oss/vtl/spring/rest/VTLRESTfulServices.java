@@ -72,7 +72,7 @@ public class VTLRESTfulServices extends SpringBootServletInitializer
 		VTLSession session = manager.getSession(uuid);
 		VTLValue value = session.resolve(alias);
 		if (value instanceof ScalarValue)
-			return new ScalarResultBean((ScalarValue<?, ?, ?>) value);
+			return new ScalarResultBean((ScalarValue<?, ?, ?, ?>) value);
 		else
 			return new DataSetResultBean((DataSet) value);
 	}

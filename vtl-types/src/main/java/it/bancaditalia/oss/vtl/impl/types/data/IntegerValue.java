@@ -24,7 +24,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 
-public class IntegerValue extends NumberValueImpl<Long, IntegerDomainSubset, IntegerDomain>
+public class IntegerValue extends NumberValueImpl<IntegerValue, Long, IntegerDomainSubset, IntegerDomain>
 {
 	private static final long serialVersionUID = 1L;
 	private static final ScalarValueMetadata<IntegerDomainSubset> META = () -> Domains.INTEGERDS;

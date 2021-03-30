@@ -63,9 +63,9 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
-		return ((TimeValue<?, ?, ?>) scalar).wrap(frequency);
+		return ((TimeValue<?, ?, ?, ?>) scalar).wrap(frequency);
 	}
 
 	@Override
@@ -77,8 +77,8 @@ public class TimeAggTransformation extends UnaryTransformation
 				.build();
 		
 		return dataset.mapKeepingKeys(structure, dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = dp.getValues(Measure.class);
-				map.put(periodComponent, ((TimeValue<?, ?, ?>) dp.get(timeMeasure)).wrap(frequency));
+				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = dp.getValues(Measure.class);
+				map.put(periodComponent, ((TimeValue<?, ?, ?, ?>) dp.get(timeMeasure)).wrap(frequency));
 				return map;
 		});
 	}

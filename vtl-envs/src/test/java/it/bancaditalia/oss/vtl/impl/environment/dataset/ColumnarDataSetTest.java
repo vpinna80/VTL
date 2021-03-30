@@ -21,14 +21,14 @@ package it.bancaditalia.oss.vtl.impl.environment.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,14 +65,6 @@ public class ColumnarDataSetTest
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 
 	private static final Long INT_ME_VAL[] = { 5L, 7L, null, 8L, 4L }; 
 	private static final Boolean BOL_ME_VAL[] = { true, null, true, false, false };
-
-	private static <T extends ScalarValue<R, ?, ?>, R extends Comparable<?> & Serializable> ScalarValue<?, ?, ?>[] arrayToArray(Function<R, T> mapper, R[] values)
-	{
-		ScalarValue<?, ?, ?>[] result = new ScalarValue[values.length];
-		for (int i = 0; i < values.length; i++)
-			result[i] = mapper.apply(values[i]);
-		return result;
-	}
 	
 	private ColumnarDataSet INSTANCE; 
 	private DataPoint DATAPOINTS[] = new DataPoint[5]; 
@@ -80,11 +72,11 @@ public class ColumnarDataSetTest
 	@BeforeEach
 	public void beforeEach()
 	{
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>[]> values = new HashMap<>();
-		values.put(STR_ID, arrayToArray(StringValue::new, STR_ID_VAL));
-		values.put(INT_ID, arrayToArray(IntegerValue::new, INT_ID_VAL));
-		values.put(INT_ME, arrayToArray(v -> v == null ? NullValue.instance(INTEGERDS) : new IntegerValue(v), INT_ME_VAL));
-		values.put(BOL_ME, arrayToArray(v -> v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(v), BOL_ME_VAL));
+		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> values = new HashMap<>();
+		values.put(STR_ID, Arrays.stream(STR_ID_VAL).map(StringValue::new).collect(toList()).toArray(new StringValue[0]));
+		values.put(INT_ID, Arrays.stream(INT_ID_VAL).map(IntegerValue::new).collect(toList()).toArray(new IntegerValue[0]));
+		values.put(INT_ME, Arrays.stream(INT_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(INTEGERDS) : new IntegerValue(v))).collect(toList()).toArray(new ScalarValue[0]));
+		values.put(BOL_ME, Arrays.stream(BOL_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));
 		INSTANCE = new ColumnarDataSet(values);
 		for (int i = 0; i < 5; i++)
 			DATAPOINTS[i] = new DataPointBuilder()
@@ -106,8 +98,8 @@ public class ColumnarDataSetTest
 			for (int i = 0; i < 5; i++)
 				if (new StringValue(STR_ID_VAL[i]).equals(dp.get(STR_ID)) && new IntegerValue(INT_ID_VAL[i]).equals(dp.get(INT_ID)))
 				{
-					ScalarValue<?, ?, ?> intVal = INT_ME_VAL[i] == null ? NullValue.instance(INTEGERDS) : new IntegerValue(INT_ME_VAL[i]);
-					ScalarValue<?, ?, ?> bolVal = BOL_ME_VAL[i] == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(BOL_ME_VAL[i]);
+					ScalarValue<?, ?, ?, ?> intVal = INT_ME_VAL[i] == null ? NullValue.instance(INTEGERDS) : new IntegerValue(INT_ME_VAL[i]);
+					ScalarValue<?, ?, ?, ?> bolVal = BOL_ME_VAL[i] == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(BOL_ME_VAL[i]);
 					assertEquals(intVal, dp.get(INT_ME));
 					assertEquals(bolVal, dp.get(BOL_ME));
 					found[i] = true;

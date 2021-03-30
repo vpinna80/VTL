@@ -133,11 +133,11 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 			.orElse(Stream.empty()), dataset);
 	}
 	
-	private Stream<DataPoint> rankPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	private Stream<DataPoint> rankPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
 		long rank = 1, position = 1;
-		Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> oldValues, measureValues = emptyMap();
+		Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, measureValues = emptyMap();
 		List<DataPoint> result = new ArrayList<>(partition.size());
 		
 		for (DataPoint dp: partition)

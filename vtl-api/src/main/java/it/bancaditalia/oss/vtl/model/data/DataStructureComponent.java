@@ -130,9 +130,9 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @throws VTLCastException if the value cannot be casted to the domain of this component.
 	 */
 	@SuppressWarnings("unchecked")
-	public default ScalarValue<?, S, D> cast(ScalarValue<?, ?, ?> value)
+	public default ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		return (ScalarValue<?, S, D>) getDomain().cast(value);
+		return (ScalarValue<?, ?, S, D>) getDomain().cast(value);
 	}
 
 	@Override

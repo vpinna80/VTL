@@ -38,6 +38,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.M
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_3;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_1;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_2;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_8;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 
@@ -79,7 +80,8 @@ public enum SampleDataSets implements DataSet
 	SAMPLE9(IDENT_DATE_3, IDENT_STRING_7, MEASURE_INTEGER_2),
 	SAMPLE10(IDENT_STRING_3, MEASURE_INTEGER_3),
 	SAMPLE11(IDENT_STRING_1, MEASURE_BOOLEAN_1),
-	SAMPLE12(IDENT_STRING_1, MEASURE_BOOLEAN_4);
+	SAMPLE12(IDENT_STRING_1, MEASURE_BOOLEAN_4),
+	SAMPLE13(IDENT_STRING_1, MEASURE_STRING_8);
 
 	private final DataSet dataset;
 
@@ -143,7 +145,7 @@ public enum SampleDataSets implements DataSet
 		return dataset.getComponent(name);
 	}
 
-	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		return dataset.getMatching(keyValues);
 	}
@@ -160,15 +162,15 @@ public enum SampleDataSets implements DataSet
 	}
 
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator)
+			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		return dataset.mapKeepingKeys(metadata, operator);
 	}
 
 	@Override
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter, Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, Collector<DataPoint, A, TT> groupCollector,
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
 		return dataset.streamByKeys(keys, filter, groupCollector, finisher);
 	}

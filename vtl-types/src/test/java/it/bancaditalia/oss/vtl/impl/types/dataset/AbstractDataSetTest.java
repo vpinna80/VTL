@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.setOf;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,7 +35,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
-import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,7 +42,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -80,14 +79,6 @@ public class AbstractDataSetTest
 	private static final Long INT_ME_VAL[] = { 5L, 7L, null, 8L, 4L }; 
 	private static final Boolean BOL_ME_VAL[] = { true, null, true, false, false };
 
-	private static <T extends ScalarValue<R, ?, ?>, R extends Comparable<?> & Serializable> ScalarValue<?, ?, ?>[] arrayToArray(Function<R, T> mapper, R[] values)
-	{
-		ScalarValue<?, ?, ?>[] result = new ScalarValue[values.length];
-		for (int i = 0; i < values.length; i++)
-			result[i] = mapper.apply(values[i]);
-		return result;
-	}
-	
 	private static AbstractDataSet INSTANCE; 
 	private static DataPoint DATAPOINTS[] = new DataPoint[5]; 
 
@@ -95,11 +86,11 @@ public class AbstractDataSetTest
 	public static void beforeAll()
 	{
 		System.setProperty("vtl.sequential", "true");
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>[]> values = new HashMap<>();
-		values.put(STR_ID, arrayToArray(StringValue::new, STR_ID_VAL));
-		values.put(INT_ID, arrayToArray(IntegerValue::new, INT_ID_VAL));
-		values.put(INT_ME, arrayToArray(v -> v == null ? NullValue.instance(INTEGERDS) : new IntegerValue(v), INT_ME_VAL));
-		values.put(BOL_ME, arrayToArray(v -> v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(v), BOL_ME_VAL));
+		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> values = new HashMap<>();
+		values.put(STR_ID, Arrays.stream(STR_ID_VAL).map(StringValue::new).collect(toList()).toArray(new StringValue[0]));
+		values.put(INT_ID, Arrays.stream(INT_ID_VAL).map(IntegerValue::new).collect(toList()).toArray(new IntegerValue[0]));
+		values.put(INT_ME, Arrays.stream(INT_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(INTEGERDS) : new IntegerValue(v))).collect(toList()).toArray(new ScalarValue[0]));
+		values.put(BOL_ME, Arrays.stream(BOL_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));
 		for (int i = 0; i < 5; i++)
 			DATAPOINTS[i] = new DataPointBuilder()
 				.add(STR_ID, values.get(STR_ID)[i])

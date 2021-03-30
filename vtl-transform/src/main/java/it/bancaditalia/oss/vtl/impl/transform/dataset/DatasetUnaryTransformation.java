@@ -62,7 +62,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	private static final long serialVersionUID = 1L;
 	private final static Logger LOGGER = LoggerFactory.getLogger(DatasetUnaryTransformation.class);
 
-	private final static boolean bothIntegers(ScalarValue<?, ?, ?> l, ScalarValue<?, ?, ?> r)
+	private final static boolean bothIntegers(ScalarValue<?, ?, ?, ?> l, ScalarValue<?, ?, ?, ?> r)
 	{
 		return l instanceof IntegerValue && r instanceof IntegerValue;
 	}
@@ -70,17 +70,17 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	public enum DatasetOperator implements BiFunction<DataSet, DataStructureComponent<Identifier, ?, ?>, Stream<DataPoint>>
 	{
 		STOCK_TO_FLOW("stock_to_flow", false, (b, a) -> bothIntegers(b, a) 
-				? DIFF.applyAsInt((NumberValue<?, ?, ?>) a, (NumberValue<?, ?, ?>) b) 
-				: DIFF.applyAsDouble((NumberValue<?, ?, ?>) a, (NumberValue<?, ?, ?>) b)), 
+				? DIFF.applyAsInt((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b) 
+				: DIFF.applyAsDouble((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b)), 
 		FLOW_TO_STOCK("flow_to_stock", true, (acc, v) -> bothIntegers(acc, v) 
-				? SUM.applyAsInt((NumberValue<?, ?, ?>) acc, (NumberValue<?, ?, ?>) v) 
-				: SUM.applyAsDouble((NumberValue<?, ?, ?>) acc, (NumberValue<?, ?, ?>) v)); 
+				? SUM.applyAsInt((NumberValue<?, ?, ?, ?>) acc, (NumberValue<?, ?, ?, ?>) v) 
+				: SUM.applyAsDouble((NumberValue<?, ?, ?, ?>) acc, (NumberValue<?, ?, ?, ?>) v)); 
 		
-		private final BinaryOperator<ScalarValue<?, ?, ?>> op;
+		private final BinaryOperator<ScalarValue<?, ?, ?, ?>> op;
 		private final String text;
 		private final boolean cumulating;
 
-		private DatasetOperator(String text, boolean cumulating, BinaryOperator<ScalarValue<?, ?, ?>> op)
+		private DatasetOperator(String text, boolean cumulating, BinaryOperator<ScalarValue<?, ?, ?, ?>> op)
 		{
 			this.text = text;
 			this.cumulating = cumulating;
@@ -98,10 +98,10 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 			return ds.streamByKeys(ids, toConcurrentMap(i -> i, i -> true, (a, b) -> a, () -> new ConcurrentSkipListMap<>(DataPoint.compareBy(timeid))))
 				.map(Map::keySet)
 				.map(group -> {
-					Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> acc = new ConcurrentHashMap<>();
+					Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> acc = new ConcurrentHashMap<>();
 					return group.stream().map(dp -> new DataPointBuilder(Utils.getStream(measures)
 							.collect(toConcurrentMap(m -> m, m -> {
-								ScalarValue<?, ?, ?> v = acc.merge(m, dp.get(m), op);
+								ScalarValue<?, ?, ?, ?> v = acc.merge(m, dp.get(m), op);
 								if (!cumulating)
 									acc.put(m, dp.get(m));
 								return v; 
@@ -134,7 +134,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	}
 	
 	@Override
-	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		throw new VTLInvalidParameterException(scalar, DataSet.class); 
 	}

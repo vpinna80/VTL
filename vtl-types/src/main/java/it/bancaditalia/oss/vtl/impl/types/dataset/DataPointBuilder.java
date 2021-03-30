@@ -58,7 +58,7 @@ public class DataPointBuilder
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
-	private final ConcurrentHashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> delegate;
+	private final ConcurrentHashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
 
 	private volatile boolean built = false;
 
@@ -67,7 +67,7 @@ public class DataPointBuilder
 		delegate = new ConcurrentHashMap<>();
 	}
 
-	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> keys)
+	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keys)
 	{
 		delegate = new ConcurrentHashMap<>(keys);
 	}
@@ -80,13 +80,13 @@ public class DataPointBuilder
 		return this;
 	}
 
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
-			DataSetMetadata structure, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> startingValues)
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+			DataSetMetadata structure, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
 	{
 		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(structure), CONCURRENT, UNORDERED);
 	}
 
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
 			DataSetMetadata structure)
 	{
 		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(structure), CONCURRENT, UNORDERED);
@@ -98,19 +98,19 @@ public class DataPointBuilder
 		return left.checkState();
 	}
 
-	public DataPointBuilder addAll(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> values)
+	public DataPointBuilder addAll(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> values)
 	{
 		values.forEach(delegate::putIfAbsent);
 		return checkState();
 	}
 
-	public <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?>> DataPointBuilder add(Entry<? extends K, ? extends V> value)
+	public <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> DataPointBuilder add(Entry<? extends K, ? extends V> value)
 	{
 		delegate.putIfAbsent(value.getKey(), value.getValue());
 		return checkState();
 	}
 
-	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?> value)
+	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
 	{
 		if (delegate.putIfAbsent(component, value) != null)
 			throw new NullPointerException();
@@ -151,21 +151,21 @@ public class DataPointBuilder
 		return DataPointBuilder.class.getSimpleName() + delegate.toString();
 	}
 
-	private static class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> implements DataPoint, Serializable
+	private static class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable
 	{
 		private static final long serialVersionUID = 1L;
 		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 
-		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> dpValues;
+		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
 
-		private DataPointImpl(DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> values)
+		private DataPointImpl(DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
 			if (!(values instanceof Serializable))
 				throw new IllegalStateException("The values map must be serializable");
 
 			if (values.size() != structure.size())
 			{
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> filledValues = new ConcurrentHashMap<>(values);
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> filledValues = new ConcurrentHashMap<>(values);
 				Utils.getStream(structure).filter(c -> !c.is(Identifier.class) && !values.containsKey(c))
 						.forEach(c -> filledValues.put(c, NullValue.instance(c.getDomain())));
 				this.dpValues = filledValues;
@@ -190,7 +190,7 @@ public class DataPointBuilder
 		}
 
 		@Override
-		public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role)
+		public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
 		{
 			return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(toMapWithValues(dpValues::get));
 		}
@@ -198,7 +198,7 @@ public class DataPointBuilder
 		@Override
 		public DataPoint dropComponents(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components)
 		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newVals = new HashMap<>(this);
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(this);
 			for (DataStructureComponent<?, ?, ?> component : components)
 				if (!component.is(Identifier.class))
 					newVals.remove(component);
@@ -213,7 +213,7 @@ public class DataPointBuilder
 
 			Set<String> thisNames = keySet().stream().map(DataStructureComponent::getName).collect(toSet());
 
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> finalMap = other.keySet().stream().filter(c -> !thisNames.contains(c.getName()))
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream().filter(c -> !thisNames.contains(c.getName()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
 
 			return new DataPointImpl(new DataStructureBuilder(finalMap.keySet()).build(), finalMap);
@@ -222,7 +222,7 @@ public class DataPointBuilder
 		@Override
 		public DataPoint keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components) throws VTLMissingComponentsException
 		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> oper = new HashMap<>(getValues(Identifier.class));
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oper = new HashMap<>(getValues(Identifier.class));
 
 			for (DataStructureComponent<?, ?, ?> component : components)
 				if (containsKey(component))
@@ -242,8 +242,8 @@ public class DataPointBuilder
 			if (newComponent == null)
 				throw new VTLException("rename: new omponent cannot be null");
 
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> newValues = new HashMap<>(this);
-			ScalarValue<?, ?, ?> value = newValues.remove(oldComponent);
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newValues = new HashMap<>(this);
+			ScalarValue<?, ?, ?, ?> value = newValues.remove(oldComponent);
 			newValues.put(newComponent, value);
 			return new DataPointImpl(new DataStructureBuilder(newValues.keySet()).build(), newValues);
 		}
@@ -261,7 +261,7 @@ public class DataPointBuilder
 		}
 
 		@Override
-		public Set<Map.Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>>> entrySet()
+		public Set<Map.Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
 		{
 			return dpValues.entrySet();
 		}
@@ -273,7 +273,7 @@ public class DataPointBuilder
 		}
 
 		@Override
-		public ScalarValue<?, ?, ?> get(Object key)
+		public ScalarValue<?, ?, ?, ?> get(Object key)
 		{
 			return dpValues.get(key);
 		}

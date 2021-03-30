@@ -27,7 +27,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 
-public class BooleanValue extends BaseScalarValue<Boolean, BooleanDomainSubset, BooleanDomain>
+public class BooleanValue extends BaseScalarValue<BooleanValue, Boolean, BooleanDomainSubset, BooleanDomain>
 {
 	public static final BooleanValue FALSE = new BooleanValue(Boolean.FALSE);
 	public static final BooleanValue TRUE = new BooleanValue(Boolean.TRUE);
@@ -52,7 +52,7 @@ public class BooleanValue extends BaseScalarValue<Boolean, BooleanDomainSubset, 
 	}
 
 	@Override
-	public int compareTo(ScalarValue<?, ?, ?> o)
+	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o == this)
 			return 0;

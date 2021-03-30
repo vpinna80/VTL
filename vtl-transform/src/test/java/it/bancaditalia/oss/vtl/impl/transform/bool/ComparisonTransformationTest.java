@@ -109,7 +109,7 @@ public class ComparisonTransformationTest
 		for (DataPoint dp: computedResult)
 		{
 			final int index = dp.get(id).get().toString().charAt(0) - 'A';
-			final ScalarValue<?, ?, ?> idValue = dp.get(id);
+			final ScalarValue<?, ?, ?, ?> idValue = dp.get(id);
 
 			final String message = Stream.of(leftD, rightD)
 					.map(DataSet::stream)

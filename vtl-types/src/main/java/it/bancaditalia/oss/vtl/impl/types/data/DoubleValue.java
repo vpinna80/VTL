@@ -26,7 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-public class DoubleValue extends NumberValueImpl<Double, NumberDomainSubset<NumberDomain>, NumberDomain>
+public class DoubleValue extends NumberValueImpl<DoubleValue, Double, NumberDomainSubset<NumberDomain>, NumberDomain>
 {
 	private static final long serialVersionUID = 1L;
 	private static final ScalarValueMetadata<NumberDomainSubset<NumberDomain>> NUMBER_METADATA = () -> NUMBERDS;

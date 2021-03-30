@@ -42,7 +42,7 @@ public class VTLMissingComponentsException extends VTLException
 		super("Components " + missing + " not found in " + operand);
 	}
 
-	public VTLMissingComponentsException(Collection<String> missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> datapoint)
+	public VTLMissingComponentsException(Collection<String> missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint)
 	{
 		super("Component " + missing + " not found in " + datapoint);
 	}
@@ -57,7 +57,7 @@ public class VTLMissingComponentsException extends VTLException
 		super("Components " + Arrays.toString(names) + " not found in " + operand);
 	}
 
-	public VTLMissingComponentsException(String missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> datapoint)
+	public VTLMissingComponentsException(String missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint)
 	{
 		super("Component " + missing + " not found in " + datapoint);
 	}
@@ -77,7 +77,7 @@ public class VTLMissingComponentsException extends VTLException
 		super("Component " + missing.getName() + " not found in " + operand);
 	}
 
-	public VTLMissingComponentsException(Set<? extends DataStructureComponent<?, ?, ?>> missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?>> datapoint)
+	public VTLMissingComponentsException(Set<? extends DataStructureComponent<?, ?, ?>> missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint)
 	{
 		super("Component " + missing + " not found in " + datapoint);
 	}

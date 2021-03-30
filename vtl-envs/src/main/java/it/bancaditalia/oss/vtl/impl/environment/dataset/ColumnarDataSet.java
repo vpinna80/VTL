@@ -40,10 +40,10 @@ public class ColumnarDataSet extends AbstractDataSet
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ColumnarDataSet.class);
 	
-	private final Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>[]> columns;
+	private final Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns;
 	private final int nRows;
 
-	public ColumnarDataSet(Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>[]> columns)
+	public ColumnarDataSet(Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns)
 	{
 		super(new DataStructureBuilder(columns.keySet()).build());
 		this.columns = columns;

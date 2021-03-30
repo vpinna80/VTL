@@ -41,7 +41,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 public class SampleValues
 {
 	private static final Map<String, Object[][]> VALUES = new HashMap<>();
-	private static final Map<String, Function<? super Object, ? extends ScalarValue<?, ?, ?>>> WRAPPERS = new HashMap<>(); 
+	private static final Map<String, Function<? super Object, ? extends ScalarValue<?, ?, ?, ?>>> WRAPPERS = new HashMap<>(); 
 	
 	static {
 		VALUES.put("INTEGER", new Long[][] {
@@ -75,10 +75,10 @@ public class SampleValues
 
 	private SampleValues() { }
 	
-	public static List<ScalarValue<?, ?, ?>> getValues(String type, int index)
+	public static List<ScalarValue<?, ?, ?, ?>> getValues(String type, int index)
 	{
 		Object values[] = VALUES.get(type)[index - 1];
-		Function<? super Object, ? extends ScalarValue<?, ?, ?>> wrapper = WRAPPERS.get(type);
+		Function<? super Object, ? extends ScalarValue<?, ?, ?, ?>> wrapper = WRAPPERS.get(type);
 		
 		return Arrays.stream(values)
 				.map(wrapper)

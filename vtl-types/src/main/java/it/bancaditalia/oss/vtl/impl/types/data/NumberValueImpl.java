@@ -27,8 +27,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-public abstract class NumberValueImpl<R extends Number & Comparable<? super R>, S extends NumberDomainSubset<D>, D extends NumberDomain> extends BaseScalarValue<R, S, D>
-	implements NumberValue<R, S, D>
+public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R extends Number & Comparable<? super R>, S extends NumberDomainSubset<D>, D extends NumberDomain> 
+	extends BaseScalarValue<T, R, S, D> implements NumberValue<T, R, S, D>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -38,10 +38,10 @@ public abstract class NumberValueImpl<R extends Number & Comparable<? super R>, 
 	}
 	
 	@Override
-	public final int compareTo(ScalarValue<?, ?, ?> o)
+	public final int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof NumberValueImpl)
-			return Double.valueOf(doubleValue()).compareTo(Double.valueOf(((NumberValueImpl<?, ?, ?>) o).doubleValue()));
+			return Double.valueOf(doubleValue()).compareTo(Double.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).doubleValue()));
 		
 		throw new VTLIncompatibleTypesException("comparison", getDomain(), o.getDomain());
 	}

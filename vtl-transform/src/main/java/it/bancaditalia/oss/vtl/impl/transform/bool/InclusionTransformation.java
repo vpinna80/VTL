@@ -53,22 +53,22 @@ public class InclusionTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public static enum InOperator implements BiPredicate<Set<? extends ScalarValue<?, ?, ?>>, ScalarValue<?, ?, ?>>
+	public static enum InOperator implements BiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
 	{
 		IN("in", Set::contains),
 		NOTIN("not_in", not(Set::contains));
 
 		private final String text;
-		private final BiPredicate<Set<? extends ScalarValue<?, ?, ?>>, ScalarValue<?, ?, ?>> test;
+		private final BiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> test;
 
-		private InOperator(String text, BiPredicate<Set<? extends ScalarValue<?, ?, ?>>, ScalarValue<?, ?, ?>> test)
+		private InOperator(String text, BiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> test)
 		{
 			this.text = text;
 			this.test = test;
 		}
 
 		@Override
-		public boolean test(Set<? extends ScalarValue<?, ?, ?>> t, ScalarValue<?, ?, ?> u)
+		public boolean test(Set<? extends ScalarValue<?, ?, ?, ?>> t, ScalarValue<?, ?, ?, ?> u)
 		{
 			return test.test(t,  u);
 		}
@@ -81,11 +81,11 @@ public class InclusionTransformation extends UnaryTransformation
 	}
 
 	private final InOperator operator;
-	private final Set<? extends ScalarValue<?, ?, ?>> set;
+	private final Set<? extends ScalarValue<?, ?, ?, ?>> set;
 
 	private DataSetMetadata    metadata = null;
 
-	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?>> list)
+	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?, ?>> list)
 	{
 		super(operand);
 		this.operator = operator;
@@ -101,7 +101,7 @@ public class InclusionTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return BooleanValue.of(operator.test(set, scalar));
 	}

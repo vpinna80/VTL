@@ -46,7 +46,7 @@ public interface EnumeratedDomainSubset<S extends ValueDomainSubset<D>, D extend
 	 * 
 	 * @return the set of all the code items in this domain.
 	 */
-	public Set<? extends CodeItem<? extends Comparable<?>, ? extends EnumeratedDomainSubset<S, D>, D>> getCodeItems();
+	public Set<? extends CodeItem<?, ? extends Comparable<?>, ? extends EnumeratedDomainSubset<S, D>, D>> getCodeItems();
 	
-	@Override ScalarValue<?, ? extends EnumeratedDomainSubset<S, D>, ? extends D> cast(ScalarValue<?, ?, ?> value);
+	@Override ScalarValue<?, ?, ? extends EnumeratedDomainSubset<S, D>, ? extends D> cast(ScalarValue<?, ?, ?, ?> value);
 }

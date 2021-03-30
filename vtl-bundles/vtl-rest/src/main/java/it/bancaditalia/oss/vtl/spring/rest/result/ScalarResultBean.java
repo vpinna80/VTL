@@ -30,12 +30,12 @@ public class ScalarResultBean extends ResultBean
 	private final String domain;
 	private final Serializable value;
 
-	public ScalarResultBean(ScalarValue<?, ?, ?> value)
+	public ScalarResultBean(ScalarValue<?, ?, ?, ?> value)
 	{
 		super("SCALAR");
 		
-		this.value = ((ScalarValue<?, ?, ?>) value).get();
-		this.domain = ((ScalarValue<?, ?, ?>) value).getDomain().toString();
+		this.value = ((ScalarValue<?, ?, ?, ?>) value).get();
+		this.domain = ((ScalarValue<?, ?, ?, ?>) value).getDomain().toString();
 	}
 
 	public String getDomain()

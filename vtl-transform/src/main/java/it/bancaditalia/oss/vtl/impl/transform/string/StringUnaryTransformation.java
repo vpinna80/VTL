@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toSet;
 
@@ -26,26 +27,26 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -53,7 +54,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public enum StringOperator implements Function<ScalarValue<?, ? extends StringDomainSubset,StringDomain>, StringValue>
+	public enum StringOperator implements UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain>>
 	{
 		TRIM("TRIM", String::trim, StringEnumeratedDomainSubset::trim),
 		LTRIM("LTRIM", s -> s.replaceAll("^\\s+",""), StringEnumeratedDomainSubset::ltrim),
@@ -63,13 +64,13 @@ public class StringUnaryTransformation extends UnaryTransformation
 
 		private final String name;
 		private final UnaryOperator<StringEnumeratedDomainSubset> codeListMapper;
-		private final Function<ScalarValue<?, ? extends StringDomainSubset,StringDomain>, StringValue> function;
+		private final UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain>> function;
 
 		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<StringEnumeratedDomainSubset> codeListMapper)
 		{
 			this.name = name;
 			this.codeListMapper = codeListMapper;
-			this.function = s -> new StringValue(function.apply(s.get().toString()));
+			this.function = s -> s instanceof NullValue ? NullValue.instance(STRINGDS) : ((StringValue) s).map(function);
 		}
 		
 		@Override
@@ -84,7 +85,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 		}
 
 		@Override
-		public StringValue apply(ScalarValue<?, ? extends StringDomainSubset,StringDomain> t)
+		public ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> apply(ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> t)
 		{
 			return function.apply(t);
 		}
@@ -101,7 +102,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return scalar.getDomain().cast(operator.apply(STRINGDS.cast(scalar)));
 	}
@@ -112,7 +113,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 		
 		return dataset.mapKeepingKeys(metadata, dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 				map.replaceAll((c, v) -> c.getDomain().cast(operator.apply(STRINGDS.cast(v))));
 				return map;
 			});
@@ -125,7 +126,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 		
 		if (meta instanceof ScalarValueMetadata)
 			if (((ScalarValueMetadata<?>) meta).getDomain() instanceof NumberDomainSubset)
-				return (ScalarValueMetadata<?>) () -> STRINGDS;
+				return STRING;
 			else
 				throw new VTLIncompatibleTypesException(operator.toString(), STRINGDS, ((ScalarValueMetadata<?>) meta).getDomain());
 		else

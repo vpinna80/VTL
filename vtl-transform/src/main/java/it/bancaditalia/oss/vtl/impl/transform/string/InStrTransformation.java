@@ -97,9 +97,9 @@ public class InStrTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue left = leftOperand.eval(session);
-		ScalarValue<?, ? extends StringDomainSubset, StringDomain> right = STRINGDS.cast((ScalarValue<?, ?, ?>) rightOperand.eval(session));
-		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?>) startOperand.eval(session));
-		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> occurrence = INTEGERDS.cast((ScalarValue<?, ?, ?>) occurrenceOperand.eval(session));
+		ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> right = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) rightOperand.eval(session));
+		ScalarValue<?, ?, ? extends IntegerDomainSubset,IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
+		ScalarValue<?, ?, ? extends IntegerDomainSubset,IntegerDomain> occurrence = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) occurrenceOperand.eval(session));
 		
 		int startPos = (int) (long) (Long) start.get() - 1;
 		int nOcc = (int) (long) (Long) occurrence.get() - 1;
@@ -119,13 +119,13 @@ public class InStrTransformation extends TransformationImpl
 			String pattern = right instanceof NullValue ? null : STRINGDS.cast(right).get().toString();
 			
 			return dataset.mapKeepingKeys(structure, dp -> singletonMap(INT_MEASURE, 
-					(ScalarValue<?, IntegerDomainSubset, IntegerDomain>) (pattern == null 
+					(ScalarValue<?, ?, IntegerDomainSubset, IntegerDomain>) (pattern == null 
 						? NullValue.instance(INTEGERDS)
 						: findOccurrence(STRINGDS.cast(dp.get(measure)).get().toString(), pattern, startPos, nOcc)))); 
 		}
 		else
 		{
-			ScalarValue<?, ?, ?> scalar = (ScalarValue<?, ?, ?>) left;
+			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) left;
 			if (left instanceof NullValue || right instanceof NullValue)
 				return NullValue.instance(INTEGERDS);
 			

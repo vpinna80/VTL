@@ -54,7 +54,7 @@ public class NotTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return scalar instanceof NullValue ? NullValue.instance(BOOLEANDS) : BooleanValue.of(!BOOLEANDS.cast(scalar).get());
 	}
@@ -65,7 +65,7 @@ public class NotTransformation extends UnaryTransformation
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 		
 		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 				map.replaceAll((c, v) -> v instanceof NullValue ? NullValue.instance(BOOLEANDS) : BooleanValue.of(!BOOLEANDS.cast(v).get()));
 				return map;
 			});

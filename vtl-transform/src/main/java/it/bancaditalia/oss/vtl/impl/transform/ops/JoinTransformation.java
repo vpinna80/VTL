@@ -196,7 +196,7 @@ public class JoinTransformation extends TransformationImpl
 
 			// TODO: Memory hungry!!! Find some way to stream instead of building this big index collection 
 			LOGGER.debug("Indexing all datapoints");
-			Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier,?,?>, ScalarValue<?,?,?>>, DataPoint>> indexes = Utils.getStream(datasets)
+			Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier,?,?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> indexes = Utils.getStream(datasets)
 					.filter(entryByKey(op -> op != referenceDataSet))
 					.map(Entry::getValue)
 					.collect(toMapWithValues(ds -> {
@@ -340,7 +340,7 @@ public class JoinTransformation extends TransformationImpl
 				.collect(DataStructureBuilder.toDataStructure(applyComponents));
 		
 		return dataset.mapKeepingKeys(applyMetadata, dp -> applyComponents.stream()
-				.collect(toConcurrentMap(c -> c, c -> (ScalarValue<?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
+				.collect(toConcurrentMap(c -> c, c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
 	}
 
 	@Override

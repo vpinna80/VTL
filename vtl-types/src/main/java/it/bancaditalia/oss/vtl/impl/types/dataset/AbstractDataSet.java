@@ -90,7 +90,7 @@ public abstract class AbstractDataSet implements DataSet
 		return mapKeepingKeys(membershipStructure, dp -> {
 			if (!dp.containsKey(sourceComponent))
 				throw new VTLMissingComponentsException(sourceComponent, dp);
-			final ScalarValue<?, ?, ?> gotValue = dp.get(sourceComponent);
+			final ScalarValue<?, ?, ?, ?> gotValue = dp.get(sourceComponent);
 			return singletonMap(membershipMeasure, gotValue);
 		});
 	}
@@ -113,7 +113,7 @@ public abstract class AbstractDataSet implements DataSet
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
 		commonIds.retainAll(other.getComponents(Identifier.class));
 		
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, List<DataPoint>> index;
+		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, List<DataPoint>> index;
 		try (Stream<DataPoint> stream = other.stream())
 		{
 			// performance if
@@ -142,7 +142,7 @@ public abstract class AbstractDataSet implements DataSet
 
 	@Override
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> operator)
+			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
 		if (!metadata.getComponents(Identifier.class).equals(identifiers))
@@ -168,17 +168,17 @@ public abstract class AbstractDataSet implements DataSet
 
 	@Override
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> filter,
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
 			Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>, T> finisher)
+			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
 		// key group holder
-		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
+		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
 		
 		// Decorated collector that keeps track of grouping key values for the finisher
 		final Set<Characteristics> characteristics = new HashSet<>(groupCollector.characteristics());
 		characteristics.remove(IDENTITY_FINISH);
-		Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>>>, A, T> decoratedCollector = Collector.of(
+		Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, A, T> decoratedCollector = Collector.of(
 				// supplier
 				groupCollector.supplier(),
 				// accumulator

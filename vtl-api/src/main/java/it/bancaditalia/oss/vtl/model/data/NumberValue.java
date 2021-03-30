@@ -31,13 +31,13 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
  * @param <S>
  * @param <D>
  */
-public interface NumberValue<R extends Number & Comparable<? super R>, S extends NumberDomainSubset<D>, D extends NumberDomain> extends ScalarValue<R, S, D> 
+public interface NumberValue<T extends NumberValue<T, R, S, D>, R extends Number & Comparable<? super R>, S extends NumberDomainSubset<D>, D extends NumberDomain> extends ScalarValue<T, R, S, D> 
 {
 	@Override
-	public default int compareTo(ScalarValue<?, ?, ?> o)
+	public default int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof NumberValue)
-			return Double.valueOf(doubleValue()).compareTo(Double.valueOf(((NumberValue<?, ?, ?>) o).doubleValue()));
+			return Double.valueOf(doubleValue()).compareTo(Double.valueOf(((NumberValue<?, ?, ?, ?>) o).doubleValue()));
 		
 		throw new UnsupportedOperationException("Comparing Number to " + o.getDomain());
 	}

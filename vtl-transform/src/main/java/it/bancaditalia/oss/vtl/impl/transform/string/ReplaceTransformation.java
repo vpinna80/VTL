@@ -54,9 +54,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -79,15 +79,15 @@ public class ReplaceTransformation extends TransformationImpl
 	{
 		exprOperand = expr;
 		patternOperand = pattern;
-		this.replaceOperand = replace == null ? new ConstantOperand<>(new StringValue("")) : replace;
+		replaceOperand = replace == null ? new ConstantOperand<>(new StringValue("")) : replace;
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue left = exprOperand.eval(session);
-		ScalarValue<?, ? extends StringDomainSubset, StringDomain> pattern = STRINGDS.cast((ScalarValue<?, ?, ?>) patternOperand.eval(session));
-		ScalarValue<?, ? extends StringDomainSubset, StringDomain> replace = STRINGDS.cast((ScalarValue<?, ?, ?>) replaceOperand.eval(session));
+		ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> pattern = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session));
+		ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> replace = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) replaceOperand.eval(session));
 		
 		if (left instanceof DataSet)
 		{
@@ -97,18 +97,15 @@ public class ReplaceTransformation extends TransformationImpl
 			Pattern compiled = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
 			
 			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
-				.map(measure -> {
-					ScalarValue<?, ? extends StringDomainSubset, StringDomain> scalar = STRINGDS.cast(dp.get(measure));
-					if (pattern == null || scalar instanceof NullValue)
-						return new SimpleEntry<>(measure, STRINGDS.cast(NullValue.instance(STRINGDS)));
-					
-					return new SimpleEntry<>(measure, new StringValue(compiled.matcher(scalar.get().toString()).replaceAll(replace.get().toString())));
-				}).collect(Utils.entriesToMap())
+				.map(measure -> new SimpleEntry<>(measure, (pattern == null || dp.get(measure) instanceof NullValue) 
+					? STRINGDS.cast(NullValue.instance(STRINGDS))
+					: ((StringValue) dp.get(measure)).map(value -> compiled.matcher(value).replaceAll(replace.get().toString()))
+				)).collect(Utils.entriesToMap())
 			); 
 		}
 		else
 		{
-			ScalarValue<?, ?, ?> scalar = (ScalarValue<?, ?, ?>) left;
+			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) left;
 			if (left instanceof NullValue || pattern instanceof NullValue)
 				return NullValue.instance(STRINGDS);
 			

@@ -212,22 +212,22 @@ public final class Utils
 
 	public static <A extends Serializable, B extends Serializable, C extends Serializable, R> Function<Triple<A, B, C>, R> splitting(TriFunction<? super A, ? super B, ? super C, ? extends R> trifunction)
 	{
-		return t -> trifunction.apply(t.a, t.b, t.c);
+		return t -> trifunction.apply(t.getFirst(), t.getSecond(), t.getThird());
 	}
 
 	public static <A extends Serializable, B extends Serializable, C extends Serializable> Consumer<Triple<A, B, C>> triple(TriConsumer<? super A, ? super B, ? super C> triconsumer)
 	{
-		return t -> triconsumer.accept(t.a, t.b, t.c);
+		return t -> triconsumer.accept(t.getFirst(), t.getSecond(), t.getThird());
 	}
 
 	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable> Consumer<Quadruple<A, B, C, D>> quartet(QuadConsumer<? super A, ? super B, ? super C, ? super D> quadconsumer)
 	{
-		return q -> quadconsumer.accept(q.a, q.b, q.c, q.d);
+		return q -> quadconsumer.accept(q.getFirst(), q.getSecond(), q.getThird(), q.getFourth());
 	}
 
 	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable, R> Function<Quadruple<A, B, C, D>, R> splitting(QuadFunction<? super A, ? super B, ? super C, ? super D, ? extends R> quadfunction)
 	{
-		return q -> quadfunction.apply(q.a, q.b, q.c, q.d);
+		return q -> quadfunction.apply(q.getFirst(), q.getSecond(), q.getThird(), q.getFourth());
 	}
 
 	public static <T> Stream<T> getStream(Spliterator<T> source)
@@ -318,7 +318,7 @@ public final class Utils
 
 	public static <A1 extends Serializable, A2 extends Serializable, B extends Serializable, C extends Serializable> Function<Triple<A1, B, C>, Triple<A2, B, C>> changingFirst(Function<? super A1, ? extends A2> mapper)
 	{
-		return t -> new Triple<>(mapper.apply(t.a), t.b, t.c);
+		return t -> new Triple<>(mapper.apply(t.getFirst()), t.getSecond(), t.getThird());
 	}
 	
 	public static <T> UnaryOperator<Set<T>> retainer(Set<? extends T> toRetain)

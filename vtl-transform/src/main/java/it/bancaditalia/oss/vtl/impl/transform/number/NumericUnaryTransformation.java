@@ -52,7 +52,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public enum NumericOperator implements UnaryOperator<ScalarValue<?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain>>
+	public enum NumericOperator implements UnaryOperator<ScalarValue<?, ?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain>>
 	{
 		CEIL("ceil", Math::ceil, l -> l),
 		FLOOR("floor", Math::floor, l -> l),
@@ -75,7 +75,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		}
 
 		@Override
-		public ScalarValue<?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain> apply(ScalarValue<?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain> number)
+		public ScalarValue<?, ?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain> apply(ScalarValue<?, ?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain> number)
 		{
 			if (number instanceof NullValue)
 				return NullValue.instance(NUMBERDS);
@@ -107,7 +107,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return operator.apply(NUMBERDS.cast(scalar));
 	}
@@ -118,7 +118,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 		
 		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 				map.replaceAll((c, v) -> operator.apply(NUMBERDS.cast(v)));
 				return map;
 			});

@@ -44,5 +44,5 @@ public interface ValueDomainSubset<D extends ValueDomain> extends ValueDomain
 	 * @param value the {@link ScalarValue} to cast
 	 * @return the casted {@link ScalarValue}
 	 */
-	public ScalarValue<?, ? extends ValueDomainSubset<? extends D>, ? extends D> cast(ScalarValue<?, ?, ?> value);
+	public ScalarValue<?, ?, ? extends ValueDomainSubset<? extends D>, ? extends D> cast(ScalarValue<?, ?, ?, ?> value);
 }

@@ -99,7 +99,7 @@ public enum DurationDomains implements DurationDomainSubset
 	}
 
 	@Override
-	public ScalarValue<?, ? extends ValueDomainSubset<? extends DurationDomain>, ? extends DurationDomain> cast(ScalarValue<?, ?, ?> value)
+	public ScalarValue<?, ?, ? extends ValueDomainSubset<? extends DurationDomain>, ? extends DurationDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		throw new UnsupportedOperationException("Cast to duration domain");
 	}

@@ -30,12 +30,10 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimeValueImpl.TimeHolderImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public class TimeValueImpl extends TimeValue<TimeHolderImpl, TimeDomainSubset<TimeDomain>, TimeDomain>
+public class TimeValueImpl extends TimeValue<TimeValueImpl, TimeHolderImpl, TimeDomainSubset<TimeDomain>, TimeDomain>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -89,7 +87,7 @@ public class TimeValueImpl extends TimeValue<TimeHolderImpl, TimeDomainSubset<Ti
 	}
 
 	@Override
-	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o)
+	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof TimeValueImpl)
 			return get().compareTo(((TimeValueImpl) o).get());
@@ -104,7 +102,7 @@ public class TimeValueImpl extends TimeValue<TimeHolderImpl, TimeDomainSubset<Ti
 	}
 
 	@Override
-	public TimeValue<?, ?, ?> increment(long amount)
+	public TimeValue<?, ?, ?, ?> increment(long amount)
 	{
 		throw new UnsupportedOperationException();
 	}

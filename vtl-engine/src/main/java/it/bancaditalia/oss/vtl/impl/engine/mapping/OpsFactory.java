@@ -548,7 +548,7 @@ public class OpsFactory implements Serializable
 		}
 	}
 
-	private ScalarValue<?, ?, ?> parseValueParam(ParserRuleContext ctx, int level, Valueparam param)
+	private ScalarValue<?, ?, ?, ?> parseValueParam(ParserRuleContext ctx, int level, Valueparam param)
 	{
 		// lookup actual token
 		ParserRuleContext element = getFieldOrMethod(param, ctx, ParserRuleContext.class, level);

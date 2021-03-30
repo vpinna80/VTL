@@ -26,8 +26,8 @@ import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public abstract class TimeValue<R extends Comparable<? super R> & TemporalAccessor & Serializable & TimeHolder, S extends TimeDomainSubset<D>, D extends TimeDomain> 
-		extends BaseScalarValue<R, S, D>
+public abstract class TimeValue<T extends TimeValue<T, R, S, D>, R extends Comparable<? super R> & TemporalAccessor & Serializable & TimeHolder, S extends TimeDomainSubset<D>, D extends TimeDomain> 
+		extends BaseScalarValue<T, R, S, D>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -36,7 +36,7 @@ public abstract class TimeValue<R extends Comparable<? super R> & TemporalAccess
 		super(value, domain);
 	}
 
-	public abstract TimeValue<?, ?, ?> increment(long amount);
+	public abstract TimeValue<?, ?, ?, ?> increment(long amount);
 	
 	public TimePeriodValue wrap(DurationDomains frequency)
 	{

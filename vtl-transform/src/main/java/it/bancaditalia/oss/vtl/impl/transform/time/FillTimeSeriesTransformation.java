@@ -95,7 +95,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		Set<DataStructureComponent<Identifier, ?, ?>> temp = new HashSet<>(ds.getComponents(Identifier.class));
 		temp.remove(timeID);
 		final Set<DataStructureComponent<Identifier, ?, ?>> ids = temp;
-		final Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> nullFiller = ds.getComponents(NonIdentifier.class).stream()
+		final Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFiller = ds.getComponents(NonIdentifier.class).stream()
 				.collect(toMapWithValues(c -> NullValue.instance(c.getDomain())));
 		
 		final Comparator<DataPoint> comparator = (dp1, dp2) -> {
@@ -109,15 +109,15 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			return dp1.get(timeID).compareTo(dp2.get(timeID));
 		};
 		
-		TimeValue<?, ?, ?> min, max;
+		TimeValue<?, ?, ?, ?> min, max;
 		if (mode == ALL && !ids.isEmpty())
 			try (Stream<DataPoint> stream = ds.stream())
 			{
-				AtomicReference<TimeValue<?, ?, ?>> minR = new AtomicReference<>();
-				AtomicReference<TimeValue<?, ?, ?>> maxR = new AtomicReference<>();
+				AtomicReference<TimeValue<?, ?, ?, ?>> minR = new AtomicReference<>();
+				AtomicReference<TimeValue<?, ?, ?, ?>> maxR = new AtomicReference<>();
 				stream.forEach(dp -> {
-					minR.accumulateAndGet((TimeValue<?, ?, ?>) dp.get(timeID), (acc, tv) -> acc == null || tv.compareTo(acc) < 0 ? tv : acc);
-					maxR.accumulateAndGet((TimeValue<?, ?, ?>) dp.get(timeID), (acc, tv) -> acc == null || tv.compareTo(acc) > 0 ? tv : acc);
+					minR.accumulateAndGet((TimeValue<?, ?, ?, ?>) dp.get(timeID), (acc, tv) -> acc == null || tv.compareTo(acc) < 0 ? tv : acc);
+					maxR.accumulateAndGet((TimeValue<?, ?, ?, ?>) dp.get(timeID), (acc, tv) -> acc == null || tv.compareTo(acc) > 0 ? tv : acc);
 				});
 				
 				min = minR.get();
@@ -136,25 +136,25 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	}
 
 	private Stream<DataPoint> fillSeries(final DataSetMetadata structure, NavigableSet<DataPoint> series,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> seriesID, 
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> seriesID, 
 			DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> timeID, 
-			Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> nullFilling, TimeValue<?, ?, ?> min, TimeValue<?, ?, ?> max)
+			Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFilling, TimeValue<?, ?, ?, ?> min, TimeValue<?, ?, ?, ?> max)
 	{
 		LOGGER.debug("Filling group " + seriesID);
 		List<DataPoint> additional = new LinkedList<>();
 		
 		// if min == null: do not add leading null datapoints (single mode)
-		TimeValue<?, ?, ?> previous = min != null ? min.increment(-1) : null; 
+		TimeValue<?, ?, ?, ?> previous = min != null ? min.increment(-1) : null; 
 		
 		// leading null elements and current elements
 		for (DataPoint current: series)
 		{
-			TimeValue<?, ?, ?> lastTime = (TimeValue<?, ?, ?>) current.get(timeID);
+			TimeValue<?, ?, ?, ?> lastTime = (TimeValue<?, ?, ?, ?>) current.get(timeID);
 			
 			// find and fill holes
 			if (previous != null)
 			{
-				TimeValue<?, ?, ?> prevTime = previous.increment(1);
+				TimeValue<?, ?, ?, ?> prevTime = previous.increment(1);
 				while (lastTime.compareTo(prevTime) > 0)
 				{
 					LOGGER.debug("Filling space between " + prevTime + " and " + lastTime);
@@ -167,13 +167,13 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 				}
 			}
 
-			previous = (TimeValue<?, ?, ?>) current.get(timeID);
+			previous = (TimeValue<?, ?, ?, ?>) current.get(timeID);
 		}
 
 		// fill trailing holes
 		if (mode == ALL)
 		{
-			TimeValue<?, ?, ?> prevTime = previous;
+			TimeValue<?, ?, ?, ?> prevTime = previous;
 			while (max.compareTo(prevTime) > 0)
 			{
 				LOGGER.debug("Filling space between " + prevTime + " and " + max);

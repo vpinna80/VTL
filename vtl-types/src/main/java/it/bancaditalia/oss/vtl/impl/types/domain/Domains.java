@@ -105,7 +105,7 @@ public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
 		}
 		
 		@Override
-		public ScalarValue<?, ? extends ValueDomainSubset<ValueDomain>, ValueDomain> cast(ScalarValue<?, ?, ?> value)
+		public ScalarValue<?, ?, ? extends ValueDomainSubset<ValueDomain>, ValueDomain> cast(ScalarValue<?, ?, ?, ?> value)
 		{
 			throw new UnsupportedOperationException("Cast to unknown domain not supported.");
 		}

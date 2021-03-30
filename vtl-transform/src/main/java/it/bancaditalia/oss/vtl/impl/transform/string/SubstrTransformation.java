@@ -91,8 +91,8 @@ public class SubstrTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue expr = exprOperand.eval(session);
-		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?>) startOperand.eval(session));
-		ScalarValue<?,? extends IntegerDomainSubset,IntegerDomain> len = INTEGERDS.cast((ScalarValue<?, ?, ?>) lenOperand.eval(session));
+		ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
+		ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> len = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) lenOperand.eval(session));
 		
 		if (start instanceof IntegerValue && (Long) len.get() < 1)
 			throw new VTLSyntaxException("substr: start parameter must be positive but it is " + start.get());
@@ -108,7 +108,7 @@ public class SubstrTransformation extends TransformationImpl
 			
 			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
 				.map(measure -> {
-					ScalarValue<?, ? extends StringDomainSubset, StringDomain> scalar = STRINGDS.cast(dp.get(measure));
+					ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> scalar = STRINGDS.cast(dp.get(measure));
 					if (scalar instanceof NullValue)
 						return new SimpleEntry<>(measure, STRINGDS.cast(NullValue.instance(STRINGDS)));
 					String string = scalar.get().toString();
@@ -125,7 +125,7 @@ public class SubstrTransformation extends TransformationImpl
 		}
 		else
 		{
-			ScalarValue<?, ?, ?> scalar = (ScalarValue<?, ?, ?>) expr;
+			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) expr;
 			if (scalar instanceof NullValue)
 				return NullValue.instance(STRINGDS);
 			int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();

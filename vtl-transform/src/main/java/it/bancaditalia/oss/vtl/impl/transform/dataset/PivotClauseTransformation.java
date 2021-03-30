@@ -63,7 +63,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		return string.replaceAll("^\"(.*)\"$", "$1");
 	}
 	
-	private static String sanitize(ScalarValue<?, ?, ?> value)
+	private static String sanitize(ScalarValue<?, ?, ?, ?> value)
 	{
 		return value.toString().replaceAll("^\"(.*)\"$", "$1");
 	}

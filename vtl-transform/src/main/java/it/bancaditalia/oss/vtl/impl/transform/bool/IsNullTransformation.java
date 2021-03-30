@@ -58,7 +58,7 @@ public class IsNullTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		return BooleanValue.of(scalar instanceof NullValue);
 	}

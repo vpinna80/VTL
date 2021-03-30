@@ -93,7 +93,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -140,7 +140,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 			.orElse(Stream.empty()), dataset);
 	}
 	
-	private Stream<DataPoint> aggregateWindows(Set<DataStructureComponent<Measure, ?, ?>> measures, Comparator<DataPoint> comparator, Set<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	private Stream<DataPoint> aggregateWindows(Set<DataStructureComponent<Measure, ?, ?>> measures, Comparator<DataPoint> comparator, Set<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
 		
@@ -150,7 +150,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		return new WindowView(orderedPartition, windowClause)
 				.getWindows()
 				.map(window -> measures.stream()
-					.map(toEntryWithValue(measure -> (ScalarValue<?, ?, ?>) Utils.getStream(window.getValue()).collect(aggregation.getReducer(measure))))
+					.map(toEntryWithValue(measure -> (ScalarValue<?, ?, ?, ?>) Utils.getStream(window.getValue()).collect(aggregation.getReducer(measure))))
 					.collect(toDataPoint(metadata, window.getKey()))
 				);
 	}

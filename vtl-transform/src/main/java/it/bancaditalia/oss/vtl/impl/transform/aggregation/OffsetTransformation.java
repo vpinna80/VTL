@@ -84,11 +84,11 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	private final List<OrderByItem> orderByClause;
 	private final OffsetDirection direction;
 	private final int offset;
-	private final ScalarValue<?,?,?> defaultValue;
+	private final ScalarValue<?, ?, ?, ?> defaultValue;
 
 	private transient DataSetMetadata metadata;
 
-	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue offset, ScalarValue<?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
+	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue offset, ScalarValue<?, ?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
 	{
 		super(operand);
 
@@ -100,7 +100,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -147,7 +147,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 			.orElse(Stream.empty()), dataset);
 	}
 	
-	private Stream<DataPoint> offsetPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> keyValues)
+	private Stream<DataPoint> offsetPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
 		
@@ -163,7 +163,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 
 					if (offsetDatapoint == null)
 					{
-						HashMap<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> nullContents = new HashMap<>(dp.getValues(Measure.class));
+						HashMap<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> nullContents = new HashMap<>(dp.getValues(Measure.class));
 						nullContents.replaceAll((m, v) -> defaultValue == null ? NullValue.instanceFrom(m) : m.cast(defaultValue));
 						resultBuilder = resultBuilder.addAll(nullContents);
 					}
@@ -173,7 +173,6 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 					return resultBuilder.build(metadata);
 				});
 	}
-	
 	
 	private static Comparator<DataPoint> comparator(Map<DataStructureComponent<?, ?, ?>, Boolean> sortMethods)
 	{

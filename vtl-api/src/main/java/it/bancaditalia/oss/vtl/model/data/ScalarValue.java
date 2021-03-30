@@ -32,8 +32,8 @@ import java.util.function.Supplier;
  * @param <S> the {@link ValueDomainSubset} of this value. 
  * @param <D> the basic {@link ValueDomain} as defined by VTL specification.
  */
-public interface ScalarValue<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<? extends D>, D extends ValueDomain> 
-		extends VTLValue, Comparable<ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain>>, Supplier<R>
+public interface ScalarValue<T extends ScalarValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<? extends D>, D extends ValueDomain> 
+		extends VTLValue, Comparable<ScalarValue<?, ?, ? extends ValueDomainSubset<?>, ? extends ValueDomain>>, Supplier<R>
 {
 	/**
 	 * @return the {@link ValueDomainSubset} of this ScalarValue.
@@ -41,7 +41,7 @@ public interface ScalarValue<R extends Comparable<?> & Serializable, S extends V
 	public S getDomain();
 
 	@Override
-	public int compareTo(ScalarValue<?, ? extends ValueDomainSubset<?>, ? extends ValueDomain> o);
+	public int compareTo(ScalarValue<?, ?, ?, ?> o);
 	
 	@Override
 	public ScalarValueMetadata<? extends ValueDomainSubset<? extends ValueDomain>> getMetadata();

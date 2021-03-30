@@ -45,10 +45,10 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class SubspaceClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final Map<String, ScalarValue<?, ?, ?>> subspace;
+	private final Map<String, ScalarValue<?, ?, ?, ?>> subspace;
 	private DataSetMetadata metadata;
 	
-	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?>> subspace)
+	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?, ?>> subspace)
 	{
 		this.subspace = subspace;
 	}
@@ -57,7 +57,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet operand = (DataSet) getThisValue(session);
-		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
+		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
 				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().as(Identifier.class), Entry::getValue));
 		
 		return new LightDataSet(metadata, () -> operand.stream()

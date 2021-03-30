@@ -30,11 +30,11 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
-public class NullValue<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> 
-		extends BaseScalarValue<R, S, D>
+public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> 
+		extends BaseScalarValue<T, R, S, D>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<ValueDomainSubset<?>, NullValue<?, ?, ?>> INSTANCES = new ConcurrentHashMap<>();
+	private static final Map<ValueDomainSubset<?>, NullValue<?, ?, ?, ?>> INSTANCES = new ConcurrentHashMap<>();
 	
 	private NullValue(S domain)
 	{
@@ -42,12 +42,12 @@ public class NullValue<R extends Comparable<?> & Serializable, S extends ValueDo
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain>  NullValue<R, S, D> instance(S domain)
+	public static <T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> T instance(S domain)
 	{
-		return (NullValue<R, S, D>) INSTANCES.computeIfAbsent(domain, d -> new NullValue<>(d));
+		return (T) INSTANCES.computeIfAbsent(domain, d -> new NullValue<>(d));
 	}
 
-	public static <C extends DataStructureComponent<?, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain>  NullValue<R, S, D> instanceFrom(C component)
+	public static <T extends NullValue<T, R, S, D>, C extends DataStructureComponent<?, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> T instanceFrom(C component)
 	{
 		return instance(component.getDomain());
 	}
@@ -65,7 +65,7 @@ public class NullValue<R extends Comparable<?> & Serializable, S extends ValueDo
 	}
 
 	@Override
-	public int compareTo(ScalarValue<?, ?, ?> o) throws VTLNullCompareException
+	public int compareTo(ScalarValue<?, ?, ?, ?> o) throws VTLNullCompareException
 	{
 		throw new VTLNullCompareException();
 	}

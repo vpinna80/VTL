@@ -102,7 +102,7 @@ public class CheckTransformation extends TransformationImpl
 		if (imbalanceExpr == null)
 			// TODO: INVALID
 			return dataset.mapKeepingKeys(metadata, dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?>> result = new HashMap<>(); 
+				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
 				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
 				result.put(ERRORCODE, NullValue.instance(NUMBERDS));
 				result.put(ERRORLEVEL, NullValue.instance(NUMBERDS));

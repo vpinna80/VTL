@@ -71,13 +71,13 @@ public class ExistsInTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -90,7 +90,7 @@ public class ExistsInTransformation extends BinaryTransformation
 				rightMeasure = right.getComponents(Measure.class).iterator().next();
 		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> boolMeasure = metadata.getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
 		
-		Set<? extends ScalarValue<?, ?, ?>> values = right.stream().map(dp -> dp.get(rightMeasure)).collect(toSet());
+		Set<? extends ScalarValue<?, ?, ?, ?>> values = right.stream().map(dp -> dp.get(rightMeasure)).collect(toSet());
 		Predicate<DataPoint> filter;
 		if (mode == ALL)
 			filter = dp -> true;
@@ -99,12 +99,12 @@ public class ExistsInTransformation extends BinaryTransformation
 		else
 			filter = dp -> !values.contains(dp.get(leftMeasure));
 		
-		Function<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?>>> mapper;
+		Function<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> mapper;
 		if (mode == ALL)
 			mapper = dp -> singletonMap(boolMeasure, BooleanValue.of(values.contains(dp.get(leftMeasure))));
 		else
 			mapper = dp -> { 
-					HashMap<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+					HashMap<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 					map.put(boolMeasure, BooleanValue.of(values.contains(dp.get(leftMeasure))));
 					map.remove(leftMeasure);
 					return map;

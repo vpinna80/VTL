@@ -41,7 +41,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
  * 
  * @author Valentino Pinna
  */
-public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>>, Serializable
+public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Serializable
 {
 	/**
 	 * Defines a {@link Comparator} that enforces an ordering using the values of a given component
@@ -97,9 +97,9 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @return the casted value for the component if exists.
 	 */
 	@SuppressWarnings("unchecked")
-	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> ScalarValue<?, S, D> getValue(DataStructureComponent<?, S, D> component)
+	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> ScalarValue<?, ?, S, D> getValue(DataStructureComponent<?, S, D> component)
 	{
-		return (ScalarValue<?, S, D>) component.getDomain().cast(get(component));
+		return (ScalarValue<?, ?, S, D>) component.getDomain().cast(get(component));
 	}
 	
 	/**
@@ -108,7 +108,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param identifierValues the id values to check
 	 * @return true if this datapoint matches the provided identifiers' values.
 	 */
-	public default boolean matches(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?>> identifierValues)
+	public default boolean matches(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> identifierValues)
 	{
 		return !Utils.getStream(identifierValues.entrySet())
 				.filter(entryByKeyValue((k, v) -> !get(k).equals(k.cast(v))))
@@ -123,7 +123,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param role role of the components
 	 * @return a map with values for each component of the specified role.
 	 */
-	public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role);
+	public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role);
 
 	/**
 	 * Returns the values for multiple components.
@@ -131,7 +131,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the collection of components to query
 	 * @return a map with the values for the specified components.
 	 */
-	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> getValues(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		return Utils.getStream(components)
 				.filter(this::containsKey)
@@ -146,7 +146,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param names collection of names
 	 * @return a map with the values for all the components having the specified role and matching one of the specified names.
 	 */
-	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Class<R> role, Collection<String> names)
+	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role, Collection<String> names)
 	{
 		return Utils.getStream(keySet())
 				.map(c -> new SimpleEntry<>(c, c.getName()))
@@ -165,7 +165,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components collection of components to query
 	 * @return a map with the values for chosen the components having the specified role.
 	 */
-	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?>> getValues(Collection<DataStructureComponent<R, ?, ?>> components, Class<R> role)
+	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<DataStructureComponent<R, ?, ?>> components, Class<R> role)
 	{
 		return Utils.getStream(getValues(role).entrySet())
 				.filter(entryByKey(components::contains))

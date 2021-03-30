@@ -74,9 +74,9 @@ public abstract class BinaryTransformation extends TransformationImpl
 		return metadata == null ? metadata = ThreadUtils.evalFuture(scheme, this, this::getMetadataFinisher, Transformation::getMetadata) : metadata;
 	}
 	
-	protected abstract VTLValue evalTwoScalars(ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right);
+	protected abstract VTLValue evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right);
 
-	protected abstract VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> scalar);
+	protected abstract VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar);
 
 	protected abstract VTLValue evalTwoDatasets(DataSet left, DataSet right);
 
@@ -97,11 +97,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 		if (left instanceof DataSet && right instanceof DataSet)
 			return evalTwoDatasets((DataSet) left, (DataSet) right);
 		else if (left instanceof DataSet && right instanceof ScalarValue)
-			return evalDatasetWithScalar(true, (DataSet) left, (ScalarValue<?, ?, ?>) right);
+			return evalDatasetWithScalar(true, (DataSet) left, (ScalarValue<?, ?, ?, ?>) right);
 		else if (left instanceof ScalarValue && right instanceof DataSet)
-			return evalDatasetWithScalar(false, (DataSet) right, (ScalarValue<?, ?, ?>) left);
+			return evalDatasetWithScalar(false, (DataSet) right, (ScalarValue<?, ?, ?, ?>) left);
 		else if (left instanceof ScalarValue && right instanceof ScalarValue)
-			return evalTwoScalars((ScalarValue<?, ?, ?>) left, (ScalarValue<?, ?, ?>) right);
+			return evalTwoScalars((ScalarValue<?, ?, ?, ?>) left, (ScalarValue<?, ?, ?, ?>) right);
 		else if (left instanceof DataSet || left instanceof ScalarValue)
 			throw new VTLInvalidParameterException(right, DataSet.class, ScalarValue.class);
 		else

@@ -30,7 +30,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 
-public enum ComparisonOperator implements BiFunction<ScalarValue<?, ?, ?>, ScalarValue<?, ?, ?>, ScalarValue<?, BooleanDomainSubset, BooleanDomain>>
+public enum ComparisonOperator implements BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain>>
 {
 	EQ("=", c -> c == 0), NE("<>", c -> c != 0), GT(">", c -> c > 0), 
 	GE(">=", c -> c >= 0), LT("<", c -> c < 0), LE("<=", c -> c <= 0);
@@ -45,7 +45,7 @@ public enum ComparisonOperator implements BiFunction<ScalarValue<?, ?, ?>, Scala
 	}
 
 	@Override
-	public ScalarValue<?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, ?> l, ScalarValue<?, ?, ?> r)
+	public ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, ?, ?> l, ScalarValue<?, ?, ?, ?> r)
 	{
 		return (l instanceof NullValue || r instanceof NullValue) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(lambda.test(l.compareTo(r)));
 	}

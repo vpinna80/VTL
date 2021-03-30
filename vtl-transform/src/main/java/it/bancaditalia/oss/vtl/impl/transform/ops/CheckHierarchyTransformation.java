@@ -163,7 +163,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			.flatMap(e -> Utils.getStream(hierarchy.getRuleItems())
 					.map(rule -> new Triple<>(rule, e)))
 			.map(splitting((rule, keys, group) -> { 
-					HashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?>> res = new HashMap<>(keys); 
+					HashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> res = new HashMap<>(keys); 
 					res.put(ruleKey, new StringValue(rule.getCodeItem()));
 					return new Triple<>(rule, res, group); 
 			// ==> rule, keys, dataset 

@@ -81,7 +81,7 @@ public class MatchTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?> string, ScalarValue<?, ?, ?> pattern)
+	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?, ?> string, ScalarValue<?, ?, ?, ?> pattern)
 	{
 		if (string instanceof NullValue || pattern instanceof NullValue)
 			return NullValue.instance(BOOLEANDS);
@@ -90,7 +90,7 @@ public class MatchTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?> patternV)
+	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> patternV)
 	{
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
 				.addComponent(BOOL_MEASURE)

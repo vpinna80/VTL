@@ -37,7 +37,7 @@ public interface BooleanDomainSubset extends ValueDomainSubset<BooleanDomain>, B
 	}
 	
 	@Override
-	public ScalarValue<Boolean, BooleanDomainSubset, BooleanDomain> cast(ScalarValue<?, ?, ?> value);
+	public ScalarValue<?, Boolean, BooleanDomainSubset, BooleanDomain> cast(ScalarValue<?, ?, ?, ?> value);
 
 	@Override
 	default boolean isAssignableFrom(ValueDomain other)

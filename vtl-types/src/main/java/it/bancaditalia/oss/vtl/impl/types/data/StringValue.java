@@ -21,13 +21,15 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 
+import java.util.function.UnaryOperator;
+
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
-public class StringValue extends BaseScalarValue<String, StringDomainSubset, StringDomain>
+public class StringValue extends BaseScalarValue<StringValue, String, StringDomainSubset, StringDomain>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -37,7 +39,7 @@ public class StringValue extends BaseScalarValue<String, StringDomainSubset, Str
 	}
 
 	@Override
-	public int compareTo(ScalarValue<?, ?, ?> o)
+	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		return get().compareTo((String) Domains.STRINGDS.cast(o).get());
 	}
@@ -53,5 +55,10 @@ public class StringValue extends BaseScalarValue<String, StringDomainSubset, Str
 	public String toString()
 	{
 		return '"' + super.toString() + '"';
+	}
+	
+	public StringValue map(UnaryOperator<String> mapper)
+	{
+		return new StringValue(mapper.apply(get()));
 	}
 }

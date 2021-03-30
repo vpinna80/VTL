@@ -26,7 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
-public abstract class BaseScalarValue<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> implements ScalarValue<R, S, D>, Serializable
+public abstract class BaseScalarValue<T extends BaseScalarValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> implements ScalarValue<T, R, S, D>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -35,7 +35,7 @@ public abstract class BaseScalarValue<R extends Comparable<?> & Serializable, S 
 	private final int	hashCode;
 
 	public BaseScalarValue(R value, S domain)
-	{
+{
 		this.value = value;
 		this.domain = Objects.requireNonNull(domain, "Domain cannot be null");
 		this.hashCode = 31 + (value == null ? 0 : value.hashCode());
@@ -64,7 +64,7 @@ public abstract class BaseScalarValue<R extends Comparable<?> & Serializable, S 
 	{
 		return hashCode;
 	}
-
+	
 	@Override
 	public final boolean equals(Object obj)
 	{
@@ -73,7 +73,7 @@ public abstract class BaseScalarValue<R extends Comparable<?> & Serializable, S 
 		if (!(obj instanceof BaseScalarValue))
 			return false;
 		
-		BaseScalarValue<?, ?, ?> other = (BaseScalarValue<?, ?, ?>) obj;
+		BaseScalarValue<?, ?, ?, ?> other = (BaseScalarValue<?, ?, ?, ?>) obj;
 		if (value == null)
 			return other.value == null;
 		if (value.equals(other.value))

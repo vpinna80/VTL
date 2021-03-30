@@ -48,7 +48,7 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?> scalar)
+	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		throw new VTLInvalidParameterException(scalar, DataSet.class);
 	}

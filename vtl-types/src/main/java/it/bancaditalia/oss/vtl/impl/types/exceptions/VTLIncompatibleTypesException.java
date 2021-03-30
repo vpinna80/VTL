@@ -74,7 +74,7 @@ public class VTLIncompatibleTypesException extends VTLException
 		this.right = right.getDomain();
 	}
 	
-	public VTLIncompatibleTypesException(String operation, ScalarValue<?, ?, ?> left, ScalarValue<?, ?, ?> right)
+	public VTLIncompatibleTypesException(String operation, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		this(operation, left.getDomain(), right.getDomain());
 	}

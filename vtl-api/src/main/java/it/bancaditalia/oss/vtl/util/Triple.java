@@ -27,20 +27,20 @@ public class Triple<A extends Serializable, B extends Serializable, C extends Se
 {
 	private static final long serialVersionUID = 1L;
 	
-	protected final A a;
-	protected final B b;
-	protected final C c;
+	private final A first;
+	private final B second;
+	private final C third;
 	
 	public Triple(A a, B b, C c)
 	{
-		this.a = a;
-		this.b = b;
-		this.c = c;
+		this.first = a;
+		this.second = b;
+		this.third = c;
 	}
 
 	public Triple(Triple<? extends A, ? extends B, ? extends C> t)
 	{
-		this(t.a, t.b, t.c);
+		this(t.first, t.second, t.third);
 	}
 
 	public Triple(A a, Entry<? extends B, ? extends C> e)
@@ -55,31 +55,31 @@ public class Triple<A extends Serializable, B extends Serializable, C extends Se
 	
 	public <D extends Serializable> Quadruple<A, B, C, D> extend(D d)
 	{
-		return new Quadruple<>(this, d);
+		return new Quadruple<>(first, second, third, d);
 	}
 	
-	public A first()
+	public A getFirst()
 	{
-		return a;
+		return first;
 	}
 
-	public B second()
+	public B getSecond()
 	{
-		return b;
+		return second;
 	}
 
-	public C third()
+	public C getThird()
 	{
-		return c;
+		return third;
 	}
 	
 	public <B2 extends Serializable> Triple<A, B2, C> map2(Function<? super Triple<A, B, C>, ? extends B2> mapper)
 	{
-		return new Triple<>(a, mapper.apply(this), c);
+		return new Triple<>(first, mapper.apply(this), third);
 	}
 	
 	public <C2 extends Serializable> Triple<A, B, C2> map3(Function<? super Triple<A, B, C>, ? extends C2> mapper)
 	{
-		return new Triple<>(a, b, mapper.apply(this));
+		return new Triple<>(first, second, mapper.apply(this));
 	}
 }

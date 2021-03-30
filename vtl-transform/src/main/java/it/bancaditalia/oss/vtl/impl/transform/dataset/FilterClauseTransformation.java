@@ -70,7 +70,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 
 		return operand.filter(dp -> {
 			final DatapointScope scheme = new DatapointScope(dp, metadata, session);
-			final ScalarValue<?, ?, ?> result = (ScalarValue<?, ?, ?>) filterClause.eval(scheme);
+			final ScalarValue<?, ?, ?, ?> result = (ScalarValue<?, ?, ?, ?>) filterClause.eval(scheme);
 			return (TRUE.equals(BOOLEANDS.cast(result)));
 		});
 	}

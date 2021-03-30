@@ -47,8 +47,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 public enum AggregateOperator  
 {
 	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::new)),
-	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue()), DoubleValue::new)), 
-	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue()), DoubleValue::new)),
+	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::new)), 
+	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::new)),
 	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, mapping(NumberValue::get, mapping(Number.class::cast, mapping(Number::doubleValue, 
 			toList())))), l -> {
 				List<Double> c = new ArrayList<>(l);
@@ -58,7 +58,8 @@ public enum AggregateOperator
 			})),
 	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
 	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
-	VAR_POP("stddev_pop", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue(), Collector.of( // See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+	VAR_POP("stddev_pop", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), Collector.of( 
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -75,7 +76,8 @@ public enum AggregateOperator
 	            return acuA;
 	        },
 	        acu -> acu[2] / acu[0], UNORDERED)), DoubleValue::new)),
-	VAR_SAMP("stddev_samp", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?>)v).get().doubleValue(), Collector.of( // See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+	VAR_SAMP("stddev_samp", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), Collector.of( 
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -94,34 +96,31 @@ public enum AggregateOperator
 	        acu -> acu[2] / (acu[0] + 1.0), UNORDERED)), DoubleValue::new)),
 	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> new DoubleValue(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> new DoubleValue(Math.sqrt((Double) dv.get()))));
-	/*, 
-	RANK = new AggregateOperator("RANK not implemented."),
-	*/;
 
-	private final Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer;
-	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> extractor;
+	private final Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
+	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
 
-	private AggregateOperator(String name, Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer)
+	private AggregateOperator(String name, Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this(name, DataPoint::get, reducer);
 	}
 
 	private AggregateOperator(String name,
-			BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?>> extractor,
-			Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> reducer)
+			BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor,
+			Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this.name = name;
 		this.extractor = extractor;
 		this.reducer = reducer;
 	}
 
-	public Collector<ScalarValue<?, ?, ?>, ?, ScalarValue<?, ?, ?>> getReducer()
+	public Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer()
 	{
 		return reducer;
 	}
 	
-	public Collector<DataPoint, ?, ScalarValue<?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
+	public Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
 		return Collectors.mapping(dp -> extractor.apply(dp, measure), reducer);
 	}
@@ -132,7 +131,7 @@ public enum AggregateOperator
 		return name;
 	}
 	
-	public BiFunction<? super DataPoint, ? super DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?>> getExtractor()
+	public BiFunction<? super DataPoint, ? super DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> getExtractor()
 	{
 		return extractor;
 	}

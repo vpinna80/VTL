@@ -58,7 +58,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		return ((DataSet) getThisValue(session)).mapKeepingKeys(metadata, dp -> {
-				Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+				Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
 				return map;
 			});
