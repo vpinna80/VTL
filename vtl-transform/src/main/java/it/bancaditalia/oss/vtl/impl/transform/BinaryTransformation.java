@@ -80,9 +80,9 @@ public abstract class BinaryTransformation extends TransformationImpl
 
 	protected abstract VTLValue evalTwoDatasets(DataSet left, DataSet right);
 
-	protected abstract VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right);
+	protected abstract VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right);
 
-	protected abstract VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar);
+	protected abstract VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar);
 
 	protected abstract VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right);
 
@@ -115,11 +115,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
 			return getMetadataTwoDatasets((DataSetMetadata) left, (DataSetMetadata) right);
 		else if (left instanceof DataSetMetadata && right instanceof ScalarValueMetadata)
-			return getMetadataDatasetWithScalar(true, (DataSetMetadata) left, (ScalarValueMetadata<?>) right);
+			return getMetadataDatasetWithScalar(true, (DataSetMetadata) left, (ScalarValueMetadata<?, ?>) right);
 		else if (left instanceof ScalarValueMetadata && right instanceof DataSetMetadata)
-			return getMetadataDatasetWithScalar(false, (DataSetMetadata) right, (ScalarValueMetadata<?>) left);
+			return getMetadataDatasetWithScalar(false, (DataSetMetadata) right, (ScalarValueMetadata<?, ?>) left);
 		else if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
-			return getMetadataTwoScalars((ScalarValueMetadata<?>) left, (ScalarValueMetadata<?>) right);
+			return getMetadataTwoScalars((ScalarValueMetadata<?, ?>) left, (ScalarValueMetadata<?, ?>) right);
 		else if (left instanceof DataSetMetadata || left instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(right, DataSetMetadata.class, ScalarValueMetadata.class);
 		else

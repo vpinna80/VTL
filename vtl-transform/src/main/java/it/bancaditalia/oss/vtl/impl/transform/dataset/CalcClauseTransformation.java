@@ -55,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -224,7 +225,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		for (CalcClauseItem item : calcClauses)
 		{
 			VTLValueMetadata itemMeta = item.getMetadata(scheme);
-			ValueDomainSubset<?> domain;
+			ValueDomainSubset<?, ?> domain;
 
 			// get the domain of the calculated component
 			if (itemMeta instanceof UnknownValueMetadata)
@@ -239,14 +240,14 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				domain = value.getComponents(Measure.class).iterator().next().getDomain();
 			} 
 			else
-				domain = ((ScalarValueMetadata<?>) itemMeta).getDomain();
+				domain = ((ScalarValueMetadata<?, ?>) itemMeta).getDomain();
 
 			Optional<DataStructureComponent<?, ?, ?>> maybePresent = metadata.getComponent(item.getName());
 			
 			if (maybePresent.isPresent())
 			{
 				// existing component
-				DataStructureComponent<?, ?, ?> definedComponent = maybePresent.get();
+				DataStructureComponent<?, ? extends ValueDomainSubset<?, ?>, ? extends ValueDomain> definedComponent = maybePresent.get();
 
 				// disallow override of ids
 				if (definedComponent.is(Identifier.class))
@@ -257,7 +258,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				{
 					// switch role (from a non-id to any)
 					builder.removeComponent(definedComponent);
-					DataStructureComponent<?, ?, ?> newComponent = new DataStructureComponentImpl<>(item.getName(), item.getRole(), definedComponent.getDomain());
+					DataStructureComponent<?, ?, ?> newComponent = DataStructureComponentImpl.of(item.getName(), item.getRole(), definedComponent.getDomain());
 					builder.addComponent(newComponent);
 				}
 			}
@@ -265,7 +266,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// new component
 				Class<? extends ComponentRole> newComponent = item.getRole() == null ? Measure.class : item.getRole();
-				builder = builder.addComponent(new DataStructureComponentImpl<>(item.getName(), newComponent, domain));
+				builder = builder.addComponent(DataStructureComponentImpl.of(item.getName(), newComponent, domain));
 			}
 		}
 

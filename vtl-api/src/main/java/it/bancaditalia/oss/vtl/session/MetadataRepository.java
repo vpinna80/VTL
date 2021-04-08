@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.session;
 
 import java.util.Collection;
 
+import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
 /**
@@ -33,7 +34,7 @@ public interface MetadataRepository
 	/**
 	 * @return a collection of all {@link ValueDomainSubset}s defined in this {@link MetadataRepository}.
 	 */
-	public Collection<ValueDomainSubset<?>> getValueDomains();
+	public Collection<ValueDomainSubset<?, ?>> getValueDomains();
 	
 	/**
 	 * Checks if a {@link ValueDomainSubset} with the specified name exists.
@@ -49,17 +50,17 @@ public interface MetadataRepository
 	 * @param name the name of the domain
 	 * @return the domain or null if none exists.
 	 */
-	public ValueDomainSubset<?> getDomain(String name);
+	public ValueDomainSubset<?, ?> getDomain(String name);
 	
 	/**
 	 * Registers a new domain instance inside this repository (optional operation).
 	 * 
-	 * @param <T> the type of the domain
+	 * @param <S> the type of the domain
 	 * @param name the name of the new domain
 	 * @param domain the domain instance
 	 * @return the same domain instance.
 	 */
-	public default <T extends ValueDomainSubset<?>> T registerDomain(String name, T domain)
+	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> S registerDomain(String name, S domain)
 	{
 		throw new UnsupportedOperationException("registerDomain");
 	}
@@ -67,14 +68,14 @@ public interface MetadataRepository
 	/**
 	 * Creates a new domain instance and registers it inside this repository (optional operation).
 	 * 
-	 * @param <T> the type of the domain
+	 * @param <S> the type of the domain
 	 * @param name the name of the new domain
 	 * @param domainClass the class of the domain
 	 * @param param optional parameters to pass to the domain class constructor
 	 * 
 	 * @return the created domain instance.
 	 */
-	public default <T extends ValueDomainSubset<?>> T defineDomain(String name, Class<T> domainClass, Object param)
+	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> S defineDomain(String name, Class<S> domainClass, Object param)
 	{
 		throw new UnsupportedOperationException("defineDomain");
 	}

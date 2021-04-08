@@ -19,16 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.A;
-
 import java.io.Serializable;
 import java.time.Year;
 import java.time.temporal.TemporalField;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 
 class YearHolder extends DateHolder<Year> implements Serializable
 {
@@ -101,33 +97,10 @@ class YearHolder extends DateHolder<Year> implements Serializable
 			return false;
 		return true;
 	}
-	
-	@Override
-	public DurationDomains getPeriod()
-	{
-		return A;
-	}
 
 	@Override
 	public YearHolder increment(long amount)
 	{
 		return new YearHolder(year.plusYears(amount));
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		switch (frequency)
-		{
-			case A: return new YearPeriodHolder<>(this);
-			default:
-				throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
-		}
-	}
-
-	@Override
-	public String getPeriodIndicator()
-	{
-		return "P1Y";
 	}
 }

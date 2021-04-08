@@ -81,11 +81,11 @@ public class SampleValues
 			{ LocalDate.of(2020, 1, 3), LocalDate.of(2020, 1, 4), LocalDate.of(2020, 1, 5), LocalDate.of(2020, 1, 7), LocalDate.of(2020, 1, 8), LocalDate.of(2020, 1, 10) }
 		});
 
-		WRAPPERS.put("INTEGER", v -> v == null ? NullValue.instance(INTEGERDS) : new IntegerValue((Long) v));
-		WRAPPERS.put("NUMBER", v -> v == null ? NullValue.instance(NUMBERDS) : new DoubleValue((Double) v));
-		WRAPPERS.put("STRING", v -> v == null ? NullValue.instance(STRINGDS) : new StringValue((String) v));
+		WRAPPERS.put("INTEGER", v -> v == null ? NullValue.instance(INTEGERDS) : IntegerValue.of((Long) v));
+		WRAPPERS.put("NUMBER", v -> v == null ? NullValue.instance(NUMBERDS) : DoubleValue.of((Double) v));
+		WRAPPERS.put("STRING", v -> v == null ? NullValue.instance(STRINGDS) : StringValue.of((String) v));
 		WRAPPERS.put("BOOLEAN", v -> v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of((Boolean) v));
-		WRAPPERS.put("DATE", v -> v == null ? NullValue.instance(DATEDS) : new DateValue((LocalDate) v));
+		WRAPPERS.put("DATE", v -> v == null ? NullValue.instance(DATEDS) : DateValue.of((LocalDate) v));
 	}
 
 	private SampleValues() { }

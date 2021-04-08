@@ -19,32 +19,32 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-
 import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValueImpl.TimeHolderImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-class EntireTimeDomainSubset extends EntireDomainSubset<TimeHolderImpl, TimeDomain> implements TimeDomainSubset<TimeDomain>, Serializable
+public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainSubset, TimeDomain> implements TimeDomainSubset<EntireTimeDomainSubset, TimeDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private static final TimeDomainSubset<TimeDomain> INSTANCE = new EntireTimeDomainSubset();
-
-	public static TimeDomainSubset<TimeDomain> getInstance()
+	private static final EntireTimeDomainSubset INSTANCE = new EntireTimeDomainSubset();
+	
+	public static EntireTimeDomainSubset getInstance()
 	{
 		return INSTANCE;
 	}
 
 	private EntireTimeDomainSubset()
 	{
-		super(TIMEDS, "time_var");
+		super(null, "time_var");
+	}
+
+	protected EntireTimeDomainSubset(TimeDomain timeds, String name)
+	{
+		super(timeds, name);
 	}
 
 	@Override
@@ -59,13 +59,14 @@ class EntireTimeDomainSubset extends EntireDomainSubset<TimeHolderImpl, TimeDoma
 		return other instanceof TimeDomainSubset;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public ScalarValue<?, ?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (isAssignableFrom(value.getDomain()) && value instanceof NullValue)
-			return NullValue.instance(this);
-		else if (value instanceof TimeValue)
-			return (TimeValue<?, ?, ?, ?>) value;
+		if (isAssignableFrom(value.getDomain()))
+			// Safe
+			return (ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain>) value; 
+
 		throw new UnsupportedOperationException("Cast to time from " + value.getClass());
 	}
 

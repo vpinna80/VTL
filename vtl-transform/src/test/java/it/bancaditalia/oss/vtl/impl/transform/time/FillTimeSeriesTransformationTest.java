@@ -44,12 +44,12 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireDateDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -89,8 +89,8 @@ public class FillTimeSeriesTransformationTest
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
 		assertEquals(expectedSize, computedResult.size(), "Dataset size");
 		
-		DataStructureComponent<Identifier, DateDomainSubset, DateDomain> time_id = computedResult.getComponent("DATE_1", Identifier.class, DATEDS).get();
-		DataStructureComponent<Identifier, StringDomainSubset, StringDomain> string_id = computedResult.getComponent("STRING_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, EntireDateDomainSubset, DateDomain> time_id = computedResult.getComponent("DATE_1", Identifier.class, DATEDS).get();
+		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> string_id = computedResult.getComponent("STRING_1", Identifier.class, STRINGDS).get();
 		
 		Collection<List<DataPoint>> splitResult = computedResult.stream().sequential()
 				.sorted((dp1, dp2) -> (dp1.get(time_id)).compareTo(dp2.get(time_id)))
@@ -100,10 +100,10 @@ public class FillTimeSeriesTransformationTest
 		
 		for (List<DataPoint> series: splitResult)
 		{
-			DateValue prev = null;
+			DateValue<?> prev = null;
 			for (DataPoint dp: series)
 			{
-				DateValue curr = (DateValue) dp.get(time_id);
+				DateValue<?> curr = (DateValue<?>) dp.get(time_id);
 				if (prev != null)
 					assertTrue(prev.compareTo(curr) == 0, "Found hole: " + prev + " -- " + curr);
 				else

@@ -61,7 +61,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -76,7 +75,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
@@ -207,14 +205,14 @@ public class CSVFileEnvironment implements Environment
 	private ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String value, String mask)
 	{
 		if (component.getDomain() instanceof StringDomainSubset)
-			return new StringValue(value.matches("^\".*\"$") ? value.substring(1, value.length() - 1) : value);
+			return StringValue.of(value.matches("^\".*\"$") ? value.substring(1, value.length() - 1) : value);
 		else if (component.getDomain() instanceof IntegerDomainSubset)
 			try
 			{
 				if (value.trim().isEmpty())
 					return NullValue.instance(INTEGERDS);
 				else
-					return new IntegerValue(Long.parseLong(value));
+					return IntegerValue.of(Long.parseLong(value));
 			}
 			catch (NumberFormatException e)
 			{
@@ -227,7 +225,7 @@ public class CSVFileEnvironment implements Environment
 				if (value.trim().isEmpty())
 					return NullValue.instance(NUMBERDS);
 				else
-					return new DoubleValue(Double.parseDouble(value));
+					return DoubleValue.of(Double.parseDouble(value));
 			}
 			catch (NumberFormatException e)
 			{
@@ -237,14 +235,12 @@ public class CSVFileEnvironment implements Environment
 		else if (component.getDomain() instanceof BooleanDomainSubset)
 			return BooleanValue.of(Boolean.parseBoolean(value));
 		else if (component.getDomain() instanceof DateDomainSubset)
-			return new DateValue(parseString(value, mask)); 
-		else if (component.getDomain() instanceof DateDomainSubset)
-			return new TimePeriodValue(parseString(value, mask));
+			return DateValue.of(parseString(value, mask)); 
 
 		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getDomain());
 	}
 
-	private Entry<ValueDomainSubset<? extends ValueDomain>, String> mapVarType(String typeName)
+	private Entry<ValueDomainSubset<?, ?>, String> mapVarType(String typeName)
 	{
 		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 		
@@ -305,11 +301,18 @@ public class CSVFileEnvironment implements Environment
 				typeName = "String";
 			}
 			
-			Entry<ValueDomainSubset<? extends ValueDomain>, String> mappedType = mapVarType(typeName);
-			ValueDomainSubset<? extends ValueDomain> domain = mappedType.getKey();
-			Class<? extends ComponentRole> role = cname.startsWith("$") ? Identifier.class : cname.startsWith("#") ? Attribute.class : Measure.class;
-			cname = cname.replaceAll("^[$#]", "");
-			DataStructureComponentImpl<? extends ComponentRole, ?, ? extends ValueDomain> component = new DataStructureComponentImpl<>(cname, role, domain);
+			Entry<ValueDomainSubset<?, ?>, String> mappedType = mapVarType(typeName);
+			ValueDomainSubset<?, ?> domain = mappedType.getKey();
+			DataStructureComponent<?, ?, ?> component;
+			Class<? extends ComponentRole> role;
+			if (cname.startsWith("$"))
+				role = Identifier.class;
+			else if (cname.startsWith("#"))
+				role = Attribute.class;
+			else
+				role = Measure.class;
+
+			component = DataStructureComponentImpl.of(cname.replaceAll("^[$#]", ""), role, domain);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)

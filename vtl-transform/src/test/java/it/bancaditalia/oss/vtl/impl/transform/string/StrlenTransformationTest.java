@@ -41,13 +41,13 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -71,14 +71,14 @@ public class StrlenTransformationTest
 		StrlenTransformation st = new StrlenTransformation(left);
 		DataSetMetadata structure = (DataSetMetadata) st.getMetadata(session);
 		
-		DataStructureComponent<Identifier, StringDomainSubset, StringDomain> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain>> measure = structure.getComponent("integer_var", Measure.class, INTEGERDS);
+		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
+		Optional<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> measure = structure.getComponent("integer_var", Measure.class, INTEGERDS);
 		assertTrue(measure.isPresent(), "integer_var result");
 		
 		DataSet ds = (DataSet) st.eval(session);
 
 		ConcurrentMap<?, ?> resultMap = ds.stream()
-			.map(dp -> new SimpleEntry<>(((StringValue) dp.get(id)).get(), ((IntegerValue) dp.get(measure.get())).get()))
+			.map(dp -> new SimpleEntry<>(((StringValue<?, ?>) dp.get(id)).get(), ((IntegerValue<?>) dp.get(measure.get())).get()))
 			.collect(entriesToMap());
 		
 		for (int i = 0; i < resultKeys.length; i++)

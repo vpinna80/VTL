@@ -30,7 +30,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
 public enum SampleVariables
 {
@@ -60,16 +59,14 @@ public enum SampleVariables
 			case "IDENT": role = Identifier.class; break;
 		}
 		
-		ValueDomainSubset<?> domain = null;
 		switch (elem[1])
 		{
-			case "NUMBER": domain = NUMBERDS; break;
-			case "INTEGER": domain = INTEGERDS; break;
-			case "STRING": domain = STRINGDS; break;
-			case "BOOLEAN": domain = BOOLEANDS; break;
+			case "NUMBER": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, NUMBERDS); break;
+			case "INTEGER": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, INTEGERDS); break;
+			case "STRING": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, STRINGDS); break;
+			case "BOOLEAN": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, BOOLEANDS); break;
+			default: throw new UnsupportedOperationException("Unsupported domain in unit test");
 		}
-
-		component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, domain);
 	}
 	
 	public DataStructureComponent<?, ?, ?> getComponent()

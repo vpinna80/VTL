@@ -30,7 +30,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * 
  * @author Valentino Pinna
  */
-public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<StringDomainSubset, StringDomain>, StringDomainSubset
+public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<StringEnumeratedDomainSubset, StringDomain>, StringDomainSubset<StringEnumeratedDomainSubset>
 {
 	/**
 	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading and 
@@ -77,14 +77,14 @@ public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<Str
 	 * 
 	 * @author Valentino Pinna
 	 */
-	public interface StringCodeItem<T extends StringCodeItem<T>> extends CodeItem<T, String, StringEnumeratedDomainSubset, StringDomain>
+	public interface StringCodeItem<I extends StringCodeItem<I>> extends CodeItem<I, String, StringEnumeratedDomainSubset, StringDomain>
 	{
 
 	}
 	
 	@Override
-	ScalarValue<?, ?, ? extends StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value);
+	ScalarValue<?, ?, StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value);
 	
 	@Override
-	public Set<StringCodeItem<?>> getCodeItems();
+	Set<? extends StringCodeItem<?>> getCodeItems();
 }

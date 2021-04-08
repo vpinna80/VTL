@@ -31,26 +31,26 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class IsNullTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>(BOOLEAN.getDomain().getVarName(), Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>(BOOLEANDS.getVarName(), Measure.class, BOOLEANDS);
 
 	public IsNullTransformation(Transformation operand)
 	{
@@ -81,10 +81,10 @@ public class IsNullTransformation extends UnaryTransformation
 		VTLValueMetadata meta = operand.getMetadata(session);
 
 		if (meta instanceof ScalarValueMetadata)
-			if (Domains.BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?>) meta).getDomain()))
+			if (Domains.BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
 				return BOOLEAN;
 			else
-				throw new VTLIncompatibleTypesException("isnull", BOOLEANDS, ((ScalarValueMetadata<?>) meta).getDomain());
+				throw new VTLIncompatibleTypesException("isnull", BOOLEANDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
 		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;

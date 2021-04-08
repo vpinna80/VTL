@@ -175,7 +175,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 
 		if (having != null)
-			result = result.filter(dp -> (BooleanValue) having.eval(new DatapointScope(dp, metadata, session)) == BooleanValue.of(true));
+			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(dp, metadata, session)) == BooleanValue.of(true));
 
 		return result;
 	}
@@ -218,11 +218,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) clauseMeta).getComponents(Measure.class);
 					if (measures.size() != 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, measures);
-					clauseMeta = (ScalarValueMetadata<?>) measures.iterator().next()::getDomain;
+					final DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
+					clauseMeta = measure.getMetadata();
 				}
 
-				if (!(clauseMeta instanceof ScalarValueMetadata) || !Domains.NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?>) clauseMeta).getDomain()))
-					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, ((ScalarValueMetadata<?>) clauseMeta).getDomain());
+				if (!(clauseMeta instanceof ScalarValueMetadata) || !Domains.NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
+					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, ((ScalarValueMetadata<?, ?>) clauseMeta).getDomain());
 
 				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getComponent());
 				Class<? extends ComponentRole> requestedRole = clause.getRole() == null ? Measure.class : clause.getRole();

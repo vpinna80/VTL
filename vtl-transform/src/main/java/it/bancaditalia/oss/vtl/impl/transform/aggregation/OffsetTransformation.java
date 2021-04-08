@@ -88,7 +88,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 
 	private transient DataSetMetadata metadata;
 
-	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue offset, ScalarValue<?, ?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
+	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue<?> offset, ScalarValue<?, ?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
 	{
 		super(operand);
 

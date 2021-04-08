@@ -35,12 +35,13 @@ import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class NvlTransformationTest
@@ -49,7 +50,7 @@ public class NvlTransformationTest
 	public void test()
 	{
 		VarIDOperand left = new VarIDOperand("left");
-		ConstantOperand<Long, IntegerDomainSubset, IntegerDomain, IntegerValue> right = new ConstantOperand<>(new IntegerValue(MAX_VALUE));
+		ConstantOperand<Long, ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain>> right = new ConstantOperand<>(IntegerValue.of(MAX_VALUE));
 		Map<String, DataSet> map = new HashMap<>();
 		map.put("left", SAMPLE5);
 		TransformationScheme session = TestUtils.mockSession(map);
@@ -57,7 +58,7 @@ public class NvlTransformationTest
 		NvlTransformation isnt = new NvlTransformation(left, right);
 		DataSetMetadata structure = (DataSetMetadata) isnt.getMetadata(session);
 		
-		Optional<DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain>> component = structure.getComponent("INTEGER_1", Measure.class, INTEGERDS);
+		Optional<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> component = structure.getComponent("INTEGER_1", Measure.class, INTEGERDS);
 		assertTrue(component.isPresent(), "integer_var measure present");
 		
 		long nullCount = ((DataSet) isnt.eval(session)).stream()

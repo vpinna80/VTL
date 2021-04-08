@@ -56,6 +56,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -70,11 +71,11 @@ public class CastTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final ValueDomainSubset<?> target;
+	private final ValueDomainSubset<?, ?> target;
 	private final String mask;
 	private transient DecimalFormat numberFormatter;
 
-	public CastTransformation(Transformation operand, Domains target, String mask)
+	public CastTransformation(Transformation operand, Domains<?, ?> target, String mask)
 	{
 		super(operand);
 		this.target = target.getDomain();
@@ -97,7 +98,7 @@ public class CastTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getComponents(Measure.class).iterator().next();
-		DataStructureComponent<Measure, ?, ?> measure = new DataStructureComponentImpl<>(target.getVarName(), Measure.class, target);
+		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getVarName(), Measure.class, target).as(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(measure)
 				.build();
@@ -108,10 +109,10 @@ public class CastTransformation extends UnaryTransformation
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
-		ValueDomainSubset<?> domain;
+		ValueDomainSubset<?, ?> domain;
 		
 		if (meta instanceof ScalarValueMetadata)
-			domain = ((ScalarValueMetadata<?>) meta).getDomain();
+			domain = ((ScalarValueMetadata<?, ?>) meta).getDomain();
 		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
@@ -136,10 +137,8 @@ public class CastTransformation extends UnaryTransformation
 			return NUMBER;
 		else if (domain instanceof TimeDomainSubset && target instanceof StringDomainSubset)
 			return STRING;
-		else if (domain instanceof TimeDomainSubset && target instanceof TimeDomainSubset)
-			return (ScalarValueMetadata<?>) () -> target;
 		else if (domain instanceof NullDomain)
-			return (ScalarValueMetadata<?>) () -> target;
+			return (ScalarValueMetadata<NullDomain, ValueDomain>) () -> Domains.UNKNOWNDS;
 		else 
 			throw new UnsupportedOperationException();
 	}
@@ -163,19 +162,19 @@ public class CastTransformation extends UnaryTransformation
 		try
 		{
 			if (scalar instanceof NullValue)
-				return NullValue.instance(target);
+				return target.cast(scalar);
 			else if (scalar instanceof StringValue && target instanceof DateDomainSubset)
-				return new DateValue(parseString(scalar.get().toString(), mask));
+				return DateValue.of(parseString(scalar.get().toString(), mask));
 			else if (scalar instanceof StringValue && target instanceof TimePeriodDomainSubset)
-				return new TimePeriodValue(parseString(scalar.get().toString(), mask));
+				return TimePeriodValue.of(parseString(scalar.get().toString(), mask));
 			else if (scalar instanceof DateValue && target instanceof StringDomainSubset)
-				return new StringValue(parseTemporal((DateHolder<?>) scalar.get(), mask));
+				return StringValue.of(parseTemporal((DateHolder<?>) scalar.get(), mask));
 			else if (scalar instanceof TimePeriodValue && target instanceof StringDomainSubset)
-				return new StringValue(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
+				return StringValue.of(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
 			else if (scalar instanceof StringValue && target instanceof IntegerDomainSubset)
-				return new IntegerValue(Long.parseLong((String) scalar.get()));
+				return IntegerValue.of(Long.parseLong((String) scalar.get()));
 			else if (scalar instanceof StringValue && target instanceof NumberDomainSubset)
-				return new DoubleValue(getNumberFormatter().parse((String) scalar.get()).doubleValue());
+				return DoubleValue.of(getNumberFormatter().parse((String) scalar.get()).doubleValue());
 			else
 				throw new UnsupportedOperationException(scalar.getClass() + " " + target.getClass() + " " + scalar);
 		}

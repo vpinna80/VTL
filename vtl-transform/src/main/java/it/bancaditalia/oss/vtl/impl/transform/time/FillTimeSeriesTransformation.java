@@ -91,12 +91,12 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	protected VTLValue evalOnDataset(DataSet ds)
 	{
 		final DataSetMetadata structure = ds.getMetadata();
-		final DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> timeID = ds.getComponents(Identifier.class, TIMEDS).iterator().next();
+		final DataStructureComponent<Identifier, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeID = ds.getComponents(Identifier.class, TIMEDS).iterator().next();
 		Set<DataStructureComponent<Identifier, ?, ?>> temp = new HashSet<>(ds.getComponents(Identifier.class));
 		temp.remove(timeID);
 		final Set<DataStructureComponent<Identifier, ?, ?>> ids = temp;
 		final Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFiller = ds.getComponents(NonIdentifier.class).stream()
-				.collect(toMapWithValues(c -> NullValue.instance(c.getDomain())));
+				.collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) NullValue.instanceFrom(c)));
 		
 		final Comparator<DataPoint> comparator = (dp1, dp2) -> {
 			for (DataStructureComponent<Identifier, ?, ?> id: ids)
@@ -137,7 +137,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 
 	private Stream<DataPoint> fillSeries(final DataSetMetadata structure, NavigableSet<DataPoint> series,
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> seriesID, 
-			DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> timeID, 
+			DataStructureComponent<Identifier, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeID, 
 			Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFilling, TimeValue<?, ?, ?, ?> min, TimeValue<?, ?, ?, ?> max)
 	{
 		LOGGER.debug("Filling group " + seriesID);

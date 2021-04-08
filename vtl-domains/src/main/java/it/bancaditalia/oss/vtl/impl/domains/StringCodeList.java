@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.domains;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
@@ -27,14 +28,11 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.types.data.BaseScalarValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 
 public class StringCodeList implements StringEnumeratedDomainSubset, Serializable
@@ -42,10 +40,10 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	private static final long serialVersionUID = 1L;
 
 	private final String name; 
-	private final Set<StringCodeItem<?>> items = new HashSet<>();
+	private final Set<StringCodeItemImpl> items = new HashSet<>();
 	private final int hashCode;
 
-	public class StringCodeItemImpl extends BaseScalarValue<StringCodeItemImpl, String, StringEnumeratedDomainSubset, StringDomain> implements StringCodeItem<StringCodeItemImpl>
+	public class StringCodeItemImpl extends StringValue<StringCodeItemImpl, StringEnumeratedDomainSubset> implements StringCodeItem<StringCodeItemImpl>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -57,13 +55,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 		@Override
 		public int compareTo(ScalarValue<?, ?, ?, ?> o)
 		{
-			return get().compareTo((String) getDomain().cast(o).get());
-		}
-
-		@Override
-		public ScalarValueMetadata<StringEnumeratedDomainSubset> getMetadata()
-		{
-			return this::getDomain; 
+			return get().compareTo((String) STRINGDS.cast(o).get());
 		}
 
 		@Override
@@ -88,9 +80,9 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	}
 
 	@Override
-	public StringDomainSubset getDomain()
+	public StringEnumeratedDomainSubset getDomain()
 	{
-		return Domains.STRINGDS;
+		return this;
 	}
 
 	@Override
@@ -139,7 +131,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	}
 
 	@Override
-	public Set<StringCodeItem<?>> getCodeItems()
+	public Set<StringCodeItemImpl> getCodeItems()
 	{
 		return items;
 	}

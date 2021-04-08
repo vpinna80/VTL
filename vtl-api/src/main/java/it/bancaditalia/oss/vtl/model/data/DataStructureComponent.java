@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 
 /**
  * The immutable representation of a component of a dataset.
@@ -33,7 +34,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
  * @param <S> the {@link ValueDomainSubset}
  * @param <D> the {@link ValueDomain}
  */
-public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> extends Serializable
+public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends Serializable
 {
 	/**
 	 * @return The dataset variable for this {@link DataStructureComponent}.
@@ -44,6 +45,14 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @return The domain subset of this {@link DataStructureComponent}.
 	 */
 	public S getDomain();
+
+	/**
+	 * @return The scalar value metadata of this {@link DataStructureComponent}.
+	 */
+	public default ScalarValueMetadata<S, D> getMetadata()
+	{
+		return this::getDomain;
+	}
 	
 	/**
 	 * @return The role of this {@link DataStructureComponent}.
@@ -113,7 +122,7 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @throws ClassCastException if the domain cannot be narrowed.
 	 */
 	@SuppressWarnings("unchecked")
-	public default <S2 extends ValueDomainSubset<D2>, D2 extends ValueDomain> DataStructureComponent<R, S2, D2> as(S2 domain)
+	public default <S2 extends ValueDomainSubset<S2, D2>, D2 extends ValueDomain> DataStructureComponent<R, S2, D2> as(S2 domain)
 	{
 		if (domain.isAssignableFrom(getDomain()))
 			// safe
@@ -129,11 +138,16 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @return the casted value.
 	 * @throws VTLCastException if the value cannot be casted to the domain of this component.
 	 */
-	@SuppressWarnings("unchecked")
 	public default ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		return (ScalarValue<?, ?, S, D>) getDomain().cast(value);
 	}
+
+	/**
+	 * Create a measure component with the same domain as this component and a default name. 
+	 * @return The new component
+	 */
+	public DataStructureComponent<Measure, S, D> createMeasureFrom();
 
 	@Override
 	public boolean equals(Object obj);

@@ -41,6 +41,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -144,7 +145,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 
 				// Scalar or component parameter
 				if (param.matches(actualParamMeta))
-					matchDomains(param.getName(), declaredDomain, (ScalarValueMetadata<?>) actualParamMeta, repo);
+					matchDomains(param.getName(), declaredDomain, (ScalarValueMetadata<?, ?>) actualParamMeta, repo);
 				// when inside a bracket expression, a component is a monomeasure dataset
 				else if (decoratedScheme.getParent().getParent() != null)
 				{
@@ -181,12 +182,12 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 		return metadata;
 	}
 
-	private void matchDomains(String paramName, String expectedDomainName, ScalarValueMetadata<?> actualParamMeta, MetadataRepository repo)
+	private <S extends ValueDomainSubset<S, D>, D extends ValueDomain> void matchDomains(String paramName, String expectedDomainName, ScalarValueMetadata<S, D> actualParamMeta, MetadataRepository repo)
 	{
-		ValueDomainSubset<?> expectedDomain = expectedDomainName == null ? null : repo.getDomain(expectedDomainName);
+		ValueDomainSubset<?, ?> expectedDomain = expectedDomainName == null ? null : repo.getDomain(expectedDomainName);
 		if (expectedDomain != null)
 		{
-			ValueDomainSubset<?> actualDomain = ((ScalarValueMetadata<?>) actualParamMeta).getDomain();
+			ValueDomainSubset<?, ?> actualDomain = ((ScalarValueMetadata<?, ?>) actualParamMeta).getDomain();
 			if (!expectedDomain.isAssignableFrom(actualDomain))
 				throw new VTLIncompatibleTypesException("Parameter " + paramName, expectedDomain, actualDomain);
 		}

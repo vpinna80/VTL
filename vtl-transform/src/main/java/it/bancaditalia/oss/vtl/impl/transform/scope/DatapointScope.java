@@ -36,7 +36,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -63,7 +62,7 @@ public class DatapointScope implements TransformationScheme
 		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
 			return true;
 		
-		return maybeMeta(structure, alias, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
+		return maybeMeta(structure, alias, DataStructureComponent::getMetadata)
 			.isPresent();
 	}
 
@@ -82,7 +81,7 @@ public class DatapointScope implements TransformationScheme
 			return structure;
 		
 		LOGGER.trace("Querying {} for {}:{}", alias, structure.hashCode(), structure);
-		return maybeMeta(structure, alias, scalar -> (ScalarValueMetadata<?>) scalar::getDomain)
+		return maybeMeta(structure, alias, scalar -> scalar.getMetadata())
 			.orElseThrow(() -> new VTLUnboundNameException(alias));
 	}
 

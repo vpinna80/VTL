@@ -407,7 +407,7 @@ public final class Utils
 	}
 	
 	@SafeVarargs
-	public static <T> Set<T> setOf(T... elements)
+	public static <T> Set<? extends T> setOf(T... elements)
 	{
 		Set<T> result = new HashSet<>();
 		for (T elem: elements)

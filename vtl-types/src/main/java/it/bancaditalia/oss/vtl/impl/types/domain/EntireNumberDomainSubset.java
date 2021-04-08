@@ -29,7 +29,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-class EntireNumberDomainSubset extends EntireDomainSubset<Double, NumberDomain> implements NumberDomainSubset<NumberDomain>, Serializable
+public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDomainSubset, NumberDomain> implements NumberDomainSubset<EntireNumberDomainSubset, NumberDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -51,7 +51,7 @@ class EntireNumberDomainSubset extends EntireDomainSubset<Double, NumberDomain> 
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends NumberDomainSubset<NumberDomain>, ? extends NumberDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()))
 		{
@@ -59,11 +59,11 @@ class EntireNumberDomainSubset extends EntireDomainSubset<Double, NumberDomain> 
 				return NullValue.instance(this);
 			Object implValue = value.get();
 			if (implValue instanceof Double)
-				return new DoubleValue((double)implValue);
+				return DoubleValue.of((Double) implValue);
 			else if (implValue instanceof Long)
-				return new DoubleValue((double)(long)implValue);
+				return DoubleValue.of((double) (long) implValue);
 			else if (implValue instanceof String)
-				return new DoubleValue(Double.parseDouble((String)implValue));
+				return DoubleValue.of(Double.parseDouble((String)implValue));
 			else 
 				throw new UnsupportedOperationException("Cast to double from " + value.getClass());
 		}

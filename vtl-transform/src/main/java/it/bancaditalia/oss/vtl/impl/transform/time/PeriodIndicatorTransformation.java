@@ -26,15 +26,16 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -48,7 +49,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -59,10 +59,10 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 
-	private static final DataStructureComponent<Measure, StringDomainSubset, StringDomain> DURATION_MEASURE = new DataStructureComponentImpl<>(
+	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> DURATION_MEASURE = new DataStructureComponentImpl<>(
 			STRINGDS.getVarName(), Measure.class, STRINGDS);
 
-	private DataStructureComponent<?, TimeDomainSubset<TimeDomain>, TimeDomain> component = null;
+	private String componentName = null;
 
 	private final Transformation operand;
 
@@ -77,12 +77,12 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	{
 		VTLValue value;
 		if (operand == null)
-			value = session.resolve(component.getName());
+			value = session.resolve(componentName);
 		else
 			value = operand.eval(session);
 
 		if (value instanceof ScalarValue)
-			return new StringValue(((TimeHolder) ((TimeValue<?, ?, ?, ?>) value).get()).getPeriodIndicator());
+			return StringValue.of(((TimePeriodValue<?, ?>) value).getPeriodIndicator());
 		else
 		{
 			DataSet ds = (DataSet) value;
@@ -91,14 +91,14 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 					.addComponent(DURATION_MEASURE)
 					.build();
 			
-			DataStructureComponent<?, TimeDomainSubset<TimeDomain>, TimeDomain> component;
+			DataStructureComponent<?, ? extends TimeDomainSubset<?, ?>, TimeDomain> component;
 			if (operand == null)
 				component = ds.getComponents(Identifier.class, TIMEDS).iterator().next();
 			else
 				component = ds.getComponents(Measure.class, TIMEDS).iterator().next();
 
 			return ds.mapKeepingKeys(metadata, dp -> singletonMap(DURATION_MEASURE,
-					new StringValue(((TimeHolder) ((TimeValue<?, ?, ?, ?>) dp.get(component)).get()).getPeriodIndicator())));
+					StringValue.of(((TimePeriodValue<?, ?>) dp.get(component)).getPeriodIndicator())));
 		}
 	}
 
@@ -113,7 +113,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 
 		if (value instanceof ScalarValueMetadata)
 		{
-			ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) value).getDomain();
+			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) value).getDomain();
 			if (!TIME.isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("period_indicator", TIME, domain);
 			else
@@ -125,11 +125,14 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 
 			if (operand == null)
 			{
-				Set<DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain>> timeIDs = ds.getComponents(Identifier.class, TIMEDS);
+				Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ds.getComponents(Identifier.class).stream()
+						.map(c -> c.as(Identifier.class))
+						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
+						.collect(toSet());
 				if (timeIDs.size() != 1)
 					throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
 				
-				component = timeIDs.iterator().next();
+				componentName = timeIDs.iterator().next().getName();
 			}
 			else
 			{
@@ -141,7 +144,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 				if (!TIME.isAssignableFrom(anyDomainComponent.getDomain()))
 					throw new VTLIncompatibleTypesException("period_indicator", TIMEDS, anyDomainComponent);
 				
-				component = anyDomainComponent.as(TIMEDS);
+				componentName = anyDomainComponent.as(TIMEDS).getName();
 			}
 
 			return new DataStructureBuilder(ds.getComponents(Identifier.class))

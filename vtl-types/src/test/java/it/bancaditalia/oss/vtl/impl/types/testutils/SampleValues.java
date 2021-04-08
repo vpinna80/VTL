@@ -67,9 +67,9 @@ public class SampleValues
 			new Boolean[] { true, false, false, false, true, null }
 		});
 
-		WRAPPERS.put("INTEGER", v -> v == null ? NullValue.instance(INTEGERDS) : new IntegerValue((Long) v));
-		WRAPPERS.put("NUMBER", v -> v == null ? NullValue.instance(NUMBERDS) : new DoubleValue((Double) v));
-		WRAPPERS.put("STRING", v -> v == null ? NullValue.instance(STRINGDS) : new StringValue((String) v));
+		WRAPPERS.put("INTEGER", v -> v == null ? NullValue.instance(INTEGERDS) : IntegerValue.of((Long) v));
+		WRAPPERS.put("NUMBER", v -> v == null ? NullValue.instance(NUMBERDS) : DoubleValue.of((Double) v));
+		WRAPPERS.put("STRING", v -> v == null ? NullValue.instance(STRINGDS) : StringValue.of((String) v));
 		WRAPPERS.put("BOOLEAN", v -> v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of((Boolean) v));
 	}
 

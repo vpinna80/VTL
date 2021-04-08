@@ -64,7 +64,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return A set of the queried components.
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role, S domain)
+	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role, S domain)
 	{
 		return getComponents(role).stream()
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
@@ -97,7 +97,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<?, S, D>> getComponent(String name, S domain)
+	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<?, S, D>> getComponent(String name, S domain)
 	{
 		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
@@ -130,7 +130,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name, Class<R> role, S domain)
+	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name, Class<R> role, S domain)
 	{
 		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
@@ -249,5 +249,5 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param measure the measure
 	 * @return the new structure.
 	 */
-	public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
 }

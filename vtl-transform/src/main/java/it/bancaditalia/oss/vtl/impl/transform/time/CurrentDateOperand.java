@@ -36,7 +36,7 @@ public class CurrentDateOperand extends TransformationImpl implements LeafTransf
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
-		return new DateValue(now());
+		return DateValue.of(now());
 	}
 
 	@Override

@@ -19,15 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.D;
-
 import java.time.LocalDate;
 import java.time.temporal.TemporalField;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 
 class DayHolder extends DateHolder<LocalDate>
 {
@@ -67,12 +63,6 @@ class DayHolder extends DateHolder<LocalDate>
 	}
 	
 	@Override
-	public DurationDomains getPeriod()
-	{
-		return D;
-	}
-
-	@Override
 	public int hashCode()
 	{
 		final int prime = 31;
@@ -111,25 +101,5 @@ class DayHolder extends DateHolder<LocalDate>
 	public DayHolder increment(long amount)
 	{
 		return new DayHolder(date.plusDays(amount));
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		switch (frequency)
-		{
-			case A: return new YearPeriodHolder<>(this);
-			case S: return new SemesterPeriodHolder(this);
-			case Q: return new QuarterPeriodHolder(this);
-			case M: return new MonthPeriodHolder(this);
-		default:
-			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
-		}
-	}
-
-	@Override
-	public String getPeriodIndicator()
-	{
-		return "P1D";
 	}
 }

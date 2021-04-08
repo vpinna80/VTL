@@ -19,44 +19,62 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import java.time.temporal.TemporalUnit;
-import java.util.HashMap;
-import java.util.Map;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
+import it.bancaditalia.oss.vtl.impl.types.data.date.DurationHolder;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public class DurationValue extends BaseScalarValue<DurationValue, Double, DurationDomainSubset, DurationDomain>
+public class DurationValue<S extends DurationDomainSubset<S>> extends BaseScalarValue<DurationValue<S>, DurationHolder, S, DurationDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<TemporalUnit, DurationDomains> DURATIONS_BY_UNIT = new HashMap<>(); 
-
-	static 
+	public static enum Durations
 	{
-		for (DurationDomains duration: DurationDomains.values())
-			DURATIONS_BY_UNIT.put(duration.getUnit(), duration);
+		A(YEARSDS), H(SEMESTERSDS), Q(QUARTERSDS), M(MONTHSDS), W(WEEKSDS), D(DAYSDS);
+
+		private final TimePeriodDomainSubset<?> related;
+
+		Durations(TimePeriodDomainSubset<?> related)
+		{
+			this.related = related;
+		}
+
+		public TimePeriodDomainSubset<?> getRelatedTimePeriodDomain()
+		{
+			return related;
+		}
+	}
+	
+	private DurationValue(DurationHolder holder, S domain)
+	{
+		super(holder, domain);
 	}
 
-	private DurationValue(double value, DurationDomains duration)
+	public static DurationValue<EntireDurationDomainSubset> of(double value, Durations duration)
 	{
-		super(value, duration);
+		return new DurationValue<>(new DurationHolder(value, duration), DURATIONDS);
 	}
 
-	@Override
-	public ScalarValueMetadata<DurationDomainSubset> getMetadata()
+	public static DurationValue<EntireDurationDomainSubset> of(DurationHolder holder)
 	{
-		return super::getDomain;
+		return new DurationValue<>(holder, DURATIONDS);
 	}
 
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
-		if (o instanceof DurationValue && o.getDomain().equals(getDomain()))
-			return get().compareTo((Double) o.get());
+		if (o instanceof DurationValue)
+			return get().compareTo((DurationHolder) o.get());
 		else
 			throw new VTLCastException(getDomain(), o);
 	}

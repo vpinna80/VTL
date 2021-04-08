@@ -22,6 +22,8 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
+import static java.util.stream.Collectors.partitioningBy;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
@@ -38,7 +40,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
@@ -84,13 +85,13 @@ public class DataStructureBuilder
 		return this;
 	}
 
-	public <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureBuilder addComponent(String name, Class<R> type, S domain)
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureBuilder addComponent(String name, Class<? extends ComponentRole> type, ValueDomainSubset<?, ?> domain)
 	{
-		this.components.add(new DataStructureComponentImpl<>(name, type, domain));
+		this.components.add(DataStructureComponentImpl.of(name, type, domain));
 		return this;
 	}
 
-	public <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> DataStructureBuilder addComponent(Triple<String, Class<? extends R>, S> characteristics)
+	public <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureBuilder addComponent(Triple<String, Class<? extends R>, S> characteristics)
 	{
 		this.components.add(new DataStructureComponentImpl<>(characteristics.getFirst(), characteristics.getSecond(), characteristics.getThird()));
 		return this;
@@ -174,13 +175,13 @@ public class DataStructureBuilder
 			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(names)
 					.map(components::get)
 					.filter(Objects::nonNull)
-					.collect(Collectors.partitioningBy(c -> c.is(Identifier.class)));
+					.collect(partitioningBy(c -> c.is(Identifier.class)));
 			
 			return new DataStructureBuilder(getComponents(Identifier.class))
 					.addComponents(toKeep.get(false))
 					.addComponents(toKeep.get(true).stream()
-							.map(c -> new DataStructureComponentImpl<>(c.getDomain().getVarName(), Measure.class, c.getDomain()))
-							.collect(Collectors.toList()))
+							.map(DataStructureComponent::createMeasureFrom)
+							.collect(toList()))
 					.build();
 		}
 
@@ -207,7 +208,7 @@ public class DataStructureBuilder
 			if (component.is(Measure.class))
 				return new DataStructureBuilder().addComponents(component).addComponents(getComponents(Identifier.class)).build();
 			else
-				return new DataStructureBuilder().addComponents(new DataStructureComponentImpl<>(component.getDomain().getVarName(), Measure.class, component.getDomain()))
+				return new DataStructureBuilder().addComponents(component.createMeasureFrom())
 						.addComponents(getComponents(Identifier.class)).build();
 		}
 
@@ -283,11 +284,11 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public <S extends ValueDomainSubset<D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier,
+		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier,
 				DataStructureComponent<Measure, S, D> measure)
 		{
 			return Utils.getStream(identifier.getDomain().getCodeItems())
-					.map(i -> new DataStructureComponentImpl<>(i.get(), Measure.class, measure.getDomain()))
+					.map(item -> new DataStructureComponentImpl<>(item.get().toString(), Measure.class, measure.getDomain()))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponents(getComponents(Identifier.class))
 					.removeComponent(identifier)

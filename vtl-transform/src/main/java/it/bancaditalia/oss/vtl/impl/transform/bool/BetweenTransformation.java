@@ -32,29 +32,29 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class BetweenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS);
 	
 	private final ScalarValue<?, ?, ?, ?> from;
 	private final ScalarValue<?, ?, ?, ?> to;
-	private final ValueDomainSubset<?> domain;
+	private final ValueDomainSubset<?, ?> domain;
 
 	private DataSetMetadata metadata;
 
@@ -64,8 +64,8 @@ public class BetweenTransformation extends UnaryTransformation
 		
 		if (fromT instanceof ConstantOperand && toT instanceof ConstantOperand)
 		{
-			this.from = ((ConstantOperand<?, ?, ?, ?>) fromT).eval(null);
-			this.to = ((ConstantOperand<?, ?, ?, ?>) toT).eval(null);
+			this.from = ((ConstantOperand<?, ?>) fromT).eval(null);
+			this.to = ((ConstantOperand<?, ?>) toT).eval(null);
 		}
 		else
 			throw new UnsupportedOperationException("Non-constant range parameters in between expression are not supported");

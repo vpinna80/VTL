@@ -21,8 +21,8 @@ package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
@@ -69,6 +69,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class REnvironment implements Environment
 {
+	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
 	private final Map<String, VTLValue>	values	= new HashMap<>();
 	private final Rengine engine = new Rengine();
@@ -119,7 +120,7 @@ public class REnvironment implements Environment
 					else
 						type = Attribute.class;
 
-					ValueDomainSubset<?> domain;
+					ValueDomainSubset<?, ?> domain;
 					switch (columnData.getType())
 					{
 						case REXP.XT_DOUBLE: case REXP.XT_ARRAY_DOUBLE:
@@ -190,13 +191,13 @@ public class REnvironment implements Environment
 				switch (data.getType())
 				{
 					case REXP.XT_STR:
-						result = new StringValue(data.asString());
+						result = StringValue.of(data.asString());
 						break;
 					case REXP.XT_ARRAY_DOUBLE:
-						result = new DoubleValue(data.asDoubleArray()[0]);
+						result = DoubleValue.of(data.asDoubleArray()[0]);
 						break;
 					case REXP.XT_ARRAY_INT:
-						result = new IntegerValue((long) data.asIntArray()[0]);
+						result = IntegerValue.of((long) data.asIntArray()[0]);
 						break;
 					case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
 						result = BooleanValue.of(data.asBool().isTRUE());
@@ -257,7 +258,7 @@ public class REnvironment implements Environment
 				type = Attribute.class;
 
 			Stream<? extends ScalarValue<?, ?, ?, ?>> values;
-			ValueDomainSubset<?> domain;
+			ValueDomainSubset<?, ?> domain;
 			switch (columnData.getType())
 			{
 				case REXP.XT_ARRAY_DOUBLE:
@@ -266,22 +267,22 @@ public class REnvironment implements Environment
 						domain = DATEDS;
 						//now transform in date
 						// NAs are mapped to something that retrns true to is.NaN()
-						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  new DateValue(LocalDate.of(1970, 1, 1).plus((long) val  , ChronoUnit.DAYS) )));   
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  DateValue.of(LocalDate.of(1970, 1, 1).plus((long) val  , ChronoUnit.DAYS) )));   
 					}
 					else {
 						// NAs are mapped to something that retrns true to is.NaN()
 						domain = NUMBERDS;
-						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : new DoubleValue(val)));
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : DoubleValue.of(val)));
 					}
 					break;
 				case REXP.XT_ARRAY_INT:
 					// NAs are mapped to Integer.MIN_VALUE
 					domain = INTEGERDS;
-					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (val == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : new IntegerValue(val)));
+					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (val == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : IntegerValue.of(val)));
 					break;
 				case REXP.XT_ARRAY_STR:
 					domain = STRINGDS;
-					values = Utils.getStream(columnData.asStringArray()).map(val -> (ScalarValue<?, ?, ?, ?>) (val == null ? NullValue.instance(STRINGDS) : new StringValue(val)));
+					values = Utils.getStream(columnData.asStringArray()).map(val -> (ScalarValue<?, ?, ?, ?>) (val == null ? NullValue.instance(STRINGDS) : StringValue.of(val)));
 					break;
 				case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
 					domain = BOOLEANDS;
@@ -292,7 +293,7 @@ public class REnvironment implements Environment
 							"In node: " + name + " there is a column (" + key + ") of type " + REXP.xtName(columnData.getType()) + ". This is not supported.");
 			}
 			
-			dataContainer.put(new DataStructureComponentImpl<>(key, type, domain), values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
+			dataContainer.put(DataStructureComponentImpl.of(key, type, domain), values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
 		}
 		
 		return new ColumnarDataSet(dataContainer);

@@ -27,7 +27,7 @@ import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -71,7 +71,8 @@ public class ParamScope implements TransformationScheme
 				.map(dataset -> dataset.getComponent(alias))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.map(component -> (VTLValueMetadata) (ScalarValueMetadata<?>) component::getDomain)
+				.map(DataStructureComponent::getMetadata)
+				.map(VTLValueMetadata.class::cast)
 				.findAny()
 				.orElseGet(() -> getParent().getMetadata(alias));
 	}

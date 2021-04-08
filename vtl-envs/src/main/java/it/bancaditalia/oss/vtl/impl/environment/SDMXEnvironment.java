@@ -66,7 +66,6 @@ import it.bancaditalia.oss.sdmx.api.BaseObservation;
 import it.bancaditalia.oss.sdmx.api.Codelist;
 import it.bancaditalia.oss.sdmx.api.DataFlowStructure;
 import it.bancaditalia.oss.sdmx.api.Dimension;
-import it.bancaditalia.oss.sdmx.api.PortableDataSet;
 import it.bancaditalia.oss.sdmx.api.PortableTimeSeries;
 import it.bancaditalia.oss.sdmx.api.SdmxMetaElement;
 import it.bancaditalia.oss.sdmx.client.SdmxClientHandler;
@@ -83,12 +82,16 @@ import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.MonthPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.QuarterPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.SemesterPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.YearPeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -100,7 +103,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
@@ -113,8 +115,8 @@ public class SDMXEnvironment implements Environment, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
-	private static final DataStructureComponentImpl<Measure, NumberDomainSubset<NumberDomain>, NumberDomain> OBS_VALUE_MEASURE = new DataStructureComponentImpl<>(PortableDataSet.OBS_LABEL, Measure.class, NUMBERDS);
-	private static final DataStructureComponentImpl<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> TIME_PERIOD_IDENTIFIER = new DataStructureComponentImpl<>(PortableDataSet.TIME_LABEL, Identifier.class, TIMEDS);
+	private static final DataStructureComponentImpl<Measure, EntireNumberDomainSubset, NumberDomain> OBS_VALUE_MEASURE = new DataStructureComponentImpl<>(OBS_LABEL, Measure.class, NUMBERDS);
+	private static final DataStructureComponent<?, ?, ?> TIME_PERIOD_IDENTIFIER = DataStructureComponentImpl.of(TIME_LABEL, Identifier.class, TIMEDS);
 	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?, ?>>> FORMATTERS = new HashMap<>();
@@ -127,14 +129,14 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(SDMXEnvironment.class, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
 		
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateValue::new);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateValue::new);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh"), DateValue::new);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd"), DateValue::new);
-		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), TimePeriodValue::new);
-		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), TimePeriodValue::new);
-		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), TimePeriodValue::new);
-		FORMATTERS.put(MONTH_PERIOD_FORMATTER.get(), TimePeriodValue::new);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateValue::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateValue::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh"), DateValue::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd"), DateValue::of);
+		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodValue::of);
+		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodValue::of);
+		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), QuarterPeriodValue::of);
+		FORMATTERS.put(MONTH_PERIOD_FORMATTER.get(), MonthPeriodValue::of);
 	}
 
 	@Override
@@ -201,7 +203,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				.map(s -> s.stream() // build a dp
 						.map(o -> obsToCompValues(seriesMeta.get(s), o)
 							.map(keepingValue(k -> (DataStructureComponent<?, ?, ?>) metadata.getComponent(k).get()))
-							.map(keepingKey((k, v) -> k.getDomain().cast(v)))
+							.map(keepingKey((k, v) -> (ScalarValue<?, ?, ?, ?>) k.getDomain().cast(v)))
 							.collect(DataPointBuilder.toDataPoint(metadata))))
 				.reduce(Stream::concat)
 				.orElse(Stream.empty()), table);
@@ -212,10 +214,10 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		return Stream.concat(Utils.getStream(seriesLevelAttrs), Stream.concat(obsLevelAttrs(o),
 						Stream.of(new SimpleEntry<>(TIME_LABEL, asDate(o)),
-								new SimpleEntry<>(OBS_LABEL, new DoubleValue(o.getValueAsDouble())))));
+								new SimpleEntry<>(OBS_LABEL, DoubleValue.of(o.getValueAsDouble())))));
 	}
 
-	private static ScalarValue<?, ?, ? extends TimeDomainSubset<? extends TimeDomain>, ? extends TimeDomain> asDate(BaseObservation<? extends Double> o)
+	private static ScalarValue<?, ?, ? extends TimeDomainSubset<?, ?>, ? extends TimeDomain> asDate(BaseObservation<? extends Double> o)
 	{
 		DateTimeException last = null;
 		for (DateTimeFormatter formatter : FORMATTERS.keySet())
@@ -239,7 +241,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		return Utils.getStream(attrs.entrySet())
 				.filter(e -> !UNSUPPORTED.contains(e.getKey()))
-				.map(keepingKey(StringValue::new))
+				.map(keepingKey(StringValue::of))
 				.map(keepingKey(v -> (ScalarValue<?, ?, ?, ?>) v))
 				.collect(entriesToMap());
 	}
@@ -248,11 +250,10 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		return Utils.getStream(observation.getAttributes())
 				.filter(entryByKey(k -> !UNSUPPORTED.contains(k)))
-				.map(keepingKey(v -> (ScalarValue<?, ?, ?, ?>) (v != null ? new StringValue(v) : NullValue.instance(STRINGDS))));
+				.map(keepingKey(v -> (ScalarValue<?, ?, ?, ?>) (v != null ? StringValue.of(v) : NullValue.instance(STRINGDS))));
 	}
 
-	private static <T extends ComponentRole> DataStructureComponent<T, StringDomainSubset, StringDomain> elementToComponent(Class<T> role,
-			SdmxMetaElement meta)
+	private static DataStructureComponent<?, ? extends StringDomainSubset<?>, StringDomain> elementToComponent(Class<? extends ComponentRole> role, SdmxMetaElement meta)
 	{
 		Codelist codelist = meta.getCodeList();
 		if (codelist == null)
@@ -298,8 +299,8 @@ public class SDMXEnvironment implements Environment, Serializable
 				activeDims = dimensions;
 
 			return Stream
-					.concat(activeDims.stream().map(d -> elementToComponent(Identifier.class, d)),
-							activeAttributes.stream().map(a -> elementToComponent(Attribute.class, a)))
+					.concat(activeDims.stream().map(d -> (DataStructureComponent<?, ?, ?>) elementToComponent(Identifier.class, d)), 
+							activeAttributes.stream().map(d -> (DataStructureComponent<?, ?, ?>) elementToComponent(Attribute.class, d)))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponent(TIME_PERIOD_IDENTIFIER)
 					.addComponent(OBS_VALUE_MEASURE)

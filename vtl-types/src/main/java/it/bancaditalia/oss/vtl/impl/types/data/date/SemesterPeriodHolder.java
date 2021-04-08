@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.data.date;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoUnit.SEMESTERS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.S;
 
 import java.time.Year;
 import java.time.temporal.Temporal;
@@ -30,15 +29,14 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Year year;
 	private final int semester;
+	private final Year year;
 
 	public SemesterPeriodHolder(TemporalAccessor other)
 	{
@@ -108,23 +106,6 @@ public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 			return false;
 		return true;
 	}
-	
-	@Override
-	public DurationDomains getPeriod()
-	{
-		return S;
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		switch (frequency)
-		{
-			case A: return new YearPeriodHolder<>(this);
-		default:
-			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
-		}
-	}
 
 	@Override
 	public boolean isSupported(TemporalUnit unit)
@@ -142,14 +123,14 @@ public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 	}
 
 	@Override
-	public TimePeriodDomainSubset getDomain()
-	{
-		return SEMESTERSDS;
-	}
-
-	@Override
 	protected TemporalUnit smallestUnit()
 	{
 		return SEMESTERS;
+	}
+	
+	@Override
+	public TimePeriodDomainSubset<?> getDomain()
+	{
+		return SEMESTERSDS;
 	}
 }

@@ -24,14 +24,14 @@ import java.io.Serializable;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
-public abstract class EntireDomainSubset<S extends Comparable<? super S>, P extends ValueDomain> implements ValueDomainSubset<P>, Serializable
+public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D extends ValueDomain> implements ValueDomainSubset<S, D>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private final P parentDomain;
+	private final D parentDomain;
 	private final String varName; 
 	
-	public EntireDomainSubset(P parentDomain, String defaultVarName)
+	public EntireDomainSubset(D parentDomain, String defaultVarName)
 	{
 		this.parentDomain = parentDomain;
 		this.varName = defaultVarName;
@@ -44,7 +44,7 @@ public abstract class EntireDomainSubset<S extends Comparable<? super S>, P exte
 				throw new UnsupportedOperationException("New subset of domain would form a cycle with parent " + parent + ".");
 			
 			if (parent instanceof ValueDomainSubset)
-				parent = ((ValueDomainSubset<?>) parent).getParentDomain();
+				parent = ((ValueDomainSubset<?, ?>) parent).getParentDomain();
 		}
 	}
 
@@ -55,7 +55,7 @@ public abstract class EntireDomainSubset<S extends Comparable<? super S>, P exte
 	}
 
 	@Override
-	public P getParentDomain()
+	public D getParentDomain()
 	{
 		return parentDomain;
 	}

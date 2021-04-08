@@ -24,22 +24,19 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -48,28 +45,28 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class BooleanTransformation extends BinaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public static enum BooleanBiOperator implements BinaryOperator<BooleanValue>
+	public static enum BooleanBiOperator implements BinaryOperator<ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>>
 	{
-		AND((l, r) -> BooleanValue.of(l.get() && r.get())), 
-		OR((l, r) -> BooleanValue.of(l.get() || r.get())), 
-		XOR((l, r) -> BooleanValue.of(l.get() ^ r.get()));
+		AND(BooleanValue::and), 
+		OR(BooleanValue::or), 
+		XOR(BooleanValue::xor);
 
-		private final BiFunction<BooleanValue, BooleanValue, BooleanValue> function;
+		private final BinaryOperator<ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> function;
 
-		private BooleanBiOperator(BiFunction<BooleanValue, BooleanValue, BooleanValue> function)
+		private BooleanBiOperator(BinaryOperator<ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> function)
 		{
 			this.function = function;
 		}
 
 		@Override
-		public BooleanValue apply(BooleanValue left, BooleanValue right)
+		public ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> left, ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> right)
 		{
 			return function.apply(left, right);
 		}
@@ -91,12 +88,9 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (left instanceof NullValue || right instanceof NullValue)
-			return NullValue.instance(BOOLEANDS);
-		else
-			return operator.apply((BooleanValue) left, (BooleanValue) right);
+		return operator.apply(BOOLEANDS.cast(left), BOOLEANDS.cast(right));
 	}
 
 	@Override
@@ -104,18 +98,10 @@ public class BooleanTransformation extends BinaryTransformation
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		
-		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-		final Function<DataPoint, ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain>> lambda = dp -> {
-			final ScalarValue<?, ?, ?, ?> value = dp.get(datasetMeasure);
-			if (value instanceof NullValue)
-				return NullValue.instance(BOOLEANDS);
-			else
-				return operator.apply((BooleanValue) value, (BooleanValue) scalar);
-		};
-
-		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, lambda.apply(dp)));
+		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, Utils.reverseIf(!datasetIsLeftOp, this::evalTwoScalars).apply(dp.get(datasetMeasure), scalar)));
 	}
 
 	@Override
@@ -126,23 +112,21 @@ public class BooleanTransformation extends BinaryTransformation
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, BooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		// Scan the dataset with less identifiers and find the matches
-		return indexed.mappedJoin(metadata, streamed,
-				(dp1, dp2) -> new DataPointBuilder()
-					.addAll(dp1.getValues(Identifier.class))
-					.addAll(dp2.getValues(Identifier.class))
-					.add(resultMeasure, dp1.get(indexedMeasure) instanceof NullValue || dp2.get(indexedMeasure) instanceof NullValue
-								? NullValue.instance(BOOLEANDS)
-								: operator.apply((BooleanValue) dp1.get(indexedMeasure), (BooleanValue) dp2.get(streamedMeasure)))
+		return streamed.mappedJoin(metadata, indexed,
+				(dps, dpi) -> new DataPointBuilder()
+					.addAll(dps.getValues(Identifier.class))
+					.addAll(dpi.getValues(Identifier.class))
+					.add(resultMeasure, Utils.reverseIf(leftHasMoreIdentifiers, this::evalTwoScalars).apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
 					.build(metadata));
 	}
 
 	@Override
-	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right)
 	{
 		if (!BOOLEANDS.isAssignableFrom(left.getDomain()))
 			throw new VTLIncompatibleTypesException(operator.toString(), left.getDomain(), BOOLEANDS);
@@ -153,7 +137,7 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean b, DataSetMetadata dataset, ScalarValueMetadata<?> right)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean b, DataSetMetadata dataset, ScalarValueMetadata<?, ?> right)
 	{
 		if (!BOOLEANDS.isAssignableFrom(right.getDomain()))
 			throw new VTLIncompatibleTypesException(operator.toString(), right.getDomain(), BOOLEANDS);

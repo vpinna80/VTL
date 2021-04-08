@@ -52,7 +52,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public enum NumericOperator implements UnaryOperator<ScalarValue<?, ?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain>>
+	public enum NumericOperator implements UnaryOperator<ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain>>
 	{
 		CEIL("ceil", Math::ceil, l -> l),
 		FLOOR("floor", Math::floor, l -> l),
@@ -75,17 +75,17 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		}
 
 		@Override
-		public ScalarValue<?, ?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain> apply(ScalarValue<?, ?, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain> number)
+		public ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain> apply(ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain> number)
 		{
 			if (number instanceof NullValue)
 				return NullValue.instance(NUMBERDS);
 			if (number instanceof IntegerValue)
 			{
-				Number res = longOp.apply(((IntegerValue) number).get());
-				return res instanceof Long ? new IntegerValue(res.longValue()) : new DoubleValue(res.doubleValue());
+				Number res = longOp.apply(((IntegerValue<?>) number).get());
+				return res instanceof Long ? IntegerValue.of(res.longValue()) : DoubleValue.of(res.doubleValue());
 			}
 			else
-				return new DoubleValue(doubleOp.applyAsDouble(((DoubleValue) number).get().doubleValue()));
+				return DoubleValue.of(doubleOp.applyAsDouble(((DoubleValue<?>) number).get().doubleValue()));
 		}
 		
 		public String capsize(Transformation operand)
@@ -130,10 +130,10 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
 		if (meta instanceof ScalarValueMetadata)
-			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?>) meta).getDomain()))
+			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
 				return NUMBER;
 			else
-				throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, ((ScalarValueMetadata<?>) meta).getDomain());
+				throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
 		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;

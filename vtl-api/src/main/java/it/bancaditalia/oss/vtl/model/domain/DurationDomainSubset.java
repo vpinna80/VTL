@@ -26,7 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
  * 
  * @author Valentino Pinna
  */
-public interface DurationDomainSubset extends DurationDomain, ValueDomainSubset<DurationDomain>
+public interface DurationDomainSubset<S extends DurationDomainSubset<S>> extends DurationDomain, ValueDomainSubset<S, DurationDomain>
 {
 
 }

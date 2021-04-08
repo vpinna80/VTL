@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
@@ -29,13 +31,13 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 
-class EntireIntegerDomainSubset extends EntireDomainSubset<Long, IntegerDomain> implements IntegerDomainSubset, Serializable
+public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerDomainSubset, IntegerDomain> implements IntegerDomainSubset<EntireIntegerDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
 	EntireIntegerDomainSubset()
 	{
-		super(Domains.INTEGERDS, "integer_var");
+		super(INTEGERDS, "integer_var");
 	}
 
 	@Override
@@ -51,7 +53,7 @@ class EntireIntegerDomainSubset extends EntireDomainSubset<Long, IntegerDomain> 
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()))
 		{
@@ -59,11 +61,11 @@ class EntireIntegerDomainSubset extends EntireDomainSubset<Long, IntegerDomain> 
 				return NullValue.instance(this);
 			Object implValue = value.get();
 			if (implValue instanceof Double)
-				return new IntegerValue((long)(double)implValue);
+				return IntegerValue.of((long)(double)implValue);
 			else if (implValue instanceof Long)
-				return new IntegerValue((long)implValue);
+				return IntegerValue.of((Long)implValue);
 			else if (implValue instanceof String)
-				return new IntegerValue(Long.parseLong((String)implValue));
+				return IntegerValue.of(Long.parseLong((String)implValue));
 			else 
 				throw new UnsupportedOperationException("Cast to double from " + value.getClass());
 		}

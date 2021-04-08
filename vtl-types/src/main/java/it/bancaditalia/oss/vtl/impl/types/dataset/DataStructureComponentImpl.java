@@ -24,12 +24,13 @@ import java.util.Objects;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 
-public class DataStructureComponentImpl<R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
+public class DataStructureComponentImpl<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
 {
 	private static final long serialVersionUID = 1L;
 	private final S domain;
@@ -43,6 +44,17 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 		this.role = Objects.requireNonNull(role, "Role is null");
 		this.name = Objects.requireNonNull(name, "Name is null");
 		this.hashCode = hashCodeInit();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureComponent<?, ?, ?> of(String name, Class<? extends ComponentRole> role, ValueDomainSubset<?, ?> domain)
+	{
+		return new DataStructureComponentImpl<>(name, (Class<ComponentRole>) role, (S) domain);
+	}
+
+	public DataStructureComponentImpl(Class<R> role, S domain)
+	{
+		this(domain.getVarName(), role, domain);
 	}
 
 	@Override
@@ -123,5 +135,11 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	public String toString()
 	{
 		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getDomain() + "]";	
+	}
+
+	@Override
+	public DataStructureComponent<Measure, S, D> createMeasureFrom()
+	{
+		return new DataStructureComponentImpl<>(Measure.class, domain);
 	}
 }

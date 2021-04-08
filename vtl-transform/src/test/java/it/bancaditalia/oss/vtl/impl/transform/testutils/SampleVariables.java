@@ -51,7 +51,7 @@ public enum SampleVariables
 	ATTRIB_BOOLEAN_1, ATTRIB_BOOLEAN_2, ATTRIB_BOOLEAN_3, ATTRIB_BOOLEAN_4,
 	ATTRIB_DATE_1, ATTRIB_DATE_2, ATTRIB_DATE_3; 
 
-	private DataStructureComponentImpl<?, ?, ?> component;
+	private DataStructureComponent<?, ?, ?> component;
 	
 	private SampleVariables()
 	{
@@ -64,7 +64,7 @@ public enum SampleVariables
 			case "IDENT": role = Identifier.class; break;
 		}
 		
-		ValueDomainSubset<?> domain = null;
+		ValueDomainSubset<?, ?> domain = null;
 		switch (elem[1])
 		{
 			case "NUMBER": domain = NUMBERDS; break;
@@ -74,7 +74,7 @@ public enum SampleVariables
 			case "DATE": domain = DATEDS; break;
 		}
 
-		component = new DataStructureComponentImpl<>(elem[1] + "_" + elem[2], role, domain);
+		component = DataStructureComponentImpl.of(elem[1] + "_" + elem[2], role, domain);
 	}
 	
 	public DataStructureComponent<?, ?, ?> getComponent(int level)

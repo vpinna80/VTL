@@ -28,7 +28,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
  * 
  * @author Valentino Pinna
  */
-public interface BooleanDomainSubset extends ValueDomainSubset<BooleanDomain>, BooleanDomain
+public interface BooleanDomainSubset<S extends BooleanDomainSubset<S>> extends ValueDomainSubset<S, BooleanDomain>, BooleanDomain
 {
 	@Override
 	default boolean isComparableWith(ValueDomain other)
@@ -37,7 +37,7 @@ public interface BooleanDomainSubset extends ValueDomainSubset<BooleanDomain>, B
 	}
 	
 	@Override
-	public ScalarValue<?, Boolean, BooleanDomainSubset, BooleanDomain> cast(ScalarValue<?, ?, ?, ?> value);
+	public ScalarValue<?, ?, S, BooleanDomain> cast(ScalarValue<?, ?, ?, ?> value);
 
 	@Override
 	default boolean isAssignableFrom(ValueDomain other)

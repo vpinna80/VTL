@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -38,7 +40,6 @@ import it.bancaditalia.oss.vtl.model.data.Hierarchy;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -50,7 +51,7 @@ public abstract class HierarchyImpl implements Hierarchy
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(HierarchyImpl.class);
 
-//	private static final DoubleValue ZERO = new DoubleValue(0.0);
+//	private static final DoubleValue ZERO = DoubleValue.of(0.0);
 //	private static final DataStructureComponent<Measure, NumberDomainSubset<NumberDomain>, NumberDomain> imbalance = new DataStructureComponentImpl<>(
 //			"imbalance", Measure.class, NUMBERDS);
 //	private static final DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> bool_var = new DataStructureComponentImpl<>("bool_var",
@@ -104,8 +105,8 @@ public abstract class HierarchyImpl implements Hierarchy
 	{
 		private final String codeItem;
 		private final Transformation condition;
-		private final ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> errorLevel;
-		private final ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> errorCode;
+		private final ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> errorLevel;
+		private final ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> errorCode;
 		private final List<? extends SourceItem> sourceItems;
 		private final ComparisonOperator relation;
 
@@ -142,25 +143,25 @@ public abstract class HierarchyImpl implements Hierarchy
 		}
 
 		@Override
-		public ScalarValue<?, ?, ? extends IntegerDomainSubset,IntegerDomain> getErrorLevel()
+		public ScalarValue<?, ?, EntireIntegerDomainSubset,IntegerDomain> getErrorLevel()
 		{
 			return errorLevel;
 		}
 
 		@Override
-		public ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> getErrorCode()
+		public ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> getErrorCode()
 		{
 			return errorCode;
 		}
 
 		@Override
-		public boolean contains(ScalarValue<?, ? extends Object, ? extends StringDomainSubset, StringDomain> item)
+		public boolean contains(ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> item)
 		{
 			return Utils.getStream(sourceItems).map(SourceItem::getId).anyMatch(i -> i.equals(item.get()));
 		}
 
 		@Override
-		public int getSign(ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> item)
+		public int getSign(ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> item)
 		{
 			return codeItem.equals(item.get()) ? 1
 					: Utils.getStream(sourceItems).filter(s -> s.getId().equals(item.get())).findFirst().map(SourceItem::isWithRelation)
@@ -180,7 +181,7 @@ public abstract class HierarchyImpl implements Hierarchy
 //			LOGGER.trace("Start evaluating {}",
 //					Utils.getStream(values.entrySet()).filter(byKey(k -> codeItem.equals(k.get()) || contains(STRINGDS.cast(k)))).collect(entriesToMap()));
 //
-//			Optional<NumberValue<?, ?, ?, ?>> opLeft = Optional.ofNullable(values.get(new StringValue(codeItem))).filter(NumberValue.class::isInstance)
+//			Optional<NumberValue<?, ?, ?, ?>> opLeft = Optional.ofNullable(values.get(StringValue.of(codeItem))).filter(NumberValue.class::isInstance)
 //					.map(NumberValue.class::cast);
 //			LOGGER.trace("Left value is {}", opLeft.isPresent() ? "present" : "not present");
 //
@@ -191,7 +192,7 @@ public abstract class HierarchyImpl implements Hierarchy
 //			final AtomicBoolean oneNonZeroExists = new AtomicBoolean(opLeft.map(v -> v.doubleValue() != 0.0).orElse(FALSE));
 //			final AtomicBoolean oneExists = new AtomicBoolean(opLeft.isPresent());
 //
-//			final DoubleValue imbalanceValue = new DoubleValue(leftValue - Utils.getStream(getComponents()).map(SourceItem::getId).map(StringValue::new)
+//			final DoubleValue imbalanceValue = DoubleValue.of(leftValue - Utils.getStream(getComponents()).map(SourceItem::getId).map(StringValue::new)
 //					.map(values::get).peek(v -> allExistNotNull.compareAndSet(true, v != null && !(v instanceof NullValue)))
 //					.peek(v -> oneNonZeroExists.compareAndSet(false, v instanceof NumberValue && ((NumberValue<?, ?, ?, ?>) v).doubleValue() != 0))
 //					.peek(v -> oneExists.compareAndSet(false, v instanceof NumberValue))
@@ -225,7 +226,7 @@ public abstract class HierarchyImpl implements Hierarchy
 //
 //			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> results = new HashMap<>();
 //			results.put(measure, opLeft.map(ScalarValue.class::cast).orElse(NullValue.instance(measure.getDomain())));
-//			results.put(ruleid, new StringValue(codeItem));
+//			results.put(ruleid, StringValue.of(codeItem));
 //			results.put(bool_var, test);
 //			results.put(errorlevel, test.get() ? NullValue.instance(INTEGERDS) : INTEGERDS.cast(getErrorLevel()));
 //			results.put(errorcode, test.get() ? NullValue.instance(STRINGDS) : STRINGDS.cast(getErrorCode()));

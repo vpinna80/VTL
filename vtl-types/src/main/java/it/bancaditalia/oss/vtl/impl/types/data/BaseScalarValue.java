@@ -23,10 +23,19 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
-public abstract class BaseScalarValue<T extends BaseScalarValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> implements ScalarValue<T, R, S, D>, Serializable
+/**
+ * @author Valentino Pinna
+ *
+ * @param <V> The concrete implementation type
+ * @param <R> The type of the value wrapped by the implementation
+ * @param <S> The domain subset
+ * @param <D> the parent domain
+ */
+public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements ScalarValue<V, R, S, D>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -35,22 +44,28 @@ public abstract class BaseScalarValue<T extends BaseScalarValue<T, R, S, D>, R e
 	private final int	hashCode;
 
 	public BaseScalarValue(R value, S domain)
-{
+	{
 		this.value = value;
 		this.domain = Objects.requireNonNull(domain, "Domain cannot be null");
 		this.hashCode = 31 + (value == null ? 0 : value.hashCode());
 	}
 
 	@Override
-	public R get()
+	public final R get()
 	{
 		return value;
 	}
 
 	@Override
-	public S getDomain()
+	public final S getDomain()
 	{
 		return domain;
+	}
+	
+	@Override
+	public final ScalarValueMetadata<S, D> getMetadata()
+	{
+		return this::getDomain;
 	}
 
 	@Override

@@ -20,15 +20,16 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Durations;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -43,7 +44,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -51,15 +51,15 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class TimeAggTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final DataStructureComponentImpl<Measure, TimePeriodDomainSubset, TimePeriodDomain> periodComponent;
-	private final DurationDomains frequency;
+	private final DataStructureComponent<Measure, ?, ?> periodComponent;
+	private final Durations frequency;
 
 	public TimeAggTransformation(Transformation operand, String periodTo)
 	{
 		super(operand);
-		frequency = DurationDomains.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
-		TimePeriodDomainSubset periodDomain = frequency.getRelatedTimePeriodDomain();
-		periodComponent = new DataStructureComponentImpl<>(periodDomain.getVarName(), Measure.class, periodDomain);
+		frequency = Durations.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
+		TimePeriodDomainSubset<?> periodDomain = frequency.getRelatedTimePeriodDomain();
+		periodComponent = DataStructureComponentImpl.of(periodDomain.getVarName(), Measure.class, periodDomain).as(Measure.class);
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
-		DataStructureComponent<Measure, TimeDomainSubset<TimeDomain>, TimeDomain> timeMeasure = dataset.getComponents(Measure.class, TIMEDS).iterator().next();
+		DataStructureComponent<Measure, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeMeasure = dataset.getComponents(Measure.class, TIMEDS).iterator().next();
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata())
 				.addComponent(periodComponent)
 				.build();
@@ -91,11 +91,11 @@ public class TimeAggTransformation extends UnaryTransformation
 
 		if (value instanceof ScalarValueMetadata)
 		{
-			ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) value).getDomain();
+			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) value).getDomain();
 			if (!TIMEDS.isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("time_agg", TIMEDS, domain);
 			else
-				return (ScalarValueMetadata<?>) periodComponent::getDomain;
+				return periodComponent.getMetadata();
 		}
 		else
 		{
@@ -109,7 +109,11 @@ public class TimeAggTransformation extends UnaryTransformation
 //			}
 //			else
 //			{
-				Set<DataStructureComponent<Measure, TimeDomainSubset<TimeDomain>, TimeDomain>> timeMeasures = ds.getComponents(Measure.class, TIMEDS);
+				Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getComponents(Measure.class).stream()
+						.map(c -> c.as(Measure.class))
+						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
+						.collect(toSet());
+				
 				if (timeMeasures.size() != 1)
 					throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, ds);
 //			}

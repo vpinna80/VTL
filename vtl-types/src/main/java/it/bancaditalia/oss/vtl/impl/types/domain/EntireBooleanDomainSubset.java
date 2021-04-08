@@ -21,8 +21,6 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 
-import java.io.Serializable;
-
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -34,13 +32,13 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-class EntireBooleanDomainSubset extends EntireDomainSubset<Boolean, BooleanDomain> implements BooleanDomainSubset, Serializable
+public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanDomainSubset, BooleanDomain> implements BooleanDomainSubset<EntireBooleanDomainSubset>
 {
 	private static final long serialVersionUID = 1L;
 
 	EntireBooleanDomainSubset()
 	{ 
-		super(Domains.BOOLEANDS, "boolean_var");
+		super(BOOLEANDS, "boolean_var");
 	}
 	
 	@Override
@@ -54,16 +52,16 @@ class EntireBooleanDomainSubset extends EntireDomainSubset<Boolean, BooleanDomai
 	{
 		return other instanceof BooleanDomainSubset || 
 				other instanceof NumberDomainSubset ||
-				(other instanceof ValueDomainSubset && isAssignableFrom(((ValueDomainSubset<?>) other).getParentDomain()));
+				(other instanceof ValueDomainSubset && isAssignableFrom(((ValueDomainSubset<?, ?>) other).getParentDomain()));
 	}
 
 	@Override
-	public ScalarValue<?, Boolean, BooleanDomainSubset, BooleanDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()) && value instanceof NullValue)
 			return NullValue.instance(this);
 		else if (value instanceof BooleanValue)
-			return (BooleanValue) value;
+			return BooleanValue.of((Boolean) value.get());
 		else if (value instanceof NumberValue)
 			return BooleanValue.of(((NumberValue<?, ?, ?, ?>) value).get().doubleValue() != 0);
 		else

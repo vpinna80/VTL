@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.M;
 import static java.time.temporal.ChronoUnit.MONTHS;
 
 import java.time.YearMonth;
@@ -32,7 +31,6 @@ import java.time.temporal.TemporalUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class MonthPeriodHolder extends PeriodHolder<MonthPeriodHolder>
@@ -101,25 +99,6 @@ public class MonthPeriodHolder extends PeriodHolder<MonthPeriodHolder>
 	{
 		return yearMonth.toString();
 	}
-	
-	@Override
-	public DurationDomains getPeriod()
-	{
-		return M;
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		switch (frequency)
-		{
-			case A: return new YearPeriodHolder<>(this);
-			case S: return new SemesterPeriodHolder(this);
-			case Q: return new QuarterPeriodHolder(this);
-		default:
-			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
-		}
-	}
 
 	@Override
 	public boolean isSupported(TemporalUnit unit)
@@ -133,16 +112,15 @@ public class MonthPeriodHolder extends PeriodHolder<MonthPeriodHolder>
 		return new MonthPeriodHolder(yearMonth.plus(amount, unit));
 	}
 
-
-	@Override
-	public TimePeriodDomainSubset getDomain()
-	{
-		return MONTHSDS;
-	}
-
 	@Override
 	protected TemporalUnit smallestUnit()
 	{
 		return MONTHS;
+	}
+
+	@Override
+	public TimePeriodDomainSubset<?> getDomain()
+	{
+		return MONTHSDS;
 	}
 }

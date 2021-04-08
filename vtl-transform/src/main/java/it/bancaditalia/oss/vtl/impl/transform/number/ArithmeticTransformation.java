@@ -136,9 +136,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 
 		if (metadata == null)
 		{
-			DataStructureComponent<Measure, NumberDomainSubset<NumberDomain>, NumberDomain> leftMeasure = streamed.getComponents(Measure.class, NUMBERDS).iterator().next();
-			DataStructureComponent<Measure, NumberDomainSubset<NumberDomain>, NumberDomain> rightMeasure = indexed.getComponents(Measure.class, NUMBERDS).iterator().next();
-			DataStructureComponentImpl<Measure, ? extends NumberDomainSubset<? extends NumberDomain>, ? extends NumberDomain> resultComp;
+			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> leftMeasure = streamed.getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> rightMeasure = indexed.getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataStructureComponentImpl<Measure, ? extends NumberDomainSubset<?, ?>, ?> resultComp;
 			if (INTEGERDS.isAssignableFrom(leftMeasure.getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getDomain()))
 				resultComp = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 			else
@@ -194,7 +194,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	private ScalarValue<?, ?, ?, ?> compute(boolean swap, boolean intResult, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
-			return NullValue.instance((NumberDomainSubset<? extends NumberDomain>)(intResult ? INTEGERDS : NUMBERDS));
+			return intResult ? NullValue.instance(INTEGERDS) : NullValue.instance(NUMBERDS);
 		
 		return reverseIf(swap, intResult
 					? getOperator()::applyAsInt 
@@ -203,7 +203,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right)
 	{
 		ValueDomain domainLeft = left.getDomain();
 		ValueDomain domainRight = right.getDomain();
@@ -219,7 +219,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		if (dataset.getComponents(Measure.class).size() == 0)
 			throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
@@ -250,8 +250,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 //		DataStructureComponent<? extends Measure, ?, ?> firstLeft = leftMeasures.iterator().next();
 //		DataStructureComponent<? extends Measure, ?, ?> firstRight = rightMeasures.iterator().next();
 //		
-//		ValueDomainSubset<?> firstLeftDomain = firstLeft.getDomain();
-//		ValueDomainSubset<?> firstRightDomain = firstRight.getDomain();
+//		ValueDomainSubset<?, ?> firstLeftDomain = firstLeft.getDomain();
+//		ValueDomainSubset<?, ?> firstRightDomain = firstRight.getDomain();
 //		
 //		boolean areFirstCompatible = !firstLeft.getName().equals(firstRight.getName()) && 
 //				(firstLeftDomain.isAssignableFrom(firstRightDomain) || firstRight.getDomain().isAssignableFrom(firstLeft.getDomain()));

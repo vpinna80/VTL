@@ -112,28 +112,28 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public DataSet mapKeepingKeys(DataSetMetadata metadata, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
-	 * Creates a new DataSet by joining DataPoints of this and another DataSet by the common identifiers.
+	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
-	 * @param other another DataSet that will be joined to this DataSet.
+	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
 	 * @param filter a {@link BiPredicate} used to select only a subset of the joined {@link DataPoint}s.
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @return The new DataSet.
 	 */
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BiPredicate<DataPoint,DataPoint> filter, BinaryOperator<DataPoint> merge);
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, BiPredicate<DataPoint,DataPoint> filter, BinaryOperator<DataPoint> merge);
 
 	/**
-	 * Creates a new DataSet by joining DataPoints of this and another DataSet by the common identifiers.
+	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
 	 * The same as {@code filteredMappedJoin(metadata, other, (a,  b) -> true, merge)}.
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
-	 * @param other another DataSet that will be joined to this DataSet. 
+	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @return The new DataSet.
 	 */
-	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet other, BinaryOperator<DataPoint> merge)
+	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, BinaryOperator<DataPoint> merge)
 	{
-		return filteredMappedJoin(metadata, other, (a,  b) -> true, merge);
+		return filteredMappedJoin(metadata, indexed, (a,  b) -> true, merge);
 	}
 
 	/**
@@ -219,7 +219,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @throws NullPointerException if domain is null.
 	 */
-	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<?, S, D>> getComponent(String name, S domain)
+	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<?, S, D>> getComponent(String name, S domain)
 	{
 		return getMetadata().getComponent(name, domain);
 	}
@@ -248,7 +248,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @throws NullPointerException if domain is null.
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name,
+	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name,
 			Class<R> role, S domain)
 	{
 		return getMetadata().getComponent(name, role, domain);
@@ -275,7 +275,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * @see DataSetMetadata#getComponents(Class, ValueDomainSubset) 
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
+	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
 			S domain)
 	{
 		return getMetadata().getComponents(role, domain);

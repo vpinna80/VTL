@@ -83,7 +83,7 @@ public class SubstrTransformation extends TransformationImpl
 	public SubstrTransformation(Transformation expr, Transformation start, Transformation len)
 	{
 		exprOperand = expr;
-		startOperand = start == null ? new ConstantOperand<>(new IntegerValue(1L)) : start;
+		startOperand = start == null ? new ConstantOperand<>(IntegerValue.of(1L)) : start;
 		this.lenOperand = len == null ? new ConstantOperand<>(NullValue.instance(INTEGERDS)) : len;
 	}
 
@@ -91,8 +91,8 @@ public class SubstrTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue expr = exprOperand.eval(session);
-		ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
-		ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> len = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) lenOperand.eval(session));
+		ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
+		ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> len = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) lenOperand.eval(session));
 		
 		if (start instanceof IntegerValue && (Long) len.get() < 1)
 			throw new VTLSyntaxException("substr: start parameter must be positive but it is " + start.get());
@@ -108,18 +108,18 @@ public class SubstrTransformation extends TransformationImpl
 			
 			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
 				.map(measure -> {
-					ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> scalar = STRINGDS.cast(dp.get(measure));
+					ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> scalar = STRINGDS.cast(dp.get(measure));
 					if (scalar instanceof NullValue)
 						return new SimpleEntry<>(measure, STRINGDS.cast(NullValue.instance(STRINGDS)));
 					String string = scalar.get().toString();
 					
 					if (startV > string.length())
-						return new SimpleEntry<>(measure, new StringValue(""));
+						return new SimpleEntry<>(measure, StringValue.of(""));
 					Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get() + startV - 1;
 					if (lenV != null && lenV > string.length())
 						lenV = string.length();
 					
-					return new SimpleEntry<>(measure, new StringValue(lenV == null ? string.substring(startV - 1) : string.substring(startV - 1, lenV)));
+					return new SimpleEntry<>(measure, StringValue.of(lenV == null ? string.substring(startV - 1) : string.substring(startV - 1, lenV)));
 				}).collect(Collectors.toMap(Entry::getKey, Entry::getValue))
 			); 
 		}
@@ -132,12 +132,12 @@ public class SubstrTransformation extends TransformationImpl
 			String string = scalar.get().toString();
 			
 			if (startV > string.length())
-				return new StringValue("");
+				return StringValue.of("");
 			Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get();
 			if (lenV != null && lenV + startV - 1 > string.length())
 				lenV = string.length() - startV + 1;
 			
-			return new StringValue(lenV == null ? string.substring(startV - 1) : string.substring(startV - 1, lenV));
+			return StringValue.of(lenV == null ? string.substring(startV - 1) : string.substring(startV - 1, lenV));
 		}
 	}
 
@@ -151,14 +151,14 @@ public class SubstrTransformation extends TransformationImpl
 			throw new VTLInvalidParameterException(start, DataSetMetadata.class);
 		if (!(len instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(len, DataSetMetadata.class);
-		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) start).getDomain()))
-			throw new VTLIncompatibleTypesException("substr: start parameter", STRING, ((ScalarValueMetadata<?>) start).getDomain());
-		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?>) len).getDomain()))
-			throw new VTLIncompatibleTypesException("substr: len parameter", STRING, ((ScalarValueMetadata<?>) len).getDomain());
+		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
+			throw new VTLIncompatibleTypesException("substr: start parameter", STRING, ((ScalarValueMetadata<?, ?>) start).getDomain());
+		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) len).getDomain()))
+			throw new VTLIncompatibleTypesException("substr: len parameter", STRING, ((ScalarValueMetadata<?, ?>) len).getDomain());
 		
 		if (source instanceof ScalarValueMetadata)
 		{
-			ScalarValueMetadata<?> scalar = (ScalarValueMetadata<?>) source; 
+			ScalarValueMetadata<?, ?> scalar = (ScalarValueMetadata<?, ?>) source; 
 			if (!(STRING.isAssignableFrom(scalar.getDomain())))
 				throw new VTLIncompatibleTypesException("substr", STRING, scalar.getDomain());
 			else

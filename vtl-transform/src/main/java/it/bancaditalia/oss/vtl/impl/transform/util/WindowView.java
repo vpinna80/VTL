@@ -103,7 +103,7 @@ public class WindowView
 		private final WindowDirection direction;
 		private final Integer count;
 		
-		public LimitClause(WindowDirection direction, IntegerValue limitCount)
+		public LimitClause(WindowDirection direction, IntegerValue<?> limitCount)
 		{
 			this(direction, limitCount.get().intValue());
 		}

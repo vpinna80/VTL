@@ -38,6 +38,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -47,7 +48,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -79,7 +79,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> oldIdentifiers = dataset.getComponents(Identifier.class);
 		Set<DataStructureComponent<Measure,?,?>> oldMeasures = dataset.getComponents(Measure.class);
-		DataStructureComponent<Identifier, StringDomainSubset, StringDomain> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
 		DataStructureComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
 
 		return new LightFDataSet<>(metadata, ds -> ds.stream()
@@ -88,7 +88,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 					.filter(entryByValue(v -> !(v instanceof NullValue)))
 					.map(e -> new DataPointBuilder(dp.getValues(oldIdentifiers))
 							.add(newMeasure, e.getValue())
-							.add(newID, new StringValue(e.getKey().getName()))
+							.add(newID, StringValue.of(e.getKey().getName()))
 							.build(metadata))
 			).reduce(Stream::concat)
 			.orElse(Stream.empty()), dataset);
@@ -104,7 +104,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 
 		DataSetMetadata dataset = (DataSetMetadata) value;
 		
-		Set<? extends ValueDomainSubset<?>> domains = dataset.getComponents(Measure.class).stream()
+		Set<? extends ValueDomainSubset<?, ?>> domains = dataset.getComponents(Measure.class).stream()
 			.map(DataStructureComponent::getDomain)
 			.distinct()
 			.collect(toSet());
@@ -112,10 +112,10 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		if (domains.size() != 1)
 			throw new VTLSyntaxException("For unpivot, all measures must be defined on the same domain, but " + domains + " were found.");
 		
-		ValueDomainSubset<?> domain = domains.iterator().next();
+		ValueDomainSubset<?, ?> domain = domains.iterator().next();
 
-		DataStructureComponent<Identifier, StringDomainSubset, StringDomain> newIdentifier = new DataStructureComponentImpl<>(identifierName, Identifier.class, STRINGDS);
-		DataStructureComponent<Measure, ?, ?> newMeasure = new DataStructureComponentImpl<>(measureName, Measure.class, domain);
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = new DataStructureComponentImpl<>(identifierName, Identifier.class, STRINGDS);
+		DataStructureComponent<?, ?, ?> newMeasure = DataStructureComponentImpl.of(measureName, Measure.class, domain);
 
 		return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(newIdentifier)

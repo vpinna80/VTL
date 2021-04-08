@@ -27,7 +27,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
  * 
  * @author Valentino Pinna
  */
-public interface StringDomainSubset extends ValueDomainSubset<StringDomain>, StringDomain
+public interface StringDomainSubset<S extends StringDomainSubset<S>> extends ValueDomainSubset<S, StringDomain>, StringDomain
 {
-	@Override ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value);
+	@Override ScalarValue<?, ?, S, StringDomain> cast(ScalarValue<?, ?, ?, ?> value);
 }

@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -31,13 +30,14 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 
-public class EntireDateDomainSubset extends EntireDomainSubset<LocalDateTime, DateDomain> implements DateDomainSubset, Serializable
+public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainSubset, DateDomain> implements DateDomainSubset<EntireDateDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final EntireDateDomainSubset INSTANCE = new EntireDateDomainSubset();
 
-	public EntireDateDomainSubset()
+	private EntireDateDomainSubset()
 	{
-		super(DATEDS, "date_var");
+		super(null, "date_var");
 	}
 
 	@Override
@@ -53,12 +53,12 @@ public class EntireDateDomainSubset extends EntireDomainSubset<LocalDateTime, Da
 	}
 
 	@Override
-	public ScalarValue<?, ?, DateDomainSubset, DateDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireDateDomainSubset, DateDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()) && value instanceof NullValue)
 			return NullValue.instance(this);
 		if (value instanceof DateValue)
-			return (DateValue) value;
+			return new DateValue<>(((DateValue<?>) value).get(), DATEDS);
 		else
 			throw new UnsupportedOperationException("Cast to date from " + value.getDomain());
 	}
@@ -67,5 +67,10 @@ public class EntireDateDomainSubset extends EntireDomainSubset<LocalDateTime, Da
 	public boolean isComparableWith(ValueDomain other)
 	{
 		return other instanceof DateDomain;
+	}
+
+	public static EntireDateDomainSubset getInstance()
+	{
+		return INSTANCE;
 	}
 }

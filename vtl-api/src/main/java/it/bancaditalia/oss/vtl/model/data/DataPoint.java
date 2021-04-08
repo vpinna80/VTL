@@ -49,9 +49,9 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param component the component whose values are used for the ordering
 	 * @return the Comparator instance
 	 */
-	public static Comparator<DataPoint> compareBy(DataStructureComponent<Identifier, ?, ?> component)
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Comparator<DataPoint> compareBy(DataStructureComponent<Identifier, S, D> component)
 	{
-		return (dp1, dp2) -> dp1.get(component).compareTo(dp2.get(component));
+		return (dp1, dp2) -> dp1.getValue(component).compareTo(dp2.getValue(component));
 	}
 
 	/**
@@ -89,17 +89,17 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	public DataPoint combine(DataPoint other);
 	
 	/**
-	 * Retrieves the value for a component in this datapoint, if the component exists, performing a cast of the result.
+	 * If the component exists, retrieves the value for it in this datapoint, performing a cast of the result.
 	 * 
 	 * @param <S> the domain subset type of the component
 	 * @param <D> the domain type of the component
 	 * @param component the component to query
 	 * @return the casted value for the component if exists.
+	 * @throws NullPointerException if the component is not found
 	 */
-	@SuppressWarnings("unchecked")
-	public default <S extends ValueDomainSubset<D>, D extends ValueDomain> ScalarValue<?, ?, S, D> getValue(DataStructureComponent<?, S, D> component)
+	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> ScalarValue<?, ?, S, D> getValue(DataStructureComponent<?, S, D> component)
 	{
-		return (ScalarValue<?, ?, S, D>) component.getDomain().cast(get(component));
+		return component.getDomain().cast(get(component));
 	}
 	
 	/**

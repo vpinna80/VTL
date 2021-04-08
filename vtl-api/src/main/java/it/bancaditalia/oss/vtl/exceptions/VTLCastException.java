@@ -26,7 +26,7 @@ public class VTLCastException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLCastException(ValueDomainSubset<?> domain, ScalarValue<?, ?, ?, ?> value)
+	public VTLCastException(ValueDomainSubset<?, ?> domain, ScalarValue<?, ?, ?, ?> value)
 	{
 		super("Cannot cast " + value + "[" + value.getDomain() + "] to type " + domain + ".");
 	}

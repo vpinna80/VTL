@@ -27,7 +27,7 @@ package it.bancaditalia.oss.vtl.model.data;
  *
  * @param <D> the original domain
  */
-public interface DescribedDomainSubset<D extends ValueDomain> extends ValueDomainSubset<D>
+public interface DescribedDomainSubset<S extends DescribedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
 {
 
 }

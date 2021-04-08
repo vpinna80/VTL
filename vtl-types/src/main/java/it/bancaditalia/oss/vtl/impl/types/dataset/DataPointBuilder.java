@@ -167,7 +167,7 @@ public class DataPointBuilder
 			{
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> filledValues = new ConcurrentHashMap<>(values);
 				Utils.getStream(structure).filter(c -> !c.is(Identifier.class) && !values.containsKey(c))
-						.forEach(c -> filledValues.put(c, NullValue.instance(c.getDomain())));
+						.forEach(c -> filledValues.put(c, NullValue.instanceFrom(c)));
 				this.dpValues = filledValues;
 			} else
 				this.dpValues = values;

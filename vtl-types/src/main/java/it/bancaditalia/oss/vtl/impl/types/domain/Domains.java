@@ -19,67 +19,75 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.DaysDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.MonthsDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.QuartersDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.SemestersDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.WeeksDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.YearsDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.DateDomain;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 
-public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
+public class Domains<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements ScalarValueMetadata<S, D>
 {
-	BOOLEAN(new EntireBooleanDomainSubset()),
-	INTEGER(new EntireIntegerDomainSubset()),
-	STRING(new EntireStringDomainSubset()),
-	NUMBER(new EntireNumberDomainSubset()),
-	DATE(new EntireDateDomainSubset()),
-	TIME(EntireTimeDomainSubset.getInstance()), 
-	DAYS(new EntireTimePeriodDomainSubset(DayPeriodHolder.class, "time_period_days_var")),
-	WEEKS(new EntireTimePeriodDomainSubset(WeekPeriodHolder.class, "time_period_weeks_var")),
-	MONTHS(new EntireTimePeriodDomainSubset(MonthPeriodHolder.class, "time_period_months_var")),
-	QUARTERS(new EntireTimePeriodDomainSubset(QuarterPeriodHolder.class, "time_period_quarters_var")),
-	SEMESTERS(new EntireTimePeriodDomainSubset(SemesterPeriodHolder.class, "time_period_semesters_var")),
-	YEARS(new EntireTimePeriodDomainSubset(YearPeriodHolder.clazz(), "time_period_years_var"));
+	public static final Domains<EntireBooleanDomainSubset, BooleanDomain> BOOLEAN = new Domains<>(new EntireBooleanDomainSubset());
+	public static final Domains<EntireIntegerDomainSubset, IntegerDomain> INTEGER = new Domains<>(new EntireIntegerDomainSubset());
+	public static final Domains<EntireDurationDomainSubset, DurationDomain> DURATION = new Domains<>(EntireDurationDomainSubset.INSTANCE);
+	public static final Domains<EntireStringDomainSubset, StringDomain> STRING = new Domains<>(new EntireStringDomainSubset());
+	public static final Domains<EntireNumberDomainSubset, ?> NUMBER = new Domains<>(new EntireNumberDomainSubset());
+	public static final Domains<EntireTimeDomainSubset, TimeDomain> TIME = new Domains<>(EntireTimeDomainSubset.getInstance());
+	public static final Domains<EntireDateDomainSubset, DateDomain> DATE = new Domains<>(EntireDateDomainSubset.getInstance());
+	public static final Domains<DaysDomainSubset, TimePeriodDomain> DAYS = new Domains<>(new DaysDomainSubset());
+	public static final Domains<WeeksDomainSubset, TimePeriodDomain> WEEKS = new Domains<>(new WeeksDomainSubset());
+	public static final Domains<MonthsDomainSubset, TimePeriodDomain> MONTHS = new Domains<>(new MonthsDomainSubset());
+	public static final Domains<QuartersDomainSubset, TimePeriodDomain> QUARTERS = new Domains<>(new QuartersDomainSubset());
+	public static final Domains<SemestersDomainSubset, TimePeriodDomain> SEMESTERS = new Domains<>(new SemestersDomainSubset());
+	public static final Domains<YearsDomainSubset, TimePeriodDomain> YEARS = new Domains<>(new YearsDomainSubset());
 
-	private final ValueDomainSubset<?> valueDomain;
+	public static final EntireDurationDomainSubset DURATIONDS = DURATION.getDomain();
+	public static final EntireNumberDomainSubset NUMBERDS = NUMBER.getDomain();
+	public static final EntireIntegerDomainSubset INTEGERDS = INTEGER.getDomain();
+	public static final EntireBooleanDomainSubset BOOLEANDS = BOOLEAN.getDomain();
+	public static final EntireStringDomainSubset STRINGDS = STRING.getDomain();
+	public static final EntireDateDomainSubset DATEDS = DATE.getDomain();
+	public static final EntireTimeDomainSubset TIMEDS = TIME.getDomain();
+	public static final DaysDomainSubset DAYSDS = DAYS.getDomain();
+	public static final WeeksDomainSubset WEEKSDS = WEEKS.getDomain();
+	public static final MonthsDomainSubset MONTHSDS = MONTHS.getDomain();
+	public static final QuartersDomainSubset QUARTERSDS = QUARTERS.getDomain();
+	public static final SemestersDomainSubset SEMESTERSDS = SEMESTERS.getDomain();
+	public static final YearsDomainSubset YEARSDS = YEARS.getDomain();
+	public static final NullDomain UNKNOWNDS = new NullDomain();
+
+	private final S valueDomain;
 	
-	Domains(ValueDomainSubset<?> valueDomain)
+	private Domains(S valueDomain)
 	{
 		this.valueDomain = valueDomain;
 	}
 	
-	public ValueDomainSubset<?> getDomain()
-	{
-		return valueDomain;
-	}
-	
-	public boolean isAssignableFrom(Domains other)
+	public boolean isAssignableFrom(ScalarValueMetadata<?, ?> other)
 	{
 		return getDomain().isAssignableFrom(other.getDomain());
 	}
 
-	public boolean isAssignableFrom(ValueDomainSubset<?> other)
+	public boolean isAssignableFrom(ValueDomainSubset<?, ?> other)
 	{
 		return getDomain().isAssignableFrom(other);
 	}
 
-	public static class NullDomain implements ValueDomainSubset<ValueDomain> 
+	public static class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain> 
 	{
 		private static final long serialVersionUID = 1L;
-
 		@Override
 		public boolean isAssignableFrom(ValueDomain other)
 		{
@@ -105,7 +113,7 @@ public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
 		}
 		
 		@Override
-		public ScalarValue<?, ?, ? extends ValueDomainSubset<ValueDomain>, ValueDomain> cast(ScalarValue<?, ?, ?, ?> value)
+		public ScalarValue<?, ?, NullDomain, ValueDomain> cast(ScalarValue<?, ?, ?, ?> value)
 		{
 			throw new UnsupportedOperationException("Cast to unknown domain not supported.");
 		}
@@ -115,20 +123,11 @@ public enum Domains implements ScalarValueMetadata<ValueDomainSubset<?>>
 		{
 			throw new UnsupportedOperationException("No variable name for unknown domain.");
 		}
-	};
+	}
 
-	@SuppressWarnings("unchecked")
-	public static final NumberDomainSubset<NumberDomain> NUMBERDS = (NumberDomainSubset<NumberDomain>) NUMBER.getDomain();
-	public static final IntegerDomainSubset INTEGERDS = (IntegerDomainSubset) INTEGER.getDomain();
-	public static final BooleanDomainSubset BOOLEANDS = (BooleanDomainSubset) BOOLEAN.getDomain();
-	public static final StringDomainSubset STRINGDS = (StringDomainSubset) STRING.getDomain();
-	public static final DateDomainSubset DATEDS = (DateDomainSubset) DATE.getDomain();
-	public static final TimeDomainSubset<TimeDomain> TIMEDS = EntireTimeDomainSubset.getInstance();
-	public static final TimePeriodDomainSubset DAYSDS = (TimePeriodDomainSubset) DAYS.getDomain();
-	public static final TimePeriodDomainSubset WEEKSDS = (TimePeriodDomainSubset) WEEKS.getDomain();
-	public static final TimePeriodDomainSubset MONTHSDS = (TimePeriodDomainSubset) MONTHS.getDomain();
-	public static final TimePeriodDomainSubset QUARTERSDS = (TimePeriodDomainSubset) QUARTERS.getDomain();
-	public static final TimePeriodDomainSubset SEMESTERSDS = (TimePeriodDomainSubset) SEMESTERS.getDomain();
-	public static final TimePeriodDomainSubset YEARSDS = (TimePeriodDomainSubset) YEARS.getDomain();
-	public static final ValueDomainSubset<? extends ValueDomain> UNKNOWNDS = new NullDomain();
+	@Override
+	public S getDomain()
+	{
+		return valueDomain;
+	};
 }

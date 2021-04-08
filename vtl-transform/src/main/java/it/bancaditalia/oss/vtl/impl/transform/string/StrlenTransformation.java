@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.Collections.singletonMap;
@@ -29,7 +30,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -49,7 +49,6 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class StrlenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final ScalarValueMetadata<IntegerDomainSubset> META = () -> Domains.INTEGERDS;  
 	
 	public StrlenTransformation(Transformation operand)
 	{
@@ -57,16 +56,16 @@ public class StrlenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, IntegerDomainSubset, IntegerDomain> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
-		return scalar instanceof NullValue ? NullValue.instance(INTEGERDS) : new IntegerValue((long) ((StringValue) scalar).get().length());
+		return scalar instanceof NullValue ? NullValue.instance(INTEGERDS) : IntegerValue.of((long) ((StringValue<?, ?>) scalar).get().length());
 	}
 
 	@Override
 	protected DataSet evalOnDataset(DataSet dataset)
 	{
-		DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain> resultMeasure = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
-		DataStructureComponent<Measure, StringDomainSubset, StringDomain> originalMeasure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
+		DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> resultMeasure = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
+		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> originalMeasure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
 		
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS))
@@ -79,8 +78,8 @@ public class StrlenTransformation extends UnaryTransformation
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata op = operand.getMetadata(session);
-		if (op instanceof ScalarValueMetadata && ((ScalarValueMetadata<?>) op).getDomain() instanceof StringDomainSubset)
-			return META;
+		if (op instanceof ScalarValueMetadata && ((ScalarValueMetadata<?, ?>) op).getDomain() instanceof StringDomainSubset)
+			return INTEGER;
 		else 
 		{
 			DataSetMetadata ds = (DataSetMetadata) op;

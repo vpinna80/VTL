@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.D;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import java.time.LocalDate;
@@ -33,7 +32,6 @@ import java.time.temporal.TemporalUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class DayPeriodHolder extends PeriodHolder<DayPeriodHolder>
@@ -102,25 +100,6 @@ public class DayPeriodHolder extends PeriodHolder<DayPeriodHolder>
 	{
 		return DateTimeFormatter.ofPattern("yyyy'P'DDD").format(date);
 	}
-	
-	@Override
-	public DurationDomains getPeriod()
-	{
-		return D;
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		switch (frequency)
-		{
-			case A: return new YearPeriodHolder<>(this);
-			case S: return new SemesterPeriodHolder(this);
-			case Q: return new QuarterPeriodHolder(this);
-		default:
-			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
-		}
-	}
 
 	@Override
 	public boolean isSupported(TemporalUnit unit)
@@ -135,14 +114,14 @@ public class DayPeriodHolder extends PeriodHolder<DayPeriodHolder>
 	}
 
 	@Override
-	public TimePeriodDomainSubset getDomain()
-	{
-		return DAYSDS;
-	}
-
-	@Override
 	protected TemporalUnit smallestUnit()
 	{
 		return DAYS;
+	}
+
+	@Override
+	public TimePeriodDomainSubset<?> getDomain()
+	{
+		return DAYSDS;
 	}
 }

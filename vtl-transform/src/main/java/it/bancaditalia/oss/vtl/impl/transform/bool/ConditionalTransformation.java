@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static java.util.stream.Collectors.mapping;
@@ -39,6 +40,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -82,7 +84,7 @@ public class ConditionalTransformation extends TransformationImpl
 			metadata = getMetadata(session);
 		
 		if (cond instanceof ScalarValue)
-			return BOOLEANDS.cast((ScalarValue<?, ?, ?, ?>) cond).get() 
+			return TRUE == BOOLEANDS.cast((ScalarValue<?, ?, ?, ?>) cond) 
 					? thenExpr.eval(session)
 					: elseExpr.eval(session);
 		else
@@ -90,7 +92,7 @@ public class ConditionalTransformation extends TransformationImpl
 			DataSet condD = (DataSet) cond;
 			VTLValue thenV = thenExpr.eval(session);
 			VTLValue elseV = elseExpr.eval(session);
-			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getComponents(Measure.class, BOOLEANDS).iterator().next();
+			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
 				return evalTwoDatasets(condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
@@ -105,7 +107,7 @@ public class ConditionalTransformation extends TransformationImpl
 	}
 
 	private DataPoint evalDatasetAndScalar(boolean cond, DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, 
-			DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
+			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
 	{
 		if (cond)
 		{
@@ -123,7 +125,7 @@ public class ConditionalTransformation extends TransformationImpl
 			return dp;
 	}
 
-	private VTLValue evalTwoDatasets(DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
+	private VTLValue evalTwoDatasets(DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, ? extends BooleanDomainSubset<?>, BooleanDomain> booleanConditionMeasure)
 	{
 		Map<Boolean, Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> partitions;
 		Set<DataStructureComponent<Identifier, ?, ?>> valueIDs = thenD.getComponents(Identifier.class);
@@ -151,7 +153,7 @@ public class ConditionalTransformation extends TransformationImpl
 
 	private boolean checkCondition(ScalarValue<?, ?, ?, ?> value)
 	{
-		return value instanceof BooleanValue && ((BooleanValue) value).get();
+		return value instanceof BooleanValue && ((BooleanValue<?>) value).get();
 	}
 
 	@Override
@@ -177,7 +179,7 @@ public class ConditionalTransformation extends TransformationImpl
 
 		if (cond instanceof UnknownValueMetadata || left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
 			return INSTANCE;
-		else if (cond instanceof ScalarValueMetadata && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?>) cond).getDomain()))
+		else if (cond instanceof ScalarValueMetadata && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) cond).getDomain()))
 			if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
 				return metadata = left;
 			else
@@ -225,8 +227,8 @@ public class ConditionalTransformation extends TransformationImpl
 			}
 			else 
 				// the other is a scalar, all measures in dataset must be assignable from the scalar
-				if (!dataset.getComponents(Measure.class).stream().allMatch(c -> c.getDomain().isAssignableFrom(((ScalarValueMetadata<?>) other).getDomain())))
-					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
+				if (!dataset.getComponents(Measure.class).stream().allMatch(c -> c.getDomain().isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain())))
+					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?, ?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
 
 			return metadata = dataset;
 		}

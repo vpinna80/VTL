@@ -20,15 +20,12 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.M;
 
 import java.time.YearMonth;
 import java.time.temporal.TemporalField;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 
 /**
  * @author Valentino Pinna
@@ -107,35 +104,11 @@ class MonthHolder extends DateHolder<YearMonth>
 	{
 		return yearMonth.toString();
 	}
-	
-	@Override
-	public DurationDomains getPeriod()
-	{
-		return M;
-	}
+
 
 	@Override
 	public MonthHolder increment(long amount)
 	{
 		return new MonthHolder(yearMonth.plusMonths(amount));
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		switch (frequency)
-		{
-			case A: return new YearPeriodHolder<>(this);
-			case S: return new SemesterPeriodHolder(this);
-			case Q: return new QuarterPeriodHolder(this);
-		default:
-			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
-		}
-	}
-
-	@Override
-	public String getPeriodIndicator()
-	{
-		return "P1M";
 	}
 }

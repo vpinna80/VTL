@@ -86,8 +86,8 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		
 		if (filterMetadata instanceof ScalarValueMetadata)
 		{
-			if (!BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?>) filterMetadata).getDomain()))
-				throw new VTLIncompatibleTypesException("FILTER", BOOLEANDS, ((ScalarValueMetadata<?>) filterMetadata).getDomain());
+			if (!BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) filterMetadata).getDomain()))
+				throw new VTLIncompatibleTypesException("FILTER", BOOLEANDS, ((ScalarValueMetadata<?, ?>) filterMetadata).getDomain());
 		}
 		else
 		{

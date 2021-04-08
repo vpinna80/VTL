@@ -38,6 +38,8 @@ import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.M
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_3;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_1;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_2;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_3;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_4;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_8;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
@@ -81,7 +83,9 @@ public enum SampleDataSets implements DataSet
 	SAMPLE10(IDENT_STRING_3, MEASURE_INTEGER_3),
 	SAMPLE11(IDENT_STRING_1, MEASURE_BOOLEAN_1),
 	SAMPLE12(IDENT_STRING_1, MEASURE_BOOLEAN_4),
-	SAMPLE13(IDENT_STRING_1, MEASURE_STRING_8);
+	SAMPLE13(IDENT_STRING_1, MEASURE_STRING_8),
+	SAMPLE14(IDENT_STRING_1, MEASURE_STRING_3),
+	SAMPLE15(IDENT_STRING_1, MEASURE_STRING_4);
 
 	private final DataSet dataset;
 

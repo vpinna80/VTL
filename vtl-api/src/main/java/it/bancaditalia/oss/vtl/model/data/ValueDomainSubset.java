@@ -26,7 +26,7 @@ package it.bancaditalia.oss.vtl.model.data;
  *
  * @param <D> The parent {@link ValueDomain}
  */
-public interface ValueDomainSubset<D extends ValueDomain> extends ValueDomain
+public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends ValueDomain
 {
 	/**
 	 * @return A criterion, if defined, to limit the admissible values from the parent {@link ValueDomain}
@@ -43,6 +43,7 @@ public interface ValueDomainSubset<D extends ValueDomain> extends ValueDomain
 	 * 
 	 * @param value the {@link ScalarValue} to cast
 	 * @return the casted {@link ScalarValue}
+	 * @throws NullPointerException if the value is null
 	 */
-	public ScalarValue<?, ?, ? extends ValueDomainSubset<? extends D>, ? extends D> cast(ScalarValue<?, ?, ?, ?> value);
+	public ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
 }

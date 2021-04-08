@@ -36,12 +36,10 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 import java.util.function.Supplier;
 
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public abstract class PeriodHolder<T extends PeriodHolder<? extends T>> implements Temporal, Comparable<PeriodHolder<?>>, Serializable, TimeHolder
+public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Temporal, Comparable<PeriodHolder<?>>, Serializable, TimeHolder
 {
 	private static final long serialVersionUID = 1L;
 
@@ -96,65 +94,13 @@ public abstract class PeriodHolder<T extends PeriodHolder<? extends T>> implemen
 		}
 	}
 
-	public static PeriodHolder<?> of(TemporalAccessor value)
-	{
-		if (value.isSupported(DAY_OF_MONTH)) 
-			return new DayPeriodHolder(value);
-		else if (value.isSupported(MONTH_OF_YEAR)) 
-			return new MonthPeriodHolder(value);
-		else if (value.isSupported(QUARTER_OF_YEAR)) 
-			return new QuarterPeriodHolder(value);
-		else if (value.isSupported(SEMESTER_OF_YEAR)) 
-			return new SemesterPeriodHolder(value);
-		else if (value.isSupported(ALIGNED_WEEK_OF_YEAR)) 
-			return new WeekPeriodHolder(value);
-		else if (value.isSupported(YEAR)) 
-			return new YearPeriodHolder<>(value);
-		else
-			throw new UnsupportedOperationException("Period from " + value + " not implemented.");
-	}
-
-	public static String getQualifier(Class<? extends PeriodHolder<?>> holder)
-	{
-		if (DayPeriodHolder.class.isAssignableFrom(holder))
-			return "P1D";
-		if (WeekPeriodHolder.class.isAssignableFrom(holder))
-			return "P1W";
-		if (MonthPeriodHolder.class.isAssignableFrom(holder))
-			return "P1M";
-		if (QuarterPeriodHolder.class.isAssignableFrom(holder))
-			return "P1Q";
-		if (SemesterPeriodHolder.class.isAssignableFrom(holder))
-			return "P1S";
-		if (YearPeriodHolder.class.isAssignableFrom(holder))
-			return "P1Y";
-		throw new UnsupportedOperationException("Unknown class " + holder);
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public String getPeriodIndicator()
-	{
-		return getQualifier((Class<? extends PeriodHolder<?>>) getClass());
-	}
-
-	public abstract TimePeriodDomainSubset getDomain();
-
-	public abstract DurationDomains getPeriod();
-
-	@Override
-	public TimePeriodValue wrap(DurationDomains frequency)
-	{
-		return new TimePeriodValue(wrapImpl(frequency));
-	}
-
-	protected abstract PeriodHolder<?> wrapImpl(DurationDomains frequency);
-
-	public PeriodHolder<?> incrementSmallest(long amount)
+	public I incrementSmallest(long amount)
 	{
 		try
 		{
-			return getClass().getConstructor(TemporalAccessor.class).newInstance(plus(amount, smallestUnit()));
+			@SuppressWarnings("unchecked")
+			final I instance = (I) getClass().getConstructor(TemporalAccessor.class).newInstance(plus(amount, smallestUnit()));
+			return instance;
 		}
 		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
 		{
@@ -184,4 +130,6 @@ public abstract class PeriodHolder<T extends PeriodHolder<? extends T>> implemen
 	{
 		throw new UnsupportedOperationException();
 	}
+
+	public abstract TimePeriodDomainSubset<?> getDomain();
 }

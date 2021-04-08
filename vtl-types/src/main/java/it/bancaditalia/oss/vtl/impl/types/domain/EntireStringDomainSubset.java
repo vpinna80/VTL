@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
-class EntireStringDomainSubset extends EntireDomainSubset<String, StringDomain> implements StringDomainSubset, Serializable
+public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDomainSubset, StringDomain> implements StringDomainSubset<EntireStringDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -53,16 +53,16 @@ class EntireStringDomainSubset extends EntireDomainSubset<String, StringDomain> 
 		return other instanceof StringDomainSubset || 
 				other instanceof NumberDomainSubset ||
 				other instanceof BooleanDomainSubset ||
-				(other instanceof ValueDomainSubset && isAssignableFrom(((ValueDomainSubset<?>) other).getParentDomain()));
+				(other instanceof ValueDomainSubset && isAssignableFrom(((ValueDomainSubset<?, ?>) other).getParentDomain()));
 	}
 
 	@Override
-	public ScalarValue<?, ?, StringDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()) && value instanceof NullValue)
 			return NullValue.instance(this);
 		if (isAssignableFrom(value.getDomain()))
-			return new StringValue(value.get().toString());
+			return StringValue.of(value.get().toString());
 		else 
 			throw new VTLCastException(this, value);
 	}

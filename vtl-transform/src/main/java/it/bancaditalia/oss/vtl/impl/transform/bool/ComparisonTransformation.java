@@ -36,6 +36,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -69,7 +70,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(BOOLEANDS);
@@ -87,7 +88,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 
-		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
 		
 		final ScalarValue<?, ?, ?, ?> castedScalar;
@@ -116,14 +117,14 @@ public class ComparisonTransformation extends BinaryTransformation
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
-		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain>> casted = 
+		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> casted = 
 				(a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
-		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain>> function =
+		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> function =
 				Utils.reverseIf(leftHasMoreIdentifiers, casted);
 
 		// Scan the dataset with less identifiers and find the matches
@@ -137,7 +138,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?> left, ScalarValueMetadata<?> right)
+	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right)
 	{
 		castToLeft = left.getDomain().isAssignableFrom(right.getDomain()); 
 		if (castToLeft || right.getDomain().isAssignableFrom(left.getDomain())) 
@@ -147,9 +148,9 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
 	{
-		ValueDomainSubset<?> scalarDomain = scalar.getDomain();
+		ValueDomainSubset<?, ?> scalarDomain = scalar.getDomain();
 
 		if (dataset.getComponents(Measure.class).size() != 1)
 			throw new VTLExpectedComponentException(Measure.class, dataset);

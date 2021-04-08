@@ -19,21 +19,27 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE14;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE15;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ConcatTransformationTest
@@ -45,8 +51,8 @@ public class ConcatTransformationTest
 	{
 		VarIDOperand left = new VarIDOperand("left"), right = new VarIDOperand("right");
 		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", SampleDataSets.getCustomSample("STRING", 3));
-		map.put("right", SampleDataSets.getCustomSample("STRING", 4));
+		map.put("left", SAMPLE14);
+		map.put("right", SAMPLE15);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		ConcatTransformation coTransformation = new ConcatTransformation(left, right);
@@ -55,8 +61,14 @@ public class ConcatTransformationTest
 		assertTrue(metadata.contains("STRING_2"));
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent("STRING_1").get();		
-		DataStructureComponent<?, ?, ?> res = metadata.getComponent("STRING_2").get();		
+		Optional<DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain>> oId = metadata.getComponent("STRING_1", Identifier.class, STRINGDS);		
+		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> oMeasure = metadata.getComponent("STRING_2", Measure.class, STRINGDS);
+		
+		assertTrue(oId.isPresent(), "String id present");
+		assertTrue(oMeasure.isPresent(), "String measure present");
+		
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> id = oId.get();
+		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> res = oMeasure.get();
 		
 		DataSet leftD = (DataSet) left.eval(session), 
 				rightD = (DataSet) right.eval(session);

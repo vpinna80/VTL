@@ -55,7 +55,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	private final String identifierName;
 	private final String measureName;
 
-	private DataStructureComponent<Measure, ?, ?>                            measure;
+	private DataStructureComponent<Measure, ?, ?> measure;
 	private DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier;
 
 	private static String sanitize(String string)
@@ -101,7 +101,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		identifier = (DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain>) tempIdentifier;
 		
 		return Utils.getStream(((StringEnumeratedDomainSubset) identifier.getDomain()).getCodeItems())
-				.map(i -> new DataStructureComponentImpl<>(i.get(), Measure.class, measure.getDomain()))
+				.map(i -> DataStructureComponentImpl.of(i.get(), Measure.class, measure.getDomain()))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(dataset.getComponents(Identifier.class))
 				.removeComponent(identifier)
@@ -120,7 +120,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 			.entrySet())
 			.map(group -> new DataPointBuilder(group.getKey()).addAll(Utils.getStream(group.getValue())
 					.collect(toConcurrentMap(
-							dp -> new DataStructureComponentImpl<>(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
+							dp -> DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
 							dp -> dp.get(measure)
 					))).build(structure)
 			), dataset);

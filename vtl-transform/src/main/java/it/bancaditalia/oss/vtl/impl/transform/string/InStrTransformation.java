@@ -56,21 +56,21 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -78,7 +78,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class InStrTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponentImpl<Measure, IntegerDomainSubset, IntegerDomain> INT_MEASURE = new DataStructureComponentImpl<>(INTEGER.getDomain().getVarName(), Measure.class, INTEGERDS);
+	private static final DataStructureComponentImpl<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_MEASURE = new DataStructureComponentImpl<>(INTEGER.getDomain().getVarName(), Measure.class, INTEGERDS);
 	
 	private final Transformation leftOperand;
 	private final Transformation rightOperand;
@@ -89,17 +89,17 @@ public class InStrTransformation extends TransformationImpl
 	{
 		this.leftOperand = left;
 		this.rightOperand = right;
-		this.startOperand = start == null ? new ConstantOperand<>(new IntegerValue(1L)) : start;
-		this.occurrenceOperand = occurrence == null ? new ConstantOperand<>(new IntegerValue(1L)) : occurrence;
+		this.startOperand = start == null ? new ConstantOperand<>(IntegerValue.of(1L)) : start;
+		this.occurrenceOperand = occurrence == null ? new ConstantOperand<>(IntegerValue.of(1L)) : occurrence;
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue left = leftOperand.eval(session);
-		ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> right = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) rightOperand.eval(session));
-		ScalarValue<?, ?, ? extends IntegerDomainSubset,IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
-		ScalarValue<?, ?, ? extends IntegerDomainSubset,IntegerDomain> occurrence = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) occurrenceOperand.eval(session));
+		ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> right = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) rightOperand.eval(session));
+		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
+		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> occurrence = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) occurrenceOperand.eval(session));
 		
 		int startPos = (int) (long) (Long) start.get() - 1;
 		int nOcc = (int) (long) (Long) occurrence.get() - 1;
@@ -115,11 +115,11 @@ public class InStrTransformation extends TransformationImpl
 			DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
 					.addComponent(INT_MEASURE)
 					.build();
-			DataStructureComponent<Measure, StringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
+			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
 			String pattern = right instanceof NullValue ? null : STRINGDS.cast(right).get().toString();
 			
 			return dataset.mapKeepingKeys(structure, dp -> singletonMap(INT_MEASURE, 
-					(ScalarValue<?, ?, IntegerDomainSubset, IntegerDomain>) (pattern == null 
+					(ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain>) (pattern == null 
 						? NullValue.instance(INTEGERDS)
 						: findOccurrence(STRINGDS.cast(dp.get(measure)).get().toString(), pattern, startPos, nOcc)))); 
 		}
@@ -133,12 +133,12 @@ public class InStrTransformation extends TransformationImpl
 		}
 	}
 	
-	private static IntegerValue findOccurrence(String string, String pattern, int startPos, int nOcc)
+	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> findOccurrence(String string, String pattern, int startPos, int nOcc)
 	{
 		int index = string.indexOf(pattern, startPos);
 		
 		if (index < 0 || nOcc <= 0)
-			return new IntegerValue((long) index + 1);
+			return IntegerValue.of((long) index + 1);
 
 		return findOccurrence(string, pattern, index + 1, nOcc - 1);
 	}
@@ -155,16 +155,16 @@ public class InStrTransformation extends TransformationImpl
 			throw new VTLInvalidParameterException(start, ScalarValueMetadata.class);
 		if (!(occurrence instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(occurrence, ScalarValueMetadata.class);
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) right).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: pattern parameter", STRING, ((ScalarValueMetadata<?>) right).getDomain());
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) start).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: start parameter", INTEGER, ((ScalarValueMetadata<?>) start).getDomain());
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) occurrence).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: occurrence parameter", INTEGER, ((ScalarValueMetadata<?>) occurrence).getDomain());
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) right).getDomain());
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: start parameter", INTEGER, ((ScalarValueMetadata<?, ?>) start).getDomain());
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) occurrence).getDomain()))
+			throw new VTLIncompatibleTypesException("concat: occurrence parameter", INTEGER, ((ScalarValueMetadata<?, ?>) occurrence).getDomain());
 		
 		if (left instanceof ScalarValueMetadata)
 		{
-			ScalarValueMetadata<?> leftV = (ScalarValueMetadata<?>) left; 
+			ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) left; 
 			if (!(STRING.isAssignableFrom(leftV.getDomain())))
 				throw new VTLIncompatibleTypesException("instr", STRING, leftV.getDomain());
 			else
@@ -173,7 +173,7 @@ public class InStrTransformation extends TransformationImpl
 		else 
 		{
 			DataSetMetadata metadata = (DataSetMetadata) left;
-			ScalarValueMetadata<?> value = (ScalarValueMetadata<?>) right;
+			ScalarValueMetadata<?, ?> value = (ScalarValueMetadata<?, ?>) right;
 			
 			if (!STRING.isAssignableFrom(value.getDomain()))
 				throw new VTLIncompatibleTypesException("instr", STRING, value.getDomain());

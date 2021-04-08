@@ -21,14 +21,16 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.ANY;
 import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.AT_LEAST_ONE;
+import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toSet;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class AnonymousComponentConstraint extends DataSetComponentConstraint
@@ -56,11 +58,14 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 	@Override
 	protected Optional<Set<? extends DataStructureComponent<?, ?, ?>>> matchStructure(DataSetMetadata structure, MetadataRepository repo)
 	{
-		Set<? extends DataStructureComponent<?, ?, ?>> matchedComponents;
+		Set<? extends DataStructureComponent<?, ?, ?>> matchedComponents = structure.getComponents(role);
 		if (domainName != null)
-			matchedComponents = structure.getComponents(role, repo.getDomain(domainName));
-		else
-			matchedComponents = structure.getComponents(role);
+		{
+			ValueDomainSubset<?, ?> domain = repo.getDomain(domainName);
+			matchedComponents = matchedComponents.stream()
+					.filter(c -> domain.isAssignableFrom(c.getDomain()))
+					.collect(toSet());
+		}
 		
 		switch (quantifier)
 		{
@@ -69,7 +74,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 			case AT_LEAST_ONE:
 				return matchedComponents.size() > 0 ? Optional.of(matchedComponents) : Optional.empty();
 			case MAX_ONE:
-				return matchedComponents.size() > 0 ? Optional.of(Collections.singleton(matchedComponents.iterator().next())) : Optional.empty();
+				return matchedComponents.size() > 0 ? Optional.of(singleton(matchedComponents.iterator().next())) : Optional.empty();
 			default:
 				throw new IllegalStateException("Unknown quantifier");
 		}

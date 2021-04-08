@@ -45,6 +45,7 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -82,14 +83,14 @@ public class StringUnaryTransformationTest
 		StringUnaryTransformation sut = new StringUnaryTransformation(operator, left);
 		DataSetMetadata structure = (DataSetMetadata) sut.getMetadata(session);
 		
-		DataStructureComponent<Identifier, StringDomainSubset, StringDomain> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, StringDomainSubset, StringDomain>> measure = structure.getComponent("STRING_2", Measure.class, STRINGDS);
+		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
+		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> measure = structure.getComponent("STRING_2", Measure.class, STRINGDS);
 		assertTrue(measure.isPresent(), "measure present in " + structure);
 		
 		try (Stream<DataPoint> stream = ((DataSet) sut.eval(session)).stream())
 		{
 			ConcurrentMap<String, String> resultMap = stream
-				.map(dp -> new SimpleEntry<>(((StringValue) dp.get(id)).get(), ((StringValue) dp.get(measure.get())).get()))
+				.map(dp -> new SimpleEntry<>(((StringValue<?, ?>) dp.get(id)).get(), ((StringValue<?, ?>) dp.get(measure.get())).get()))
 				.collect(entriesToMap());
 
 			for (int i = 0; i < resultValues.length; i++)

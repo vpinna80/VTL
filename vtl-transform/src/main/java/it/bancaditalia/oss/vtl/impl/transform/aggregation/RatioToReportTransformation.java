@@ -130,7 +130,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		return Utils.getStream(partition)
 			.map(dp -> Utils.getStream(measureSums.entrySet())
 				.map(keepingKey((m, v) -> dp.get(m) instanceof NullValue ? null : ((Number) dp.get(m).get()).doubleValue() / v))
-				.map(keepingKey((m, v) -> (ScalarValue<?, ?, ?, ?>)(v == null ? NullValue.instanceFrom(m) : new DoubleValue(v))))
+				.map(keepingKey((m, v) -> (ScalarValue<?, ?, ?, ?>)(v == null ? NullValue.instanceFrom(m) : DoubleValue.of(v))))
 				.collect(toDataPoint(metadata, dp.getValues(Identifier.class)))
 			);
 	}

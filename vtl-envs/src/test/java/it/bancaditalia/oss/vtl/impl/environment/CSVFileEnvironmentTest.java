@@ -53,6 +53,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -132,11 +133,12 @@ public class CSVFileEnvironmentTest
 		
 		DataSet dataset = (DataSet) search.get();
 		
-		assertEquals(4, dataset.getMetadata().size(), "Wrong number of columns");
-		assertTrue(dataset.getMetadata().contains(IDENTIFIER), "Missing IDENTIFIER Column");
-		assertTrue(dataset.getMetadata().contains(MEASURE), "Missing MEASURE Column");
-		assertTrue(dataset.getMetadata().contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
-		assertTrue(dataset.getMetadata().contains(QUOTED), "Missing ATTRIBUTE Column");
+		final DataSetMetadata structure = dataset.getMetadata();
+		assertEquals(4, structure.size(), "Wrong number of columns");
+		assertTrue(structure.contains(IDENTIFIER), "Missing IDENTIFIER Column");
+		assertTrue(structure.contains(MEASURE), "Missing MEASURE Column");
+		assertTrue(structure.contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
+		assertTrue(structure.contains(QUOTED), "Missing ATTRIBUTE Column");
 		
 		Set<String> results = new HashSet<>(Arrays.asList(QUOTED_RESULTS));
 		try (Stream<DataPoint> stream = dataset.stream())

@@ -19,38 +19,66 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 
-public class BooleanValue extends BaseScalarValue<BooleanValue, Boolean, BooleanDomainSubset, BooleanDomain>
+public class BooleanValue<S extends BooleanDomainSubset<S>> extends BaseScalarValue<BooleanValue<S>, Boolean, S, BooleanDomain>
 {
-	public static final BooleanValue FALSE = new BooleanValue(Boolean.FALSE);
-	public static final BooleanValue TRUE = new BooleanValue(Boolean.TRUE);
-	
 	private static final long serialVersionUID = 1L;
-	private static final ScalarValueMetadata<ValueDomainSubset<?>> META = Domains.BOOLEAN;
+	public static final BooleanValue<EntireBooleanDomainSubset> FALSE = new BooleanValue<EntireBooleanDomainSubset>(Boolean.FALSE, BOOLEANDS);
+	public static final BooleanValue<EntireBooleanDomainSubset> TRUE = new BooleanValue<EntireBooleanDomainSubset>(Boolean.TRUE, BOOLEANDS);
+	
+	private static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> NULLINSTANCE = NullValue.instance(BOOLEANDS);
+	
 
-	private BooleanValue(Boolean value)
+	private BooleanValue(Boolean value, S domain)
 	{
-		super(value, Domains.BOOLEANDS);
+		super(value, domain);
 	}
 
-	public static final BooleanValue of(boolean value)
+	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> of(Boolean value)
 	{
-		return value ? TRUE : FALSE;
+		return value == null ? NULLINSTANCE : value ? TRUE : FALSE;
 	}
 	
-	@Override
-	public Boolean get()
+	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> not(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> value)
 	{
-		return this == TRUE ? true : false;
+		return value == null ? NULLINSTANCE : ((Boolean) value.get() ? FALSE : TRUE);
 	}
-
+	
+	public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> and(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
+	{
+		if (left instanceof NullValue || right instanceof NullValue)
+			return NULLINSTANCE;
+		else if (left == FALSE || right == FALSE)
+			return FALSE;
+		else 
+			return TRUE; 
+	}
+	
+	public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> or(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
+	{
+		if (left instanceof NullValue || right instanceof NullValue)
+			return of(null);
+		else if (left == TRUE || right == TRUE)
+			return TRUE;
+		else 
+			return FALSE; 
+	}
+	
+	public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> xor(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
+	{
+		if (left instanceof NullValue || right instanceof NullValue)
+			return of(null);
+		else 
+			return left != right ? TRUE : FALSE;
+	}
+	
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
@@ -62,11 +90,5 @@ public class BooleanValue extends BaseScalarValue<BooleanValue, Boolean, Boolean
 			return -1;
 		else
 			throw new VTLIncompatibleTypesException("comparison", this, o);
-	}
-	
-	@Override
-	public ScalarValueMetadata<? extends ValueDomainSubset<?>> getMetadata()
-	{
-		return META;
 	}
 }

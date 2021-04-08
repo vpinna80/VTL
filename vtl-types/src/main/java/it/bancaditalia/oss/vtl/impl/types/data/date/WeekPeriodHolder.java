@@ -21,10 +21,10 @@ package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.WEEK_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.W;
 import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
 import static java.time.temporal.ChronoUnit.WEEKS;
 
+import java.time.Year;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
@@ -33,38 +33,38 @@ import java.time.temporal.TemporalUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public class WeekPeriodHolder extends YearPeriodHolder<WeekPeriodHolder>
+public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(WeekPeriodHolder.class);
 	private static final long serialVersionUID = 1L;
 
 	private final long weekOfYear;
+	private final Year year;
 
 	public WeekPeriodHolder(TemporalAccessor other)
 	{
-		super(other);
+		this.year = Year.from(other);
 		this.weekOfYear = other.getLong(ALIGNED_WEEK_OF_YEAR);
 	}
 
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return field == ALIGNED_WEEK_OF_YEAR ? weekOfYear : super.getLong(field);
+		return field == ALIGNED_WEEK_OF_YEAR ? weekOfYear : year.getLong(field);
 	}
 	
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return field == ALIGNED_WEEK_OF_YEAR || super.isSupported(field);
+		return field == ALIGNED_WEEK_OF_YEAR || year.isSupported(field);
 	}
 	
 	@Override
 	public int compareTo(PeriodHolder<?> other)
 	{
-		int c = super.compareTo(other);
+		int c = year.compareTo(Year.from(other));
 		if (c == 0)
 			c = Integer.compare(get(ALIGNED_WEEK_OF_YEAR), other.get(ALIGNED_WEEK_OF_YEAR));
 		LOGGER.trace("Comparing {} and {} yield {}.", this, other, c);
@@ -75,23 +75,25 @@ public class WeekPeriodHolder extends YearPeriodHolder<WeekPeriodHolder>
 	public int hashCode()
 	{
 		final int prime = 31;
-		int result = super.hashCode();
+		int result = 1;
 		result = prime * result + (int) (weekOfYear ^ (weekOfYear >>> 32));
+		result = prime * result + ((year == null) ? 0 : year.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj)
 	{
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
 		WeekPeriodHolder other = (WeekPeriodHolder) obj;
-		if (weekOfYear != other.weekOfYear)
-			return false;
+		if (weekOfYear != other.weekOfYear) return false;
+		if (year == null)
+		{
+			if (other.year != null) return false;
+		}
+		else if (!year.equals(other.year)) return false;
 		return true;
 	}
 
@@ -100,30 +102,11 @@ public class WeekPeriodHolder extends YearPeriodHolder<WeekPeriodHolder>
 	{
 		return WEEK_PERIOD_FORMATTER.get().format(this);
 	}
-	
-	@Override
-	public DurationDomains getPeriod()
-	{
-		return W;
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		switch (frequency)
-		{
-			case A: return new YearPeriodHolder<>(this);
-			case S: return new SemesterPeriodHolder(this);
-			case Q: return new QuarterPeriodHolder(this);
-		default:
-			throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
-		}
-	}
 
 	@Override
 	public boolean isSupported(TemporalUnit unit)
 	{
-		return unit == WEEKS || super.isSupported(unit);
+		return unit == WEEKS || year.isSupported(unit);
 	}
 
 	@Override
@@ -133,14 +116,14 @@ public class WeekPeriodHolder extends YearPeriodHolder<WeekPeriodHolder>
 	}
 
 	@Override
-	public TimePeriodDomainSubset getDomain()
-	{
-		return WEEKSDS;
-	}
-
-	@Override
 	protected TemporalUnit smallestUnit()
 	{
 		return WEEKS;
+	}
+	
+	@Override
+	public TimePeriodDomainSubset<?> getDomain()
+	{
+		return WEEKSDS;
 	}
 }

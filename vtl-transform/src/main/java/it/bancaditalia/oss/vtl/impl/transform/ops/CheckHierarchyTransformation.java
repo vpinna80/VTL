@@ -164,7 +164,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 					.map(rule -> new Triple<>(rule, e)))
 			.map(splitting((rule, keys, group) -> { 
 					HashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> res = new HashMap<>(keys); 
-					res.put(ruleKey, new StringValue(rule.getCodeItem()));
+					res.put(ruleKey, StringValue.of(rule.getCodeItem()));
 					return new Triple<>(rule, res, group); 
 			// ==> rule, keys, dataset 
 			})).map(splitting((rule, keys, group) -> new SimpleEntry<>(keys, rule.validate(measure, mode, group.get()

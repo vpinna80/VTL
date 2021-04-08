@@ -39,7 +39,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class JoinApplyScope implements TransformationScheme
 {
 	private final Map<String, ScalarValue<?, ?, ?, ?>> joinValues;
-	private final Map<String, ScalarValueMetadata<?>> joinMeta;
+	private final Map<String, ScalarValueMetadata<?, ?>> joinMeta;
 	private final TransformationScheme parent;
 
 	public JoinApplyScope(TransformationScheme parent, String measureName, DataPoint joinedDataPoint)
@@ -57,7 +57,7 @@ public class JoinApplyScope implements TransformationScheme
 		this.joinValues = null;
 		this.joinMeta = joinedComponents.stream()
 				.filter(c -> measureName.equals(c.getName().replaceAll("^.*#", "")))
-				.collect(toConcurrentMap(c -> c.getName().replaceAll("#.*", ""), c -> (ScalarValueMetadata<?>) c::getDomain));
+				.collect(toConcurrentMap(c -> c.getName().replaceAll("#.*", ""), DataStructureComponent::getMetadata));
 	}
 
 	@Override

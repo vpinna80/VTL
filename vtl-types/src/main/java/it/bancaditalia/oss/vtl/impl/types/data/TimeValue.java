@@ -22,12 +22,24 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 import java.io.Serializable;
 import java.time.temporal.TemporalAccessor;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Durations;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.DayPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.MonthPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.QuarterPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.SemesterPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.WeekPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.YearPeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public abstract class TimeValue<T extends TimeValue<T, R, S, D>, R extends Comparable<? super R> & TemporalAccessor & Serializable & TimeHolder, S extends TimeDomainSubset<D>, D extends TimeDomain> 
-		extends BaseScalarValue<T, R, S, D>
+public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Comparable<? super R> & TemporalAccessor & Serializable & TimeHolder, S extends TimeDomainSubset<S, D>, D extends TimeDomain> 
+		extends BaseScalarValue<I, R, S, D>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -38,8 +50,17 @@ public abstract class TimeValue<T extends TimeValue<T, R, S, D>, R extends Compa
 
 	public abstract TimeValue<?, ?, ?, ?> increment(long amount);
 	
-	public TimePeriodValue wrap(DurationDomains frequency)
+	public TimePeriodValue<?, ?> wrap(Durations duration)
 	{
-		return get().wrap(frequency);
+		switch (duration)
+		{
+			case A: return new YearPeriodValue(new YearPeriodHolder(get()));
+			case H: return new SemesterPeriodValue(new SemesterPeriodHolder(get()));
+			case Q: return new QuarterPeriodValue(new QuarterPeriodHolder(get()));
+			case M: return new MonthPeriodValue(new MonthPeriodHolder(get()));
+			case W: return new WeekPeriodValue(new WeekPeriodHolder(get()));
+			case D: return new DayPeriodValue(new DayPeriodHolder(get()));
+			default: throw new IllegalStateException(); // Should never occur
+		}
 	}
 }

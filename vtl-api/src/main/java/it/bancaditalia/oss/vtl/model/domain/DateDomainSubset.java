@@ -24,7 +24,7 @@ package it.bancaditalia.oss.vtl.model.domain;
  * 
  * @author Valentino Pinna
  */
-public interface DateDomainSubset extends DateDomain, TimeDomainSubset<DateDomain>
+public interface DateDomainSubset<S extends DateDomainSubset<S>> extends DateDomain, TimeDomainSubset<S, DateDomain>
 {
 
 }

@@ -29,7 +29,7 @@ import java.util.Set;
  * @param <S> the domain subset
  * @param <D> the domain
  */
-public interface EnumeratedDomainSubset<S extends ValueDomainSubset<D>, D extends ValueDomain> extends ValueDomainSubset<D>
+public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
 {
 	/**
 	 * @return the domain name.
@@ -46,7 +46,7 @@ public interface EnumeratedDomainSubset<S extends ValueDomainSubset<D>, D extend
 	 * 
 	 * @return the set of all the code items in this domain.
 	 */
-	public Set<? extends CodeItem<?, ? extends Comparable<?>, ? extends EnumeratedDomainSubset<S, D>, D>> getCodeItems();
+	public Set<? extends CodeItem<?, ?, S, D>> getCodeItems();
 	
-	@Override ScalarValue<?, ?, ? extends EnumeratedDomainSubset<S, D>, ? extends D> cast(ScalarValue<?, ?, ?, ?> value);
+	@Override ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
 }

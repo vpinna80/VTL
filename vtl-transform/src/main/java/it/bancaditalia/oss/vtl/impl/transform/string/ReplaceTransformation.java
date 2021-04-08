@@ -51,6 +51,7 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -61,7 +62,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -79,15 +79,15 @@ public class ReplaceTransformation extends TransformationImpl
 	{
 		exprOperand = expr;
 		patternOperand = pattern;
-		replaceOperand = replace == null ? new ConstantOperand<>(new StringValue("")) : replace;
+		replaceOperand = replace == null ? new ConstantOperand<>(StringValue.of("")) : replace;
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue left = exprOperand.eval(session);
-		ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> pattern = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session));
-		ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> replace = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) replaceOperand.eval(session));
+		ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> pattern = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session));
+		ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> replace = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) replaceOperand.eval(session));
 		
 		if (left instanceof DataSet)
 		{
@@ -99,7 +99,7 @@ public class ReplaceTransformation extends TransformationImpl
 			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
 				.map(measure -> new SimpleEntry<>(measure, (pattern == null || dp.get(measure) instanceof NullValue) 
 					? STRINGDS.cast(NullValue.instance(STRINGDS))
-					: ((StringValue) dp.get(measure)).map(value -> compiled.matcher(value).replaceAll(replace.get().toString()))
+					: ((StringValue<?, ?>) dp.get(measure)).map(value -> compiled.matcher(value).replaceAll(replace.get().toString()))
 				)).collect(Utils.entriesToMap())
 			); 
 		}
@@ -110,7 +110,7 @@ public class ReplaceTransformation extends TransformationImpl
 				return NullValue.instance(STRINGDS);
 			
 			Pattern compiled = Pattern.compile(STRINGDS.cast(pattern).get().toString());
-			return new StringValue(compiled.matcher(scalar.get().toString()).replaceAll(replace.get().toString()));
+			return StringValue.of(compiled.matcher(scalar.get().toString()).replaceAll(replace.get().toString()));
 		}
 	}
 
@@ -124,14 +124,14 @@ public class ReplaceTransformation extends TransformationImpl
 			throw new VTLInvalidParameterException(pattern, DataSetMetadata.class);
 		if (!(replace instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(replace, DataSetMetadata.class);
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) pattern).getDomain()))
-			throw new VTLIncompatibleTypesException("replace: pattern parameter", STRING, ((ScalarValueMetadata<?>) pattern).getDomain());
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?>) replace).getDomain()))
-			throw new VTLIncompatibleTypesException("replace: replacement parameter", STRING, ((ScalarValueMetadata<?>) replace).getDomain());
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
+			throw new VTLIncompatibleTypesException("replace: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
+		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) replace).getDomain()))
+			throw new VTLIncompatibleTypesException("replace: replacement parameter", STRING, ((ScalarValueMetadata<?, ?>) replace).getDomain());
 		
 		if (source instanceof ScalarValueMetadata)
 		{
-			ScalarValueMetadata<?> leftV = (ScalarValueMetadata<?>) source; 
+			ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) source; 
 			if (!(STRING.isAssignableFrom(leftV.getDomain())))
 				throw new VTLIncompatibleTypesException("replace", STRING, leftV.getDomain());
 			else

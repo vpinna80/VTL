@@ -26,11 +26,9 @@ import static java.time.temporal.ChronoField.YEAR;
 import java.io.Serializable;
 import java.time.temporal.TemporalAccessor;
 
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 
-public abstract class DateHolder<T extends TemporalAccessor> implements TemporalAccessor, Comparable<DateHolder<?>>, Serializable, TimeHolder
+public abstract class DateHolder<I extends TemporalAccessor> implements TemporalAccessor, Comparable<DateHolder<?>>, Serializable, TimeHolder
 {
 	private static final long serialVersionUID = 1L;
 
@@ -54,16 +52,6 @@ public abstract class DateHolder<T extends TemporalAccessor> implements Temporal
 
 	@Override
 	public abstract String toString();
-
-	@Override
-	public TimePeriodValue wrap(DurationDomains frequency)
-	{
-		return new TimePeriodValue(wrapImpl(frequency));
-	}
-
-	protected abstract PeriodHolder<?> wrapImpl(DurationDomains frequency);
-
-	public abstract DurationDomains getPeriod();
 
 	public abstract DateHolder<?> increment(long amount);
 }

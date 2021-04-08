@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static java.lang.Double.NaN;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.averagingDouble;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -55,18 +56,18 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum AnalyticOperator  
 {
-	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::new)),
-	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::new)), 
-	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::new)),
+	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::of)),
+	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)), 
+	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)),
 	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, mapping(NumberValue::get, mapping(Number.class::cast, mapping(Number::doubleValue, 
 			toList())))), l -> {
 				List<Double> c = new ArrayList<>(l);
 				Collections.sort(c);
 				int s = c.size();
-				return new DoubleValue(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
+				return DoubleValue.of(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
 			})),
-	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
-	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(new DoubleValue(Double.NaN)))),
+	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(DoubleValue.of(NaN)))),
+	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(DoubleValue.of(NaN)))),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	VAR_POP("var_pop", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), Collector.of(
 	        () -> new double[3],
@@ -84,7 +85,7 @@ public enum AnalyticOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / acu[0], UNORDERED)), DoubleValue::new)),
+	        acu -> acu[2] / acu[0], UNORDERED)), DoubleValue::of)),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	VAR_SAMP("var_samp", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>) v).get().doubleValue(), Collector.of( 
 	        () -> new double[3],
@@ -102,9 +103,9 @@ public enum AnalyticOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / (acu[0] + 1.0), UNORDERED)), DoubleValue::new)),
-	STDDEV_POP("stddev_pop", collectingAndThen(VAR_POP.getReducer(), dv -> new DoubleValue(Math.sqrt((Double) dv.get())))),
-	STDDEV_SAMP("stddev_var", collectingAndThen(VAR_SAMP.getReducer(), dv -> new DoubleValue(Math.sqrt((Double) dv.get())))),
+	        acu -> acu[2] / (acu[0] + 1.0), UNORDERED)), DoubleValue::of)),
+	STDDEV_POP("stddev_pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
+	STDDEV_SAMP("stddev_var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
 	FIRST_VALUE("first_value", new PositionCollector(Utils::coalesce, (a, b) -> a)),
 	LAST_VALUE("last_value", new PositionCollector(Utils::coalesceSwapped, (a, b) -> b));
 	/* TODO: LAG, LEAD, RANK */

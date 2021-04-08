@@ -49,15 +49,15 @@ public interface Hierarchy extends VTLValue, VTLValueMetadata
 
 		public Transformation getCondition();
 
-		public ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> getErrorLevel();
+		public ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> getErrorLevel();
 
-		public ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> getErrorCode();
+		public ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> getErrorCode();
 
 		public List<? extends SourceItem> getComponents();
 
-		public boolean contains(ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> item);
+		public boolean contains(ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> item);
 
-		public int getSign(ScalarValue<?, ?, ? extends StringDomainSubset, StringDomain> item);
+		public int getSign(ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> item);
 
 		public Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> validate(DataStructureComponent<Measure, ?, ?> measure, CheckMode mode,
 				Map<? extends ScalarValue<?, ?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> values);

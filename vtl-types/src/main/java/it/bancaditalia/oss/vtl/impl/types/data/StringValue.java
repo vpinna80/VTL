@@ -19,36 +19,32 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
-
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
-public class StringValue extends BaseScalarValue<StringValue, String, StringDomainSubset, StringDomain>
+public class StringValue<I extends StringValue<I, S>, S extends StringDomainSubset<S>> extends BaseScalarValue<I, String, S, StringDomain>
 {
 	private static final long serialVersionUID = 1L;
 
-	public StringValue(String value)
+	public static StringValue<?, EntireStringDomainSubset> of(String value)
 	{
-		super(value.replaceAll("^\"(.*)\"$", "$1"), Domains.STRINGDS);
+		return new StringValue<>(value.replaceAll("^\"(.*)\"$", "$1"), Domains.STRINGDS);
+	}
+
+	public StringValue(String value, S domain)
+	{
+		super(value.replaceAll("^\"(.*)\"$", "$1"), domain);
 	}
 
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		return get().compareTo((String) Domains.STRINGDS.cast(o).get());
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public ScalarValueMetadata<StringDomainSubset> getMetadata()
-	{
-		return (ScalarValueMetadata<StringDomainSubset>) (ScalarValueMetadata<?>) STRING;
 	}
 	
 	@Override
@@ -57,8 +53,8 @@ public class StringValue extends BaseScalarValue<StringValue, String, StringDoma
 		return '"' + super.toString() + '"';
 	}
 	
-	public StringValue map(UnaryOperator<String> mapper)
+	public StringValue<I, S> map(UnaryOperator<String> mapper)
 	{
-		return new StringValue(mapper.apply(get()));
+		return new StringValue<>(mapper.apply(get()), getDomain());
 	}
 }

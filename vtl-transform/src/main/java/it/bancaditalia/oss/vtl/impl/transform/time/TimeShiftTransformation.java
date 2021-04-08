@@ -27,9 +27,9 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
@@ -45,13 +45,13 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	{
 		super(operand);
 		
-		this.amount = ((IntegerValue) amount).get();
+		this.amount = ((IntegerValue<?>) amount).get();
 	}
 
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
-		DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain> timeID = dataset.getComponents(Identifier.class, TIMEDS).iterator().next();
+		DataStructureComponent<Identifier, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeID = dataset.getComponents(Identifier.class, TIMEDS).iterator().next();
 		DataSetMetadata structure = dataset.getMetadata();
 		
 		return new LightFDataSet<>(structure, ds -> ds.stream()

@@ -19,29 +19,34 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 
-public class IntegerValue extends NumberValueImpl<IntegerValue, Long, IntegerDomainSubset, IntegerDomain>
+public class IntegerValue<S extends IntegerDomainSubset<S>> extends NumberValueImpl<IntegerValue<S>, Long, S, IntegerDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final ScalarValueMetadata<IntegerDomainSubset> META = () -> Domains.INTEGERDS;
+	private static final ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> NULLINSTANCE = NullValue.instance(INTEGERDS);
 
-	public IntegerValue(Long value)
+	private IntegerValue(Long value, S domain)
 	{
-		super(value, Domains.INTEGERDS);
+		super(value, domain);
 	}
-
-	public DoubleValue asDoubleValue()
+	
+	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(Long value)
 	{
-		return new DoubleValue(get().doubleValue());
+		return value == null ? NULLINSTANCE : new IntegerValue<>(value, INTEGERDS);
 	}
 	
 	@Override
-	public ScalarValueMetadata<IntegerDomainSubset> getMetadata()
+	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
-		return META;
+		if (o instanceof IntegerValue)
+			return get().compareTo(((IntegerValue<?>) o).get());
+			
+		return super.compareTo(o);
 	}
 }

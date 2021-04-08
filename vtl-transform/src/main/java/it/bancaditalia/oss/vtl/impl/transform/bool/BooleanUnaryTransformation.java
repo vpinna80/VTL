@@ -31,12 +31,13 @@ import java.util.function.Predicate;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -49,7 +50,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public enum BooleanUnaryOperator //implements Function<ScalarValue<?, BooleanDomainSubset, BooleanDomain>, ScalarValue<?, BooleanDomainSubset, BooleanDomain>>
+	public enum BooleanUnaryOperator //implements Function<ScalarValue<?, EntireBooleanDomainSubset, BooleanDomain>, ScalarValue<?, EntireBooleanDomainSubset, BooleanDomain>>
 	{
 		NOT(a -> !a), CHECK(a -> a);
 
@@ -60,7 +61,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 			this.booleanOp = booleanOp;
 		}
 
-		public ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, BooleanDomainSubset, BooleanDomain> booleanValue)
+		public ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> booleanValue)
 		{
 			return booleanValue instanceof NullValue ? NullValue.instance(BOOLEANDS)
 					: BooleanValue.of(booleanOp.test((Boolean) booleanValue.get()));
@@ -98,10 +99,10 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 		VTLValueMetadata meta = operand.getMetadata(session);
 
 		if (meta instanceof ScalarValueMetadata)
-			if (((ScalarValueMetadata<?>) meta).getDomain() instanceof BooleanDomainSubset)
+			if (((ScalarValueMetadata<?, ?>) meta).getDomain() instanceof BooleanDomainSubset)
 				return BOOLEAN;
 			else
-				throw new VTLIncompatibleTypesException(function.toString(), BOOLEANDS, ((ScalarValueMetadata<?>) meta).getDomain());
+				throw new VTLIncompatibleTypesException(function.toString(), BOOLEANDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
 		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;

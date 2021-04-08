@@ -56,6 +56,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -67,7 +68,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -75,7 +75,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class RankTransformation extends TransformationImpl implements AnalyticTransformation, LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain> RANK_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
 
 	private final List<String> partitionBy;
@@ -145,12 +145,12 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 			oldValues = measureValues;
 			measureValues = dp.getValues(Measure.class);
 			
-			IntegerValue rankResult;
+			ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> rankResult;
 			if (measureValues.equals(oldValues))
-				rankResult = new IntegerValue(rank);
+				rankResult = IntegerValue.of(rank);
 			else
 				// update rank if the new measures are different from the old
-				rankResult = new IntegerValue(rank = position);
+				rankResult = IntegerValue.of(rank = position);
 			position++;
 				
 			result.add(new DataPointBuilder(dp.getValues(Identifier.class))

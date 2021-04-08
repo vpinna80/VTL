@@ -26,15 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLNullCompareException;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
-public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> 
+public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
 		extends BaseScalarValue<T, R, S, D>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<ValueDomainSubset<?>, NullValue<?, ?, ?, ?>> INSTANCES = new ConcurrentHashMap<>();
+	private static final Map<ValueDomainSubset<? extends ValueDomainSubset<?, ?>, ? extends ValueDomain>, NullValue<?, ?, ?, ?>> INSTANCES = new ConcurrentHashMap<>();
 	
 	private NullValue(S domain)
 	{
@@ -42,12 +41,12 @@ public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> 
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> T instance(S domain)
+	public static <T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> T instance(S domain)
 	{
-		return (T) INSTANCES.computeIfAbsent(domain, d -> new NullValue<>(d));
+		return (T) INSTANCES.computeIfAbsent(domain, d -> new NullValue<>((S) d));
 	}
 
-	public static <T extends NullValue<T, R, S, D>, C extends DataStructureComponent<?, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> T instanceFrom(C component)
+	public static <T extends NullValue<T, R, S, D>, C extends DataStructureComponent<?, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> T instanceFrom(C component)
 	{
 		return instance(component.getDomain());
 	}
@@ -59,20 +58,8 @@ public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> 
 	}
 
 	@Override
-	public R get()
-	{
-		return null;
-	}
-
-	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o) throws VTLNullCompareException
 	{
 		throw new VTLNullCompareException();
-	}
-
-	@Override
-	public ScalarValueMetadata<S> getMetadata()
-	{
-		return () -> super.getDomain();
 	}
 }

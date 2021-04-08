@@ -30,7 +30,7 @@ import java.io.Serializable;
  * @param <S> The domain subset of the item
  * @param <D> The domain of the type
  */
-public interface CodeItem<T extends CodeItem<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain> extends ScalarValue<T, R, S, D>
+public interface CodeItem<I extends CodeItem<I, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> extends ScalarValue<I, R, S, D>
 {
 
 }

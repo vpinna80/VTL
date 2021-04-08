@@ -62,19 +62,19 @@ public enum ArithmeticOperator
 		this.opInteger = opInteger;
 	}
 
-	public ScalarValue<?, ?, NumberDomainSubset<NumberDomain>, NumberDomain> applyAsDouble(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	public ScalarValue<?, ?, ? extends NumberDomainSubset<?, ? extends NumberDomain>, ? extends NumberDomain> applyAsDouble(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(NUMBERDS);
-		return new DoubleValue(opDouble.applyAsDouble(((Number) (NUMBERDS.cast(left)).get()).doubleValue(), 
+		return DoubleValue.of(opDouble.applyAsDouble(((Number) (NUMBERDS.cast(left)).get()).doubleValue(), 
 				(((Number) NUMBERDS.cast(right).get()).doubleValue())));
 	}
 
-	public ScalarValue<?, ?, IntegerDomainSubset, IntegerDomain> applyAsInt(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	public ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> applyAsInt(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(INTEGERDS);
-		return new IntegerValue(opInteger.applyAsLong(((Number) (INTEGERDS.cast(left)).get()).longValue(), 
+		return IntegerValue.of(opInteger.applyAsLong(((Number) (INTEGERDS.cast(left)).get()).longValue(), 
 				(((Number) INTEGERDS.cast(right).get()).longValue())));
 	}
 	

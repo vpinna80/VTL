@@ -26,8 +26,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * 
  * @author Valentino Pinna
  */
-public interface IntegerDomainSubset extends NumberDomainSubset<IntegerDomain>, IntegerDomain
+public interface IntegerDomainSubset<S extends IntegerDomainSubset<S>> extends NumberDomainSubset<S, IntegerDomain>, IntegerDomain
 {
 	@Override
-	public ScalarValue<?, ?, ? extends IntegerDomainSubset, IntegerDomain> cast(ScalarValue<?, ?, ?, ?> value);
+	public ScalarValue<?, ?, S, IntegerDomain> cast(ScalarValue<?, ?, ?, ?> value);
 }

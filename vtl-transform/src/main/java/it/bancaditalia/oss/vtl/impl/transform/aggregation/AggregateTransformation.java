@@ -43,6 +43,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
@@ -58,14 +59,13 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class AggregateTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponentImpl<Measure, IntegerDomainSubset, IntegerDomain> COUNT_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
+	private static final DataStructureComponentImpl<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 
 	private final AggregateOperator	aggregation;
 	private final List<String> groupBy;
@@ -119,8 +119,8 @@ public class AggregateTransformation extends UnaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
 		Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> reducer = aggregation.getReducer(sourceMeasure);
 		DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
-				? new DataStructureComponentImpl<>(name, role, sourceMeasure.getDomain())
-				: new DataStructureComponentImpl<>(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
+				? DataStructureComponentImpl.of(name, role, sourceMeasure.getDomain())
+				: DataStructureComponentImpl.of(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
 				: sourceMeasure;
 
 		if (groupBy == null)
@@ -145,7 +145,7 @@ public class AggregateTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
 		
-		if (opmeta instanceof ScalarValueMetadata && NUMBER.isAssignableFrom(((ScalarValueMetadata<?>) opmeta).getDomain()))
+		if (opmeta instanceof ScalarValueMetadata && NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))
 			return metadata = NUMBER;
 		else if (opmeta instanceof DataSetMetadata)
 		{
@@ -180,8 +180,8 @@ public class AggregateTransformation extends UnaryTransformation
 
 				DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
 				DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
-						? new DataStructureComponentImpl<>(name, role, sourceMeasure.getDomain())
-						: new DataStructureComponentImpl<>(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
+						? DataStructureComponentImpl.of(name, role, sourceMeasure.getDomain())
+						: DataStructureComponentImpl.of(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
 						: sourceMeasure;
 				
 				return metadata = new DataStructureBuilder().addComponents(keys).addComponents(resultComponent).build();

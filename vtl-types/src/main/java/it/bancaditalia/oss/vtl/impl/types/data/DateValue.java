@@ -24,50 +24,47 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import java.time.temporal.TemporalAccessor;
 
 import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireDateDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 
-public class DateValue extends TimeValue<DateValue, DateHolder<?>, DateDomainSubset, DateDomain>
+public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValue<S>, DateHolder<?>, S, DateDomain>
 {
 	private static final long serialVersionUID = 1L;
 
-	public DateValue(TemporalAccessor value)
+	public DateValue(DateHolder<?> value, S domain)
 	{
-		this(DateHolder.of(value));
+		super(value, domain);
+	}
+	
+	public static DateValue<EntireDateDomainSubset> of(TemporalAccessor value)
+	{
+		return new DateValue<>(DateHolder.of(value), DATEDS);
+	}
+	
+	public static DateValue<EntireDateDomainSubset> of(DateHolder<?> value)
+	{
+		return new DateValue<>(value, DATEDS);
 	}
 
-	public DateValue(DateHolder<?> value)
+	public <S1 extends DateDomainSubset<S1>> DateValue<S1> as(S1 domain2)
 	{
-		super(value, DATEDS);
+		return new DateValue<>(get(), domain2);
 	}
-
+	
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof DateValue)
-			return get().compareTo(((DateValue) o).get());
+			return get().compareTo(((DateValue<?>) o).get());
 		else
 			throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ScalarValueMetadata<DateDomainSubset> getMetadata()
+	public DateValue<S> increment(long amount)
 	{
-		return () -> DATEDS;
-	}
-
-	@Override
-	public DateValue increment(long amount)
-	{
-		return new DateValue(get().increment(amount));
-	}
-
-	@Override
-	public TimePeriodValue wrap(DurationDomains frequency)
-	{
-		return get().wrap(frequency);
+		return new DateValue<>(get().increment(amount), getDomain());
 	}
 }

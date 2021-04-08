@@ -331,8 +331,8 @@ public class JoinTransformation extends TransformationImpl
 				.map(c -> c.getName( ).replaceAll("^.*#", ""))
 				.distinct()
 				.map(name -> {
-					ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, metadata))).getDomain();
-					return new DataStructureComponentImpl<>(name, Measure.class, domain);
+					ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(session, name, metadata))).getDomain();
+					return DataStructureComponentImpl.of(name, Measure.class, domain).as(Measure.class);
 				}).collect(toSet());
 		
 		DataSetMetadata applyMetadata = dataset.getMetadata().stream()
@@ -397,8 +397,8 @@ public class JoinTransformation extends TransformationImpl
 					.map(c -> c.getName( ).replaceAll("^.*#", ""))
 					.distinct()
 					.map(name -> {
-						ValueDomainSubset<?> domain = ((ScalarValueMetadata<?>) apply.getMetadata(new JoinApplyScope(session, name, applyResult))).getDomain();
-						return new DataStructureComponentImpl<>(name, Measure.class, domain);
+						ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(session, name, applyResult))).getDomain();
+						return DataStructureComponentImpl.of(name, Measure.class, domain).as(Measure.class);
 					}).collect(toSet());
 			
 			result = applyResult.stream()

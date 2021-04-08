@@ -25,24 +25,20 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class ConstantOperand<R extends Comparable<?> & Serializable, S extends ValueDomainSubset<D>, D extends ValueDomain, 
-		T extends ScalarValue<?, ?, ?, ?>> extends TransformationImpl implements LeafTransformation
+public class ConstantOperand<R extends Comparable<?> & Serializable, T extends ScalarValue<?, ?, ?, ?>> extends TransformationImpl implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
 
 	private final T value;
-	private final ScalarValueMetadata<S> metadata;
+	private final ScalarValueMetadata<?, ?> metadata;
 	
-	@SuppressWarnings("unchecked")
 	public ConstantOperand(T value)
 	{
 		this.value = value;
-		metadata = (ScalarValueMetadata<S>) value.getMetadata();
+		metadata = (ScalarValueMetadata<?, ?>) value.getMetadata();
 	}
 
 	@Override
@@ -64,7 +60,7 @@ public class ConstantOperand<R extends Comparable<?> & Serializable, S extends V
 	}
 
 	@Override
-	public ScalarValueMetadata<S> getMetadata(TransformationScheme scheme)
+	public ScalarValueMetadata<?, ?> getMetadata(TransformationScheme scheme)
 	{
 		return metadata;
 	}

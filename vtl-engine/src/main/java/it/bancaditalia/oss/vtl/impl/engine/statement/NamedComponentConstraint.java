@@ -46,12 +46,11 @@ public class NamedComponentConstraint extends DataSetComponentConstraint
 	@Override
 	protected Optional<Set<? extends DataStructureComponent<?, ?, ?>>> matchStructure(DataSetMetadata structure, MetadataRepository repo)
 	{
+		Optional<? extends DataStructureComponent<?, ?, ?>> component = structure.getComponent(getName(), role);
 		if (domainName != null)
-			return structure.getComponent(getName(), role, repo.getDomain(domainName))
-					.map(Collections::singleton);
-		else
-			return structure.getComponent(getName(), role)
-					.map(Collections::singleton);
+			component = component.filter(c -> repo.getDomain(domainName).isAssignableFrom(c.getDomain()));
+
+		return component.map(Collections::singleton);
 	}
 	
 	@Override

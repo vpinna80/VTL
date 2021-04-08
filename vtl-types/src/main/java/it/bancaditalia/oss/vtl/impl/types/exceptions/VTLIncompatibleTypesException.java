@@ -42,7 +42,7 @@ public class VTLIncompatibleTypesException extends VTLException
 		this.right = right;
 	}
 	
-	public VTLIncompatibleTypesException(String operation, Domains left, ValueDomain right)
+	public VTLIncompatibleTypesException(String operation, Domains<?, ?> left, ValueDomain right)
 	{
 		super("Found incompatible types in " + operation + ": " + left.getDomain() + ", " + right, null);
 		
@@ -50,7 +50,7 @@ public class VTLIncompatibleTypesException extends VTLException
 		this.right = right;
 	}
 	
-	public VTLIncompatibleTypesException(String operation, ValueDomain left, Domains right)
+	public VTLIncompatibleTypesException(String operation, ValueDomain left, Domains<?, ?> right)
 	{
 		super("Found incompatible types in " + operation + ": " + left + ", " + right.getDomain(), null);
 		

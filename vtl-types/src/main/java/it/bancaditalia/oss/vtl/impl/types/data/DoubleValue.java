@@ -21,24 +21,23 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-public class DoubleValue extends NumberValueImpl<DoubleValue, Double, NumberDomainSubset<NumberDomain>, NumberDomain>
+public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends NumberValueImpl<DoubleValue<S>, Double, S, NumberDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final ScalarValueMetadata<NumberDomainSubset<NumberDomain>> NUMBER_METADATA = () -> NUMBERDS;
+	private static final ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> NULLINSTANCE = NullValue.instance(NUMBERDS);
 
-	public DoubleValue(Double value)
+	private DoubleValue(Double value, S domain)
 	{
-		super(value, Domains.NUMBERDS);
+		super(value, domain);
 	}
-
-	@Override
-	public ScalarValueMetadata<NumberDomainSubset<NumberDomain>> getMetadata()
+	
+	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(Double value)
 	{
-		return NUMBER_METADATA;
+		return value == null ? NULLINSTANCE : new DoubleValue<>(value, NUMBERDS);
 	}
 }

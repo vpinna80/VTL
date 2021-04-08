@@ -45,18 +45,18 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 {
 	private static final long serialVersionUID = 1L;
 
-	protected static final ValueDomainSubset<?>[] INITIAL_DOMAINS = new ValueDomainSubset<?>[] { NUMBERDS, INTEGERDS, STRINGDS, BOOLEANDS, TIMEDS, DATEDS };
+	protected static final ValueDomainSubset<?, ?>[] INITIAL_DOMAINS = new ValueDomainSubset<?, ?>[] { NUMBERDS, INTEGERDS, STRINGDS, BOOLEANDS, TIMEDS, DATEDS };
 
-	private final Map<String, ValueDomainSubset<? extends ValueDomain>> domains = new ConcurrentHashMap<>();
+	private final Map<String, ValueDomainSubset<?, ?>> domains = new ConcurrentHashMap<>();
 	
 	public InMemoryMetadataRepository() 
 	{
-		for (ValueDomainSubset<?> domain: INITIAL_DOMAINS)
+		for (ValueDomainSubset<?, ?> domain: INITIAL_DOMAINS)
 			domains.put(domain.toString().toLowerCase(), domain);
 	}
 	
 	@Override
-	public Collection<ValueDomainSubset<?>> getValueDomains() 
+	public Collection<ValueDomainSubset<?, ?>> getValueDomains() 
 	{
 		return domains.values();
 	}
@@ -68,7 +68,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 
 	@Override
-	public ValueDomainSubset<?> getDomain(String alias) 
+	public ValueDomainSubset<?, ?> getDomain(String alias) 
 	{
 		if (domains.containsKey(mapAlias(alias)))
 			return domains.get(mapAlias(alias));
@@ -77,7 +77,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 	
 	@Override
-	public <T extends ValueDomainSubset<?>> T defineDomain(String alias, Class<T> domainClass, Object arg) 
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> S defineDomain(String alias, Class<S> domainClass, Object param)
 	{
 		return domainClass.cast(domains.computeIfAbsent(mapAlias(alias), a -> {
 			try 
@@ -87,7 +87,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 				if (constructors.length == 0)
 					throw new IllegalStateException("Implementation '" + implementingClass.getName() + "' of '" 
 							+ domainClass + "' does not have any accessible constructor.");
-				return domainClass.cast(constructors[0].newInstance(alias, arg));
+				return domainClass.cast(constructors[0].newInstance(alias, param));
 			} 
 			catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) 
 			{
@@ -96,12 +96,12 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 		}));
 	}
 	
-	protected BiConsumer<? super String, ? super Object> defineDomainOf(Class<? extends ValueDomainSubset<?>> domainClass)
+	protected <S extends ValueDomainSubset<S, D>, D extends ValueDomain> BiConsumer<? super String, ? super Object> defineDomainOf(Class<S> domainClass)
 	{
 		return (alias, arg) -> defineDomain(alias, domainClass, arg); 
 	}
 
-	private Class<? extends ValueDomainSubset<?>> mapClass(Class<? extends ValueDomain> domainClass)
+	private Class<? extends ValueDomainSubset<?, ?>> mapClass(Class<? extends ValueDomain> domainClass)
 	{
 		if (domainClass == StringEnumeratedDomainSubset.class)
 			return StringCodeList.class;

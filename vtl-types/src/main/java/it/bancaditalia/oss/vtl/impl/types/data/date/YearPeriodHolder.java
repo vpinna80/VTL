@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains.A;
+import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoUnit.YEARS;
 
 import java.time.Year;
@@ -32,30 +32,21 @@ import java.time.temporal.TemporalUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.DurationDomains;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public class YearPeriodHolder<P extends YearPeriodHolder<P>> extends PeriodHolder<P>
+public class YearPeriodHolder extends PeriodHolder<YearPeriodHolder>
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(YearPeriodHolder.class);
 	private static final long serialVersionUID = 1L;
 
 	private final Year year;
-
-	@SuppressWarnings("unchecked")
-	public static <P extends YearPeriodHolder<P>> Class<P> clazz()
-	{
-		return (Class<P>) (Object) new YearPeriodHolder<>().getClass();
-	}
 	
-	private YearPeriodHolder()
+	public YearPeriodHolder(TemporalAccessor value)
 	{
-		year = null;
-	}
-	
-	public YearPeriodHolder(TemporalAccessor other)
-	{
-		this.year = Year.from(other);
+		if (value.isSupported(YEAR)) 
+			this.year = Year.from(value);
+		else
+			throw new UnsupportedOperationException("Period from " + value + " not implemented.");
 	}
 
 	@Override
@@ -102,7 +93,7 @@ public class YearPeriodHolder<P extends YearPeriodHolder<P>> extends PeriodHolde
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		YearPeriodHolder<?> other = (YearPeriodHolder<?>) obj;
+		YearPeriodHolder other = (YearPeriodHolder) obj;
 		if (year == null)
 		{
 			if (other.year != null)
@@ -111,18 +102,6 @@ public class YearPeriodHolder<P extends YearPeriodHolder<P>> extends PeriodHolde
 		else if (!year.equals(other.year))
 			return false;
 		return true;
-	}
-	
-	@Override
-	public DurationDomains getPeriod()
-	{
-		return A;
-	}
-
-	@Override
-	public PeriodHolder<?> wrapImpl(DurationDomains frequency)
-	{
-		throw new UnsupportedOperationException("Cannot wrap " + this + " with duration " + frequency + " or wrapping time_period not implemented"); 
 	}
 
 	@Override
@@ -134,18 +113,18 @@ public class YearPeriodHolder<P extends YearPeriodHolder<P>> extends PeriodHolde
 	@Override
 	public Temporal plus(long amount, TemporalUnit unit)
 	{
-		return new YearPeriodHolder<>(year.plus(amount, unit));
-	}
-
-	@Override
-	public TimePeriodDomainSubset getDomain()
-	{
-		return YEARSDS;
+		return new YearPeriodHolder(year.plus(amount, unit));
 	}
 
 	@Override
 	protected TemporalUnit smallestUnit()
 	{
 		return YEARS;
+	}
+	
+	@Override
+	public TimePeriodDomainSubset<?> getDomain()
+	{
+		return YEARSDS;
 	}
 }

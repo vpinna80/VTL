@@ -86,7 +86,7 @@ public class VTLRESTfulServices extends SpringBootServletInitializer
 		VTLSession session = manager.getSession(uuid);
 		VTLValueMetadata value = session.getMetadata(alias);
 		if (value instanceof ScalarValueMetadata)
-			return singletonList(new DomainBean(((ScalarValueMetadata<?>) value).getDomain()));
+			return singletonList(new DomainBean(((ScalarValueMetadata<?, ?>) value).getDomain()));
 		else
 			return ((DataSetMetadata) value).stream().map(ComponentBean::new).collect(toList());
 	}
