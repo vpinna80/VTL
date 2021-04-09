@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransfo
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation.OffsetDirection.LEAD;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
@@ -111,7 +112,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
 		
 		if (orderByClause.isEmpty())
-			ordering = dataset.getComponents(Identifier.class).stream().collect(Utils.toMapWithValues(c -> TRUE));
+			ordering = dataset.getComponents(Identifier.class).stream().collect(toMapWithValues(c -> TRUE));
 		else
 		{
 			ordering = new LinkedHashMap<>();
@@ -149,7 +150,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	
 	private Stream<DataPoint> offsetPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
-		LOGGER.debug("Analytic invocation on partition {}", keyValues);
+		LOGGER.trace("Analytic invocation on partition {}", keyValues);
 		
 		return Utils.getStream(partition)
 				.map(dp -> {

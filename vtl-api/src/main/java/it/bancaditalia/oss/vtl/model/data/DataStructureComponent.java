@@ -140,7 +140,7 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 */
 	public default ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		return (ScalarValue<?, ?, S, D>) getDomain().cast(value);
+		return getDomain().cast(value);
 	}
 
 	/**

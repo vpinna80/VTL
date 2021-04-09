@@ -110,7 +110,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 */
 	public default boolean matches(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> identifierValues)
 	{
-		return !Utils.getStream(identifierValues.entrySet())
+		return !Utils.getStream(identifierValues)
 				.filter(entryByKeyValue((k, v) -> !get(k).equals(k.cast(v))))
 				.findAny()
 				.isPresent();
@@ -165,7 +165,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components collection of components to query
 	 * @return a map with the values for chosen the components having the specified role.
 	 */
-	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<DataStructureComponent<R, ?, ?>> components, Class<R> role)
+	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<R, ?, ?>> components, Class<R> role)
 	{
 		return Utils.getStream(getValues(role).entrySet())
 				.filter(entryByKey(components::contains))

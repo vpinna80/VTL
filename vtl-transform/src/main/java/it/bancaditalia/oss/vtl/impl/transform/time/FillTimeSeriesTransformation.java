@@ -140,7 +140,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			DataStructureComponent<Identifier, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeID, 
 			Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFilling, TimeValue<?, ?, ?, ?> min, TimeValue<?, ?, ?, ?> max)
 	{
-		LOGGER.debug("Filling group " + seriesID);
+		LOGGER.trace("Filling group {}", seriesID);
 		List<DataPoint> additional = new LinkedList<>();
 		
 		// if min == null: do not add leading null datapoints (single mode)
@@ -157,7 +157,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 				TimeValue<?, ?, ?, ?> prevTime = previous.increment(1);
 				while (lastTime.compareTo(prevTime) > 0)
 				{
-					LOGGER.debug("Filling space between " + prevTime + " and " + lastTime);
+					LOGGER.trace("Filling space between {} and {}", prevTime, lastTime);
 					DataPoint fillingDataPoint = new DataPointBuilder(seriesID)
 						.add(timeID, prevTime)
 						.addAll(nullFilling)
@@ -176,7 +176,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			TimeValue<?, ?, ?, ?> prevTime = previous;
 			while (max.compareTo(prevTime) > 0)
 			{
-				LOGGER.debug("Filling space between " + prevTime + " and " + max);
+				LOGGER.trace("Filling space between {} and {}", prevTime, max);
 				prevTime = prevTime.increment(1);
 				DataPoint fillingDataPoint = new DataPointBuilder(seriesID)
 					.add(timeID, prevTime)

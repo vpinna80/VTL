@@ -19,6 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
@@ -94,10 +97,10 @@ public class DataPointBuilder
 
 	private static DataPointBuilder merge(DataPointBuilder left, DataPointBuilder right)
 	{
-		right.delegate.forEach(left.delegate::putIfAbsent);
+		right.delegate.forEach(left::add);
 		return left.checkState();
 	}
-
+	
 	public DataPointBuilder addAll(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> values)
 	{
 		values.forEach(delegate::putIfAbsent);
@@ -157,6 +160,7 @@ public class DataPointBuilder
 		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
+		private transient Map<? extends DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
 
 		private DataPointImpl(DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
@@ -165,12 +169,13 @@ public class DataPointBuilder
 
 			if (values.size() != structure.size())
 			{
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> filledValues = new ConcurrentHashMap<>(values);
-				Utils.getStream(structure).filter(c -> !c.is(Identifier.class) && !values.containsKey(c))
-						.forEach(c -> filledValues.put(c, NullValue.instanceFrom(c)));
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> filledValues = new HashMap<>(values);
+				for (DataStructureComponent<?, ?, ?> component: structure)
+					if (!component.is(Identifier.class) && !values.containsKey(component))
+						filledValues.put(component, NullValue.instanceFrom(component));
 				this.dpValues = filledValues;
 			} else
-				this.dpValues = values;
+				this.dpValues = new HashMap<>(values);
 
 			if (!structure.equals(dpValues.keySet()))
 			{
@@ -192,7 +197,17 @@ public class DataPointBuilder
 		@Override
 		public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
 		{
-			return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(toMapWithValues(dpValues::get));
+			if (role == Identifier.class)
+			{
+				if (ids == null)
+					ids = Utils.getStream(dpValues).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.as(Identifier.class))).collect(entriesToMap());
+				// safe cast, R is Identifier
+				@SuppressWarnings("unchecked")
+				final Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>>) ids;
+				return result;
+			}
+			else
+				return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(toMapWithValues(dpValues::get));
 		}
 
 		@Override

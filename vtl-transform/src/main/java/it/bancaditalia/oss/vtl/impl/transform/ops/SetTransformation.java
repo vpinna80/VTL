@@ -19,17 +19,23 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
@@ -37,6 +43,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -44,39 +52,45 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class SetTransformation extends TransformationImpl
 {
+	private final static Logger LOGGER = LoggerFactory.getLogger(SetTransformation.class);
 	private static final long serialVersionUID = 1L;
 
 	public enum SetOperator
 	{
-		UNION((left, right) -> structure -> new LightFDataSet<>(structure, 
-				ds -> Stream.concat(left.stream(), ds.stream()), setDiff(right, left))),
-		INTERSECT((left, right) -> structure -> setDiff(left, setDiff(left, right))), 
-		SETDIFF((left, right) -> structure -> setDiff(left, right)), 
-		SYMDIFF((left, right) -> structure -> new LightFDataSet<>(structure,  
-				ds -> Stream.concat(setDiff(left, right).stream(), ds.stream()), setDiff(right, left)));
+		UNION((left, right) -> (structure, alias) -> new LightFDataSet<>(structure, 
+				ds -> Stream.concat(left.stream(), ds.stream()), setDiff(right, left, "nested setdiff"))),
+		INTERSECT((left, right) -> (structure, alias) -> setDiff(left, setDiff(left, right, alias), "nested setdiff")), 
+		SETDIFF((left, right) -> (structure, alias) -> setDiff(left, right, alias)), 
+		SYMDIFF((left, right) -> (structure, alias) -> new LightFDataSet<>(structure,  
+				ds -> Stream.concat(setDiff(left, right, alias).stream(), ds.stream()), setDiff(right, left, "inversed setdiff of " + alias)));
 
-		private final BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer;
+		private final BiFunction<DataSet, DataSet, BiFunction<DataSetMetadata, String, DataSet>> reducer;
 
-		SetOperator(BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer)
+		SetOperator(BiFunction<DataSet, DataSet, BiFunction<DataSetMetadata, String, DataSet>> reducer)
 		{
 			this.reducer = reducer;
 		}
 		
-		public BinaryOperator<DataSet> getReducer(DataSetMetadata metadata)
+		public BinaryOperator<DataSet> getReducer(DataSetMetadata metadata, String rightAlias)
 		{
-			return (left, right) -> reducer.apply(left, right).apply(metadata);
+			return (left, right) -> reducer.apply(left, right).apply(metadata, rightAlias);
 		}
 	}
 
-	private static DataSet setDiff(DataSet a, DataSet b)
+	private static DataSet setDiff(DataSet left, DataSet right, String rightAlias)
 	{
-		try (Stream<DataPoint> stream = b.stream())
+		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> rightIdValues;
+		try (Stream<DataPoint> stream = right.stream())
 		{
-			Set<?> leftValues = stream
-					.map(dp -> dp.getValues(Identifier.class))
-					.collect(toSet());
-			return a.filter(dp -> !leftValues.contains(dp.getValues(Identifier.class)));
+			LOGGER.debug("Indexing operand {} of a set operator", rightAlias);
+			rightIdValues = new HashSet<>(stream
+				.map(dp -> dp.getValues(Identifier.class))
+				.collect(toConcurrentMap(identity(), x -> Boolean.TRUE))
+				.keySet());
+			LOGGER.debug("Finished indexing operand {} of a set operator", rightAlias);
 		}
+
+		return left.filter(dp -> !rightIdValues.contains(dp.getValues(Identifier.class)));
 	}
 
 	private final List<Transformation> operands;
@@ -100,7 +114,7 @@ public class SetTransformation extends TransformationImpl
 			if (first.getAndSet(false))
 				accumulator = other;
 			else
-				accumulator = setOperator.getReducer(accumulator.getMetadata()).apply(accumulator, other);
+				accumulator = setOperator.getReducer(accumulator.getMetadata(), operand.toString()).apply(accumulator, other);
 		}
 		
 		return accumulator;

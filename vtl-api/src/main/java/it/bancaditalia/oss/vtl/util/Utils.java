@@ -128,9 +128,9 @@ public final class Utils
 		return toConcurrentMap(Entry::getKey, Entry::getValue);
 	}
 
-	public static <K, V> Collector<K, ?, ConcurrentMap<K, V>> toMapWithValues(Function<? super K, ? extends V> valueMapper)
+	public static <K, V> Collector<K, ?, ConcurrentMap<K, V>> toMapWithValues(Function<? super K, ? extends V> keyMapper)
 	{
-		return toConcurrentMap(identity(), valueMapper);
+		return toConcurrentMap(identity(), keyMapper);
 	}
 
 	public static <K, V> Collector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(Function<? super V, ? extends K> valueMapper)
