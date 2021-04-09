@@ -85,9 +85,9 @@ public class DataStructureBuilder
 		return this;
 	}
 
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureBuilder addComponent(String name, Class<? extends ComponentRole> type, ValueDomainSubset<?, ?> domain)
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureBuilder addComponent(String alias, Class<? extends ComponentRole> type, ValueDomainSubset<?, ?> domain)
 	{
-		this.components.add(DataStructureComponentImpl.of(name, type, domain));
+		this.components.add(DataStructureComponentImpl.of(getNormalizedAlias(alias), type, domain));
 		return this;
 	}
 
@@ -163,10 +163,9 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public Optional<DataStructureComponent<?, ?, ?>> getComponent(String component)
+		public Optional<DataStructureComponent<?, ?, ?>> getComponent(String alias)
 		{
-			String stripped = component.replaceAll("'(.*)'", "$1");
-			return Optional.ofNullable(components.get(stripped));
+			return Optional.ofNullable(components.get(getNormalizedAlias(alias)));
 		}
 
 		@Override
@@ -198,12 +197,12 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public DataSetMetadata membership(String name)
+		public DataSetMetadata membership(String alias)
 		{
-			DataStructureComponent<?, ?, ?> component = components.get(name);
+			DataStructureComponent<?, ?, ?> component = components.get(getNormalizedAlias(alias));
 
 			if (component == null)
-				throw new VTLMissingComponentsException(name, components.values());
+				throw new VTLMissingComponentsException(alias, components.values());
 
 			if (component.is(Measure.class))
 				return new DataStructureBuilder().addComponents(component).addComponents(getComponents(Identifier.class)).build();
@@ -227,7 +226,7 @@ public class DataStructureBuilder
 		@Override
 		public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName)
 		{
-			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.rename(newName)).build();
+			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.rename(getNormalizedAlias(newName))).build();
 		}
 
 		@Override
@@ -266,9 +265,9 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public boolean contains(String component)
+		public boolean contains(String alias)
 		{
-			return components.containsKey(component);
+			return components.containsKey(getNormalizedAlias(alias));
 		}
 
 		@Override
@@ -309,5 +308,10 @@ public class DataStructureBuilder
 		return Collector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
 				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
 				UNORDERED, CONCURRENT);
+	}
+
+	private static String getNormalizedAlias(String alias)
+	{
+		return alias.matches("'.*'") ? alias.replaceAll("'(.*)'", "$1") : alias.toLowerCase();
 	}
 }

@@ -19,13 +19,19 @@
  */
 package it.bancaditalia.oss.vtl.impl.session;
 
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithKey;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptySet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingByConcurrent;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
@@ -233,27 +239,32 @@ public class CachedDataSet extends NamedDataSet
 		exception.getStackTrace();
 		stacks.put(alias, exception);
 		
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> ungroupedCache = caches.get(getComponents(Identifier.class)).get();
-		if (!keys.equals(getComponents(Identifier.class)) && ungroupedCache == null)
-			ungroupedCache = createCache(isCompleted, getComponents(Identifier.class));
-
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;
 		if (keys.equals(getComponents(Identifier.class)))
 			try (Stream<DataPoint> stream = getDelegate().stream())
 			{
 				result = stream
 					.map(toEntry(dp -> dp.getValues(Identifier.class), Collections::singleton))
-					.collect(toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> { 
-						throw new IllegalStateException("Found duplicate datapoint: " + a.iterator().next().getValues(Identifier.class) + " and " + b.iterator().next().getValues(Identifier.class)); 
-					}));
+					.collect(entriesToMap());
 			}
 		else
-			result = Utils.getStream(ungroupedCache)
-					.map(Entry::getValue)
-					.map(Set::stream)
-					.reduce(Stream::concat)
-					.orElse(Stream.empty())
-					.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), toSet()));
+		{
+			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> ungroupedCache = caches.get(getComponents(Identifier.class)).get();
+			if (ungroupedCache == null)
+				try (Stream<DataPoint> stream = getDelegate().stream())
+				{
+					result = stream
+							.map(toEntryWithKey(dp -> dp.getValues(keys, Identifier.class)))
+							.collect(groupingByConcurrent(Entry::getKey, collectingAndThen(mapping(Entry::getValue, toConcurrentMap(identity(), a -> TRUE)), Map::keySet)));
+				}
+			else
+				result = Utils.getStream(ungroupedCache)
+						.map(Entry::getValue)
+						.map(Set::stream)
+						.reduce(Stream::concat)
+						.orElse(Stream.empty())
+						.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), toSet()));
+		}
 		
 		SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> cacheRef = new SoftReference<>(result, REF_QUEUE);
 		caches.put(keys, cacheRef);

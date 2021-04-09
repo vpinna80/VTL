@@ -79,7 +79,7 @@ public enum SampleVariables
 	
 	public DataStructureComponent<?, ?, ?> getComponent(int level)
 	{
-		return component.rename(name -> name.split("_")[0] + "_" + level);
+		return component.rename(name -> name.split("_")[0].toLowerCase() + "_" + level);
 	}
 	
 	public String getType()
