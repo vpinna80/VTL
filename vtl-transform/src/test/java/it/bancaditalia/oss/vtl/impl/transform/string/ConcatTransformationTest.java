@@ -58,11 +58,11 @@ public class ConcatTransformationTest
 		ConcatTransformation coTransformation = new ConcatTransformation(left, right);
 		
 		DataSetMetadata metadata = (DataSetMetadata) coTransformation.getMetadata(session);
-		assertTrue(metadata.contains("STRING_2"));
+		assertTrue(metadata.contains("string_2"));
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
-		Optional<DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain>> oId = metadata.getComponent("STRING_1", Identifier.class, STRINGDS);		
-		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> oMeasure = metadata.getComponent("STRING_2", Measure.class, STRINGDS);
+		Optional<DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
+		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> oMeasure = metadata.getComponent("string_2", Measure.class, STRINGDS);
 		
 		assertTrue(oId.isPresent(), "String id present");
 		assertTrue(oMeasure.isPresent(), "String measure present");

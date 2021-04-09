@@ -89,8 +89,8 @@ public class FillTimeSeriesTransformationTest
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
 		assertEquals(expectedSize, computedResult.size(), "Dataset size");
 		
-		DataStructureComponent<Identifier, EntireDateDomainSubset, DateDomain> time_id = computedResult.getComponent("DATE_1", Identifier.class, DATEDS).get();
-		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> string_id = computedResult.getComponent("STRING_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, EntireDateDomainSubset, DateDomain> time_id = computedResult.getComponent("date_1", Identifier.class, DATEDS).get();
+		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> string_id = computedResult.getComponent("string_1", Identifier.class, STRINGDS).get();
 		
 		Collection<List<DataPoint>> splitResult = computedResult.stream().sequential()
 				.sorted((dp1, dp2) -> (dp1.get(time_id)).compareTo(dp2.get(time_id)))

@@ -40,13 +40,13 @@ public class BracketTransformation extends TransformationImpl
 	private static final long serialVersionUID = 1L;
 	private final Transformation operand;
 	private final DatasetClauseTransformation clause;
-	private final String component;
+	private final String componentName;
 	
-	public BracketTransformation(Transformation operand, DatasetClauseTransformation clause, String component)
+	public BracketTransformation(Transformation operand, DatasetClauseTransformation clause, String componentName)
 	{
 		this.operand = operand;
 		this.clause = clause;
-		this.component = component;
+		this.componentName = componentName.matches("'.*'") ? componentName.replaceAll("'(.*)'", "$1") : componentName.toLowerCase();
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class BracketTransformation extends TransformationImpl
 		if (clause != null)
 			return clause.eval(new ThisScope((DataSet) operand.eval(session), session));
 		else
-			return ((DataSet) operand.eval(session)).membership(component);
+			return ((DataSet) operand.eval(session)).membership(componentName);
 	}
 
 	@Override
@@ -89,12 +89,12 @@ public class BracketTransformation extends TransformationImpl
 		if (clause != null)
 			return clause.getMetadata(new ThisScope((DataSetMetadata) operand.getMetadata(session)));
 		else
-			return ((DataSetMetadata) metadata).membership(component);
+			return ((DataSetMetadata) metadata).membership(componentName);
 	}
 	
 	@Override
 	public String toString()
 	{
-		return operand + (clause != null ? clause.toString() : "") + (component != null ? "#" + component : "");
+		return operand + (clause != null ? clause.toString() : "") + (componentName != null ? "#" + componentName : "");
 	}
 }

@@ -100,7 +100,7 @@ public class ComparisonTransformationTest
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent("STRING_1").get();		
+		DataStructureComponent<?, ?, ?> id = metadata.getComponent("string_1").get();		
 		DataStructureComponent<?, ?, ?> bool_var = metadata.getComponent("bool_var").get();		
 		
 		DataSet leftD = (DataSet) left.eval(session), 

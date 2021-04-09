@@ -73,7 +73,7 @@ public class FilterClauseTransformationTest
 	@BeforeEach
 	public void before()
 	{
-		condition = new VarIDOperand("BOOLEAN_1");
+		condition = new VarIDOperand("boolean_1");
 		Map<String, DataSet> map = new HashMap<>();
 		session = TestUtils.mockSession(map);
 	}
@@ -86,14 +86,14 @@ public class FilterClauseTransformationTest
 		FilterClauseTransformation fct = new FilterClauseTransformation(condition);
 		
 		DataSetMetadata metadata = (DataSetMetadata) fct.getMetadata(session);
-		assertTrue(metadata.contains("BOOLEAN_1"));
+		assertTrue(metadata.contains("boolean_1"));
 		
 		DataSet computedResult = (DataSet) fct.eval(session);
 		
 		assertEquals(expectedResult.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> id = metadata.getComponent("STRING_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> id = metadata.getComponent("string_1", Identifier.class, STRINGDS).get();
 		
 		String[] arrayResult = computedResult.stream()
 			.map(dp -> dp.get(id).get())

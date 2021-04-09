@@ -80,15 +80,15 @@ public class BooleanTransformationTest
 		BooleanTransformation bt = new BooleanTransformation(operator, left, right);
 		
 		DataSetMetadata metadata = (DataSetMetadata) bt.getMetadata(session);
-		assertTrue(metadata.contains("BOOLEAN_1"));
+		assertTrue(metadata.contains("boolean_1"));
 		
 		DataSet computedResult = (DataSet) bt.eval(session);
 		
 		assertEquals(booleanResults.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent("STRING_1").get();
-		DataStructureComponent<?, ?, ?> measure = metadata.getComponent("BOOLEAN_1").get();
+		DataStructureComponent<?, ?, ?> id = metadata.getComponent("string_1").get();
+		DataStructureComponent<?, ?, ?> measure = metadata.getComponent("boolean_1").get();
 		
 		computedResult.stream()
 			.map(dp -> new SimpleEntry<>(dp.get(id).get().toString().charAt(0) - 'A', dp.get(measure).get()))

@@ -90,12 +90,12 @@ public class ArithmeticTransformationTest
 		ArithmeticTransformation arTransformation = new ArithmeticTransformation(operator, left, right);
 		
 		DataSetMetadata metadata = (DataSetMetadata) arTransformation.getMetadata(session);
-		assertTrue(metadata.contains("INTEGER_1"));
-		assertTrue(metadata.contains("NUMBER_1"));
+		assertTrue(metadata.contains("integer_1"));
+		assertTrue(metadata.contains("number_1"));
 		
 		DataSet computedResult = (DataSet) arTransformation.eval(session);
-		DataStructureComponent<?, ?, ?> integerMeasure = metadata.getComponent("INTEGER_1").get();
-		DataStructureComponent<?, ?, ?> numberMeasure = metadata.getComponent("NUMBER_1").get();
+		DataStructureComponent<?, ?, ?> integerMeasure = metadata.getComponent("integer_1").get();
+		DataStructureComponent<?, ?, ?> numberMeasure = metadata.getComponent("number_1").get();
 		
 		assertEquals(integerResults.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());

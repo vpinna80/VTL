@@ -61,10 +61,10 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 @ExtendWith(MockitoExtension.class)
 public class CSVFileEnvironmentTest
 {
-	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = new DataStructureComponentImpl<>("IDENTIFIER", Identifier.class, DATEDS);
-	private static final DataStructureComponent<?, ?, ?> MEASURE = new DataStructureComponentImpl<>("MEASURE", Measure.class, NUMBERDS);
-	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = new DataStructureComponentImpl<>("ATTRIBUTE", Attribute.class, STRINGDS);
-	private static final DataStructureComponent<?, ?, ?> QUOTED = new DataStructureComponentImpl<>("QUOTED", Attribute.class, STRINGDS);
+	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = new DataStructureComponentImpl<>("identifier", Identifier.class, DATEDS);
+	private static final DataStructureComponent<?, ?, ?> MEASURE = new DataStructureComponentImpl<>("measure", Measure.class, NUMBERDS);
+	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = new DataStructureComponentImpl<>("attribute", Attribute.class, STRINGDS);
+	private static final DataStructureComponent<?, ?, ?> QUOTED = new DataStructureComponentImpl<>("quoted", Attribute.class, STRINGDS);
 	private static final String QUOTED_RESULTS[] = {
 			" Hello, \"World\"! ",
 			"Test with",

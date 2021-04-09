@@ -74,7 +74,7 @@ public enum SampleVariables
 			case "DATE": domain = DATEDS; break;
 		}
 
-		component = DataStructureComponentImpl.of(elem[1] + "_" + elem[2], role, domain);
+		component = DataStructureComponentImpl.of(elem[1].toLowerCase() + "_" + elem[2], role, domain);
 	}
 	
 	public DataStructureComponent<?, ?, ?> getComponent(int level)

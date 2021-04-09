@@ -77,14 +77,15 @@ public abstract class AbstractDataSet implements DataSet
 	}
 	
 	@Override
-	public DataSet membership(String componentName)
+	public DataSet membership(String alias)
 	{
-		final DataSetMetadata membershipStructure = dataStructure.membership(componentName);
+		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
 
-		LOGGER.trace("Creating dataset by membership on {} from {} to {}", componentName, dataStructure, membershipStructure);
+		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
 
-		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(componentName)
-				.orElseThrow(() -> new VTLMissingComponentsException(componentName, dataStructure));
+		
+		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
+				.orElseThrow(() -> new VTLMissingComponentsException(alias, dataStructure));
 		DataStructureComponent<? extends Measure, ?, ?> membershipMeasure = membershipStructure.getComponents(Measure.class).iterator().next();
 
 		return mapKeepingKeys(membershipStructure, dp -> {

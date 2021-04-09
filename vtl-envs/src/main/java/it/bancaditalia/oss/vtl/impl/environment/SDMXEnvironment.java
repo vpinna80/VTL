@@ -262,7 +262,9 @@ public class SDMXEnvironment implements Environment, Serializable
 		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 		StringEnumeratedDomainSubset domain = repository.defineDomain(codelist.getId(), StringEnumeratedDomainSubset.class, codelist.keySet());
 		Objects.requireNonNull(domain, "domain null for " + codelist.getId() + " - " + meta);
-		return new DataStructureComponentImpl<>(meta.getId(), role, domain);
+		
+		String normalizedName = meta.getId().matches("'.*'") ? meta.getId().replaceAll("'(.*)'", "$1") : meta.getId().toLowerCase();
+		return new DataStructureComponentImpl<>(normalizedName, role, domain);
 	}
 
 	protected VTLValueMetadata getMetadataSDMX(String provider, String dataflow, String[] tokens)

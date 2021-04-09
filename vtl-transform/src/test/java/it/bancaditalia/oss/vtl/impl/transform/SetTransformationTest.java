@@ -78,8 +78,8 @@ public class SetTransformationTest
 		SetTransformation setTransformation = new SetTransformation(operator, asList(left, right));
 		
 		DataSetMetadata metadata = (DataSetMetadata) setTransformation.getMetadata(session);
-		assertTrue(metadata.contains("INTEGER_1"));
-		assertTrue(metadata.contains("STRING_1"));
+		assertTrue(metadata.contains("integer_1"));
+		assertTrue(metadata.contains("string_1"));
 		
 		DataSet result = setTransformation.eval(session);
 		

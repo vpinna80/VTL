@@ -68,15 +68,15 @@ public class ConditionalTransformationTest
 		ConditionalTransformation arTransformation = new ConditionalTransformation(cond, left, right);
 		
 		DataSetMetadata metadata = (DataSetMetadata) arTransformation.getMetadata(session);
-		assertTrue(metadata.contains("INTEGER_1"));
+		assertTrue(metadata.contains("integer_1"));
 		
 		DataSet computedResult = (DataSet) arTransformation.eval(session);
 		
 		assertEquals(INTEGER_RESULTS.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent("STRING_1").get();
-		DataStructureComponent<?, ?, ?> measure = metadata.getComponent("INTEGER_1").get();
+		DataStructureComponent<?, ?, ?> id = metadata.getComponent("string_1").get();
+		DataStructureComponent<?, ?, ?> measure = metadata.getComponent("integer_1").get();
 		
 		computedResult.stream()
 			.map(dp -> new SimpleEntry<>(dp.get(id).get().toString().charAt(0) - 'A', dp.get(measure).get()))

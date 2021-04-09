@@ -84,7 +84,7 @@ public class StringUnaryTransformationTest
 		DataSetMetadata structure = (DataSetMetadata) sut.getMetadata(session);
 		
 		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> measure = structure.getComponent("STRING_2", Measure.class, STRINGDS);
+		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> measure = structure.getComponent("string_2", Measure.class, STRINGDS);
 		assertTrue(measure.isPresent(), "measure present in " + structure);
 		
 		try (Stream<DataPoint> stream = ((DataSet) sut.eval(session)).stream())

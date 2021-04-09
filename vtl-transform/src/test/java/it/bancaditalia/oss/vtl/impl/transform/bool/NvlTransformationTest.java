@@ -58,7 +58,7 @@ public class NvlTransformationTest
 		NvlTransformation isnt = new NvlTransformation(left, right);
 		DataSetMetadata structure = (DataSetMetadata) isnt.getMetadata(session);
 		
-		Optional<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> component = structure.getComponent("INTEGER_1", Measure.class, INTEGERDS);
+		Optional<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> component = structure.getComponent("integer_1", Measure.class, INTEGERDS);
 		assertTrue(component.isPresent(), "integer_var measure present");
 		
 		long nullCount = ((DataSet) isnt.eval(session)).stream()
