@@ -87,7 +87,7 @@ public class BracketTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("Dataset expected as left operand of []# but found " + metadata);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope(operand.getMetadata(session), session));
+			return clause.getMetadata(new ThisScope(operand.getMetadata(session)));
 		else
 			return ((DataSetMetadata) metadata).membership(component);
 	}

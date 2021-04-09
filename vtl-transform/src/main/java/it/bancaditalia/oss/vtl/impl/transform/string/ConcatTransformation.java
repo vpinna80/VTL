@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.reverseIfBOp;
@@ -37,7 +38,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -133,7 +133,7 @@ public class ConcatTransformation extends BinaryTransformation
 		else if (!(STRINGDS.isAssignableFrom(right.getDomain())))
 			throw new VTLIncompatibleTypesException("concat", STRINGDS, right.getDomain());
 		else
-			return Domains.STRING;
+			return STRING;
 	}
 	
 	@Override

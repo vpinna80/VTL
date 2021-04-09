@@ -79,18 +79,22 @@ public class SetTransformation extends TransformationImpl
 
 	private static DataSet setDiff(DataSet left, DataSet right, String rightAlias)
 	{
-		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> rightIdValues;
-		try (Stream<DataPoint> stream = right.stream())
+		return left.filter(dp -> !indexKeys(right, rightAlias).contains(dp.getValues(Identifier.class)));
+	}
+
+	private static Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> indexKeys(DataSet dataset, String alias)
+	{
+		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
+		try (Stream<DataPoint> stream = dataset.stream())
 		{
-			LOGGER.debug("Indexing operand {} of a set operator", rightAlias);
-			rightIdValues = new HashSet<>(stream
+			LOGGER.debug("Indexing operand {} of a set operator", alias);
+			index = new HashSet<>(stream
 				.map(dp -> dp.getValues(Identifier.class))
 				.collect(toConcurrentMap(identity(), x -> Boolean.TRUE))
 				.keySet());
-			LOGGER.debug("Finished indexing operand {} of a set operator", rightAlias);
+			LOGGER.debug("Finished indexing operand {} of a set operator", alias);
 		}
-
-		return left.filter(dp -> !rightIdValues.contains(dp.getValues(Identifier.class)));
+		return index;
 	}
 
 	private final List<Transformation> operands;

@@ -19,7 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -33,20 +35,17 @@ public class ThisScope implements TransformationScheme
 	
 	private final VTLValue thisValue;
 	private final VTLValueMetadata thisMetadata;
-	private final TransformationScheme parent;
 	
 	public ThisScope(VTLValue thisValue, TransformationScheme parent)
 	{
 		this.thisValue = thisValue;
 		this.thisMetadata = thisValue.getMetadata();
-		this.parent = parent;
 	}
 
-	public ThisScope(VTLValueMetadata thisMetadata, TransformationScheme parent)
+	public ThisScope(VTLValueMetadata thisMetadata)
 	{
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
-		this.parent = parent;
 	}
 
 	@Override
@@ -66,7 +65,7 @@ public class ThisScope implements TransformationScheme
 			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(stripped).isPresent())
 				return ((DataSetMetadata) thisMetadata).membership(stripped);
 			else 
-				return getParent().getMetadata(node);
+				throw new VTLUnboundNameException(node);
 		}
 	}
 
@@ -81,25 +80,19 @@ public class ThisScope implements TransformationScheme
 			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(node).isPresent())
 				return ((DataSet) thisValue).membership(stripped);
 			else 
-				return getParent().resolve(node);
+				throw new VTLUnboundNameException(node);
 		}
 	}
 
 	@Override
 	public Statement getRule(String node)
 	{
-		return getParent().getRule(node);
+		throw new VTLUnboundNameException(node);
 	}
 
 	@Override
 	public MetadataRepository getRepository()
 	{
-		return getParent().getRepository();
-	}
-
-	@Override
-	public TransformationScheme getParent()
-	{
-		return parent;
+		return ConfigurationManager.getDefault().getMetadataRepository();
 	}
 }

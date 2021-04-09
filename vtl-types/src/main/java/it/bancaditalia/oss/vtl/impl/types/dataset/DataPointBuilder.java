@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.joining;
@@ -278,7 +279,7 @@ public class DataPointBuilder
 		@Override
 		public Set<Map.Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
 		{
-			return dpValues.entrySet();
+			return unmodifiableSet(dpValues.entrySet());
 		}
 
 		@Override

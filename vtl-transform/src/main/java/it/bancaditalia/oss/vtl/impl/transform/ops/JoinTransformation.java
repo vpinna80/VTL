@@ -389,7 +389,7 @@ public class JoinTransformation extends TransformationImpl
 		
 		// modify the result structure as needed
 		if (filter != null)
-			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result));
 		if (apply != null)
 		{
 			DataSetMetadata applyResult = result; 
@@ -408,14 +408,14 @@ public class JoinTransformation extends TransformationImpl
 					.build();
 		}
 		if (calc != null)
-			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result));
 		if (aggr != null)
-			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result));
 		if (keepOrDrop != null)
-			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result));
 		if (rename != null)
 		{
-			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result, session));
+			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result));
 			// check if rename has made some components unambiguous
 			Map<String, List<String>> sameUnaliasedName = Utils.getStream(result)
 				.map(DataStructureComponent::getName)
