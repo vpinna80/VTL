@@ -160,7 +160,7 @@ public class DataPointBuilder
 		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
-		private transient Map<? extends DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
+		private transient Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
 
 		private DataPointImpl(DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
@@ -202,8 +202,8 @@ public class DataPointBuilder
 				if (ids == null)
 					ids = Utils.getStream(dpValues).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.as(Identifier.class))).collect(entriesToMap());
 				// safe cast, R is Identifier
-				@SuppressWarnings("unchecked")
-				final Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>>) ids;
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				final Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map) ids;
 				return result;
 			}
 			else
