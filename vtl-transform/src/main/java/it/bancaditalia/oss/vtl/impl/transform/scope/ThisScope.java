@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -33,16 +34,16 @@ public class ThisScope implements TransformationScheme
 {
 	public static final String THIS = "$$THIS";
 	
-	private final VTLValue thisValue;
-	private final VTLValueMetadata thisMetadata;
+	private final DataSet thisValue;
+	private final DataSetMetadata thisMetadata;
 	
-	public ThisScope(VTLValue thisValue, TransformationScheme parent)
+	public ThisScope(DataSet thisValue, TransformationScheme parent)
 	{
 		this.thisValue = thisValue;
 		this.thisMetadata = thisValue.getMetadata();
 	}
 
-	public ThisScope(VTLValueMetadata thisMetadata)
+	public ThisScope(DataSetMetadata thisMetadata)
 	{
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
@@ -61,11 +62,11 @@ public class ThisScope implements TransformationScheme
 			return thisMetadata;
 		else
 		{
-			String stripped = node.replaceAll("^'(.*)'$", "$1");
+			final String stripped = node.matches("'.*'") ? node.replaceAll("'(.*)'", "$1") : node.toLowerCase();
 			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(stripped).isPresent())
 				return ((DataSetMetadata) thisMetadata).membership(stripped);
 			else 
-				throw new VTLUnboundNameException(node);
+				throw new VTLMissingComponentsException(stripped, (DataSetMetadata) thisMetadata);
 		}
 	}
 
@@ -76,11 +77,11 @@ public class ThisScope implements TransformationScheme
 			return thisValue;
 		else 
 		{
-			String stripped = node.replaceAll("^'(.*)'$", "$1");
+			final String stripped = node.matches("'.*'") ? node.replaceAll("'(.*)'", "$1") : node.toLowerCase();
 			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(node).isPresent())
 				return ((DataSet) thisValue).membership(stripped);
 			else 
-				throw new VTLUnboundNameException(node);
+				throw new VTLMissingComponentsException(stripped, thisMetadata);
 		}
 	}
 

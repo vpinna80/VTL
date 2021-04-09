@@ -110,9 +110,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		}
 
 		@Override
-		public ScalarValue<?, ?, ?, ?> eval(TransformationScheme sscheme)
+		public ScalarValue<?, ?, ?, ?> eval(TransformationScheme scheme)
 		{
-			return (ScalarValue<?, ?, ?, ?>) calcClause.eval(sscheme);
+			return (ScalarValue<?, ?, ?, ?>) calcClause.eval(scheme);
 		}
 
 		@Override

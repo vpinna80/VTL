@@ -70,7 +70,7 @@ public class BracketTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme session)
 	{
 		if (clause != null)
-			return clause.eval(new ThisScope(operand.eval(session), session));
+			return clause.eval(new ThisScope((DataSet) operand.eval(session), session));
 		else
 			return ((DataSet) operand.eval(session)).membership(component);
 	}
@@ -87,7 +87,7 @@ public class BracketTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("Dataset expected as left operand of []# but found " + metadata);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope(operand.getMetadata(session)));
+			return clause.getMetadata(new ThisScope((DataSetMetadata) operand.getMetadata(session)));
 		else
 			return ((DataSetMetadata) metadata).membership(component);
 	}
