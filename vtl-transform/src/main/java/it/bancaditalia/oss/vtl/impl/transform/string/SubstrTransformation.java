@@ -41,12 +41,11 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
@@ -58,9 +57,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -84,7 +83,7 @@ public class SubstrTransformation extends TransformationImpl
 	{
 		exprOperand = expr;
 		startOperand = start == null ? new ConstantOperand<>(IntegerValue.of(1L)) : start;
-		this.lenOperand = len == null ? new ConstantOperand<>(NullValue.instance(INTEGERDS)) : len;
+		lenOperand = len == null ? new ConstantOperand<>(NullValue.instance(INTEGERDS)) : len;
 	}
 
 	@Override
@@ -94,7 +93,7 @@ public class SubstrTransformation extends TransformationImpl
 		ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
 		ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> len = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) lenOperand.eval(session));
 		
-		if (start instanceof IntegerValue && (Long) len.get() < 1)
+		if (start instanceof IntegerValue && (Long) start.get() < 1)
 			throw new VTLSyntaxException("substr: start parameter must be positive but it is " + start.get());
 		if (len instanceof IntegerValue && (Long) len.get() < 1)
 			throw new VTLSyntaxException("substr: length parameter must be positive but it is " + len.get());
@@ -104,41 +103,41 @@ public class SubstrTransformation extends TransformationImpl
 			DataSet dataset = (DataSet) expr;
 			DataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
-			int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
 			
 			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
-				.map(measure -> {
-					ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> scalar = STRINGDS.cast(dp.get(measure));
-					if (scalar instanceof NullValue)
-						return new SimpleEntry<>(measure, STRINGDS.cast(NullValue.instance(STRINGDS)));
-					String string = scalar.get().toString();
-					
-					if (startV > string.length())
-						return new SimpleEntry<>(measure, StringValue.of(""));
-					Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get() + startV - 1;
-					if (lenV != null && lenV > string.length())
-						lenV = string.length();
-					
-					return new SimpleEntry<>(measure, StringValue.of(lenV == null ? string.substring(startV - 1) : string.substring(startV - 1, lenV)));
-				}).collect(Collectors.toMap(Entry::getKey, Entry::getValue))
+				.map(toEntryWithValue(measure -> getSubstring(len, start, STRINGDS.cast(dp.get(measure)))))
+				.collect(entriesToMap())
 			); 
 		}
 		else
+			return getSubstring(len, start, STRINGDS.cast(STRINGDS.cast((ScalarValue<?, ?, ?, ?>) expr)));
+	}
+
+	private static ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> getSubstring(
+			ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> len, 
+			ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> start,
+			ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> scalar)
+	{
+		int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
+		ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> result;
+		if (scalar instanceof NullValue)
+			result = STRINGDS.cast(NullValue.instance(STRINGDS));
+		else
 		{
-			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) expr;
-			if (scalar instanceof NullValue)
-				return NullValue.instance(STRINGDS);
-			int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
 			String string = scalar.get().toString();
-			
+		
 			if (startV > string.length())
-				return StringValue.of("");
-			Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get();
-			if (lenV != null && lenV + startV - 1 > string.length())
-				lenV = string.length() - startV + 1;
+				result = StringValue.of("");
+			else
+			{
+				Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get() + startV - 1;
 			
-			return StringValue.of(lenV == null ? string.substring(startV - 1) : string.substring(startV - 1, lenV));
+				if (lenV != null && lenV > string.length())
+					lenV = string.length();
+				result = StringValue.of(lenV == null ? string.substring(startV - 1) : string.substring(startV - 1, lenV));
+			}
 		}
+		return result;
 	}
 
 	@Override

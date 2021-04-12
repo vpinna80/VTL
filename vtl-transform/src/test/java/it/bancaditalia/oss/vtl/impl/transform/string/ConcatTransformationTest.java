@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE13;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE14;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE15;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -28,8 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
@@ -44,15 +48,24 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ConcatTransformationTest
 {
-	private final static String RESULT[] = { "AK", "CC", "EG", null, "IA", "KE" };
+	public static Stream<Arguments> test()
+	{
+		// "Filled String", "    Leading spaces", "Trailing spaces    ", "    Leading and trailing     ", "\"Quoted\" 'String'", "\t\b \n\r\f"
+		return Stream.of(
+				Arguments.of(SAMPLE13, SAMPLE14, new String[] { "Filled StringA", "    Leading spacesC", "Trailing spaces    E", "    Leading and trailing     G", "\"Quoted\" 'String'I", "\t\b \n\r\fK" }),
+				Arguments.of(SAMPLE13, SAMPLE15, new String[] { "Filled StringK", "    Leading spacesC", "Trailing spaces    G", null, "\"Quoted\" 'String'A", "\t\b \n\r\fE" }),
+				Arguments.of(SAMPLE14, SAMPLE15, new String[] { "AK", "CC", "EG", null, "IA", "KE" })
+		);
+	}
 	
-	@Test
-	public void test()
+	@ParameterizedTest(name = "{0} || {1}")
+	@MethodSource
+	public void test(DataSet leftDS, DataSet rightDS, String[] result)
 	{
 		VarIDOperand left = new VarIDOperand("left"), right = new VarIDOperand("right");
 		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", SAMPLE14);
-		map.put("right", SAMPLE15);
+		map.put("left", leftDS);
+		map.put("right", rightDS);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		ConcatTransformation coTransformation = new ConcatTransformation(left, right);
@@ -74,7 +87,7 @@ public class ConcatTransformationTest
 				rightD = (DataSet) right.eval(session);
 		
 		computedResult.stream()
-			.forEach(dp -> assertEquals(RESULT[dp.get(id).get().toString().charAt(0) - 'A'], dp.get(res).get(), 
+			.forEach(dp -> assertEquals(result[dp.get(id).get().toString().charAt(0) - 'A'], dp.get(res).get(), 
 					dp.get(id).get().toString() + "(" + leftD.stream()
 						.filter(dpl -> dpl.get(id).equals(dp.get(id)))
 						.map(dpl -> dpl.getValues(Measure.class).values().iterator().next().toString())
