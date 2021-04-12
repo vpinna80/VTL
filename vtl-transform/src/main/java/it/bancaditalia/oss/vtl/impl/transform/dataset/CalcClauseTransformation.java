@@ -76,7 +76,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		public CalcClauseItem(Class<? extends ComponentRole> role, String name, Transformation calcClause)
 		{
-			this.name = name;
+			this.name = name.matches("'.*'") ? name.replaceAll("'(.*)'", "$1") : name.toLowerCase();;
 			this.calcClause = calcClause;
 			this.role = role;
 		}

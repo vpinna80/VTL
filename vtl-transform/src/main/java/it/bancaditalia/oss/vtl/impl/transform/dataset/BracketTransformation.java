@@ -46,7 +46,7 @@ public class BracketTransformation extends TransformationImpl
 	{
 		this.operand = operand;
 		this.clause = clause;
-		this.componentName = componentName.matches("'.*'") ? componentName.replaceAll("'(.*)'", "$1") : componentName.toLowerCase();
+		this.componentName = componentName == null ? null : componentName.matches("'.*'") ? componentName.replaceAll("'(.*)'", "$1") : componentName.toLowerCase();
 	}
 
 	@Override
