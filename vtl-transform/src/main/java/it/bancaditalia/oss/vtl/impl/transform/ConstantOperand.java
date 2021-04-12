@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,21 +27,21 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class ConstantOperand<R extends Comparable<?> & Serializable, T extends ScalarValue<?, ?, ?, ?>> extends TransformationImpl implements LeafTransformation
+public class ConstantOperand extends TransformationImpl implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	private final T value;
+	private final ScalarValue<?, ?, ?, ?> value;
 	private final ScalarValueMetadata<?, ?> metadata;
 	
-	public ConstantOperand(T value)
+	public ConstantOperand(ScalarValue<?, ?, ?, ?> value)
 	{
 		this.value = value;
 		metadata = (ScalarValueMetadata<?, ?>) value.getMetadata();
 	}
 
 	@Override
-	public T eval(TransformationScheme session)
+	public ScalarValue<?, ?, ?, ?> eval(TransformationScheme session)
 	{
 		return value;
 	}

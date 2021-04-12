@@ -89,8 +89,8 @@ public class InStrTransformation extends TransformationImpl
 	{
 		this.leftOperand = left;
 		this.rightOperand = right;
-		this.startOperand = start == null ? new ConstantOperand<>(IntegerValue.of(1L)) : start;
-		this.occurrenceOperand = occurrence == null ? new ConstantOperand<>(IntegerValue.of(1L)) : occurrence;
+		this.startOperand = start == null ? new ConstantOperand(IntegerValue.of(1L)) : start;
+		this.occurrenceOperand = occurrence == null ? new ConstantOperand(IntegerValue.of(1L)) : occurrence;
 	}
 
 	@Override
@@ -101,13 +101,13 @@ public class InStrTransformation extends TransformationImpl
 		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
 		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> occurrence = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) occurrenceOperand.eval(session));
 		
-		int startPos = (int) (long) (Long) start.get() - 1;
-		int nOcc = (int) (long) (Long) occurrence.get() - 1;
+		int startPos = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
+		int nOcc = occurrence instanceof NullValue ? 1 : (int) (long) (Long) occurrence.get();
 		
-		if (startPos < 0)
-			throw new VTLSyntaxException("instr: start parameter must be positive but it was " + (startPos + 1));
-		if (nOcc < 0)
-			throw new VTLSyntaxException("instr: occurrence parameter must be positive but it was " + (nOcc + 1));
+		if (startPos < 1)
+			throw new VTLSyntaxException("instr: start parameter must be positive but it was " + (startPos));
+		if (nOcc < 1)
+			throw new VTLSyntaxException("instr: occurrence parameter must be positive but it was " + (nOcc));
 		
 		if (left instanceof DataSet)
 		{
@@ -135,10 +135,10 @@ public class InStrTransformation extends TransformationImpl
 	
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> findOccurrence(String string, String pattern, int startPos, int nOcc)
 	{
-		int index = string.indexOf(pattern, startPos);
+		int index = string.indexOf(pattern, startPos - 1) + 1;
 		
-		if (index < 0 || nOcc <= 0)
-			return IntegerValue.of((long) index + 1);
+		if (index < 1 || nOcc <= 1)
+			return IntegerValue.of((long) index);
 
 		return findOccurrence(string, pattern, index + 1, nOcc - 1);
 	}

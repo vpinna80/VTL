@@ -40,7 +40,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -50,7 +49,7 @@ public class NvlTransformationTest
 	public void test()
 	{
 		VarIDOperand left = new VarIDOperand("left");
-		ConstantOperand<Long, ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain>> right = new ConstantOperand<>(IntegerValue.of(MAX_VALUE));
+		ConstantOperand right = new ConstantOperand(IntegerValue.of(MAX_VALUE));
 		Map<String, DataSet> map = new HashMap<>();
 		map.put("left", SAMPLE5);
 		TransformationScheme session = TestUtils.mockSession(map);

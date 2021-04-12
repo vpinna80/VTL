@@ -79,7 +79,7 @@ public class ReplaceTransformation extends TransformationImpl
 	{
 		exprOperand = expr;
 		patternOperand = pattern;
-		replaceOperand = replace == null ? new ConstantOperand<>(StringValue.of("")) : replace;
+		replaceOperand = replace == null ? new ConstantOperand(StringValue.of("")) : replace;
 	}
 
 	@Override

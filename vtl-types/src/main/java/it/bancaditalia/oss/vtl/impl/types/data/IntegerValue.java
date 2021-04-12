@@ -29,7 +29,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 public class IntegerValue<S extends IntegerDomainSubset<S>> extends NumberValueImpl<IntegerValue<S>, Long, S, IntegerDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> NULLINSTANCE = NullValue.instance(INTEGERDS);
+	private static final ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> NULL_INSTANCE = NullValue.instance(INTEGERDS);
 
 	private IntegerValue(Long value, S domain)
 	{
@@ -38,7 +38,7 @@ public class IntegerValue<S extends IntegerDomainSubset<S>> extends NumberValueI
 	
 	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(Long value)
 	{
-		return value == null ? NULLINSTANCE : new IntegerValue<>(value, INTEGERDS);
+		return value == null ? NULL_INSTANCE : new IntegerValue<>(value, INTEGERDS);
 	}
 	
 	@Override

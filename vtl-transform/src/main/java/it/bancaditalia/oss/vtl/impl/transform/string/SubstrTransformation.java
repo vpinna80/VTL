@@ -82,8 +82,8 @@ public class SubstrTransformation extends TransformationImpl
 	public SubstrTransformation(Transformation expr, Transformation start, Transformation len)
 	{
 		exprOperand = expr;
-		startOperand = start == null ? new ConstantOperand<>(IntegerValue.of(1L)) : start;
-		lenOperand = len == null ? new ConstantOperand<>(NullValue.instance(INTEGERDS)) : len;
+		startOperand = start == null ? new ConstantOperand(IntegerValue.of(1L)) : start;
+		lenOperand = len == null ? new ConstantOperand(NullValue.instance(INTEGERDS)) : len;
 	}
 
 	@Override

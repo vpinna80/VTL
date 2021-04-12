@@ -64,8 +64,8 @@ public class BetweenTransformation extends UnaryTransformation
 		
 		if (fromT instanceof ConstantOperand && toT instanceof ConstantOperand)
 		{
-			this.from = ((ConstantOperand<?, ?>) fromT).eval(null);
-			this.to = ((ConstantOperand<?, ?>) toT).eval(null);
+			this.from = ((ConstantOperand) fromT).eval(null);
+			this.to = ((ConstantOperand) toT).eval(null);
 		}
 		else
 			throw new UnsupportedOperationException("Non-constant range parameters in between expression are not supported");

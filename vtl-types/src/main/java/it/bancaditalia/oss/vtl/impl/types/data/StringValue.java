@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
@@ -30,10 +32,11 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 public class StringValue<I extends StringValue<I, S>, S extends StringDomainSubset<S>> extends BaseScalarValue<I, String, S, StringDomain>
 {
 	private static final long serialVersionUID = 1L;
+	private static final ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> NULL_INSTANCE = NullValue.instance(STRINGDS);
 
-	public static StringValue<?, EntireStringDomainSubset> of(String value)
+	public static ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> of(String value)
 	{
-		return new StringValue<>(value.replaceAll("^\"(.*)\"$", "$1"), Domains.STRINGDS);
+		return value == null ? NULL_INSTANCE : new StringValue<>(value.replaceAll("^\"(.*)\"$", "$1"), Domains.STRINGDS);
 	}
 
 	public StringValue(String value, S domain)

@@ -37,7 +37,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class TestUtils
 {
-	public static TransformationScheme mockSession(Map<String, DataSet> map) 
+	public static TransformationScheme mockSession(Map<String, ? extends VTLValue> map) 
 	{
 		TransformationScheme session = mock(TransformationScheme.class);
 		
