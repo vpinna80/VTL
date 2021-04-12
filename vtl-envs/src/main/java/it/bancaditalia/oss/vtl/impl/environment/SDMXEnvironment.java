@@ -76,6 +76,7 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
@@ -115,8 +116,8 @@ public class SDMXEnvironment implements Environment, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
-	private static final DataStructureComponentImpl<Measure, EntireNumberDomainSubset, NumberDomain> OBS_VALUE_MEASURE = new DataStructureComponentImpl<>(OBS_LABEL, Measure.class, NUMBERDS);
-	private static final DataStructureComponent<?, ?, ?> TIME_PERIOD_IDENTIFIER = DataStructureComponentImpl.of(TIME_LABEL, Identifier.class, TIMEDS);
+	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> OBS_VALUE_MEASURE = new DataStructureComponentImpl<>(OBS_LABEL.toLowerCase(), Measure.class, NUMBERDS);
+	private static final DataStructureComponent<?, ?, ?> TIME_PERIOD_IDENTIFIER = DataStructureComponentImpl.of(TIME_LABEL.toLowerCase(), Identifier.class, TIMEDS);
 	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
 	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?, ?>>> FORMATTERS = new HashMap<>();
@@ -202,7 +203,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		return new LightFDataSet<>(metadata, t -> Utils.getStream(t) // for each series
 				.map(s -> s.stream() // build a dp
 						.map(o -> obsToCompValues(seriesMeta.get(s), o)
-							.map(keepingValue(k -> (DataStructureComponent<?, ?, ?>) metadata.getComponent(k).get()))
+							.map(keepingValue(k -> metadata.getComponent(k).orElseThrow(() -> new VTLMissingComponentsException(k, metadata))))
 							.map(keepingKey((k, v) -> (ScalarValue<?, ?, ?, ?>) k.getDomain().cast(v)))
 							.collect(DataPointBuilder.toDataPoint(metadata))))
 				.reduce(Stream::concat)
@@ -255,15 +256,16 @@ public class SDMXEnvironment implements Environment, Serializable
 
 	private static DataStructureComponent<?, ? extends StringDomainSubset<?>, StringDomain> elementToComponent(Class<? extends ComponentRole> role, SdmxMetaElement meta)
 	{
+		String normalizedName = meta.getId().matches("'.*'") ? meta.getId().replaceAll("'(.*)'", "$1") : meta.getId().toLowerCase();
+
 		Codelist codelist = meta.getCodeList();
 		if (codelist == null)
-			return new DataStructureComponentImpl<>(meta.getId(), role, STRINGDS);
+			return new DataStructureComponentImpl<>(normalizedName, role, STRINGDS);
 		
 		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
 		StringEnumeratedDomainSubset domain = repository.defineDomain(codelist.getId(), StringEnumeratedDomainSubset.class, codelist.keySet());
 		Objects.requireNonNull(domain, "domain null for " + codelist.getId() + " - " + meta);
 		
-		String normalizedName = meta.getId().matches("'.*'") ? meta.getId().replaceAll("'(.*)'", "$1") : meta.getId().toLowerCase();
 		return new DataStructureComponentImpl<>(normalizedName, role, domain);
 	}
 
