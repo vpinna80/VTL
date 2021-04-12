@@ -142,10 +142,11 @@ public class ReplaceTransformation extends TransformationImpl
 			DataSetMetadata metadata = (DataSetMetadata) source;
 			
 			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
-			measures.stream().forEach(c -> {
-				if (!STRINGDS.isAssignableFrom(c.getDomain()))
-					throw new VTLIncompatibleTypesException("replace", c, STRINGDS);
-			});
+			measures.stream()
+				// do not use isAssignableFrom to avoid casting other domains
+				.filter(c -> !(c.getDomain() instanceof StringDomain))
+				.findAny()
+				.ifPresent(c -> { throw new VTLIncompatibleTypesException("replace", c, STRINGDS); });
 			
 			return metadata;
 		}
