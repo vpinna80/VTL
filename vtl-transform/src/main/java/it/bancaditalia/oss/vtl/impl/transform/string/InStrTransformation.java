@@ -103,6 +103,7 @@ public class InStrTransformation extends TransformationImpl
 		
 		int startPos = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
 		int nOcc = occurrence instanceof NullValue ? 1 : (int) (long) (Long) occurrence.get();
+		String pattern = right instanceof NullValue ? null : STRINGDS.cast(right).get().toString();
 		
 		if (startPos < 1)
 			throw new VTLSyntaxException("instr: start parameter must be positive but it was " + (startPos));
@@ -116,21 +117,21 @@ public class InStrTransformation extends TransformationImpl
 					.addComponent(INT_MEASURE)
 					.build();
 			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
-			String pattern = right instanceof NullValue ? null : STRINGDS.cast(right).get().toString();
 			
 			return dataset.mapKeepingKeys(structure, dp -> singletonMap(INT_MEASURE, 
-					(ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain>) (pattern == null 
-						? NullValue.instance(INTEGERDS)
-						: findOccurrence(STRINGDS.cast(dp.get(measure)).get().toString(), pattern, startPos, nOcc)))); 
+					instrScalar(dp.get(measure), pattern, startPos, nOcc))); 
 		}
 		else
-		{
-			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) left;
-			if (left instanceof NullValue || right instanceof NullValue)
-				return NullValue.instance(INTEGERDS);
-			
-			return findOccurrence(STRINGDS.cast(scalar).toString(), right.toString(), startPos, nOcc);
-		}
+			return instrScalar((ScalarValue<?, ?, ?, ?>) left, pattern, startPos, nOcc);
+	}
+
+	private ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> instrScalar(ScalarValue<?, ?, ?, ?> scalar,
+			String pattern, int startPos, int nOcc)
+	{
+		if (pattern == null)
+			return NullValue.instance(INTEGERDS);
+		else
+			return findOccurrence(STRINGDS.cast(scalar).get().toString(), pattern, startPos, nOcc);
 	}
 	
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> findOccurrence(String string, String pattern, int startPos, int nOcc)
@@ -149,22 +150,25 @@ public class InStrTransformation extends TransformationImpl
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session),
 				start = startOperand.getMetadata(session), occurrence = occurrenceOperand.getMetadata(session);
 		
-		if (!(right instanceof ScalarValueMetadata))
-			throw new VTLInvalidParameterException(right, ScalarValueMetadata.class);
 		if (!(start instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(start, ScalarValueMetadata.class);
 		if (!(occurrence instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(occurrence, ScalarValueMetadata.class);
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) right).getDomain());
 		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: start parameter", INTEGER, ((ScalarValueMetadata<?, ?>) start).getDomain());
+			throw new VTLIncompatibleTypesException("instr: start parameter", INTEGER, ((ScalarValueMetadata<?, ?>) start).getDomain());
 		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) occurrence).getDomain()))
-			throw new VTLIncompatibleTypesException("concat: occurrence parameter", INTEGER, ((ScalarValueMetadata<?, ?>) occurrence).getDomain());
+			throw new VTLIncompatibleTypesException("instr: occurrence parameter", INTEGER, ((ScalarValueMetadata<?, ?>) occurrence).getDomain());
 		
 		if (left instanceof ScalarValueMetadata)
 		{
 			ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) left; 
+
+			// pattern must be a scalar too
+			if (!(right instanceof ScalarValueMetadata))
+				throw new VTLInvalidParameterException(right, ScalarValueMetadata.class);
+			else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
+				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) right).getDomain());
+
 			if (!(STRING.isAssignableFrom(leftV.getDomain())))
 				throw new VTLIncompatibleTypesException("instr", STRING, leftV.getDomain());
 			else
@@ -173,11 +177,17 @@ public class InStrTransformation extends TransformationImpl
 		else 
 		{
 			DataSetMetadata metadata = (DataSetMetadata) left;
-			ScalarValueMetadata<?, ?> value = (ScalarValueMetadata<?, ?>) right;
 			
-			if (!STRING.isAssignableFrom(value.getDomain()))
-				throw new VTLIncompatibleTypesException("instr", STRING, value.getDomain());
-			
+			if (right instanceof DataSetMetadata)
+			{
+				DataSetMetadata patternMetadata = (DataSetMetadata) right;
+				final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> patternMeasures = patternMetadata.getComponents(Measure.class);
+				if (patternMeasures.size() != 1)
+					throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, patternMeasures);
+			}
+			else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
+				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) right).getDomain());
+
 			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
 			if (measures.size() != 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
