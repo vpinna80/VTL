@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.sdmx.util.Utils.Function;
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -39,10 +40,14 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 public class CSVPathEnvironment extends CSVFileEnvironment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVPathEnvironment.class);
-
 	public static final VTLProperty VTL_CSV_ENVIRONMENT_SEARCH_PATH = 
 			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("PATH"), true, false, System.getenv("PATH"));
 
+	static
+	{
+		ConfigurationManagerFactory.registerSupportedProperties(CSVPathEnvironment.class, VTL_CSV_ENVIRONMENT_SEARCH_PATH);
+	}
+	
 	private List<String> paths;
 	
 	public CSVPathEnvironment()
