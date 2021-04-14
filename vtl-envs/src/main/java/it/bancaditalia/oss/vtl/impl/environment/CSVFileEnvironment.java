@@ -125,7 +125,7 @@ public class CSVFileEnvironment implements Environment
 	}
 	
 	@SuppressWarnings("resource")
-	private Stream<DataPoint> streamFileName(String fileName)
+	protected Stream<DataPoint> streamFileName(String fileName)
 	{
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8)))
 		{
@@ -282,7 +282,7 @@ public class CSVFileEnvironment implements Environment
 		}
 	}
 
-	private Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> extractMetadata(String headers[]) throws IOException
+	protected Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> extractMetadata(String headers[]) throws IOException
 	{
 		List<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>();
 		Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();

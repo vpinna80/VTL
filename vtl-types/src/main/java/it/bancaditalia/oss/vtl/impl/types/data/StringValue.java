@@ -23,7 +23,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
 import java.util.function.UnaryOperator;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -36,7 +35,7 @@ public class StringValue<I extends StringValue<I, S>, S extends StringDomainSubs
 
 	public static ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> of(String value)
 	{
-		return value == null ? NULL_INSTANCE : new StringValue<>(value.replaceAll("^\"(.*)\"$", "$1"), Domains.STRINGDS);
+		return value == null ? NULL_INSTANCE : new StringValue<>(value.replaceAll("^\"(.*)\"$", "$1"), STRINGDS);
 	}
 
 	public StringValue(String value, S domain)
@@ -47,13 +46,13 @@ public class StringValue<I extends StringValue<I, S>, S extends StringDomainSubs
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
-		return get().compareTo((String) Domains.STRINGDS.cast(o).get());
+		return get().compareTo(STRINGDS.cast(o).get().toString());
 	}
 	
 	@Override
 	public String toString()
 	{
-		return '"' + super.toString() + '"';
+		return '"' + get() + '"';
 	}
 	
 	public StringValue<I, S> map(UnaryOperator<String> mapper)
