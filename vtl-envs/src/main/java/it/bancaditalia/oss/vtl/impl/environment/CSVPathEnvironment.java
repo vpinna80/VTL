@@ -59,10 +59,10 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 	public boolean contains(String name)
 	{
 		if (name.startsWith("csv:"))
-		{
-			String fileName = name.substring(4);
-			return searchPaths(fileName).isPresent();
-		}
+			if (name.contains("\\") || name.contains("/"))
+				return super.contains(name);
+			else
+				return searchPaths(name.substring(4)).isPresent();
 		else
 			return false;
 	}
@@ -88,7 +88,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 				.map(path -> "csv:" + path)
 				.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; })
 				.map(string -> mapper.apply(string))
-				.orElse(Optional.<T>empty());
+				.orElse(Optional.empty());
 	}
 	
 	@Override
