@@ -117,25 +117,6 @@ repositoryImplementations <- list(`In-Memory repository` = 'it.bancaditalia.oss.
                                   `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.domains.CSVMetadataRepository',
                                   `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.domains.SDMXMetadataRepository')
 
-environments <- list(
-  `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
-  `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
-  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
-  `In-Memory environment` = "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"
-)
-
-currentEnvironments <- function() {
-  sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
-}
-
-activeEnvs <- function(active) {
-  items <- names(environments[xor(!active, environments %in% currentEnvironments())])
-  if (length(items) > 0)
-    items
-  else
-    NULL
-}
-
 ui <- shinydashboard::dashboardPage(
   
   shinydashboard::dashboardHeader(disable = T),
@@ -240,12 +221,6 @@ ui <- shinydashboard::dashboardPage(
                             uiOutput(outputId = "repoProperties"),
                             actionButton(inputId = 'setRepo', label = 'Change repository')
                           ),
-                          shinydashboard::box(title = 'VTL Environments', status = 'primary', solidHeader = T, collapsible = T,
-                            sortable::bucket_list(header = NULL, 
-                              sortable::add_rank_list(text = tags$label("Available"), labels = activeEnvs(F)),
-                              sortable::add_rank_list(input_id = "envs", text = tags$label("Active"), labels = activeEnvs(T)),
-                              orientation = 'horizontal')
-                          ),
                           shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T, collapsible = T,
                                               textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
                                               textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
@@ -255,6 +230,20 @@ ui <- shinydashboard::dashboardPage(
                           ),
                           shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
                             verbatimTextOutput(outputId = "conf_output", placeholder = T)
+                          )
+                 ),
+                 tabPanel("Environment Settings",
+                          shinydashboard::box(title = 'VTL Environments', status = 'primary', solidHeader = T, collapsible = T,
+                                              uiOutput(outputId = "sortableEnvs")
+                          ),
+                          shinydashboard::box(title = 'Environment Properties', status = 'primary', solidHeader = T, collapsible = T,
+                                              uiOutput(outputId = "envList"),
+                                              uiOutput(outputId = "propertyList"),
+                                              uiOutput(outputId = "propertyValueInput"),
+                                              actionButton(inputId = 'setProperty', label = 'Change property')
+                          ),
+                          shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
+                                              verbatimTextOutput(outputId = "env_conf_output", placeholder = T)
                           )
                  )
                )                 

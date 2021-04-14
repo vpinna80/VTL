@@ -25,11 +25,23 @@ vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
 
 environments <- list(
   `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
+  `CSV Path environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
   `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
   `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
   `In-Memory environment` = "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"
 )
 
+currentEnvironments <- function() {
+  sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
+}
+
+activeEnvs <- function(active) {
+  items <- names(environments[xor(!active, environments %in% currentEnvironments())])
+  if (length(items) > 0)
+    items
+  else
+    NULL
+}
 shinyServer(function(input, output, session) {
   
   ######
@@ -61,7 +73,8 @@ shinyServer(function(input, output, session) {
         paste0(isolate(input$sessionID), ".vtl")
       }, content = function (file) {
         writeLines(currentSession()$text, file)
-      })
+      }
+  )
 
   # Repository Properties box
   output$repoProperties <- renderUI({
@@ -74,7 +87,41 @@ shinyServer(function(input, output, session) {
       })
     )
   })
-
+  
+  # Sortable environments
+  output$sortableEnvs <- renderUI({
+    sortable::bucket_list(header = NULL, 
+    sortable::add_rank_list(text = tags$label("Available"), labels = activeEnvs(F)),
+    sortable::add_rank_list(input_id = "envs", text = tags$label("Active"), labels = activeEnvs(T)),
+    orientation = 'horizontal')
+  })
+  
+  # Environment list
+  output$envList <- renderUI({
+    selectInput(inputId = 'selectEnv', label = 'Select Environment', multiple = F, 
+                choices = unlist(environments))
+  })
+  
+  # Property list
+  output$propertyList <- renderUI({
+    req(input$selectEnv)
+    supportedProperties <- as.list(configManager$getSupportedProperties(J(input$selectEnv)@jobj))
+    props = sapply(supportedProperties, function (x) x$getName())
+    names(props) = sapply(supportedProperties, function (x) x$getDescription())
+    selectInput(inputId = 'selectProp', label = 'Select Property', multiple = F, 
+                choices = props)
+  })
+  
+  # Property value
+  output$propertyValueInput <- renderUI({
+    req(input$selectProp)
+    selectedEnv = J(input$selectEnv)@jobj
+    prop = configManager$findSupportedProperty(selectedEnv, input$selectProp)$get()
+    print(prop)
+    print(prop$getValue())
+    textInput(inputId = 'propertyValue', label = 'Value:', value = prop$getValue())
+  })
+  
   # Select dataset to browse
   output$dsNames<- renderUI({
     selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, 
@@ -325,6 +372,7 @@ shinyServer(function(input, output, session) {
     req(input$proxyHost)
     req(input$proxyPort)
     output$conf_output <- renderPrint({
+      print(paste('Setting proxy', input$proxyHost, ':', input$proxyPort))
       J('it.bancaditalia.oss.sdmx.util.Configuration')$setDefaultProxy(input$proxyHost, input$proxyPort, input$proxyUser, input$proxyPassword)
       J("java.lang.System")$setProperty("http.proxyHost", input$proxyHost)
       J("java.lang.System")$setProperty("https.proxyHost", input$proxyHost)
@@ -343,6 +391,17 @@ shinyServer(function(input, output, session) {
         property$setValue(input[[property$getName()]])
     })
     vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
+  })
+  
+  # configure environment property
+  observeEvent(input$setProperty, {
+    output$env_conf_output <- renderPrint({
+      print(paste('Setting property', input$selectProp))
+      selectedEnv = J(input$selectEnv)@jobj
+      prop = configManager$findSupportedProperty(selectedEnv, input$selectProp)$get()
+      prop$setValue(input$propertyValue)
+      print('OK.')
+    })
   })
   
   observeEvent(input$editorText, {

@@ -41,7 +41,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVPathEnvironment.class);
 	public static final VTLProperty VTL_CSV_ENVIRONMENT_SEARCH_PATH = 
-			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("PATH"), true, false, System.getenv("PATH"));
+			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), true, false, System.getenv("VTL_PATH"));
 
 	static
 	{
