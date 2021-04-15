@@ -106,20 +106,27 @@ shinyServer(function(input, output, session) {
   output$propertyList <- renderUI({
     req(input$selectEnv)
     supportedProperties <- as.list(configManager$getSupportedProperties(J(input$selectEnv)@jobj))
-    props = sapply(supportedProperties, function (x) x$getName())
-    names(props) = sapply(supportedProperties, function (x) x$getDescription())
-    selectInput(inputId = 'selectProp', label = 'Select Property', multiple = F, 
-                choices = props)
+    if(length(supportedProperties) > 0){
+      props = sapply(supportedProperties, function (x) x$getName())
+      names(props) = sapply(supportedProperties, function (x) x$getDescription())
+      selectInput(inputId = 'selectProp', label = 'Select Property', multiple = F, 
+                  choices = props)
+    }
+    else{
+      selectInput(inputId = 'selectProp', label = 'Select Property', multiple = F, 
+                  choices = list())
+    }
   })
   
   # Property value
   output$propertyValueInput <- renderUI({
     req(input$selectProp)
     selectedEnv = J(input$selectEnv)@jobj
-    prop = configManager$findSupportedProperty(selectedEnv, input$selectProp)$get()
-    print(prop)
-    print(prop$getValue())
-    textInput(inputId = 'propertyValue', label = 'Value:', value = prop$getValue())
+    prop = configManager$findSupportedProperty(selectedEnv, input$selectProp)
+    if(prop$isPresent()){
+      prop = prop$get()
+      textInput(inputId = 'propertyValue', label = 'Value:', value = req(prop$getValue()))
+    }
   })
   
   # Select dataset to browse
@@ -205,6 +212,12 @@ shinyServer(function(input, output, session) {
       }))
     }
     shinyjs::toggleState("setRepo", canChange)
+  })
+  
+  # Disable changing environment props if fields are no ready
+  observe({
+    canChange <- isTruthy(input$selectEnv) & isTruthy(input$selectProp) & isTruthy(input$propertyValue)
+    shinyjs::toggleState("setProperty", canChange)
   })
   
   # Disable navigator and graph if the session was not compiled
@@ -398,9 +411,12 @@ shinyServer(function(input, output, session) {
     output$env_conf_output <- renderPrint({
       print(paste('Setting property', input$selectProp))
       selectedEnv = J(input$selectEnv)@jobj
-      prop = configManager$findSupportedProperty(selectedEnv, input$selectProp)$get()
-      prop$setValue(input$propertyValue)
-      print('OK.')
+      prop = configManager$findSupportedProperty(selectedEnv, req(input$selectProp))
+      if(prop$isPresent()){
+        prop = prop$get()
+        prop$setValue(input$propertyValue)
+        print('OK.')
+      }
     })
   })
   
