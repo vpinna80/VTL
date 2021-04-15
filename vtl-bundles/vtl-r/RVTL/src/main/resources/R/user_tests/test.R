@@ -23,11 +23,12 @@ library(testthat)
 
 runTest=function(test_name){
   vtlCode = readChar(x, file.info(x)$size)
-  vtlAddStatements(sessionID = test_name, statements = vtlCode)
-  vtlCompile(sessionID = test_name)
+  expect_true(object = vtlAddStatements(sessionID = test_name, statements = vtlCode), label = paste(test_name, 'syntax'))
+  expect_true(object = vtlCompile(sessionID = test_name), label = paste(test_name, 'compilation'))
   return(vtlEvalNodes(sessionID = test_name, nodes = 'test_result')[[1]])
 }
 
+# test all vtl scripts
 for(x in dir(path = 'vtl_scripts', pattern = '*.vtl', full.names = T)){
   print(paste0('Run test:', x))
   test_that(x,
@@ -39,3 +40,19 @@ for(x in dir(path = 'vtl_scripts', pattern = '*.vtl', full.names = T)){
   })
 }
 
+# run scalar tests row by row
+scalar_src = file('vtl_scripts_scalars/tests.txt', "r")
+tests = readLines(scalar_src)
+close(scalar_src)
+n=0
+for(x in tests){
+  n=n+1
+  session = paste('scalar', n)
+  test_that(session,
+  {
+    expect_true(object = vtlAddStatements(sessionID = session, statements = x), label = paste(session, 'syntax'))
+    expect_true(object = vtlCompile(sessionID = session), label = paste(session, 'compilation'))
+    result = vtlEvalNodes(sessionID = session, nodes = 'test_result')[[1]]
+    expect_true(object = result$Scalar, label = session)
+  })
+}

@@ -1,0 +1,4 @@
+test_result := "Hello, world!" = "Hello" || ", world!";
+a:= "Hello";b:= ", world!";test_result:= "Hello, world!" = a||b;
+b:= ", world!";test_result:= ", world!, world!" = b||b;
+a:= "Hello";test_result:= "Hello, kitten!" = a||", kitten!";
