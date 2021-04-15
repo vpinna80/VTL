@@ -1,0 +1,5 @@
+/* Load dataset 1 from csv*/
+ds1:= 'csv:trim_test.csv';
+result:= ds1[ calc Text_3:= Text_1||Text_2];
+ref_output := 'csv:string_concatenation_2.csv';
+test_result := result#Text_3 = ref_output#Text_3;

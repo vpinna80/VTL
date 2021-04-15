@@ -1,0 +1,7 @@
+/* Load dataset 2 from csv*/
+ds2:= 'csv:concat_test1.csv';
+/* Load dataset 3 from csv*/
+ds3:= 'csv:concat_test2.csv';
+result:= ds2||" - " ||ds3;
+ref_output := 'csv:string_concatenation_3.csv';
+test_result := result#text_1 = ref_output#text_1;
