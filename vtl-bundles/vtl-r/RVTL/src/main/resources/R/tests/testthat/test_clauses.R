@@ -81,50 +81,51 @@ test_that('R dataset clauses work', {
 ###
 test_that('SDMX dataset clauses work', {
   result = getTimeSeriesTable('ECB', 'EXR.A.USD+GBP.EUR.SP00.A')
-  result = within(result, rm(action, validFromDate, CONNECTORS_AUTONAME, ID))
-  result$PUBL_PUBLIC = rep(NA, nrow(result))
-  result$COVERAGE = rep(NA, nrow(result))
-  result$SOURCE_PUB = rep(NA, nrow(result))
-  result$NAT_TITLE = rep(NA, nrow(result))
-  result$BREAKS = rep(NA, nrow(result))
-  result$COMPILING_ORG = rep(NA, nrow(result))
-  result$OBS_PRE_BREAK = rep(NA, nrow(result))
-  result$PUBL_MU = rep(NA, nrow(result))
-  result$DOM_SER_IDS = rep(NA, nrow(result))
-  result$COMPILATION = rep(NA, nrow(result))
-  result$OBS_COM = rep(NA, nrow(result))
-  result$OBS_CONF = rep(NA, nrow(result))
-  result$UNIT_INDEX_BASE = rep(NA, nrow(result))
-  result$DISS_ORG = rep(NA, nrow(result))
-  result$PUBL_ECB = rep(NA, nrow(result))
-  attr(result, 'identifiers') = c('TIME_PERIOD')
-  attr(result, 'measures') = c('OBS_VALUE')
-  result1 = result[result$TIME_PERIOD=='2000', ]
-  result2 = result[result$CURRENCY=='USD',] 
-  result2 = within(result2, rm(CURRENCY))
-  result3 = result[result$OBS_VALUE==0.923612549019608,]
-  result4 = result[result$UNIT=='USD',] 
+  names(result) = tolower(names(result))
+  result = within(result, rm(action, validfromdate, connectors_autoname, id))
+  result$publ_public = rep(NA, nrow(result))
+  result$coverage = rep(NA, nrow(result))
+  result$source_pub = rep(NA, nrow(result))
+  result$nat_title = rep(NA, nrow(result))
+  result$breaks = rep(NA, nrow(result))
+  result$compiling_org = rep(NA, nrow(result))
+  result$obs_pre_break = rep(NA, nrow(result))
+  result$publ_mu = rep(NA, nrow(result))
+  result$dom_ser_ids = rep(NA, nrow(result))
+  result$compilation = rep(NA, nrow(result))
+  result$obs_com = rep(NA, nrow(result))
+  result$obs_conf = rep(NA, nrow(result))
+  result$unit_index_base = rep(NA, nrow(result))
+  result$diss_org = rep(NA, nrow(result))
+  result$publ_ecb = rep(NA, nrow(result))
+  attr(result, 'identifiers') = c('time_period')
+  attr(result, 'measures') = c('obs_value')
+  result1 = result[result$currency=='USD', ]
+  result2 = result[result$currency=='USD',] 
+  result2 = within(result2, rm(currency))
+  result3 = result[result$obs_value==0.923612549019608,]
+  result4 = result[result$obs_status=='A',] 
   result5 = result
-  result5$OBS_VALUE2 = result5$OBS_VALUE*2
-  result6 = aggregate(result$OBS_VALUE, by = list(result$CURRENCY), FUN = 'sum')
-  names(result6) = c('CURRENCY', 'OBS_AGG')
-  result7 = within(result, rm(OBS_VALUE))
-  result8 = within(result, rm(UNIT))
-  result9 = result[, c('CURRENCY', 'OBS_VALUE', 'TIME_PERIOD')]
-  result10 = result[, c('CURRENCY', 'UNIT', 'TIME_PERIOD')]
+  result5$obs_value2 = result5$obs_value*2
+  result6 = aggregate(result$obs_value, by = list(result$currency), FUN = 'sum')
+  names(result6) = c('currency', 'obs_agg')
+  result7 = within(result, rm(obs_value))
+  result8 = within(result, rm(obs_status))
+  result9 = result[, c('currency', 'obs_value', 'time_period')]
+  result10 = result[, c('currency', 'obs_status', 'time_period')]
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = 'tmp := \'ECB:EXR/A.USD+GBP.EUR.SP00.A\';
-                                                      result1 :=tmp[filter cast(TIME_PERIOD, string, "YYYY") = "2000"];
-                                                      result2 := tmp[sub CURRENCY = "USD"];
-                                                      result3 := tmp[filter OBS_VALUE = 0.923612549019608];
-                                                      result4 := tmp[filter UNIT = "USD"];
-                                                      result5 := tmp[calc OBS_VALUE2 := OBS_VALUE * 2];
-                                                      result6 := tmp[aggr OBS_AGG := sum(OBS_VALUE) group by CURRENCY];
-                                                      result7 := tmp[drop OBS_VALUE];
-                                                      result8 := tmp[drop UNIT];
-                                                      result9 := tmp[keep OBS_VALUE];
-                                                      result10 := tmp[keep UNIT];' ,  
+                                                      result1 :=tmp[filter currency = "USD"];
+                                                      result2 := tmp[sub currency = "USD"];
+                                                      result3 := tmp[filter obs_value = 0.923612549019608];
+                                                      result4 := tmp[filter obs_status = "A"];
+                                                      result5 := tmp[calc obs_value2 := obs_value * 2];
+                                                      result6 := tmp[aggr obs_agg := sum(obs_value) group by currency];
+                                                      result7 := tmp[drop obs_value];
+                                                      result8 := tmp[drop obs_status];
+                                                      result9 := tmp[keep obs_value];
+                                                      result10 := tmp[keep obs_status];' ,  
                                         restartSession = T), label = 'clauses syntax ')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Compile clauses  ')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result1')$result1, target = result1), label = 'Filter  value correct')
@@ -148,24 +149,24 @@ test_that('SDMX dataset clauses work', {
 
 test_that('CSV dataset clauses works', {
   result = read.csv(paste0(find.package(package = 'RVTL'), '/vtlStudio2/test_data/ecbexrusd_plain.csv'), stringsAsFactors = F, colClasses='character')
-  result$OBS_VALUE = as.numeric(result$OBS_VALUE)
-  attr(result, 'identifiers') = c("CURRENCY", "CURRENCY_DENOM", "EXR_SUFFIX",
-                                  "EXR_TYPE", "FREQ", "TIME_PERIOD" )
-  attr(result, 'measures') = c('OBS_VALUE')
-  result1 = result[result$TIME_PERIOD=='2000',]
-  result2 = result[result$TIME_PERIOD=='2000',]
-  result2 = within(result2, rm(TIME_PERIOD))
-  result3 = result[result$OBS_VALUE==0.923612549019608 & !is.na(result$OBS_VALUE),]
-  result4 = result[result$UNIT=='USD',]
+  result$obs_value = as.numeric(result$obs_value)
+  attr(result, 'identifiers') = c("currency", "currency_denom", "exr_suffix",
+                                  "exr_type", "freq", "time_period" )
+  attr(result, 'measures') = c('obs_value')
+  result1 = result[result$time_period=='2000',]
+  result2 = result[result$time_period=='2000',]
+  result2 = within(result2, rm(time_period))
+  result3 = result[result$obs_value==0.923612549019608 & !is.na(result$obs_value),]
+  result4 = result[result$unit=='USD',]
   result5 = result
-  result5$OBS_VALUE2 = result5$OBS_VALUE*2
-  result6 = data.frame('CURRENCY'=logical(0), 'OBS_AGG'=logical(0))
-  result6_2 = aggregate(result[result$TIME_PERIOD != '2017','OBS_VALUE'], by = list(result[result$TIME_PERIOD != '2017','CURRENCY']), FUN = 'sum')
-  names(result6_2) = c('CURRENCY', 'OBS_AGG')
-  result7 = within(result, rm(OBS_VALUE))
-  result8 = within(result, rm(UNIT))
-  result9 = result[, c('CURRENCY', 'CURRENCY_DENOM', 'EXR_SUFFIX', 'FREQ', 'OBS_VALUE', 'TIME_PERIOD', 'EXR_TYPE')]
-  result10 = result[, c('CURRENCY', 'CURRENCY_DENOM', 'EXR_SUFFIX', 'UNIT', 'FREQ', 'TIME_PERIOD', 'EXR_TYPE')]
+  result5$obs_value2 = result5$obs_value*2
+  result6 = data.frame('currency'=logical(0), 'obs_agg'=logical(0))
+  result6_2 = aggregate(result[result$time_period != '2017','obs_value'], by = list(result[result$time_period != '2017','currency']), FUN = 'sum')
+  names(result6_2) = c('currency', 'obs_agg')
+  result7 = within(result, rm(obs_value))
+  result8 = within(result, rm(obs_status))
+  result9 = result[, c('currency', 'currency_denom', 'exr_suffix', 'freq', 'obs_value', 'time_period', 'exr_type')]
+  result10 = result[, c('currency', 'currency_denom', 'exr_suffix', 'obs_status', 'freq', 'time_period', 'exr_type')]
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = paste0("tmp := 'csv:", 
@@ -173,15 +174,15 @@ test_that('CSV dataset clauses works', {
                                                             "/vtlStudio2/test_data/ecbexrusd_vtl.csv" , "';                                                                        
                                                             result1:= tmp[filter TIME_PERIOD = \"2000\"];
                                                             result2:= tmp[sub TIME_PERIOD = \"2000\"];
-                                                            result3:= tmp[filter OBS_VALUE = 0.923612549019608];
+                                                            result3:= tmp[filter obs_value = 0.923612549019608];
                                                             result4:= tmp[filter UNIT = \"USD\"];
-                                                            result5:= tmp[calc OBS_VALUE2 := OBS_VALUE * 2];
-                                                            result6 := tmp[aggr OBS_AGG := sum(OBS_VALUE) group by CURRENCY];
-                                                            result6_2 := tmp[filter TIME_PERIOD <> \"2017\"][aggr OBS_AGG := sum(OBS_VALUE) group by CURRENCY];
-                                                            result7 := tmp[drop OBS_VALUE];
-                                                            result8 := tmp[drop UNIT];
-                                                            result9 := tmp[keep OBS_VALUE];
-                                                            result10 := tmp[keep UNIT];"), 
+                                                            result5:= tmp[calc obs_value2 := obs_value * 2];
+                                                            result6 := tmp[aggr obs_agg := sum(obs_value) group by currency];
+                                                            result6_2 := tmp[filter TIME_PERIOD <> \"2017\"][aggr obs_agg := sum(obs_value) group by currency];
+                                                            result7 := tmp[drop obs_value];
+                                                            result8 := tmp[drop obs_status];
+                                                            result9 := tmp[keep obs_value];
+                                                            result10 := tmp[keep obs_status];"), 
                                         restartSession = T), label = 'clauses syntax ')
   expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'clauses  compile ')
   expect_true(object = dplyr::all_equal(current = vtlEvalNodes(sessionID = 'test_session', 'result1')$result1, target = result1), label = 'filter dimension value correct')

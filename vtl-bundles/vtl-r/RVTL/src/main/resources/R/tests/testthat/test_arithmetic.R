@@ -172,24 +172,25 @@ test_that('dataset multiplication works', {
 
 test_that('SDMX dataset assignment works', {
   result = getTimeSeriesTable('ECB', 'EXR.A.USD.EUR.SP00.A')
-  result = within(result, rm(action, validFromDate, CONNECTORS_AUTONAME, ID))
-  result$PUBL_PUBLIC = rep(NA, nrow(result))
-  result$COVERAGE = rep(NA, nrow(result))
-  result$SOURCE_PUB = rep(NA, nrow(result))
-  result$NAT_TITLE = rep(NA, nrow(result))
-  result$BREAKS = rep(NA, nrow(result))
-  result$COMPILING_ORG = rep(NA, nrow(result))
-  result$OBS_PRE_BREAK = rep(NA, nrow(result))
-  result$PUBL_MU = rep(NA, nrow(result))
-  result$DOM_SER_IDS = rep(NA, nrow(result))
-  result$COMPILATION = rep(NA, nrow(result))
-  result$OBS_COM = rep(NA, nrow(result))
-  result$OBS_CONF = rep(NA, nrow(result))
-  result$UNIT_INDEX_BASE = rep(NA, nrow(result))
-  result$DISS_ORG = rep(NA, nrow(result))
-  result$PUBL_ECB = rep(NA, nrow(result))
-  attr(result, 'identifiers') = c('TIME_PERIOD')
-  attr(result, 'measures') = c('OBS_VALUE')
+  names(result) = tolower(names(result))
+  result = within(result, rm(action, validfromdate, connectors_autoname, id))
+  result$publ_public = rep(NA, nrow(result))
+  result$coverage = rep(NA, nrow(result))
+  result$source_pub = rep(NA, nrow(result))
+  result$nat_title = rep(NA, nrow(result))
+  result$breaks = rep(NA, nrow(result))
+  result$compiling_org = rep(NA, nrow(result))
+  result$obs_pre_break = rep(NA, nrow(result))
+  result$publ_mu = rep(NA, nrow(result))
+  result$dom_ser_ids = rep(NA, nrow(result))
+  result$compilation = rep(NA, nrow(result))
+  result$obs_com = rep(NA, nrow(result))
+  result$obs_conf = rep(NA, nrow(result))
+  result$unit_index_base = rep(NA, nrow(result))
+  result$diss_org = rep(NA, nrow(result))
+  result$publ_ecb = rep(NA, nrow(result))
+  attr(result, 'identifiers') = c('time_period')
+  attr(result, 'measures') = c('obs_value')
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = "tmp := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
@@ -202,13 +203,14 @@ test_that('SDMX dataset assignment works', {
 
 test_that('SDMX dataset addition works', {
   result = getTimeSeriesTable('ECB', 'EXR.A.USD.EUR.SP00.A')
-  result = within(result, rm(action, validFromDate, CONNECTORS_AUTONAME, ID, EXR_TYPE, 
-                               COLLECTION, SOURCE_AGENCY, UNIT_MULT, TITLE_COMPL, FREQ, 
-                               OBS_STATUS, CURRENCY_DENOM, EXR_SUFFIX, UNIT, DECIMALS, 
-                               TIME_FORMAT, TITLE, CURRENCY))
-  attr(result, 'identifiers') = c('TIME_PERIOD')
-  attr(result, 'measures') = c('OBS_VALUE')
-  result$OBS_VALUE = result$OBS_VALUE + result$OBS_VALUE
+  names(result) = tolower(names(result))
+  result = within(result, rm(action, validfromdate, connectors_autoname, id, exr_type, 
+                               collection, source_agency, unit_mult, title_compl, freq, 
+                               obs_status, currency_denom, exr_suffix, unit, decimals, 
+                               time_format, title, currency))
+  attr(result, 'identifiers') = c('time_period')
+  attr(result, 'measures') = c('obs_value')
+  result$obs_value = result$obs_value + result$obs_value
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
@@ -222,13 +224,14 @@ test_that('SDMX dataset addition works', {
 
 test_that('SDMX dataset subtraction works', {
   result = getTimeSeriesTable('ECB', 'EXR.A.USD.EUR.SP00.A')
-  result = within(result, rm(action, validFromDate, CONNECTORS_AUTONAME, ID, EXR_TYPE, 
-                               COLLECTION, SOURCE_AGENCY, UNIT_MULT, TITLE_COMPL, FREQ, 
-                               OBS_STATUS, CURRENCY_DENOM, EXR_SUFFIX, UNIT, DECIMALS, 
-                               TIME_FORMAT, TITLE, CURRENCY))
-  attr(result, 'identifiers') = c('TIME_PERIOD')
-  attr(result, 'measures') = c('OBS_VALUE')
-  result$OBS_VALUE = result$OBS_VALUE - result$OBS_VALUE
+  names(result) = tolower(names(result))
+  result = within(result, rm(action, validfromdate, connectors_autoname, id, exr_type, 
+                               collection, source_agency, unit_mult, title_compl, freq, 
+                               obs_status, currency_denom, exr_suffix, unit, decimals, 
+                               time_format, title, currency))
+  attr(result, 'identifiers') = c('time_period')
+  attr(result, 'measures') = c('obs_value')
+  result$obs_value = result$obs_value - result$obs_value
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
@@ -241,13 +244,14 @@ test_that('SDMX dataset subtraction works', {
 
 test_that('SDMX dataset division works', {
   result = getTimeSeriesTable('ECB', 'EXR.A.USD.EUR.SP00.A')
-  result = within(result, rm(action, validFromDate, CONNECTORS_AUTONAME, ID, EXR_TYPE, 
-                               COLLECTION, SOURCE_AGENCY, UNIT_MULT, TITLE_COMPL, FREQ, 
-                               OBS_STATUS, CURRENCY_DENOM, EXR_SUFFIX, UNIT, DECIMALS, 
-                               TIME_FORMAT, TITLE, CURRENCY))
-  attr(result, 'identifiers') = c('TIME_PERIOD')
-  attr(result, 'measures') = c('OBS_VALUE')
-  result$OBS_VALUE = result$OBS_VALUE / result$OBS_VALUE
+  names(result) = tolower(names(result))
+  result = within(result, rm(action, validfromdate, connectors_autoname, id, exr_type, 
+                               collection, source_agency, unit_mult, title_compl, freq, 
+                               obs_status, currency_denom, exr_suffix, unit, decimals, 
+                               time_format, title, currency))
+  attr(result, 'identifiers') = c('time_period')
+  attr(result, 'measures') = c('obs_value')
+  result$obs_value = result$obs_value / result$obs_value
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
@@ -261,13 +265,14 @@ test_that('SDMX dataset division works', {
 
 test_that('SDMX dataset multiplication works', {
   result = getTimeSeriesTable('ECB', 'EXR.A.USD.EUR.SP00.A')
-  result = within(result, rm(action, validFromDate, CONNECTORS_AUTONAME, ID, EXR_TYPE, 
-                               COLLECTION, SOURCE_AGENCY, UNIT_MULT, TITLE_COMPL, FREQ, 
-                               OBS_STATUS, CURRENCY_DENOM, EXR_SUFFIX, UNIT, DECIMALS, 
-                               TIME_FORMAT, TITLE, CURRENCY))
-  attr(result, 'identifiers') = c('TIME_PERIOD')
-  attr(result, 'measures') = c('OBS_VALUE')
-  result$OBS_VALUE = result$OBS_VALUE * result$OBS_VALUE
+  names(result) = tolower(names(result))
+  result = within(result, rm(action, validfromdate, connectors_autoname, id, exr_type, 
+                               collection, source_agency, unit_mult, title_compl, freq, 
+                               obs_status, currency_denom, exr_suffix, unit, decimals, 
+                               time_format, title, currency))
+  attr(result, 'identifiers') = c('time_period')
+  attr(result, 'measures') = c('obs_value')
+  result$obs_value = result$obs_value * result$obs_value
 
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                     statements = "tmp1 := 'ECB:EXR/A.USD.EUR.SP00.A';                                                                         
@@ -285,10 +290,10 @@ test_that('SDMX dataset multiplication works', {
 
 test_that('CSV dataset assignment works', {
   result = read.csv(paste0(find.package(package = 'RVTL'), '/vtlStudio2/test_data/ecbexrusd_plain.csv'), stringsAsFactors = F, colClasses='character')
-  result$OBS_VALUE = as.numeric(result$OBS_VALUE)
-  attr(result, 'identifiers') = c("CURRENCY", "CURRENCY_DENOM", "EXR_SUFFIX",
-                                    "EXR_TYPE", "FREQ", "TIME_PERIOD" )
-  attr(result, 'measures') = c('OBS_VALUE')
+  result$obs_value = as.numeric(result$obs_value)
+  attr(result, 'identifiers') = c("currency", "currency_denom", "exr_suffix",
+                                    "exr_type", "freq", "time_period" )
+  attr(result, 'measures') = c('obs_value')
   
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
@@ -304,15 +309,15 @@ test_that('CSV dataset assignment works', {
 
 test_that('CSV dataset addition works', {
   result = read.csv(paste0(find.package(package = 'RVTL'), '/vtlStudio2/test_data/ecbexrusd_plain.csv'), stringsAsFactors = F, colClasses='character')
-  result = within(result, rm( ID, 
-                             COLLECTION, SOURCE_AGENCY, UNIT_MULT,   
-                             OBS_STATUS, UNIT, DECIMALS, 
-                             TIME_FORMAT, TITLE))
-  result$OBS_VALUE = as.numeric(result$OBS_VALUE)
-  result$OBS_VALUE = result$OBS_VALUE + result$OBS_VALUE
-  attr(result, 'identifiers') = c("CURRENCY", "CURRENCY_DENOM", "EXR_SUFFIX",
-                                    "EXR_TYPE", "FREQ", "TIME_PERIOD" )
-  attr(result, 'measures') = c('OBS_VALUE')
+  result = within(result, rm( id, 
+                             collection, source_agency, unit_mult,   
+                             obs_status, unit, decimals, 
+                             time_format, title))
+  result$obs_value = as.numeric(result$obs_value)
+  result$obs_value = result$obs_value + result$obs_value
+  attr(result, 'identifiers') = c("currency", "currency_denom", "exr_suffix",
+                                    "exr_type", "freq", "time_period" )
+  attr(result, 'measures') = c('obs_value')
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = paste0("tmp1 := 'csv:", 
@@ -327,16 +332,16 @@ test_that('CSV dataset addition works', {
 
 test_that('CSV dataset subtraction works', {
   result = read.csv(paste0(find.package(package = 'RVTL'), '/vtlStudio2/test_data/ecbexrusd_plain.csv'), stringsAsFactors = F, colClasses='character')
-  result = within(result, rm( ID, 
-                             COLLECTION, SOURCE_AGENCY, UNIT_MULT,   
-                             OBS_STATUS, UNIT, DECIMALS, 
-                             TIME_FORMAT, TITLE))
+  result = within(result, rm( id, 
+                             collection, source_agency, unit_mult,   
+                             obs_status, unit, decimals, 
+                             time_format, title))
   
-  result$OBS_VALUE = as.numeric(result$OBS_VALUE)
-  result$OBS_VALUE = result$OBS_VALUE - result$OBS_VALUE
-  attr(result, 'identifiers') = c("CURRENCY", "CURRENCY_DENOM", "EXR_SUFFIX",
-                                  "EXR_TYPE", "FREQ", "TIME_PERIOD" )
-  attr(result, 'measures') = c('OBS_VALUE')
+  result$obs_value = as.numeric(result$obs_value)
+  result$obs_value = result$obs_value - result$obs_value
+  attr(result, 'identifiers') = c("currency", "currency_denom", "exr_suffix",
+                                  "exr_type", "freq", "time_period" )
+  attr(result, 'measures') = c('obs_value')
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = paste0("tmp1 := 'csv:", 
@@ -351,16 +356,16 @@ test_that('CSV dataset subtraction works', {
 
 test_that('CSV dataset division works', {
   result = read.csv(paste0(find.package(package = 'RVTL'), '/vtlStudio2/test_data/ecbexrusd_plain.csv'), stringsAsFactors = F, colClasses='character')
-  result = within(result, rm(   ID, 
-                             COLLECTION, SOURCE_AGENCY, UNIT_MULT,   
-                             OBS_STATUS, UNIT, DECIMALS, 
-                             TIME_FORMAT, TITLE))
+  result = within(result, rm(   id, 
+                             collection, source_agency, unit_mult,   
+                             obs_status, unit, decimals, 
+                             time_format, title))
   
-  result$OBS_VALUE = as.numeric(result$OBS_VALUE)
-  result$OBS_VALUE = result$OBS_VALUE / result$OBS_VALUE
-  attr(result, 'identifiers') = c("CURRENCY", "CURRENCY_DENOM", "EXR_SUFFIX",
-                                  "EXR_TYPE", "FREQ", "TIME_PERIOD" )
-  attr(result, 'measures') = c('OBS_VALUE')
+  result$obs_value = as.numeric(result$obs_value)
+  result$obs_value = result$obs_value / result$obs_value
+  attr(result, 'identifiers') = c("currency", "currency_denom", "exr_suffix",
+                                  "exr_type", "freq", "time_period" )
+  attr(result, 'measures') = c('obs_value')
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = paste0("tmp1 := 'csv:", 
@@ -376,16 +381,16 @@ test_that('CSV dataset division works', {
 
 test_that('CSV dataset multiplication works', {
   result = read.csv(paste0(find.package(package = 'RVTL'), '/vtlStudio2/test_data/ecbexrusd_plain.csv'), stringsAsFactors = F, colClasses='character')
-  result = within(result, rm(   ID, 
-                             COLLECTION, SOURCE_AGENCY, UNIT_MULT,   
-                             OBS_STATUS, UNIT, DECIMALS, 
-                             TIME_FORMAT, TITLE))
+  result = within(result, rm(   id, 
+                             collection, source_agency, unit_mult,   
+                             obs_status, unit, decimals, 
+                             time_format, title))
   
-  result$OBS_VALUE = as.numeric(result$OBS_VALUE)
-  result$OBS_VALUE = result$OBS_VALUE * result$OBS_VALUE
-  attr(result, 'identifiers') = c("CURRENCY", "CURRENCY_DENOM", "EXR_SUFFIX",
-                                  "EXR_TYPE", "FREQ", "TIME_PERIOD" )
-  attr(result, 'measures') = c('OBS_VALUE')
+  result$obs_value = as.numeric(result$obs_value)
+  result$obs_value = result$obs_value * result$obs_value
+  attr(result, 'identifiers') = c("currency", "currency_denom", "exr_suffix",
+                                  "exr_type", "freq", "time_period" )
+  attr(result, 'measures') = c('obs_value')
   
   expect_true(object = vtlAddStatements(sessionID = 'test_session', 
                                         statements = paste0("tmp1 := 'csv:", 
