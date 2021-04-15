@@ -41,7 +41,7 @@ for(x in dir(path = 'vtl_scripts', pattern = '*.vtl', full.names = T)){
 }
 
 # run scalar tests row by row
-scalar_src = file('vtl_scripts_scalars/tests.txt', "r")
+scalar_src = file('vtl_scripts_scalars/tests.src', "r")
 tests = readLines(scalar_src)
 close(scalar_src)
 n=0

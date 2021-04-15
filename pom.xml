@@ -743,6 +743,7 @@
 									<exclude>**/NOTICE</exclude>
 									<exclude>**/DESCRIPTION</exclude>
 									<exclude>**/*.in</exclude>
+									<exclude>**/*.src</exclude>
 									<exclude>**/*.csv</exclude>
 									<exclude>**/*.whl</exclude>
 									<exclude>**/*.war</exclude>
