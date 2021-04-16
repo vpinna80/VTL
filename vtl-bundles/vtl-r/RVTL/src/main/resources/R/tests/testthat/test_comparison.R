@@ -24,34 +24,6 @@ library(RJSDMX)
 library(testthat)
 context("Comparison")
 
-# SCALARS
-test_that('scalar comparisons work',
-  {
-  expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                    statements = 'tmp := 1.23;                                                                         
-                                                  equal := tmp = 1.23;
-                                                  not_equal := tmp <> 1.23;
-                                                  greater := tmp > 1.23;
-                                                  greater_eq := tmp >=1.23;  
-                                                  less := tmp < 1.23;
-                                                  less_eq := tmp <= 1.23;', 
-                                    restartSession = T), label = 'scalar comparison syntax')
-  expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'scalar comparison compile')
-  expect_true(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'equal')$equal[1,1],  
-              label = 'equal value correct')
-  expect_false(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'not_equal')$not_equal[1,1],  
-              label = 'not_equal value correct')
-  expect_false(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'greater')$greater[1,1],  
-              label = 'greater value correct')
-  expect_true(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'greater_eq')$greater_eq[1,1],  
-              label = 'greater_eq value correct')
-  expect_false(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'less')$less[1,1],  
-              label = 'less value correct')
-  expect_true(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'less_eq')$less_eq[1,1],  
-              label = 'equal value correct')
-})
-
-
 ###
 # R Environment
 ###
