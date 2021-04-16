@@ -1,8 +1,8 @@
 $IDENTIFIER=Date[YYYY-MM-DD],MEASURE=Number,#ATTRIBUTE=String,#QUOTED=String
-2020-01-21,1,A," Hello, ""World""! "
-2020-01-22,2,B,Test with,Skipped field
-2020-01-23,3,D,,Remove last comma test
-2020-01-24,3,E,Dummy
-2020-01-25,3,F,"Dummy"
-2020-01-26,3,G," Dummy"
-2020-01-27,3,H, Dummy ,Trim test
+2020-01-21,12345,A," Hello, ""World""! "
+2020-01-22,23456.123,B,Test with,Skipped field
+2020-01-23,3.1234,D,,Remove last comma test
+2020-01-24,4,E,Dummy
+2020-01-25,5,F,"Dummy"
+2020-01-26,6,G," Dummy"
+2020-01-27,7,H, Dummy ,Trim test

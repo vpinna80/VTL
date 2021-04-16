@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.UNKNOWNDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.averagingDouble;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -58,8 +58,8 @@ public enum AggregateOperator
 				int s = c.size();
 				return DoubleValue.of(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
 			})),
-	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(UNKNOWNDS)))),
-	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(UNKNOWNDS)))),
+	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
+	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	VAR_POP("stddev_pop", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), Collector.of( 
 	        () -> new double[3],

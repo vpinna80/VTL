@@ -35,15 +35,15 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 public abstract class TimePeriodDomainSubsets<S extends TimePeriodDomainSubsets<S>> extends EntireDomainSubset<S, TimePeriodDomain> implements TimePeriodDomainSubset<S>
 {
 	private static final long serialVersionUID = 1L;
-
+	
+	public TimePeriodDomainSubsets()
+	{
+		super(null, "time_period_var");
+	}
+	
 	public static class YearsDomainSubset extends TimePeriodDomainSubsets<YearsDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
-
-		public YearsDomainSubset()
-		{
-			super(null, "time_period_years_var");
-		}
 
 		protected YearPeriodValue cast2(TimePeriodValue<?, ?> value)
 		{
@@ -55,11 +55,6 @@ public abstract class TimePeriodDomainSubsets<S extends TimePeriodDomainSubsets<
 	{
 		private static final long serialVersionUID = 1L;
 
-		public SemestersDomainSubset()
-		{
-			super(null, "time_period_semesters_var");
-		}
-
 		protected SemesterPeriodValue cast2(TimePeriodValue<?, ?> value)
 		{
 			return SemesterPeriodValue.of(value.get());
@@ -69,11 +64,6 @@ public abstract class TimePeriodDomainSubsets<S extends TimePeriodDomainSubsets<
 	public static class QuartersDomainSubset extends TimePeriodDomainSubsets<QuartersDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
-
-		public QuartersDomainSubset()
-		{
-			super(null, "time_period_quarters_var");
-		}
 
 		protected QuarterPeriodValue cast2(TimePeriodValue<?, ?> value)
 		{
@@ -85,11 +75,6 @@ public abstract class TimePeriodDomainSubsets<S extends TimePeriodDomainSubsets<
 	{
 		private static final long serialVersionUID = 1L;
 
-		public MonthsDomainSubset()
-		{
-			super(null, "time_period_months_var");
-		}
-
 		protected MonthPeriodValue cast2(TimePeriodValue<?, ?> value)
 		{
 			return MonthPeriodValue.of(value.get());
@@ -100,11 +85,6 @@ public abstract class TimePeriodDomainSubsets<S extends TimePeriodDomainSubsets<
 	{
 		private static final long serialVersionUID = 1L;
 
-		public WeeksDomainSubset()
-		{
-			super(null, "time_period_weeks_var");
-		}
-
 		protected WeekPeriodValue cast2(TimePeriodValue<?, ?> value)
 		{
 			return WeekPeriodValue.of(value.get());
@@ -114,11 +94,6 @@ public abstract class TimePeriodDomainSubsets<S extends TimePeriodDomainSubsets<
 	public static class DaysDomainSubset extends TimePeriodDomainSubsets<DaysDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
-
-		public DaysDomainSubset()
-		{
-			super(null, "time_period_days_var");
-		}
 
 		protected DayPeriodValue cast2(TimePeriodValue<?, ?> value)
 		{
@@ -152,4 +127,10 @@ public abstract class TimePeriodDomainSubsets<S extends TimePeriodDomainSubsets<
 	}
 
 	protected abstract TimePeriodValue<?, S> cast2(TimePeriodValue<?, ?> value);
+	
+	@Override
+	public String toString()
+	{
+		return "time_period";
+	}
 }
