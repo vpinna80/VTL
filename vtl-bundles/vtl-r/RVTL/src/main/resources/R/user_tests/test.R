@@ -50,9 +50,11 @@ for(x in tests){
   session = paste('scalar', n)
   test_that(session,
   {
+    print(session)
     expect_true(object = vtlAddStatements(sessionID = session, statements = x), label = paste(session, 'syntax'))
     expect_true(object = vtlCompile(sessionID = session), label = paste(session, 'compilation'))
     result = vtlEvalNodes(sessionID = session, nodes = 'test_result')[[1]]
     expect_true(object = result$Scalar, label = session)
+    print('Done')
   })
 }
