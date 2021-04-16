@@ -23,7 +23,7 @@ library(testthat)
 
 # if we are in interactive mode, rely on the wd(). Otherwise the environment variable has to be set 
 # in the calling shell
-if(interactive) Sys.setenv(VTL_PATH=paste0(getwd(),'/input_data',';',getwd(),'/output_data'))
+if(interactive()) Sys.setenv(VTL_PATH=paste0(getwd(),'/input_data',';',getwd(),'/output_data'))
 
 
 sink('test_result.out')
