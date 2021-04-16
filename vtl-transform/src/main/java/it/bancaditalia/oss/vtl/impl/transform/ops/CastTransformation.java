@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.TimePatterns.parseTem
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static java.util.Collections.singletonMap;
@@ -85,7 +86,7 @@ public class CastTransformation extends UnaryTransformation
 	public CastTransformation(Transformation operand, String targetDomainName, String mask)
 	{
 		super(null);
-		throw new UnsupportedOperationException("cast with non-basic domain names not implemented");
+		throw new UnsupportedOperationException("cast with non-basic domain name '" + targetDomainName + "' not implemented");
 	}
 
 	@Override
@@ -138,7 +139,7 @@ public class CastTransformation extends UnaryTransformation
 		else if (domain instanceof TimeDomainSubset && target instanceof StringDomainSubset)
 			return STRING;
 		else if (domain instanceof NullDomain)
-			return (ScalarValueMetadata<NullDomain, ValueDomain>) () -> Domains.UNKNOWNDS;
+			return (ScalarValueMetadata<NullDomain, ValueDomain>) NULL;
 		else 
 			throw new UnsupportedOperationException();
 	}

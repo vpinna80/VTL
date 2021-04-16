@@ -52,6 +52,7 @@ public class Domains<S extends ValueDomainSubset<S, D>, D extends ValueDomain> i
 	public static final Domains<QuartersDomainSubset, TimePeriodDomain> QUARTERS = new Domains<>(new QuartersDomainSubset());
 	public static final Domains<SemestersDomainSubset, TimePeriodDomain> SEMESTERS = new Domains<>(new SemestersDomainSubset());
 	public static final Domains<YearsDomainSubset, TimePeriodDomain> YEARS = new Domains<>(new YearsDomainSubset());
+	public static final Domains<NullDomain, ValueDomain> NULL = new Domains<>(new NullDomain());
 
 	public static final EntireDurationDomainSubset DURATIONDS = DURATION.getDomain();
 	public static final EntireNumberDomainSubset NUMBERDS = NUMBER.getDomain();
@@ -66,7 +67,7 @@ public class Domains<S extends ValueDomainSubset<S, D>, D extends ValueDomain> i
 	public static final QuartersDomainSubset QUARTERSDS = QUARTERS.getDomain();
 	public static final SemestersDomainSubset SEMESTERSDS = SEMESTERS.getDomain();
 	public static final YearsDomainSubset YEARSDS = YEARS.getDomain();
-	public static final NullDomain UNKNOWNDS = new NullDomain();
+	public static final NullDomain NULLDS = NULL.getDomain();
 
 	private final S valueDomain;
 	
