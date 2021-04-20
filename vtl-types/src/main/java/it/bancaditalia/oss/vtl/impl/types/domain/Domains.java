@@ -19,59 +19,56 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.DaysDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.MonthsDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.QuartersDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.SemestersDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.WeeksDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.TimePeriodDomainSubsets.YearsDomainSubset;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import java.util.EnumSet;
+
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.DaysDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.MonthsDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.QuartersDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.SemestersDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.WeeksDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.YearsDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.DateDomain;
-import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 
-public class Domains<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements ScalarValueMetadata<S, D>
+@SuppressWarnings("rawtypes")
+public enum Domains implements ScalarValueMetadata
 {
-	public static final Domains<EntireBooleanDomainSubset, BooleanDomain> BOOLEAN = new Domains<>(new EntireBooleanDomainSubset());
-	public static final Domains<EntireIntegerDomainSubset, IntegerDomain> INTEGER = new Domains<>(new EntireIntegerDomainSubset());
-	public static final Domains<EntireDurationDomainSubset, DurationDomain> DURATION = new Domains<>(EntireDurationDomainSubset.INSTANCE);
-	public static final Domains<EntireStringDomainSubset, StringDomain> STRING = new Domains<>(new EntireStringDomainSubset());
-	public static final Domains<EntireNumberDomainSubset, ?> NUMBER = new Domains<>(new EntireNumberDomainSubset());
-	public static final Domains<EntireTimeDomainSubset, TimeDomain> TIME = new Domains<>(EntireTimeDomainSubset.getInstance());
-	public static final Domains<EntireDateDomainSubset, DateDomain> DATE = new Domains<>(EntireDateDomainSubset.getInstance());
-	public static final Domains<DaysDomainSubset, TimePeriodDomain> DAYS = new Domains<>(new DaysDomainSubset());
-	public static final Domains<WeeksDomainSubset, TimePeriodDomain> WEEKS = new Domains<>(new WeeksDomainSubset());
-	public static final Domains<MonthsDomainSubset, TimePeriodDomain> MONTHS = new Domains<>(new MonthsDomainSubset());
-	public static final Domains<QuartersDomainSubset, TimePeriodDomain> QUARTERS = new Domains<>(new QuartersDomainSubset());
-	public static final Domains<SemestersDomainSubset, TimePeriodDomain> SEMESTERS = new Domains<>(new SemestersDomainSubset());
-	public static final Domains<YearsDomainSubset, TimePeriodDomain> YEARS = new Domains<>(new YearsDomainSubset());
-	public static final Domains<NullDomain, ValueDomain> NULL = new Domains<>(new NullDomain());
-
-	public static final EntireDurationDomainSubset DURATIONDS = DURATION.getDomain();
-	public static final EntireNumberDomainSubset NUMBERDS = NUMBER.getDomain();
-	public static final EntireIntegerDomainSubset INTEGERDS = INTEGER.getDomain();
-	public static final EntireBooleanDomainSubset BOOLEANDS = BOOLEAN.getDomain();
-	public static final EntireStringDomainSubset STRINGDS = STRING.getDomain();
-	public static final EntireDateDomainSubset DATEDS = DATE.getDomain();
-	public static final EntireTimeDomainSubset TIMEDS = TIME.getDomain();
-	public static final DaysDomainSubset DAYSDS = DAYS.getDomain();
-	public static final WeeksDomainSubset WEEKSDS = WEEKS.getDomain();
-	public static final MonthsDomainSubset MONTHSDS = MONTHS.getDomain();
-	public static final QuartersDomainSubset QUARTERSDS = QUARTERS.getDomain();
-	public static final SemestersDomainSubset SEMESTERSDS = SEMESTERS.getDomain();
-	public static final YearsDomainSubset YEARSDS = YEARS.getDomain();
-	public static final NullDomain NULLDS = NULL.getDomain();
-
-	private final S valueDomain;
+	BOOLEAN(new EntireBooleanDomainSubset()),
+	INTEGER(new EntireIntegerDomainSubset()),
+	DURATION(EntireDurationDomainSubset.INSTANCE),
+	STRING(new EntireStringDomainSubset()),
+	NUMBER(new EntireNumberDomainSubset()),
+	TIME(EntireTimeDomainSubset.getInstance()),
+	DATE(EntireDateDomainSubset.getInstance()),
+	TIME_PERIOD_DAYS(new DaysDomainSubset()),
+	TIME_PERIOD_WEEKS(new WeeksDomainSubset()),
+	TIME_PERIOD_MONTHS(new MonthsDomainSubset()),
+	TIME_PERIOD_QUARTERS(new QuartersDomainSubset()),
+	TIME_PERIOD_SEMESTERS(new SemestersDomainSubset()),
+	TIME_PERIOD_YEARS(new YearsDomainSubset()),
+	NULL(new NullDomain());
 	
-	private Domains(S valueDomain)
+	public static final EnumSet<Domains> TIME_PERIODS = EnumSet.of(TIME_PERIOD_DAYS, TIME_PERIOD_WEEKS, TIME_PERIOD_MONTHS, TIME_PERIOD_QUARTERS, TIME_PERIOD_SEMESTERS, TIME_PERIOD_YEARS);
+
+	public static final EntireDurationDomainSubset DURATIONDS = (EntireDurationDomainSubset) DURATION.getDomain();
+	public static final EntireNumberDomainSubset NUMBERDS = (EntireNumberDomainSubset) NUMBER.getDomain();
+	public static final EntireIntegerDomainSubset INTEGERDS = (EntireIntegerDomainSubset) INTEGER.getDomain();
+	public static final EntireBooleanDomainSubset BOOLEANDS = (EntireBooleanDomainSubset) BOOLEAN.getDomain();
+	public static final EntireStringDomainSubset STRINGDS = (EntireStringDomainSubset) STRING.getDomain();
+	public static final EntireDateDomainSubset DATEDS = (EntireDateDomainSubset) DATE.getDomain();
+	public static final EntireTimeDomainSubset TIMEDS = (EntireTimeDomainSubset) TIME.getDomain();
+	public static final DaysDomainSubset DAYSDS = (DaysDomainSubset) TIME_PERIOD_DAYS.getDomain();
+	public static final WeeksDomainSubset WEEKSDS = (WeeksDomainSubset) TIME_PERIOD_WEEKS.getDomain();
+	public static final MonthsDomainSubset MONTHSDS = (MonthsDomainSubset) TIME_PERIOD_MONTHS.getDomain();
+	public static final QuartersDomainSubset QUARTERSDS = (QuartersDomainSubset) TIME_PERIOD_QUARTERS.getDomain();
+	public static final SemestersDomainSubset SEMESTERSDS = (SemestersDomainSubset) TIME_PERIOD_SEMESTERS.getDomain();
+	public static final YearsDomainSubset YEARSDS = (YearsDomainSubset) TIME_PERIOD_YEARS.getDomain();
+	public static final NullDomain NULLDS = (NullDomain) NULL.getDomain();
+
+	private final ValueDomainSubset<?, ? extends ValueDomain> valueDomain;
+	
+	private Domains(ValueDomainSubset<?, ?> valueDomain)
 	{
 		this.valueDomain = valueDomain;
 	}
@@ -86,49 +83,8 @@ public class Domains<S extends ValueDomainSubset<S, D>, D extends ValueDomain> i
 		return getDomain().isAssignableFrom(other);
 	}
 
-	public static class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain> 
-	{
-		private static final long serialVersionUID = 1L;
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return false;
-		}
-
-		@Override
-		public boolean isComparableWith(ValueDomain other)
-		{
-			return false;
-		}
-
-		@Override
-		public Object getCriterion()
-		{
-			return null;
-		}
-
-		@Override
-		public ValueDomain getParentDomain()
-		{
-			return null;
-		}
-		
-		@Override
-		public ScalarValue<?, ?, NullDomain, ValueDomain> cast(ScalarValue<?, ?, ?, ?> value)
-		{
-			throw new UnsupportedOperationException("Cast to unknown domain not supported.");
-		}
-
-		@Override
-		public String getVarName()
-		{
-			throw new UnsupportedOperationException("No variable name for unknown domain.");
-		}
-	}
-
-	@Override
-	public S getDomain()
+	public ValueDomainSubset<?, ?> getDomain()
 	{
 		return valueDomain;
-	};
+	}
 }

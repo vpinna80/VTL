@@ -19,23 +19,18 @@
  */
 package it.bancaditalia.oss.vtl.impl.domains;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
@@ -45,14 +40,12 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 {
 	private static final long serialVersionUID = 1L;
 
-	protected static final ValueDomainSubset<?, ?>[] INITIAL_DOMAINS = new ValueDomainSubset<?, ?>[] { NUMBERDS, INTEGERDS, STRINGDS, BOOLEANDS, TIMEDS, DATEDS };
-
 	private final Map<String, ValueDomainSubset<?, ?>> domains = new ConcurrentHashMap<>();
 	
 	public InMemoryMetadataRepository() 
 	{
-		for (ValueDomainSubset<?, ?> domain: INITIAL_DOMAINS)
-			domains.put(domain.toString().toLowerCase(), domain);
+		for (Domains domain: EnumSet.allOf(Domains.class))
+			domains.put(domain.name().toLowerCase(), domain.getDomain());
 	}
 	
 	@Override
@@ -62,16 +55,16 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 
 	@Override
-	public boolean isDomainDefined(String alias) 
+	public boolean isDomainDefined(String domain) 
 	{
-		return domains.containsKey(mapAlias(alias)); 
+		return domains.containsKey(domain); 
 	}
 
 	@Override
 	public ValueDomainSubset<?, ?> getDomain(String alias) 
 	{
-		if (domains.containsKey(mapAlias(alias)))
-			return domains.get(mapAlias(alias));
+		if (domains.containsKey(alias))
+			return domains.get(alias);
 		
 		throw new VTLException("Domain '" + alias + "' is undefined in the metadata.");
 	}
@@ -79,7 +72,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	@Override
 	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> S defineDomain(String alias, Class<S> domainClass, Object param)
 	{
-		return domainClass.cast(domains.computeIfAbsent(mapAlias(alias), a -> {
+		return domainClass.cast(domains.computeIfAbsent(alias, a -> {
 			try 
 			{
 				Class<? extends ValueDomain> implementingClass = mapClass(domainClass);
@@ -107,10 +100,5 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 			return StringCodeList.class;
 		else
 			throw new UnsupportedOperationException(domainClass + " does not have a suitable implementation.");
-	}
-
-	private String mapAlias(String alias) 
-	{
-		return alias.matches("^'.*'$") ? alias.replaceAll("^'(.*)'$", "$1") : alias.toLowerCase();
 	}
 }

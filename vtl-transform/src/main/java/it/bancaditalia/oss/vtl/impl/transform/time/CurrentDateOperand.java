@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIOD_DAYS;
 import static java.time.LocalDate.now;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
@@ -42,7 +42,7 @@ public class CurrentDateOperand extends TransformationImpl implements LeafTransf
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return DAYS;
+		return TIME_PERIOD_DAYS;
 	}
 
 	@Override

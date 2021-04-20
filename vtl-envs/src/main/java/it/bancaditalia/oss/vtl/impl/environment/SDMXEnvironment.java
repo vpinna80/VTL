@@ -41,6 +41,7 @@ import java.security.InvalidParameterException;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,11 +84,13 @@ import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.MonthPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.QuarterPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.SemesterPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.YearPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -120,7 +123,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final DataStructureComponent<?, ?, ?> TIME_PERIOD_IDENTIFIER = DataStructureComponentImpl.of(TIME_LABEL.toLowerCase(), Identifier.class, TIMEDS);
 	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
 	private static final SortedMap<String, Boolean> PROVIDERS = SdmxClientHandler.getProviders(); // it will contain only built-in providers for now.
-	private static final Map<DateTimeFormatter, Function<TemporalAccessor, TimeValue<?, ?, ?, ?>>> FORMATTERS = new HashMap<>();
+	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final Pattern SDMX_PATTERN = Pattern.compile("^(.+):(?:(.+?)(?:\\((.+)\\))?)/(.+)$");
 
 	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = 
@@ -130,14 +133,14 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(SDMXEnvironment.class, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
 		
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateValue::of);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateValue::of);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh"), DateValue::of);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd"), DateValue::of);
-		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodValue::of);
-		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodValue::of);
-		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), QuarterPeriodValue::of);
-		FORMATTERS.put(MONTH_PERIOD_FORMATTER.get(), MonthPeriodValue::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateHolder::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateHolder::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh"), DateHolder::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd"), DateHolder::of);
+		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodHolder::new);
+		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodHolder::new);
+		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), QuarterPeriodHolder::new);
+		FORMATTERS.put(MONTH_PERIOD_FORMATTER.get(), MonthPeriodHolder::new);
 	}
 
 	@Override
@@ -224,8 +227,11 @@ public class SDMXEnvironment implements Environment, Serializable
 		for (DateTimeFormatter formatter : FORMATTERS.keySet())
 			try
 			{
-				TemporalAccessor parsed = formatter.parse(o.getTimeslot());
-				return FORMATTERS.get(formatter).apply(parsed);
+				TemporalAccessor parsed = formatter.parse(o.getTimeslot(), FORMATTERS.get(formatter));
+				if (parsed instanceof PeriodHolder)
+					return TimePeriodValue.of((PeriodHolder<?>) parsed);
+				else
+					return DateValue.of(parsed);
 			}
 			catch (DateTimeException e)
 			{

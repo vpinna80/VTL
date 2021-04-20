@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
-import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoUnit.YEARS;
 
 import java.time.Year;
@@ -43,10 +42,7 @@ public class YearPeriodHolder extends PeriodHolder<YearPeriodHolder>
 	
 	public YearPeriodHolder(TemporalAccessor value)
 	{
-		if (value.isSupported(YEAR)) 
-			this.year = Year.from(value);
-		else
-			throw new UnsupportedOperationException("Period from " + value + " not implemented.");
+		this.year = Year.from(value);
 	}
 
 	@Override
