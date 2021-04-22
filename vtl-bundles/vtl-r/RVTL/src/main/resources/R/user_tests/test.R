@@ -21,6 +21,35 @@
 library(RVTL)
 library(testthat)
 
+# Configure the CSVPathEnvironment: if we are in interactive mode, rely on the wd(). 
+# Otherwise the environment variable has to be set in the calling shell
+if(interactive()) Sys.setenv(VTL_PATH=paste0(getwd(),'/input_data',';',getwd(),'/output_data'))
+
+# force read sdmx configuration
+J('it.bancaditalia.oss.sdmx.util.Configuration') 
+
+# Configure the SDMX Metadata Repo
+vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
+vtlProperties$METADATA_REPOSITORY$setValue('it.bancaditalia.oss.vtl.impl.domains.SDMXMetadataRepository')
+
+configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
+supportedProperties <- configManager$getSupportedProperties(J('it.bancaditalia.oss.vtl.impl.domains.SDMXMetadataRepository')@jobj)
+supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
+for (property in as.list(supportedProperties)){
+  if(property$getName() == 'vtl.metadata.sdmx.provider.endpoint'){
+    property$setValue('https://sdw-wsrest.ecb.europa.eu/service')
+  } 
+}
+
+#Configure SDMX Env regarding identifiers policy
+supportedProperties <- configManager$getSupportedProperties(J('it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment')@jobj)
+supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
+for (property in as.list(supportedProperties)){
+  if(property$getName() == 'vtl.sdmx.keep.identifiers'){
+    property$setValue('true')
+  } 
+}
+
 #prepare r env test
 r_env_input_1 = data.frame(id1=c('1999', '2000', '2001', '2002', '2003', '2004'),
                            id2=c(1.06, 0.92, 0.89, 0.94, 1.13, 1.24),
@@ -41,7 +70,7 @@ runTest=function(test_name){
 }
 
 # test all vtl scripts
-for(x in dir(path = 'vtl_scripts', pattern = '*.vtl', full.names = T)){
+for(x in dir(path = 'vtl_scripts', pattern = '*.vtl', full.names = T, recursive = T)){
   print(paste0('Run test:', x))
   test_that(x,
   {
@@ -70,3 +99,4 @@ for(x in tests){
     print('Done')
   })
 }
+
