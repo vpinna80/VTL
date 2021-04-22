@@ -164,7 +164,7 @@ public class AggregateTransformation extends UnaryTransformation
 				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
 					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, measure.getDomain());
 				
-				return metadata;
+				return metadata = dataset;
 			}
 			else
 			{
