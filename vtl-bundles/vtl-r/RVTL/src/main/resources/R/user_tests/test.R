@@ -26,7 +26,7 @@ library(testthat)
 if(interactive()) Sys.setenv(VTL_PATH=paste0(getwd(),'/input_data',';',getwd(),'/output_data'))
 
 # force read sdmx configuration
-J('it.bancaditalia.oss.sdmx.util.Configuration') 
+RJSDMX::getFlows('ECB')
 
 # Configure the SDMX Metadata Repo
 vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
