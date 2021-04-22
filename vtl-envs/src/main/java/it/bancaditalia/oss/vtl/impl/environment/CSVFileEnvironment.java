@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.TimePatterns.parseString;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
@@ -205,7 +205,7 @@ public class CSVFileEnvironment implements Environment
 	private ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String value, String mask)
 	{
 		if (component.getDomain() instanceof StringDomainSubset)
-			return StringValue.of(value.matches("^\".*\"$") ? value.substring(1, value.length() - 1) : value);
+			return component.getDomain().cast(StringValue.of(value.matches("^\".*\"$") ? value.substring(1, value.length() - 1) : value));
 		else if (component.getDomain() instanceof IntegerDomainSubset)
 			try
 			{

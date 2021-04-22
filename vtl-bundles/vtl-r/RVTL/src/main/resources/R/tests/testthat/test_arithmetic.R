@@ -24,59 +24,6 @@ library(RJSDMX)
 library(testthat)
 context("Arithmetic")
 
-# SCALARS
-test_that('scalar assignment works',
-  {
-  expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                    statements = 'tmp := 1.23;                                                                         
-                                                  result:= tmp;', 
-                                    restartSession = T), label = 'Assignment syntax')
-  expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Assignment compile')
-  expect_identical(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'tmp')$tmp[1,1], expected = 1.23, label = 'Assignment value correct')
-  expect_identical(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result[1,1], expected = 1.23, label = 'Assignment value correct')
-})
-
-test_that('scalar addition works',
-  {
-  expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                    statements = 'tmp1 := 1.23;                                                                         
-                                                  tmp2 := 1.23;
-                                                  result := tmp1 + tmp2;', 
-                                    restartSession = T), label = 'Plus failed')
-  expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Plus compile failed')
-  expect_identical(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result[1,1], expected = 2.46, label = 'Plus value correct')
-})
-
-test_that('scalar subtraction works', {
-  expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                    statements = 'tmp1 := 1.23;                                                                         
-                                                  tmp2 := 1.23;
-                                                  result := tmp1 - tmp2;', 
-                                    restartSession = T), label = 'Minus failed')
-  expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Minus compile failed')
-  expect_identical(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result[1,1], expected = 0.0, label = 'Plus value correct')
-})
-
-test_that('scalar division works', {
-  expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                    statements = 'tmp1 := 1.23;                                                                         
-                                                  tmp2 := 1.23;
-                                                  result := tmp1 / tmp2;', 
-                                    restartSession = T), label = 'Division failed')
-  expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'Division compile failed')
-  expect_identical(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result[1,1], expected = 1.0, label = 'Division value correct')
-})
-
-test_that('scalar multiplication works', {
-  expect_true(object = vtlAddStatements(sessionID = 'test_session', 
-                                    statements = 'tmp1 := 1.23;                                                                         
-                                                  tmp2 := 1.23;
-                                                  result := tmp1 * tmp2;', 
-                                    restartSession = T), label = 'multiplication failed')
-  expect_true(object = vtlCompile(sessionID = 'test_session'), label = 'multiplication compile failed')
-  expect_identical(object = vtlEvalNodes(sessionID = 'test_session', nodes = 'result')$result[1,1], expected = 1.5129, label = 'multiplication value correct')
-})
-
 ###
 # R Environment
 ###

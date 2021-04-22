@@ -23,14 +23,9 @@ import java.io.Serializable;
 import java.time.temporal.TemporalAccessor;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Durations;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.DayPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.MonthPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.QuarterPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.SemesterPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.WeekPeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue.YearPeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
@@ -50,17 +45,20 @@ public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Compa
 
 	public abstract TimeValue<?, ?, ?, ?> increment(long amount);
 	
-	public TimePeriodValue<?, ?> wrap(Durations duration)
+	public TimePeriodValue<?> wrap(Durations duration)
 	{
+		PeriodHolder<?> holder;
 		switch (duration)
 		{
-			case A: return new YearPeriodValue(new YearPeriodHolder(get()));
-			case H: return new SemesterPeriodValue(new SemesterPeriodHolder(get()));
-			case Q: return new QuarterPeriodValue(new QuarterPeriodHolder(get()));
-			case M: return new MonthPeriodValue(new MonthPeriodHolder(get()));
-			case W: return new WeekPeriodValue(new WeekPeriodHolder(get()));
-			case D: return new DayPeriodValue(new DayPeriodHolder(get()));
+			case A: holder = new YearPeriodHolder(get()); break;
+			case H: holder = new SemesterPeriodHolder(get()); break;
+			case Q: holder = new QuarterPeriodHolder(get()); break;
+			case M: holder = new MonthPeriodHolder(get()); break;
+			case W: holder = new WeekPeriodHolder(get()); break;
+			case D: holder = new DayPeriodHolder(get()); break;
 			default: throw new IllegalStateException(); // Should never occur
 		}
+		
+		return TimePeriodValue.of(holder);
 	}
 }

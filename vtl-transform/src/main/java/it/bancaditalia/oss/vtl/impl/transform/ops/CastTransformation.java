@@ -19,13 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.TimePatterns.parseString;
-import static it.bancaditalia.oss.vtl.impl.types.data.date.TimePatterns.parseTemporal;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseTemporal;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATE;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODS;
 import static java.util.Collections.singletonMap;
 
 import java.text.DecimalFormat;
@@ -46,7 +47,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains.NullDomain;
+import it.bancaditalia.oss.vtl.impl.types.domain.NullDomain;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -56,36 +57,35 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CastTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final ValueDomainSubset<?, ?> target;
+	private final Domains target;
 	private final String mask;
 	private transient DecimalFormat numberFormatter;
 
-	public CastTransformation(Transformation operand, Domains<?, ?> target, String mask)
+	public CastTransformation(Transformation operand, Domains target, String mask)
 	{
 		super(operand);
-		this.target = target.getDomain();
+		this.target = target;
 		this.mask = mask != null ? mask.substring(1, mask.length() - 1) : "";
 	}
 
 	public CastTransformation(Transformation operand, String targetDomainName, String mask)
 	{
-		super(null);
-		throw new UnsupportedOperationException("cast with non-basic domain names not implemented");
+		this(operand, Utils.getStream(Domains.values())
+				.filter(domain -> domain.name().equalsIgnoreCase(targetDomainName))
+				.findAny()
+				.orElseThrow(() -> new UnsupportedOperationException("Cast with non-basic domain name '" + targetDomainName + "' not implemented")),
+			mask);
 	}
 
 	@Override
@@ -98,7 +98,7 @@ public class CastTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset)
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getComponents(Measure.class).iterator().next();
-		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getVarName(), Measure.class, target).as(Measure.class);
+		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getDomain().getVarName(), Measure.class, target.getDomain()).as(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(measure)
 				.build();
@@ -123,22 +123,21 @@ public class CastTransformation extends UnaryTransformation
 			
 			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
 			
-			// keep the ordering! DateDomain subclass of TimeDomain, IntegerDomain subclass of NumberDomain
 			domain = measure.getDomain();
 		}
 
-		if (domain instanceof StringDomainSubset && target instanceof DateDomainSubset)
+		if (domain instanceof StringDomainSubset && target == DATE)
 			return DATE;
-		else if (domain instanceof StringDomainSubset && target instanceof TimePeriodDomainSubset)
-			return DAYS;
-		else if (domain instanceof StringDomainSubset && target instanceof IntegerDomainSubset)
+		else if (domain instanceof StringDomainSubset && TIME_PERIODS.contains(target))
+			return target;
+		else if (domain instanceof StringDomainSubset && target == INTEGER)
 			return INTEGER;
-		else if (domain instanceof StringDomainSubset && target instanceof NumberDomainSubset)
+		else if (domain instanceof StringDomainSubset && target == NUMBER)
 			return NUMBER;
-		else if (domain instanceof TimeDomainSubset && target instanceof StringDomainSubset)
+		else if (domain instanceof TimeDomainSubset && target == STRING)
 			return STRING;
 		else if (domain instanceof NullDomain)
-			return (ScalarValueMetadata<NullDomain, ValueDomain>) () -> Domains.UNKNOWNDS;
+			return NULL;
 		else 
 			throw new UnsupportedOperationException();
 	}
@@ -162,18 +161,18 @@ public class CastTransformation extends UnaryTransformation
 		try
 		{
 			if (scalar instanceof NullValue)
-				return target.cast(scalar);
-			else if (scalar instanceof StringValue && target instanceof DateDomainSubset)
+				return target.getDomain().cast(scalar);
+			else if (scalar instanceof StringValue && target == DATE)
 				return DateValue.of(parseString(scalar.get().toString(), mask));
-			else if (scalar instanceof StringValue && target instanceof TimePeriodDomainSubset)
-				return TimePeriodValue.of(parseString(scalar.get().toString(), mask));
-			else if (scalar instanceof DateValue && target instanceof StringDomainSubset)
+			else if (scalar instanceof StringValue && TIME_PERIODS.contains(target))
+				return TimePeriodValue.of(scalar.get().toString(), mask);
+			else if (scalar instanceof DateValue && target == STRING)
 				return StringValue.of(parseTemporal((DateHolder<?>) scalar.get(), mask));
-			else if (scalar instanceof TimePeriodValue && target instanceof StringDomainSubset)
+			else if (scalar instanceof TimePeriodValue && target == STRING)
 				return StringValue.of(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
-			else if (scalar instanceof StringValue && target instanceof IntegerDomainSubset)
+			else if (scalar instanceof StringValue && target == INTEGER)
 				return IntegerValue.of(Long.parseLong((String) scalar.get()));
-			else if (scalar instanceof StringValue && target instanceof NumberDomainSubset)
+			else if (scalar instanceof StringValue && target == NUMBER)
 				return DoubleValue.of(getNumberFormatter().parse((String) scalar.get()).doubleValue());
 			else
 				throw new UnsupportedOperationException(scalar.getClass() + " " + target.getClass() + " " + scalar);

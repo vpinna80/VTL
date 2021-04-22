@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.mapping;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.UNKNOWNDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -563,7 +563,7 @@ public class OpsFactory implements Serializable
 			case Vtl.NUMBER_CONSTANT: return DoubleValue.of(Double.parseDouble(token.getText()));
 			case Vtl.BOOLEAN_CONSTANT: return BooleanValue.of(Boolean.parseBoolean(token.getText()));
 			case Vtl.STRING_CONSTANT: return StringValue.of(token.getText());
-			case Vtl.NULL_CONSTANT: return NullValue.instance(UNKNOWNDS);
+			case Vtl.NULL_CONSTANT: return NullValue.instance(NULLDS);
 			// These are specific values for analytic invocations to determine the sliding window size
 			case Vtl.UNBOUNDED: return IntegerValue.of((long) (Integer.MAX_VALUE));
 			case Vtl.CURRENT: return IntegerValue.of(0L);

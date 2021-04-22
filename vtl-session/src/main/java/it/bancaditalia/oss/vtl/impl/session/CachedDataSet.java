@@ -19,19 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.impl.session;
 
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithKey;
-import static java.lang.Boolean.TRUE;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
@@ -51,6 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -77,12 +73,14 @@ public class CachedDataSet extends NamedDataSet
 	private static final Map<VTLSession, Map<String, IllegalStateException>> SESSION_STACKS = new ConcurrentHashMap<>();
 	private static final Map<VTLSession, Map<String, Map<Set<DataStructureComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>>>> SESSION_CACHES = new ConcurrentHashMap<>();
 	private static final ReferenceQueue<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> REF_QUEUE = new ReferenceQueue<>();
-	private static final Map<Reference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>, Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
+	private static final Map<Reference<?>, Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
 
-	private final Map<String, Semaphore> statuses;
-	private final Map<Set<DataStructureComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>> caches;
-	private final Map<String, Long> times;
-	private final Map<String, IllegalStateException> stacks;
+	private transient final Map<String, Semaphore> statuses;
+	private transient final Map<Set<DataStructureComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>> caches;
+	private transient final Map<String, Long> times;
+	private transient final Map<String, IllegalStateException> stacks;
+	
+	private transient volatile SoftReference<Set<DataPoint>> unindexed = new SoftReference<>(null);
 	
 	static {
 		new Thread() {
@@ -152,27 +150,14 @@ public class CachedDataSet extends NamedDataSet
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, Collector<DataPoint, A, TT> groupCollector,
 			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
-		Semaphore isCompleted;
-		try
-		{
-			isCompleted = waitLock();
-		}
-		catch (InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
-			return Stream.empty();
-		}
-	
 		// the total dataset cache is a dummy index corresponding to no identifiers 
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result = Stream.of(caches.get(keys))
 				.map(SoftReference::get)
 				.filter(Objects::nonNull)
-				.peek(cache -> {
-					isCompleted.release();
-					LOGGER.trace("Cache hit for {}.", getAlias());
-				}).findAny()
+				.peek(cache -> LOGGER.trace("Cache hit for {}.", getAlias()))
+				.findAny()
 				// re/build the cache if gced or never created
-				.orElseGet(() -> createCache(isCompleted, keys));
+				.orElseGet(() -> createCache(keys));
 		
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filterOutsideKeys = new HashMap<>(filter);
 		filterOutsideKeys.keySet().retainAll(keys);
@@ -198,79 +183,108 @@ public class CachedDataSet extends NamedDataSet
 			Thread.currentThread().interrupt();
 			return Stream.empty();
 		}
-	
-		// the total dataset cache is a dummy index corresponding to no identifiers 
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result = Stream.of(caches.get(getComponents(Identifier.class)))
-				.map(SoftReference::get)
-				.filter(Objects::nonNull)
-				.peek(cache -> {
-					isCompleted.release();
-					LOGGER.trace("Cache hit for {}.", getAlias());
-				}).findAny()
-				// re/build the cache if gced or never created
-				.orElseGet(() -> createCache(isCompleted, getComponents(Identifier.class)));
-		
-		return result.values().stream().map(singletonSet -> singletonSet.iterator().next());
+
+		Set<DataPoint> cache = unindexed.get();
+		if (cache != null)
+		{
+			isCompleted.release();
+			return cache.stream();
+		}
+		else
+			return createUnindexedCache(isCompleted);
 	}
 
 	private Semaphore waitLock() throws InterruptedException
 	{
-		Semaphore isCompleted = statuses.computeIfAbsent(getAlias(), alias -> new Semaphore(1));
+		final String alias = getAlias();
+		LOGGER.trace("Acquiring lock for {}", alias);
+		
+		Semaphore isCompleted = statuses.computeIfAbsent(alias, a -> new Semaphore(1, true));
 
 		while (!isCompleted.tryAcquire(1000, MILLISECONDS))
 		{
-			LOGGER.trace("Waiting cache completion for {}.", getAlias());
+			LOGGER.trace("Waiting cache completion for {}.", alias);
 			// After 10 seconds of waiting, a deadlock is assumed 
-			if (System.currentTimeMillis() - times.get(getAlias()) > 10000)
-				throw stacks.get(getAlias());
+			if (times.containsKey(alias) && System.currentTimeMillis() - times.get(alias) > 10000)
+				throw stacks.get(alias);
 		}
 		
+		LOGGER.trace("Lock acquired for {}", alias);
 		return isCompleted;
 	}
 
-	private Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> createCache(Semaphore isCompleted, Set<DataStructureComponent<Identifier,?,?>> keys)
+	private Stream<DataPoint> createUnindexedCache(Semaphore isCompleted)
 	{
 		String alias = getAlias();
-		LOGGER.debug("Cache miss for {} on {}, start caching.", alias, keys);
 
-		// keeps track of where the deadlock may have been occurred
+		LOGGER.debug("Cache miss for {}, start caching.", alias);
+		Set<DataPoint> cache = newSetFromMap(new ConcurrentHashMap<>());
+		unindexed = new SoftReference<Set<DataPoint>>(cache);
+		
 		IllegalStateException exception = new IllegalStateException("A deadlock may have happened in the cache mechanism. Caching for dataset " 
 				+ alias + " never completed.");
 		exception.getStackTrace();
 		stacks.put(alias, exception);
+		times.merge(alias, System.currentTimeMillis(), Math::max);
 		
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;
-		if (keys.equals(getComponents(Identifier.class)))
-			try (Stream<DataPoint> stream = getDelegate().stream())
-			{
-				result = stream
-					.map(toEntry(dp -> dp.getValues(Identifier.class), Collections::singleton))
-					.collect(entriesToMap());
-			}
-		else
-		{
-			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> ungroupedCache = caches.get(getComponents(Identifier.class)).get();
-			if (ungroupedCache == null)
-				try (Stream<DataPoint> stream = getDelegate().stream())
+		AtomicBoolean alreadyInterrupted = new AtomicBoolean(false);
+		return getDelegate().stream()
+			.peek(dp -> {
+				// enqueue datapoint if reference was not gced
+				Set<DataPoint> set = unindexed.get();
+				if (set != null)
 				{
-					result = stream
-							.map(toEntryWithKey(dp -> dp.getValues(keys, Identifier.class)))
-							.collect(groupingByConcurrent(Entry::getKey, collectingAndThen(mapping(Entry::getValue, toConcurrentMap(identity(), a -> TRUE)), Map::keySet)));
+					LOGGER.trace("Caching a datapoint for {}.", alias);
+					times.merge(alias, System.currentTimeMillis(), Math::max);
+					set.add(dp);
 				}
-			else
-				result = Utils.getStream(ungroupedCache)
-						.map(Entry::getValue)
-						.map(Set::stream)
-						.reduce(Stream::concat)
-						.orElse(Stream.empty())
-						.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), toSet()));
+				else if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
+				{
+					LOGGER.trace("Caching interrupted for {}.", alias);
+					isCompleted.release();
+				}
+			}).onClose(() -> {
+				if (!alreadyInterrupted.get() && alreadyInterrupted.compareAndSet(false, true))
+					LOGGER.debug("Caching finished for {}.", alias);
+				isCompleted.release();
+			});
+	}
+
+	private Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> createCache(Set<DataStructureComponent<Identifier,?,?>> keys)
+	{
+		String alias = getAlias();
+		LOGGER.debug("Cache miss for {}, start indexing on {}.", alias, keys);
+
+		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;
+		Set<DataPoint> unindexedCache = unindexed.get();
+		if (unindexedCache == null)
+		{
+			Semaphore isCompleted;
+			try
+			{
+				isCompleted = waitLock();
+			}
+			catch (InterruptedException e)
+			{
+				Thread.currentThread().interrupt();
+				return emptyMap();
+			}
+
+			unindexedCache = createUnindexedCache(isCompleted).collect(toSet());
+			unindexed = new SoftReference<>(unindexedCache);
 		}
+
+		if (getComponents(Identifier.class).equals(keys))
+			result = Utils.getStream(unindexedCache)
+				.collect(toConcurrentMap(dp -> dp.getValues(keys, Identifier.class), Collections::singleton));
+		else
+			result = Utils.getStream(unindexedCache)
+				.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), toSet()));
 		
 		SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> cacheRef = new SoftReference<>(result, REF_QUEUE);
 		caches.put(keys, cacheRef);
 		REF_NAMES.put(cacheRef, new SimpleEntry<>(getAlias(), keys));
-		LOGGER.debug("Caching finished for {} on {}.", alias, keys);
-		isCompleted.release();
+		LOGGER.debug("Indexing finished for {} on {}.", alias, keys);
 		return result;
 	}
 }

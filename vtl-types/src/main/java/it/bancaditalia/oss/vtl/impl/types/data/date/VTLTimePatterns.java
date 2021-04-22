@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 
-public class TimePatterns
+public class VTLTimePatterns
 {
 	private static final Map<Pattern, UnaryOperator<DateTimeFormatterBuilder>> PATTERNS = new LinkedHashMap<>();
 	private static final Pattern DATE_LITERAL_ELEMENT = Pattern.compile("^([-/ ]|\\\\.)(.*)$");
@@ -78,9 +78,9 @@ public class TimePatterns
 		return getFormatter(mask).format(temporal);
 	}
 
-	private static DateTimeFormatter getFormatter(final String mask)
+	public static DateTimeFormatter getFormatter(final String mask)
 	{
-		return FORMATTERS_CACHE.computeIfAbsent(mask, TimePatterns::createFormatter);
+		return FORMATTERS_CACHE.computeIfAbsent(mask, VTLTimePatterns::createFormatter);
 	}
 	
 	private static DateTimeFormatter createFormatter(String mask)

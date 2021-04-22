@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -28,10 +29,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -57,43 +58,46 @@ public class SetTransformation extends TransformationImpl
 
 	public enum SetOperator
 	{
-		UNION((left, right) -> (structure, alias) -> new LightFDataSet<>(structure, 
-				ds -> Stream.concat(left.stream(), ds.stream()), setDiff(right, left, "nested setdiff"))),
-		INTERSECT((left, right) -> (structure, alias) -> setDiff(left, setDiff(left, right, alias), "nested setdiff")), 
-		SETDIFF((left, right) -> (structure, alias) -> setDiff(left, right, alias)), 
-		SYMDIFF((left, right) -> (structure, alias) -> new LightFDataSet<>(structure,  
-				ds -> Stream.concat(setDiff(left, right, alias).stream(), ds.stream()), setDiff(right, left, "inversed setdiff of " + alias)));
+		UNION((left, right) -> (structure) -> new LightFDataSet<>(structure, 
+				ds -> Stream.concat(left.stream(), ds.stream()), setDiff(right, left))),
+		INTERSECT((left, right) -> (structure) -> setDiff(left, setDiff(left, right))), 
+		SETDIFF((left, right) -> (structure) -> setDiff(left, right)), 
+		SYMDIFF((left, right) -> (structure) -> new LightFDataSet<>(structure,  
+				ds -> Stream.concat(setDiff(left, right).stream(), ds.stream()), setDiff(right, left)));
 
-		private final BiFunction<DataSet, DataSet, BiFunction<DataSetMetadata, String, DataSet>> reducer;
+		private final BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer;
 
-		SetOperator(BiFunction<DataSet, DataSet, BiFunction<DataSetMetadata, String, DataSet>> reducer)
+		SetOperator(BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer)
 		{
 			this.reducer = reducer;
 		}
 		
-		public BinaryOperator<DataSet> getReducer(DataSetMetadata metadata, String rightAlias)
+		public BinaryOperator<DataSet> getReducer(DataSetMetadata metadata)
 		{
-			return (left, right) -> reducer.apply(left, right).apply(metadata, rightAlias);
+			return (left, right) -> reducer.apply(left, right).apply(metadata);
 		}
 	}
 
-	private static DataSet setDiff(DataSet left, DataSet right, String rightAlias)
+	private static DataSet setDiff(DataSet left, DataSet right)
 	{
-		return left.filter(dp -> !indexKeys(right, rightAlias).contains(dp.getValues(Identifier.class)));
+		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index = extractIndex(right);
+		
+		return left.filter(dp -> !index.contains(dp.getValues(Identifier.class)));
 	}
 
-	private static Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> indexKeys(DataSet dataset, String alias)
+	private static Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> extractIndex(DataSet right)
 	{
+		String alias = right instanceof NamedDataSet ? ((NamedDataSet) right).getAlias() : "unnamed dataset";
+		LOGGER.debug("Started indexing {}.", alias);
 		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
-		try (Stream<DataPoint> stream = dataset.stream())
+		try (Stream<DataPoint> stream = right.stream())
 		{
-			LOGGER.debug("Indexing operand {} of a set operator", alias);
 			index = new HashSet<>(stream
 				.map(dp -> dp.getValues(Identifier.class))
 				.collect(toConcurrentMap(identity(), x -> Boolean.TRUE))
 				.keySet());
-			LOGGER.debug("Finished indexing operand {} of a set operator", alias);
 		}
+		LOGGER.debug("Finished indexing {}.", alias);
 		return index;
 	}
 
@@ -110,17 +114,20 @@ public class SetTransformation extends TransformationImpl
 	public DataSet eval(TransformationScheme scheme)
 	{
 		DataSet accumulator = null;
-		AtomicBoolean first = new AtomicBoolean(true);
+		boolean first = true;
 		for (Transformation operand: operands)
 		{
 			DataSet other = (DataSet) operand.eval(scheme);
 			
-			if (first.getAndSet(false))
+			if (first)
+			{
+				first = false;
 				accumulator = other;
+			}
 			else
-				accumulator = setOperator.getReducer(accumulator.getMetadata(), operand.toString()).apply(accumulator, other);
+				accumulator = setOperator.getReducer(accumulator.getMetadata()).apply(accumulator, other);
 		}
-		
+
 		return accumulator;
 	}
 
@@ -155,6 +162,6 @@ public class SetTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return operands.stream().map(Object::toString).collect(Collectors.joining(", ", setOperator + "(", ")"));
+		return operands.stream().map(Object::toString).collect(joining(", ", setOperator + "(", ")"));
 	}
 }

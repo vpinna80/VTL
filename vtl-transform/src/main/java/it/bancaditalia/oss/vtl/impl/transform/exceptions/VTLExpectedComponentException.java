@@ -36,7 +36,7 @@ public class VTLExpectedComponentException extends VTLException
 		super("Expected exactly one " + role.getSimpleName() + " of type " + domain + " but found: " + components);
 	}
 
-	public VTLExpectedComponentException(Class<? extends ComponentRole> role, Domains<?, ?> domain, Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public VTLExpectedComponentException(Class<? extends ComponentRole> role, Domains domain, Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		super("Expected exactly one " + role.getSimpleName() + " of type " + domain + " but found: " + components);
 	}
