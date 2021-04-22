@@ -56,6 +56,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -140,12 +141,18 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(
-				partitionIDs, 
-				toConcurrentMap(identity(), identity(), (a, b) -> a, () -> new ConcurrentSkipListMap<>(comparator)), 
-				(partition, keyValues) -> offsetPartition(partition.keySet(), keyValues)
-			).reduce(Stream::concat)
-			.orElse(Stream.empty()), dataset);
+		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> { 
+				String alias = ds instanceof NamedDataSet ? ((NamedDataSet) ds).getAlias() : "Unnamed data set";
+				LOGGER.debug("Starting computation of {} on {}", direction, alias);
+				Stream<DataPoint> result = ds.streamByKeys(
+						partitionIDs, 
+						toConcurrentMap(identity(), identity(), (a, b) -> a, () -> new ConcurrentSkipListMap<>(comparator)), 
+						(partition, keyValues) -> offsetPartition(partition.keySet(), keyValues)
+					).reduce(Stream::concat)
+					.orElse(Stream.empty());
+				LOGGER.debug("Finished computing {} on {}", direction, alias);
+				return result;
+			}, dataset);
 	}
 	
 	private Stream<DataPoint> offsetPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)

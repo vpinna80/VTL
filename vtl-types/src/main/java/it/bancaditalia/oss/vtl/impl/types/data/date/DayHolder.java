@@ -22,12 +22,8 @@ package it.bancaditalia.oss.vtl.impl.types.data.date;
 import java.time.LocalDate;
 import java.time.temporal.TemporalField;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 class DayHolder extends DateHolder<LocalDate>
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(DayHolder.class);
 	private static final long serialVersionUID = 1L;
 
 	private final LocalDate date;
@@ -57,9 +53,7 @@ class DayHolder extends DateHolder<LocalDate>
 	@Override
 	public int compareTo(DateHolder<?> other)
 	{
-		int c = date.compareTo(LocalDate.from(other));
-		LOGGER.trace("Comparing {} and {} yield {}.", date, other, c);
-		return c;
+		return date.compareTo(LocalDate.from(other));
 	}
 	
 	@Override

@@ -123,6 +123,16 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, BiPredicate<DataPoint,DataPoint> filter, BinaryOperator<DataPoint> merge);
 
 	/**
+	 * Checks if this DataSet is indexed. 
+	 * @param keys An hint to the implementation about the keys over which an index would be eventually requested 
+	 * @return true if this DataSet is indexed.
+	 */
+	public default boolean isIndexed(Set<DataStructureComponent<Identifier, ?, ?>> keys)
+	{
+		return false;
+	}
+	
+	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
 	 * The same as {@code filteredMappedJoin(metadata, other, (a,  b) -> true, merge)}.
 	 * 

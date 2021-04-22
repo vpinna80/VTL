@@ -19,9 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
+import static java.util.concurrent.ForkJoinPool.commonPool;
+
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.function.BiFunction;
 
@@ -46,17 +47,9 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class ThreadUtils 
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(ThreadUtils.class);
-	private final static ForkJoinPool POOL;
 	private final static Set<Class<? extends Transformation>> SIMPLE_TRANSFORMATIONS = new HashSet<>();
 	
 	static {
-		// Compensate for few cores available and avoid starvation
-		final int parallelism = ForkJoinPool.commonPool().getParallelism();
-		if (parallelism < 32)
-			POOL = new ForkJoinPool(32 - parallelism);
-		else
-			POOL = ForkJoinPool.commonPool();
-		
 		SIMPLE_TRANSFORMATIONS.add(ConstantOperand.class);
 		SIMPLE_TRANSFORMATIONS.add(VarIDOperand.class);
 		SIMPLE_TRANSFORMATIONS.add(CurrentDateOperand.class);
@@ -88,9 +81,9 @@ public class ThreadUtils
 		
 		ForkJoinTask<? extends T> leftTask = null, rightTask = null;
 		if (!SIMPLE_TRANSFORMATIONS.contains(leftExpr.getClass()))
-			leftTask = POOL.submit(() -> extractor.apply(leftExpr, scheme));
+			leftTask = commonPool().submit(() -> extractor.apply(leftExpr, scheme));
 		if (!SIMPLE_TRANSFORMATIONS.contains(rightExpr.getClass()))
-			rightTask = POOL.submit(() -> extractor.apply(rightExpr, scheme));
+			rightTask = commonPool().submit(() -> extractor.apply(rightExpr, scheme));
 		
 		T left = leftTask != null ? leftTask.join() : extractor.apply(leftExpr, scheme); 
 		T right = rightTask != null ? rightTask.join() : extractor.apply(rightExpr, scheme); 

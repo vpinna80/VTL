@@ -557,17 +557,18 @@ public class OpsFactory implements Serializable
 		
 		Token token = (Token) element.getChild(TerminalNode.class, 0).getPayload();
 		int tokenType = token.getType();
+		String text = token.getText();
 		switch (tokenType)
 		{
-			case Vtl.INTEGER_CONSTANT: return IntegerValue.of(Long.parseLong(token.getText()));
-			case Vtl.NUMBER_CONSTANT: return DoubleValue.of(Double.parseDouble(token.getText()));
-			case Vtl.BOOLEAN_CONSTANT: return BooleanValue.of(Boolean.parseBoolean(token.getText()));
-			case Vtl.STRING_CONSTANT: return StringValue.of(token.getText());
+			case Vtl.INTEGER_CONSTANT: return IntegerValue.of(Long.parseLong(text));
+			case Vtl.NUMBER_CONSTANT: return DoubleValue.of(Double.parseDouble(text));
+			case Vtl.BOOLEAN_CONSTANT: return BooleanValue.of(Boolean.parseBoolean(text));
+			case Vtl.STRING_CONSTANT: return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
 			case Vtl.NULL_CONSTANT: return NullValue.instance(NULLDS);
 			// These are specific values for analytic invocations to determine the sliding window size
 			case Vtl.UNBOUNDED: return IntegerValue.of((long) (Integer.MAX_VALUE));
 			case Vtl.CURRENT: return IntegerValue.of(0L);
-			default: throw new VTLUnmappedTokenException(token.getText(), param);
+			default: throw new VTLUnmappedTokenException(text, param);
 		}
 	}
 

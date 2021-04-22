@@ -24,9 +24,11 @@ import static java.util.Collections.singletonMap;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.lang.ref.SoftReference;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -80,9 +82,7 @@ public abstract class AbstractDataSet implements DataSet
 	public DataSet membership(String alias)
 	{
 		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
-
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
-
 		
 		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
 				.orElseThrow(() -> new VTLMissingComponentsException(alias, dataStructure));
@@ -124,11 +124,18 @@ public abstract class AbstractDataSet implements DataSet
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class)));
 		}
 		
+		return filteredMappedJoinWithIndex(this, metadata, predicate, mergeOp, commonIds, index);
+	}
+
+	protected static DataSet filteredMappedJoinWithIndex(DataSet streamed, DataSetMetadata metadata, BiPredicate<DataPoint, DataPoint> predicate, BinaryOperator<DataPoint> mergeOp,
+			Set<DataStructureComponent<Identifier, ?, ?>> commonIds,
+			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> index)
+	{
 		return new LightFDataSet<>(metadata, d -> {
 				final Stream<DataPoint> stream = d.stream();
 				return stream
 					.map(dpThis -> {
-						List<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
+						Collection<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
 						if (otherSubGroup == null)
 							return Stream.<DataPoint>empty();
 						else
@@ -138,7 +145,7 @@ public abstract class AbstractDataSet implements DataSet
 					}).reduce(Stream::concat)
 					.orElse(Stream.empty())
 					.onClose(stream::close);
-			}, this);
+			}, streamed);
 	}
 
 	@Override
@@ -163,6 +170,15 @@ public abstract class AbstractDataSet implements DataSet
 			protected Stream<DataPoint> streamDataPoints()
 			{
 				return AbstractDataSet.this.stream().map(extendingOperator);
+			}
+			
+			@Override
+			public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
+					Collector<DataPoint, A, TT> groupCollector,
+					BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
+			{
+				return AbstractDataSet.this.streamByKeys(keys, filter, mapping(extendingOperator, groupCollector), finisher);
 			}
 		};
 	}

@@ -33,7 +33,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
@@ -47,6 +52,7 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersExce
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -65,6 +71,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class CalcClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
+	private final static Logger LOGGER = LoggerFactory.getLogger(CalcClauseTransformation.class);
 
 	public static class CalcClauseItem extends TransformationImpl
 	{
@@ -123,7 +130,22 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		
 		public boolean isAnalytic()
 		{
-			return calcClause instanceof AnalyticTransformation;
+			return isAnalytic1(calcClause);
+		}
+
+		private static boolean isAnalytic1(Transformation calcClause)
+		{
+			if (calcClause instanceof AnalyticTransformation)
+				return true;
+			else if (calcClause instanceof BinaryTransformation)
+			{
+				final BinaryTransformation binaryTransformation = (BinaryTransformation) calcClause;
+				return isAnalytic1(binaryTransformation.getLeftOperand()) || isAnalytic1(binaryTransformation.getRightOperand());
+			} 
+			else if (calcClause instanceof UnaryTransformation)
+				return isAnalytic1(((UnaryTransformation) calcClause).getOperand());
+			else
+				return false;
 		}
 	}
 
@@ -184,6 +206,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	private static Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme)
 	{
 		return clause -> {
+			LOGGER.debug("Evaluating calc expression {}", clause.calcClause.toString());
 			DataSet clauseValue = (DataSet) clause.calcClause.eval(scheme);
 			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getComponents(Measure.class).iterator().next();
 	
@@ -194,7 +217,8 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				.removeComponent(measure)
 				.addComponent(newComponent)
 				.build();
-				
+
+			LOGGER.trace("Creating component {} from expression {}", newComponent, clause.calcClause.toString());
 			return new LightFDataSet<>(newStructure, ds -> ds.stream()
 					.map(dp -> new DataPointBuilder(dp)
 							.delete(measure)
@@ -205,7 +229,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	
 	private static DataSet joinByIDs(DataSet left, DataSet right)
 	{
-		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, (dpl, dpr) -> dpl.combine(dpr));
+		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, DataPoint::combine);
 	}
 
 	@Override

@@ -35,12 +35,12 @@ public class StringValue<I extends StringValue<I, S>, S extends StringDomainSubs
 
 	public static ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> of(String value)
 	{
-		return value == null ? NULL_INSTANCE : new StringValue<>(value.replaceAll("^\"(.*)\"$", "$1"), STRINGDS);
+		return value == null ? NULL_INSTANCE : new StringValue<>(value, STRINGDS);
 	}
 
 	public StringValue(String value, S domain)
 	{
-		super(value.replaceAll("^\"(.*)\"$", "$1"), domain);
+		super(value, domain);
 	}
 
 	@Override

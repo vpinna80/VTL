@@ -64,6 +64,11 @@ public abstract class UnaryTransformation extends TransformationImpl
 			return evalOnScalar((ScalarValue<?, ?, ?, ?>) value);
 	}
 
+	public Transformation getOperand()
+	{
+		return operand;
+	}
+
 	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar);
 
 	protected abstract VTLValue evalOnDataset(DataSet dataset);

@@ -56,6 +56,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
+
 /**
  * This class contains various utility functions used by the VTL Engine implementation.
  * Most of the functions are wrappers of the standard packages in Java 8.
@@ -365,6 +367,11 @@ public final class Utils
 		return a -> function.apply(a);
 	}
 	
+	public static BiPredicate<DataPoint, DataPoint> reverseIf(boolean isReverse, BiPredicate<DataPoint, DataPoint> predicate)
+	{
+		return (a, b) -> isReverse ? predicate.test(b, a) : predicate.test(a, b);
+	}
+
 	public static <A> BinaryOperator<A> reverseIfBOp(boolean isReverse, BinaryOperator<A> binaryOperator)
 	{
 		return (a, b) -> isReverse ? binaryOperator.apply(b, a) : binaryOperator.apply(a, b);
