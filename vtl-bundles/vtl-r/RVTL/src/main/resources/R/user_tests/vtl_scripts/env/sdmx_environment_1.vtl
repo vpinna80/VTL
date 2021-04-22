@@ -17,9 +17,6 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-a:='csv:r_env_1.csv';
-b:=r_env_input_1;
-tmp_result1:= (a#m1=b#m1)[rename bool_var to m1];
-tmp_result2:= (a#m2=b#m2)[rename bool_var to m2];
-tmp_result3:= (a#m3=b#m3)[rename bool_var to m3];
-test_result:=inner_join(tmp_result1, tmp_result2, tmp_result3);
+a:='ECB:EXR/A.USD.EUR.SP00.A'[calc identifier obs_date := cast(TIME_PERIOD, string, "YYYY")];
+b:='csv:sdmx_env_1.csv';
+test_result:= a=b;
