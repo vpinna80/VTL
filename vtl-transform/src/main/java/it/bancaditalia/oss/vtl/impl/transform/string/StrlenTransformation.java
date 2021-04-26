@@ -56,13 +56,13 @@ public class StrlenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return scalar instanceof NullValue ? NullValue.instance(INTEGERDS) : IntegerValue.of((long) ((StringValue<?, ?>) scalar).get().length());
 	}
 
 	@Override
-	protected DataSet evalOnDataset(DataSet dataset)
+	protected DataSet evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> resultMeasure = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> originalMeasure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
@@ -71,11 +71,11 @@ public class StrlenTransformation extends UnaryTransformation
 				.addComponent(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS))
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, dp -> singletonMap(resultMeasure, evalOnScalar(dp.get(originalMeasure))));
+		return dataset.mapKeepingKeys(structure, dp -> singletonMap(resultMeasure, evalOnScalar(dp.get(originalMeasure), metadata)));
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata op = operand.getMetadata(session);
 		if (op instanceof ScalarValueMetadata && ((ScalarValueMetadata<?, ?>) op).getDomain() instanceof StringDomainSubset)

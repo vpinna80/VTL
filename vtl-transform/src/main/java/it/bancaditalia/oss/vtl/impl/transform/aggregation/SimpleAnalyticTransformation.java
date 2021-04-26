@@ -80,8 +80,6 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	private final List<OrderByItem> orderByClause;
 	private final WindowClause windowClause;
 
-	private transient DataSetMetadata metadata;
-
 	public SimpleAnalyticTransformation(AnalyticOperator aggregation, Transformation operand, List<String> partitionBy, List<OrderByItem> orderByClause, WindowClause windowClause)
 	{
 		super(operand);
@@ -93,13 +91,13 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
 		
@@ -134,13 +132,13 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new LightFDataSet<>(metadata, ds -> ds.streamByKeys(partitionIDs, toConcurrentMap(identity(), dp -> TRUE), 
-				(partition, keyValues) -> aggregateWindows(measures, comparator, partition.keySet(), keyValues)
+		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(partitionIDs, toConcurrentMap(identity(), dp -> TRUE), 
+				(partition, keyValues) -> aggregateWindows((DataSetMetadata) metadata, measures, comparator, partition.keySet(), keyValues)
 			).reduce(Stream::concat)
 			.orElse(Stream.empty()), dataset);
 	}
 	
-	private Stream<DataPoint> aggregateWindows(Set<DataStructureComponent<Measure, ?, ?>> measures, Comparator<DataPoint> comparator, Set<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
+	private Stream<DataPoint> aggregateWindows(DataSetMetadata metadata, Set<DataStructureComponent<Measure, ?, ?>> measures, Comparator<DataPoint> comparator, Set<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
 		
@@ -171,7 +169,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
 		if (opmeta instanceof ScalarValueMetadata)
@@ -192,7 +190,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.map(c -> c.as(Identifier.class))
 				.collect(toSet());
 		
-		return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponents(dataset.getComponents(Measure.class))
 				.build();
 	}

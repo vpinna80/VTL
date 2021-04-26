@@ -83,8 +83,6 @@ public class InclusionTransformation extends UnaryTransformation
 	private final InOperator operator;
 	private final Set<? extends ScalarValue<?, ?, ?, ?>> set;
 
-	private transient DataSetMetadata metadata = null;
-
 	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?, ?>> list)
 	{
 		super(operand);
@@ -101,22 +99,22 @@ public class InclusionTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return BooleanValue.of(operator.test(set, scalar));
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getComponents(Measure.class).iterator().next();
 		
-		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, BooleanValue.of(operator.test(set, dp.get(datasetMeasure)))));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, BooleanValue.of(operator.test(set, dp.get(datasetMeasure)))));
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata value = operand.getMetadata(session);
 
@@ -129,7 +127,7 @@ public class InclusionTransformation extends UnaryTransformation
 			if (measures.size() != 1)
 				throw new UnsupportedOperationException("Expected single measure but found: " + measures);
 
-			return metadata = new DataStructureBuilder()
+			return new DataStructureBuilder()
 					.addComponents(ds.getComponents(Identifier.class))
 					.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))
 					.build();

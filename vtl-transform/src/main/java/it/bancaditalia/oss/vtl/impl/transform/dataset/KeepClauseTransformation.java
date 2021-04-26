@@ -32,6 +32,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -47,7 +48,6 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private final String names[];
-	private transient DataSetMetadata metadata;
 	
 	public KeepClauseTransformation(List<String> names)
 	{
@@ -55,9 +55,10 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		return ((DataSet) getThisValue(session)).mapKeepingKeys(metadata, dp -> {
+		DataSetMetadata metadata = getMetadata(scheme);
+		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, dp -> {
 				Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
 				return map;
@@ -65,9 +66,14 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata operand = getThisMetadata(session);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata operand = getThisMetadata(scheme);
 		
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
@@ -91,8 +97,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		if (!namedIDs.isEmpty())
 			throw new VTLInvariantIdentifiersException("keep", namedIDs);
 
-		metadata = dsMeta.keep(names);
-		return metadata;
+		return dsMeta.keep(names);
 	}
 
 	@Override

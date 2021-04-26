@@ -63,13 +63,13 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return ((TimeValue<?, ?, ?, ?>) scalar).wrap(frequency);
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeMeasure = dataset.getComponents(Measure.class, TIMEDS).iterator().next();
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata())
@@ -84,7 +84,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata value;
 		value = operand.getMetadata(session);

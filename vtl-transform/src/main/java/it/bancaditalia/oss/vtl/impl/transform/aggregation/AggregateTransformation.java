@@ -72,8 +72,6 @@ public class AggregateTransformation extends UnaryTransformation
 	private final Transformation having;
 	private final String name;
 	private final Class<? extends ComponentRole> role;
-
-	private transient VTLValueMetadata metadata;
 	
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, List<String> groupBy, Transformation having)
 	{
@@ -108,13 +106,13 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 	
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return Stream.of(scalar).collect(aggregation.getReducer());
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
 		Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> reducer = aggregation.getReducer(sourceMeasure);
@@ -141,12 +139,12 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
 		
 		if (opmeta instanceof ScalarValueMetadata && NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))
-			return metadata = NUMBER;
+			return NUMBER;
 		else if (opmeta instanceof DataSetMetadata)
 		{
 			DataSetMetadata dataset = (DataSetMetadata) opmeta;
@@ -155,7 +153,7 @@ public class AggregateTransformation extends UnaryTransformation
 			if (groupBy == null)
 			{
 				if (aggregation == COUNT)
-					return metadata;
+					return dataset;
 					
 				if (measures.size() != 1)
 					throw new VTLExpectedComponentException(Measure.class, measures);
@@ -164,7 +162,7 @@ public class AggregateTransformation extends UnaryTransformation
 				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
 					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, measure.getDomain());
 				
-				return metadata = dataset;
+				return dataset;
 			}
 			else
 			{
@@ -184,7 +182,7 @@ public class AggregateTransformation extends UnaryTransformation
 						: DataStructureComponentImpl.of(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
 						: sourceMeasure;
 				
-				return metadata = new DataStructureBuilder().addComponents(keys).addComponents(resultComponent).build();
+				return new DataStructureBuilder().addComponents(keys).addComponents(resultComponent).build();
 			}
 		}
 		else

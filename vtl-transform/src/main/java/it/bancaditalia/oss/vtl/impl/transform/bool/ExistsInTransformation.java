@@ -71,24 +71,23 @@ public class ExistsInTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getComponents(Measure.class).iterator().next(),
 				rightMeasure = right.getComponents(Measure.class).iterator().next();
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> boolMeasure = metadata.getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> boolMeasure = ((DataSetMetadata) metadata).getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
 		
 		Set<? extends ScalarValue<?, ?, ?, ?>> values = right.stream().map(dp -> dp.get(rightMeasure)).collect(toSet());
 		Predicate<DataPoint> filter;
@@ -110,7 +109,7 @@ public class ExistsInTransformation extends BinaryTransformation
 					return map;
 				};
 			
-		return left.filter(filter).mapKeepingKeys(metadata, mapper);
+		return left.filter(filter).mapKeepingKeys((DataSetMetadata) metadata, mapper);
 	}
 
 	@Override

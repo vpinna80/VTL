@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -49,6 +51,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
@@ -75,8 +78,6 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 
 	private final List<String> partitionBy;
 
-	private transient DataSetMetadata metadata;
-	
 	public RatioToReportTransformation(Transformation operand, List<String> partitionBy)
 	{
 		super(operand);
@@ -85,13 +86,13 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
 		partitionIDs = partitionBy.stream()
@@ -108,35 +109,37 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 			.ifPresent(c -> { throw new VTLIncompatibleTypesException("ratio_to_report", c, NUMBERDS); });
 		
 		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(
-				partitionIDs, collectingAndThen(toSet(), this::ratioToReportByPartition)
+				partitionIDs, collectingAndThen(toSet(), ratioToReportByPartition((DataSetMetadata) metadata))
 			).reduce(Stream::concat)
 			.orElse(Stream.empty()), dataset);
 	}
 
-	private Stream<DataPoint> ratioToReportByPartition(Set<DataPoint> partition)
+	private Function<Set<DataPoint>, Stream<DataPoint>> ratioToReportByPartition(DataSetMetadata metadata)
 	{
-		Map<DataStructureComponent<Measure, ?, ?>, Double> measureSums = Utils.getStream(metadata.getComponents(Measure.class))
-		.map(m -> Utils.getStream(partition)
-			.map(dp -> dp.get(m))
-			.filter(NumberValue.class::isInstance)
-			.map(ScalarValue::get)
-			.map(Number.class::cast)
-			.map(Number::doubleValue)
-			.map(Utils.toEntryWithKey(v -> m))
-		).reduce(Stream::concat)
-		.orElse(Stream.empty())
-		.collect(groupingByConcurrent(Entry::getKey, summingDouble(e -> e.getValue())));
-	
-		return Utils.getStream(partition)
-			.map(dp -> Utils.getStream(measureSums.entrySet())
-				.map(keepingKey((m, v) -> dp.get(m) instanceof NullValue ? null : ((Number) dp.get(m).get()).doubleValue() / v))
-				.map(keepingKey((m, v) -> (ScalarValue<?, ?, ?, ?>)(v == null ? NullValue.instanceFrom(m) : DoubleValue.of(v))))
-				.collect(toDataPoint(metadata, dp.getValues(Identifier.class)))
-			);
+		return partition -> {
+			Map<DataStructureComponent<Measure, ?, ?>, Double> measureSums = Utils.getStream(metadata.getComponents(Measure.class))
+			.map(m -> Utils.getStream(partition)
+				.map(dp -> dp.get(m))
+				.filter(NumberValue.class::isInstance)
+				.map(ScalarValue::get)
+				.map(Number.class::cast)
+				.map(Number::doubleValue)
+				.map(Utils.toEntryWithKey(v -> m))
+			).reduce(Stream::concat)
+			.orElse(Stream.empty())
+			.collect(groupingByConcurrent(Entry::getKey, summingDouble(e -> e.getValue())));
+		
+			return Utils.getStream(partition)
+				.map(dp -> Utils.getStream(measureSums.entrySet())
+					.map(keepingKey((m, v) -> dp.get(m) instanceof NullValue ? null : ((Number) dp.get(m).get()).doubleValue() / v))
+					.map(keepingKey((m, v) -> (ScalarValue<?, ?, ?, ?>)(v == null ? NullValue.instanceFrom(m) : DoubleValue.of(v))))
+					.collect(toDataPoint(metadata, dp.getValues(Identifier.class)))
+				);
+		};
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session);
 		
@@ -152,7 +155,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 			.map(c -> c.as(Identifier.class))
 			.collect(toSet());
 		
-		return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponents(dataset.getComponents(Measure.class))
 				.build();
 	}

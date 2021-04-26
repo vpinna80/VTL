@@ -23,7 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -70,7 +69,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(BOOLEANDS);
@@ -84,11 +83,9 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected DataSet evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected DataSet evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
-
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
 		
 		final ScalarValue<?, ?, ?, ?> castedScalar;
@@ -99,42 +96,39 @@ public class ComparisonTransformation extends BinaryTransformation
 		
 		if (castToLeft) 
 			if (datasetIsLeftOp)
-				return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, operator.apply(dp.get(measure), castedScalar)));
+				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(dp.get(measure), castedScalar)));
 			else
-				return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, operator.apply(scalar, scalar.getDomain().cast(dp.get(measure)))));
+				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(scalar, scalar.getDomain().cast(dp.get(measure)))));
 		else
 			if (datasetIsLeftOp)
-				return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, operator.apply(scalar.getDomain().cast(dp.get(measure)), scalar)));
+				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(scalar.getDomain().cast(dp.get(measure)), scalar)));
 			else
-				return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, operator.apply(castedScalar, dp.get(measure))));
+				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(castedScalar, dp.get(measure))));
 	}
 
 	@Override
-	protected DataSet evalTwoDatasets(DataSet left, DataSet right)
+	protected DataSet evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = metadata.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
-		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> casted = 
-				(a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
-		BiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> function =
-				Utils.reverseIf(leftHasMoreIdentifiers, casted);
+		BinaryOperator<ScalarValue<?, ?, ?, ?>> casted = (a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
+		BinaryOperator<ScalarValue<?, ?, ?, ?>> function = Utils.reverseIf(casted, leftHasMoreIdentifiers);
 
 		// Scan the dataset with less identifiers and find the matches
-		return streamed.filteredMappedJoin(metadata, indexed,
-						(dps, dpi) -> true,
-						(dps, dpi) -> new DataPointBuilder()
-								.addAll(dps.getValues(Identifier.class))
-								.addAll(dpi.getValues(Identifier.class))
-								.add(resultMeasure, function.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-								.build(metadata));
+		return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed,
+				(dps, dpi) -> true,
+				(dps, dpi) -> new DataPointBuilder()
+						.addAll(dps.getValues(Identifier.class))
+						.addAll(dpi.getValues(Identifier.class))
+						.add(resultMeasure, function.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
+						.build((DataSetMetadata) metadata));
 	}
 
 	@Override

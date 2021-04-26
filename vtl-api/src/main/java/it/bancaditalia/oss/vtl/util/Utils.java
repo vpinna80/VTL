@@ -367,19 +367,19 @@ public final class Utils
 		return a -> function.apply(a);
 	}
 	
-	public static BiPredicate<DataPoint, DataPoint> reverseIf(boolean isReverse, BiPredicate<DataPoint, DataPoint> predicate)
-	{
-		return (a, b) -> isReverse ? predicate.test(b, a) : predicate.test(a, b);
-	}
-
-	public static <A> BinaryOperator<A> reverseIfBOp(boolean isReverse, BinaryOperator<A> binaryOperator)
+	public static <A> BinaryOperator<A> reverseIf(BinaryOperator<A> binaryOperator, boolean isReverse)
 	{
 		return (a, b) -> isReverse ? binaryOperator.apply(b, a) : binaryOperator.apply(a, b);
 	}
 
-	public static <A, R> BiFunction<A, A, R> reverseIf(boolean isReverse, BiFunction<? super A, ? super A, ? extends R> bifunction)
+	public static <A, R> BiFunction<? super A, ? super A, ? extends R> reverseIf(BiFunction<? super A, ? super A, ? extends R> binaryOperator, boolean isReverse)
 	{
-		return (a, b) -> isReverse ? bifunction.apply(b, a) : bifunction.apply(a, b);
+		return (a, b) -> isReverse ? binaryOperator.apply(b, a) : binaryOperator.apply(a, b);
+	}
+
+	public static BiPredicate<DataPoint, DataPoint> reverseIf(boolean isReverse, BiPredicate<DataPoint, DataPoint> predicate)
+	{
+		return (a, b) -> isReverse ? predicate.test(b, a) : predicate.test(a, b);
 	}
 
 	public static <A, B, C> BiFunction<A, B, C> asFun(BiFunction<? super A, ? super B, ? extends C> bifunction)

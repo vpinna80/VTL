@@ -88,41 +88,43 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	{
+		return evalTwoScalars(left, right);
+	}
+
+	private ScalarValue<?, ?, ?, ?> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		return operator.apply(BOOLEANDS.cast(left), BOOLEANDS.cast(right));
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
-		
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(resultMeasure, Utils.reverseIf(!datasetIsLeftOp, this::evalTwoScalars).apply(dp.get(datasetMeasure), scalar)));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, Utils.<ScalarValue<?, ?, ?, ?>>reverseIf(this::evalTwoScalars, !datasetIsLeftOp).apply(dp.get(datasetMeasure), scalar)));
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = (metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		// Scan the dataset with less identifiers and find the matches
-		return streamed.mappedJoin(metadata, indexed,
+		return streamed.mappedJoin((DataSetMetadata) metadata, indexed,
 				(dps, dpi) -> new DataPointBuilder()
 					.addAll(dps.getValues(Identifier.class))
 					.addAll(dpi.getValues(Identifier.class))
-					.add(resultMeasure, Utils.reverseIf(leftHasMoreIdentifiers, this::evalTwoScalars).apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-					.build(metadata));
+					.add(resultMeasure, Utils.<ScalarValue<?, ?, ?, ?>>reverseIf(this::evalTwoScalars, leftHasMoreIdentifiers).apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
+					.build((DataSetMetadata) metadata));
 	}
 
 	@Override

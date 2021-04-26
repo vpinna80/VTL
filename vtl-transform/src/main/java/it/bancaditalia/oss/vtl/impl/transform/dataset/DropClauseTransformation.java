@@ -30,6 +30,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -48,24 +49,22 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 
 	private final List<String> names;
 	
-	private transient DataSetMetadata metadata;
-	
 	public DropClauseTransformation(List<String> names)
 	{
 		this.names = names;
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSet dataset = (DataSet) getThisValue(session);
+		DataSet dataset = (DataSet) getThisValue(scheme);
 		Set<DataStructureComponent<NonIdentifier, ?, ?>> toDrop = Utils.getStream(names)
 				.map(n -> dataset.getComponent(n))
 				.map(Optional::get)
 				.map(c -> c.as(NonIdentifier.class))
 				.collect(toSet());
 		
-		return dataset.mapKeepingKeys(metadata, dp -> {
+		return dataset.mapKeepingKeys(getMetadata(scheme), dp -> {
 				Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(dp.getValues(NonIdentifier.class));
 				newVals.keySet().removeAll(toDrop);
 				return newVals;
@@ -73,9 +72,14 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 	}
 	
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata operand = getThisMetadata(session);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata operand = getThisMetadata(scheme);
 		
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
@@ -90,9 +94,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		if (!namedIDs.isEmpty())
 			throw new VTLInvariantIdentifiersException("drop", namedIDs);
 
-		metadata = ((DataSetMetadata) operand).drop(names);
-		
-		return metadata;
+		return ((DataSetMetadata) operand).drop(names);
 	}
 
 	@Override

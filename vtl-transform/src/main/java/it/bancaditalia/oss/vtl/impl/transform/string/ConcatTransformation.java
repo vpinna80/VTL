@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
-import static it.bancaditalia.oss.vtl.util.Utils.reverseIfBOp;
+import static it.bancaditalia.oss.vtl.util.Utils.reverseIf;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
@@ -68,15 +68,15 @@ public class ConcatTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		return CONCAT.apply(STRINGDS.cast(left), STRINGDS.cast(right));
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> function = Utils.reverseIfBOp(!datasetIsLeftOp, CONCAT);
+		BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> function = Utils.reverseIf(CONCAT, !datasetIsLeftOp);
 		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
 		
@@ -85,14 +85,13 @@ public class ConcatTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
 
 		DataSet streamed = leftHasMoreIdentifiers ? right: left;
 		DataSet indexed = leftHasMoreIdentifiers ? left: right;
-		Set<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = metadata.getComponents(Measure.class, STRINGDS);
+		Set<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = ((DataSetMetadata) metadata).getComponents(Measure.class, STRINGDS);
 		
 		if (resultMeasures.size() == 1 && (!left.getMetadata().containsAll(resultMeasures) || !right.getMetadata().containsAll(resultMeasures)))
 		{
@@ -100,28 +99,28 @@ public class ConcatTransformation extends BinaryTransformation
 			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> streamedMeasure = streamed.getComponents(Measure.class, STRINGDS).iterator().next();
 			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> indexedMeasure = indexed.getComponents(Measure.class, STRINGDS).iterator().next();
 			
-			BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> finalOperator = reverseIfBOp(!leftHasMoreIdentifiers, CONCAT);
+			BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> finalOperator = reverseIf(CONCAT, !leftHasMoreIdentifiers);
 			
-			return streamed.mappedJoin(metadata, indexed, (dps, dpi) -> new DataPointBuilder()
+			return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dps, dpi) -> new DataPointBuilder()
 				.add(resultMeasure, finalOperator.apply(dps.getValue(streamedMeasure), dpi.getValue(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build(metadata));
+				.build((DataSetMetadata) metadata));
 		}
 		else
 		{
 			// must remember which is the left operand because some operators are not commutative
-			BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> finalOperator = reverseIfBOp(!leftHasMoreIdentifiers, CONCAT);  
+			BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> finalOperator = reverseIf(CONCAT, !leftHasMoreIdentifiers);  
 	
 			// Scan the dataset with less identifiers and find the matches
-			return streamed.mappedJoin(metadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
+			return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
 						.map(rm -> new SimpleEntry<>(rm, finalOperator
 								.apply(STRINGDS.cast(dpi.get(indexed.getComponent(rm.getName()).get())), 
 										STRINGDS.cast(dps.get(streamed.getComponent(rm.getName()).get())))))
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build(metadata));
+					.build((DataSetMetadata) metadata));
 		}
 	}
 

@@ -19,12 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
-import static java.util.concurrent.ForkJoinPool.commonPool;
-
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ForkJoinTask;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,6 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.time.CurrentDateOperand;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 /**
@@ -61,33 +60,27 @@ public class ThreadUtils
 	/**
 	 * @param <T> The type returned by the extractor
 	 * 
-	 * @param scheme The {@link TransformationScheme}
-	 * @param expr The binary expression being computed
-	 * @param extractor a function that extracts the value from the result of each subexpression
-	 * @param combiner a function that combines the results of the two subexpressions 
+	 * @param expr The transformation being computed
+	 * @param extractors an array of functions that extracts the results of each subexpression
+	 * @param combiner a function that reduces the results of the subexpressions 
 	 * @return
 	 */
-	public static <T> T evalFuture(TransformationScheme scheme, BinaryTransformation expr,
-			BiFunction<? super T, ? super T, ? extends T> combiner, 
-			BiFunction<? super Transformation, ? super TransformationScheme, ? extends T> extractor) 
+	@SafeVarargs
+	public static <T> Function<Transformation, T> evalFuture(BinaryOperator<T> combiner, Function<? super Transformation, T>... extractors) 
 	{
-		Transformation leftExpr = expr.getLeftOperand();
-		Transformation rightExpr = expr.getRightOperand();
-		
-		if (Utils.SEQUENTIAL)
-			return combiner.apply(extractor.apply(leftExpr, scheme), extractor.apply(rightExpr, scheme));
-
-		LOGGER.trace("Asking computation of {}:{}", expr.getClass().getSimpleName(), expr);
-		
-		ForkJoinTask<? extends T> leftTask = null, rightTask = null;
-		if (!SIMPLE_TRANSFORMATIONS.contains(leftExpr.getClass()))
-			leftTask = commonPool().submit(() -> extractor.apply(leftExpr, scheme));
-		if (!SIMPLE_TRANSFORMATIONS.contains(rightExpr.getClass()))
-			rightTask = commonPool().submit(() -> extractor.apply(rightExpr, scheme));
-		
-		T left = leftTask != null ? leftTask.join() : extractor.apply(leftExpr, scheme); 
-		T right = rightTask != null ? rightTask.join() : extractor.apply(rightExpr, scheme); 
-
-		return combiner.apply(left, right);
+		return transformation -> {
+			LOGGER.debug("Extracting {} subexpressions from {}", extractors.length, transformation);
+			Stream<Function<? super Transformation, T>> stream = Arrays.stream(extractors);
+			if (Utils.SEQUENTIAL)
+				LOGGER.trace("Computation is done sequentially");
+			else
+			{
+				LOGGER.trace("Computation is done concurrently");
+				stream = stream.parallel();
+			}
+			T result = Arrays.stream(extractors).parallel().map(e -> e.apply(transformation)).reduce(combiner).get();
+			LOGGER.debug("Reduced result for {}", transformation);
+			return result;
+		};
 	}
 }

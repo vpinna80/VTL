@@ -53,13 +53,13 @@ public class NotTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return BooleanValue.not(BOOLEANDS.cast(scalar));
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 		
@@ -71,7 +71,7 @@ public class NotTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		

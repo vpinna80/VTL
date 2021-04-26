@@ -38,6 +38,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -173,8 +174,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	private final List<String> groupBy;
 	private final Transformation having;
 
-	private transient DataSetMetadata metadata;
-
 	public AggrClauseTransformation(List<AggrClauseItem> operands, List<String> groupBy, Transformation having)
 	{
 		this.aggrItems = operands.stream().map(clause -> clause.withGroupBy(groupBy)).collect(toList());
@@ -191,6 +190,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
+		DataSetMetadata metadata = getMetadata(session);
 		DataSet operand = (DataSet) getThisValue(session);
 		
 		TransformationScheme thisScope = new ThisScope(operand, session);
@@ -216,12 +216,14 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		if (metadata != null)
-			return metadata;
-
-		VTLValueMetadata meta = getThisMetadata(session);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata meta = getThisMetadata(scheme);
 
 		if (meta instanceof DataSetMetadata)
 		{
@@ -246,7 +248,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 			for (AggrClauseItem clause : aggrItems)
 			{
-				VTLValueMetadata clauseMeta = clause.getOperand().getMetadata(session);
+				VTLValueMetadata clauseMeta = clause.getOperand().getMetadata(scheme);
 				
 				if (clauseMeta instanceof DataSetMetadata)
 				{
@@ -276,8 +278,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					builder = builder.addComponent(new DataStructureComponentImpl<>(clause.getComponent(), requestedRole, Domains.NUMBERDS));
 			}
 
-			metadata = builder.build();
-
 			if (having != null)
 			{
 				throw new UnsupportedOperationException("HAVING not implemented.");
@@ -290,7 +290,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 //					throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, havingDS.getComponents(Measure.class));
 			}
 
-			return metadata;
+			return builder.build();
 		}
 		else
 			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);

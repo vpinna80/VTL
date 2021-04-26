@@ -88,8 +88,6 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	private final int offset;
 	private final ScalarValue<?, ?, ?, ?> defaultValue;
 
-	private transient DataSetMetadata metadata;
-
 	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue<?> offset, ScalarValue<?, ?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
 	{
 		super(operand);
@@ -102,13 +100,13 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
 		
@@ -147,7 +145,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 				Stream<DataPoint> result = ds.streamByKeys(
 						partitionIDs, 
 						toConcurrentMap(identity(), identity(), (a, b) -> a, () -> new ConcurrentSkipListMap<>(comparator)), 
-						(partition, keyValues) -> offsetPartition(partition.keySet(), keyValues)
+						(partition, keyValues) -> offsetPartition((DataSetMetadata) metadata, partition.keySet(), keyValues)
 					).reduce(Stream::concat)
 					.orElse(Stream.empty());
 				LOGGER.debug("Finished computing {} on {}", direction, alias);
@@ -155,7 +153,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 			}, dataset);
 	}
 	
-	private Stream<DataPoint> offsetPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
+	private Stream<DataPoint> offsetPartition(DataSetMetadata metadata, NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		LOGGER.trace("Analytic invocation on partition {}", keyValues);
 		
@@ -197,13 +195,13 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata opmeta = operand.getMetadata(session);
 		if (opmeta instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
 		
-		metadata = (DataSetMetadata) opmeta;
+		DataSetMetadata metadata = (DataSetMetadata) opmeta;
 		
 		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)

@@ -128,19 +128,19 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		return new LightF2DataSet<>(dataset.getMetadata(), operator::apply, dataset, main);
+		return new LightF2DataSet<>((DataSetMetadata) metadata, operator::apply, dataset, main);
 	}
 	
 	@Override
-	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new VTLInvalidParameterException(scalar, DataSet.class); 
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata metadata = operand.getMetadata(session);
 		

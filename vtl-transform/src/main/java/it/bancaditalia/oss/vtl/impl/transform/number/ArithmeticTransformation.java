@@ -52,6 +52,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -86,7 +87,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			if (INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(left.getDomain()))
@@ -100,35 +101,31 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		Set<String> measureNames = dataset.getComponents(Measure.class, NUMBERDS).stream().map(DataStructureComponent::getName).collect(toSet());
-
-		Predicate<String> bothIntegers = name -> metadata.getComponent(name)
+		ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> castedScalar = NUMBERDS.cast(scalar);
+		
+		Predicate<String> bothIntegers = name -> ((DataSetMetadata) metadata).getComponent(name)
 					.map(DataStructureComponent::getDomain)
 					.map(c -> INTEGERDS.isAssignableFrom(c))
-					.orElseThrow(() -> new VTLMissingComponentsException(name, metadata)) 
+					.orElseThrow(() -> new VTLMissingComponentsException(name, (DataSetMetadata) metadata)) 
 				&& INTEGERDS.isAssignableFrom(scalar.getDomain());
 		
 		// must remember which is the left operand because some operators are not commutative
 		BiFunction<? super DataPoint, ? super String, ScalarValue<?, ?, ?, ?>> finisher = (dp, name) -> 
-			reverseIf(!datasetIsLeftOp, bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsDouble)
-				.apply(dp.get(dataset.getComponent(name)
-						.map(c -> c.as(NUMBERDS))
-						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata))
-						), scalar);
+			reverseIf(bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsDouble, !datasetIsLeftOp)
+				.apply(NUMBERDS.cast(dp.get(dataset.getComponent(name).get())), castedScalar);
 		
-		return dataset.mapKeepingKeys(metadata, dp -> Utils.getStream(measureNames)
-				.collect(toConcurrentMap(name -> metadata.getComponent(name)
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> Utils.getStream(measureNames)
+				.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata).getComponent(name)
 						.map(c -> c.as(Measure.class))
-						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata)), name -> finisher.apply(dp, name))));
+						.get(), name -> finisher.apply(dp, name))));
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata();
 		// index (as right operand) the one with less keys and stream the other (as left operand)
 		boolean swap = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
 		DataSet streamed = swap ? right : left;
@@ -158,7 +155,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		}
 		else
 		{
-			Set<DataStructureComponent<Measure, ?, ?>> resultMeasures = metadata.getComponents(Measure.class);
+			Set<DataStructureComponent<Measure, ?, ?>> resultMeasures = ((DataSetMetadata) metadata).getComponents(Measure.class);
 			
 			if (resultMeasures.size() == 1)
 			{
@@ -167,18 +164,18 @@ public class ArithmeticTransformation extends BinaryTransformation
 				DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next(); 
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
-				return streamed.mappedJoin(metadata, indexed, 
+				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, 
 						(dpl, dpr) -> new DataPointBuilder()
 							.add(resultMeasure, compute(swap, INTEGERDS.isAssignableFrom(resultMeasure.getDomain()), 
 									dpl.get(streamedMeasure), 
 									dpr.get(indexedMeasure))
 							).addAll(dpl.getValues(Identifier.class))
 							.addAll(dpr.getValues(Identifier.class))
-							.build(metadata));
+							.build((DataSetMetadata) metadata));
 			}
 			else
 				// Scan the dataset with less identifiers and find the matches
-				return streamed.mappedJoin(metadata, indexed, 
+				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, 
 					(dpl, dpr) -> new DataPointBuilder(resultMeasures.stream()
 							.map(toEntryWithValue(compToCalc -> compute(swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
 									dpl.get(streamed.getComponent(compToCalc.getName()).get()), 
@@ -186,7 +183,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 							)).collect(entriesToMap()))		
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
-						.build(metadata));
+						.build((DataSetMetadata) metadata));
 		}
 	}
 
@@ -196,9 +193,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		if (left instanceof NullValue || right instanceof NullValue)
 			return intResult ? NullValue.instance(INTEGERDS) : NullValue.instance(NUMBERDS);
 		
-		return reverseIf(swap, intResult
-					? getOperator()::applyAsInt 
-					: getOperator()::applyAsDouble)
+		return reverseIf(intResult ? getOperator()::applyAsInt : getOperator()::applyAsDouble, swap)
 			.apply((NumberValue<?, ?, ?, ?>) left, (NumberValue<?, ?, ?, ?>) right);
 	}
 

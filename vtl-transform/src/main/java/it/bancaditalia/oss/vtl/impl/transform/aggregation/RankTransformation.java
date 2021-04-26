@@ -51,6 +51,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -81,8 +82,6 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	private final List<String> partitionBy;
 	private final List<OrderByItem> orderByClause;
 
-	private transient DataSetMetadata metadata;
-
 	public RankTransformation(List<String> partitionBy, List<OrderByItem> orderByClause)
 	{
 		this.partitionBy = coalesce(partitionBy, emptyList());
@@ -90,9 +89,9 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSet dataset = (DataSet) session.resolve(THIS); 
+		DataSet dataset = (DataSet) scheme.resolve(THIS); 
 				
 		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
 		
@@ -125,15 +124,15 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(
+		return new LightFDataSet<>(getMetadata(scheme), ds -> ds.streamByKeys(
 				partitionIDs, 
 				toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
-				(partition, keyValues) -> rankPartition(partition, keyValues)
+				(partition, keyValues) -> rankPartition(scheme, partition, keyValues)
 			).reduce(Stream::concat)
 			.orElse(Stream.empty()), dataset);
 	}
 	
-	private Stream<DataPoint> rankPartition(NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
+	private Stream<DataPoint> rankPartition(TransformationScheme scheme, NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
 		long rank = 1, position = 1;
@@ -155,7 +154,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				
 			result.add(new DataPointBuilder(dp.getValues(Identifier.class))
 				.add(RANK_MEASURE, rankResult)
-				.build(metadata));
+				.build(getMetadata(scheme)));
 		}
 		
 		return result.stream();
@@ -177,9 +176,14 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata opmeta = session.getMetadata(THIS);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+
+	private VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata opmeta = scheme.getMetadata(THIS);
 		if (opmeta instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
 		
@@ -198,7 +202,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.map(c -> c.as(Identifier.class))
 				.collect(toSet());
 		
-		return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(RANK_MEASURE)
 				.build();
 	}

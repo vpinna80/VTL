@@ -89,13 +89,13 @@ public class CastTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return castScalar(scalar);
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getComponents(Measure.class).iterator().next();
 		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getDomain().getVarName(), Measure.class, target.getDomain()).as(Measure.class);
@@ -106,7 +106,7 @@ public class CastTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		ValueDomainSubset<?, ?> domain;

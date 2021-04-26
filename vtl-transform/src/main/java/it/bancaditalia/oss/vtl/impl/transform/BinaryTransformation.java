@@ -23,10 +23,12 @@ import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.Set;
+import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.transform.util.ThreadUtils;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -44,7 +46,6 @@ public abstract class BinaryTransformation extends TransformationImpl
 	private static final long serialVersionUID = 1L;
 	
 	private final Transformation leftOperand, rightOperand;
-	private transient VTLValueMetadata metadata = null;
 
 	public BinaryTransformation(Transformation left, Transformation right)
 	{
@@ -62,23 +63,24 @@ public abstract class BinaryTransformation extends TransformationImpl
 	public final VTLValue eval(TransformationScheme scheme)
 	{
 		// Optimization, avoid parallelization of simple scalar operations
+		BinaryOperator<VTLValue> combiner = evalCombiner(getMetadata(scheme));
 		if (scheme instanceof DatapointScope)
-			return evalFinisher(leftOperand.eval(scheme), rightOperand.eval(scheme));
+			return combiner.apply(leftOperand.eval(scheme), rightOperand.eval(scheme));
 		else
-			return ThreadUtils.evalFuture(scheme, this, this::evalFinisher, Transformation::eval);
+			return ThreadUtils.evalFuture(combiner, t -> leftOperand.eval(scheme), t -> rightOperand.eval(scheme)).apply(this);
 	}
 	
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return metadata == null ? metadata = ThreadUtils.evalFuture(scheme, this, this::getMetadataFinisher, Transformation::getMetadata) : metadata;
+		return MetadataHolder.getInstance(scheme).computeIfAbsent(this, ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)));
 	}
 	
-	protected abstract VTLValue evalTwoScalars(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right);
+	protected abstract VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right);
 
-	protected abstract VTLValue evalDatasetWithScalar(boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar);
+	protected abstract VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar);
 
-	protected abstract VTLValue evalTwoDatasets(DataSet left, DataSet right);
+	protected abstract VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right);
 
 	protected abstract VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right);
 
@@ -92,23 +94,25 @@ public abstract class BinaryTransformation extends TransformationImpl
 		return Stream.concat(leftOperand.getTerminals().stream(), rightOperand.getTerminals().stream()).collect(toSet()); 
 	}
 
-	private VTLValue evalFinisher(VTLValue left, VTLValue right) 
+	private BinaryOperator<VTLValue> evalCombiner(VTLValueMetadata metadata) 
 	{
-		if (left instanceof DataSet && right instanceof DataSet)
-			return evalTwoDatasets((DataSet) left, (DataSet) right);
-		else if (left instanceof DataSet && right instanceof ScalarValue)
-			return evalDatasetWithScalar(true, (DataSet) left, (ScalarValue<?, ?, ?, ?>) right);
-		else if (left instanceof ScalarValue && right instanceof DataSet)
-			return evalDatasetWithScalar(false, (DataSet) right, (ScalarValue<?, ?, ?, ?>) left);
-		else if (left instanceof ScalarValue && right instanceof ScalarValue)
-			return evalTwoScalars((ScalarValue<?, ?, ?, ?>) left, (ScalarValue<?, ?, ?, ?>) right);
-		else if (left instanceof DataSet || left instanceof ScalarValue)
-			throw new VTLInvalidParameterException(right, DataSet.class, ScalarValue.class);
-		else
-			throw new VTLInvalidParameterException(left, DataSet.class, ScalarValue.class);
+		return (left, right) -> {
+			if (left instanceof DataSet && right instanceof DataSet)
+				return evalTwoDatasets(metadata, (DataSet) left, (DataSet) right);
+			else if (left instanceof DataSet && right instanceof ScalarValue)
+				return evalDatasetWithScalar(metadata, true, (DataSet) left, (ScalarValue<?, ?, ?, ?>) right);
+			else if (left instanceof ScalarValue && right instanceof DataSet)
+				return evalDatasetWithScalar(metadata, false, (DataSet) right, (ScalarValue<?, ?, ?, ?>) left);
+			else if (left instanceof ScalarValue && right instanceof ScalarValue)
+				return evalTwoScalars(metadata, (ScalarValue<?, ?, ?, ?>) left, (ScalarValue<?, ?, ?, ?>) right);
+			else if (left instanceof DataSet || left instanceof ScalarValue)
+				throw new VTLInvalidParameterException(right, DataSet.class, ScalarValue.class);
+			else
+				throw new VTLInvalidParameterException(left, DataSet.class, ScalarValue.class);
+		};
 	}
 
-	private VTLValueMetadata getMetadataFinisher(VTLValueMetadata left, VTLValueMetadata right) 
+	private VTLValueMetadata metadataCombiner(VTLValueMetadata left, VTLValueMetadata right) 
 	{
 		if (left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
 			return INSTANCE;
@@ -124,11 +128,6 @@ public abstract class BinaryTransformation extends TransformationImpl
 			throw new VTLInvalidParameterException(right, DataSetMetadata.class, ScalarValueMetadata.class);
 		else
 			throw new VTLInvalidParameterException(left, DataSetMetadata.class, ScalarValueMetadata.class);
-	}
-
-	public VTLValueMetadata getMetadata()
-	{
-		return metadata;
 	}
 
 	public Transformation getLeftOperand()

@@ -65,6 +65,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLAmbiguousComponentEx
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.JoinApplyScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -81,6 +82,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -166,7 +168,6 @@ public class JoinTransformation extends TransformationImpl
 	private final Transformation calc;
 	private final Transformation aggr;
 
-	private transient DataSetMetadata metadata;
 	private transient JoinOperand referenceDataSet;
 
 	@SuppressWarnings("java:S107")
@@ -202,14 +203,15 @@ public class JoinTransformation extends TransformationImpl
 
 	@Override
 	@SuppressWarnings("java:S3864")
-	public DataSet eval(TransformationScheme session)
+	public DataSet eval(TransformationScheme scheme)
 	{
 		LOGGER.debug("Preparing renamed datasets for join");
 		
 		Map<JoinOperand, DataSet> values = Utils.getStream(operands)
-			.collect(toMapWithValues(operand -> (DataSet) operand.getOperand().eval(session)));
+			.collect(toMapWithValues(operand -> (DataSet) operand.getOperand().eval(scheme)));
 		
 		DataSet result;
+		DataSetMetadata metadata = getMetadata(scheme);
 		
 		if (usingNames.isEmpty())
 		{
@@ -284,18 +286,18 @@ public class JoinTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("inner_join case B1-B2 not implemented");
 		
 		if (filter != null)
-			result = (DataSet) filter.eval(new ThisScope(result, session));
+			result = (DataSet) filter.eval(new ThisScope(result, scheme));
 		if (apply != null)
-			result = applyClause(session, result);
+			result = applyClause(metadata, scheme, result);
 		if (calc != null)
-			result = (DataSet) calc.eval(new ThisScope(result, session));
+			result = (DataSet) calc.eval(new ThisScope(result, scheme));
 		if (aggr != null)
-			result = (DataSet) aggr.eval(new ThisScope(result, session));
+			result = (DataSet) aggr.eval(new ThisScope(result, scheme));
 		if (keepOrDrop != null)
-			result = (DataSet) keepOrDrop.eval(new ThisScope(result, session));
+			result = (DataSet) keepOrDrop.eval(new ThisScope(result, scheme));
 		if (rename != null)
 		{
-			result = (DataSet) rename.eval(new ThisScope(result, session));
+			result = (DataSet) rename.eval(new ThisScope(result, scheme));
 
 			// unalias all remaining components that have not been already unaliased 
 			Set<DataStructureComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
@@ -351,7 +353,7 @@ public class JoinTransformation extends TransformationImpl
 			})).collect(entriesToMap());
 	}
 
-	private DataSet applyClause(TransformationScheme session, DataSet dataset)
+	private DataSet applyClause(DataSetMetadata metadata, TransformationScheme session, DataSet dataset)
 	{
 		if (apply == null)
 			return dataset;
@@ -373,11 +375,13 @@ public class JoinTransformation extends TransformationImpl
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		if (metadata != null)
-			return metadata;
-		
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
 		if (operator != INNER_JOIN && operator != LEFT_JOIN)
 			throw new UnsupportedOperationException("Not implemented: " + operator.toString());
 		
@@ -403,7 +407,7 @@ public class JoinTransformation extends TransformationImpl
 				});
 
 		Map<JoinOperand, DataSetMetadata> datasetsMeta = operands.stream()
-				.collect(toMap(op -> op, op -> (DataSetMetadata) op.getOperand().getMetadata(session)));
+				.collect(toMap(op -> op, op -> (DataSetMetadata) op.getOperand().getMetadata(scheme)));
 		
 		Optional<JoinOperand> caseAorB1 = isCaseAorB1(datasetsMeta);
 		Optional<JoinOperand> caseB2 = isCaseB2(caseAorB1, datasetsMeta);
@@ -426,7 +430,7 @@ public class JoinTransformation extends TransformationImpl
 					.map(c -> c.getName( ).replaceAll("^.*#", ""))
 					.distinct()
 					.map(name -> {
-						ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(session, name, applyResult))).getDomain();
+						ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(scheme, name, applyResult))).getDomain();
 						return DataStructureComponentImpl.of(name, Measure.class, domain).as(Measure.class);
 					}).collect(toSet());
 			
@@ -473,7 +477,7 @@ public class JoinTransformation extends TransformationImpl
 				throw new VTLAmbiguousComponentException(ambiguousComponent, sameUnaliasedName);
 			});
 		
-		return metadata = result;
+		return result;
 	}
 	
 	private Optional<JoinOperand> isCaseAorB1(Map<JoinOperand, DataSetMetadata> datasetsMeta)

@@ -48,13 +48,13 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected final VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new VTLInvalidParameterException(scalar, DataSet.class);
 	}
 	
 	@Override
-	public final DataSetMetadata getMetadata(TransformationScheme scheme)
+	protected final DataSetMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata metadata = operand.getMetadata(scheme);
 		

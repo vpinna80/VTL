@@ -91,7 +91,6 @@ public class StringUnaryTransformation extends UnaryTransformation
 	}
 
 	private final StringOperator operator;
-	private transient DataSetMetadata metadata;
 	
 	public StringUnaryTransformation(StringOperator operator, Transformation operand)
 	{
@@ -101,17 +100,17 @@ public class StringUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return scalar.getDomain().cast(operator.apply(STRINGDS.cast(scalar)));
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 		
-		return dataset.mapKeepingKeys(metadata, dp -> {
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 				map.replaceAll((c, v) -> c.getDomain().cast(operator.apply(STRINGDS.cast(v))));
 				return map;
@@ -119,7 +118,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
@@ -150,7 +149,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 			components.removeAll(dataset.getComponents(Measure.class));
 			components.addAll(measures);
 			
-			return metadata = new DataStructureBuilder(components).build();
+			return new DataStructureBuilder(components).build();
 		}
 	}
 	

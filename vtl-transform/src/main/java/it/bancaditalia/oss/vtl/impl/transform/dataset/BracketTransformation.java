@@ -26,6 +26,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
@@ -76,9 +77,14 @@ public class BracketTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata metadata = operand.getMetadata(session);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata metadata = operand.getMetadata(scheme);
 		
 		if (metadata instanceof UnknownValueMetadata)
 			return INSTANCE;
@@ -87,7 +93,7 @@ public class BracketTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("Dataset expected as left operand of []# but found " + metadata);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope((DataSetMetadata) operand.getMetadata(session)));
+			return clause.getMetadata(new ThisScope((DataSetMetadata) operand.getMetadata(scheme)));
 		else
 			return ((DataSetMetadata) metadata).membership(componentName);
 	}

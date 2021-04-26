@@ -24,9 +24,11 @@ import static java.util.Collections.emptySet;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -54,14 +56,14 @@ public abstract class UnaryTransformation extends TransformationImpl
 	}
 	
 	@Override
-	public final VTLValue eval(TransformationScheme session)
+	public final VTLValue eval(TransformationScheme scheme)
 	{
-		VTLValue value = operand == null ? session.resolve(ThisScope.THIS) : operand.eval(session);
+		VTLValue value = operand == null ? scheme.resolve(ThisScope.THIS) : operand.eval(scheme);
 		
 		if (value instanceof DataSet)
-			return evalOnDataset((DataSet) value);
+			return evalOnDataset((DataSet) value, getMetadata(scheme));
 		else
-			return evalOnScalar((ScalarValue<?, ?, ?, ?>) value);
+			return evalOnScalar((ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme));
 	}
 
 	public Transformation getOperand()
@@ -69,9 +71,17 @@ public abstract class UnaryTransformation extends TransformationImpl
 		return operand;
 	}
 
-	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar);
+	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata);
 
-	protected abstract VTLValue evalOnDataset(DataSet dataset);
+	protected abstract VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata);
+
+	@Override
+	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
+	{
+		return MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+
+	protected abstract VTLValueMetadata computeMetadata(TransformationScheme scheme);
 
 	@Override
 	public int hashCode()
@@ -81,7 +91,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
 		return result;
 	}
-
+	
 	@Override
 	public boolean equals(Object obj)
 	{

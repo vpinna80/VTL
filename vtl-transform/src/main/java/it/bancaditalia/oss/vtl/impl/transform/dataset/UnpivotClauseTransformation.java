@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
@@ -59,8 +60,6 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	private final String identifierName;
 	private final String measureName;
 
-	private transient DataSetMetadata metadata;
-
 	private static String sanitize(String string)
 	{
 		return string.replaceAll("^\"(.*)\"$", "$1");
@@ -73,9 +72,10 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSet dataset = (DataSet) getThisValue(session);
+		DataSet dataset = (DataSet) getThisValue(scheme);
+		DataSetMetadata metadata = getMetadata(scheme);
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> oldIdentifiers = dataset.getComponents(Identifier.class);
 		Set<DataStructureComponent<Measure,?,?>> oldMeasures = dataset.getComponents(Measure.class);
@@ -95,9 +95,14 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata value = getThisMetadata(session);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata value = getThisMetadata(scheme);
 
 		if (!(value instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(value, DataSetMetadata.class);
@@ -117,7 +122,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = new DataStructureComponentImpl<>(identifierName, Identifier.class, STRINGDS);
 		DataStructureComponent<?, ?, ?> newMeasure = DataStructureComponentImpl.of(measureName, Measure.class, domain);
 
-		return metadata = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(newIdentifier)
 				.addComponent(newMeasure)
 				.build();

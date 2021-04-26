@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -50,7 +51,6 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	private final static Logger LOGGER = LoggerFactory.getLogger(FilterClauseTransformation.class);
 
 	private final Transformation filterClause;
-	private transient DataSetMetadata metadata;
 
 	public FilterClauseTransformation(Transformation filterClause)
 	{
@@ -64,25 +64,26 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSet operand = (DataSet) getThisValue(session);
+		DataSet operand = (DataSet) getThisValue(scheme);
 
 		return operand.filter(dp -> {
-			final DatapointScope scheme = new DatapointScope(dp, metadata, session);
-			final ScalarValue<?, ?, ?, ?> result = (ScalarValue<?, ?, ?, ?>) filterClause.eval(scheme);
+			final DatapointScope dpScope = new DatapointScope(dp, getMetadata(scheme), scheme);
+			final ScalarValue<?, ?, ?, ?> result = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
 			return (TRUE.equals(BOOLEANDS.cast(result)));
 		});
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		if (metadata != null)
-			return metadata;
-		
-		metadata = getThisMetadata(session);
-		VTLValueMetadata filterMetadata = filterClause.getMetadata(session);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata filterMetadata = filterClause.getMetadata(scheme);
 		
 		if (filterMetadata instanceof ScalarValueMetadata)
 		{
@@ -102,7 +103,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		}
 			
 		
-		return metadata = getThisMetadata(session);
+		return getThisMetadata(scheme);
 	}
 
 	@Override

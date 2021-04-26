@@ -33,6 +33,7 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -76,8 +77,6 @@ public class CheckTransformation extends TransformationImpl
 	private final Transformation imbalanceExpr;
 	private final CheckOutput output;
 	
-	private transient DataSetMetadata metadata;
-	
 	public CheckTransformation(Transformation operand, Transformation errorcode, Transformation errorlevel, Transformation imbalance, CheckOutput output)
 	{
 		this.operand = operand;
@@ -96,10 +95,11 @@ public class CheckTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSet dataset = (DataSet) operand.eval(session);
-
+		DataSet dataset = (DataSet) operand.eval(scheme);
+		DataSetMetadata metadata = getMetadata(scheme);
+		
 		if (imbalanceExpr == null)
 			// TODO: INVALID
 			return dataset.mapKeepingKeys(metadata, dp -> {
@@ -111,7 +111,7 @@ public class CheckTransformation extends TransformationImpl
 			});
 		else
 		{
-			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(session);
+			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(scheme);
 			
 			// TODO: INVALID
 			BiPredicate<DataPoint, DataPoint> filter = (a, b) -> true;
@@ -126,10 +126,15 @@ public class CheckTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata meta = operand.getMetadata(session),
-				imbalanceValue = imbalanceExpr != null ? imbalanceExpr.getMetadata(session) : null;
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata meta = operand.getMetadata(scheme),
+				imbalanceValue = imbalanceExpr != null ? imbalanceExpr.getMetadata(scheme) : null;
 
 		if (meta instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
@@ -164,7 +169,7 @@ public class CheckTransformation extends TransformationImpl
 			if (output == ALL)
 				metadata.addComponent(BOOL_VAR);
 
-			return this.metadata = metadata
+			return metadata
 					.addComponent(ERRORCODE)
 					.addComponent(ERRORLEVEL)
 					.build();

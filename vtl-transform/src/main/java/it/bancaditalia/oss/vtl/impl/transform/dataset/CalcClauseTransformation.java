@@ -43,6 +43,7 @@ import it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -185,7 +186,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	}
 
 	private final List<CalcClauseItem> calcClauses;
-	private DataSetMetadata metadata;
 
 	public CalcClauseTransformation(List<CalcClauseItem> items)
 	{
@@ -201,6 +201,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet operand = (DataSet) getThisValue(scheme);
 
 		final Map<Boolean, List<CalcClauseItem>> partitionedClauses = Utils.getStream(calcClauses)
@@ -270,15 +271,17 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		if (metadata != null)
-			return metadata;
-		
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
 		VTLValueMetadata operand = getThisMetadata(scheme);
 
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 
-		metadata = (DataSetMetadata) operand;
+		final DataSetMetadata metadata = (DataSetMetadata) operand;
 		DataStructureBuilder builder = new DataStructureBuilder(metadata);
 
 		for (CalcClauseItem item : calcClauses)
@@ -329,7 +332,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			}
 		}
 
-		return metadata = builder.build();
+		return builder.build();
 	}
 
 	@Override
@@ -344,7 +347,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((calcClauses == null) ? 0 : calcClauses.hashCode());
-		result = prime * result + ((metadata == null) ? 0 : metadata.hashCode());
 		return result;
 	}
 
@@ -359,11 +361,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			if (other.calcClauses != null) return false;
 		}
 		else if (!calcClauses.equals(other.calcClauses)) return false;
-		if (metadata == null)
-		{
-			if (other.metadata != null) return false;
-		}
-		else if (!metadata.equals(other.metadata)) return false;
 		return true;
 	}
 }

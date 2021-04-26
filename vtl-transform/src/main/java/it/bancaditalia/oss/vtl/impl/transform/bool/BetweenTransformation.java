@@ -56,7 +56,6 @@ public class BetweenTransformation extends UnaryTransformation
 	private final ScalarValue<?, ?, ?, ?> to;
 
 	private final transient ValueDomainSubset<?, ?> domain;
-	private transient DataSetMetadata metadata;
 
 	public BetweenTransformation(Transformation operand, Transformation fromT, Transformation toT)
 	{
@@ -78,7 +77,7 @@ public class BetweenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme scheme)
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata op = operand.getMetadata(scheme);
 
@@ -96,7 +95,7 @@ public class BetweenTransformation extends UnaryTransformation
 			if (!measure.getDomain().isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("between", measure, domain);
 
-			return metadata = new DataStructureBuilder()
+			return new DataStructureBuilder()
 					.addComponents(ds.getComponents(Identifier.class))
 					.addComponent(BOOL_MEASURE)
 					.build();
@@ -106,16 +105,16 @@ public class BetweenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar)
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return scalar instanceof NullValue ? NullValue.instance(BOOLEANDS) : BooleanValue.of(scalar.compareTo(from) >= 0 && scalar.compareTo(to) <= 0);
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
-		return dataset.mapKeepingKeys(metadata, dp -> singletonMap(BOOL_MEASURE, evalOnScalar(dp.get(measure))));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(BOOL_MEASURE, evalOnScalar(dp.get(measure), metadata)));
 	}
 	
 	@Override

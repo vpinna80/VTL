@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -46,7 +47,6 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private final Map<String, ScalarValue<?, ?, ?, ?>> subspace;
-	private transient DataSetMetadata metadata;
 	
 	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?, ?>> subspace)
 	{
@@ -54,24 +54,27 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSet operand = (DataSet) getThisValue(session);
+		DataSet operand = (DataSet) getThisValue(scheme);
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
 				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().as(Identifier.class), Entry::getValue));
 		
+		final DataSetMetadata metadata = getMetadata(scheme);
 		return new LightDataSet(metadata, () -> operand.stream()
 				.filter(dp -> subspaceKeyValues.equals(dp.getValues(subspaceKeyValues.keySet(), Identifier.class)))
 				.map(dp -> new DataPointBuilder(dp).delete(subspaceKeyValues.keySet()).build(metadata)));
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		if (metadata != null)
-			return metadata;
-		
-		VTLValueMetadata operand = getThisMetadata(session);
+		return (DataSetMetadata) MetadataHolder.getInstance(scheme).computeIfAbsent(this, t -> computeMetadata(scheme));
+	}
+	
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		VTLValueMetadata operand = getThisMetadata(scheme);
 		
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
@@ -85,11 +88,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		if (missing.size() > 0)
 			throw new VTLMissingComponentsException(missing, dataset);
 
-		// TODO: cast because compiler bug
-		metadata = dataset.subspace(subspace.keySet().stream()
-				.map(name -> dataset.getComponent(name, Identifier.class).get()).collect(toSet()));
-		
-		return metadata;
+		return dataset.subspace(subspace.keySet().stream().map(name -> dataset.getComponent(name, Identifier.class).get()).collect(toSet()));
 	}
 	
 	@Override
