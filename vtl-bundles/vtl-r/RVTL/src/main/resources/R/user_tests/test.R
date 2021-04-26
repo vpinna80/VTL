@@ -51,16 +51,16 @@ for (property in as.list(supportedProperties)){
 }
 
 #prepare r env test
-r_env_input_1 = data.frame(id1=c('1999', '2000', '2001', '2002', '2003', '2004'),
+r_env_input_1 <<- data.frame(id1=c('1999', '2000', '2001', '2002', '2003', '2004'),
                            id2=c(1.06, 0.92, 0.89, 0.94, 1.13, 1.24),
                            m1=c('A1', 'A2', 'A3', NA, 'A5', 'A6'),
                            m2=c(1.2, 2.3, 3.4, 4.5, NA, 6.7),
                            m3=c(T,F,T,F,T,NA),
                            attr1=c('att1', 'att2','att3',NA,'att5','att6'),
                            attr2=c(T,F,T,F,NA,F),
-                           attr3=c(1:5,NA))
-attr(r_env_input_1, 'measures')=c('m1','m2','m3')
-attr(r_env_input_1, 'identifiers')=c('id1','id2')
+                           attr3=c(1:5,NA), stringsAsFactors = F)
+attr(r_env_input_1, 'measures') <<- c('m1','m2','m3')
+attr(r_env_input_1, 'identifiers') <<- c('id1','id2') 
                            
 runTest=function(test_name){
   vtlCode = readChar(x, file.info(x)$size)
