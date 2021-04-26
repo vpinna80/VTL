@@ -286,7 +286,7 @@ public class CachedDataSet extends NamedDataSet
 			});
 	}
 
-	protected Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> createCache(Set<DataStructureComponent<Identifier,?,?>> keys)
+	protected Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys)
 	{
 		String alias = getAlias();
 		LOGGER.debug("Cache miss for {}, start indexing on {}.", alias, keys);
