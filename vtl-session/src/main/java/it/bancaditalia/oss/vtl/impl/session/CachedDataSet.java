@@ -71,12 +71,10 @@ public class CachedDataSet extends NamedDataSet
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedDataSet.class);
-	private static final Map<VTLSession, Map<String, IllegalStateException>> SESSION_STACKS = new ConcurrentHashMap<>();
 	private static final Map<VTLSession, Map<String, CacheWaiter>> SESSION_CACHES = new ConcurrentHashMap<>();
 	private static final ReferenceQueue<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> REF_QUEUE = new ReferenceQueue<>();
 	private static final Map<Reference<?>, Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
 
-	private final Map<String, IllegalStateException> stacks;
 	private final transient CacheWaiter waiter;
 	private transient volatile SoftReference<Set<DataPoint>> unindexed = new SoftReference<>(null);
 	
@@ -140,7 +138,7 @@ public class CachedDataSet extends NamedDataSet
 		new Thread() {
 			
 			{
-				setName("CachedDataSet watcher");
+				setName("CachedDataSet gc watcher");
 				setDaemon(true);
 			}
 			
@@ -168,7 +166,6 @@ public class CachedDataSet extends NamedDataSet
 		super(alias, delegate);
 		
 		waiter = SESSION_CACHES.computeIfAbsent(session, s -> new ConcurrentHashMap<>()).computeIfAbsent(alias, a -> new CacheWaiter(this));
-		stacks = SESSION_STACKS.computeIfAbsent(session, s -> new ConcurrentHashMap<>());
 	}
 
 	public CachedDataSet(VTLSessionImpl session, NamedDataSet delegate)
@@ -181,15 +178,8 @@ public class CachedDataSet extends NamedDataSet
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, Collector<DataPoint, A, TT> groupCollector,
 			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
-		try
-		{
-			ForkJoinPool.managedBlock(waiter);
-		}
-		catch (InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		if (!lock())
 			return Stream.empty();
-		}
 		
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> value = waiter.getCache(keys);
 		if (value == null)
@@ -214,15 +204,8 @@ public class CachedDataSet extends NamedDataSet
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		try
-		{
-			ForkJoinPool.managedBlock(waiter);
-		}
-		catch (InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		if (!lock())
 			return Stream.empty();
-		}
 
 		Set<DataPoint> cache = unindexed.get();
 		if (cache != null)
@@ -237,15 +220,8 @@ public class CachedDataSet extends NamedDataSet
 	@Override
 	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BiPredicate<DataPoint, DataPoint> predicate, BinaryOperator<DataPoint> mergeOp)
 	{
-		try
-		{
-			ForkJoinPool.managedBlock(waiter);
-		}
-		catch (InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		if (!lock())
 			return new LightDataSet(metadata, Stream::empty);
-		}
 	
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
 		commonIds.retainAll(other.getComponents(Identifier.class));
@@ -264,6 +240,20 @@ public class CachedDataSet extends NamedDataSet
 		return filteredMappedJoinWithIndex(other, metadata, newPredicate, newMergeOp, commonIds, value);
 	}
 
+	private boolean lock()
+	{
+		try
+		{
+			ForkJoinPool.managedBlock(waiter);
+			return true;
+		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			return false;
+		}
+	}
+
 	protected Stream<DataPoint> createUnindexedCache(boolean unlockWhenComplete)
 	{
 		String alias = getAlias();
@@ -271,11 +261,6 @@ public class CachedDataSet extends NamedDataSet
 		LOGGER.debug("Cache miss for {}, start caching.", alias);
 		Set<DataPoint> cache = newSetFromMap(new ConcurrentHashMap<>());
 		unindexed = new SoftReference<Set<DataPoint>>(cache);
-		
-		IllegalStateException exception = new IllegalStateException("A deadlock may have happened in the cache mechanism. Caching for dataset " 
-				+ alias + " never completed.");
-		exception.getStackTrace();
-		stacks.put(alias, exception);
 		
 		AtomicBoolean alreadyInterrupted = new AtomicBoolean(false);
 		return getDelegate().stream()
