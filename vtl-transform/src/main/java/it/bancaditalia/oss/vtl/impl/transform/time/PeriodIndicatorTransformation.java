@@ -58,18 +58,15 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class PeriodIndicatorTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-
 	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> DURATION_MEASURE = new DataStructureComponentImpl<>(
 			STRINGDS.getVarName(), Measure.class, STRINGDS);
 
-	private String componentName = null;
-
 	private final Transformation operand;
+	private transient String componentName = null;
 
 	public PeriodIndicatorTransformation(Transformation operand)
 	{
 		this.operand = operand;
-		
 	}
 
 	@Override
@@ -163,5 +160,28 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	public Set<LeafTransformation> getTerminals()
 	{
 		return operand != null ? operand.getTerminals() : emptySet();
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof PeriodIndicatorTransformation)) return false;
+		PeriodIndicatorTransformation other = (PeriodIndicatorTransformation) obj;
+		if (operand == null)
+		{
+			if (other.operand != null) return false;
+		}
+		else if (!operand.equals(other.operand)) return false;
+		return true;
 	}
 }

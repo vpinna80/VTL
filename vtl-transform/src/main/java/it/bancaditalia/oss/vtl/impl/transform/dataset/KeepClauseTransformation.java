@@ -47,7 +47,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private final String names[];
-	private DataSetMetadata metadata;
+	private transient DataSetMetadata metadata;
 	
 	public KeepClauseTransformation(List<String> names)
 	{
@@ -99,5 +99,24 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	public String toString()
 	{
 		return Arrays.stream(names).collect(joining(", ", "[keep ", "]"));
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(names);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof KeepClauseTransformation)) return false;
+		KeepClauseTransformation other = (KeepClauseTransformation) obj;
+		if (!Arrays.equals(names, other.names)) return false;
+		return true;
 	}
 }

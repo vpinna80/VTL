@@ -119,7 +119,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	}
 
 	private final DatasetOperator operator;
-	private DataStructureComponent<Identifier, ?, ?> main;
+	private transient DataStructureComponent<Identifier, ?, ?> main;
 
 	public DatasetUnaryTransformation(DatasetOperator operator, Transformation operand)
 	{
@@ -181,5 +181,25 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	public String toString()
 	{
 		return operator + "(" + operand + ")";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((operator == null) ? 0 : operator.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof DatasetUnaryTransformation)) return false;
+		DatasetUnaryTransformation other = (DatasetUnaryTransformation) obj;
+		if (operator != other.operator) return false;
+		return true;
 	}
 }

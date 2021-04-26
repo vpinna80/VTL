@@ -188,4 +188,30 @@ public class CastTransformation extends UnaryTransformation
 	{
 		return "cast(" + operand + ", " + target + ", \"" + mask + "\")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((mask == null) ? 0 : mask.hashCode());
+		result = prime * result + ((target == null) ? 0 : target.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof CastTransformation)) return false;
+		CastTransformation other = (CastTransformation) obj;
+		if (mask == null)
+		{
+			if (other.mask != null) return false;
+		}
+		else if (!mask.equals(other.mask)) return false;
+		if (target != other.target) return false;
+		return true;
+	}
 }

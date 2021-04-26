@@ -155,4 +155,24 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	{
 		return operator.capsize(operand);
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((operator == null) ? 0 : operator.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof NumericUnaryTransformation)) return false;
+		NumericUnaryTransformation other = (NumericUnaryTransformation) obj;
+		if (operator != other.operator) return false;
+		return true;
+	}
 }

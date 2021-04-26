@@ -192,4 +192,19 @@ public class ConcatTransformation extends BinaryTransformation
 	{
 		return getLeftOperand() + " || " + getRightOperand();
 	}
+
+	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof ConcatTransformation)) return false;
+		return true;
+	}
 }

@@ -35,4 +35,19 @@ public class NvlTransformation extends ConditionalTransformation
 	{
 		return "nvl(" + elseExpr + ", " + thenExpr + ")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof NvlTransformation)) return false;
+		return true;
+	}
 }

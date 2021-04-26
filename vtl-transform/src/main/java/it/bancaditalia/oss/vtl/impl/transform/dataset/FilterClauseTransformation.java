@@ -50,7 +50,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	private final static Logger LOGGER = LoggerFactory.getLogger(FilterClauseTransformation.class);
 
 	private final Transformation filterClause;
-	private DataSetMetadata metadata;
+	private transient DataSetMetadata metadata;
 
 	public FilterClauseTransformation(Transformation filterClause)
 	{
@@ -109,5 +109,28 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	public String toString()
 	{
 		return "[filter " + filterClause + "]";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((filterClause == null) ? 0 : filterClause.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof FilterClauseTransformation)) return false;
+		FilterClauseTransformation other = (FilterClauseTransformation) obj;
+		if (filterClause == null)
+		{
+			if (other.filterClause != null) return false;
+		}
+		else if (!filterClause.equals(other.filterClause)) return false;
+		return true;
 	}
 }

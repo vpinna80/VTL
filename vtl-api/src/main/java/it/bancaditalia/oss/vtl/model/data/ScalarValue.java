@@ -42,4 +42,10 @@ public interface ScalarValue<T extends ScalarValue<T, R, S, D>, R extends Compar
 
 	@Override
 	public ScalarValueMetadata<S, D> getMetadata();
+	
+	@Override
+	public int hashCode();
+	
+	@Override
+	public boolean equals(Object obj);
 }

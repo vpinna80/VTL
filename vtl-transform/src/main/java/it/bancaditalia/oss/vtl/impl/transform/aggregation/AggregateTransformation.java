@@ -211,4 +211,48 @@ public class AggregateTransformation extends UnaryTransformation
 	{
 		return aggregation + "(" + operand + ")" + (groupBy != null ? groupBy.stream().collect(Collectors.joining(", ", " GROUP BY ", "")) : "");
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((aggregation == null) ? 0 : aggregation.hashCode());
+		result = prime * result + ((groupBy == null) ? 0 : groupBy.hashCode());
+		result = prime * result + ((having == null) ? 0 : having.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((role == null) ? 0 : role.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof AggregateTransformation)) return false;
+		AggregateTransformation other = (AggregateTransformation) obj;
+		if (aggregation != other.aggregation) return false;
+		if (groupBy == null)
+		{
+			if (other.groupBy != null) return false;
+		}
+		else if (!groupBy.equals(other.groupBy)) return false;
+		if (having == null)
+		{
+			if (other.having != null) return false;
+		}
+		else if (!having.equals(other.having)) return false;
+		if (name == null)
+		{
+			if (other.name != null) return false;
+		}
+		else if (!name.equals(other.name)) return false;
+		if (role == null)
+		{
+			if (other.role != null) return false;
+		}
+		else if (!role.equals(other.role)) return false;
+		return true;
+	}
 }

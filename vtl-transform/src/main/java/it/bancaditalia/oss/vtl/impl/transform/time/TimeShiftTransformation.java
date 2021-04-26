@@ -73,4 +73,24 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	{
 		return "timeshift(" + operand + ", " + amount + ")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + (int) (amount ^ (amount >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof TimeShiftTransformation)) return false;
+		TimeShiftTransformation other = (TimeShiftTransformation) obj;
+		if (amount != other.amount) return false;
+		return true;
+	}
 }

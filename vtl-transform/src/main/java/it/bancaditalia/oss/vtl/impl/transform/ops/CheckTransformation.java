@@ -75,7 +75,8 @@ public class CheckTransformation extends TransformationImpl
 	private final Transformation errorlevelExpr;
 	private final Transformation imbalanceExpr;
 	private final CheckOutput output;
-	private DataSetMetadata metadata;
+	
+	private transient DataSetMetadata metadata;
 	
 	public CheckTransformation(Transformation operand, Transformation errorcode, Transformation errorlevel, Transformation imbalance, CheckOutput output)
 	{
@@ -190,5 +191,48 @@ public class CheckTransformation extends TransformationImpl
 	{
 		// TODO: add imbalance, errorcode and errorlevel terminals
 		return operand.getTerminals();
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((errorcodeExpr == null) ? 0 : errorcodeExpr.hashCode());
+		result = prime * result + ((errorlevelExpr == null) ? 0 : errorlevelExpr.hashCode());
+		result = prime * result + ((imbalanceExpr == null) ? 0 : imbalanceExpr.hashCode());
+		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
+		result = prime * result + ((output == null) ? 0 : output.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof CheckTransformation)) return false;
+		CheckTransformation other = (CheckTransformation) obj;
+		if (errorcodeExpr == null)
+		{
+			if (other.errorcodeExpr != null) return false;
+		}
+		else if (!errorcodeExpr.equals(other.errorcodeExpr)) return false;
+		if (errorlevelExpr == null)
+		{
+			if (other.errorlevelExpr != null) return false;
+		}
+		else if (!errorlevelExpr.equals(other.errorlevelExpr)) return false;
+		if (imbalanceExpr == null)
+		{
+			if (other.imbalanceExpr != null) return false;
+		}
+		else if (!imbalanceExpr.equals(other.imbalanceExpr)) return false;
+		if (operand == null)
+		{
+			if (other.operand != null) return false;
+		}
+		else if (!operand.equals(other.operand)) return false;
+		if (output != other.output) return false;
+		return true;
 	}
 }

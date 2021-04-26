@@ -97,4 +97,39 @@ public class BracketTransformation extends TransformationImpl
 	{
 		return operand + (clause != null ? clause.toString() : "") + (componentName != null ? "#" + componentName : "");
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((clause == null) ? 0 : clause.hashCode());
+		result = prime * result + ((componentName == null) ? 0 : componentName.hashCode());
+		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof BracketTransformation)) return false;
+		BracketTransformation other = (BracketTransformation) obj;
+		if (clause == null)
+		{
+			if (other.clause != null) return false;
+		}
+		else if (!clause.equals(other.clause)) return false;
+		if (componentName == null)
+		{
+			if (other.componentName != null) return false;
+		}
+		else if (!componentName.equals(other.componentName)) return false;
+		if (operand == null)
+		{
+			if (other.operand != null) return false;
+		}
+		else if (!operand.equals(other.operand)) return false;
+		return true;
+	}
 }

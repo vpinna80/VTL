@@ -70,4 +70,19 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 	}
 
 	protected abstract DataSetMetadata checkIsTimeSeriesDataSet(DataSetMetadata metadata, TransformationScheme scheme);
+
+	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof TimeSeriesTransformation)) return false;
+		return true;
+	}
 }

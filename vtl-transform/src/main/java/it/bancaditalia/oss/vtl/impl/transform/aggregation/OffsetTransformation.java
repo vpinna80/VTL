@@ -229,4 +229,44 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 				+ (orderByClause != null ? orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")) : "")
 				+ ")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((defaultValue == null) ? 0 : defaultValue.hashCode());
+		result = prime * result + ((direction == null) ? 0 : direction.hashCode());
+		result = prime * result + offset;
+		result = prime * result + ((orderByClause == null) ? 0 : orderByClause.hashCode());
+		result = prime * result + ((partitionBy == null) ? 0 : partitionBy.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof OffsetTransformation)) return false;
+		OffsetTransformation other = (OffsetTransformation) obj;
+		if (defaultValue == null)
+		{
+			if (other.defaultValue != null) return false;
+		}
+		else if (!defaultValue.equals(other.defaultValue)) return false;
+		if (direction != other.direction) return false;
+		if (offset != other.offset) return false;
+		if (orderByClause == null)
+		{
+			if (other.orderByClause != null) return false;
+		}
+		else if (!orderByClause.equals(other.orderByClause)) return false;
+		if (partitionBy == null)
+		{
+			if (other.partitionBy != null) return false;
+		}
+		else if (!partitionBy.equals(other.partitionBy)) return false;
+		return true;
+	}
 }

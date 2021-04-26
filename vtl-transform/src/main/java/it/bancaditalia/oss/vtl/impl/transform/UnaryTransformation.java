@@ -72,4 +72,27 @@ public abstract class UnaryTransformation extends TransformationImpl
 	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar);
 
 	protected abstract VTLValue evalOnDataset(DataSet dataset);
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof UnaryTransformation)) return false;
+		UnaryTransformation other = (UnaryTransformation) obj;
+		if (operand == null)
+		{
+			if (other.operand != null) return false;
+		}
+		else if (!operand.equals(other.operand)) return false;
+		return true;
+	}
 }

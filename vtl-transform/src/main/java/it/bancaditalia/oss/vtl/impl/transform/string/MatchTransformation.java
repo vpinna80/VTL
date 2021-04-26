@@ -162,4 +162,19 @@ public class MatchTransformation extends BinaryTransformation
 	{
 		return "match_characters(" + getLeftOperand() + ", " + getRightOperand() + ")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof MatchTransformation)) return false;
+		return true;
+	}
 }

@@ -132,13 +132,48 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		{
 			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupBy, name, role));
 		}
+
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((name == null) ? 0 : name.hashCode());
+			result = prime * result + ((operand == null) ? 0 : operand.hashCode());
+			result = prime * result + ((role == null) ? 0 : role.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj) return true;
+			if (!(obj instanceof AggrClauseItem)) return false;
+			AggrClauseItem other = (AggrClauseItem) obj;
+			if (name == null)
+			{
+				if (other.name != null) return false;
+			}
+			else if (!name.equals(other.name)) return false;
+			if (operand == null)
+			{
+				if (other.operand != null) return false;
+			}
+			else if (!operand.equals(other.operand)) return false;
+			if (role == null)
+			{
+				if (other.role != null) return false;
+			}
+			else if (!role.equals(other.role)) return false;
+			return true;
+		}
 	}
 
 	private final List<AggrClauseItem> aggrItems;
 	private final List<String> groupBy;
 	private final Transformation having;
 
-	private DataSetMetadata metadata;
+	private transient DataSetMetadata metadata;
 
 	public AggrClauseTransformation(List<AggrClauseItem> operands, List<String> groupBy, Transformation having)
 	{
@@ -266,5 +301,40 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	{
 		String terminator = (groupBy != null ? groupBy.stream().map(Object::toString).collect(joining(", ", " group by ", "")) : "") + (having != null ? " having " + having : "");
 		return aggrItems.stream().map(Object::toString).collect(joining(", ", "[aggr ", terminator + "]"));
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((aggrItems == null) ? 0 : aggrItems.hashCode());
+		result = prime * result + ((groupBy == null) ? 0 : groupBy.hashCode());
+		result = prime * result + ((having == null) ? 0 : having.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof AggrClauseTransformation)) return false;
+		AggrClauseTransformation other = (AggrClauseTransformation) obj;
+		if (aggrItems == null)
+		{
+			if (other.aggrItems != null) return false;
+		}
+		else if (!aggrItems.equals(other.aggrItems)) return false;
+		if (groupBy == null)
+		{
+			if (other.groupBy != null) return false;
+		}
+		else if (!groupBy.equals(other.groupBy)) return false;
+		if (having == null)
+		{
+			if (other.having != null) return false;
+		}
+		else if (!having.equals(other.having)) return false;
+		return true;
 	}
 }

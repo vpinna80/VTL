@@ -206,4 +206,42 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				+ (windowClause != UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT ? windowClause : "")
 				+ ")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((aggregation == null) ? 0 : aggregation.hashCode());
+		result = prime * result + ((orderByClause == null) ? 0 : orderByClause.hashCode());
+		result = prime * result + ((partitionBy == null) ? 0 : partitionBy.hashCode());
+		result = prime * result + ((windowClause == null) ? 0 : windowClause.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof SimpleAnalyticTransformation)) return false;
+		SimpleAnalyticTransformation other = (SimpleAnalyticTransformation) obj;
+		if (aggregation != other.aggregation) return false;
+		if (orderByClause == null)
+		{
+			if (other.orderByClause != null) return false;
+		}
+		else if (!orderByClause.equals(other.orderByClause)) return false;
+		if (partitionBy == null)
+		{
+			if (other.partitionBy != null) return false;
+		}
+		else if (!partitionBy.equals(other.partitionBy)) return false;
+		if (windowClause == null)
+		{
+			if (other.windowClause != null) return false;
+		}
+		else if (!windowClause.equals(other.windowClause)) return false;
+		return true;
+	}
 }

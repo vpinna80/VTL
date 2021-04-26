@@ -95,6 +95,37 @@ public class WindowView
 		{
 			return (rangeType == RANGE ? "range" : "data points") + " between " + preceding + " and " + following;
 		}
+
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((following == null) ? 0 : following.hashCode());
+			result = prime * result + ((preceding == null) ? 0 : preceding.hashCode());
+			result = prime * result + ((rangeType == null) ? 0 : rangeType.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj) return true;
+			if (!(obj instanceof WindowClause)) return false;
+			WindowClause other = (WindowClause) obj;
+			if (following == null)
+			{
+				if (other.following != null) return false;
+			}
+			else if (!following.equals(other.following)) return false;
+			if (preceding == null)
+			{
+				if (other.preceding != null) return false;
+			}
+			else if (!preceding.equals(other.preceding)) return false;
+			if (rangeType != other.rangeType) return false;
+			return true;
+		}
 	}
 	
 	public static class LimitClause implements Serializable
@@ -136,6 +167,31 @@ public class WindowView
 				return "unbounded " + direction.toString().toLowerCase();
 			else
 				return count + " " + direction.toString().toLowerCase();
+		}
+
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((count == null) ? 0 : count.hashCode());
+			result = prime * result + ((direction == null) ? 0 : direction.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj) return true;
+			if (!(obj instanceof LimitClause)) return false;
+			LimitClause other = (LimitClause) obj;
+			if (count == null)
+			{
+				if (other.count != null) return false;
+			}
+			else if (!count.equals(other.count)) return false;
+			if (direction != other.direction) return false;
+			return true;
 		}
 	}
 	

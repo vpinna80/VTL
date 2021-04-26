@@ -27,4 +27,9 @@ public abstract class TransformationImpl implements Transformation, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
+	@Override
+	public abstract int hashCode();
+	
+	@Override
+	public abstract boolean equals(Object obj);
 }

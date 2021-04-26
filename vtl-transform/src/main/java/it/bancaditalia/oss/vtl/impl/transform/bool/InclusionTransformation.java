@@ -83,7 +83,7 @@ public class InclusionTransformation extends UnaryTransformation
 	private final InOperator operator;
 	private final Set<? extends ScalarValue<?, ?, ?, ?>> set;
 
-	private DataSetMetadata    metadata = null;
+	private transient DataSetMetadata metadata = null;
 
 	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?, ?>> list)
 	{
@@ -142,5 +142,31 @@ public class InclusionTransformation extends UnaryTransformation
 	public String toString()
 	{
 		return operand + " " + operator + set.stream().map(Object::toString).collect(Collectors.joining(", ", " {", "}"));
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((operator == null) ? 0 : operator.hashCode());
+		result = prime * result + ((set == null) ? 0 : set.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof InclusionTransformation)) return false;
+		InclusionTransformation other = (InclusionTransformation) obj;
+		if (operator != other.operator) return false;
+		if (set == null)
+		{
+			if (other.set != null) return false;
+		}
+		else if (!set.equals(other.set)) return false;
+		return true;
 	}
 }

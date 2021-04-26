@@ -70,10 +70,10 @@ public class ConditionalTransformation extends TransformationImpl
 		this.elseExpr = falseExpr;
 	}
 
-	protected final Transformation	condition;
-	protected final Transformation	thenExpr, elseExpr;
+	protected final Transformation condition;
+	protected final Transformation thenExpr, elseExpr;
 
-	private VTLValueMetadata		metadata;
+	private transient VTLValueMetadata metadata;
 
 	@Override
 	public VTLValue eval(TransformationScheme session)
@@ -238,5 +238,40 @@ public class ConditionalTransformation extends TransformationImpl
 	public String toString()
 	{
 		return "if " + condition + " then " + thenExpr + " else " + elseExpr;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((condition == null) ? 0 : condition.hashCode());
+		result = prime * result + ((elseExpr == null) ? 0 : elseExpr.hashCode());
+		result = prime * result + ((thenExpr == null) ? 0 : thenExpr.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof ConditionalTransformation)) return false;
+		ConditionalTransformation other = (ConditionalTransformation) obj;
+		if (condition == null)
+		{
+			if (other.condition != null) return false;
+		}
+		else if (!condition.equals(other.condition)) return false;
+		if (elseExpr == null)
+		{
+			if (other.elseExpr != null) return false;
+		}
+		else if (!elseExpr.equals(other.elseExpr)) return false;
+		if (thenExpr == null)
+		{
+			if (other.thenExpr != null) return false;
+		}
+		else if (!thenExpr.equals(other.thenExpr)) return false;
+		return true;
 	}
 }

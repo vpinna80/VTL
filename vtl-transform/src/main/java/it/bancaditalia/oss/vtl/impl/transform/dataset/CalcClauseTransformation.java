@@ -147,6 +147,41 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else
 				return false;
 		}
+
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((calcClause == null) ? 0 : calcClause.hashCode());
+			result = prime * result + ((name == null) ? 0 : name.hashCode());
+			result = prime * result + ((role == null) ? 0 : role.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj) return true;
+			if (!(obj instanceof CalcClauseItem)) return false;
+			CalcClauseItem other = (CalcClauseItem) obj;
+			if (calcClause == null)
+			{
+				if (other.calcClause != null) return false;
+			}
+			else if (!calcClause.equals(other.calcClause)) return false;
+			if (name == null)
+			{
+				if (other.name != null) return false;
+			}
+			else if (!name.equals(other.name)) return false;
+			if (role == null)
+			{
+				if (other.role != null) return false;
+			}
+			else if (!role.equals(other.role)) return false;
+			return true;
+		}
 	}
 
 	private final List<CalcClauseItem> calcClauses;
@@ -301,5 +336,34 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	public String toString()
 	{
 		return calcClauses.stream().map(Object::toString).collect(joining(", ", "[calc ", "]"));
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((calcClauses == null) ? 0 : calcClauses.hashCode());
+		result = prime * result + ((metadata == null) ? 0 : metadata.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof CalcClauseTransformation)) return false;
+		CalcClauseTransformation other = (CalcClauseTransformation) obj;
+		if (calcClauses == null)
+		{
+			if (other.calcClauses != null) return false;
+		}
+		else if (!calcClauses.equals(other.calcClauses)) return false;
+		if (metadata == null)
+		{
+			if (other.metadata != null) return false;
+		}
+		else if (!metadata.equals(other.metadata)) return false;
+		return true;
 	}
 }

@@ -173,4 +173,39 @@ public class ReplaceTransformation extends TransformationImpl
 	{
 		return "replace(" + exprOperand + ", " + patternOperand + ", " + replaceOperand + ")"; 
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((exprOperand == null) ? 0 : exprOperand.hashCode());
+		result = prime * result + ((patternOperand == null) ? 0 : patternOperand.hashCode());
+		result = prime * result + ((replaceOperand == null) ? 0 : replaceOperand.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof ReplaceTransformation)) return false;
+		ReplaceTransformation other = (ReplaceTransformation) obj;
+		if (exprOperand == null)
+		{
+			if (other.exprOperand != null) return false;
+		}
+		else if (!exprOperand.equals(other.exprOperand)) return false;
+		if (patternOperand == null)
+		{
+			if (other.patternOperand != null) return false;
+		}
+		else if (!patternOperand.equals(other.patternOperand)) return false;
+		if (replaceOperand == null)
+		{
+			if (other.replaceOperand != null) return false;
+		}
+		else if (!replaceOperand.equals(other.replaceOperand)) return false;
+		return true;
+	}
 }

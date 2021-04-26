@@ -60,7 +60,7 @@ public class ComparisonTransformation extends BinaryTransformation
 
 	private final ComparisonOperator operator;
 	
-	private boolean castToLeft = false;
+	private transient boolean castToLeft = false;
 
 	public ComparisonTransformation(ComparisonOperator operator, Transformation left, Transformation right)
 	{
@@ -202,5 +202,25 @@ public class ComparisonTransformation extends BinaryTransformation
 	public String toString()
 	{
 		return getLeftOperand() + " " + operator + " " + getRightOperand();
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((operator == null) ? 0 : operator.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof ComparisonTransformation)) return false;
+		ComparisonTransformation other = (ComparisonTransformation) obj;
+		if (operator != other.operator) return false;
+		return true;
 	}
 }

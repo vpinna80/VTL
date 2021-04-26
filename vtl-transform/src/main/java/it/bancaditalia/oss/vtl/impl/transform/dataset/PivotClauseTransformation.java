@@ -55,8 +55,8 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	private final String identifierName;
 	private final String measureName;
 
-	private DataStructureComponent<Measure, ?, ?> measure;
-	private DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier;
+	private transient DataStructureComponent<Measure, ?, ?> measure;
+	private transient DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier;
 
 	private static String sanitize(String string)
 	{
@@ -130,5 +130,34 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	public String toString()
 	{
 		return "[pivot " + identifierName + ", " + measureName + "]";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((identifierName == null) ? 0 : identifierName.hashCode());
+		result = prime * result + ((measureName == null) ? 0 : measureName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof PivotClauseTransformation)) return false;
+		PivotClauseTransformation other = (PivotClauseTransformation) obj;
+		if (identifierName == null)
+		{
+			if (other.identifierName != null) return false;
+		}
+		else if (!identifierName.equals(other.identifierName)) return false;
+		if (measureName == null)
+		{
+			if (other.measureName != null) return false;
+		}
+		else if (!measureName.equals(other.measureName)) return false;
+		return true;
 	}
 }

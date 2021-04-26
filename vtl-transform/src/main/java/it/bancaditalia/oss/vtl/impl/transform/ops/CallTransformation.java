@@ -105,4 +105,33 @@ public class CallTransformation extends TransformationImpl
 	{
 		return operator + params.stream().map(Transformation::toString).collect(joining(", ", "(", ")"));
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((operator == null) ? 0 : operator.hashCode());
+		result = prime * result + ((params == null) ? 0 : params.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof CallTransformation)) return false;
+		CallTransformation other = (CallTransformation) obj;
+		if (operator == null)
+		{
+			if (other.operator != null) return false;
+		}
+		else if (!operator.equals(other.operator)) return false;
+		if (params == null)
+		{
+			if (other.params != null) return false;
+		}
+		else if (!params.equals(other.params)) return false;
+		return true;
+	}
 }

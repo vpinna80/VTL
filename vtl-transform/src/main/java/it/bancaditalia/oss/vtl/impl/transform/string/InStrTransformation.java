@@ -227,4 +227,45 @@ public class InStrTransformation extends TransformationImpl
 				(occurrenceOperand != null ? ", " + occurrenceOperand : "") + 
 				")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((leftOperand == null) ? 0 : leftOperand.hashCode());
+		result = prime * result + ((occurrenceOperand == null) ? 0 : occurrenceOperand.hashCode());
+		result = prime * result + ((rightOperand == null) ? 0 : rightOperand.hashCode());
+		result = prime * result + ((startOperand == null) ? 0 : startOperand.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!(obj instanceof InStrTransformation)) return false;
+		InStrTransformation other = (InStrTransformation) obj;
+		if (leftOperand == null)
+		{
+			if (other.leftOperand != null) return false;
+		}
+		else if (!leftOperand.equals(other.leftOperand)) return false;
+		if (occurrenceOperand == null)
+		{
+			if (other.occurrenceOperand != null) return false;
+		}
+		else if (!occurrenceOperand.equals(other.occurrenceOperand)) return false;
+		if (rightOperand == null)
+		{
+			if (other.rightOperand != null) return false;
+		}
+		else if (!rightOperand.equals(other.rightOperand)) return false;
+		if (startOperand == null)
+		{
+			if (other.startOperand != null) return false;
+		}
+		else if (!startOperand.equals(other.startOperand)) return false;
+		return true;
+	}
 }

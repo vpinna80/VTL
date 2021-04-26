@@ -156,4 +156,24 @@ public class ExistsInTransformation extends BinaryTransformation
 	{
 		return "exists_in(" + getLeftOperand() + ", " + getRightOperand() + ", " + mode + ")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((mode == null) ? 0 : mode.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof ExistsInTransformation)) return false;
+		ExistsInTransformation other = (ExistsInTransformation) obj;
+		if (mode != other.mode) return false;
+		return true;
+	}
 }

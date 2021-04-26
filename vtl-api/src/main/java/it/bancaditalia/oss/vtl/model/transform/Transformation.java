@@ -64,4 +64,10 @@ public interface Transformation extends Serializable
 	 * @throws VTLException if the metadata is incoherent within the given {@link TransformationScheme}.
 	 */
 	public VTLValueMetadata getMetadata(TransformationScheme scheme);
+	
+	@Override
+	public int hashCode();
+	
+	@Override
+	public boolean equals(Object obj);
 }

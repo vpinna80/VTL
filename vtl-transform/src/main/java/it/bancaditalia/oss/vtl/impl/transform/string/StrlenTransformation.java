@@ -99,4 +99,19 @@ public class StrlenTransformation extends UnaryTransformation
 	{
 		return "length(" + operand + ")";
 	}
+
+	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (!(obj instanceof StrlenTransformation)) return false;
+		return true;
+	}
 }
