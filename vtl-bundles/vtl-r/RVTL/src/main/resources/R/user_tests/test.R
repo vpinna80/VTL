@@ -59,8 +59,8 @@ r_env_input_1 <<- data.frame(id1=c('1999', '2000', '2001', '2002', '2003', '2004
                            attr1=c('att1', 'att2','att3',NA,'att5','att6'),
                            attr2=c(T,F,T,F,NA,F),
                            attr3=c(1:5,NA), stringsAsFactors = F)
-attr(r_env_input_1, 'measures') <- c('m1','m2','m3')
-attr(r_env_input_1, 'identifiers') <- c('id1','id2') 
+attr(r_env_input_1, 'measures') <<- c('m1','m2','m3')
+attr(r_env_input_1, 'identifiers') <<- c('id1','id2') 
                            
 runTest=function(test_name){
   vtlCode = readChar(x, file.info(x)$size)
