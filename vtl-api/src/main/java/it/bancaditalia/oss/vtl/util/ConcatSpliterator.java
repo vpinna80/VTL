@@ -48,9 +48,9 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	public static <T> Collector<Stream<T>, ?, Stream<T>> concatenating(boolean keepOrder)
 	{
 		if (keepOrder)
-			return collectingAndThen(toList(), collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL));
+			return collectingAndThen(toList(), collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL).onClose(() -> collection.forEach(Stream::close)));
 		else
-			return collectingAndThen(toSet(), collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL));
+			return collectingAndThen(toSet(), collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL).onClose(() -> collection.forEach(Stream::close)));
 	}
 	
 	public ConcatSpliterator(Collection<? extends Stream<T>> streams)
