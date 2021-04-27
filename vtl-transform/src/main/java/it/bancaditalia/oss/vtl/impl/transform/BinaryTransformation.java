@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.MetadataHolder;
+import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.transform.util.ThreadUtils;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -73,7 +73,7 @@ public abstract class BinaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return MetadataHolder.getInstance(scheme).computeIfAbsent(this, ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)));
+		return ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)));
 	}
 	
 	protected abstract VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right);

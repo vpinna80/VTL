@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation.OrderingMethod.DESC;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation.OffsetDirection.LEAD;
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
@@ -146,8 +147,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 						partitionIDs, 
 						toConcurrentMap(identity(), identity(), (a, b) -> a, () -> new ConcurrentSkipListMap<>(comparator)), 
 						(partition, keyValues) -> offsetPartition((DataSetMetadata) metadata, partition.keySet(), keyValues)
-					).reduce(Stream::concat)
-					.orElse(Stream.empty());
+					).collect(concatenating(Utils.ORDERED));
 				LOGGER.debug("Finished computing {} on {}", direction, alias);
 				return result;
 			}, dataset);

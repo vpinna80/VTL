@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransfo
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowView.UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Boolean.TRUE;
@@ -134,8 +135,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		// sort each partition with the comparator and then perform the analytic computation on each partition
 		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(partitionIDs, toConcurrentMap(identity(), dp -> TRUE), 
 				(partition, keyValues) -> aggregateWindows((DataSetMetadata) metadata, measures, comparator, partition.keySet(), keyValues)
-			).reduce(Stream::concat)
-			.orElse(Stream.empty()), dataset);
+			).collect(concatenating(Utils.ORDERED)), dataset);
 	}
 	
 	private Stream<DataPoint> aggregateWindows(DataSetMetadata metadata, Set<DataStructureComponent<Measure, ?, ?>> measures, Comparator<DataPoint> comparator, Set<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)

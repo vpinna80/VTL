@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.SUM;
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.util.HashSet;
@@ -107,8 +108,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 								return v; 
 							}))).addAll(dp.getValues(Identifier.class))
 							.build(metadata));
-				}).reduce(Stream::concat)
-				.orElse(Stream.empty());
+				}).collect(concatenating(Utils.ORDERED));
 		}
 		
 		@Override

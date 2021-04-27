@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static java.awt.EventQueue.invokeLater;
 import static java.util.function.UnaryOperator.identity;
 import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
@@ -49,8 +50,7 @@ public class ProgressWindow
 		ProgressWindow window = new ProgressWindow(title, maxValue);
 		return Stream.of(source)
 				.map(streamProducer.andThen(s -> s.onClose(window::dispose).peek(i -> window.progress())))
-				.reduce(Stream::concat)
-				.orElse(Stream.empty());
+				.collect(concatenating(Utils.ORDERED));
 	}
 
 	private static <K> IntStream intStreamHelper(String title, long maxValue, K source, Function<? super K, ? extends IntStream> streamProducer)

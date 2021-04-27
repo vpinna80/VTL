@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
@@ -108,8 +109,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		
 		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(
 				partitionIDs, collectingAndThen(toSet(), ratioToReportByPartition((DataSetMetadata) metadata))
-			).reduce(Stream::concat)
-			.orElse(Stream.empty()), dataset);
+			).collect(concatenating(Utils.ORDERED)), dataset);
 	}
 
 	private Function<Set<DataPoint>, Stream<DataPoint>> ratioToReportByPartition(DataSetMetadata metadata)
@@ -123,8 +123,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 				.map(Number.class::cast)
 				.map(Number::doubleValue)
 				.map(Utils.toEntryWithKey(v -> m))
-			).reduce(Stream::concat)
-			.orElse(Stream.empty())
+			).collect(concatenating(Utils.ORDERED))
 			.collect(groupingByConcurrent(Entry::getKey, summingDouble(e -> e.getValue())));
 		
 			return Utils.getStream(partition)

@@ -28,6 +28,7 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatte
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
@@ -209,8 +210,7 @@ public class SDMXEnvironment implements Environment, Serializable
 							.map(keepingValue(k -> metadata.getComponent(k).orElseThrow(() -> new VTLMissingComponentsException(k, metadata))))
 							.map(keepingKey((k, v) -> (ScalarValue<?, ?, ?, ?>) k.getDomain().cast(v)))
 							.collect(DataPointBuilder.toDataPoint(metadata))))
-				.reduce(Stream::concat)
-				.orElse(Stream.empty()), table);
+				.collect(concatenating(Utils.ORDERED)), table);
 	}
 
 	private static Stream<Entry<String, ScalarValue<?, ?, ?, ?>>> obsToCompValues(Map<String, ScalarValue<?, ?, ?, ?>> seriesLevelAttrs, 

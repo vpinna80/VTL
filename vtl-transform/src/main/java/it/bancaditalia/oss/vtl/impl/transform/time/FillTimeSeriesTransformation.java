@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.ALL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.stream.Collectors.toCollection;
 
@@ -136,8 +137,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 				LOGGER.debug("Filling time series for {}", alias);
 				Stream<DataPoint> result = dataset.streamByKeys(ids, toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
 						(elements, idValues) -> fillSeries(structure, elements, idValues, timeID, nullFiller, min, max))
-					.reduce(Stream::concat)
-					.orElse(Stream.empty());
+					.collect(concatenating(Utils.ORDERED));
 				LOGGER.debug("Finished filling time series for {}", alias);
 				return result;
 			}, ds);

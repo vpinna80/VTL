@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
@@ -142,8 +143,7 @@ public abstract class AbstractDataSet implements DataSet
 							return otherSubGroup.stream()
 								.filter(dpOther -> predicate.test(dpThis, dpOther))
 								.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
-					}).reduce(Stream::concat)
-					.orElse(Stream.empty())
+					}).collect(concatenating(Utils.ORDERED))
 					.onClose(stream::close);
 			}, streamed);
 	}

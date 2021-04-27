@@ -23,28 +23,29 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class MetadataHolder extends ConcurrentHashMap<Transformation, VTLValueMetadata>
+public class ResultHolder<T> extends ConcurrentHashMap<Transformation, T>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<TransformationScheme, MetadataHolder> HOLDERS = new WeakHashMap<>(); 
+	private static final Map<Class<?>, Map<TransformationScheme, ResultHolder<?>>> HOLDERS = new ConcurrentHashMap<>(); 
 
-	private MetadataHolder()
+	private ResultHolder(TransformationScheme scheme)
 	{
 		super();
+		
 	}
 	
-	public static MetadataHolder getInstance(TransformationScheme scheme)
+	public static <T> ResultHolder<T> getInstance(TransformationScheme scheme, Class<T> valueType)
 	{
-		MetadataHolder holder = HOLDERS.get(scheme);
+		@SuppressWarnings("unchecked")
+		ResultHolder<T> holder = (ResultHolder<T>) HOLDERS.computeIfAbsent(valueType, c -> new WeakHashMap<>()).get(scheme);
 		if (holder == null)
 			synchronized (HOLDERS)
 			{
-				holder = new MetadataHolder();
-				HOLDERS.put(scheme, holder);
+				holder = new ResultHolder<>(scheme);
+				HOLDERS.get(valueType).put(scheme, holder);
 			}
 
 		return holder;

@@ -64,10 +64,10 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		UNARY_MINUS("-", d -> -d, l -> -l);
 
 		private final DoubleUnaryOperator doubleOp;
-		private final LongFunction<? extends Number> longOp;
+		private final LongFunction<Number> longOp;
 		private final String name;
 
-		private NumericOperator(String name, DoubleUnaryOperator doubleOp, LongFunction<? extends Number> longOp)
+		private NumericOperator(String name, DoubleUnaryOperator doubleOp, LongFunction<Number> longOp)
 		{
 			this.name = name;
 			this.doubleOp = doubleOp; 
