@@ -60,9 +60,8 @@ public class ThreadUtils
 	/**
 	 * @param <T> The type returned by the extractor
 	 * 
-	 * @param expr The transformation being computed
-	 * @param extractors an array of functions that extracts the results of each subexpression
-	 * @param combiner a function that reduces the results of the subexpressions 
+	 * @param extractors functions that extracts the results of each subexpression
+	 * @param combiner an associative function that reduces the results of the subexpressions 
 	 * @return
 	 */
 	@SafeVarargs
