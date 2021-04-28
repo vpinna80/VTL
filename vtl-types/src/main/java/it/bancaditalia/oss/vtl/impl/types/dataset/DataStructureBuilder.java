@@ -312,6 +312,6 @@ public class DataStructureBuilder
 
 	private static String getNormalizedAlias(String alias)
 	{
-		return alias.matches("'.*'") ? alias.replaceAll("'(.*)'", "$1") : alias.toLowerCase();
+		return alias.matches("'.*'") ? alias.replaceAll("^'(.*)'$", "$1") : alias.toLowerCase();
 	}
 }

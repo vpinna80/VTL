@@ -202,7 +202,7 @@ public final class Utils
 		return e -> entryPredicate.test(e.getKey(), e.getValue());
 	}
 
-	public static <K, V, R> Function<Entry<K, V>, R> splitting(BiFunction<? super K, ? super V, ? extends R> function)
+	public static <K, V, R> Function<Entry<K, V>, R> splitting(BiFunction<? super K, ? super V, R> function)
 	{
 		return e -> function.apply(e.getKey(), e.getValue());
 	}

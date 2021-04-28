@@ -118,9 +118,11 @@ public class ArithmeticTransformation extends BinaryTransformation
 				.apply(NUMBERDS.cast(dp.get(dataset.getComponent(name).get())), castedScalar);
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> Utils.getStream(measureNames)
-				.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata).getComponent(name)
+				.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata)
+						.getComponent(name)
 						.map(c -> c.as(Measure.class))
-						.get(), name -> finisher.apply(dp, name))));
+						.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())
+					), name -> finisher.apply(dp, name))));
 	}
 
 	@Override
@@ -260,7 +262,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 
 		// check if measures are the same, unless we are at component level
 		Set<DataStructureComponent<? extends Measure, ?, ?>> resultMeasures;
-		if (leftMeasures.size() == 1 || rightMeasures.size() == 1)
+		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
 			resultMeasures = singleton(new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS));
 		else
 		{
