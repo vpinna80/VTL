@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,23 +30,24 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class ResultHolder<T> extends ConcurrentHashMap<Transformation, T>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<Class<?>, Map<TransformationScheme, ResultHolder<?>>> HOLDERS = new ConcurrentHashMap<>(); 
+	private static final Map<Class<?>, Map<TransformationScheme, ResultHolder<?>>> HOLDERS = new HashMap<>(); 
 	
-	private ResultHolder(TransformationScheme scheme)
+	private ResultHolder()
 	{
 		super();
-		
 	}
 	
 	public static <T> ResultHolder<T> getInstance(TransformationScheme scheme, Class<T> valueType)
 	{
+		final Map<TransformationScheme, ResultHolder<?>> sessionHolders = HOLDERS.computeIfAbsent(valueType, v -> new WeakHashMap<>());
+		
 		@SuppressWarnings("unchecked")
-		ResultHolder<T> holder = (ResultHolder<T>) HOLDERS.computeIfAbsent(valueType, c -> new WeakHashMap<>()).get(scheme);
+		ResultHolder<T> holder = (ResultHolder<T>) sessionHolders.get(scheme);
 		if (holder == null)
-			synchronized (HOLDERS)
+			synchronized (sessionHolders)
 			{
-				holder = new ResultHolder<>(scheme);
-				HOLDERS.get(valueType).put(scheme, holder);
+				holder = new ResultHolder<>();
+				sessionHolders.put(scheme, holder);
 			}
 
 		return holder;
