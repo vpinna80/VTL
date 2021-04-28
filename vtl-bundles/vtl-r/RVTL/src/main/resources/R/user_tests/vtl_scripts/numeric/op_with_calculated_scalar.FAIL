@@ -20,4 +20,4 @@
 tmp1 := 'csv:number_test1.csv';
 tmp3 := 'csv:numeric_scalar_op_1.csv';
 scalar_sum := sum(tmp1); 
-test_result := (filtered * scalar_sum) = tmp3;
+test_result := (tmp1 * scalar_sum) = tmp3;
