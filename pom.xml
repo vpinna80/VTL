@@ -745,6 +745,7 @@
 									<exclude>**/*.in</exclude>
 									<exclude>**/*.src</exclude>
 									<exclude>**/*.csv</exclude>
+									<exclude>**/*.FAIL</exclude>
 									<exclude>**/*.whl</exclude>
 									<exclude>**/*.war</exclude>
 									<exclude>**/*.g4</exclude>
