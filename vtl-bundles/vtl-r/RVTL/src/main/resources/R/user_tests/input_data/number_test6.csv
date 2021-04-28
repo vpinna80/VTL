@@ -1,0 +1,5 @@
+$id1=String,m1=Number,#att1=String,$id2=String,m2=String
+a,1,att_a,a,m1
+b,2,att_b,b,m2
+c,3.4,att_c,c,m3
+d,,att_d,d,
