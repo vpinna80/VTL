@@ -202,40 +202,43 @@ public class CSVFileEnvironment implements Environment
 		}
 	}
 
-	private ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String value, String mask)
+	private ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String stringRepresentation, String mask)
 	{
 		if (component.getDomain() instanceof StringDomainSubset)
-			return component.getDomain().cast(StringValue.of(value.matches("^\".*\"$") ? value.substring(1, value.length() - 1) : value));
+			return component.getDomain().cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
 		else if (component.getDomain() instanceof IntegerDomainSubset)
 			try
 			{
-				if (value.trim().isEmpty())
+				if (stringRepresentation.trim().isEmpty())
 					return NullValue.instance(INTEGERDS);
 				else
-					return IntegerValue.of(Long.parseLong(value));
+					return IntegerValue.of(Long.parseLong(stringRepresentation));
 			}
 			catch (NumberFormatException e)
 			{
-				LOGGER.error("An Integer was expected but found: " + value);
+				LOGGER.error("An Integer was expected but found: " + stringRepresentation);
 				return NullValue.instance(INTEGERDS);
 			}
 		else if (component.getDomain() instanceof NumberDomainSubset)
 			try
 			{
-				if (value.trim().isEmpty())
+				if (stringRepresentation.trim().isEmpty())
 					return NullValue.instance(NUMBERDS);
 				else
-					return DoubleValue.of(Double.parseDouble(value));
+					return DoubleValue.of(Double.parseDouble(stringRepresentation));
 			}
 			catch (NumberFormatException e)
 			{
-				LOGGER.error("A Number was expected but found: " + value);
+				LOGGER.error("A Number was expected but found: " + stringRepresentation);
 				return NullValue.instance(NUMBERDS);
 			}
 		else if (component.getDomain() instanceof BooleanDomainSubset)
-			return BooleanValue.of(Boolean.parseBoolean(value));
+			if (stringRepresentation == null || stringRepresentation.trim().isEmpty())
+				return NullValue.instanceFrom(component);
+			else
+				return BooleanValue.of(Boolean.parseBoolean(stringRepresentation));
 		else if (component.getDomain() instanceof DateDomainSubset)
-			return DateValue.of(parseString(value, mask)); 
+			return DateValue.of(parseString(stringRepresentation, mask)); 
 
 		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getDomain());
 	}
