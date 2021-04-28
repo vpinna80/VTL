@@ -78,7 +78,14 @@ public abstract class UnaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		final ResultHolder<VTLValueMetadata> holder = ResultHolder.getInstance(scheme, VTLValueMetadata.class);
+		VTLValueMetadata metadata = holder.get(this);
+		if (metadata == null)
+		{
+			metadata = computeMetadata(scheme); 
+			holder.put(this, metadata);
+		}
+		return metadata;
 	}
 
 	protected abstract VTLValueMetadata computeMetadata(TransformationScheme scheme);

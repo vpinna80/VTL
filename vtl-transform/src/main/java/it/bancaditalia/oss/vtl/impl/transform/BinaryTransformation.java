@@ -76,7 +76,10 @@ public abstract class BinaryTransformation extends TransformationImpl
 		final ResultHolder<VTLValueMetadata> holder = ResultHolder.getInstance(scheme, VTLValueMetadata.class);
 		VTLValueMetadata metadata = holder.get(this);
 		if (metadata == null)
-			metadata = holder.computeIfAbsent(this, ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)));
+		{
+			metadata = ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)).apply(this); 
+			holder.put(this, metadata);
+		}
 		return metadata;
 	}
 	
