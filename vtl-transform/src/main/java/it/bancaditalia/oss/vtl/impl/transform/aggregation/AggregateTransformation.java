@@ -159,9 +159,6 @@ public class AggregateTransformation extends UnaryTransformation
 
 			if (groupBy == null)
 			{
-				if (aggregation == COUNT)
-					return dataset;
-				
 				if (measures.isEmpty())
 					throw new VTLExpectedComponentException(Measure.class, dataset);
 				

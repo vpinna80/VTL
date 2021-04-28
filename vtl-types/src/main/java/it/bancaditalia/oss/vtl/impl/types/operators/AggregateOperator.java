@@ -19,8 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.util.Utils.filtering;
+import static it.bancaditalia.oss.vtl.util.Utils.peeking;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.averagingDouble;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -34,6 +36,7 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -41,6 +44,7 @@ import java.util.stream.Collectors;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -125,7 +129,14 @@ public enum AggregateOperator
 	
 	public Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
-		return mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer));
+		AtomicBoolean isInteger = new AtomicBoolean(true);
+		return collectingAndThen(
+				mapping(dp -> extractor.apply(dp, measure), 
+				peeking(extracted -> {
+					if (extracted != null && !INTEGERDS.isAssignableFrom(extracted.getDomain()))
+						isInteger.set(false);
+				}, filtering(v -> !(v instanceof NullValue), reducer))), 
+			v -> v instanceof DoubleValue && isInteger.get() ? IntegerValue.of(((DoubleValue<?>) v).get().longValue()): v);
 	}
 	
 	@Override

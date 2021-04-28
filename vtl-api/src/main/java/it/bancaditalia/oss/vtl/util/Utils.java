@@ -313,6 +313,17 @@ public final class Utils
 				downstream.characteristics().toArray(new Characteristics[0]));
 	}
 
+	public static <T, A, R> Collector<T, A, R> peeking(Consumer<? super T> action, Collector<? super T, A, R> downstream)
+	{
+		final BiConsumer<A, T> biConsumer = (r, t) -> {
+			action.accept(t);
+			downstream.accumulator().accept(r, t);
+		};
+		
+		return Collector.of(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(),
+				downstream.characteristics().toArray(new Characteristics[0]));
+	}
+
 	public static <T> Predicate<T> not(Predicate<T> target) 
 	{
         return target.negate();

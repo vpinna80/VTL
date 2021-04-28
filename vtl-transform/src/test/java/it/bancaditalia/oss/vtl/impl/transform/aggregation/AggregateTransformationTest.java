@@ -23,6 +23,11 @@ import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SA
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE17;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE5;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE6;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.MAX;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.MEDIAN;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.MIN;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.SUM;
 import static java.lang.Double.NaN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,16 +58,36 @@ public class AggregateTransformationTest
 		// "Filled String", "    Leading spaces", "Trailing spaces    ", "    Leading and trailing     ", "\"Quoted\" 'String'", "\t\b \n\r\f"
 
 		return Stream.of(
-				Arguments.of(SUM, SAMPLE5,  69.),
-				Arguments.of(SUM, SAMPLE6,  141.),
+				Arguments.of(SUM, SAMPLE5,  69L),
+				Arguments.of(SUM, SAMPLE6,  141L),
 				Arguments.of(SUM, SAMPLE16, NaN),
-				Arguments.of(SUM, SAMPLE17, 70.9)
+				Arguments.of(SUM, SAMPLE17, 70.9),
+				Arguments.of(AVG, SAMPLE5,  13L),
+				Arguments.of(AVG, SAMPLE6,  23L),
+				Arguments.of(AVG, SAMPLE16, NaN),
+				Arguments.of(AVG, SAMPLE17, 14.18),
+				Arguments.of(MEDIAN, SAMPLE5,  14L),
+				Arguments.of(MEDIAN, SAMPLE6,  24L),
+				Arguments.of(MEDIAN, SAMPLE16, 4.4),
+				Arguments.of(MEDIAN, SAMPLE17, 14.95),
+				Arguments.of(MIN, SAMPLE5,  11L),
+				Arguments.of(MIN, SAMPLE6,  21L),
+				Arguments.of(MIN, SAMPLE16, 1.1),
+				Arguments.of(MIN, SAMPLE17, 11.1),
+				Arguments.of(MAX, SAMPLE5,  16L),
+				Arguments.of(MAX, SAMPLE6,  26L),
+				Arguments.of(MAX, SAMPLE16, NaN),
+				Arguments.of(MAX, SAMPLE17, 16.6),
+				Arguments.of(COUNT, SAMPLE5,  6L),
+				Arguments.of(COUNT, SAMPLE6,  6L),
+				Arguments.of(COUNT, SAMPLE16, 6L),
+				Arguments.of(COUNT, SAMPLE17, 6L)
 			);
 	}
 	
 	@ParameterizedTest(name = "{0} {1}")
 	@MethodSource
-	public void test(AggregateOperator operator, DataSet sample, double result)
+	public void test(AggregateOperator operator, DataSet sample, Number result)
 	{
 		VarIDOperand operand = new VarIDOperand("operand");
 		Map<String, DataSet> map = new HashMap<>();
@@ -72,14 +97,19 @@ public class AggregateTransformationTest
 		AggregateTransformation at = new AggregateTransformation(operator, operand, null, null);
 		final VTLValueMetadata metadata = at.getMetadata(session);
 		assertTrue(metadata instanceof DataSetMetadata, "Result structure is dataset: " + metadata);
-		assertEquals(((DataSetMetadata) metadata).size(), 1, "Only one measure in " + metadata);
+		assertEquals(1, ((DataSetMetadata) metadata).size(), "Only one measure in " + metadata);
 
 		final VTLValue eval = at.eval(session);
 		assertTrue(eval instanceof DataSet, eval.getClass().getSimpleName() + " instanceof DataSet");
 		DataSet dataset = (DataSet) eval;
+		assertEquals(1, dataset.size(), "Only one datapoint in result");
 		
-		assertEquals(dataset.size(), 1, "Only one datapoint in result");
 		DataPoint dp = dataset.stream().findAny().get();
-		assertEquals(result, dp.values().iterator().next().get(), "Result of " + operator);
+		Number value = ((Number) dp.values().iterator().next().get());
+		assertEquals(result.getClass(), value.getClass(), "Integer preserved");
+		if (value instanceof Double)
+			assertEquals(result.doubleValue(), value.doubleValue(), 0.00001, "Result of " + operator);
+		else
+			assertEquals(result.longValue(), value.longValue(), "Result of " + operator);
 	}
 }
