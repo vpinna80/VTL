@@ -30,7 +30,7 @@ public class ResultHolder<T> extends ConcurrentHashMap<Transformation, T>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Map<Class<?>, Map<TransformationScheme, ResultHolder<?>>> HOLDERS = new ConcurrentHashMap<>(); 
-
+	
 	private ResultHolder(TransformationScheme scheme)
 	{
 		super();

@@ -73,7 +73,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)));
+		final ResultHolder<VTLValueMetadata> holder = ResultHolder.getInstance(scheme, VTLValueMetadata.class);
+		VTLValueMetadata metadata = holder.get(this);
+		if (metadata == null)
+			metadata = holder.computeIfAbsent(this, ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)));
+		return metadata;
 	}
 	
 	protected abstract VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right);

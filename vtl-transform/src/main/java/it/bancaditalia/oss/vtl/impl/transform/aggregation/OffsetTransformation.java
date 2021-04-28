@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -138,19 +139,32 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 
 		// The ordering of the dataset
 		final Comparator<DataPoint> comparator = comparator(ordering);
-		
+
+		String alias = dataset instanceof NamedDataSet ? ((NamedDataSet) dataset).getAlias() : "Unnamed data set";
 		// sort each partition with the comparator and then perform the analytic computation on each partition
 		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> { 
-				String alias = ds instanceof NamedDataSet ? ((NamedDataSet) ds).getAlias() : "Unnamed data set";
-				LOGGER.debug("Starting computation of {} on {}", direction, alias);
-				Stream<DataPoint> result = ds.streamByKeys(
-						partitionIDs, 
-						toConcurrentMap(identity(), identity(), (a, b) -> a, () -> new ConcurrentSkipListMap<>(comparator)), 
-						(partition, keyValues) -> offsetPartition((DataSetMetadata) metadata, partition.keySet(), keyValues)
-					).collect(concatenating(Utils.ORDERED));
+				LOGGER.debug("Started computing {} on {}", direction, alias);
+				Stream<Entry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> streamByKeys = 
+						getGroupedDataset(dataset, partitionIDs, comparator, alias);
+				Stream<DataPoint> result = streamByKeys
+						.map(e -> offsetPartition((DataSetMetadata) metadata, e.getKey(), e.getValue()))
+						.collect(concatenating(Utils.ORDERED));
 				LOGGER.debug("Finished computing {} on {}", direction, alias);
 				return result;
 			}, dataset);
+	}
+
+	private static Stream<Entry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> getGroupedDataset(
+			DataSet dataset, Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs, final Comparator<DataPoint> comparator, String alias)
+	{
+		LOGGER.debug("Started sorting {}", alias);
+		final Stream<Entry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> streamByKeys = dataset.streamByKeys(
+				partitionIDs, 
+				toConcurrentMap(identity(), identity(), (a, b) -> a, () -> new ConcurrentSkipListMap<>(comparator)), 
+				(partition, keyValues) -> new SimpleEntry<>(partition.keySet(), keyValues)
+			);
+		LOGGER.debug("Finished sorting {}", alias);
+		return streamByKeys;
 	}
 	
 	private Stream<DataPoint> offsetPartition(DataSetMetadata metadata, NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
