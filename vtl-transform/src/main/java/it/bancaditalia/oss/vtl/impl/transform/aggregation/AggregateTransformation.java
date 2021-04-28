@@ -42,9 +42,11 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -124,7 +126,12 @@ public class AggregateTransformation extends UnaryTransformation
 		if (groupBy == null)
 			try (Stream<DataPoint> stream = dataset.stream())
 			{
-				return stream.collect(reducer);
+				ScalarValue<?, ?, ?, ?> result = stream.collect(reducer);
+				if (operand == null)
+					return result;
+
+				final DataSetMetadata structure = new DataStructureBuilder(sourceMeasure).build();
+				return new LightDataSet(structure, () -> Stream.of(new DataPointBuilder().add(sourceMeasure, result).build(structure)));
 			}
 		else
 		{
@@ -154,15 +161,21 @@ public class AggregateTransformation extends UnaryTransformation
 			{
 				if (aggregation == COUNT)
 					return dataset;
-					
-				if (measures.size() != 1)
-					throw new VTLExpectedComponentException(Measure.class, measures);
 				
-				DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
-					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, measure.getDomain());
+				if (measures.isEmpty())
+					throw new VTLExpectedComponentException(Measure.class, dataset);
 				
-				return dataset;
+				for (DataStructureComponent<? extends Measure, ?, ?> measure: measures)
+					if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
+						throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, measure.getDomain());
+				
+				if (operand != null)
+					return new DataStructureBuilder(measures).build();
+				
+				if (measures.size() == 1)
+					return NUMBER;
+				else
+					throw new VTLSingletonComponentRequiredException(Measure.class, measures);
 			}
 			else
 			{

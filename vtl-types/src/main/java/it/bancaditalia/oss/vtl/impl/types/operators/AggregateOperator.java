@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
+import static it.bancaditalia.oss.vtl.util.Utils.filtering;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.averagingDouble;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -124,7 +125,7 @@ public enum AggregateOperator
 	
 	public Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
-		return Collectors.mapping(dp -> extractor.apply(dp, measure), reducer);
+		return mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer));
 	}
 	
 	@Override
