@@ -23,7 +23,7 @@ library(testthat)
 
 # Configure the CSVPathEnvironment: if we are in interactive mode, rely on the wd(). 
 # Otherwise the environment variable has to be set in the calling shell
-if(interactive()) Sys.setenv(VTL_PATH=paste0(getwd(),'/input_data',';',getwd(),'/output_data'))
+if(interactive()) Sys.setenv(VTL_PATH=paste0(getwd(),'/input_data',',',getwd(),'/output_data'))
 
 # force read sdmx configuration
 RJSDMX::getFlows('ECB')
@@ -99,4 +99,3 @@ for(x in tests){
     print('Done')
   })
 }
-
