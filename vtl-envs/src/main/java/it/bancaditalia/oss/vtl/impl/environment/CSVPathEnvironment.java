@@ -82,12 +82,15 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 
 	private <T> Optional<T> mapper(String alias, Function<String, Optional<T>> mapper)
 	{
-		return searchPaths(alias.substring(4))
-				.map(Path::toString)
-				.map(path -> "csv:" + path)
-				.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; })
-				.map(string -> mapper.apply(string))
-				.orElse(Optional.empty());
+		if (alias.startsWith("csv:"))
+			return searchPaths(alias.substring(4))
+					.map(Path::toString)
+					.map(path -> "csv:" + path)
+					.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; })
+					.map(string -> mapper.apply(string))
+					.orElse(Optional.empty());
+		else
+			return Optional.empty();
 	}
 	
 	@Override
