@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,7 +51,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 	
 	public CSVPathEnvironment()
 	{
-		paths = Arrays.asList(VTL_CSV_ENVIRONMENT_SEARCH_PATH.getValue().split(File.pathSeparator));
+		paths = Arrays.asList(VTL_CSV_ENVIRONMENT_SEARCH_PATH.getValue().split(","));
 	}
 	
 	@Override
