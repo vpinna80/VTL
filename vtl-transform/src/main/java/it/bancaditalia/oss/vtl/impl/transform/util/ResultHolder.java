@@ -23,14 +23,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
+/**
+ * Keeps transient results used in computations. 
+ * Each computation can store a single result of a given type.
+ * 
+ * @author Valentino Pinna
+ *
+ * @param <T> The type of the transient results
+ */
 public class ResultHolder<T> extends ConcurrentHashMap<Transformation, T>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<Class<?>, Map<TransformationScheme, ResultHolder<?>>> HOLDERS = new HashMap<>(); 
+	private static final Map<Class<?>, Map<TransformationScheme, ResultHolder<?>>> TYPE_HOLDERS = new HashMap<>(); 
 	
 	private ResultHolder()
 	{
@@ -39,7 +48,7 @@ public class ResultHolder<T> extends ConcurrentHashMap<Transformation, T>
 	
 	public static <T> ResultHolder<T> getInstance(TransformationScheme scheme, Class<T> valueType)
 	{
-		final Map<TransformationScheme, ResultHolder<?>> sessionHolders = HOLDERS.computeIfAbsent(valueType, v -> new WeakHashMap<>());
+		final Map<TransformationScheme, ResultHolder<?>> sessionHolders = TYPE_HOLDERS.computeIfAbsent(valueType, v -> new WeakHashMap<>());
 		
 		@SuppressWarnings("unchecked")
 		ResultHolder<T> holder = (ResultHolder<T>) sessionHolders.get(scheme);
@@ -51,5 +60,15 @@ public class ResultHolder<T> extends ConcurrentHashMap<Transformation, T>
 			}
 
 		return holder;
+	}
+	
+	@Override
+	public T computeIfAbsent(Transformation key, Function<? super Transformation, ? extends T> mappingFunction)
+	{
+		if (containsKey(key))
+			return get(key);
+		
+		T result = mappingFunction.apply(key);
+		return super.computeIfAbsent(key, k -> result);
 	}
 }
