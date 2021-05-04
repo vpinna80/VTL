@@ -17,7 +17,6 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-tmp1 := 'csv:number_test6.csv';
+tmp1 := 'csv:number_test5.csv';
 tmp3 := 'csv:clauses_aggr_1.csv';
-test_result := tmp1[aggr m2 := sum(m1) group by id2] = tmp3;
-
+test_result := sum(tmp1 group by id2) = tmp3;
