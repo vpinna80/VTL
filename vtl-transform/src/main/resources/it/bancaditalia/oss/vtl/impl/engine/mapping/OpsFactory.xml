@@ -181,6 +181,7 @@
 		<context name="JoinApplyClauseContext" />
 		<context name="NumericFunctionsContext" />
 		<context name="NumericFunctionsComponentsContext" />
+		<context name="ParameterContext" />
 		<context name="ParameterComponentContext" />
 		<context name="ParenthesisExprCompContext" />
 		<context name="ParenthesisExprContext" />

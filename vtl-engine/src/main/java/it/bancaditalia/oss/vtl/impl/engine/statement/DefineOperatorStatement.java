@@ -139,37 +139,38 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 		{
 			VTLValueMetadata actualParamMeta = decoratedScheme.getMetadata(param.getName());
 			
-			if (param instanceof ScalarParameter)
-			{
-				String declaredDomain = ((ScalarParameter) param).getDomain();
-
-				// Scalar or component parameter
-				if (param.matches(actualParamMeta))
-					matchDomains(param.getName(), declaredDomain, (ScalarValueMetadata<?, ?>) actualParamMeta, repo);
-				// when inside a bracket expression, a component is a monomeasure dataset
-				else if (decoratedScheme.getParent().getParent() != null)
+			if (!(actualParamMeta instanceof UnknownValueMetadata))
+				if (param instanceof ScalarParameter)
 				{
-					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) actualParamMeta).getComponents(Measure.class);
-					// This condition should never happen, but better to have a check
-					if (measures.size() != 1)
+					String declaredDomain = ((ScalarParameter) param).getDomain();
+	
+					// Scalar or component parameter
+					if (param.matches(actualParamMeta))
+						matchDomains(param.getName(), declaredDomain, (ScalarValueMetadata<?, ?>) actualParamMeta, repo);
+					// when inside a bracket expression, a component is a monomeasure dataset
+					else if (decoratedScheme.getParent().getParent() != null)
+					{
+						Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) actualParamMeta).getComponents(Measure.class);
+						// This condition should never happen, but better to have a check
+						if (measures.size() != 1)
+							throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" 
+									+ param.getName() + "' but " + actualParamMeta + " was found.");
+						else 
+							matchDomains(param.getName(), declaredDomain, measures.iterator().next()::getDomain, repo);
+					}
+					else
 						throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" 
 								+ param.getName() + "' but " + actualParamMeta + " was found.");
-					else 
-						matchDomains(param.getName(), declaredDomain, measures.iterator().next()::getDomain, repo);
+				}
+				else if (param instanceof DataSetParameter)
+				{
+					if (!param.matches(actualParamMeta))
+						throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" + param.getName() 
+						+ "' but " + actualParamMeta + " was found.");
+						
 				}
 				else
-					throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" 
-							+ param.getName() + "' but " + actualParamMeta + " was found.");
-			}
-			else if (param instanceof DataSetParameter)
-			{
-				if (!param.matches(actualParamMeta))
-					throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" + param.getName() 
-					+ "' but " + actualParamMeta + " was found.");
-					
-			}
-			else
-				throw new UnsupportedOperationException(param.getClass().getSimpleName() + " not implemented.");
+					throw new UnsupportedOperationException(param.getClass().getSimpleName() + " not implemented.");
 		}
 		
 		// get the actual result type of the expression
