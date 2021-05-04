@@ -63,7 +63,7 @@ attr(r_env_input_1, 'measures') <<- c('m1','m2','m3')
 attr(r_env_input_1, 'identifiers') <<- c('id1','id2') 
                            
 runTest=function(test_name){
-  vtlCode = readChar(x, file.info(x)$size)
+  vtlCode = readChar(test_name, file.info(test_name)$size)
   expect_true(object = vtlAddStatements(sessionID = test_name, statements = vtlCode), label = paste(test_name, 'syntax'))
   expect_true(object = vtlCompile(sessionID = test_name), label = paste(test_name, 'compilation'))
   return(vtlEvalNodes(sessionID = test_name, nodes = 'test_result')[[1]])
