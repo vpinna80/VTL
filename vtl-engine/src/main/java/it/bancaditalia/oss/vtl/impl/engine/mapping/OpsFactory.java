@@ -120,7 +120,7 @@ public class OpsFactory implements Serializable
 	private final Map<Class<? extends ParserRuleContext>, List<Mapping>> mappings = new HashMap<>();
 	private final Map<String, Tokenset> tokensets = new HashMap<>();
 	private final Set<Class<? extends ParserRuleContext>> recursivecontexts = new HashSet<>();
-//	private final Map<Transformation, Transformation> transformationCache = new HashMap<>();
+	private final Map<Transformation, Transformation> transformationCache = new HashMap<>();
 
 	public OpsFactory() throws JAXBException, ClassNotFoundException, IOException
 	{
@@ -241,8 +241,11 @@ public class OpsFactory implements Serializable
 					LOGGER.trace("|{}<< Invoking constructor for {} with {}", tabs, target.getSimpleName(), args);
 
 					Transformation transformation = (Transformation) constructor.newInstance(args.toArray());
-//					transformationCache.putIfAbsent(transformation, transformation);
-					return transformation/*Cache.get(transformation)*/;
+					transformationCache.putIfAbsent(transformation, transformation);
+					Transformation cached = transformationCache.get(transformation);
+					if (cached != transformation)
+						LOGGER.debug("Reused transformation from cache: {} instead of {}", cached, transformation);
+					return cached;
 				}
 			}
 			catch (Exception e)

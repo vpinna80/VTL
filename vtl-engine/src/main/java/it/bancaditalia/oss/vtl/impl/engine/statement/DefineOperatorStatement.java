@@ -190,7 +190,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 		{
 			ValueDomainSubset<?, ?> actualDomain = ((ScalarValueMetadata<?, ?>) actualParamMeta).getDomain();
 			if (!expectedDomain.isAssignableFrom(actualDomain))
-				throw new VTLIncompatibleTypesException("Parameter " + paramName, expectedDomain, actualDomain);
+				throw new VTLIncompatibleTypesException("parameter " + paramName, expectedDomain, actualDomain);
 		}
 	}
 

@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Stack;
-import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
@@ -122,8 +121,8 @@ public class StatementFactory implements Serializable
 				DefOperatorContext defineOp = (DefOperatorContext) defineContext;
 				List<Parameter> params = coalesce(defineOp.parameterItem(), emptyList()).stream()
 						.map(this::buildParam)
-						.collect(Collectors.toList());
-				Parameter outputType = buildParamType(defineOp.outputParameterType());
+						.collect(toList());
+				Parameter outputType = buildResultType(defineOp.outputParameterType());
 				
 				return new DefineOperatorStatement(defineOp.operatorID().getText(), params, outputType, buildExpr(defineOp.expr()));
 			}
@@ -140,11 +139,6 @@ public class StatementFactory implements Serializable
 	public Parameter buildParam(ParameterItemContext param)
 	{
 		return buildParamType(param.varID().getText(), param.inputParameterType());
-//		
-//		if (String.class == buildParamType.getValue())
-//			return new ScalarParameter(, buildParamType.getKey());
-//		else
-//			throw new UnsupportedOperationException("Parameter type not implemented: " + param.inputParameterType().getText());
 	}
 
 	private static Parameter buildParamType(String name, ParserRuleContext type)
@@ -164,21 +158,8 @@ public class StatementFactory implements Serializable
 			scalarType = (ScalarTypeContext) type;
 		else
 			throw new UnsupportedOperationException(type.getClass().getName());
-		
-		// check kind of each parameter used in the operator definition and generate constraints
-		if (scalarType != null)
-			return new ScalarParameter(name, generateDomainName(scalarType));
-		else if (compType != null)
-		{
-			Entry<Class<? extends ComponentRole>, String> metadata = generateComponentMetadata(compType);
-			return new ComponentParameter<>(name, metadata.getValue(), metadata.getKey());
-		}
-		else if (datasetType != null)
-			return new DataSetParameter(name, datasetType.compConstraint().stream()
-					.map(StatementFactory::generateComponentConstraint)
-					.collect(toList()));
-		else
-			throw new UnsupportedOperationException("Parameter of type " + type.getText() + " not implemented.");
+
+		return buildType(type, name, scalarType, compType, datasetType);
 	}
 
 	private static String generateDomainName(ScalarTypeContext scalarType)
@@ -258,22 +239,32 @@ public class StatementFactory implements Serializable
 		return new SimpleEntry<>(role, domain);
 	}
 
-	private Parameter buildParamType(OutputParameterTypeContext type)
+	private Parameter buildResultType(OutputParameterTypeContext type)
 	{
 		if (type == null)
 			return null;
-		
-		else if (type.scalarType() != null)
+		else
+			/* the result doesn't have a name */
+			return buildType(type, null, type.scalarType(), type.componentType(), type.datasetType());
+	}
+
+	private static Parameter buildType(ParserRuleContext type, String name, ScalarTypeContext scalarType, ComponentTypeContext compType, DatasetTypeContext datasetType)
+	{
+		// check kind of each parameter used in the operator definition and generate constraints
+		if (scalarType != null)
+			return new ScalarParameter(name, generateDomainName(scalarType));
+		else if (compType != null)
 		{
-			ScalarTypeContext scalarType = type.scalarType();
-			ParserRuleContext scalarTypeName = coalesce(scalarType.basicScalarType(), scalarType.valueDomainName());
-			if (scalarType.scalarTypeConstraint() != null)
-				throw new UnsupportedOperationException("Domain constraint not implemented.");
-			if (scalarType.NULL_CONSTANT() != null)
-				throw new UnsupportedOperationException("NULL/NOT NULL constraint not implemented.");
-			return new ScalarParameter(null, scalarTypeName.getText());
+			Entry<Class<? extends ComponentRole>, String> metadata = generateComponentMetadata(compType);
+			return new ComponentParameter<>(name, metadata.getValue(), metadata.getKey());
 		}
+		else if (datasetType != null)
+			return new DataSetParameter(name, datasetType.compConstraint().stream()
+					.map(StatementFactory::generateComponentConstraint)
+					.collect(toList()));
 		else
 			throw new UnsupportedOperationException("Parameter of type " + type.getText() + " not implemented.");
 	}
+	
+	
 }
