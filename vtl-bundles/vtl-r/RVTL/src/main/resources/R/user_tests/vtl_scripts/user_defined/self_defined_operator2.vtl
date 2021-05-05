@@ -17,7 +17,14 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-ds1:= 'csv:trim_test.csv';
-result:= ds1[ calc Text_3:= Text_1||Text_2];
-ref_output := 'csv:string_concatenation_2.csv';
-test_result := result#Text_3 = ref_output#Text_3;
+ define operator concat (x dataset { component _ * }, y dataset { component _ * } )
+returns dataset { component _ * } 
+is 
+  x ||" - " || y 
+end operator;  
+
+ds2:= 'csv:concat_test1.csv';
+ds3:= 'csv:concat_test2.csv';
+result:= ds2||" - " ||ds3;
+ref_output := 'csv:string_concatenation_3.csv';
+test_result := result#text_1 = ref_output#text_1;
