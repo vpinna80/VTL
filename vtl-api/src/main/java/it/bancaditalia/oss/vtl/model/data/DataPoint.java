@@ -172,4 +172,11 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.map(keepingValue(c -> c.as(role)))
 				.collect(entriesToMap());
 	}
+
+	/**
+	 * Get the source transformation of this DataPoint
+	 * 
+	 * @return the transformation from where the datapoint originated 
+	 */
+	public Lineage getLineage();
 }

@@ -42,6 +42,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -49,6 +50,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
@@ -64,15 +66,15 @@ public class ConditionalTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 
+	protected final Transformation condition;
+	protected final Transformation thenExpr, elseExpr;
+
 	public ConditionalTransformation(Transformation condition, Transformation trueExpr, Transformation falseExpr)
 	{
 		this.condition = condition;
 		this.thenExpr = trueExpr;
 		this.elseExpr = falseExpr;
 	}
-
-	protected final Transformation condition;
-	protected final Transformation thenExpr, elseExpr;
 
 	@Override
 	public VTLValue eval(TransformationScheme session)
@@ -116,7 +118,7 @@ public class ConditionalTransformation extends TransformationImpl
 			return new DataPointBuilder(dp.getValues(Identifier.class))
 					.addAll(dp.getValues(Attribute.class))
 					.addAll(nonIdValues)
-					.build((DataSetMetadata) metadata);
+					.build(getLineage(), (DataSetMetadata) metadata);
 		}
 		else
 			return dp;
@@ -275,5 +277,11 @@ public class ConditionalTransformation extends TransformationImpl
 		}
 		else if (!thenExpr.equals(other.thenExpr)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(this, condition.getLineage(), thenExpr.getLineage(), elseExpr.getLineage());
 	}
 }

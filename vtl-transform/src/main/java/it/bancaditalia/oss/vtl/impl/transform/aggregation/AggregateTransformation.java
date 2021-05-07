@@ -28,6 +28,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.afterMapping;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -47,6 +48,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -56,6 +58,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -117,7 +120,7 @@ public class AggregateTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
-		Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> reducer = aggregation.getReducer(sourceMeasure);
+		Collector<DataPoint, ?, Entry<Lineage, ScalarValue<?, ?, ?, ?>>> reducer = aggregation.getReducer(sourceMeasure);
 		DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
 				? DataStructureComponentImpl.of(name, role, sourceMeasure.getDomain())
 				: DataStructureComponentImpl.of(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
@@ -126,12 +129,12 @@ public class AggregateTransformation extends UnaryTransformation
 		if (groupBy == null)
 			try (Stream<DataPoint> stream = dataset.stream())
 			{
-				ScalarValue<?, ?, ?, ?> result = stream.collect(reducer);
+				Entry<Lineage, ScalarValue<?, ?, ?, ?>> result = stream.collect(reducer);
 				if (operand == null)
-					return result;
+					return result.getValue();
 
 				final DataSetMetadata structure = new DataStructureBuilder(sourceMeasure).build();
-				return new LightDataSet(structure, () -> Stream.of(new DataPointBuilder().add(sourceMeasure, result).build(structure)));
+				return new LightDataSet(structure, () -> Stream.of(new DataPointBuilder().add(sourceMeasure, result.getValue()).build(LineageNode.of(this, result.getKey()), structure)));
 			}
 		else
 		{
@@ -140,8 +143,8 @@ public class AggregateTransformation extends UnaryTransformation
 			// dataset-level aggregation
 			return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(groupIDs, reducer, (v, keyValues) -> 
 					new DataPointBuilder(keyValues)
-						.add(resultComponent, v)
-						.build((DataSetMetadata) metadata)), dataset);
+						.add(resultComponent, v.getValue())
+						.build(LineageNode.of(this, v.getKey()), (DataSetMetadata) metadata)), dataset);
 		}
 	}
 

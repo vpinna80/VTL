@@ -25,6 +25,7 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toConcurrentMap;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
@@ -50,6 +51,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageChain;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -57,6 +60,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
@@ -183,6 +187,12 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else if (!role.equals(other.role)) return false;
 			return true;
 		}
+		
+		@Override
+		public Lineage computeLineage()
+		{
+			return calcClause.getLineage();
+		}
 	}
 
 	private final List<CalcClauseItem> calcClauses;
@@ -228,7 +238,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 								clause -> clause.eval(dpSession))
 							);
 					
-					return new DataPointBuilder(calcValues).addAll(dp).build(nonAnalyticResultMetadata);
+					return new DataPointBuilder(calcValues).addAll(dp).build(LineageNode.of(this, dp.getLineage(), getLineage()), nonAnalyticResultMetadata);
 				}), operand);
 
 		// TODO: more efficient way to compute this instead of reduction by joining
@@ -239,7 +249,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			.orElse(nonAnalyticResult);
 	}
 	
-	private static Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme)
+	private Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme)
 	{
 		return clause -> {
 			LOGGER.debug("Evaluating calc expression {}", clause.calcClause.toString());
@@ -259,7 +269,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					.map(dp -> new DataPointBuilder(dp)
 							.delete(measure)
 							.add(newComponent, dp.get(measure))
-							.build(newStructure)), clauseValue);
+							.build(getLineage(), newStructure)), clauseValue);
 		};
 	}
 	
@@ -362,5 +372,11 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!calcClauses.equals(other.calcClauses)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageChain.of(calcClauses.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
 	}
 }

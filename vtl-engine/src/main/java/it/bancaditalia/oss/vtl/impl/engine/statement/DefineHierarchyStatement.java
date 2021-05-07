@@ -29,6 +29,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.ValueDomainHierarchyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.VariableHierarchyImpl;
 import it.bancaditalia.oss.vtl.model.data.Hierarchy;
 import it.bancaditalia.oss.vtl.model.data.Hierarchy.RuleItem;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -67,5 +68,11 @@ class DefineHierarchyStatement extends AbstractStatement
 	public String toString()
 	{
 		return "DEFINE HIERARCHICAL RULESET " + getId() + "(VARIABLE RULE " + hierarchy.getName() + ")";
+	}
+
+	@Override
+	public Lineage getLineage()
+	{
+		throw new UnsupportedOperationException();
 	}
 }

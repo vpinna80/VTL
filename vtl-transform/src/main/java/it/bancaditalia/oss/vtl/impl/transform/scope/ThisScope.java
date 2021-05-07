@@ -25,6 +25,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -36,17 +37,20 @@ public class ThisScope implements TransformationScheme
 	
 	private final DataSet thisValue;
 	private final DataSetMetadata thisMetadata;
+	private final Lineage thisLineage;
 	
-	public ThisScope(DataSet thisValue, TransformationScheme parent)
+	public ThisScope(DataSet thisValue, Lineage thisLineage)
 	{
 		this.thisValue = thisValue;
 		this.thisMetadata = thisValue.getMetadata();
+		this.thisLineage = thisLineage;
 	}
 
-	public ThisScope(DataSetMetadata thisMetadata)
+	public ThisScope(DataSetMetadata thisMetadata, Lineage thisLineage)
 	{
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
+		this.thisLineage = thisLineage;
 	}
 
 	@Override
@@ -79,7 +83,7 @@ public class ThisScope implements TransformationScheme
 		{
 			final String stripped = node.matches("'.*'") ? node.replaceAll("'(.*)'", "$1") : node.toLowerCase();
 			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(node).isPresent())
-				return ((DataSet) thisValue).membership(stripped);
+				return ((DataSet) thisValue).membership(stripped, thisLineage);
 			else 
 				throw new VTLMissingComponentsException(stripped, thisMetadata);
 		}
@@ -95,5 +99,11 @@ public class ThisScope implements TransformationScheme
 	public MetadataRepository getRepository()
 	{
 		return ConfigurationManager.getDefault().getMetadataRepository();
+	}
+
+	@Override
+	public Lineage linkLineage(String alias)
+	{
+		throw new UnsupportedOperationException();
 	}
 }

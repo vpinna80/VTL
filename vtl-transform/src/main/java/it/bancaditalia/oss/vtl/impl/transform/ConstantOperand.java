@@ -22,6 +22,8 @@ package it.bancaditalia.oss.vtl.impl.transform;
 import java.util.HashSet;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -91,5 +93,11 @@ public class ConstantOperand extends TransformationImpl implements LeafTransform
 		}
 		else if (!value.equals(other.value)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageExternal.of("Constant:" + value.toString());
 	}
 }

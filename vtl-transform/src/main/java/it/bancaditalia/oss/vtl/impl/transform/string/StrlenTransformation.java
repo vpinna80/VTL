@@ -31,6 +31,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -71,7 +72,7 @@ public class StrlenTransformation extends UnaryTransformation
 				.addComponent(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS))
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, dp -> singletonMap(resultMeasure, evalOnScalar(dp.get(originalMeasure), metadata)));
+		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(resultMeasure, evalOnScalar(dp.get(originalMeasure), metadata)));
 	}
 
 	@Override

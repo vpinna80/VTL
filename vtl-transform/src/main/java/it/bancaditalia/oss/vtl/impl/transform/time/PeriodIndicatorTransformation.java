@@ -38,11 +38,13 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -94,8 +96,8 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			else
 				component = ds.getComponents(Measure.class, TIMEDS).iterator().next();
 
-			return ds.mapKeepingKeys(metadata, dp -> singletonMap(DURATION_MEASURE,
-					StringValue.of(((TimePeriodValue<?>) dp.get(component)).getPeriodIndicator())));
+			return ds.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(DURATION_MEASURE,
+							StringValue.of(((TimePeriodValue<?>) dp.get(component)).getPeriodIndicator())));
 		}
 	}
 
@@ -183,5 +185,11 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		}
 		else if (!operand.equals(other.operand)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(this, operand.getLineage());
 	}
 }

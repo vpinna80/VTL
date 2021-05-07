@@ -20,68 +20,49 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class BracketTransformation extends TransformationImpl
+public class BracketTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final Transformation operand;
 	private final DatasetClauseTransformation clause;
 	private final String componentName;
 	
 	public BracketTransformation(Transformation operand, DatasetClauseTransformation clause, String componentName)
 	{
-		this.operand = operand;
+		super(operand);
 		this.clause = clause;
 		this.componentName = componentName == null ? null : componentName.matches("'.*'") ? componentName.replaceAll("'(.*)'", "$1") : componentName.toLowerCase();
 	}
 
 	@Override
-	public boolean isTerminal()
-	{
-		return false;
-	}
-
-	@Override
-	public Set<LeafTransformation> getTerminals()
-	{
-		Set<LeafTransformation> result = new HashSet<>(operand.getTerminals());
-
-		if (clause != null) 
-			result.addAll(clause.getTerminals());
-
-		return result;
-	}
-
-	@Override
-	public VTLValue eval(TransformationScheme session)
+	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		if (clause != null)
-			return clause.eval(new ThisScope((DataSet) operand.eval(session), session));
+			return clause.eval(new ThisScope(dataset, getLineage()));
 		else
-			return ((DataSet) operand.eval(session)).membership(componentName);
-	}
-
-	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+			return dataset.membership(componentName, getLineage());
 	}
 	
+	@Override
+	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	{
+		throw new UnsupportedOperationException();
+	}
+
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata metadata = operand.getMetadata(scheme);
@@ -93,7 +74,7 @@ public class BracketTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("Dataset expected as left operand of []# but found " + metadata);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope((DataSetMetadata) operand.getMetadata(scheme)));
+			return clause.getMetadata(new ThisScope((DataSetMetadata) operand.getMetadata(scheme), getLineage()));
 		else
 			return ((DataSetMetadata) metadata).membership(componentName);
 	}
@@ -137,5 +118,11 @@ public class BracketTransformation extends TransformationImpl
 		}
 		else if (!operand.equals(other.operand)) return false;
 		return true;
+	}
+
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(coalesce(clause, this), operand.getLineage());
 	}
 }

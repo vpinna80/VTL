@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -32,6 +33,8 @@ import it.bancaditalia.oss.vtl.engine.NamedOperator;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ParamScope;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -133,5 +136,11 @@ public class CallTransformation extends TransformationImpl
 		}
 		else if (!params.equals(other.params)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(this, params.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
 	}
 }

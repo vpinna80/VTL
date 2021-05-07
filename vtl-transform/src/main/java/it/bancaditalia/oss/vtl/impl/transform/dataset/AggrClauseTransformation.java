@@ -46,6 +46,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -54,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -168,6 +170,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			else if (!role.equals(other.role)) return false;
 			return true;
 		}
+		
+		@Override
+		public Lineage computeLineage()
+		{
+			return LineageNode.of(this, operand.getLineage());
+		}
 	}
 
 	private final List<AggrClauseItem> aggrItems;
@@ -188,12 +196,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSetMetadata metadata = getMetadata(session);
-		DataSet operand = (DataSet) getThisValue(session);
+		DataSetMetadata metadata = getMetadata(scheme);
+		DataSet operand = (DataSet) getThisValue(scheme);
 		
-		TransformationScheme thisScope = new ThisScope(operand, session);
+		TransformationScheme thisScope = new ThisScope(operand, getLineage());
 		
 		List<DataSet> resultList = Utils.getStream(aggrItems)
 			.map(item -> (DataSet) item.eval(thisScope))
@@ -210,7 +218,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 
 		if (having != null)
-			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(dp, metadata, session)) == BooleanValue.of(true));
+			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(dp, metadata, scheme)) == BooleanValue.of(true));
 
 		return result;
 	}
@@ -336,5 +344,11 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!having.equals(other.having)) return false;
 		return true;
+	}
+
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(this, aggrItems.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
 	}
 }

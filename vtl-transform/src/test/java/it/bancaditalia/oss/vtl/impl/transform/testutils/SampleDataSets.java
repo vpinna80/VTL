@@ -43,6 +43,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.M
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_8;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
+import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -66,6 +67,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -122,7 +124,7 @@ public enum SampleDataSets implements DataSet
 						.map(toEntry(
 							var -> var.getComponent(counts.get(var.getType()).getAndIncrement()),
 							var -> SampleValues.getValues(var.getType(), var.getIndex()).get(dpIdx) 
-						)).collect(toDataPoint(structure));
+						)).collect(toDataPoint(mock(Lineage.class), structure));
 				}));
 	}
 
@@ -141,9 +143,9 @@ public enum SampleDataSets implements DataSet
 		return dataset.getMetadata();
 	}
 
-	public DataSet membership(String component)
+	public DataSet membership(String component, Lineage lineage)
 	{
-		return dataset.membership(component);
+		return dataset.membership(component, mock(Lineage.class));
 	}
 
 	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name)
@@ -168,9 +170,9 @@ public enum SampleDataSets implements DataSet
 	}
 
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+			Function<? super DataPoint, ? extends Lineage> lineageOperator, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
-		return dataset.mapKeepingKeys(metadata, operator);
+		return dataset.mapKeepingKeys(metadata, x -> mock(Lineage.class), operator);
 	}
 
 	@Override

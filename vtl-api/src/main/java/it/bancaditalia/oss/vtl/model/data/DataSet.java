@@ -69,10 +69,11 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
 	 * @param component The component to retain.
+	 * @param lineage TODO
 	 * 
 	 * @return The projected dataset
 	 */
-	public DataSet membership(String component);
+	public DataSet membership(String component, Lineage lineage);
 
 	/**
 	 * Finds a component with given name
@@ -106,10 +107,11 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new dataset must conform to.
+	 * @param lineageOperator TODO
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, Function<? super DataPoint, ? extends Lineage> lineageOperator, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.

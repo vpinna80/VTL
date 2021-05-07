@@ -97,6 +97,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -209,7 +210,7 @@ public class SDMXEnvironment implements Environment, Serializable
 						.map(o -> obsToCompValues(seriesMeta.get(s), o)
 							.map(keepingValue(k -> metadata.getComponent(k).orElseThrow(() -> new VTLMissingComponentsException(k, metadata))))
 							.map(keepingKey((k, v) -> (ScalarValue<?, ?, ?, ?>) k.getDomain().cast(v)))
-							.collect(DataPointBuilder.toDataPoint(metadata))))
+							.collect(DataPointBuilder.toDataPoint(LineageExternal.of("SDMXEnv(" + name + ")"), metadata))))
 				.collect(concatenating(Utils.ORDERED)), table);
 	}
 

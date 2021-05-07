@@ -23,12 +23,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.reverseIf;
+import static java.util.Collections.singletonMap;
 
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -40,11 +41,14 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -79,9 +83,13 @@ public class ConcatTransformation extends BinaryTransformation
 		BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> function = Utils.reverseIf(CONCAT, !datasetIsLeftOp);
 		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
+		Lineage scalarLineage = (datasetIsLeftOp ? getRightOperand() : getLeftOperand()).getLineage();
+		Function<DataPoint, Lineage> lineageFunc = dp -> datasetIsLeftOp
+				? LineageNode.of(this, dp.getLineage(), scalarLineage)
+				: LineageNode.of(this, scalarLineage, dp.getLineage());
 		
-		return dataset.mapKeepingKeys(structure, dp -> Collections.singletonMap(measure, 
-				function.apply(STRINGDS.cast(dp.get(measure)), STRINGDS.cast(scalar)))); 
+		return dataset.mapKeepingKeys(structure, lineageFunc, dp -> singletonMap(measure, 
+						function.apply(STRINGDS.cast(dp.get(measure)), STRINGDS.cast(scalar)))); 
 	}
 
 	@Override
@@ -105,7 +113,7 @@ public class ConcatTransformation extends BinaryTransformation
 				.add(resultMeasure, finalOperator.apply(dps.getValue(streamedMeasure), dpi.getValue(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build((DataSetMetadata) metadata));
+				.build(getLineage(), (DataSetMetadata) metadata));
 		}
 		else
 		{
@@ -120,7 +128,7 @@ public class ConcatTransformation extends BinaryTransformation
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build((DataSetMetadata) metadata));
+					.build(getLineage(), (DataSetMetadata) metadata));
 		}
 	}
 

@@ -32,6 +32,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -76,7 +77,7 @@ public class TimeAggTransformation extends UnaryTransformation
 				.addComponent(periodComponent)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, dp -> {
+		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = dp.getValues(Measure.class);
 				map.put(periodComponent, ((TimeValue<?, ?, ?, ?>) dp.get(timeMeasure)).wrap(frequency));
 				return map;

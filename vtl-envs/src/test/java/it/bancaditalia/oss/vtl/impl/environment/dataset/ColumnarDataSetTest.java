@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,6 +50,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -77,14 +79,14 @@ public class ColumnarDataSetTest
 		values.put(INT_ID, Arrays.stream(INT_ID_VAL).map(IntegerValue::of).collect(toList()).toArray(new IntegerValue[0]));
 		values.put(INT_ME, Arrays.stream(INT_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(INTEGERDS) : IntegerValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));
 		values.put(BOL_ME, Arrays.stream(BOL_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));
-		INSTANCE = new ColumnarDataSet(values);
+		INSTANCE = new ColumnarDataSet("test", values);
 		for (int i = 0; i < 5; i++)
 			DATAPOINTS[i] = new DataPointBuilder()
 				.add(STR_ID, values.get(STR_ID)[i])
 				.add(INT_ID, values.get(INT_ID)[i])
 				.add(INT_ME, values.get(INT_ME)[i])
 				.add(BOL_ME, values.get(BOL_ME)[i])
-				.build(STRUCTURE);
+				.build(mock(Lineage.class), STRUCTURE);
 	}
 	
 	@Test

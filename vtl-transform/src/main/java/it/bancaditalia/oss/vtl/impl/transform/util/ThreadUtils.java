@@ -77,7 +77,7 @@ public class ThreadUtils
 				LOGGER.trace("Computation is done concurrently");
 				stream = stream.parallel();
 			}
-			T result = Arrays.stream(extractors).parallel().map(e -> e.apply(transformation)).reduce(combiner).get();
+			T result = stream.map(e -> e.apply(transformation)).reduce(combiner).get();
 			LOGGER.debug("Reduced result for {}", transformation);
 			return result;
 		};

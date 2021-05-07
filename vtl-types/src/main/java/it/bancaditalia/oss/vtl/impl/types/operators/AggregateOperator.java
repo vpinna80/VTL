@@ -33,9 +33,13 @@ import static java.util.stream.Collectors.minBy;
 import static java.util.stream.Collectors.summingDouble;
 import static java.util.stream.Collectors.toList;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.stream.Collector;
@@ -44,9 +48,11 @@ import java.util.stream.Collectors;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageChain;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
@@ -126,16 +132,20 @@ public enum AggregateOperator
 		return reducer;
 	}
 	
-	public Collector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
+	public Collector<DataPoint, ?, Entry<Lineage, ScalarValue<?, ?, ?, ?>>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
 		AtomicBoolean isInteger = new AtomicBoolean(true);
+		Map<Lineage, Boolean> lineage = new ConcurrentHashMap<>();
 		return collectingAndThen(
-				mapping(dp -> extractor.apply(dp, measure), 
+				collectingAndThen(
+				peeking(dp -> lineage.put(dp.getLineage(), Boolean.TRUE), 
+				mapping(dp -> extractor.apply(dp, measure),
 				peeking(extracted -> {
 					if (extracted != null && !INTEGERDS.isAssignableFrom(extracted.getDomain()))
 						isInteger.set(false);
-				}, filtering(v -> !(v instanceof NullValue), reducer))), 
-			v -> v instanceof DoubleValue && isInteger.get() ? IntegerValue.of(((DoubleValue<?>) v).get().longValue()): v);
+				}, filtering(v -> !(v instanceof NullValue), reducer)))), 
+			v -> v instanceof DoubleValue && isInteger.get() ? IntegerValue.of(((DoubleValue<?>) v).get().longValue()): v),
+			value -> new SimpleEntry<>(LineageChain.of(lineage.keySet()), value));
 	}
 	
 	@Override

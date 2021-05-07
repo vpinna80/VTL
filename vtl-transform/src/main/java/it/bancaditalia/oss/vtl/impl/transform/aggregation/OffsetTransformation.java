@@ -190,7 +190,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 					else
 						resultBuilder = resultBuilder.addAll(offsetDatapoint.getValues(Measure.class));
 
-					return resultBuilder.build(metadata);
+					return resultBuilder.build(getLineage(), metadata);
 				});
 	}
 	

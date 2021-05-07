@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.unmodifiableSet;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.joining;
@@ -55,6 +56,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -85,15 +87,15 @@ public class DataPointBuilder
 	}
 
 	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
-			DataSetMetadata structure, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
+			Lineage lineage, DataSetMetadata structure, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
 	{
-		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(structure), CONCURRENT, UNORDERED);
+		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(lineage, structure), CONCURRENT, UNORDERED);
 	}
 
 	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
-			DataSetMetadata structure)
+			Lineage lineage, DataSetMetadata structure)
 	{
-		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(structure), CONCURRENT, UNORDERED);
+		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(lineage, structure), CONCURRENT, UNORDERED);
 	}
 
 	private static DataPointBuilder merge(DataPointBuilder left, DataPointBuilder right)
@@ -141,12 +143,12 @@ public class DataPointBuilder
 		return checkState();
 	}
 
-	public synchronized DataPoint build(DataSetMetadata structure)
+	public synchronized DataPoint build(Lineage lineage, DataSetMetadata structure)
 	{
 		if (built)
 			throw new IllegalStateException("DataPoint already built");
 		built = true;
-		return new DataPointImpl(Objects.requireNonNull(structure, "DataSet structure is null for " + delegate), delegate);
+		return new DataPointImpl(requireNonNull(lineage), requireNonNull(structure, "DataSet structure is null for " + delegate), delegate);
 	}
 
 	@Override
@@ -161,10 +163,12 @@ public class DataPointBuilder
 		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
+		private final Lineage lineage;
 		private transient Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
 
-		private DataPointImpl(DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
+		private DataPointImpl(Lineage lineage, DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
+			this.lineage = lineage;
 			if (!(values instanceof Serializable))
 				throw new IllegalStateException("The values map must be serializable");
 
@@ -219,7 +223,7 @@ public class DataPointBuilder
 				if (!component.is(Identifier.class))
 					newVals.remove(component);
 
-			return new DataPointImpl(new DataStructureBuilder(newVals.keySet()).build(), newVals);
+			return new DataPointImpl(getLineage(), new DataStructureBuilder(newVals.keySet()).build(), newVals);
 		}
 
 		@Override
@@ -232,7 +236,7 @@ public class DataPointBuilder
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream().filter(c -> !thisNames.contains(c.getName()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
 
-			return new DataPointImpl(new DataStructureBuilder(finalMap.keySet()).build(), finalMap);
+			return new DataPointImpl(getLineage(), new DataStructureBuilder(finalMap.keySet()).build(), finalMap);
 		}
 
 		@Override
@@ -246,7 +250,7 @@ public class DataPointBuilder
 				else
 					throw new VTLMissingComponentsException(component, keySet());
 
-			return new DataPointImpl(new DataStructureBuilder(oper.keySet()).build(), oper);
+			return new DataPointImpl(getLineage() ,new DataStructureBuilder(oper.keySet()).build(), oper);
 		}
 
 		@Override
@@ -261,7 +265,7 @@ public class DataPointBuilder
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newValues = new HashMap<>(this);
 			ScalarValue<?, ?, ?, ?> value = newValues.remove(oldComponent);
 			newValues.put(newComponent, value);
-			return new DataPointImpl(new DataStructureBuilder(newValues.keySet()).build(), newValues);
+			return new DataPointImpl(getLineage(), new DataStructureBuilder(newValues.keySet()).build(), newValues);
 		}
 
 		@Override
@@ -311,6 +315,12 @@ public class DataPointBuilder
 		{
 			return entrySet().stream().peek(e -> Objects.nonNull(e.getKey())).peek(e -> Objects.nonNull(e.getValue())).map(Entry::toString)
 					.collect(joining(", ", "{ ", " }"));
+		}
+
+		@Override
+		public Lineage getLineage()
+		{
+			return lineage;
 		}
 	}
 }

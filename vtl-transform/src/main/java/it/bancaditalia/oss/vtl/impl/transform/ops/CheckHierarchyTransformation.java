@@ -42,6 +42,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Hierarchy;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -221,5 +222,11 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		else if (!operand.equals(other.operand)) return false;
 		if (output != other.output) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		throw new UnsupportedOperationException(); 
 	}
 }

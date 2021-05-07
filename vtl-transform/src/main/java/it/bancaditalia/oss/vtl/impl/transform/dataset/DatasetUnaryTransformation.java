@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
@@ -50,12 +49,14 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.TriFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DatasetUnaryTransformation extends UnaryTransformation
@@ -68,7 +69,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 		return l instanceof IntegerValue && r instanceof IntegerValue;
 	}
 
-	public enum DatasetOperator implements BiFunction<DataSet, DataStructureComponent<Identifier, ?, ?>, Stream<DataPoint>>
+	public enum DatasetOperator implements TriFunction<Lineage, DataSet, DataStructureComponent<Identifier, ?, ?>, Stream<DataPoint>>
 	{
 		STOCK_TO_FLOW("stock_to_flow", false, (b, a) -> bothIntegers(b, a) 
 				? DIFF.applyAsInt((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b) 
@@ -89,7 +90,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 		}
 
 		@Override
-		public Stream<DataPoint> apply(DataSet ds, DataStructureComponent<Identifier, ?, ?> timeid)
+		public Stream<DataPoint> apply(Lineage lineage, DataSet ds, DataStructureComponent<Identifier, ?, ?> timeid)
 		{
 			final DataSetMetadata metadata = ds.getMetadata();
 			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getComponents(Measure.class));
@@ -107,7 +108,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 									acc.put(m, dp.get(m));
 								return v; 
 							}))).addAll(dp.getValues(Identifier.class))
-							.build(metadata));
+							.build(lineage, metadata));
 				}).collect(concatenating(Utils.ORDERED));
 		}
 		
@@ -130,7 +131,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		return new LightF2DataSet<>((DataSetMetadata) metadata, operator::apply, dataset, main);
+		return new LightF2DataSet<>((DataSetMetadata) metadata, Utils.partial(operator::apply, getLineage()), dataset, main);
 	}
 	
 	@Override

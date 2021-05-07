@@ -296,7 +296,7 @@ public class REnvironment implements Environment
 			dataContainer.put(DataStructureComponentImpl.of(key, type, domain), values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
 		}
 		
-		return new ColumnarDataSet(dataContainer);
+		return new ColumnarDataSet(name, dataContainer);
 	}
 
 	@Override

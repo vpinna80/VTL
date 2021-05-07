@@ -56,6 +56,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -139,7 +140,7 @@ public class VTLSessionImpl implements VTLSession
 			return cacheHelper(name, cache, n -> acquireValue(name, Environment::getValue)
 					.orElseThrow(() -> new VTLUnboundNameException(name)));
 	}
-
+	
 	@Override
 	public VTLValueMetadata getMetadata(String name2)
 	{
@@ -331,5 +332,12 @@ public class VTLSessionImpl implements VTLSession
 	public Workspace getWorkspace()
 	{
 		return workspace;
+	}
+
+	@Override
+	public Lineage linkLineage(String alias)
+	{
+		Optional<? extends Statement> rule = workspace.getRule(alias);
+		return rule.map(Statement::getLineage).orElse(null);
 	}
 }

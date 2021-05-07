@@ -33,6 +33,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -65,6 +66,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -133,11 +135,12 @@ public class CSVFileEnvironment implements Environment
 			List<DataStructureComponent<?, ?, ?>> metadata = headerInfo.getKey();
 			Map<DataStructureComponent<?, ?, ?>, String> masks = headerInfo.getValue();
 			final DataSetMetadata structure = new DataStructureBuilder(metadata).build();
-			long lineCount = reader.lines().count();
-			
-			LOGGER.info("Reading {}", fileName);
+
+			LOGGER.info("Counting lines on {}...", fileName);
+			long lineCount = countLines(reader);
+			LOGGER.info("Reading {} lines from {}...", lineCount, fileName);
 	
-			// Do not close here!
+			// Do not close this reader!
 			BufferedReader innerReader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8));
 			
 			// Skip header
@@ -147,6 +150,7 @@ public class CSVFileEnvironment implements Environment
 			return ProgressWindow.of("Loading CSV", lineCount, Utils.getStream(innerReader.lines()))
 				// Skip empty lines
 				.filter(line -> !line.trim().isEmpty())
+				.peek(line -> LOGGER.trace("Parsing line from CSV: {}", line))
 				.map(line -> {
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
 
@@ -178,8 +182,8 @@ public class CSVFileEnvironment implements Environment
 					
 					return result;
 				})
-				.map(m -> new DataPointBuilder(m).build(structure))
-				.peek(dp -> LOGGER.trace("Read: {}", dp))
+				.map(m -> new DataPointBuilder(m).build(LineageExternal.of("csv:" + fileName), structure))
+				.peek(dp -> LOGGER.trace("Parsed datapoint from CSV: {}", dp))
 				.peek(dp -> {
 					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> values = dp.getValues(Identifier.class);
 					Boolean a = set.putIfAbsent(values, true);
@@ -188,6 +192,7 @@ public class CSVFileEnvironment implements Environment
 				}).onClose(() -> {
 					try
 					{
+						LOGGER.info("Completed reading of {}.", fileName);
 						innerReader.close();
 					}
 					catch (IOException e)
@@ -326,5 +331,37 @@ public class CSVFileEnvironment implements Environment
 		}
 		
 		return new SimpleEntry<>(metadata, masks);
+	}
+	
+	public static int countLines(Reader is) throws IOException
+	{
+		char[] c = new char[1024];
+
+        int readChars = is.read(c);
+        if (readChars == -1) {
+            // bail out if nothing to read
+            return 0;
+        }
+
+        // make it easy for the optimizer to tune this loop
+        int count = 0;
+        while (readChars == 1024)
+        {
+            for (int i=0; i<1024;)
+                if (c[i++] == '\n')
+                	++count;
+            readChars = is.read(c);
+        }
+
+        // count remaining characters
+        while (readChars != -1)
+        {
+            for (int i=0; i<readChars; ++i)
+                if (c[i] == '\n')
+                    ++count;
+            readChars = is.read(c);
+        }
+
+        return count == 0 ? 1 : count;
 	}
 }

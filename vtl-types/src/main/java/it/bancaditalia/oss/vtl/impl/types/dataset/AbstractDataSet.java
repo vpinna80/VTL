@@ -62,6 +62,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -80,7 +81,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 	
 	@Override
-	public DataSet membership(String alias)
+	public DataSet membership(String alias, Lineage lineage)
 	{
 		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
@@ -89,12 +90,7 @@ public abstract class AbstractDataSet implements DataSet
 				.orElseThrow(() -> new VTLMissingComponentsException(alias, dataStructure));
 		DataStructureComponent<? extends Measure, ?, ?> membershipMeasure = membershipStructure.getComponents(Measure.class).iterator().next();
 
-		return mapKeepingKeys(membershipStructure, dp -> {
-			if (!dp.containsKey(sourceComponent))
-				throw new VTLMissingComponentsException(sourceComponent, dp);
-			final ScalarValue<?, ?, ?, ?> gotValue = dp.get(sourceComponent);
-			return singletonMap(membershipMeasure, gotValue);
-		});
+		return mapKeepingKeys(membershipStructure, dp -> lineage, dp -> singletonMap(membershipMeasure, dp.get(sourceComponent)));
 	}
 
 	@Override
@@ -150,7 +146,7 @@ public abstract class AbstractDataSet implements DataSet
 
 	@Override
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+			Function<? super DataPoint, ? extends Lineage> lineageOperator, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
 		if (!metadata.getComponents(Identifier.class).equals(identifiers))
@@ -160,7 +156,7 @@ public abstract class AbstractDataSet implements DataSet
 		
 		UnaryOperator<DataPoint> extendingOperator = dp -> new DataPointBuilder(dp.getValues(Identifier.class))
 				.addAll(operator.apply(dp))
-				.build(metadata);
+				.build(lineageOperator.apply(dp), metadata);
 		
 		return new AbstractDataSet(metadata)
 		{

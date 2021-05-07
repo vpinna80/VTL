@@ -122,7 +122,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 					.collect(toConcurrentMap(
 							dp -> DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
 							dp -> dp.get(measure)
-					))).build(structure)
+					))).build(getLineage(), structure)
 			), dataset);
 	}
 

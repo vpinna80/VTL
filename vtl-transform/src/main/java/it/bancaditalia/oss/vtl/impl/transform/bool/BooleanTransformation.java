@@ -35,6 +35,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -104,7 +105,7 @@ public class BooleanTransformation extends BinaryTransformation
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, Utils.<ScalarValue<?, ?, ?, ?>>reverseIf(this::evalTwoScalars, !datasetIsLeftOp).apply(dp.get(datasetMeasure), scalar)));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(resultMeasure, Utils.<ScalarValue<?, ?, ?, ?>>reverseIf(this::evalTwoScalars, !datasetIsLeftOp).apply(dp.get(datasetMeasure), scalar)));
 	}
 
 	@Override
@@ -124,7 +125,7 @@ public class BooleanTransformation extends BinaryTransformation
 					.addAll(dps.getValues(Identifier.class))
 					.addAll(dpi.getValues(Identifier.class))
 					.add(resultMeasure, Utils.<ScalarValue<?, ?, ?, ?>>reverseIf(this::evalTwoScalars, leftHasMoreIdentifiers).apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-					.build((DataSetMetadata) metadata));
+					.build(getLineage(), (DataSetMetadata) metadata));
 	}
 
 	@Override

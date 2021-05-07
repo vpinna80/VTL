@@ -23,13 +23,15 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-class AssignStatement extends AbstractStatement
+class AssignStatement extends AbstractStatement implements Transformation
 {
 	//private final static Logger LOGGER = LoggerFactory.getLogger(AssignStatement.class);
 	private static final long serialVersionUID = 1L;
@@ -90,5 +92,17 @@ class AssignStatement extends AbstractStatement
 		{
 			throw new VTLNestedException("Error evaluating statement '" + this + "'. Error: " + e.getMessage(), e);
 		}
+	}
+
+	@Override
+	public Lineage getLineage()
+	{
+		return LineageNode.of(this, expression.getLineage());
+	}
+
+	@Override
+	public boolean isTerminal()
+	{
+		return false;
 	}
 }

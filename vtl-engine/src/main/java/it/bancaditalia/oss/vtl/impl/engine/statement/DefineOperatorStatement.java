@@ -37,6 +37,7 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesExcepti
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -132,6 +133,12 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 				{
 					return paramMap.containsKey(alias) || scheme.contains(alias);
 				}
+
+				@Override
+				public Lineage linkLineage(String alias)
+				{
+					throw new UnsupportedOperationException();
+				}
 			};
 		
 		// check if each parameter metadata matches its definition			
@@ -211,5 +218,12 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 	{
 		return "define operator " + getId() + "(" + params.stream().map(Parameter::toString).collect(joining(", ")) + ")"
 				+ (resultType != null ? " returns " + resultType : "") + " is " + expression + " end operator;";
+	}
+
+
+	@Override
+	public Lineage getLineage()
+	{
+		throw new UnsupportedOperationException();
 	}
 }

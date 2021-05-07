@@ -34,6 +34,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -72,7 +73,7 @@ public class IsNullTransformation extends UnaryTransformation
 
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
 
-		return dataset.mapKeepingKeys(structure, dp -> singletonMap(BOOL_MEASURE, BooleanValue.of(dp.get(measure) instanceof NullValue)));
+		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_MEASURE, BooleanValue.of(dp.get(measure) instanceof NullValue)));
 	}
 
 	@Override

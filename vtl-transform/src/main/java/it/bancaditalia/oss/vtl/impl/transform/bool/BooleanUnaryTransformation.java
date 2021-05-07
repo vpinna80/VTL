@@ -33,6 +33,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -86,7 +87,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 
-		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> {
+		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 			map.replaceAll((c, v) -> function.apply(BOOLEANDS.cast(v)));
 			return map;

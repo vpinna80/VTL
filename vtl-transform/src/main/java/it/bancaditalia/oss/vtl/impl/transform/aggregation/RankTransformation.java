@@ -59,12 +59,14 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -154,7 +156,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				
 			result.add(new DataPointBuilder(dp.getValues(Identifier.class))
 				.add(RANK_MEASURE, rankResult)
-				.build(getMetadata(scheme)));
+				.build(getLineage(), getMetadata(scheme)));
 		}
 		
 		return result.stream();
@@ -249,5 +251,11 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		}
 		else if (!partitionBy.equals(other.partitionBy)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageExternal.of("RANK:" + this);
 	}
 }

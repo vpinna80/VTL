@@ -432,4 +432,9 @@ public final class Utils
 			result.add(elem);
 		return Collections.unmodifiableSet(result);
 	}
+
+	public static <A, B, C, R> BiFunction<B, C, R> partial(TriFunction<A, B, C, R> triFunction, A a)
+	{
+		return (b, c) -> triFunction.apply(a, b, c);
+	}
 }

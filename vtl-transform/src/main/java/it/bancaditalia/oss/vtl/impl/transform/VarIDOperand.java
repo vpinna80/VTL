@@ -19,44 +19,46 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class VarIDOperand extends TransformationImpl implements LeafTransformation
+public class VarIDOperand implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String name;
+	private final String alias;
 	
 	public VarIDOperand(String name)
 	{
-		this.name = name;
+		this.alias = name;
 	}
 	
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
-		return session.resolve(name);
+		return session.resolve(alias);
 	}
 
 	@Override
 	public String getText()
 	{
-		return name;
+		return alias;
 	}
 
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return scheme.getMetadata(name);
+		return scheme.getMetadata(alias);
 	}
 	
 	@Override
 	public String toString()
 	{
-		return name;
+		return alias;
 	}
 
 	@Override
@@ -64,7 +66,7 @@ public class VarIDOperand extends TransformationImpl implements LeafTransformati
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((alias == null) ? 0 : alias.hashCode());
 		return result;
 	}
 
@@ -74,11 +76,17 @@ public class VarIDOperand extends TransformationImpl implements LeafTransformati
 		if (this == obj) return true;
 		if (!(obj instanceof VarIDOperand)) return false;
 		VarIDOperand other = (VarIDOperand) obj;
-		if (name == null)
+		if (alias == null)
 		{
-			if (other.name != null) return false;
+			if (other.alias != null) return false;
 		}
-		else if (!name.equals(other.name)) return false;
+		else if (!alias.equals(other.alias)) return false;
 		return true;
+	}
+
+	@Override
+	public Lineage getLineage()
+	{
+		return LineageExternal.of(alias);
 	}
 }

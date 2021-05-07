@@ -20,16 +20,40 @@
 package it.bancaditalia.oss.vtl.impl.transform;
 
 import java.io.Serializable;
+import java.lang.ref.SoftReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public abstract class TransformationImpl implements Transformation, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private final static Logger LOGGER = LoggerFactory.getLogger(TransformationImpl.class);
+	
+	private transient SoftReference<Lineage> lineageCache = new SoftReference<>(null);
 
 	@Override
 	public abstract int hashCode();
 	
 	@Override
 	public abstract boolean equals(Object obj);
+	
+	@Override
+	public final Lineage getLineage()
+	{
+		Lineage lineage = lineageCache.get();
+		if (lineage == null)
+		{
+			LOGGER.debug("Starting computing lineage for {}...", this);
+			lineage = computeLineage(); 
+			lineageCache = new SoftReference<>(lineage);
+			LOGGER.debug("Finished computing lineage for {}.", this);
+		}
+		return lineage;
+	}
+
+	protected abstract Lineage computeLineage();
 }

@@ -169,7 +169,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 					DataPoint fillingDataPoint = new DataPointBuilder(seriesID)
 						.add(timeID, prevTime)
 						.addAll(nullFilling)
-						.build(structure);
+						.build(getLineage(), structure);
 					additional.add(fillingDataPoint);
 					prevTime = prevTime.increment(1);
 				}
@@ -189,7 +189,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 				DataPoint fillingDataPoint = new DataPointBuilder(seriesID)
 					.add(timeID, prevTime)
 					.addAll(nullFilling)
-					.build(structure);
+					.build(getLineage(), structure);
 				additional.add(fillingDataPoint);
 			}
 		}

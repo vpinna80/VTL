@@ -26,9 +26,9 @@ import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.to
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
-import static it.bancaditalia.oss.vtl.util.Utils.onlyIf;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
+import static it.bancaditalia.oss.vtl.util.Utils.onlyIf;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
@@ -73,6 +73,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -80,6 +81,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -267,7 +269,7 @@ public class JoinTransformation extends TransformationImpl
 							if (otherDPs.size() != indexes.size())
 								return operator == INNER_JOIN ? null : new DataPointBuilder(refDP)
 										.addAll(totalStructure.stream().collect(toMapWithValues(NullValue::instanceFrom)))
-										.build(totalStructure);
+										.build(getLineage(), totalStructure);
 							else
 							{
 								// Join all datapoints
@@ -286,18 +288,18 @@ public class JoinTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("inner_join case B1-B2 not implemented");
 		
 		if (filter != null)
-			result = (DataSet) filter.eval(new ThisScope(result, scheme));
+			result = (DataSet) filter.eval(new ThisScope(result, filter.getLineage()));
 		if (apply != null)
 			result = applyClause(metadata, scheme, result);
 		if (calc != null)
-			result = (DataSet) calc.eval(new ThisScope(result, scheme));
+			result = (DataSet) calc.eval(new ThisScope(result, calc.getLineage()));
 		if (aggr != null)
-			result = (DataSet) aggr.eval(new ThisScope(result, scheme));
+			result = (DataSet) aggr.eval(new ThisScope(result, aggr.getLineage()));
 		if (keepOrDrop != null)
-			result = (DataSet) keepOrDrop.eval(new ThisScope(result, scheme));
+			result = (DataSet) keepOrDrop.eval(new ThisScope(result, keepOrDrop.getLineage()));
 		if (rename != null)
 		{
-			result = (DataSet) rename.eval(new ThisScope(result, scheme));
+			result = (DataSet) rename.eval(new ThisScope(result, rename.getLineage()));
 
 			// unalias all remaining components that have not been already unaliased 
 			Set<DataStructureComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
@@ -308,7 +310,7 @@ public class JoinTransformation extends TransformationImpl
 				.map(dp -> Utils.getStream(dp)
 						.map(keepingValue(onlyIf(comp -> comp.getName().contains("#"), 
 								comp -> comp.rename(comp.getName().split("#", 2)[1])))
-						).collect(toDataPoint(metadata))));
+						).collect(toDataPoint(getLineage(), metadata))));
 		}
 		
 		return result;
@@ -348,7 +350,7 @@ public class JoinTransformation extends TransformationImpl
 				return new NamedDataSet(op.getId(), new LightFDataSet<>(newStructure, dataset -> dataset.stream()
 						.map(dp -> Utils.getStream(dp)
 								.map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c))
-								.collect(toDataPoint(newStructure))
+								.collect(toDataPoint(getLineage(), newStructure))
 						), ds));
 			})).collect(entriesToMap());
 	}
@@ -370,8 +372,9 @@ public class JoinTransformation extends TransformationImpl
 				.filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
 				.collect(DataStructureBuilder.toDataStructure(applyComponents));
 		
-		return dataset.mapKeepingKeys(applyMetadata, dp -> applyComponents.stream()
-				.collect(toConcurrentMap(c -> c, c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
+		return dataset.mapKeepingKeys(applyMetadata, dp -> LineageNode.of(this, dp.getLineage()), 
+				dp -> applyComponents.stream()
+						.collect(toConcurrentMap(c -> c, c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
 	}
 
 	@Override
@@ -422,7 +425,7 @@ public class JoinTransformation extends TransformationImpl
 		
 		// modify the result structure as needed
 		if (filter != null)
-			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result));
+			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result, filter.getLineage()));
 		if (apply != null)
 		{
 			DataSetMetadata applyResult = result; 
@@ -441,14 +444,14 @@ public class JoinTransformation extends TransformationImpl
 					.build();
 		}
 		if (calc != null)
-			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result));
+			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result, calc.getLineage()));
 		if (aggr != null)
-			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result));
+			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result, aggr.getLineage()));
 		if (keepOrDrop != null)
-			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result));
+			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result, keepOrDrop.getLineage()));
 		if (rename != null)
 		{
-			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result));
+			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result, rename.getLineage()));
 			// check if rename has made some components unambiguous
 			Map<String, List<String>> sameUnaliasedName = Utils.getStream(result)
 				.map(DataStructureComponent::getName)
@@ -712,5 +715,17 @@ public class JoinTransformation extends TransformationImpl
 		}
 		else if (!usingNames.equals(other.usingNames)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		Lineage[] sources = Stream.concat(operands.stream().map(JoinOperand::getOperand), Stream.of(apply, keepOrDrop, rename, filter, calc, aggr))
+			.filter(Objects::nonNull)
+			.map(Transformation::getLineage)
+			.collect(toList())
+			.toArray(new Lineage[0]);
+		
+		return LineageNode.of(this, sources);
 	}
 }

@@ -28,7 +28,6 @@ import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -43,7 +42,7 @@ public class ProgressWindow
 	private final JFrame window;
 	private final Timer timer;
 	
-	private AtomicInteger progress = new AtomicInteger();
+	private volatile int progress = 0;
 
 	private static <T, K> Stream<T> streamHelper(String title, long maxValue, K source, Function<? super K, ? extends Stream<T>> streamProducer)
 	{
@@ -84,7 +83,7 @@ public class ProgressWindow
 		{
 			window = new JFrame();
 			JProgressBar progressBar = new JProgressBar();
-			timer = new Timer(200, event -> invokeLater(() -> progressBar.setValue(progress.get())));
+			timer = new Timer(200, event -> invokeLater(() -> progressBar.setValue(progress)));
 	
 			window.setTitle(title);
 			window.setSize(400, 100);
@@ -122,7 +121,7 @@ public class ProgressWindow
 	
 	public void progress()
 	{
-		progress.incrementAndGet();
+		progress++;
 	}
 	
 	public void dispose()

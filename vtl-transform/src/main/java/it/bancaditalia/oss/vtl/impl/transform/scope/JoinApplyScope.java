@@ -29,6 +29,7 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -96,5 +97,11 @@ public class JoinApplyScope implements TransformationScheme
 	public Statement getRule(String node)
 	{
 		return parent.getRule(node);
+	}
+
+	@Override
+	public Lineage linkLineage(String alias)
+	{
+		throw new UnsupportedOperationException();
 	}
 }

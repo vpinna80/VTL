@@ -48,6 +48,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.NullDomain;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -102,7 +103,7 @@ public class CastTransformation extends UnaryTransformation
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(measure)
 				.build();
-		return dataset.mapKeepingKeys(structure, dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
+		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
 	}
 
 	@Override

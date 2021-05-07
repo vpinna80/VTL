@@ -149,7 +149,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.getWindows()
 				.map(window -> measures.stream()
 					.map(toEntryWithValue(measure -> (ScalarValue<?, ?, ?, ?>) Utils.getStream(window.getValue()).collect(aggregation.getReducer(measure))))
-					.collect(toDataPoint(metadata, window.getKey()))
+					.collect(toDataPoint(getLineage(), metadata, window.getKey()))
 				);
 	}
 	

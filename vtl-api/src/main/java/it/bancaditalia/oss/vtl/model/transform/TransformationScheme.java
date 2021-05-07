@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.model.transform;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -90,4 +91,12 @@ public interface TransformationScheme
 	{
 		return null;
 	}
+
+	/**
+	 * Tries to resolve a lineage link specified by a given alias for a VTL rule defined in this scheme.
+	 * 
+	 * @param alias The alias referring to a rule
+	 * @return The lineage link
+	 */
+	public Lineage linkLineage(String alias);
 }

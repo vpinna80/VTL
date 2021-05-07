@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +39,11 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -93,17 +96,22 @@ public class ComparisonTransformation extends BinaryTransformation
 			castedScalar = measure.cast(scalar);
 		else
 			castedScalar = scalar;
-		
+
+		final Function<DataPoint, ScalarValue<?, ?, ?, ?>> extractor;
 		if (castToLeft) 
 			if (datasetIsLeftOp)
-				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(dp.get(measure), castedScalar)));
+				extractor = dp -> operator.apply(dp.get(measure), castedScalar);
 			else
-				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(scalar, scalar.getDomain().cast(dp.get(measure)))));
+				extractor = dp -> operator.apply(scalar, scalar.getDomain().cast(dp.get(measure)));
 		else
 			if (datasetIsLeftOp)
-				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(scalar.getDomain().cast(dp.get(measure)), scalar)));
+				extractor = dp -> operator.apply(scalar.getDomain().cast(dp.get(measure)), scalar);
 			else
-				return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> singletonMap(resultMeasure, operator.apply(castedScalar, dp.get(measure))));
+				extractor = dp -> operator.apply(castedScalar, dp.get(measure));
+
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, 
+				dp -> LineageNode.of(this, dp.getLineage()), 
+				dp -> singletonMap(resultMeasure, extractor.apply(dp)));
 	}
 
 	@Override
@@ -128,7 +136,7 @@ public class ComparisonTransformation extends BinaryTransformation
 						.addAll(dps.getValues(Identifier.class))
 						.addAll(dpi.getValues(Identifier.class))
 						.add(resultMeasure, function.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-						.build((DataSetMetadata) metadata));
+						.build(getLineage(), (DataSetMetadata) metadata));
 	}
 
 	@Override

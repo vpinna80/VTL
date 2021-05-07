@@ -60,11 +60,13 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -118,8 +120,8 @@ public class InStrTransformation extends TransformationImpl
 					.build();
 			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
 			
-			return dataset.mapKeepingKeys(structure, dp -> singletonMap(INT_MEASURE, 
-					instrScalar(dp.get(measure), pattern, startPos, nOcc))); 
+			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage(), rightOperand.getLineage()), dp -> singletonMap(INT_MEASURE, 
+							instrScalar(dp.get(measure), pattern, startPos, nOcc))); 
 		}
 		else
 			return instrScalar((ScalarValue<?, ?, ?, ?>) left, pattern, startPos, nOcc);
@@ -267,5 +269,11 @@ public class InStrTransformation extends TransformationImpl
 		}
 		else if (!startOperand.equals(other.startOperand)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(this, leftOperand.getLineage(), rightOperand.getLineage());
 	}
 }

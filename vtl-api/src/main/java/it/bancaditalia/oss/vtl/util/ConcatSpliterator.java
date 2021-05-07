@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Long.MAX_VALUE;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -44,20 +44,30 @@ import java.util.stream.StreamSupport;
 public class ConcatSpliterator<T> implements Spliterator<T>
 {
 	private final Queue<Spliterator<T>> spliterators;
+	private volatile long estimatedSize = 0;
 	
 	public static <T> Collector<Stream<T>, ?, Stream<T>> concatenating(boolean keepOrder)
 	{
 		if (keepOrder)
 			return collectingAndThen(toList(), collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL).onClose(() -> collection.forEach(Stream::close)));
 		else
-			return collectingAndThen(toSet(), collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL).onClose(() -> collection.forEach(Stream::close)));
+			return collectingAndThen(
+					collectingAndThen(toMapWithValues(x -> Boolean.TRUE), map -> map.keySet()), 
+				collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL).onClose(() -> collection.forEach(Stream::close)));
 	}
 	
 	public ConcatSpliterator(Collection<? extends Stream<T>> streams)
 	{
 		spliterators = Utils.SEQUENTIAL ? new LinkedList<>() : new ConcurrentLinkedQueue<>(); 
 		for (Stream<T> stream: streams)
-			spliterators.add(stream.spliterator());
+		{
+			Spliterator<T> spliterator = stream.spliterator();
+			spliterators.add(spliterator);
+			if (estimatedSize < MAX_VALUE)
+				estimatedSize += spliterator.estimateSize();
+			if (estimatedSize < 0)
+				estimatedSize = MAX_VALUE;
+		}
 	}
 	
 	public ConcatSpliterator(Queue<Spliterator<T>> spliterators)
@@ -68,7 +78,14 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	@Override
 	public Spliterator<T> trySplit()
 	{
-		return spliterators.poll();
+		final Spliterator<T> polled = spliterators.poll();
+		if (polled != null && estimatedSize < MAX_VALUE)
+		{
+			estimatedSize -= polled.estimateSize();
+			if (estimatedSize < 0)
+				estimatedSize = MAX_VALUE;
+		}
+		return polled;
 	}
 
 	@Override
@@ -76,7 +93,11 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	{
 		while (!spliterators.isEmpty())
 			if (spliterators.peek().tryAdvance(consumer))
+			{
+				if (estimatedSize < MAX_VALUE)
+					estimatedSize--;
 				return true;
+			}
 			else
 				spliterators.remove();
 		return false;
@@ -88,20 +109,13 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 		Spliterator<T> spliterator;
 		while ((spliterator = spliterators.poll()) != null)
 			spliterator.forEachRemaining(consumer);
+		estimatedSize = 0;
 	}
 
 	@Override
 	public long estimateSize()
 	{
-		long size = 0;
-		for (Spliterator<T> spliterator: spliterators)
-		{
-			size += spliterator.estimateSize();
-			if (size < 0)
-				return MAX_VALUE;
-		}
-		
-		return size;
+		return estimatedSize;
 	}
 
 	@Override

@@ -41,12 +41,14 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -102,7 +104,7 @@ public class CheckTransformation extends TransformationImpl
 		
 		if (imbalanceExpr == null)
 			// TODO: INVALID
-			return dataset.mapKeepingKeys(metadata, dp -> {
+			return dataset.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
 				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
 				result.put(ERRORCODE, NullValue.instance(NUMBERDS));
@@ -121,7 +123,7 @@ public class CheckTransformation extends TransformationImpl
 				.add(IMBALANCE, b.getValues(Measure.class).values().iterator().next())
 				.add(ERRORCODE, NullValue.instance(NUMBERDS))
 				.add(ERRORLEVEL, NullValue.instance(NUMBERDS))
-				.build(metadata));
+				.build(getLineage(), metadata));
 		}
 	}
 
@@ -239,5 +241,11 @@ public class CheckTransformation extends TransformationImpl
 		else if (!operand.equals(other.operand)) return false;
 		if (output != other.output) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		throw new UnsupportedOperationException();
 	}
 }

@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -42,10 +43,12 @@ public class ColumnarDataSet extends AbstractDataSet
 	
 	private final Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns;
 	private final int nRows;
+	private final String alias;
 
-	public ColumnarDataSet(Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns)
+	public ColumnarDataSet(String alias, Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns)
 	{
 		super(new DataStructureBuilder(columns.keySet()).build());
+		this.alias = alias;
 		this.columns = columns;
 		nRows = columns.values().iterator().next().length;
 		
@@ -63,6 +66,11 @@ public class ColumnarDataSet extends AbstractDataSet
 	{
 		return Utils.getStream(columns.entrySet())
 				.map(Utils.keepingKey(col -> col[rowIndex]))
-				.collect(toDataPoint(getMetadata()));
+				.collect(toDataPoint(LineageExternal.of("REnv(" + alias + ")"), getMetadata()));
+	}
+
+	public String getAlias()
+	{
+		return alias;
 	}
 }

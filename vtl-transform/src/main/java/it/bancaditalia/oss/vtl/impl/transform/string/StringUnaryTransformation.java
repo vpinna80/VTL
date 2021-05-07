@@ -35,6 +35,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -110,11 +111,11 @@ public class StringUnaryTransformation extends UnaryTransformation
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
-				map.replaceAll((c, v) -> c.getDomain().cast(operator.apply(STRINGDS.cast(v))));
-				return map;
-			});
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+					map.replaceAll((c, v) -> c.getDomain().cast(operator.apply(STRINGDS.cast(v))));
+					return map;
+				});
 	}
 
 	@Override

@@ -62,6 +62,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -97,7 +98,7 @@ public class AbstractDataSetTest
 				.add(INT_ID, values.get(INT_ID)[i])
 				.add(INT_ME, values.get(INT_ME)[i])
 				.add(BOL_ME, values.get(BOL_ME)[i])
-				.build(STRUCTURE);
+				.build(mock(Lineage.class), STRUCTURE);
 		
 		INSTANCE = mock(AbstractDataSet.class, withSettings()
 		        .useConstructor(STRUCTURE)
@@ -115,10 +116,10 @@ public class AbstractDataSetTest
 				new SimpleEntry<>(BOL_ME, Stream.of(STR_ID, INT_ID, BOL_ME)));
 		
 		expected.map(keepingKey(s -> s.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).build()))
-				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getName()).getMetadata()))
+				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getName(), mock(Lineage.class)).getMetadata()))
 				.forEach(e -> assertEquals(e.getKey(), e.getValue(), "Structural mismatch in membership"));
 		
-		verify(INSTANCE, times(4)).membership(anyString());
+		verify(INSTANCE, times(4)).membership(anyString(), mock(Lineage.class));
 	}
 
 	@Test
@@ -142,7 +143,7 @@ public class AbstractDataSetTest
 	@Test
 	void testMapKeepingKeys()
 	{
-		DataSet result = INSTANCE.mapKeepingKeys(STRUCTURE, dp -> dp.getValues(NonIdentifier.class));
+		DataSet result = INSTANCE.mapKeepingKeys(STRUCTURE, x -> mock(Lineage.class), dp -> dp.getValues(NonIdentifier.class));
 		assertEquals(STRUCTURE, result.getMetadata());
 		assertEquals(new HashSet<>(Arrays.asList(DATAPOINTS)), result.stream().collect(toSet()));
 	}

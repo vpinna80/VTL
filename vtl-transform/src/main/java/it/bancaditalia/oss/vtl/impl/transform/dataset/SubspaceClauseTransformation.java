@@ -63,7 +63,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		final DataSetMetadata metadata = getMetadata(scheme);
 		return new LightDataSet(metadata, () -> operand.stream()
 				.filter(dp -> subspaceKeyValues.equals(dp.getValues(subspaceKeyValues.keySet(), Identifier.class)))
-				.map(dp -> new DataPointBuilder(dp).delete(subspaceKeyValues.keySet()).build(metadata)));
+				.map(dp -> new DataPointBuilder(dp).delete(subspaceKeyValues.keySet()).build(getLineage(), metadata)));
 	}
 
 	@Override

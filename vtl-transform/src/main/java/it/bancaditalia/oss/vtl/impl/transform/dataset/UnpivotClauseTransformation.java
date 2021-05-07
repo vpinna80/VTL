@@ -89,7 +89,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 					.map(e -> new DataPointBuilder(dp.getValues(oldIdentifiers))
 							.add(newMeasure, e.getValue())
 							.add(newID, StringValue.of(e.getKey().getName()))
-							.build(metadata))
+							.build(getLineage(), metadata))
 			).collect(concatenating(Utils.ORDERED)), dataset);
 	}
 

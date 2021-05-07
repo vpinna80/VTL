@@ -59,7 +59,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 				.map(dp -> new DataPointBuilder(dp)
 					.delete(timeID)
 					.add(timeID, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).increment(amount))
-					.build(structure)
+					.build(getLineage(), structure)
 				), dataset);
 	}
 

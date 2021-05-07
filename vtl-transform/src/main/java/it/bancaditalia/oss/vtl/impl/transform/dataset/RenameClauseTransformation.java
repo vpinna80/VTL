@@ -70,7 +70,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 										dp.get(oldComponents.get(oldName)))))
 								.collect(Utils.entriesToMap()))
 						.delete(oldComponents.values())
-						.build(metadata)
+						.build(getLineage(), metadata)
 				), operand);
 	}
 

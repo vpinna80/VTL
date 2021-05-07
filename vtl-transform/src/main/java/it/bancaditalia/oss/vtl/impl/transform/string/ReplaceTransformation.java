@@ -53,10 +53,12 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -96,11 +98,12 @@ public class ReplaceTransformation extends TransformationImpl
 			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getComponents(Measure.class);
 			Pattern compiled = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
 			
-			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
-				.map(measure -> new SimpleEntry<>(measure, (pattern == null || dp.get(measure) instanceof NullValue) 
-					? STRINGDS.cast(NullValue.instance(STRINGDS))
-					: ((StringValue<?, ?>) dp.get(measure)).map(value -> compiled.matcher(value).replaceAll(replace.get().toString()))
-				)).collect(Utils.entriesToMap())
+			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage(), patternOperand.getLineage(), replaceOperand.getLineage()), 
+					dp -> measures.stream()
+						.map(measure -> new SimpleEntry<>(measure, (pattern == null || dp.get(measure) instanceof NullValue) 
+							? STRINGDS.cast(NullValue.instance(STRINGDS))
+							: ((StringValue<?, ?>) dp.get(measure)).map(value -> compiled.matcher(value).replaceAll(replace.get().toString()))
+						)).collect(Utils.entriesToMap())
 			); 
 		}
 		else
@@ -207,5 +210,11 @@ public class ReplaceTransformation extends TransformationImpl
 		}
 		else if (!replaceOperand.equals(other.replaceOperand)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(this, replaceOperand.getLineage());
 	}
 }

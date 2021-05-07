@@ -55,10 +55,12 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -104,9 +106,9 @@ public class SubstrTransformation extends TransformationImpl
 			DataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 			
-			return dataset.mapKeepingKeys(structure, dp -> measures.stream()
-				.map(toEntryWithValue(measure -> getSubstring(len, start, STRINGDS.cast(dp.get(measure)))))
-				.collect(entriesToMap())
+			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> measures.stream()
+					.map(toEntryWithValue(measure -> getSubstring(len, start, STRINGDS.cast(dp.get(measure)))))
+					.collect(entriesToMap())
 			); 
 		}
 		else
@@ -235,5 +237,11 @@ public class SubstrTransformation extends TransformationImpl
 		}
 		else if (!startOperand.equals(other.startOperand)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of(this, exprOperand.getLineage());
 	}
 }
