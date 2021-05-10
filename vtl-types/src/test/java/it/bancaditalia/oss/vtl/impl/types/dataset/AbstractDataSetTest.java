@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.setOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
@@ -46,6 +47,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -119,7 +121,7 @@ public class AbstractDataSetTest
 				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getName(), mock(Lineage.class)).getMetadata()))
 				.forEach(e -> assertEquals(e.getKey(), e.getValue(), "Structural mismatch in membership"));
 		
-		verify(INSTANCE, times(4)).membership(anyString(), mock(Lineage.class));
+		verify(INSTANCE, times(4)).membership(anyString(), any(Lineage.class));
 	}
 
 	@Test
