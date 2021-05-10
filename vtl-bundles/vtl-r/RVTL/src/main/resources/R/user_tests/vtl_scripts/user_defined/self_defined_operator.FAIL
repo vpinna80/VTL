@@ -1,7 +1,0 @@
-/* Define operator with the name of the operator "add" */
-define operator add (x number default 0, y number default 0)
-returns number is
-x+y
-end operator;
-
-a:= add(2,3);
