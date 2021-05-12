@@ -25,7 +25,6 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
@@ -51,7 +50,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageChain;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -372,11 +370,5 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!calcClauses.equals(other.calcClauses)) return false;
 		return true;
-	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageChain.of(calcClauses.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
 	}
 }

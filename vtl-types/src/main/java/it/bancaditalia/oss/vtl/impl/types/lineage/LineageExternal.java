@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class LineageExternal implements Lineage
+public class LineageExternal extends LineageImpl
 {
 	private final static Map<String, SoftReference<LineageExternal>> CACHE = new ConcurrentHashMap<>();
 	

@@ -46,6 +46,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -349,6 +350,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public Lineage computeLineage()
 	{
-		return LineageNode.of(this, aggrItems.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
+		return LineageNode.of(this, LineageCall.of(aggrItems.stream().map(Transformation::getLineage).collect(toList())));
 	}
 }

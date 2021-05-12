@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageChain;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -135,17 +135,17 @@ public enum AggregateOperator
 	public Collector<DataPoint, ?, Entry<Lineage, ScalarValue<?, ?, ?, ?>>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
 		AtomicBoolean isInteger = new AtomicBoolean(true);
-		Map<Lineage, Boolean> lineage = new ConcurrentHashMap<>();
+		Map<Lineage, Long> lineage = new ConcurrentHashMap<>();
 		return collectingAndThen(
-				collectingAndThen(
-				peeking(dp -> lineage.put(dp.getLineage(), Boolean.TRUE), 
-				mapping(dp -> extractor.apply(dp, measure),
-				peeking(extracted -> {
-					if (extracted != null && !INTEGERDS.isAssignableFrom(extracted.getDomain()))
-						isInteger.set(false);
-				}, filtering(v -> !(v instanceof NullValue), reducer)))), 
-			v -> v instanceof DoubleValue && isInteger.get() ? IntegerValue.of(((DoubleValue<?>) v).get().longValue()): v),
-			value -> new SimpleEntry<>(LineageChain.of(lineage.keySet()), value));
+			collectingAndThen(
+				peeking(dp -> lineage.merge(dp.getLineage(), 1L, Long::sum), 
+					mapping(dp -> extractor.apply(dp, measure),
+						peeking(extracted -> {
+								if (extracted != null && !INTEGERDS.isAssignableFrom(extracted.getDomain()))
+									isInteger.set(false);
+							}, filtering(v -> !(v instanceof NullValue), reducer)))), 
+				v -> v instanceof DoubleValue && isInteger.get() ? IntegerValue.of(((DoubleValue<?>) v).get().longValue()): v),
+			value -> new SimpleEntry<>(LineageGroup.of(lineage), value));
 	}
 	
 	@Override

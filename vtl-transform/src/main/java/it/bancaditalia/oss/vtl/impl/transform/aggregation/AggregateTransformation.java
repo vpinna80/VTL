@@ -134,7 +134,9 @@ public class AggregateTransformation extends UnaryTransformation
 					return result.getValue();
 
 				final DataSetMetadata structure = new DataStructureBuilder(sourceMeasure).build();
-				return new LightDataSet(structure, () -> Stream.of(new DataPointBuilder().add(sourceMeasure, result.getValue()).build(LineageNode.of(this, result.getKey()), structure)));
+				return new LightDataSet(structure, () -> Stream.of(new DataPointBuilder()
+						.add(sourceMeasure, result.getValue())
+						.build(LineageNode.of(this, result.getKey()), structure)));
 			}
 		else
 		{
@@ -220,7 +222,7 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	public String toString()
 	{
-		return aggregation + "(" + operand + ")" + (groupBy != null ? groupBy.stream().collect(Collectors.joining(", ", " GROUP BY ", "")) : "");
+		return aggregation + "(" + operand + (groupBy != null ? groupBy.stream().collect(Collectors.joining(", ", " group by ", "")) : "") + ")";
 	}
 
 	@Override

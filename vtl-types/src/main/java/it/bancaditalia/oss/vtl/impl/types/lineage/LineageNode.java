@@ -21,8 +21,6 @@ package it.bancaditalia.oss.vtl.impl.types.lineage;
 
 import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -35,29 +33,34 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public class LineageNode implements Lineage
+public class LineageNode extends LineageImpl
 {
-	private final static Map<Entry<Transformation, List<Lineage>>, SoftReference<LineageNode>> CACHE = new ConcurrentHashMap<>();
+	private final static Map<Entry<Transformation, LineageSet>, SoftReference<LineageNode>> CACHE = new ConcurrentHashMap<>();
 	private final static Logger LOGGER = LoggerFactory.getLogger(LineageNode.class);
 
 	private final Transformation transformation;
-	private final LineageChain sources;
+	private final LineageSet sources;
 
 	public static LineageNode of(Transformation transformation, Lineage... sources)
 	{
-		return of(transformation, Arrays.asList(sources));
+		if (sources.length == 1 && sources[0] instanceof LineageCall)
+			return of(transformation, (LineageCall) sources[0]);
+		else if (sources.length == 1 && sources[0] instanceof LineageGroup)
+			return of(transformation, (LineageGroup) sources[0]);
+		else
+			return of(transformation, LineageCall.of(sources));
 	}
 	
-	public static LineageNode of(Transformation transformation, List<Lineage> sources)
+	public static LineageNode of(Transformation transformation, LineageSet sources)
 	{
-		Entry<Transformation, List<Lineage>> entry = new SimpleEntry<>(transformation, sources);
+		Entry<Transformation, LineageSet> entry = new SimpleEntry<>(transformation, sources);
 		LineageNode instance = CACHE.computeIfAbsent(entry, e -> {
-				LOGGER.trace("Creating lineage for {} with {}...", transformation, sources);
-				final SoftReference<LineageNode> lineage = new SoftReference<>(new LineageNode(transformation, sources));
-				LOGGER.debug("Lineage created for {}.", transformation);
-				return lineage;
-			}).get();
-		
+			LOGGER.trace("Creating lineage for {} with {}...", transformation, sources);
+			final SoftReference<LineageNode> lineage = new SoftReference<>(new LineageNode(transformation, sources));
+			LOGGER.trace("Lineage created for {}.", transformation);
+			return lineage;
+		}).get();
+
 		// Small chance that the reference if gced while being resolved
 		if (instance == null)
 		{
@@ -67,18 +70,13 @@ public class LineageNode implements Lineage
 		return instance;
 	}
 
-	private LineageNode(Transformation transformation, List<Lineage> sources)
+	private LineageNode(Transformation transformation, LineageSet sources)
 	{
 		Objects.requireNonNull(transformation);
 		Objects.requireNonNull(sources);
-		
+
 		this.transformation = transformation;
-		if (sources.size() == 1 && sources.get(0) instanceof LineageChain)
-			this.sources = (LineageChain) sources.get(0);
-		else
-			this.sources = LineageChain.of(sources);
-		
-		sources.stream().forEach(Objects::requireNonNull);
+		this.sources = sources;
 	}
 
 	public Transformation getGenerator()
@@ -86,11 +84,11 @@ public class LineageNode implements Lineage
 		return transformation;
 	}
 
-	public List<Lineage> getSources()
+	public LineageSet getSourceSet()
 	{
-		return sources.getSources();
+		return sources;
 	}
-	
+
 	@Override
 	public String toString()
 	{
@@ -101,5 +99,45 @@ public class LineageNode implements Lineage
 	public Lineage resolveExternal(TransformationScheme scheme)
 	{
 		return LineageNode.of(transformation, sources.resolveExternal(scheme));
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((sources == null) ? 0 : sources.hashCode());
+		result = prime * result + ((transformation == null) ? 0 : transformation.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		LineageNode other = (LineageNode) obj;
+		if (sources == null)
+		{
+			if (other.sources != null)
+				return false;
+		} else if (!sources.equals(other.sources))
+			return false;
+		if (transformation == null)
+		{
+			if (other.transformation != null)
+				return false;
+		} else if (!transformation.equals(other.transformation))
+			return false;
+		return true;
+	}
+
+	public Transformation getTransformation()
+	{
+		return transformation;
 	}
 }

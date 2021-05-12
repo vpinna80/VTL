@@ -30,6 +30,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.transform.util.ThreadUtils;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -181,6 +182,6 @@ public abstract class BinaryTransformation extends TransformationImpl
 	@Override
 	public Lineage computeLineage()
 	{
-		return LineageNode.of(this, leftOperand.getLineage(), rightOperand.getLineage());
+		return LineageNode.of(this, LineageCall.of(leftOperand.getLineage(), rightOperand.getLineage()));
 	}
 }

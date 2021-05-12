@@ -54,6 +54,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -118,7 +119,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			reverseIf(bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsDouble, !datasetIsLeftOp)
 				.apply(NUMBERDS.cast(dp.get(dataset.getComponent(name).get())), castedScalar);
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage(), getLeftOperand().getLineage()), dp -> Utils.getStream(measureNames)
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, LineageCall.of(dp.getLineage(), getLeftOperand().getLineage())), dp -> Utils.getStream(measureNames)
 							.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata)
 									.getComponent(name)
 									.map(c -> c.as(Measure.class))
@@ -154,7 +155,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 						.add(resultComp, compute(swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
-						.build(LineageNode.of(this, dpl.getLineage(), dpr.getLineage()), newStructure));
+						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), newStructure));
 		}
 		else
 		{
@@ -174,7 +175,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 									dpr.get(indexedMeasure))
 							).addAll(dpl.getValues(Identifier.class))
 							.addAll(dpr.getValues(Identifier.class))
-							.build(LineageNode.of(this, dpl.getLineage(), dpr.getLineage()), (DataSetMetadata) metadata));
+							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata));
 			}
 			else
 				// Scan the dataset with less identifiers and find the matches
@@ -186,7 +187,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 							)).collect(entriesToMap()))		
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
-						.build(LineageNode.of(this, dpl.getLineage(), dpr.getLineage()), (DataSetMetadata) metadata));
+						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata));
 		}
 	}
 

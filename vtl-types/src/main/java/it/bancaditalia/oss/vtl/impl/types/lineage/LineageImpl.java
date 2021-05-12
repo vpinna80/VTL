@@ -21,7 +21,25 @@ package it.bancaditalia.oss.vtl.impl.types.lineage;
 
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 
-public interface LineageSet extends Lineage
+public abstract class LineageImpl implements Lineage
 {
-	public abstract long size();
+	private final Exception exception;
+
+	public LineageImpl()
+	{
+		try
+		{
+			throw new NullPointerException();
+		}
+		catch (NullPointerException e)
+		{
+			e.getStackTrace();
+			this.exception = e;
+		}
+	}
+
+	public Exception getException()
+	{
+		return exception;
+	}
 }
