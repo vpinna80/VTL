@@ -273,7 +273,10 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public default long size()
 	{
-		return stream().count();
+		try (Stream<DataPoint> stream = stream())
+		{
+			return stream.count();
+		}
 	}
 
 	/**
