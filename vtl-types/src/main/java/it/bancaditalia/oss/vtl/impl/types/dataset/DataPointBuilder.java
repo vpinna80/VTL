@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -58,6 +59,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataPointBuilder
@@ -227,16 +229,17 @@ public class DataPointBuilder
 		}
 
 		@Override
-		public DataPoint combine(DataPoint other)
+		public DataPoint combine(Transformation transformation, DataPoint other)
 		{
 			Objects.requireNonNull(other);
 
-			Set<String> thisNames = keySet().stream().map(DataStructureComponent::getName).collect(toSet());
-
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream().filter(c -> !thisNames.contains(c.getName()))
+			Set<String> thisComponentNames = keySet().stream().map(DataStructureComponent::getName).collect(toSet());
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream()
+					.filter(c -> !thisComponentNames.contains(c.getName()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
+			DataSetMetadata newStructure = new DataStructureBuilder(finalMap.keySet()).build();
 
-			return new DataPointImpl(getLineage(), new DataStructureBuilder(finalMap.keySet()).build(), finalMap);
+			return new DataPointImpl(LineageNode.of(transformation, getLineage(), other.getLineage()), newStructure, finalMap);
 		}
 
 		@Override

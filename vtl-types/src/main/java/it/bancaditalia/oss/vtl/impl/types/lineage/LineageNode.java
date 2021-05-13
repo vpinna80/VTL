@@ -79,11 +79,6 @@ public class LineageNode extends LineageImpl
 		this.sources = sources;
 	}
 
-	public Transformation getGenerator()
-	{
-		return transformation;
-	}
-
 	public LineageSet getSourceSet()
 	{
 		return sources;

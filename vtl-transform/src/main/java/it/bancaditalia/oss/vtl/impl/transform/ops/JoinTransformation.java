@@ -275,7 +275,7 @@ public class JoinTransformation extends TransformationImpl
 								// Join all datapoints
 								DataPoint accDP = refDP;
 								for (DataPoint otherDP : otherDPs)
-									accDP = accDP.combine(otherDP);
+									accDP = accDP.combine(this, otherDP);
 								
 								LOGGER.trace("Joined {}", accDP);
 								return accDP;

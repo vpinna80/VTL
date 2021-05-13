@@ -34,6 +34,7 @@ import java.util.Map;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 /**
@@ -82,11 +83,12 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	/**
 	 * Create a new datapoint combining this and another datapoint.
 	 * All existing components keep their values in this datapoint and aren't updated with new values.
+	 * @param transformation The transformation that originated the combine operation
+	 * @param other the datapoint to combine with this datapoint
 	 * 
-	 * @param other the datapoint to combine
 	 * @return a new datapoint that is the combination of this and another datapoint.
 	 */
-	public DataPoint combine(DataPoint other);
+	public DataPoint combine(Transformation transformation, DataPoint other);
 	
 	/**
 	 * If the component exists, retrieves the value for it in this datapoint, performing a cast of the result.

@@ -56,6 +56,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -99,7 +100,7 @@ public class AbstractDataSetTest
 				.add(INT_ID, values.get(INT_ID)[i])
 				.add(INT_ME, values.get(INT_ME)[i])
 				.add(BOL_ME, values.get(BOL_ME)[i])
-				.build(mock(Lineage.class), STRUCTURE);
+				.build(mock(LineageNode.class), STRUCTURE);
 		
 		INSTANCE = mock(AbstractDataSet.class, withSettings()
 		        .useConstructor(STRUCTURE)

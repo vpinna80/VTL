@@ -25,6 +25,7 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toConcurrentMap;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +52,11 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -236,13 +238,17 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 								clause -> clause.eval(dpSession))
 							);
 					
-					return new DataPointBuilder(calcValues).addAll(dp).build(LineageNode.of(this, dp.getLineage(), getLineage()), nonAnalyticResultMetadata);
+					Lineage lineageCall = LineageCall.of(Stream.concat(Stream.of(dp.getLineage()), 
+							Utils.getStream(nonAnalyticClauses)
+								.map(Transformation::getLineage))
+						.collect(toList()));
+					return new DataPointBuilder(calcValues).addAll(dp).build(LineageNode.of(this, lineageCall), nonAnalyticResultMetadata);
 				}), operand);
 
 		// TODO: more efficient way to compute this instead of reduction by joining
 		return Utils.getStream(analyticClauses)
 			.map(calcAndRename(metadata, scheme))
-			.reduce(CalcClauseTransformation::joinByIDs)
+			.reduce(this::joinByIDs)
 			.map(anResult -> joinByIDs(anResult, nonAnalyticResult))
 			.orElse(nonAnalyticResult);
 	}
@@ -267,13 +273,14 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					.map(dp -> new DataPointBuilder(dp)
 							.delete(measure)
 							.add(newComponent, dp.get(measure))
-							.build(getLineage(), newStructure)), clauseValue);
+							.build(LineageNode.of(this, dp.getLineage(), clause.calcClause.getLineage()), newStructure)), clauseValue);
 		};
 	}
 	
-	private static DataSet joinByIDs(DataSet left, DataSet right)
+	private DataSet joinByIDs(DataSet left, DataSet right)
 	{
-		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, DataPoint::combine);
+		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, 
+				(dpl, dpr) -> dpl.combine(this, dpr));
 	}
 
 	@Override

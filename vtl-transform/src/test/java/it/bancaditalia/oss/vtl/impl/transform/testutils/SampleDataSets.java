@@ -61,6 +61,7 @@ import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -124,7 +125,7 @@ public enum SampleDataSets implements DataSet
 						.map(toEntry(
 							var -> var.getComponent(counts.get(var.getType()).getAndIncrement()),
 							var -> SampleValues.getValues(var.getType(), var.getIndex()).get(dpIdx) 
-						)).collect(toDataPoint(mock(Lineage.class), structure));
+						)).collect(toDataPoint(mock(LineageNode.class), structure));
 				}));
 	}
 
