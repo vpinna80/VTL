@@ -135,6 +135,20 @@ shinyServer(function(input, output, session) {
                 choices = c('', currentSession()$getNodes()), selected ='')
   })
 
+  # output dataset lineage 
+  output$lineage <- networkD3::renderSankeyNetwork({
+    req(input$sessionID)
+    req(input$selectDatasets)
+    edges <- currentSession()$getLineage(input$selectDatasets)
+    vertices <- data.frame(name = unique(c(as.character(edges[,'source']), as.character(edges[,'target']))), stringsAsFactors = F)
+    edges[, 'source'] <- match(edges[, 'source'], vertices[, 'name']) - 1
+    edges[, 'target'] <- match(edges[, 'target'], vertices[, 'name']) - 1
+    graph <- networkD3::sankeyNetwork(Links = edges, Nodes = vertices, Source = 'source', 
+                                      Target = 'target', Value = 'value', NodeID = 'name', 
+                                      nodeWidth = 40, nodePadding = 20, fontSize = 10)
+    return(graph)
+  })
+  
   # output VTL result  
   output$datasets <- DT::renderDataTable({
     req(input$sessionID)

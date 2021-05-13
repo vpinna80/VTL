@@ -203,8 +203,13 @@ ui <- shinydashboard::dashboardPage(
                           ),
                           checkboxInput(inputId = 'showAttrs', label = "Show Attributes", value = T),
                           hr(),
-                          uiOutput(outputId = "datasetsInfo"),
-                          DT::dataTableOutput(outputId = "datasets")
+                          tabsetPanel(id = "dataview", type = "tabs",
+                            tabPanel("Data points", 
+                                     uiOutput(outputId = "datasetsInfo"),
+                                     DT::dataTableOutput(outputId = "datasets")
+                            ),
+                            tabPanel("Lineage", networkD3::sankeyNetworkOutput("lineage", height = "100%"))
+                          ),
                  ),
                  tabPanel("Graph Explorer",
                           sliderInput(inputId = 'distance', label = "Nodes distance", min=50, max=500, step=10, value=100),

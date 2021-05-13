@@ -150,6 +150,22 @@ VTLSession <- R6Class("VTLSession",
                   },
       
       #' @description
+      #' Returns a lineage for the value of the named node defined in this session.
+      #' @param alias
+      #' a name of a node to compute from this session
+      getLineage = function (alias) {
+                    instance <- private$checkInstance()
+                    jds <- instance$resolve(alias)
+                    viewer <- new(J("it.bancaditalia.oss.vtl.util.LineageViewer"), jds)
+                    matrix <- viewer$generateAdiacenceMatrix(instance)
+                    df <- data.frame(source = matrix$getFirst(),
+                                     target = matrix$getSecond(), 
+                                     value = sapply(matrix$getThird(), function (x) { x$longValue() }),
+                                     stringsAsFactors = F)
+                    return(df)
+                  },
+
+      #' @description
       #' Creates a fore network representation of all nodes defined in this VTL session.
       #' @param distance
       #' The distance between dots
