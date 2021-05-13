@@ -32,9 +32,10 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -70,7 +71,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 										dp.get(oldComponents.get(oldName)))))
 								.collect(Utils.entriesToMap()))
 						.delete(oldComponents.values())
-						.build(getLineage(), metadata)
+						.build(LineageNode.of(this, dp.getLineage()), metadata)
 				), operand);
 	}
 

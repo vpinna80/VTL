@@ -19,11 +19,18 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.toConcurrentMap;
+import static java.util.stream.Collectors.mapping;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,16 +42,20 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -115,15 +126,22 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
 		
-		return new LightFDataSet<>(structure, ds -> Utils.getStream(ds.stream()
-			.collect(groupingByConcurrent(dp -> dp.getValues(ids, Identifier.class)))
-			.entrySet())
-			.map(group -> new DataPointBuilder(group.getKey()).addAll(Utils.getStream(group.getValue())
-					.collect(toConcurrentMap(
-							dp -> DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
-							dp -> dp.get(measure)
-					))).build(getLineage(), structure)
-			), dataset);
+		Collector<DataPoint, ?, Entry<LineageGroup, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>> collector = mapping((DataPoint dp) ->
+			new SimpleEntry<>(DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
+					new SimpleEntry<>(dp.getLineage(), dp.get(measure))), 
+			collectingAndThen(Utils.entriesToMap(), map -> {
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> measures = Utils.getStream(map)
+					.map(Utils.keepingKey(Entry::getValue))
+					.collect(entriesToMap());
+				Map<Lineage, Long> lineages = Utils.getStream(map.values())
+					.collect(groupingByConcurrent(Entry::getKey, counting()));
+				return new SimpleEntry<>(LineageGroup.of(lineages), measures);
+			})); 
+		
+		return new LightFDataSet<>(structure, ds -> ds.streamByKeys(ids, collector, 
+					(measures, keys) -> new DataPointBuilder(keys)
+							.addAll(measures.getValue())
+							.build(LineageNode.of(this, measures.getKey()), structure)), dataset);
 	}
 
 	@Override
