@@ -176,7 +176,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
 	 * over each of the groups, and applying a final transformation.
 	 * 
-	 * The same as {@link #streamByKeys(Set, Map, Collector, SerBiFunction)} with an empty filter.
+	 * The same as {@link #streamByKeys(Set, Map, SerCollector, SerBiFunction)} with an empty filter.
 	 * 
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the datapoints
@@ -196,7 +196,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
 	 * over each of a chosen subset of the groups.
 	 * 
-	 * The same as {@link #streamByKeys(Set, Map, Collector, SerBiFunction)} with an identity finisher.
+	 * The same as {@link #streamByKeys(Set, Map, SerCollector, SerBiFunction)} with an identity finisher.
 	 *
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the datapoints
@@ -204,9 +204,9 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param groupCollector a {@link Collector} applied to each group to produce the result
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
-	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+	public default <A, T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-			SerCollector<DataPoint, ?, T> groupCollector)
+			SerCollector<DataPoint, A, T> groupCollector)
 	{
 		return streamByKeys(keys, filter, groupCollector, (a, b) -> a);
 	}
@@ -216,7 +216,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
 	 * over each of the groups.
 	 * 
-	 * The same as {@link #streamByKeys(Set, Map, Collector, SerBiFunction)} with an empty filter and an identity finisher.
+	 * The same as {@link #streamByKeys(Set, Map, SerCollector, SerBiFunction)} with an empty filter and an identity finisher.
 	 *
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the datapoints

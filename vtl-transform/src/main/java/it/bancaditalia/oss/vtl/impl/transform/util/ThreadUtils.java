@@ -62,7 +62,7 @@ public class ThreadUtils
 	 * 
 	 * @param extractors functions that extracts the results of each subexpression
 	 * @param combiner an associative function that reduces the results of the subexpressions 
-	 * @return
+	 * @return the result of the computation
 	 */
 	@SafeVarargs
 	public static <T> Function<Transformation, T> evalFuture(BinaryOperator<T> combiner, Function<? super Transformation, T>... extractors) 

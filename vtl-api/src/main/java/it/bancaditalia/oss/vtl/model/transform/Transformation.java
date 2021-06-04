@@ -35,8 +35,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 public interface Transformation extends Serializable
 {
 	/**
-	 * True if this {@link Transformation} do not require previous computations before returning a result.
-	 * @return
+	 * @return True if this {@link Transformation} do not require previous computations before returning a result.
 	 */
 	public boolean isTerminal();
 	
