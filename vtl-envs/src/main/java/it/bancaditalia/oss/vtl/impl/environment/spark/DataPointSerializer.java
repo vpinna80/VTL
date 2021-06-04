@@ -82,10 +82,10 @@ public class DataPointSerializer extends Serializer<DataPoint>
 	{
 		switch (tag)
 		{
-			case 1: output.writeLong((long) scalar.get()); break;
-			case 2: output.writeDouble((double) scalar.get()); break;
+			case 1: output.writeLong((Long) scalar.get()); break;
+			case 2: output.writeDouble((Double) scalar.get()); break;
 			case 3: output.writeString((String) scalar.get()); break;
-			case 4: output.writeBoolean((boolean) scalar.get()); break;
+			case 4: output.writeBoolean((Boolean) scalar.get()); break;
 			case 5: break;
 			case 6: kryo.writeClassAndObject(output, scalar.get()); break;
 		}
