@@ -36,7 +36,7 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	private final S domain;
 	private final String name;
 	private final Class<R> role;
-	private final transient int hashCode;
+	private transient int hashCode;
 	
 	public DataStructureComponentImpl(String name, Class<R> role, S domain)
 	{
@@ -84,7 +84,7 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	@Override
 	public int hashCode()
 	{
-		return hashCode;
+		return hashCode == 0 ? hashCode = hashCodeInit() : hashCode;
 	}
 
 	public int hashCodeInit()
@@ -107,27 +107,14 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 		if (getClass() != obj.getClass())
 			return false;
 		DataStructureComponentImpl<?, ?, ?> other = (DataStructureComponentImpl<?, ?, ?>) obj;
-		if (domain == null)
-		{
-			if (other.domain != null)
-				return false;
-		}
-		else if (!domain.equals(other.domain))
+		
+		if (!name.equals(other.name))
 			return false;
-		if (name == null)
-		{
-			if (other.name != null)
-				return false;
-		}
-		else if (!name.equals(other.name))
+		if (!role.equals(other.role))
 			return false;
-		if (role == null)
-		{
-			if (other.role != null)
-				return false;
-		}
-		else if (!role.equals(other.role))
+		if (!domain.equals(other.domain))
 			return false;
+		
 		return true;
 	}
 

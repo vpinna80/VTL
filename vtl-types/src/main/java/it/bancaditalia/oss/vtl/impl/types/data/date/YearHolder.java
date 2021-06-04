@@ -26,7 +26,7 @@ import java.time.temporal.TemporalField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class YearHolder extends DateHolder<Year> implements Serializable
+public class YearHolder extends DateHolder<Year> implements Serializable
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(YearHolder.class);
 	private static final long serialVersionUID = 1L;

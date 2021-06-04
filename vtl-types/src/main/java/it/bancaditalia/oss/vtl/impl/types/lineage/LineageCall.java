@@ -32,7 +32,9 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class LineageCall extends LineageImpl implements LineageSet
 {
-	private final static Map<List<Lineage>, SoftReference<LineageCall>> CACHE = new ConcurrentHashMap<>();
+	private static final long serialVersionUID = 1L;
+	private static final Map<List<Lineage>, SoftReference<LineageCall>> CACHE = new ConcurrentHashMap<>();
+	
 	private final List<Lineage> sources;
 
 	public static LineageCall of(Lineage... sources)

@@ -19,8 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import java.io.Serializable;
+
 @FunctionalInterface
-public interface QuadFunction<A, B, C, D, R>
+public interface QuadFunction<A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable, R extends Serializable> extends Serializable
 {
 	public R apply(A a, B b, C c, D d);
+	
+	public default R apply(Quadruple<A, B, C, D> quadruple)
+	{
+		return apply(quadruple.getFirst(), quadruple.getSecond(), quadruple.getThird(), quadruple.getFourth());
+	}
 }

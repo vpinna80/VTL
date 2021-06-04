@@ -204,7 +204,8 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		TransformationScheme thisScope = new ThisScope(operand, getLineage());
 		
 		List<DataSet> resultList = Utils.getStream(aggrItems)
-			.map(item -> (DataSet) item.eval(thisScope))
+			.map(thisScope::eval)
+			.map(DataSet.class::cast)
 			.collect(toList());
 		
 		DataSet result = resultList.get(0);

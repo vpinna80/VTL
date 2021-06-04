@@ -46,10 +46,8 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ManagedBlocker;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -64,6 +62,10 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBiPredicate;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CachedDataSet extends NamedDataSet
@@ -175,8 +177,8 @@ public class CachedDataSet extends NamedDataSet
 
 	@Override
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, SerCollector<DataPoint, A, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
 		if (!lock())
 			return Stream.empty();
@@ -218,7 +220,7 @@ public class CachedDataSet extends NamedDataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BiPredicate<DataPoint, DataPoint> predicate, BinaryOperator<DataPoint> mergeOp)
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp)
 	{
 		if (!lock())
 			return new LightDataSet(metadata, Stream::empty);
@@ -311,5 +313,11 @@ public class CachedDataSet extends NamedDataSet
 		LOGGER.debug("Indexing finished for {} on {}.", alias, keys);
 		waiter.done();
 		return result;
+	}
+	
+	@Override
+	public boolean isCacheable()
+	{
+		return false;
 	}
 }

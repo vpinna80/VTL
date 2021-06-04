@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static java.lang.Long.MAX_VALUE;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -30,7 +30,6 @@ import java.util.Queue;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -41,22 +40,24 @@ import java.util.stream.StreamSupport;
  *
  * @param <T>
  */
-public class ConcatSpliterator<T> implements Spliterator<T>
+public class ConcatSpliterator<T, C extends Collection<Stream<T>>> implements Spliterator<T>
 {
 	private final Queue<Spliterator<T>> spliterators;
 	private volatile long estimatedSize = 0;
 	
-	public static <T> Collector<Stream<T>, ?, Stream<T>> concatenating(boolean keepOrder)
+	public static <T> SerCollector<Stream<T>, ?, Stream<T>> concatenating(boolean keepOrder)
 	{
 		if (keepOrder)
-			return collectingAndThen(toList(), collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL).onClose(() -> collection.forEach(Stream::close)));
+			return collectingAndThen(toList(), 
+				list -> StreamSupport.stream(new ConcatSpliterator<>(list), !Utils.SEQUENTIAL)
+						.onClose(() -> list.forEach(Stream::close)));
 		else
-			return collectingAndThen(
-					collectingAndThen(toMapWithValues(x -> Boolean.TRUE), map -> map.keySet()), 
-				collection -> StreamSupport.stream(new ConcatSpliterator<>(collection), !Utils.SEQUENTIAL).onClose(() -> collection.forEach(Stream::close)));
+			return collectingAndThen(toSet(), 
+				set -> StreamSupport.stream(new ConcatSpliterator<>(set), !Utils.SEQUENTIAL)
+						.onClose(() -> set.forEach(Stream::close)));
 	}
 	
-	public ConcatSpliterator(Collection<? extends Stream<T>> streams)
+	public ConcatSpliterator(C streams)
 	{
 		spliterators = Utils.SEQUENTIAL ? new LinkedList<>() : new ConcurrentLinkedQueue<>(); 
 		for (Stream<T> stream: streams)

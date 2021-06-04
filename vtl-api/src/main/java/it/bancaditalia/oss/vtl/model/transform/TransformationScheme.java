@@ -49,6 +49,18 @@ public interface TransformationScheme
 	public VTLValue resolve(String alias);
 
 	/**
+	 * Attempts to compute a given {@link Transformation}, binding references to aliases defined in this TransformationScheme.
+	 *  
+	 * @param rule The rule that must be evaluated.
+	 * @return The {@link VTLValue} resulting from applying the given rule.
+	 * @throws VTLUnboundNameException if some references couldn't be resolved.
+	 */
+	public default VTLValue eval(Transformation rule)
+	{
+		return rule.eval(this);
+	}
+
+	/**
 	 * Searches and retrieves metadata for value, referred by an alias defined in this TransformationScheme.
 	 *  
 	 * @param alias the alias whose value is to be retrieved.

@@ -374,7 +374,7 @@ public class JoinTransformation extends TransformationImpl
 		
 		return dataset.mapKeepingKeys(applyMetadata, dp -> LineageNode.of(this, dp.getLineage()), 
 				dp -> applyComponents.stream()
-						.collect(toConcurrentMap(c -> c, c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
+						.collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
 	}
 
 	@Override

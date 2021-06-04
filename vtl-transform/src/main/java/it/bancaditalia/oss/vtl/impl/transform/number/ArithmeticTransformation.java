@@ -119,12 +119,14 @@ public class ArithmeticTransformation extends BinaryTransformation
 			reverseIf(bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsDouble, !datasetIsLeftOp)
 				.apply(NUMBERDS.cast(dp.get(dataset.getComponent(name).get())), castedScalar);
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, LineageCall.of(dp.getLineage(), getLeftOperand().getLineage())), dp -> Utils.getStream(measureNames)
-							.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata)
-									.getComponent(name)
-									.map(c -> c.as(Measure.class))
-									.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())
-								), name -> finisher.apply(dp, name))));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, 
+				LineageCall.of(dp.getLineage(), getLeftOperand().getLineage())), 
+				dp -> Utils.getStream(measureNames)
+						.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata)
+								.getComponent(name)
+								.map(c -> c.as(Measure.class))
+								.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())
+							), name -> finisher.apply(dp, name))));
 	}
 
 	@Override
@@ -168,14 +170,16 @@ public class ArithmeticTransformation extends BinaryTransformation
 				DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next(); 
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
-				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, 
-						(dpl, dpr) -> new DataPointBuilder()
-							.add(resultMeasure, compute(swap, INTEGERDS.isAssignableFrom(resultMeasure.getDomain()), 
-									dpl.get(streamedMeasure), 
-									dpr.get(indexedMeasure))
-							).addAll(dpl.getValues(Identifier.class))
-							.addAll(dpr.getValues(Identifier.class))
-							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata));
+				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dpl, dpr) -> {
+						boolean isResultInt = INTEGERDS.isAssignableFrom(resultMeasure.getDomain());
+						ScalarValue<?, ?, ?, ?> leftVal = dpl.get(streamedMeasure);
+						ScalarValue<?, ?, ?, ?> rightVal = dpr.get(indexedMeasure);
+						return new DataPointBuilder()
+								.add(resultMeasure, compute(swap, isResultInt, leftVal, rightVal))
+								.addAll(dpl.getValues(Identifier.class))
+								.addAll(dpr.getValues(Identifier.class))
+								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata);						
+					});
 			}
 			else
 				// Scan the dataset with less identifiers and find the matches

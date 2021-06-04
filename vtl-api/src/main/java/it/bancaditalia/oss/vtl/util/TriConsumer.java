@@ -19,8 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import java.io.Serializable;
+
 @FunctionalInterface
-public interface TriConsumer<A, B, C>
+public interface TriConsumer<A extends Serializable, B extends Serializable, C extends Serializable> extends Serializable
 {
 	void accept(A a, B b, C c);
+	
+	public default void accept(Triple<A, B, C> triple)
+	{
+		accept(triple.getFirst(), triple.getSecond(), triple.getThird());
+	}
 }

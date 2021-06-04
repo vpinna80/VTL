@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Valentino Pinna
  */
-class MonthHolder extends DateHolder<YearMonth>
+public class MonthHolder extends DateHolder<YearMonth>
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(MonthHolder.class);
 	private static final long serialVersionUID = 1L;

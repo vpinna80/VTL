@@ -35,13 +35,14 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class LineageNode extends LineageImpl
 {
-	private final static Map<Entry<Transformation, LineageSet>, SoftReference<LineageNode>> CACHE = new ConcurrentHashMap<>();
-	private final static Logger LOGGER = LoggerFactory.getLogger(LineageNode.class);
+	private static final long serialVersionUID = 1L;
+	private static final Map<Entry<String, LineageSet>, SoftReference<LineageNode>> CACHE2 = new ConcurrentHashMap<>();
+	private static final Logger LOGGER = LoggerFactory.getLogger(LineageNode.class);
 
-	private final Transformation transformation;
+	private final String transformation;
 	private final LineageSet sources;
 
-	public static LineageNode of(Transformation transformation, Lineage... sources)
+	public static LineageNode of(String transformation, Lineage... sources)
 	{
 		if (sources.length == 1 && sources[0] instanceof LineageCall)
 			return of(transformation, (LineageCall) sources[0]);
@@ -53,8 +54,18 @@ public class LineageNode extends LineageImpl
 	
 	public static LineageNode of(Transformation transformation, LineageSet sources)
 	{
-		Entry<Transformation, LineageSet> entry = new SimpleEntry<>(transformation, sources);
-		LineageNode instance = CACHE.computeIfAbsent(entry, e -> {
+		return of(transformation.toString(), sources);
+	}
+
+	public static LineageNode of(Transformation transformation, Lineage... sources)
+	{
+		return of(transformation.toString(), sources);
+	}
+
+	private static LineageNode of(String transformation, LineageSet sources)
+	{
+		Entry<String, LineageSet> entry = new SimpleEntry<>(transformation, sources);
+		LineageNode instance = CACHE2.computeIfAbsent(entry, e -> {
 			LOGGER.trace("Creating lineage for {} with {}...", transformation, sources);
 			final SoftReference<LineageNode> lineage = new SoftReference<>(new LineageNode(transformation, sources));
 			LOGGER.trace("Lineage created for {}.", transformation);
@@ -65,17 +76,17 @@ public class LineageNode extends LineageImpl
 		if (instance == null)
 		{
 			instance = new LineageNode(transformation, sources);
-			CACHE.put(entry, new SoftReference<>(instance));
+			CACHE2.put(entry, new SoftReference<>(instance));
 		}
 		return instance;
 	}
 
-	private LineageNode(Transformation transformation, LineageSet sources)
+	private LineageNode(String transformation, LineageSet sources)
 	{
 		Objects.requireNonNull(transformation);
 		Objects.requireNonNull(sources);
 
-		this.transformation = transformation;
+		this.transformation = transformation.toString();
 		this.sources = sources;
 	}
 
@@ -87,13 +98,13 @@ public class LineageNode extends LineageImpl
 	@Override
 	public String toString()
 	{
-		return transformation.toString();
+		return getTransformation().toString();
 	}
 
 	@Override
 	public Lineage resolveExternal(TransformationScheme scheme)
 	{
-		return LineageNode.of(transformation, sources.resolveExternal(scheme));
+		return of(getTransformation(), sources.resolveExternal(scheme));
 	}
 
 	@Override
@@ -102,7 +113,7 @@ public class LineageNode extends LineageImpl
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((sources == null) ? 0 : sources.hashCode());
-		result = prime * result + ((transformation == null) ? 0 : transformation.hashCode());
+		result = prime * result + ((getTransformation() == null) ? 0 : getTransformation().hashCode());
 		return result;
 	}
 
@@ -122,16 +133,16 @@ public class LineageNode extends LineageImpl
 				return false;
 		} else if (!sources.equals(other.sources))
 			return false;
-		if (transformation == null)
+		if (getTransformation() == null)
 		{
-			if (other.transformation != null)
+			if (other.getTransformation() != null)
 				return false;
-		} else if (!transformation.equals(other.transformation))
+		} else if (!getTransformation().equals(other.getTransformation()))
 			return false;
 		return true;
 	}
 
-	public Transformation getTransformation()
+	public String getTransformation()
 	{
 		return transformation;
 	}

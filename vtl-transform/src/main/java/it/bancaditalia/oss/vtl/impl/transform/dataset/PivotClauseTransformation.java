@@ -19,18 +19,17 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.mapping;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,6 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -57,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class PivotClauseTransformation extends DatasetClauseTransformation
@@ -126,7 +125,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
 		
-		Collector<DataPoint, ?, Entry<LineageGroup, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>> collector = mapping((DataPoint dp) ->
+		SerCollector<DataPoint, ?, Entry<LineageGroup, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>> collector = mapping((DataPoint dp) ->
 			new SimpleEntry<>(DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
 					new SimpleEntry<>(dp.getLineage(), dp.get(measure))), 
 			collectingAndThen(Utils.entriesToMap(), map -> {
@@ -138,10 +137,9 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 				return new SimpleEntry<>(LineageGroup.of(lineages), measures);
 			})); 
 		
-		return new LightFDataSet<>(structure, ds -> ds.streamByKeys(ids, collector, 
-					(measures, keys) -> new DataPointBuilder(keys)
-							.addAll(measures.getValue())
-							.build(LineageNode.of(this, measures.getKey()), structure)), dataset);
+		return dataset.aggr(structure, ids, collector, (measures, keys) -> new DataPointBuilder(keys)
+				.addAll(measures.getValue())
+				.build(LineageNode.of(this, measures.getKey()), structure));
 	}
 
 	@Override

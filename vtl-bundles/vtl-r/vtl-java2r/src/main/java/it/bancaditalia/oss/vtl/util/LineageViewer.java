@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -90,8 +89,6 @@ public class LineageViewer
 				for (Lineage source: innerResult.keySet())
 					adiacences.merge(new SimpleEntry<>(source.toString(), lineage.toString()), innerResult.get(source), Long::sum);
 			} 
-			else if (lineage instanceof LineageSet)
-				throw new IllegalStateException(((LineageImpl) lineage).getException());
 		}
 		
 		Triple<String[], String[], Long[]> columns = new Triple<>(new String[adiacences.size()], new String[adiacences.size()], new Long[adiacences.size()]);

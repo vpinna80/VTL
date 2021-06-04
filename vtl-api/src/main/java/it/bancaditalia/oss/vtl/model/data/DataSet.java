@@ -35,6 +35,12 @@ import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBiPredicate;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerPredicate;
 
 /**
  * The base interface describing a dataset
@@ -101,7 +107,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param predicate The {@link Predicate} to be applied.
 	 * @return A new filtered DataSet. 
 	 */
-	public DataSet filter(Predicate<DataPoint> predicate);
+	public DataSet filter(SerPredicate<DataPoint> predicate);
 
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
@@ -111,7 +117,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, Function<? super DataPoint, ? extends Lineage> lineageOperator, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
@@ -122,7 +128,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @return The new DataSet.
 	 */
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, BiPredicate<DataPoint,DataPoint> filter, BinaryOperator<DataPoint> merge);
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> filter, SerBinaryOperator<DataPoint> merge);
 
 	/**
 	 * Checks if this DataSet is indexed. 
@@ -143,7 +149,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @return The new DataSet.
 	 */
-	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, BinaryOperator<DataPoint> merge)
+	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, SerBinaryOperator<DataPoint> merge)
 	{
 		return filteredMappedJoin(metadata, indexed, (a,  b) -> true, merge);
 	}
@@ -162,15 +168,15 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-			Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher);
+			SerCollector<DataPoint, A, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher);
 	
 	/**
 	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
 	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
 	 * over each of the groups, and applying a final transformation.
 	 * 
-	 * The same as {@link #streamByKeys(Set, Map, Collector, BiFunction)} with an empty filter.
+	 * The same as {@link #streamByKeys(Set, Map, Collector, SerBiFunction)} with an empty filter.
 	 * 
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the datapoints
@@ -179,8 +185,8 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
 	public default <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
+			SerCollector<DataPoint, A, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
 		return streamByKeys(keys, emptyMap(), groupCollector, finisher);
 	}
@@ -190,7 +196,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
 	 * over each of a chosen subset of the groups.
 	 * 
-	 * The same as {@link #streamByKeys(Set, Map, Collector, BiFunction)} with an identity finisher.
+	 * The same as {@link #streamByKeys(Set, Map, Collector, SerBiFunction)} with an identity finisher.
 	 *
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the datapoints
@@ -200,7 +206,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-			Collector<DataPoint, ?, T> groupCollector)
+			SerCollector<DataPoint, ?, T> groupCollector)
 	{
 		return streamByKeys(keys, filter, groupCollector, (a, b) -> a);
 	}
@@ -210,17 +216,21 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
 	 * over each of the groups.
 	 * 
-	 * The same as {@link #streamByKeys(Set, Map, Collector, BiFunction)} with an empty filter and an identity finisher.
+	 * The same as {@link #streamByKeys(Set, Map, Collector, SerBiFunction)} with an empty filter and an identity finisher.
 	 *
 	 * @param <T> the type of the result of the computation.
 	 * @param keys the {@link Identifier}s used to group the datapoints
 	 * @param groupCollector a {@link Collector} applied to each group to produce the result
 	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
 	 */
-	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, Collector<DataPoint, ?, T> groupCollector)
+	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector)
 	{
 		return streamByKeys(keys, emptyMap(), groupCollector);
 	}
+	
+	public <TT> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+			SerCollector<DataPoint, ?, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
 	
 	/**
 	 * Obtains a component with given name, and checks that it belongs to the specified domain.
@@ -309,5 +319,13 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public default boolean notContains(DataPoint datapoint)
 	{
 		return !getMatching(datapoint.getValues(Identifier.class)).stream().findAny().isPresent();
+	}
+	
+	/**
+	 * @return true if this DataSet can be cached
+	 */
+	public default boolean isCacheable()
+	{
+		return true;
 	}
 }

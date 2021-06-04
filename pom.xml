@@ -20,6 +20,13 @@
     permissions and limitations under the License.
 
 -->
+<!-- Copyright © 2020 Banca D'Italia Licensed under the EUPL, Version 1.2 
+	(the "License"); You may not use this work except in compliance with the 
+	License. You may obtain a copy of the License at: https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt 
+	Unless required by applicable law or agreed to in writing, software distributed 
+	under the License is distributed on an "AS IS" basis, WITHOUT WARRANTIES 
+	OR CONDITIONS OF ANY KIND, either express or implied. See the License for 
+	the specific language governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -142,7 +149,10 @@
 												</goals>
 											</pluginExecutionFilter>
 											<action>
-												<ignore>true</ignore>
+												<execute>
+													<runOnIncremental>true</runOnIncremental>
+													<runOnConfiguration>false</runOnConfiguration>
+												</execute>
 											</action>
 										</pluginExecution>
 										<pluginExecution>
@@ -196,6 +206,10 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<bundle.plugin.version>5.1.1</bundle.plugin.version>
+		<scala.version>2.12.11</scala.version>
+		<scala.compat.version>2.12</scala.compat.version>
+		<scala-compiler.version>4.5.2</scala-compiler.version>
+		<spark.version>3.1.1</spark.version>
 		<tycho.version>2.1.0</tycho.version>
 		<slf4j.version>1.7.26</slf4j.version>
 		<log4j.version>2.13.3</log4j.version>
@@ -376,6 +390,26 @@
 				<version>${junit.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-core_${scala.compat.version}</artifactId>
+				<version>${spark.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-sql_${scala.compat.version}</artifactId>
+				<version>${spark.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.codehaus.janino</groupId>
+				<artifactId>commons-compiler</artifactId>
+				<version>3.0.16</version>
+			</dependency>
+			<dependency>
+				<groupId>org.codehaus.janino</groupId>
+				<artifactId>janino</artifactId>
+				<version>3.0.16</version>
+			</dependency>
+			<dependency>
 				<groupId>org.junit.jupiter</groupId>
 				<artifactId>junit-jupiter-params</artifactId>
 				<version>${junit.version}</version>
@@ -470,7 +504,7 @@
 			<dependency>
 				<groupId>org.scala-lang</groupId>
 				<artifactId>scala-library</artifactId>
-				<version>2.12.11</version>
+				<version>${scala.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.zookeeper</groupId>
@@ -496,7 +530,7 @@
 				<plugin>
 					<groupId>net.alchim31.maven</groupId>
 					<artifactId>scala-maven-plugin</artifactId>
-					<version>4.4.0</version>
+					<version>${scala-compiler.version}</version>
 					<executions>
 						<execution>
 							<id>scala-compile</id>
@@ -514,6 +548,8 @@
 						</execution>
 					</executions>
 					<configuration>
+						<compileOrder>Mixed</compileOrder>
+						<recompileMode>incremental</recompileMode>
 						<args>
 							<arg>-deprecation</arg>
 							<arg>-feature</arg>
@@ -902,7 +938,7 @@
 							<regex>SNAPSHOT</regex>
 							<replacement>dev</replacement>
 							<failIfNoMatch>false</failIfNoMatch>
-  						</configuration>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

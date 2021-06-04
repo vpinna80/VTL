@@ -23,7 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.SUM;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
-import static java.util.stream.Collectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 
 import java.util.HashSet;
 import java.util.Map;

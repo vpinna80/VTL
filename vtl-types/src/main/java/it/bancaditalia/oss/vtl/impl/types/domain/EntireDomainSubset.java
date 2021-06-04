@@ -65,4 +65,16 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	{
 		return varName;
 	}
+
+	@Override
+	public int hashCode()
+	{
+		return getClass().hashCode();
+	}
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+		return obj != null && obj.getClass() == getClass();
+	}
 }

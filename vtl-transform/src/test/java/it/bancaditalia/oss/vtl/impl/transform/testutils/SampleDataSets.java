@@ -51,12 +51,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -70,6 +64,12 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBiPredicate;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum SampleDataSets implements DataSet
@@ -159,28 +159,36 @@ public enum SampleDataSets implements DataSet
 		return dataset.getMatching(keyValues);
 	}
 
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet rightDataset, BiPredicate<DataPoint, DataPoint> filter,
-			BinaryOperator<DataPoint> mergeOp)
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet rightDataset, SerBiPredicate<DataPoint, DataPoint> filter,
+			SerBinaryOperator<DataPoint> mergeOp)
 	{
 		return dataset.filteredMappedJoin(metadata, rightDataset, filter, mergeOp);
 	}
 
-	public DataSet filter(Predicate<DataPoint> predicate)
+	public DataSet filter(SerPredicate<DataPoint> predicate)
 	{
 		return dataset.filter(predicate);
 	}
 
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			Function<? super DataPoint, ? extends Lineage> lineageOperator, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		return dataset.mapKeepingKeys(metadata, x -> mock(Lineage.class), operator);
 	}
 
 	@Override
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, SerCollector<DataPoint, A, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
 		return dataset.streamByKeys(keys, filter, groupCollector, finisher);
+	}
+
+	@Override
+	public <TT> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+			SerCollector<DataPoint, ?, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
+	{
+		return dataset.aggr(structure, keys, groupCollector, finisher);
 	}
 }

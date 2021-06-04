@@ -42,7 +42,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -69,6 +68,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 
 public class AbstractDataSetTest
 {
@@ -133,7 +133,7 @@ public class AbstractDataSetTest
 	@Test
 	void testFilteredMappedJoin()
 	{
-		BiPredicate<DataPoint, DataPoint> filter = (dp1, dp2) -> {
+		SerBiPredicate<DataPoint, DataPoint> filter = (dp1, dp2) -> {
 			assertEquals(dp1, dp2, "Joining unrelated datapoints");
 			return true;
 		};

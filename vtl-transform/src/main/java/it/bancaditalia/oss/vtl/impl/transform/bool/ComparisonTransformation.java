@@ -23,7 +23,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -53,6 +52,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ComparisonTransformation extends BinaryTransformation
@@ -126,8 +126,8 @@ public class ComparisonTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
-		BinaryOperator<ScalarValue<?, ?, ?, ?>> casted = (a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
-		BinaryOperator<ScalarValue<?, ?, ?, ?>> function = Utils.reverseIf(casted, leftHasMoreIdentifiers);
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted = (a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = Utils.reverseIf(casted, leftHasMoreIdentifiers);
 
 		// Scan the dataset with less identifiers and find the matches
 		return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed,

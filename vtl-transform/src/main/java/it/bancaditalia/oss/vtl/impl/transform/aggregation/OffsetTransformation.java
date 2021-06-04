@@ -22,15 +22,15 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation.OrderingMethod.DESC;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation.OffsetDirection.LEAD;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Comparator;
@@ -144,7 +144,7 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 		// sort each partition with the comparator and then perform the analytic computation on each partition
 		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> { 
 				LOGGER.debug("Started computing {} on {}", direction, alias);
-				Stream<Entry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> streamByKeys = 
+				Stream<SimpleEntry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> streamByKeys = 
 						getGroupedDataset(dataset, partitionIDs, comparator, alias);
 				Stream<DataPoint> result = streamByKeys
 						.map(e -> offsetPartition((DataSetMetadata) metadata, e.getKey(), e.getValue()))
@@ -154,11 +154,11 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 			}, dataset);
 	}
 
-	private static Stream<Entry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> getGroupedDataset(
+	private static Stream<SimpleEntry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> getGroupedDataset(
 			DataSet dataset, Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs, final Comparator<DataPoint> comparator, String alias)
 	{
 		LOGGER.debug("Started sorting {}", alias);
-		final Stream<Entry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> streamByKeys = dataset.streamByKeys(
+		final Stream<SimpleEntry<NavigableSet<DataPoint>, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> streamByKeys = dataset.streamByKeys(
 				partitionIDs, 
 				toConcurrentMap(identity(), identity(), (a, b) -> a, () -> new ConcurrentSkipListMap<>(comparator)), 
 				(partition, keyValues) -> new SimpleEntry<>(partition.keySet(), keyValues)

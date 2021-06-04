@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -115,6 +114,7 @@ import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SDMXEnvironment implements Environment, Serializable
@@ -196,7 +196,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				.orElseThrow(() -> new NullPointerException("Could not retrieve SDMX metadata for " + name));
 
 		Map<PortableTimeSeries<Double>, Map<String, ScalarValue<?, ?, ?, ?>>> seriesMeta = Utils.getStream(table)
-				.map(toEntry(Function.identity(), PortableTimeSeries::getAttributesMap))
+				.map(toEntry(SerFunction.identity(), PortableTimeSeries::getAttributesMap))
 				.map(e -> {
 					ConcurrentMap<String, String> attrs = new ConcurrentHashMap<>(e.getKey().getAttributesMap());
 					attrs.putAll(e.getKey().getDimensionsMap());

@@ -28,7 +28,8 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class LineageExternal extends LineageImpl
 {
-	private final static Map<String, SoftReference<LineageExternal>> CACHE = new ConcurrentHashMap<>();
+	private static final long serialVersionUID = 1L;
+	private static final Map<String, SoftReference<LineageExternal>> CACHE = new ConcurrentHashMap<>();
 	
 	private final String source;
 

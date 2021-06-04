@@ -46,4 +46,10 @@ public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends 
 	 * @throws NullPointerException if the value is null
 	 */
 	public ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
+	
+	@Override
+	boolean equals(Object obj);
+	
+	@Override
+	int hashCode();
 }

@@ -19,27 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.lineage;
 
+import java.io.Serializable;
+
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 
-public abstract class LineageImpl implements Lineage
+public abstract class LineageImpl implements Lineage, Serializable
 {
-	private final Exception exception;
-
-	public LineageImpl()
-	{
-		try
-		{
-			throw new NullPointerException();
-		}
-		catch (NullPointerException e)
-		{
-			e.getStackTrace();
-			this.exception = e;
-		}
-	}
-
-	public Exception getException()
-	{
-		return exception;
-	}
+	private static final long serialVersionUID = 1L;
 }

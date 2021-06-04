@@ -35,6 +35,7 @@ import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,7 +43,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collector;
+import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataPointBuilder
@@ -88,16 +90,22 @@ public class DataPointBuilder
 		return this;
 	}
 
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
 			Lineage lineage, DataSetMetadata structure, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
 	{
-		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(lineage, structure), CONCURRENT, UNORDERED);
+		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(lineage, structure), EnumSet.of(CONCURRENT, UNORDERED));
 	}
 
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> Collector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
 			Lineage lineage, DataSetMetadata structure)
 	{
-		return Collector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(lineage, structure), CONCURRENT, UNORDERED);
+		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(lineage, structure), EnumSet.of(CONCURRENT, UNORDERED));
+	}
+
+	public static <T extends DataPoint, K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, T> toDataPoint(
+			Lineage lineage, DataSetMetadata structure, BiFunction<Lineage, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> instancer)
+	{
+		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(lineage, structure, instancer), EnumSet.of(CONCURRENT, UNORDERED));
 	}
 
 	private static DataPointBuilder merge(DataPointBuilder left, DataPointBuilder right)
@@ -145,12 +153,20 @@ public class DataPointBuilder
 		return checkState();
 	}
 
-	public synchronized DataPoint build(Lineage lineage, DataSetMetadata structure)
+	public DataPoint build(Lineage lineage, DataSetMetadata structure)
 	{
 		if (built)
 			throw new IllegalStateException("DataPoint already built");
 		built = true;
 		return new DataPointImpl(requireNonNull(lineage), requireNonNull(structure, "DataSet structure is null for " + delegate), delegate);
+	}
+
+	public <T extends DataPoint> T build(Lineage lineage, DataSetMetadata structure, BiFunction<Lineage, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> instancer)
+	{
+		if (built)
+			throw new IllegalStateException("DataPoint already built");
+		built = true;
+		return instancer.apply(requireNonNull(lineage), delegate);
 	}
 
 	@Override

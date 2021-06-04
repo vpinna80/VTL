@@ -19,8 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import java.io.Serializable;
+
 @FunctionalInterface
-public interface QuadConsumer<A, B, C, D>
+public interface QuadConsumer<A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable> extends Serializable
 {
 	void accept(A a, B b, C c, D d);
+	
+	public default void accept(Quadruple<A, B, C, D> quadruple)
+	{
+		accept(quadruple.getFirst(), quadruple.getSecond(), quadruple.getThird(), quadruple.getFourth());
+	}
 }

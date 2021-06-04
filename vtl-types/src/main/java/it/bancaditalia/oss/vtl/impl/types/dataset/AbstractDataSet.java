@@ -20,14 +20,16 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toConcurrentMap;
 
+import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,12 +42,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 import java.util.stream.Stream;
@@ -64,13 +63,19 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBiPredicate;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerPredicate;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public abstract class AbstractDataSet implements DataSet
 {
 	private static final long serialVersionUID = 1L;
-
-	private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
 	private final DataSetMetadata dataStructure;
 	private SoftReference<String> cacheString  = null;
@@ -87,10 +92,13 @@ public abstract class AbstractDataSet implements DataSet
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
 		
 		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
-				.orElseThrow(() -> new VTLMissingComponentsException(alias, dataStructure));
-		DataStructureComponent<? extends Measure, ?, ?> membershipMeasure = membershipStructure.getComponents(Measure.class).iterator().next();
+				.orElseThrow((Supplier<? extends RuntimeException> & Serializable) () -> new VTLMissingComponentsException(alias, dataStructure));
+		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getComponents(Measure.class).iterator().next();
 
-		return mapKeepingKeys(membershipStructure, dp -> lineage, dp -> singletonMap(membershipMeasure, dp.get(sourceComponent)));
+		SerFunction<DataPoint, Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = 
+				dp -> singletonMap(membershipMeasure, dp.get(sourceComponent));
+		
+		return mapKeepingKeys(membershipStructure, dp -> lineage, operator);
 	}
 
 	@Override
@@ -106,7 +114,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, BiPredicate<DataPoint, DataPoint> predicate, BinaryOperator<DataPoint> mergeOp)
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
 		commonIds.retainAll(other.getComponents(Identifier.class));
@@ -146,7 +154,7 @@ public abstract class AbstractDataSet implements DataSet
 
 	@Override
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			Function<? super DataPoint, ? extends Lineage> lineageOperator, Function<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
 		if (!metadata.getComponents(Identifier.class).equals(identifiers))
@@ -154,7 +162,7 @@ public abstract class AbstractDataSet implements DataSet
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
-		UnaryOperator<DataPoint> extendingOperator = dp -> new DataPointBuilder(dp.getValues(Identifier.class))
+		SerUnaryOperator<DataPoint> extendingOperator = dp -> new DataPointBuilder(dp.getValues(Identifier.class))
 				.addAll(operator.apply(dp))
 				.build(lineageOperator.apply(dp), metadata);
 		
@@ -171,8 +179,8 @@ public abstract class AbstractDataSet implements DataSet
 			@Override
 			public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-					Collector<DataPoint, A, TT> groupCollector,
-					BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
+					SerCollector<DataPoint, A, TT> groupCollector,
+					SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 			{
 				return AbstractDataSet.this.streamByKeys(keys, filter, mapping(extendingOperator, groupCollector), finisher);
 			}
@@ -182,8 +190,8 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-			Collector<DataPoint, A, TT> groupCollector,
-			BiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
+			SerCollector<DataPoint, A, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
 		// key group holder
 		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
@@ -223,7 +231,33 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet filter(Predicate<DataPoint> predicate)
+	public <TT> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+			SerCollector<DataPoint, ?, TT> groupCollector,
+			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
+	{
+		return new AbstractDataSet(structure) {
+			private static final long serialVersionUID = 1L;
+			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT>> cache = null;
+			
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
+				{
+					if (cache == null)
+						cache = stream
+								.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), groupCollector))
+								.entrySet();
+
+					return Utils.getStream(cache)
+							.map(splitting((k, v) -> finisher.apply(v, k)));
+				}
+			}
+		};
+	}
+	
+	@Override
+	public DataSet filter(SerPredicate<DataPoint> predicate)
 	{
 		return new LightDataSet(dataStructure, () -> stream().filter(predicate));
 	}

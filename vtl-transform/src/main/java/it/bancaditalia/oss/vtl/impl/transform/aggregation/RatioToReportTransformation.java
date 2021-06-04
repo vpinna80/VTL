@@ -24,22 +24,21 @@ import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toData
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.summingDouble;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -67,6 +66,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class RatioToReportTransformation extends UnaryTransformation implements AnalyticTransformation
@@ -112,7 +112,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 			).collect(concatenating(Utils.ORDERED)), dataset);
 	}
 
-	private Function<Set<DataPoint>, Stream<DataPoint>> ratioToReportByPartition(DataSetMetadata metadata)
+	private SerFunction<Set<DataPoint>, Stream<DataPoint>> ratioToReportByPartition(DataSetMetadata metadata)
 	{
 		return partition -> {
 			Map<DataStructureComponent<Measure, ?, ?>, Double> measureSums = Utils.getStream(metadata.getComponents(Measure.class))

@@ -27,7 +27,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiPredicate;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator;
@@ -58,6 +57,7 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 
 public class CheckTransformation extends TransformationImpl
 {
@@ -116,7 +116,7 @@ public class CheckTransformation extends TransformationImpl
 			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(scheme);
 			
 			// TODO: INVALID
-			BiPredicate<DataPoint, DataPoint> filter = (a, b) -> true;
+			SerBiPredicate<DataPoint, DataPoint> filter = (a, b) -> true;
 			return dataset.filteredMappedJoin(metadata, imbalanceDataset, filter, (a, b) -> new DataPointBuilder()
 				.addAll(a.getValues(Identifier.class))
 				.add(BOOL_VAR, function.apply(BOOLEANDS.cast(a.get(BOOL_VAR))))

@@ -40,17 +40,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collector;
-import java.util.stream.Collector.Characteristics;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -59,8 +48,8 @@ import java.util.stream.StreamSupport;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 
 /**
- * This class contains various utility functions used by the VTL Engine implementation.
- * Most of the functions are wrappers of the standard packages in Java 8.
+ * This class contains various utility SerFunctions used by the VTL Engine implementation.
+ * Most of the SerFunctions are wrappers of the standard packages in Java 8.
  * 
  * @see java.util.function
  * @see java.util.stream
@@ -75,111 +64,111 @@ public final class Utils
 	
 	private Utils() {}
 
-	public static <K, V1, V2> Function<Entry<K, V1>, Entry<K, V2>> keepingKey(Function<? super V1, ? extends V2> valueMapper)
+	public static <K, V1, V2> SerFunction<Entry<K, V1>, Entry<K, V2>> keepingKey(SerFunction<? super V1, ? extends V2> valueMapper)
 	{
 		return e -> new SimpleEntry<>(e.getKey(), valueMapper.apply(e.getValue()));
 	}
 
-	public static <K, V> Consumer<Entry<K, V>> atKey(Consumer<? super K> valueMapper)
+	public static <K, V> SerConsumer<Entry<K, V>> atKey(SerConsumer<? super K> valueMapper)
 	{
 		return e -> valueMapper.accept(e.getKey());
 	}
 
-	public static <K, V> Consumer<Entry<K, V>> atValue(Consumer<? super V> valueMapper)
+	public static <K, V> SerConsumer<Entry<K, V>> atValue(SerConsumer<? super V> valueMapper)
 	{
 		return e -> valueMapper.accept(e.getValue());
 	}
 
-	public static <R> UnaryOperator<R> onlyIf(Predicate<? super R> condition, UnaryOperator<R> mapper)
+	public static <R> SerUnaryOperator<R> onlyIf(SerPredicate<? super R> condition, SerUnaryOperator<R> mapper)
 	{
 		return v -> condition.test(v) ? mapper.apply(v) : v;
 	}
 
-	public static <T, R> Predicate<T> afterMapping(Function<? super T, ? extends R> mapper, Predicate<? super R> condition)
+	public static <T, R> SerPredicate<T> afterMapping(SerFunction<? super T, ? extends R> mapper, SerPredicate<? super R> condition)
 	{
 		return t -> condition.test(mapper.apply(t));
 	}
 	
-	public static <K1, K2, V> Function<Entry<K1, V>, Entry<K2, V>> keepingValue(Function<? super K1, ? extends K2> keyMapper)
+	public static <K1, K2, V> SerFunction<Entry<K1, V>, Entry<K2, V>> keepingValue(SerFunction<? super K1, ? extends K2> keyMapper)
 	{
 		return e -> new SimpleEntry<>(keyMapper.apply(e.getKey()), e.getValue());
 	}
 
-	public static <K, A, B> Function<Entry<K, A>, Entry<K, B>> keepingKey(BiFunction<K, A, B> valueMapper)
+	public static <K, A, B> SerFunction<Entry<K, A>, Entry<K, B>> keepingKey(SerBiFunction<K, A, B> valueMapper)
 	{
 		return e -> new SimpleEntry<>(e.getKey(), valueMapper.apply(e.getKey(), e.getValue()));
 	}
 
-	public static <T, K, V> Function<T, Entry<K, V>> toEntry(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper)
+	public static <T, K, V> SerFunction<T, Entry<K, V>> toEntry(SerFunction<? super T, ? extends K> keyMapper, SerFunction<? super T, ? extends V> valueMapper)
 	{
 		return t -> new SimpleEntry<>(keyMapper.apply(t), valueMapper.apply(t));
 	}
 
-	public static <K, V> Function<K, Entry<K, V>> toEntryWithValue(Function<? super K, ? extends V> keyToValueMapper)
+	public static <K, V> SerFunction<K, Entry<K, V>> toEntryWithValue(SerFunction<? super K, ? extends V> keyToValueMapper)
 	{
 		return k -> new SimpleEntry<>(k, keyToValueMapper.apply(k));
 	}
 
-	public static <K, V> Function<V, Entry<K, V>> toEntryWithKey(Function<? super V, ? extends K> valueToKeyMapper)
+	public static <K, V> SerFunction<V, Entry<K, V>> toEntryWithKey(SerFunction<? super V, ? extends K> valueToKeyMapper)
 	{
 		return v -> new SimpleEntry<>(valueToKeyMapper.apply(v), v);
 	}
 
-	public static <U, V> Collector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
+	public static <U, V> SerCollector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
 	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue);
+		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue));
 	}
 
-	public static <K, V> Collector<K, ?, ConcurrentMap<K, V>> toMapWithValues(Function<? super K, ? extends V> keyMapper)
+	public static <K, V> SerCollector<K, ?, ConcurrentMap<K, V>> toMapWithValues(SerFunction<K, V> keyMapper)
 	{
-		return toConcurrentMap(identity(), keyMapper);
+		return SerCollector.from(toConcurrentMap(identity(), keyMapper));
 	}
 
-	public static <K, V> Collector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(Function<? super V, ? extends K> valueMapper)
+	public static <K, V> SerCollector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(SerFunction<? super V, ? extends K> valueMapper)
 	{
-		return toConcurrentMap(valueMapper, identity());
+		return SerCollector.from(toConcurrentMap(valueMapper, identity()));
 	}
 
-	public static <U, V, M extends ConcurrentMap<U, V>> Collector<Entry<U, V>, ?, M> entriesToMap(Supplier<M> mapSupplier)
+	public static <U, V, M extends ConcurrentMap<U, V>> SerCollector<Entry<U, V>, ?, M> entriesToMap(SerSupplier<M> mapSupplier)
 	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> a, mapSupplier);
+		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue, mergeError(), mapSupplier));
 	}
 
-	public static <U, V> Collector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap(BinaryOperator<V> combiner)
+	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap(SerBinaryOperator<V> combiner)
 	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue, combiner);
+		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue, combiner));
 	}
 
-	public static <U, V, R> Collector<Entry<U, V>, ?, ConcurrentMap<U, R>> mappingValues(Function<? super V, ? extends R> valueMapper)
+	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> mappingValues(SerFunction<? super V, ? extends R> valueMapper)
 	{
-		return toConcurrentMap(Entry::getKey, valueMapper.compose(Entry::getValue));
+		return SerCollector.from(toConcurrentMap(Entry::getKey, valueMapper.compose(Entry::getValue)));
 	}
 
-	public static <U, V, R> Collector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(Function<? super U, ? extends R> keyMapper)
+	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(SerFunction<? super U, ? extends R> keyMapper)
 	{
-		return toConcurrentMap(keyMapper.compose(Entry::getKey), Entry::getValue);
+		return SerCollector.from(toConcurrentMap(keyMapper.compose(Entry::getKey), Entry::getValue));
 	}
 
-	public static <U, V> Collector<Entry<U, V>, ?, ConcurrentMap<U, V>> mappingConcurrentEntries(Supplier<ConcurrentMap<U, V>> factory)
+	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> mappingConcurrentEntries(SerSupplier<ConcurrentMap<U, V>> factory)
 	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> {
+		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> {
 			throw new UnsupportedOperationException("Duplicate");
-		}, factory);
+		}, factory));
 	}
 
-	public static <U, V, R> Collector<Entry<U, V>, ?, ConcurrentMap<U, R>> groupingByKeys(Collector<Entry<U, V>, ?, R> valueMapper)
+	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> groupingByKeys(SerCollector<Entry<U, V>, ?, R> valueMapper)
 	{
-		return groupingByConcurrent(Entry::getKey, valueMapper);
+		return SerCollector.from(groupingByConcurrent(Entry::getKey, valueMapper));
 	}
 
-	public static <T, R> R folding(R accumulator, Stream<T> stream, BiFunction<? super R, ? super T, ? extends R> aggregator)
+	public static <T, R> R folding(R accumulator, Stream<T> stream, SerBiFunction<? super R, ? super T, ? extends R> aggregator)
 	{
 		for (T object : (Iterable<T>) () -> stream.iterator())
 			accumulator = aggregator.apply(accumulator, object);
 		return accumulator;
 	}
 
-	public static <T, R> R fold(R accumulator, Iterable<T> iterable, BiFunction<? super R, ? super T, ? extends R> aggregator)
+	public static <T, R> R fold(R accumulator, Iterable<T> iterable, SerBiFunction<? super R, ? super T, ? extends R> aggregator)
 	{
 		for (T object : iterable)
 			accumulator = aggregator.apply(accumulator, object);
@@ -187,47 +176,64 @@ public final class Utils
 		return accumulator;
 	}
 
-	public static <K, V> Predicate<Entry<K, V>> entryByValue(Predicate<V> valuePredicate)
+	public static <T> SerBinaryOperator<T> mergeError()
+	{
+		return (a, b) -> { 
+			throw new UnsupportedOperationException("Found duplicated entries with same key: [" + a + ", " + b + "]");
+		};
+	}
+
+	public static <T> SerBinaryOperator<T> mergeLeft()
+	{
+		return (a, b) -> a;
+	}
+
+	public static <T> SerBinaryOperator<T> mergeRight()
+	{
+		return (a, b) -> b;
+	}
+
+	public static <K, V> SerPredicate<Entry<K, V>> entryByValue(SerPredicate<V> valuePredicate)
 	{
 		return e -> valuePredicate.test(e.getValue());
 	}
 
-	public static <K, V> Predicate<Entry<K, V>> entryByKey(Predicate<K> keyPredicate)
+	public static <K, V> SerPredicate<Entry<K, V>> entryByKey(SerPredicate<K> keyPredicate)
 	{
 		return e -> keyPredicate.test(e.getKey());
 	}
 
-	public static <K, V> Predicate<? super Entry<K, V>> entryByKeyValue(BiPredicate<? super K, ? super V> entryPredicate)
+	public static <K, V> SerPredicate<? super Entry<K, V>> entryByKeyValue(SerBiPredicate<? super K, ? super V> entryPredicate)
 	{
 		return e -> entryPredicate.test(e.getKey(), e.getValue());
 	}
 
-	public static <K, V, R> Function<Entry<K, V>, R> splitting(BiFunction<? super K, ? super V, R> function)
+	public static <K, V, R> SerFunction<Entry<K, V>, R> splitting(SerBiFunction<? super K, ? super V, R> biFunction)
 	{
-		return e -> function.apply(e.getKey(), e.getValue());
+		return e -> biFunction.apply(e.getKey(), e.getValue());
 	}
 
-	public static <K, V> Consumer<Entry<K, V>> splittingConsumer(BiConsumer<? super K, ? super V> function)
+	public static <K, V, R> SerConsumer<Entry<K, V>> splittingConsumer(SerBiConsumer<? super K, ? super V> consumer)
 	{
-		return e -> function.accept(e.getKey(), e.getValue());
+		return e -> consumer.accept(e.getKey(), e.getValue());
 	}
 
-	public static <A extends Serializable, B extends Serializable, C extends Serializable, R> Function<Triple<A, B, C>, R> splitting(TriFunction<? super A, ? super B, ? super C, ? extends R> trifunction)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable, R> SerFunction<Triple<A, B, C>, R> splitting(SerTriFunction<? super A, ? super B, ? super C, ? extends R> trifunction)
 	{
 		return t -> trifunction.apply(t.getFirst(), t.getSecond(), t.getThird());
 	}
 
-	public static <A extends Serializable, B extends Serializable, C extends Serializable> Consumer<Triple<A, B, C>> triple(TriConsumer<? super A, ? super B, ? super C> triconsumer)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable> SerConsumer<Triple<A, B, C>> triple(TriConsumer<? super A, ? super B, ? super C> triconsumer)
 	{
 		return t -> triconsumer.accept(t.getFirst(), t.getSecond(), t.getThird());
 	}
 
-	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable> Consumer<Quadruple<A, B, C, D>> quartet(QuadConsumer<? super A, ? super B, ? super C, ? super D> quadconsumer)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable> SerConsumer<Quadruple<A, B, C, D>> quartet(QuadConsumer<? super A, ? super B, ? super C, ? super D> quadconsumer)
 	{
 		return q -> quadconsumer.accept(q.getFirst(), q.getSecond(), q.getThird(), q.getFourth());
 	}
 
-	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable, R> Function<Quadruple<A, B, C, D>, R> splitting(QuadFunction<? super A, ? super B, ? super C, ? super D, ? extends R> quadfunction)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable, R> SerFunction<Quadruple<A, B, C, D>, R> splitting(QuadFunction<? super A, ? super B, ? super C, ? super D, ? extends R> quadfunction)
 	{
 		return q -> quadfunction.apply(q.getFirst(), q.getSecond(), q.getThird(), q.getFourth());
 	}
@@ -293,48 +299,20 @@ public final class Utils
 		return ORDERED ? stream : stream.unordered();
 	}
 
-	public static <T, U, A, R> Collector<T, ?, R> flatMapping(Function<? super T, ? extends Stream<? extends U>> mapper, Collector<? super U, A, R> downstream)
+	public static <T, U, A, R> SerCollector<T, A, R> flatMapping(SerFunction<? super T, ? extends Stream<? extends U>> mapper, SerCollector<? super U, A, R> downstream)
 	{
-		final BiConsumer<A, T> biConsumer = (r, t) -> 
+		final SerBiConsumer<A, T> biConsumer = (r, t) -> 
 			Optional.ofNullable(mapper.apply(t)).ifPresent(s -> s.forEach(u -> downstream.accumulator().accept(r, u)));
 
-		return Collector.of(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(),
-				downstream.characteristics().toArray(new Characteristics[0]));
+		return SerCollector.of(downstream.supplier()::get, biConsumer, downstream.combiner()::apply, downstream.finisher()::apply, downstream.characteristics());
 	}
 
-	public static <T, A, R> Collector<T, ?, R> filtering(Predicate<? super T> predicate, Collector<? super T, A, R> downstream)
-	{
-		final BiConsumer<A, T> biConsumer = (r, t) -> {
-			if (predicate.test(t))
-				downstream.accumulator().accept(r, t);
-		};
-		
-		return Collector.of(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(),
-				downstream.characteristics().toArray(new Characteristics[0]));
-	}
-
-	public static <T, A, R> Collector<T, A, R> peeking(Consumer<? super T> action, Collector<? super T, A, R> downstream)
-	{
-		final BiConsumer<A, T> biConsumer = (r, t) -> {
-			action.accept(t);
-			downstream.accumulator().accept(r, t);
-		};
-		
-		return Collector.of(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(),
-				downstream.characteristics().toArray(new Characteristics[0]));
-	}
-
-	public static <T> Predicate<T> not(Predicate<T> target) 
-	{
-        return target.negate();
-    }
-
-	public static <A1 extends Serializable, A2 extends Serializable, B extends Serializable, C extends Serializable> Function<Triple<A1, B, C>, Triple<A2, B, C>> changingFirst(Function<? super A1, ? extends A2> mapper)
+	public static <A1 extends Serializable, A2 extends Serializable, B extends Serializable, C extends Serializable> SerFunction<Triple<A1, B, C>, Triple<A2, B, C>> changingFirst(SerFunction<? super A1, ? extends A2> mapper)
 	{
 		return t -> new Triple<>(mapper.apply(t.getFirst()), t.getSecond(), t.getThird());
 	}
 	
-	public static <T> UnaryOperator<Set<T>> retainer(Set<? extends T> toRetain)
+	public static <T> SerUnaryOperator<Set<T>> retainer(Set<? extends T> toRetain)
 	{
 		return oldSet -> {
 			Set<T> newSet = new HashSet<>(oldSet);
@@ -358,53 +336,53 @@ public final class Utils
 		return classifierMap;
 	}
 
-	public static <A, B, C> Function<A, Function<B, C>> curry(BiFunction<A, B, C> bifunction)
+	public static <A, B, C> SerFunction<A, SerFunction<B, C>> curry(SerBiFunction<A, B, C> biFunction)
 	{
-		return a -> b -> bifunction.apply(a, b);
+		return a -> b -> biFunction.apply(a, b);
 	}
 
-	public static <A, B> Function<A, Consumer<B>> curry(BiConsumer<A, B> biconsumer)
+	public static <A, B> SerFunction<A, SerConsumer<B>> curry(SerBiConsumer<A, B> biconsumer)
 	{
 		return a -> b -> biconsumer.accept(a, b);
 	}
 
-	public static <A, B, C> Function<B, Function<A, C>> curryRev(BiFunction<A, B, C> bifunction)
+	public static <A, B, C> SerFunction<B, SerFunction<A, C>> curryRev(SerBiFunction<A, B, C> biFunction)
 	{
-		return b -> a -> bifunction.apply(a, b);
+		return b -> a -> biFunction.apply(a, b);
 	}
 	
-	public static <A, B> Function<A, B> asFun(Function<? super A, ? extends B> function)
+	public static <A, B> SerFunction<A, B> asFun(SerFunction<? super A, ? extends B> function)
 	{
 		return a -> function.apply(a);
 	}
 	
-	public static <A> BinaryOperator<A> reverseIf(BinaryOperator<A> binaryOperator, boolean isReverse)
+	public static <A> SerBinaryOperator<A> reverseIf(SerBinaryOperator<A> binaryOperator, boolean isReverse)
 	{
 		return (a, b) -> isReverse ? binaryOperator.apply(b, a) : binaryOperator.apply(a, b);
 	}
 
-	public static <A, R> BiFunction<? super A, ? super A, ? extends R> reverseIf(BiFunction<? super A, ? super A, ? extends R> binaryOperator, boolean isReverse)
+	public static <A, R> SerBiFunction<? super A, ? super A, ? extends R> reverseIf(SerBiFunction<? super A, ? super A, ? extends R> biFunction, boolean isReverse)
 	{
-		return (a, b) -> isReverse ? binaryOperator.apply(b, a) : binaryOperator.apply(a, b);
+		return (a, b) -> isReverse ? biFunction.apply(b, a) : biFunction.apply(a, b);
 	}
 
-	public static BiPredicate<DataPoint, DataPoint> reverseIf(boolean isReverse, BiPredicate<DataPoint, DataPoint> predicate)
+	public static SerBiPredicate<DataPoint, DataPoint> reverseIf(boolean isReverse, SerBiPredicate<DataPoint, DataPoint> predicate)
 	{
 		return (a, b) -> isReverse ? predicate.test(b, a) : predicate.test(a, b);
 	}
 
-	public static <A, B, C> BiFunction<A, B, C> asFun(BiFunction<? super A, ? super B, ? extends C> bifunction)
+	public static <A, B, C> SerBiFunction<A, B, C> asFun(SerBiFunction<? super A, ? super B, ? extends C> biFunction)
 	{
-		return (a, b) -> bifunction.apply(a, b);
+		return (a, b) -> biFunction.apply(a, b);
 	}
 	
 	@SuppressWarnings("ReturnValueIgnored")
-	public <T> Consumer<T> asConsumer(Function<? super T, ?> function)
+	public <T> SerConsumer<T> asConsumer(SerFunction<? super T, ?> function)
 	{
 		return function::apply;
 	}
 
-	public static <T, U> BiPredicate<T, U> not(BiPredicate<T, U> test)
+	public static <T, U> SerBiPredicate<T, U> not(SerBiPredicate<T, U> test)
 	{
 		return (a, b) -> !test.test(a, b);
 	}
@@ -433,7 +411,12 @@ public final class Utils
 		return Collections.unmodifiableSet(result);
 	}
 
-	public static <A, B, C, R> BiFunction<B, C, R> partial(TriFunction<A, B, C, R> triFunction, A a)
+	public static <A extends Serializable, B extends Serializable, C extends Serializable, R extends Serializable> SerBiFunction<B, C, R> partial(SerTriFunction<A, B, C, R> triFunction, A a)
+	{
+		return (b, c) -> triFunction.apply(a, b, c);
+	}
+
+	public static <A, B, C, R> SerBiFunction<B, C, R> partial(SerTriFunction<A, B, C, R> triFunction, A a)
 	{
 		return (b, c) -> triFunction.apply(a, b, c);
 	}

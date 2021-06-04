@@ -22,8 +22,8 @@ package it.bancaditalia.oss.vtl.impl.transform.time;
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.ALL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
-import static java.util.stream.Collectors.toCollection;
 
 import java.util.Comparator;
 import java.util.HashSet;

@@ -28,8 +28,6 @@ import static java.util.stream.Collectors.toSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
@@ -52,6 +50,8 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerPredicate;
 
 public class ExistsInTransformation extends BinaryTransformation
 {
@@ -91,7 +91,7 @@ public class ExistsInTransformation extends BinaryTransformation
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> boolMeasure = ((DataSetMetadata) metadata).getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
 		
 		Set<? extends ScalarValue<?, ?, ?, ?>> values = right.stream().map(dp -> dp.get(rightMeasure)).collect(toSet());
-		Predicate<DataPoint> filter;
+		SerPredicate<DataPoint> filter;
 		if (mode == ALL)
 			filter = dp -> true;
 		else if (mode == TRUE) 
@@ -99,7 +99,7 @@ public class ExistsInTransformation extends BinaryTransformation
 		else
 			filter = dp -> !values.contains(dp.get(leftMeasure));
 		
-		Function<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> mapper;
+		SerFunction<DataPoint, Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> mapper;
 		if (mode == ALL)
 			mapper = dp -> singletonMap(boolMeasure, BooleanValue.of(values.contains(dp.get(leftMeasure))));
 		else

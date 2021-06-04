@@ -24,14 +24,14 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowView.UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;

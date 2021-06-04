@@ -29,7 +29,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -57,12 +56,14 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ConcatTransformation extends BinaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> CONCAT = (l, r) -> l instanceof NullValue || r instanceof NullValue 
+	private static final SerBinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> CONCAT = (l, r) -> l instanceof NullValue || r instanceof NullValue 
 			? NullValue.instance(STRINGDS)
 			: StringValue.of(l.get().toString() + r.get().toString());
 
@@ -80,11 +81,11 @@ public class ConcatTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> function = Utils.reverseIf(CONCAT, !datasetIsLeftOp);
+		SerBinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> function = Utils.reverseIf(CONCAT, !datasetIsLeftOp);
 		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
 		Lineage scalarLineage = (datasetIsLeftOp ? getRightOperand() : getLeftOperand()).getLineage();
-		Function<DataPoint, Lineage> lineageFunc = dp -> datasetIsLeftOp
+		SerFunction<DataPoint, Lineage> lineageFunc = dp -> datasetIsLeftOp
 				? LineageNode.of(this, dp.getLineage(), scalarLineage)
 				: LineageNode.of(this, scalarLineage, dp.getLineage());
 		

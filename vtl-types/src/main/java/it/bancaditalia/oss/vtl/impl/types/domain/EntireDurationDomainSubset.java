@@ -87,4 +87,16 @@ public class EntireDurationDomainSubset implements DurationDomainSubset<EntireDu
 	{
 		return null;
 	}
+	
+	@Override
+	public int hashCode()
+	{
+		return getClass().hashCode();
+	}
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+		return obj != null && obj.getClass() == getClass();
+	}
 }

@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import java.io.Serializable;
+
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 /**
@@ -26,7 +28,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
  * 
  * @author Valentino Pinna
  */
-public interface Lineage
+public interface Lineage extends Serializable
 {
 	/**
 	 * Resolve lineage links to aliases bound to a {@link TransformationScheme}.

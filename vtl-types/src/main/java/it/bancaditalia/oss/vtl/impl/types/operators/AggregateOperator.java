@@ -21,29 +21,28 @@ package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
-import static it.bancaditalia.oss.vtl.util.Utils.filtering;
-import static it.bancaditalia.oss.vtl.util.Utils.peeking;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.averagingDouble;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.peeking;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
-import static java.util.stream.Collectors.averagingDouble;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.maxBy;
-import static java.util.stream.Collectors.minBy;
-import static java.util.stream.Collectors.summingDouble;
-import static java.util.stream.Collectors.toList;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -55,6 +54,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public enum AggregateOperator  
 {
@@ -71,7 +71,7 @@ public enum AggregateOperator
 	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-	VAR_POP("stddev_pop", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), Collector.of( 
+	VAR_POP("stddev_pop", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), SerCollector.of( 
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -87,9 +87,9 @@ public enum AggregateOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / acu[0], UNORDERED)), DoubleValue::of)),
+	        acu -> acu[2] / acu[0], EnumSet.of(UNORDERED))), DoubleValue::of)),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-	VAR_SAMP("stddev_samp", collectingAndThen(Collectors.mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), Collector.of( 
+	VAR_SAMP("stddev_samp", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), SerCollector.of( 
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -105,34 +105,34 @@ public enum AggregateOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / (acu[0] + 1.0), UNORDERED)), DoubleValue::of)),
+	        acu -> acu[2] / (acu[0] + 1.0), EnumSet.of(UNORDERED))), DoubleValue::of)),
 	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get()))));
 
-	private final Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
+	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
 	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
 
-	private AggregateOperator(String name, Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
+	private AggregateOperator(String name, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this(name, (dp, c) -> dp.get(c), reducer);
 	}
 
 	private AggregateOperator(String name,
 			BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor,
-			Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
+			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this.name = name;
 		this.extractor = extractor;
 		this.reducer = reducer;
 	}
 
-	public Collector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer()
+	public SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer()
 	{
 		return reducer;
 	}
 	
-	public Collector<DataPoint, ?, Entry<Lineage, ScalarValue<?, ?, ?, ?>>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
+	public SerCollector<DataPoint, ?, Entry<Lineage, ScalarValue<?, ?, ?, ?>>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
 		AtomicBoolean isInteger = new AtomicBoolean(true);
 		Map<Lineage, Long> lineage = new ConcurrentHashMap<>();

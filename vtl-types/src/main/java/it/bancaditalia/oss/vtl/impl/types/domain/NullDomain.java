@@ -61,4 +61,16 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	{
 		throw new UnsupportedOperationException("No variable name for unknown domain.");
 	}
+	
+	@Override
+	public int hashCode()
+	{
+		return getClass().hashCode();
+	}
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+		return obj != null && obj.getClass() == getClass();
+	}
 }

@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.data.date;
 import java.time.LocalDate;
 import java.time.temporal.TemporalField;
 
-class DayHolder extends DateHolder<LocalDate>
+public class DayHolder extends DateHolder<LocalDate>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -95,5 +95,10 @@ class DayHolder extends DateHolder<LocalDate>
 	public DayHolder increment(long amount)
 	{
 		return new DayHolder(date.plusDays(amount));
+	}
+	
+	public long toEpochMilli()
+	{
+		return date.toEpochDay() * 24 * 60 * 60 * 1000;
 	}
 }

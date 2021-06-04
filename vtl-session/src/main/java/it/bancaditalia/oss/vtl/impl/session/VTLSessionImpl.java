@@ -229,7 +229,7 @@ public class VTLSessionImpl implements VTLSession
 				.map(Optional::get)
 				.findAny()
 				.map(result -> {
-					if (result instanceof DataSet && !(result instanceof CachedDataSet))
+					if (result instanceof DataSet && ((DataSet) result).isCacheable())
 					{
 						@SuppressWarnings("unchecked")
 						T tempResult = (T) new CachedDataSet(this, name, (DataSet) result);
@@ -251,7 +251,7 @@ public class VTLSessionImpl implements VTLSession
 		try
 		{
 			VTLValue result = statement.eval(this);
-			if (result instanceof DataSet && !(result instanceof CachedDataSet))
+			if (result instanceof DataSet && ((DataSet) result).isCacheable())
 				result = new CachedDataSet(this, alias, (DataSet) result);
 
 			return result;

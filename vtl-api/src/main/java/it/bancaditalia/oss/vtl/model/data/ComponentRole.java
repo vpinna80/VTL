@@ -19,6 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Representation of a component role
  * 
@@ -33,6 +36,15 @@ public interface ComponentRole
 		ATTRIBUTE(Attribute.class),
 		VIRAL_ATTRIBUTE(ViralAttribute.class);
 		
+		private static final Map<Class<? extends ComponentRole>, Roles> ENUM_TAGS = new HashMap<>();
+		
+		static {
+			ENUM_TAGS.put(Identifier.class, IDENTIFIER);
+			ENUM_TAGS.put(Measure.class, MEASURE);
+			ENUM_TAGS.put(Attribute.class, ATTRIBUTE);
+			ENUM_TAGS.put(ViralAttribute.class, VIRAL_ATTRIBUTE);
+		}
+		
 		private final Class<? extends ComponentRole> clazz;
 
 		Roles(Class<? extends ComponentRole> clazz)
@@ -43,6 +55,11 @@ public interface ComponentRole
 		public Class<? extends ComponentRole> getClazz()
 		{
 			return clazz;
+		}
+		
+		public static Roles from(Class<? extends ComponentRole> clazz)
+		{
+			return ENUM_TAGS.get(clazz);
 		}
 	}
 
