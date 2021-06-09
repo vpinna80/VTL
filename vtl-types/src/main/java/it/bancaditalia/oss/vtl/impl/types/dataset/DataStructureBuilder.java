@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
@@ -149,8 +151,8 @@ public class DataStructureBuilder
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
 			this.components = Collections.unmodifiableMap(Utils.getStream(components)
-				.map(Utils.toEntry(DataStructureComponent::getName, c -> c))
-				.collect(Utils.entriesToMap(ConcurrentSkipListMap::new)));
+				.map(toEntry(DataStructureComponent::getName, c -> c))
+				.collect(entriesToMap(ConcurrentSkipListMap::new)));
 		}
 		
 		@Override
@@ -172,6 +174,7 @@ public class DataStructureBuilder
 		public DataSetMetadata keep(String... names)
 		{
 			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(names)
+					.map(DataStructureBuilder::getNormalizedAlias)
 					.map(components::get)
 					.filter(Objects::nonNull)
 					.collect(partitioningBy(c -> c.is(Identifier.class)));
@@ -188,6 +191,7 @@ public class DataStructureBuilder
 		public DataSetMetadata drop(Collection<String> names)
 		{
 			final Set<? extends DataStructureComponent<?, ?, ?>> filter = Utils.getStream(names)
+					.map(DataStructureBuilder::getNormalizedAlias)
 					.map(components::get)
 					.filter(Objects::nonNull)
 					.filter(c -> !c.is(Identifier.class))

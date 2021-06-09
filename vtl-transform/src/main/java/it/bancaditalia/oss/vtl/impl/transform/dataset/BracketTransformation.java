@@ -74,7 +74,7 @@ public class BracketTransformation extends UnaryTransformation
 			throw new UnsupportedOperationException("Dataset expected as left operand of []# but found " + metadata);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope((DataSetMetadata) operand.getMetadata(scheme), getLineage()));
+			return clause.getMetadata(new ThisScope((DataSetMetadata) metadata, getLineage()));
 		else
 			return ((DataSetMetadata) metadata).membership(componentName);
 	}
