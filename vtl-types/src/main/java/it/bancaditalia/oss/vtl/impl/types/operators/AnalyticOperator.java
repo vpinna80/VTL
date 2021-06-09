@@ -30,7 +30,6 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.util.ArrayList;
@@ -48,7 +47,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -104,23 +102,16 @@ public enum AnalyticOperator
 	        acu -> acu[2] / (acu[0] + 1.0), EnumSet.of(UNORDERED))), DoubleValue::of)),
 	STDDEV_POP("stddev_pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP("stddev_var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
-	FIRST_VALUE("first_value", new PositionCollector(Utils::coalesce, (a, b) -> a)),
-	LAST_VALUE("last_value", new PositionCollector(Utils::coalesceSwapped, (a, b) -> b));
-	/* TODO: LAG, LEAD, RANK */
-	
-	private static class PositionCollector extends SerCollector<ScalarValue<?, ?, ?, ?>, AtomicReference<ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
-	{
-		private static final long serialVersionUID = 1L;
-
-		public PositionCollector(SerBinaryOperator<ScalarValue<?, ?, ?, ?>> valueCombiner, SerBinaryOperator<AtomicReference<ScalarValue<?, ?, ?, ?>>> combinerFunction)
-		{
-			super(AtomicReference::new, 
-					(acc, value) -> acc.accumulateAndGet(value,(a, b) -> valueCombiner.apply(a, b)),
-					(left, right) -> { left.accumulateAndGet(right.get(), (a, b) -> a); return left; }, 
+	FIRST_VALUE("first_value", SerCollector.of(AtomicReference<ScalarValue<?, ?, ?, ?>>::new, 
+					(acc, value) -> acc.accumulateAndGet(value, Utils::coalesce),
+					(left, right) -> { left.accumulateAndGet(right.get(), Utils::coalesce); return left; }, 
 					acc -> acc.get() != null ? acc.get() : NullValue.instance(NUMBERDS), 
-					EnumSet.of(CONCURRENT));
-		}
-	}
+					Collections.emptySet())),
+	LAST_VALUE("last_value", SerCollector.of(AtomicReference<ScalarValue<?, ?, ?, ?>>::new, 
+					(acc, value) -> acc.accumulateAndGet(value, Utils::coalesceSwapped),
+					(left, right) -> { left.accumulateAndGet(right.get(), Utils::coalesceSwapped); return left; }, 
+					acc -> acc.get() != null ? acc.get() : NullValue.instance(NUMBERDS), 
+					Collections.emptySet()));
 
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
 	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
