@@ -42,6 +42,7 @@ import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
@@ -149,6 +150,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			} 
 			else if (calcClause instanceof UnaryTransformation)
 				return isAnalytic1(((UnaryTransformation) calcClause).getOperand());
+			else if (calcClause instanceof ConditionalTransformation)
+				return isAnalytic1(((ConditionalTransformation) calcClause).getCondition())
+						|| isAnalytic1(((ConditionalTransformation) calcClause).getThenExpr())
+						|| isAnalytic1(((ConditionalTransformation) calcClause).getElseExpr());
 			else
 				return false;
 		}

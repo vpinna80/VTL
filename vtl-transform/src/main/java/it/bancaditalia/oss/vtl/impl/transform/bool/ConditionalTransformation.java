@@ -284,4 +284,19 @@ public class ConditionalTransformation extends TransformationImpl
 	{
 		return LineageNode.of(this, condition.getLineage(), thenExpr.getLineage(), elseExpr.getLineage());
 	}
+
+	public Transformation getCondition()
+	{
+		return condition;
+	}
+
+	public Transformation getThenExpr()
+	{
+		return thenExpr;
+	}
+
+	public Transformation getElseExpr()
+	{
+		return elseExpr;
+	}
 }
