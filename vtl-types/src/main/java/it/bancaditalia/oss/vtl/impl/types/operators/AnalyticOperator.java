@@ -54,20 +54,20 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum AnalyticOperator  
 {
-	COUNT("count", false, (dp, m) -> null, collectingAndThen(counting(), IntegerValue::of)),
-	SUM("sum", true, collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)), 
-	AVG("avg", true, collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)),
-	MEDIAN("median", true, collectingAndThen(mapping(NumberValue.class::cast, mapping(NumberValue::get, mapping(Number.class::cast, mapping(Number::doubleValue, 
+	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::of)),
+	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)), 
+	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)),
+	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, mapping(NumberValue::get, mapping(Number.class::cast, mapping(Number::doubleValue, 
 			toList())))), l -> {
 				List<Double> c = new ArrayList<>(l);
 				Collections.sort(c);
 				int s = c.size();
 				return DoubleValue.of(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
 			})),
-	MIN("min", true, collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(NullValue.instance(NULLDS)))),
-	MAX("max", true, collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(NullValue.instance(NULLDS)))),
+	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(NullValue.instance(NULLDS)))),
+	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(NullValue.instance(NULLDS)))),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-	VAR_POP("var_pop", true, collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), SerCollector.of(
+	VAR_POP("var_pop", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), SerCollector.of(
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -85,7 +85,7 @@ public enum AnalyticOperator
 	        },
 	        acu -> acu[2] / acu[0], EnumSet.of(UNORDERED))), DoubleValue::of)),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-	VAR_SAMP("var_samp", true, collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>) v).get().doubleValue(), SerCollector.of( 
+	VAR_SAMP("var_samp", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>) v).get().doubleValue(), SerCollector.of( 
 	        () -> new double[3],
 	        (acu, d) -> {
 	            acu[0]++;
@@ -102,10 +102,10 @@ public enum AnalyticOperator
 	            return acuA;
 	        },
 	        acu -> acu[2] / (acu[0] + 1.0), EnumSet.of(UNORDERED))), DoubleValue::of)),
-	STDDEV_POP("stddev_pop", true, collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
-	STDDEV_SAMP("stddev_var", true, collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
-	FIRST_VALUE("first_value", false, new PositionCollector(Utils::coalesce, (a, b) -> a)),
-	LAST_VALUE("last_value", false, new PositionCollector(Utils::coalesceSwapped, (a, b) -> b));
+	STDDEV_POP("stddev_pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
+	STDDEV_SAMP("stddev_var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
+	FIRST_VALUE("first_value", new PositionCollector(Utils::coalesce, (a, b) -> a)),
+	LAST_VALUE("last_value", new PositionCollector(Utils::coalesceSwapped, (a, b) -> b));
 	/* TODO: LAG, LEAD, RANK */
 	
 	private static class PositionCollector extends SerCollector<ScalarValue<?, ?, ?, ?>, AtomicReference<ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
@@ -125,19 +125,17 @@ public enum AnalyticOperator
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
 	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
-	private boolean filterNulls;
 
-	private AnalyticOperator(String name, boolean filterNulls, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
+	private AnalyticOperator(String name, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
-		this(name, filterNulls, DataPoint::get, reducer);
+		this(name, DataPoint::get, reducer);
 	}
 
-	private AnalyticOperator(String name, boolean filterNulls,
+	private AnalyticOperator(String name,
 			SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor,
 			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this.name = name;
-		this.filterNulls = filterNulls;
 		this.extractor = extractor;
 		this.reducer = reducer;
 	}
@@ -149,10 +147,7 @@ public enum AnalyticOperator
 	
 	public SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
 	{
-		if (filterNulls)
-			return mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer));
-		else
-			return mapping(dp -> extractor.apply(dp, measure), reducer);
+		return mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer));
 	}
 	
 	@Override

@@ -73,7 +73,6 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class SimpleAnalyticTransformation extends UnaryTransformation implements AnalyticTransformation
 {
 	private static final long serialVersionUID = 1L;
-//	private static final DataStructureComponent<Measure, IntegerDomainSubset, IntegerDomain> COUNT_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 	private final static Logger LOGGER = LoggerFactory.getLogger(SimpleAnalyticTransformation.class);
 
 	private final AnalyticOperator	aggregation;

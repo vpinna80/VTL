@@ -44,7 +44,7 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 		return new SerCollector<>(supplier, accumulator, combiner, finisher, characteristics);
 	}
 
-	SerCollector(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
+	protected SerCollector(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
 			SerFunction<A, R> finisher, Set<Characteristics> characteristics)
 	{
 		this.supplier = supplier;
