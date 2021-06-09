@@ -237,8 +237,8 @@ public class OffsetTransformation extends UnaryTransformation implements Analyti
 	public String toString()
 	{
 		return direction.toString().toLowerCase() + "(" + operand + ", " + offset + ", " + defaultValue + " over (" 
-				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
-				+ (orderByClause != null ? orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")) : "")
+				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().collect(joining(", ", " partition by ", " ")))
+				+ (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")))
 				+ ")";
 	}
 
