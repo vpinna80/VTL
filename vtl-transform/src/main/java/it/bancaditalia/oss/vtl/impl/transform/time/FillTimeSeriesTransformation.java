@@ -179,7 +179,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		}
 
 		// fill trailing holes
-		if (mode == ALL)
+		if (mode == ALL && max != null)
 		{
 			TimeValue<?, ?, ?, ?> prevTime = previous;
 			while (max.compareTo(prevTime) > 0)
