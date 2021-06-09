@@ -30,7 +30,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
@@ -82,7 +81,7 @@ public class IsNullTransformation extends UnaryTransformation
 		VTLValueMetadata meta = operand.getMetadata(session);
 
 		if (meta instanceof ScalarValueMetadata)
-			if (Domains.BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
+			if (BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
 				return BOOLEAN;
 			else
 				throw new VTLIncompatibleTypesException("isnull", BOOLEANDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());

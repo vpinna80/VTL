@@ -29,7 +29,6 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -79,7 +78,7 @@ public class NotTransformation extends UnaryTransformation
 		if (meta instanceof ScalarValueMetadata)
 		{
 			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) meta).getDomain();
-			if (Domains.BOOLEANDS.isAssignableFrom(domain))
+			if (BOOLEANDS.isAssignableFrom(domain))
 				return BOOLEAN;
 			else
 				throw new VTLIncompatibleTypesException("not", BOOLEANDS, domain);
