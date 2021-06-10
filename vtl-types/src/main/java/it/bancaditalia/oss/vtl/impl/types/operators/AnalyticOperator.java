@@ -30,6 +30,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.util.ArrayList;
@@ -105,13 +106,13 @@ public enum AnalyticOperator
 	FIRST_VALUE("first_value", SerCollector.of(AtomicReference<ScalarValue<?, ?, ?, ?>>::new, 
 					(acc, value) -> acc.accumulateAndGet(value, Utils::coalesce),
 					(left, right) -> { left.accumulateAndGet(right.get(), Utils::coalesce); return left; }, 
-					acc -> acc.get() != null ? acc.get() : NullValue.instance(NUMBERDS), 
-					Collections.emptySet())),
+					acc -> acc.get() != null ? acc.get() : (ScalarValue<?, ?, ?, ?>) NullValue.instance(NUMBERDS), 
+					emptySet())),
 	LAST_VALUE("last_value", SerCollector.of(AtomicReference<ScalarValue<?, ?, ?, ?>>::new, 
 					(acc, value) -> acc.accumulateAndGet(value, Utils::coalesceSwapped),
 					(left, right) -> { left.accumulateAndGet(right.get(), Utils::coalesceSwapped); return left; }, 
-					acc -> acc.get() != null ? acc.get() : NullValue.instance(NUMBERDS), 
-					Collections.emptySet()));
+					acc -> acc.get() != null ? acc.get() : (ScalarValue<?, ?, ?, ?>) NullValue.instance(NUMBERDS), 
+					emptySet()));
 
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
 	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
