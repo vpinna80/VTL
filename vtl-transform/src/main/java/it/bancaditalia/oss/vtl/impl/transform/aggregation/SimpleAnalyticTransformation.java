@@ -198,9 +198,9 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	public String toString()
 	{
 		return aggregation + "(" + operand + " over (" 
-				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
-				+ (orderByClause != null ? orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")) : "")
-				+ (windowClause != UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT ? windowClause : "")
+				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().collect(joining(", ", " partition by ", " ")))
+				+ (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")))
+				+ (windowClause == UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT ? "" : windowClause)
 				+ ")";
 	}
 
