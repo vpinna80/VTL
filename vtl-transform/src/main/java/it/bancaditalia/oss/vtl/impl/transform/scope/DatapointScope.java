@@ -113,7 +113,7 @@ public class DatapointScope implements TransformationScheme
 	}
 
 	@Override
-	public Lineage linkLineage(String alias)
+	public Optional<Lineage> linkLineage(String alias)
 	{
 		throw new UnsupportedOperationException();
 	}

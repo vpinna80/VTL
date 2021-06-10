@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -135,7 +136,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 				}
 
 				@Override
-				public Lineage linkLineage(String alias)
+				public Optional<Lineage> linkLineage(String alias)
 				{
 					throw new UnsupportedOperationException();
 				}

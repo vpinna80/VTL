@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -100,7 +101,7 @@ public class JoinApplyScope implements TransformationScheme
 	}
 
 	@Override
-	public Lineage linkLineage(String alias)
+	public Optional<Lineage> linkLineage(String alias)
 	{
 		throw new UnsupportedOperationException();
 	}

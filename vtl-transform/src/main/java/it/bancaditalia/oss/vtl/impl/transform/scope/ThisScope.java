@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
+import java.util.Optional;
+
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -102,7 +104,7 @@ public class ThisScope implements TransformationScheme
 	}
 
 	@Override
-	public Lineage linkLineage(String alias)
+	public Optional<Lineage> linkLineage(String alias)
 	{
 		throw new UnsupportedOperationException();
 	}

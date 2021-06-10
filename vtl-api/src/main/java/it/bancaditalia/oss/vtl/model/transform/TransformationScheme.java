@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.model.transform;
 
+import java.util.Optional;
+
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
@@ -110,5 +112,5 @@ public interface TransformationScheme
 	 * @param alias The alias referring to a rule
 	 * @return The lineage link
 	 */
-	public Lineage linkLineage(String alias);
+	public Optional<Lineage> linkLineage(String alias);
 }

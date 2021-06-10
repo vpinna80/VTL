@@ -58,6 +58,6 @@ public class LineageExternal extends LineageImpl
 	@Override
 	public Lineage resolveExternal(TransformationScheme scheme)
 	{
-		return scheme.linkLineage(source);
+		return scheme.linkLineage(source).orElse(this);
 	}
 }

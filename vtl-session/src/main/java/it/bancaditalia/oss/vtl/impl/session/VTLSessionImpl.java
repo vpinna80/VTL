@@ -327,10 +327,9 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public Lineage linkLineage(String alias)
+	public Optional<Lineage> linkLineage(String alias)
 	{
 		return workspace.getRule(normalizeAlias(alias))
-				.map(Statement::getLineage)
-				.orElseThrow(() -> new VTLUnboundAliasException(alias));
+				.map(Statement::getLineage);
 	}
 }
