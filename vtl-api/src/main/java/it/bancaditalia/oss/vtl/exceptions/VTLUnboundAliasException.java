@@ -25,17 +25,17 @@ package it.bancaditalia.oss.vtl.exceptions;
  * @author Attilio Mattiocco
  *
  */
-public class VTLUnboundNameException extends VTLException {
+public class VTLUnboundAliasException extends VTLException {
 
 	private static final long serialVersionUID = 1L;
 	
 	private final String name;
 
-	public VTLUnboundNameException(String name) 
+	public VTLUnboundAliasException(String alias) 
 	{
-		super("Alias '" + name + "' is not bound to this transformation scheme.");
+		super("Alias '" + alias + "' is not bound to this transformation scheme.");
 	
-		this.name = name;
+		this.name = alias;
 	}
 
 	public String getName()

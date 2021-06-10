@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -44,13 +44,13 @@ public class TestUtils
 		// Mock getMetadata(alias)
 		when(session.getMetadata(anyString())).thenAnswer(mock -> {
 			String name = mock.getArgument(0);
-			return Optional.ofNullable(map.get(name)).map(VTLValue::getMetadata).orElseThrow(() -> new VTLUnboundNameException(name));
+			return Optional.ofNullable(map.get(name)).map(VTLValue::getMetadata).orElseThrow(() -> new VTLUnboundAliasException(name));
 		});
 
 		// Mock resolve(alias)
 		when(session.resolve(anyString())).thenAnswer(mock -> {
 			String name = mock.getArgument(0);
-			return Optional.ofNullable(map.get(name)).orElseThrow(() -> new VTLUnboundNameException(name));
+			return Optional.ofNullable(map.get(name)).orElseThrow(() -> new VTLUnboundAliasException(name));
 		});
 		
 		return session; 

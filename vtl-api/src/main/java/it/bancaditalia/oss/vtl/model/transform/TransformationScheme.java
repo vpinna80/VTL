@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.model.transform;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -44,7 +44,7 @@ public interface TransformationScheme
 	 *  
 	 * @param alias The alias whose value is to be retrieved.
 	 * @return The {@link VTLValue} if the alias is found.
-	 * @throws VTLUnboundNameException if the alias is not defined.
+	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
 	public VTLValue resolve(String alias);
 
@@ -53,7 +53,7 @@ public interface TransformationScheme
 	 *  
 	 * @param rule The rule that must be evaluated.
 	 * @return The {@link VTLValue} resulting from applying the given rule.
-	 * @throws VTLUnboundNameException if some references couldn't be resolved.
+	 * @throws VTLUnboundAliasException if some references couldn't be resolved.
 	 */
 	public default VTLValue eval(Transformation rule)
 	{
@@ -65,7 +65,7 @@ public interface TransformationScheme
 	 *  
 	 * @param alias the alias whose value is to be retrieved.
 	 * @return the {@link VTLValueMetadata metadata} of the value if the alias is found.
-	 * @throws VTLUnboundNameException if the alias is not defined.
+	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
 	public VTLValueMetadata getMetadata(String alias);
 
@@ -74,7 +74,7 @@ public interface TransformationScheme
 	 * 
 	 * @param alias the alias of the rule whose structure is to be retrieved.
 	 * @return a {@link Statement} instance describing the rule if found.
-	 * @throws VTLUnboundNameException if the alias is not defined.
+	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
 	public Statement getRule(String alias);
 

@@ -125,6 +125,8 @@ public class SparkEnvironment implements Environment
 			  .setMaster(VTL_SPARK_MASTER_CONNECTION.getValue())
 			  .setAppName("Spark SQL Environment for VTL Engine [" + hashCode() + "]")
 			  .set("spark.executor.processTreeMetrics.enabled", "false")
+			  .set("spark.executor.uri", "file:///home/user/public/m027907/spark-3.1.2-bin-hadoop3.2.tgz")
+			  .set("spark.driver.host", "stu068.utenze.bankit.it")
 			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString());
 		

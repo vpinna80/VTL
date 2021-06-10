@@ -35,25 +35,8 @@ public class LineageGroup extends LineageImpl implements LineageSet
 	
 	private final Map<Lineage, Long> sources;
 
-//	public static LineageGroup of(Lineage... sources)
-//	{
-//		Map<Lineage, Long> sourcesMap = Arrays.stream(sources).collect(toMapWithValues(k -> 1L));
-//		return of(sourcesMap);
-//	}
-//
-//	public static LineageGroup of(Collection<Lineage> sources)
-//	{
-//		Map<Lineage, Long> sourcesMap = sources.stream().collect(toMapWithValues(k -> 1L));
-//		return of(sourcesMap);
-//	}
-//
 	public static LineageGroup of(Map<Lineage, Long> sources)
 	{
-		sources.keySet().forEach(e -> {
-			if (e instanceof LineageGroup)
-				throw new NullPointerException();
-		});
-		
 		LineageGroup instance = CACHE.computeIfAbsent(sources, s -> new SoftReference<>(new LineageGroup(s))).get();
 		if (instance == null)
 		{

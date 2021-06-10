@@ -25,6 +25,7 @@ import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.model.data.Lineage;
@@ -44,11 +45,6 @@ public class LineageCall extends LineageImpl implements LineageSet
 
 	public static LineageCall of(List<Lineage> sources)
 	{
-		sources.forEach(e -> {
-			if (e instanceof LineageSet)
-				throw new NullPointerException();
-		});
-		
 		LineageCall instance = CACHE.computeIfAbsent(sources, s -> new SoftReference<>(new LineageCall(s))).get();
 		if (instance == null)
 		{
@@ -60,6 +56,8 @@ public class LineageCall extends LineageImpl implements LineageSet
 
 	private LineageCall(List<Lineage> sources)
 	{
+		sources.stream()
+			.forEach(Objects::requireNonNull);
 		this.sources = sources;
 	}
 

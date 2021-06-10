@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -72,7 +72,7 @@ public class DatapointScope implements TransformationScheme
 	{
 		LOGGER.trace("Querying {} for {}:{}", alias, dp.hashCode(), dp);
 		return maybeMeta(structure, alias, dp::get)
-			.orElseThrow(() -> new VTLUnboundNameException(alias));
+			.orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 	
 	@Override
@@ -83,7 +83,7 @@ public class DatapointScope implements TransformationScheme
 		
 		LOGGER.trace("Querying {} for {}:{}", alias, structure.hashCode(), structure);
 		return maybeMeta(structure, alias, scalar -> scalar.getMetadata())
-			.orElseThrow(() -> new VTLUnboundNameException(alias));
+			.orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 
 	private <T> Optional<T> maybeMeta(Set<DataStructureComponent<?, ?, ?>> components, String alias, Function<? super DataStructureComponent<?, ?, ?>, T> mapper)

@@ -54,7 +54,7 @@ import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -119,71 +119,59 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public VTLValue resolve(String name2)
+	public VTLValue resolve(String alias)
 	{
-		final String name;
-		if (name2.matches("'.*'"))
-			name = name2.replaceAll("'(.*)'", "$1");
-		else
-			name = name2.toLowerCase();
+		final String normalizedAlias = normalizeAlias(alias);
 
-		Optional<? extends Statement> rule = workspace.getRule(name);
+		Optional<? extends Statement> rule = workspace.getRule(normalizedAlias);
 		if (rule.isPresent())
 		{
 			Statement statement = rule.get();
 			if (statement.isCacheable())
-				return cacheHelper(name, cache, n -> acquireResult(statement, n));
+				return cacheHelper(normalizedAlias, cache, n -> acquireResult(statement, n));
 			else
-				return acquireResult(statement, name);
+				return acquireResult(statement, normalizedAlias);
 		}
 		else
-			return cacheHelper(name, cache, n -> acquireValue(name, Environment::getValue)
-					.orElseThrow(() -> new VTLUnboundNameException(name)));
+			return cacheHelper(normalizedAlias, cache, n -> acquireValue(normalizedAlias, Environment::getValue)
+					.orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias)));
 	}
 	
 	@Override
-	public VTLValueMetadata getMetadata(String name2)
+	public VTLValueMetadata getMetadata(String alias)
 	{
-		final String name;
-		if (name2.matches("'.*'"))
-			name = name2.replaceAll("'(.*)'", "$1");
-		else
-			name = name2.toLowerCase();
+		final String normalizedAlias = normalizeAlias(alias);
 
-		Optional<? extends Statement> rule = workspace.getRule(name);
+		Optional<? extends Statement> rule = workspace.getRule(normalizedAlias);
 		if (rule.isPresent())
 		{
 			Statement statement = rule.get();
 			if (statement.isCacheable())
-				return cacheHelper(name, metacache, n -> statement.getMetadata(this));
+				return cacheHelper(normalizedAlias, metacache, n -> statement.getMetadata(this));
 			else
 				return statement.getMetadata(this);
 		}
 		else
-			return cacheHelper(name, metacache, n -> acquireValue(n, Environment::getValueMetadata)
-					.orElseThrow(() -> new VTLUnboundNameException(name)));
+			return cacheHelper(normalizedAlias, metacache, n -> acquireValue(n, Environment::getValueMetadata)
+					.orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias)));
 	}
 
 
 	@Override
-	public boolean contains(String name2)
+	public boolean contains(String alias)
 	{
-		final String name;
-		if (name2.matches("'.*'"))
-			name = name2.replaceAll("'(.*)'", "$1");
-		else
-			name = name2.toLowerCase();
+		final String normalizedAlias = normalizeAlias(alias);
 
-		Optional<? extends Statement> rule = workspace.getRule(name);
+		Optional<? extends Statement> rule = workspace.getRule(normalizedAlias);
 		if (rule.isPresent())
 			return true;
 		else
-			return cacheHelper(name, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
+			return cacheHelper(normalizedAlias, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
 	}
 
-	private <T> T cacheHelper(final String name, Map<String, SoftReference<T>> cache, Function<? super String, ? extends T> mapper)
+	private <T> T cacheHelper(final String alias, Map<String, SoftReference<T>> cache, Function<? super String, ? extends T> mapper)
 	{
-		ReentrantLock lock = cacheLocks.computeIfAbsent(name, alias -> new ReentrantLock());
+		ReentrantLock lock = cacheLocks.computeIfAbsent(alias, a -> new ReentrantLock());
 		
 		if (lock.isHeldByCurrentThread())
 		{
@@ -198,11 +186,11 @@ public class VTLSessionImpl implements VTLSession
 		{
 			lock.lockInterruptibly();
 
-			T result = cache.computeIfAbsent(name, n -> new SoftReference<>(null)).get();
+			T result = cache.computeIfAbsent(alias, n -> new SoftReference<>(null)).get();
 			if (result == null)
 			{
-				result = mapper.apply(name);
-				cache.put(name, new SoftReference<>(result));
+				result = mapper.apply(alias);
+				cache.put(alias, new SoftReference<>(result));
 			}
 			
 			return result;
@@ -219,12 +207,12 @@ public class VTLSessionImpl implements VTLSession
 		}
 	}
 
-	private <T> Optional<T> acquireValue(final String name, BiFunction<? super Environment, ? super String, ? extends Optional<T>> mapper)
+	private <T> Optional<T> acquireValue(final String alias, BiFunction<? super Environment, ? super String, ? extends Optional<T>> mapper)
 	{
-		LOGGER.info("Resolving value of {}", name);
+		LOGGER.info("Resolving value of {}", alias);
 
 		Optional<T> maybeResult = environments.stream()
-				.map(env -> mapper.apply(env, name))
+				.map(env -> mapper.apply(env, alias))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.findAny()
@@ -232,7 +220,7 @@ public class VTLSessionImpl implements VTLSession
 					if (result instanceof DataSet && ((DataSet) result).isCacheable())
 					{
 						@SuppressWarnings("unchecked")
-						T tempResult = (T) new CachedDataSet(this, name, (DataSet) result);
+						T tempResult = (T) new CachedDataSet(this, alias, (DataSet) result);
 						return tempResult;
 					}
 					else
@@ -240,7 +228,7 @@ public class VTLSessionImpl implements VTLSession
 				});
 		
 
-		LOGGER.trace("Finished resolving {}", name);
+		LOGGER.trace("Finished resolving {}", alias);
 		return maybeResult;
 	}
 
@@ -305,15 +293,19 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public Statement getRule(String name2)
+	public Statement getRule(String alias)
 	{
-		final String name;
-		if (name2.matches("'.*'"))
-			name = name2.replaceAll("'(.*)'", "$1");
-		else
-			name = name2.toLowerCase();
+		final String normalizedAlias = normalizeAlias(alias);
 
-		return workspace.getRule(name).orElseThrow(() -> new VTLUnboundNameException(name));
+		return workspace.getRule(normalizedAlias).orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias));
+	}
+
+	private static String normalizeAlias(String alias)
+	{
+		if (alias.matches("'.*'"))
+			return alias.replaceAll("'(.*)'", "$1");
+		else
+			return alias.toLowerCase();
 	}
 
 	@Override
@@ -337,7 +329,8 @@ public class VTLSessionImpl implements VTLSession
 	@Override
 	public Lineage linkLineage(String alias)
 	{
-		Optional<? extends Statement> rule = workspace.getRule(alias);
-		return rule.map(Statement::getLineage).orElse(null);
+		return workspace.getRule(normalizeAlias(alias))
+				.map(Statement::getLineage)
+				.orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 }

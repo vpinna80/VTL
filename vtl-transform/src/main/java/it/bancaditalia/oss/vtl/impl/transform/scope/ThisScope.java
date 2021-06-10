@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
@@ -92,7 +92,7 @@ public class ThisScope implements TransformationScheme
 	@Override
 	public Statement getRule(String node)
 	{
-		throw new VTLUnboundNameException(node);
+		throw new VTLUnboundAliasException(node);
 	}
 
 	@Override

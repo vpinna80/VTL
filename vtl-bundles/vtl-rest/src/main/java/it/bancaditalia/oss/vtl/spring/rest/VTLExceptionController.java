@@ -26,7 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundNameException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.spring.rest.exception.VTLInvalidSessionException;
 
 @ControllerAdvice
@@ -38,8 +38,8 @@ public class VTLExceptionController
 		return new ResponseEntity<>("Syntax error: " + e.getLocalizedMessage(), BAD_REQUEST);
 	}
 
-	@ExceptionHandler(value = VTLUnboundNameException.class)
-	public ResponseEntity<Object> exception(VTLUnboundNameException e)
+	@ExceptionHandler(value = VTLUnboundAliasException.class)
+	public ResponseEntity<Object> exception(VTLUnboundAliasException e)
 	{
 		return new ResponseEntity<>(e.getLocalizedMessage(), BAD_REQUEST);
 	}
