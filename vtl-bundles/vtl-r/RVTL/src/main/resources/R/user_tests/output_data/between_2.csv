@@ -1,0 +1,7 @@
+$Id_1=String,$Year=Number,Num_1=Number,btwn=Boolean
+A,1999,12,FALSE
+B,2000,3,FALSE
+A,2001,-9,FALSE
+B,2002,,
+A,2003,6,TRUE
+B,2004,7,TRUE
