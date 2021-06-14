@@ -1,0 +1,31 @@
+/* Clause operators */
+
+/* Work only on datasets & components */
+
+/* Load dataset 1 from csv */
+ds1 := 'csv:\\NSCL01FCT-EP\CASPER_developer\valice\VTL_E_E\test_data\clause\ecbexrusd_vtl.csv';
+/* Load dataset 2 from csv */
+ds2 := 'csv:\\NSCL01FCT-EP\CASPER_developer\valice\VTL_E_E\test_data\clause\pivoting_test.csv';
+/* Load dataset 3 from csv */
+ds3 := 'csv:\\NSCL01FCT-EP\CASPER_developer\valice\VTL_E_E\test_data\clause\unpivoting_test.csv';
+
+dc_filter := ds1 [ filter Me_2 > 50 ];
+dc_filter1 := ds1 [ filter Me_1 + Me_2 <= 50 ];
+
+dc_calc := ds1[calc Me_sum:= Me_1 + Me_2];
+
+dc_aggr := ds1[aggr Me_1 := min ( Me_1 ) group by Id_1 ];
+
+dc_aggr1 := ds1[aggr Me_2 := min ( Me_2 ) group except Year];
+
+dc_keep := ds1[keep Me_1, FREQ];
+
+dc_drop:= ds1[drop Me_1, Me_2];
+
+dc_rename:= ds1[rename CURRENCY to Me_3, EXR_SUFFIX to Me_4, CURRENCY_DENOM to Me_5, FREQ to Me_6, EXR_TYPE to Me_7];
+
+/*dc_pivot:= ds2[pivot Id_2, Me_1];*/
+
+dc_unpivot := ds3[unpivot Id_2, Me_1];
+
+dc_sub:=ds1[sub Id_1="A"];

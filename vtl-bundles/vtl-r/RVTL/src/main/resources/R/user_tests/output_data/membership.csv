@@ -1,0 +1,13 @@
+$Id_1=String,$Id_2=Number,$Id_3=String,Id=String,Me_1=Boolean
+M,15,B,M,TRUE
+M,64,B,M,FALSE
+M,65,B,M,TRUE
+F,15,U,F,FALSE
+F,64,U,F,FALSE
+F,65,U,F,TRUE
+F,13,U,F,FALSE
+F,12,U,F,FALSE
+F,11,U,F,TRUE
+M,13,B,M,TRUE
+M,12,B,M,FALSE
+M,11,B,M,TRUE

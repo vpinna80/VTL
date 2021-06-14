@@ -1,0 +1,7 @@
+$Id_1=String,$Year=Number,bool_var=Boolean
+A,1999,TRUE
+B,2000,TRUE
+A,2001,FALSE
+B,2002,
+A,2003,TRUE
+B,2004,FALSE
