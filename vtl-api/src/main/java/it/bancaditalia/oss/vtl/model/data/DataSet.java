@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.emptyMap;
 
 import java.util.Iterator;
@@ -34,7 +35,8 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
@@ -117,7 +119,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
@@ -228,10 +230,43 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 		return streamByKeys(keys, emptyMap(), groupCollector);
 	}
 	
+	/**
+	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers 
+	 * 
+	 * @param <TT> The type of the result of the aggregation 
+	 * @param structure the metadata of the structure produced
+	 * @param keys the identifiers on whose values datapoints should be grouped 
+	 * @param groupCollector the aggregator that performs the reduction
+	 * @param finisher a finisher that may manipulate the result given the group where it belongs
+	 * 
+	 * @return a new dataset where each datapoint is the result of the aggregation of a group.
+	 */
 	public <TT> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			SerCollector<DataPoint, ?, TT> groupCollector,
 			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
 	
+	public <TT> DataSet analytic(Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> components, 
+			WindowClause clause, Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
+			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers);
+
+	public default <TT> DataSet analytic(Set<DataStructureComponent<Measure, ?, ?>> components, WindowClause clause,
+			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
+			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
+	{
+		return analytic(components.stream().collect(toMapWithValues(k -> k)), clause, collectors, finishers);
+	}
+
+	public default DataSet analytic(Set<DataStructureComponent<Measure, ?, ?>> components, WindowClause clause,
+			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors)
+	{
+		Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> measures = components.stream()
+				.collect(toMapWithValues(measure -> measure));
+		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers = components.stream()
+				.collect(toMapWithValues(measure -> (value, originalValue) -> value));
+		
+		return analytic(measures, clause, collectors, finishers);
+	}
+
 	/**
 	 * Obtains a component with given name, and checks that it belongs to the specified domain.
 	 * 

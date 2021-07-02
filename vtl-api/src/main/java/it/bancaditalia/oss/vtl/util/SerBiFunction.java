@@ -25,5 +25,29 @@ import java.util.function.BiFunction;
 @FunctionalInterface
 public interface SerBiFunction<T, U, R> extends BiFunction<T, U, R>, Serializable
 {
+    public default <T1, U1> SerBiFunction<T1, U1, R> before(SerFunction<T1, T> left, SerFunction<U1, U> right)
+    {
+    	return new SerBiFunction<T1, U1, R>() {
+			private static final long serialVersionUID = 1L;
 
+			@Override
+			public R apply(T1 t, U1 u)
+			{
+				return SerBiFunction.this.apply(left.apply(t), right.apply(u));
+			}
+		};
+    }
+
+    public default <V> SerFunction<V, R> beforeBoth(SerFunction<V, T> left, SerFunction<V, U> right)
+    {
+    	return new SerFunction<V, R>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public R apply(V v)
+			{
+				return SerBiFunction.this.apply(left.apply(v), right.apply(v));
+			}
+		};
+    }
 }

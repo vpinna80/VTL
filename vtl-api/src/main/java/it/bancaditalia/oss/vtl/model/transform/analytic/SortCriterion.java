@@ -17,16 +17,24 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.model.transform.analytic;
 
-import java.io.Serializable;
-import java.util.function.Predicate;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
-@FunctionalInterface
-public interface SerPredicate<T> extends Predicate<T>, Serializable
+/**
+ * A criterion used to sort the data points inside a window of a VTL analytic invocation 
+ * 
+ * @author Valentino Pinna
+ *
+ */
+public interface SortCriterion
 {
-	public default <U> SerPredicate<U> compose(SerFunction<U, T> function)
+	public enum SortingMethod 
 	{
-		return u -> test(function.apply(u));
-	}
+		ASC, DESC
+	};
+
+	public DataStructureComponent<?, ?, ?> getComponent();
+
+	public SortingMethod getMethod();
 }

@@ -20,26 +20,19 @@
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
-import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
+import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.SUM;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
-import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,14 +41,12 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -66,8 +57,9 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.SerFunction;
-import it.bancaditalia.oss.vtl.util.Utils;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class RatioToReportTransformation extends UnaryTransformation implements AnalyticTransformation
 {
@@ -94,45 +86,30 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
-		partitionIDs = partitionBy.stream()
-			.map(dataset::getComponent)
-			.map(Optional::get)
-			.map(c -> c.as(Identifier.class))
-			.collect(toSet());
+		if (partitionBy != null)
+			partitionIDs = partitionBy.stream()
+				.map(dataset::getComponent)
+				.map(Optional::get)
+				.map(c -> c.as(Identifier.class))
+				.collect(toSet());
+		else
+			partitionIDs = dataset.getComponents(Identifier.class);
 		
-		// The measures to aggregate
-		dataset.getComponents(Measure.class)
-			.stream()
-			.filter(c -> !NUMBER.isAssignableFrom(c.getDomain()))
-			.findAny()
-			.ifPresent(c -> { throw new VTLIncompatibleTypesException("ratio_to_report", c, NUMBERDS); });
+		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		
-		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(
-				partitionIDs, collectingAndThen(toSet(), ratioToReportByPartition((DataSetMetadata) metadata))
-			).collect(concatenating(Utils.ORDERED)), dataset);
-	}
-
-	private SerFunction<Set<DataPoint>, Stream<DataPoint>> ratioToReportByPartition(DataSetMetadata metadata)
-	{
-		return partition -> {
-			Map<DataStructureComponent<Measure, ?, ?>, Double> measureSums = Utils.getStream(metadata.getComponents(Measure.class))
-			.map(m -> Utils.getStream(partition)
-				.map(dp -> dp.get(m))
-				.filter(NumberValue.class::isInstance)
-				.map(ScalarValue::get)
-				.map(Number.class::cast)
-				.map(Number::doubleValue)
-				.map(Utils.toEntryWithKey(v -> m))
-			).collect(concatenating(Utils.ORDERED))
-			.collect(groupingByConcurrent(Entry::getKey, summingDouble(e -> e.getValue())));
+		Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = dataset.getComponents(Measure.class).stream()
+			.collect(toMapWithValues(measure -> SUM.getReducer()));
+		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers = dataset.getComponents(Measure.class).stream()
+			.collect(toMapWithValues(measure -> (newV, oldV) -> {
+				if (newV instanceof NullValue || oldV instanceof NullValue)
+					return newV;
+				else if (newV instanceof NumberValue && oldV instanceof NumberValue)
+					return DoubleValue.of(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue());
+				else
+					throw new UnsupportedOperationException();
+			}));
 		
-			return Utils.getStream(partition)
-				.map(dp -> Utils.getStream(measureSums.entrySet())
-					.map(keepingKey((m, v) -> dp.get(m) instanceof NullValue ? null : ((Number) dp.get(m).get()).doubleValue() / v))
-					.map(keepingKey((m, v) -> (ScalarValue<?, ?, ?, ?>)(v == null ? NullValue.instanceFrom(m) : DoubleValue.of(v))))
-					.collect(toDataPoint(getLineage(), metadata, dp.getValues(Identifier.class)))
-				);
-		};
+		return dataset.analytic(dataset.getComponents(Measure.class), clause, collectors, finishers);	
 	}
 
 	@Override
@@ -162,7 +139,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	{
 		return "ratio_to_report(" + operand + " over (" 
 				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
-				+ ")";
+				+ "))";
 	}
 
 	@Override

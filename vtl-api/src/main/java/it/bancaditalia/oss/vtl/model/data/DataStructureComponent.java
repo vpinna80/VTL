@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
@@ -36,6 +37,11 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
  */
 public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends Serializable
 {
+	public static Comparator<DataStructureComponent<?, ?, ?>> byName()
+	{
+		return (c1, c2) -> c1.getName().compareTo(c2.getName());
+	}
+	
 	/**
 	 * @return The dataset variable for this {@link DataStructureComponent}.
 	 */

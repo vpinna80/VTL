@@ -17,16 +17,33 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.model.transform.analytic;
 
-import java.io.Serializable;
-import java.util.function.Predicate;
-
-@FunctionalInterface
-public interface SerPredicate<T> extends Predicate<T>, Serializable
+/**
+ * The criteria used to determine the composition of the windows defining a VTL analytic invocation over a dataset. 
+ * 
+ * @author Valentino Pinna
+ *
+ */
+public interface WindowCriterion
 {
-	public default <U> SerPredicate<U> compose(SerFunction<U, T> function)
+	public enum LimitType
 	{
-		return u -> test(function.apply(u));
+		RANGE, DATAPOINTS
 	}
+
+	/**
+	 * @return get the type of windows being defined
+	 */
+	public LimitType getType();
+
+	/**
+	 * @return the inferior limit of the window, inclusive
+	 */
+	public LimitCriterion getInfBound();
+
+	/**
+	 * @return the superior limit of the window, inclusive
+	 */
+	public LimitCriterion getSupBound();
 }

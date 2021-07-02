@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+
 import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -33,15 +35,16 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	private final SerFunction<A, R> finisher;
 	private final Set<Characteristics> characteristics;
 
-	public static <T, A, R> SerCollector<T, A, R> from(Collector<T, A, R> collector)
-	{
-		return of(collector.supplier()::get, collector.accumulator()::accept, collector.combiner()::apply, collector.finisher()::apply, collector.characteristics());
-	}
-	
 	public static <T, A, R> SerCollector<T, A, R> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
 			SerFunction<A, R> finisher, Set<Characteristics> characteristics)
 	{
 		return new SerCollector<>(supplier, accumulator, combiner, finisher, characteristics);
+	}
+
+	public static <T, A> SerCollector<T, A, A> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
+			Set<Characteristics> characteristics)
+	{
+		return new SerCollector<>(supplier, accumulator, combiner, identity(), characteristics);
 	}
 
 	protected SerCollector(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,

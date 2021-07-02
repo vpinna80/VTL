@@ -29,29 +29,24 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 
-/**
- * Emulate scala companion object
- *
- */
-public class LineageSparkUDT$ extends LineageSparkUDT
+public class DataPointSerializer$ extends DataPointSerializer
 {
-	public static final LineageSparkUDT$ MODULE$ = new LineageSparkUDT$();
+	public static DataPointSerializer$ MODULE$ = new DataPointSerializer$();
 	public static final Kryo KRYO;
-	private static final long serialVersionUID = 1L;
 	
 	static {
 		KRYO = new Kryo();
-		LineageSerializer lineageSerializer = new LineageSerializer();
-		KRYO.register(LineageExternal.class, lineageSerializer);
-		KRYO.register(LineageGroup.class, lineageSerializer);
-		KRYO.register(LineageCall.class, lineageSerializer);
-		KRYO.register(LineageNode.class, lineageSerializer);
-		KRYO.register(LineageImpl.class, lineageSerializer);
-		KRYO.register(LineageSet.class, lineageSerializer);
-		KRYO.register(Lineage.class, lineageSerializer);
+		DataPointSerializer datapointSerializer = new DataPointSerializer();
+		KRYO.register(LineageExternal.class, datapointSerializer);
+		KRYO.register(LineageGroup.class, datapointSerializer);
+		KRYO.register(LineageCall.class, datapointSerializer);
+		KRYO.register(LineageNode.class, datapointSerializer);
+		KRYO.register(LineageImpl.class, datapointSerializer);
+		KRYO.register(LineageSet.class, datapointSerializer);
+		KRYO.register(Lineage.class, datapointSerializer);
 	}
 	
-	public static LineageSparkUDT$ apply()
+	public static DataPointSerializer$ apply()
 	{
 		return MODULE$;
 	}

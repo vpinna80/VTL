@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
@@ -33,8 +34,9 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-public class ThisScope implements TransformationScheme
+public class ThisScope implements TransformationScheme, Serializable
 {
+	private static final long serialVersionUID = 1L;
 	public static final String THIS = "$$THIS";
 	
 	private final DataSet thisValue;

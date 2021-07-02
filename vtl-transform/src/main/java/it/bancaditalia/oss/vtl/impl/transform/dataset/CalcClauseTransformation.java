@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -274,11 +275,12 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				.build();
 
 			LOGGER.trace("Creating component {} from expression {}", newComponent, clause.calcClause.toString());
-			return new LightFDataSet<>(newStructure, ds -> ds.stream()
-					.map(dp -> new DataPointBuilder(dp)
-							.delete(measure)
-							.add(newComponent, dp.get(measure))
-							.build(LineageNode.of(this, dp.getLineage(), clause.calcClause.getLineage()), newStructure)), clauseValue);
+			return clauseValue.mapKeepingKeys(newStructure, dp -> LineageNode.of(this, dp.getLineage(), clause.calcClause.getLineage()), dp -> {
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values = new HashMap<>(dp);
+				values.remove(measure);
+				values.put(newComponent, dp.get(measure));
+				return values;
+			});
 		};
 	}
 	

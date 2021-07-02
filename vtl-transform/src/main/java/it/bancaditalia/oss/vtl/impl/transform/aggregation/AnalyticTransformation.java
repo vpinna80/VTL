@@ -21,20 +21,17 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod;
+
 public interface AnalyticTransformation
 {
-	public enum OrderingMethod 
-	{
-		ASC, DESC
-	};
-
 	public static class OrderByItem implements Serializable
 	{
 		private static final long serialVersionUID = 1L;
 		private final String name;
-		private final OrderingMethod method;
+		private final SortingMethod method;
 
-		public OrderByItem(String name, OrderingMethod method)
+		public OrderByItem(String name, SortingMethod method)
 		{
 			this.name = name;
 			this.method = method;
@@ -45,7 +42,7 @@ public interface AnalyticTransformation
 			return name;
 		}
 
-		public OrderingMethod getMethod()
+		public SortingMethod getMethod()
 		{
 			return method;
 		}

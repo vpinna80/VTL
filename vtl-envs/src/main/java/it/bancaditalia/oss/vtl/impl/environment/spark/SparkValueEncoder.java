@@ -17,16 +17,9 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import java.io.Serializable;
-import java.util.function.Predicate;
-
-@FunctionalInterface
-public interface SerPredicate<T> extends Predicate<T>, Serializable
+public class SparkValueEncoder
 {
-	public default <U> SerPredicate<U> compose(SerFunction<U, T> function)
-	{
-		return u -> test(function.apply(u));
-	}
+
 }

@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.byName;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 
 import java.util.HashMap;
@@ -91,12 +92,17 @@ public class DataPointSerializer extends Serializer<DataPoint>
 		}
 	}
 
+	public void write(Output output, DataPoint dp)
+	{
+		write(getKryoInstance(), output, dp);
+	}
+
 	@Override
 	public void write(Kryo kryo, Output output, DataPoint dp)
 	{
 		output.writeVarInt(dp.size(), true);
 		dp.entrySet().stream()
-			.sorted((dp1, dp2) -> dp1.getKey().getName().compareTo(dp2.getKey().getName()))
+			.sorted((dp1, dp2) -> byName().compare(dp1.getKey(), dp2.getKey()))
 			.forEach(splittingConsumer((k, v) -> {
 				Integer tag = DOMAIN_TAGS.get(v.getClass());
 				Objects.requireNonNull(tag, v.getClass().toString());
@@ -108,6 +114,11 @@ public class DataPointSerializer extends Serializer<DataPoint>
 		kryo.writeClassAndObject(output, dp.getLineage());
 	}
 
+	public DataPoint read(Input input, Class<DataPoint> type)
+	{
+		return read(getKryoInstance(), input, type);
+	}
+	
 	@Override
 	public DataPoint read(Kryo kryo, Input input, Class<DataPoint> type)
 	{
@@ -122,5 +133,10 @@ public class DataPointSerializer extends Serializer<DataPoint>
 			values.put(component, value);
 		}
 		return new SparkDataPoint((Lineage) kryo.readClassAndObject(input), values);
+	}
+	
+	protected Kryo getKryoInstance()
+	{
+		throw new UnsupportedOperationException();
 	}
 }

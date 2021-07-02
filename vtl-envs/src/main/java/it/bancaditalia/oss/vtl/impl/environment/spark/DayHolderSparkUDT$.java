@@ -17,16 +17,19 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import java.io.Serializable;
-import java.util.function.Predicate;
-
-@FunctionalInterface
-public interface SerPredicate<T> extends Predicate<T>, Serializable
+/**
+ * Emulate scala companion object
+ *
+ */
+public class DayHolderSparkUDT$ extends DayHolderSparkUDT
 {
-	public default <U> SerPredicate<U> compose(SerFunction<U, T> function)
+	public static final DayHolderSparkUDT$ MODULE$ = new DayHolderSparkUDT$();
+	private static final long serialVersionUID = 1L;
+	
+	public static DayHolderSparkUDT$ apply()
 	{
-		return u -> test(function.apply(u));
+		return MODULE$;
 	}
 }

@@ -30,8 +30,15 @@ public interface SerFunction<T, R> extends Function<T, R>, Serializable
 		return a -> a;
 	}
 	
+	public R apply(T t);
+	
 	default <V> SerFunction<T, V> andThen(SerFunction<? super R, ? extends V> after)
 	{
 		return t -> after.apply(apply(t));
+	}
+	
+	default <V> SerFunction<V, R> compose(SerFunction<? super V, ? extends T> before)
+	{
+		return v -> apply(before.apply(v));
 	}
 }

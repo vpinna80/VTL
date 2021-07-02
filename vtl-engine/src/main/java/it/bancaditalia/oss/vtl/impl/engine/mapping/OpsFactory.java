@@ -416,22 +416,28 @@ public class OpsFactory implements Serializable
 
 	private Object parseCustomParam(ParserRuleContext ctx, int level, Customparam customParam)
 	{
+		Object result = null;
+		ParserRuleContext customCtx = null;
+		List<Nonnullparam> innerParams = null;
+		List<Object> resultList = null;
+		Class<?> customClass = null;
+		Constructor<?> ctor = null;
+		
 		try
 		{
-			Object result;
 			// get the nested context by looking up the name attribute of nestedparam in current context
-			ParserRuleContext customCtx = getFieldOrMethod(customParam, ctx, ParserRuleContext.class, level);
+			customCtx = getFieldOrMethod(customParam, ctx, ParserRuleContext.class, level);
 			
 			if (customCtx == null)
 				return null;
 			
-			List<Nonnullparam> innerParams = customParam.getStringparamOrExprparamOrValueparam();
+			innerParams = customParam.getStringparamOrExprparamOrValueparam();
 
-			List<Object> resultList = new ArrayList<>(innerParams.size());
+			resultList = new ArrayList<>(innerParams.size());
 			for (Nonnullparam child : innerParams)
 				resultList.add(createParam(customCtx, child, level + 1));
 			
-			Class<?> customClass = Class.forName(customParam.getClazz());
+			customClass = Class.forName(customParam.getClazz());
 			if (customParam.getMethod() != null)
 				result = Arrays.stream(customClass.getMethods())
 						.filter(m -> m.getName().equals(customParam.getMethod()))
@@ -439,11 +445,14 @@ public class OpsFactory implements Serializable
 						.orElseThrow(() -> new NoSuchMethodException(customParam.getMethod()))
 						.invoke(null, resultList.toArray());
 			else
-				result = customClass.getConstructors()[0]
-						.newInstance(resultList.toArray());
+			{
+				ctor = customClass.getConstructors()[0];
+				result = ctor.newInstance(resultList.toArray());
+			}
+				
 			return result;
 		}
-		catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | InstantiationException e)
+		catch (Exception e)
 		{
 			throw new VTLParsingException(ctx, e);
 		}

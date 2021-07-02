@@ -17,16 +17,28 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.model.transform.analytic;
 
-import java.io.Serializable;
-import java.util.function.Predicate;
-
-@FunctionalInterface
-public interface SerPredicate<T> extends Predicate<T>, Serializable
+/**
+ * The criterion defining the bounds of each of the windows in a VTL analytic invocation.
+ * 
+ * @author Valentino Pinna
+ *
+ */
+public interface LimitCriterion
 {
-	public default <U> SerPredicate<U> compose(SerFunction<U, T> function)
+	public static enum LimitDirection
 	{
-		return u -> test(function.apply(u));
+		PRECEDING, FOLLOWING
 	}
+
+	/**
+	 * @return The direction of the bound from current data point
+	 */
+	public LimitDirection getDirection();
+
+	/**
+	 * @return The distance of the bound from current data point
+	 */
+	public long getCount();
 }

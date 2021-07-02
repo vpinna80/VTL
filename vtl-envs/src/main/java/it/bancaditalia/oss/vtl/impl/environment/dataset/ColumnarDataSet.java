@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.environment.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -65,7 +66,7 @@ public class ColumnarDataSet extends AbstractDataSet
 	private DataPoint mapIndexToDataPoint(int rowIndex)
 	{
 		return Utils.getStream(columns.entrySet())
-				.map(Utils.keepingKey(col -> col[rowIndex]))
+				.map(keepingKey(col -> col[rowIndex]))
 				.collect(toDataPoint(LineageExternal.of("REnv(" + alias + ")"), getMetadata()));
 	}
 

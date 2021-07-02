@@ -25,6 +25,7 @@ import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,7 +61,7 @@ public class SerCollectors
         SerBiConsumer<M, T> accumulator
                 = (map, element) -> map.merge(keyMapper.apply(element),
                                               valueMapper.apply(element), mergeFunction);
-        return SerCollector.of(mapSupplier, accumulator, mapMerger(mergeFunction), SerFunction.identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
+        return SerCollector.of(mapSupplier, accumulator, mapMerger(mergeFunction), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
     public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, R> downstream, SerFunction<R, RR> finisher)
@@ -156,12 +157,12 @@ public class SerCollectors
 		return new SerCollector<>(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
 	}
 
-    public static <T> SerCollector<T, ? extends SerConsumer<T>, Optional<T>> minBy(Comparator<? super T> comparator)
+    public static <T extends Serializable> SerCollector<T, ? extends SerConsumer<T>, Optional<T>> minBy(Comparator<? super T> comparator)
     {
         return reducing(SerBinaryOperator.minBy(comparator));
     }
 
-    public static <T> SerCollector<T, ?, Optional<T>> maxBy(Comparator<? super T> comparator)
+    public static <T extends Serializable> SerCollector<T, ?, Optional<T>> maxBy(Comparator<? super T> comparator)
     {
         return reducing(SerBinaryOperator.maxBy(comparator));
     }
@@ -221,30 +222,11 @@ public class SerCollectors
         }
     }
     
-    public static <T> SerCollector<T, ? extends SerConsumer<T>, Optional<T>> reducing(SerBinaryOperator<T> op)
+    public static <T extends Serializable> SerCollector<T, ? extends SerConsumer<T>, Optional<T>> reducing(SerBinaryOperator<T> op)
     {
-        class OptionalBox implements SerConsumer<T>
-        {
-			private static final long serialVersionUID = 1L;
-			private T value = null;
-            private boolean present = false;
-
-            @Override
-            public void accept(T t)
-            {
-                if (present)
-                    value = op.apply(value, t);
-                else
-                {
-                    value = t;
-                    present = true;
-                }
-            }
-        }
-
-        return new SerCollector<>(OptionalBox::new, OptionalBox::accept,
-                (a, b) -> { if (b.present) a.accept(b.value); return a; },
-                a -> Optional.ofNullable(a.value), emptySet());
+        return new SerCollector<>(() -> new OptionalBox<T>(op), OptionalBox::accept,
+                (a, b) -> { if (b.isPresent()) a.accept(b.get()); return a; },
+                a -> Optional.ofNullable(a.get()), emptySet());
     }
 
     private static double[] sumWithCompensation(double[] intermediateSum, double value)

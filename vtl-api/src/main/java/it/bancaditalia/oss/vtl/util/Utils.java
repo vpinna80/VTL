@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -116,49 +116,49 @@ public final class Utils
 
 	public static <U, V> SerCollector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
 	{
-		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue));
+		return toConcurrentMap(Entry::getKey, Entry::getValue);
 	}
 
 	public static <K, V> SerCollector<K, ?, ConcurrentMap<K, V>> toMapWithValues(SerFunction<K, V> keyMapper)
 	{
-		return SerCollector.from(toConcurrentMap(identity(), keyMapper));
+		return toConcurrentMap(identity(), keyMapper);
 	}
 
 	public static <K, V> SerCollector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(SerFunction<? super V, ? extends K> valueMapper)
 	{
-		return SerCollector.from(toConcurrentMap(valueMapper, identity()));
+		return toConcurrentMap(valueMapper, identity());
 	}
 
 	public static <U, V, M extends ConcurrentMap<U, V>> SerCollector<Entry<U, V>, ?, M> entriesToMap(SerSupplier<M> mapSupplier)
 	{
-		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue, mergeError(), mapSupplier));
+		return toConcurrentMap(Entry::getKey, Entry::getValue, mergeError(), mapSupplier);
 	}
 
 	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap(SerBinaryOperator<V> combiner)
 	{
-		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue, combiner));
+		return toConcurrentMap(Entry::getKey, Entry::getValue, combiner);
 	}
 
 	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> mappingValues(SerFunction<? super V, ? extends R> valueMapper)
 	{
-		return SerCollector.from(toConcurrentMap(Entry::getKey, valueMapper.compose(Entry::getValue)));
+		return toConcurrentMap(Entry::getKey, valueMapper.compose(Entry::getValue));
 	}
 
 	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(SerFunction<? super U, ? extends R> keyMapper)
 	{
-		return SerCollector.from(toConcurrentMap(keyMapper.compose(Entry::getKey), Entry::getValue));
+		return toConcurrentMap(keyMapper.compose(Entry::getKey), Entry::getValue);
 	}
 
 	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> mappingConcurrentEntries(SerSupplier<ConcurrentMap<U, V>> factory)
 	{
-		return SerCollector.from(toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> {
+		return toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> {
 			throw new UnsupportedOperationException("Duplicate");
-		}, factory));
+		}, factory);
 	}
 
 	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> groupingByKeys(SerCollector<Entry<U, V>, ?, R> valueMapper)
 	{
-		return SerCollector.from(groupingByConcurrent(Entry::getKey, valueMapper));
+		return groupingByConcurrent(Entry::getKey, valueMapper);
 	}
 
 	public static <T, R> R folding(R accumulator, Stream<T> stream, SerBiFunction<? super R, ? super T, ? extends R> aggregator)
@@ -385,6 +385,11 @@ public final class Utils
 	public static <T, U> SerBiPredicate<T, U> not(SerBiPredicate<T, U> test)
 	{
 		return (a, b) -> !test.test(a, b);
+	}
+	
+	public static <T, U> SerPredicate<T> not(SerPredicate<T> test)
+	{
+		return a -> !test.test(a);
 	}
 	
 	public static <T, C extends Collection<T>> C coalesce(C value, C defaultValue)

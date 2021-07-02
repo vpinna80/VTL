@@ -52,7 +52,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 */
 	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Comparator<DataPoint> compareBy(DataStructureComponent<Identifier, S, D> component)
 	{
-		return (dp1, dp2) -> dp1.getValue(component).compareTo(dp2.getValue(component));
+		return (Comparator<DataPoint> & Serializable) (dp1, dp2) -> dp1.getValue(component).compareTo(dp2.getValue(component));
 	}
 
 	/**

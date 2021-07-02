@@ -19,46 +19,34 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
-import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation.OrderingMethod.DESC;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
-import static it.bancaditalia.oss.vtl.impl.transform.util.WindowView.UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT;
-import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
-import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
-import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static java.lang.Boolean.TRUE;
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.util.WindowView;
-import it.bancaditalia.oss.vtl.impl.transform.util.WindowView.WindowClause;
+import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
+import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -68,26 +56,30 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SimpleAnalyticTransformation extends UnaryTransformation implements AnalyticTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final static Logger LOGGER = LoggerFactory.getLogger(SimpleAnalyticTransformation.class);
 
-	private final AnalyticOperator	aggregation;
-	private final List<String> partitionBy;
-	private final List<OrderByItem> orderByClause;
-	private final WindowClause windowClause;
+	protected final AnalyticOperator aggregation;
+	protected final List<String> partitionBy;
+	protected final List<OrderByItem> orderByClause;
+	protected final WindowCriterion windowCriterion;
 
-	public SimpleAnalyticTransformation(AnalyticOperator aggregation, Transformation operand, List<String> partitionBy, List<OrderByItem> orderByClause, WindowClause windowClause)
+	public SimpleAnalyticTransformation(AnalyticOperator aggregation, Transformation operand, List<String> partitionBy, 
+				List<OrderByItem> orderByClause, WindowCriterion windowCriterion)
 	{
 		super(operand);
-
+		
 		this.aggregation = aggregation;
 		this.partitionBy = coalesce(partitionBy, emptyList());
 		this.orderByClause = coalesce(orderByClause, emptyList());
-		this.windowClause = coalesce(windowClause, UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT);
+		this.windowCriterion = windowCriterion;
 	}
 
 	@Override
@@ -99,16 +91,15 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
-		
+		List<SortCriterion> ordering;
 		if (orderByClause.isEmpty())
-			ordering = dataset.getComponents(Identifier.class).stream().collect(Utils.toMapWithValues(c -> TRUE));
+			ordering = dataset.getComponents(Identifier.class).stream()
+				.map(c -> new SortClause(c, ASC))
+				.collect(toList());
 		else
-		{
-			ordering = new LinkedHashMap<>();
-			for (OrderByItem orderByComponent: orderByClause)
-				ordering.put(dataset.getComponent(orderByComponent.getName()).get(), DESC != orderByComponent.getMethod());
-		}
+			ordering = orderByClause.stream()
+				.map(item -> new SortClause(dataset.getComponent(item.getName()).get(), item.getMethod()))
+				.collect(toList());
 
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
 		if (partitionBy != null)
@@ -119,52 +110,18 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.collect(toSet());
 		else
 			partitionIDs = Utils.getStream(dataset.getComponents(Identifier.class))
-					.filter(partitionID -> !ordering.containsKey(partitionID))
+					.filter(id -> !ordering.stream().anyMatch(oc -> oc.getComponent().equals(id)))
 					.collect(toSet());
 		
-		for (DataStructureComponent<?, ?, ?> orderingComponent: ordering.keySet())
+		for (DataStructureComponent<?, ?, ?> orderingComponent: ordering.stream().map(SortCriterion::getComponent).collect(toSet()))
 			if (partitionIDs.contains(orderingComponent))
 				throw new VTLException("Cannot order by " + orderingComponent.getName() + " because the component is used in partition by " + partitionBy);
 
-		// The measures to aggregate
-		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
-		// The ordering of the dataset
-		final Comparator<DataPoint> comparator = comparator(ordering);
+		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, windowCriterion);
+		Map<DataStructureComponent<Measure,?,?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = dataset.getComponents(Measure.class).stream()
+			.collect(toMapWithValues(k -> aggregation.getReducer()));
 		
-		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new LightFDataSet<>((DataSetMetadata) metadata, ds -> ds.streamByKeys(partitionIDs, toConcurrentMap(identity(), dp -> TRUE), 
-				(partition, keyValues) -> aggregateWindows((DataSetMetadata) metadata, measures, comparator, partition.keySet(), keyValues)
-			).collect(concatenating(Utils.ORDERED)), dataset);
-	}
-	
-	private Stream<DataPoint> aggregateWindows(DataSetMetadata metadata, Set<DataStructureComponent<Measure, ?, ?>> measures, Comparator<DataPoint> comparator, Set<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
-	{
-		LOGGER.debug("Analytic invocation on partition {}", keyValues);
-		
-		TreeSet<DataPoint> orderedPartition = new TreeSet<>(comparator);
-		orderedPartition.addAll(partition);
-		// for each window, compute aggregations for each measure and create a new datapoint with them
-		return new WindowView(orderedPartition, windowClause)
-				.getWindows()
-				.map(window -> measures.stream()
-					.map(toEntryWithValue(measure -> (ScalarValue<?, ?, ?, ?>) Utils.getStream(window.getValue()).collect(aggregation.getReducer(measure))))
-					.collect(toDataPoint(getLineage(), metadata, window.getKey()))
-				);
-	}
-	
-	
-	private static Comparator<DataPoint> comparator(Map<DataStructureComponent<?, ?, ?>, Boolean> sortMethods)
-	{
-		return (dp1, dp2) -> {
-			for (Entry<DataStructureComponent<?, ?, ?>, Boolean> sortID: sortMethods.entrySet())
-			{
-				int res = dp1.get(sortID.getKey()).compareTo(dp2.get(sortID.getKey()));
-				if (res != 0)
-					return sortID.getValue() ? res : -res;
-			}
-
-			return 0;
-		};
+		return dataset.analytic(dataset.getComponents(Measure.class), clause, collectors);
 	}
 
 	@Override
@@ -200,8 +157,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		return aggregation + "(" + operand + " over (" 
 				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().collect(joining(", ", " partition by ", " ")))
 				+ (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")))
-				+ (windowClause == UNBOUNDED_PRECEDING_TO_CURRENT_DATA_POINT ? "" : windowClause)
-				+ ")";
+				+ windowCriterion + ")";
 	}
 
 	@Override
@@ -212,33 +168,43 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		result = prime * result + ((aggregation == null) ? 0 : aggregation.hashCode());
 		result = prime * result + ((orderByClause == null) ? 0 : orderByClause.hashCode());
 		result = prime * result + ((partitionBy == null) ? 0 : partitionBy.hashCode());
-		result = prime * result + ((windowClause == null) ? 0 : windowClause.hashCode());
+		result = prime * result + ((windowCriterion == null) ? 0 : windowCriterion.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj)
 	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof SimpleAnalyticTransformation)) return false;
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
 		SimpleAnalyticTransformation other = (SimpleAnalyticTransformation) obj;
-		if (aggregation != other.aggregation) return false;
+		if (aggregation != other.aggregation)
+			return false;
 		if (orderByClause == null)
 		{
-			if (other.orderByClause != null) return false;
+			if (other.orderByClause != null)
+				return false;
 		}
-		else if (!orderByClause.equals(other.orderByClause)) return false;
+		else if (!orderByClause.equals(other.orderByClause))
+			return false;
 		if (partitionBy == null)
 		{
-			if (other.partitionBy != null) return false;
+			if (other.partitionBy != null)
+				return false;
 		}
-		else if (!partitionBy.equals(other.partitionBy)) return false;
-		if (windowClause == null)
+		else if (!partitionBy.equals(other.partitionBy))
+			return false;
+		if (windowCriterion == null)
 		{
-			if (other.windowClause != null) return false;
+			if (other.windowCriterion != null)
+				return false;
 		}
-		else if (!windowClause.equals(other.windowClause)) return false;
+		else if (!windowCriterion.equals(other.windowCriterion))
+			return false;
 		return true;
 	}
 }
