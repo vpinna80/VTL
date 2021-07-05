@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils;
@@ -81,6 +82,11 @@ public class SparkEnvironment implements Environment
 	public static final VTLProperty VTL_SPARK_PAGE_SIZE = 
 			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", true, false, "1000");
 
+	static
+	{
+		ConfigurationManagerFactory.registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_PAGE_SIZE, VTL_SPARK_UI_ENABLED);
+	}
+	
 	public static class VTLKryoRegistrator implements KryoRegistrator
 	{
 		@Override

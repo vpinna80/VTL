@@ -21,7 +21,7 @@
 #' @import rJava
 #' @import R6
 .onLoad <- function(libname, pkgname) {
-  .jpackage(pkgname, lib.loc = libname)
+  .jpackage(pkgname, morePaths = Sys.getenv('CLASSPATH'), lib.loc = libname)
   J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
       "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
       "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
