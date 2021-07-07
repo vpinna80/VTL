@@ -20,13 +20,39 @@
 package it.bancaditalia.oss.vtl.util;
 
 import java.io.Serializable;
-import java.util.function.Predicate;
 
-@FunctionalInterface
-public interface SerPredicate<T> extends Predicate<T>, Serializable
+public class OptionalBox<T extends Serializable> implements SerConsumer<T>
 {
-	public default <U> SerPredicate<U> compose(SerFunction<U, T> function)
+	private static final long serialVersionUID = 1L;
+	
+    private final SerBinaryOperator<T> op;
+	private T value = null;
+    private boolean present = false;
+
+    public OptionalBox(SerBinaryOperator<T> op)
 	{
-		return u -> test(function.apply(u));
+    	this.op = op;
 	}
+    
+    @Override
+    public void accept(T t)
+    {
+        if (present)
+            value = op.apply(value, t);
+        else
+        {
+            value = t;
+            present = true;
+        }
+    }
+    
+    public boolean isPresent()
+    {
+    	return present;
+    }
+    
+    public T get()
+    {
+    	return value;
+    }
 }

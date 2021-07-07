@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2020 Banca D'Italia
  *
  * Licensed under the EUPL, Version 1.2 (the "License");
@@ -17,10 +17,33 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-/* Load dataset 1 from csv */
-d1 := 'csv:ecbexrusd_vtl.csv';
-result:=  d1[keep Me_1, FREQ];
-ref_output := 'csv:keep.csv';
-tmp_result1 := (result#Me_1 = ref_output#Me_1)[rename bool_var to res1];
-tmp_result2 := (result#FREQ = ref_output#FREQ)[rename bool_var to res2];
-test_result := inner_join(tmp_result1, tmp_result2);
+package it.bancaditalia.oss.vtl.model.transform.analytic;
+
+/**
+ * The criteria used to determine the composition of the windows defining a VTL analytic invocation over a dataset. 
+ * 
+ * @author Valentino Pinna
+ *
+ */
+public interface WindowCriterion
+{
+	public enum LimitType
+	{
+		RANGE, DATAPOINTS
+	}
+
+	/**
+	 * @return get the type of windows being defined
+	 */
+	public LimitType getType();
+
+	/**
+	 * @return the inferior limit of the window, inclusive
+	 */
+	public LimitCriterion getInfBound();
+
+	/**
+	 * @return the superior limit of the window, inclusive
+	 */
+	public LimitCriterion getSupBound();
+}

@@ -44,13 +44,13 @@ public abstract class TransformationImpl implements Transformation, Serializable
 	@Override
 	public final Lineage getLineage()
 	{
-		Lineage lineage = lineageCache.get();
+		Lineage lineage = lineageCache == null ? null : lineageCache.get();
 		if (lineage == null)
 		{
-			LOGGER.debug("Starting computing lineage for {}...", this);
+			LOGGER.trace("Starting computing lineage for {}...", this);
 			lineage = computeLineage(); 
 			lineageCache = new SoftReference<>(lineage);
-			LOGGER.debug("Finished computing lineage for {}.", this);
+			LOGGER.trace("Finished computing lineage for {}.", this);
 		}
 		return lineage;
 	}

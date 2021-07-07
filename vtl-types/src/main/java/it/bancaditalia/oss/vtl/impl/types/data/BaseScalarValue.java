@@ -65,7 +65,7 @@ public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R e
 	@Override
 	public final ScalarValueMetadata<S, D> getMetadata()
 	{
-		return this::getDomain;
+		return (ScalarValueMetadata<S, D> & Serializable) this::getDomain;
 	}
 
 	@Override

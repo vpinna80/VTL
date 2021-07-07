@@ -40,7 +40,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collector;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -152,7 +151,7 @@ public class DataStructureBuilder
 		{
 			this.components = Collections.unmodifiableMap(Utils.getStream(components)
 				.map(toEntry(DataStructureComponent::getName, c -> c))
-				.collect(entriesToMap(ConcurrentSkipListMap::new)));
+				.collect(entriesToMap()));
 		}
 		
 		@Override

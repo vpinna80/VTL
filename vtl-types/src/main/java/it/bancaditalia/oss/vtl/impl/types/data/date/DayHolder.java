@@ -101,4 +101,9 @@ public class DayHolder extends DateHolder<LocalDate>
 	{
 		return date.toEpochDay() * 24 * 60 * 60 * 1000;
 	}
+	
+	public LocalDate getLocalDate()
+	{
+		return date;
+	}
 }

@@ -28,6 +28,7 @@ environments <- list(
   `CSV Path environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
   `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
   `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
+  `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment",
   `In-Memory environment` = "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"
 )
 

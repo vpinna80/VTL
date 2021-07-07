@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2020 Banca D'Italia
  *
  * Licensed under the EUPL, Version 1.2 (the "License");
@@ -17,10 +17,19 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-/* Load dataset 1 from csv */
-d1 := 'csv:ecbexrusd_vtl.csv';
-result:=  d1[keep Me_1, FREQ];
-ref_output := 'csv:keep.csv';
-tmp_result1 := (result#Me_1 = ref_output#Me_1)[rename bool_var to res1];
-tmp_result2 := (result#FREQ = ref_output#FREQ)[rename bool_var to res2];
-test_result := inner_join(tmp_result1, tmp_result2);
+package it.bancaditalia.oss.vtl.impl.environment.spark;
+
+/**
+ * Emulate scala companion object
+ *
+ */
+public class DayHolderSparkUDT$ extends DayHolderSparkUDT
+{
+	public static final DayHolderSparkUDT$ MODULE$ = new DayHolderSparkUDT$();
+	private static final long serialVersionUID = 1L;
+	
+	public static DayHolderSparkUDT$ apply()
+	{
+		return MODULE$;
+	}
+}

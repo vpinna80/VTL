@@ -19,14 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
-import static it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation.OrderingMethod.DESC;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -99,7 +100,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
 		
 		if (orderByClause.isEmpty())
-			ordering = dataset.getComponents(Identifier.class).stream().collect(Utils.toMapWithValues(c -> TRUE));
+			ordering = dataset.getComponents(Identifier.class).stream().collect(toMapWithValues(c -> TRUE));
 		else
 		{
 			ordering = new LinkedHashMap<>();

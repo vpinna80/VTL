@@ -35,6 +35,7 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.time.CurrentDateOperand;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 /**
@@ -65,20 +66,18 @@ public class ThreadUtils
 	 * @return the result of the computation
 	 */
 	@SafeVarargs
-	public static <T> Function<Transformation, T> evalFuture(BinaryOperator<T> combiner, Function<? super Transformation, T>... extractors) 
+	public static <T> SerFunction<Transformation, T> evalFuture(BinaryOperator<T> combiner, SerFunction<? super Transformation, T>... extractors) 
 	{
 		return transformation -> {
-			LOGGER.debug("Extracting {} subexpressions from {}", extractors.length, transformation);
+			LOGGER.trace("Extracting {} subexpressions from {}", extractors.length, transformation);
 			Stream<Function<? super Transformation, T>> stream = Arrays.stream(extractors);
-			if (Utils.SEQUENTIAL)
-				LOGGER.trace("Computation is done sequentially");
-			else
+			if (!Utils.SEQUENTIAL)
 			{
 				LOGGER.trace("Computation is done concurrently");
 				stream = stream.parallel();
 			}
 			T result = stream.map(e -> e.apply(transformation)).reduce(combiner).get();
-			LOGGER.debug("Reduced result for {}", transformation);
+			LOGGER.trace("Reduced result for {}", transformation);
 			return result;
 		};
 	}

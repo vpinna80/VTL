@@ -21,7 +21,7 @@
 
 -->
 <parserconfig xmlns="http://oss.bancaditalia.it/vtl">
-	<tokenset name="WindowDirection" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowDirection">
+	<tokenset name="WindowDirection" class="it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion$LimitDirection">
 		<tokenmapping name="PRECEDING" value="PRECEDING" />
 		<tokenmapping name="FOLLOWING" value="FOLLOWING" />
 	</tokenset>
@@ -31,12 +31,12 @@
 		<tokenmapping name="LEAD" value="LEAD" />
 	</tokenset>
 	
-	<tokenset name="WindowRangeType" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowRangeType">
+	<tokenset name="WindowRangeType" class="it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion$LimitType">
 		<tokenmapping name="RANGE" value="RANGE" />
 		<tokenmapping name="DATA" value="DATAPOINTS" />
 	</tokenset>
 	
-	<tokenset name="OrderingMethod" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderingMethod">
+	<tokenset name="OrderingMethod" class="it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion$SortingMethod">
 		<tokenmapping name="ASC" value="ASC" />
 		<tokenmapping name="DESC" value="DESC" />
 	</tokenset>
@@ -214,13 +214,13 @@
 					</customparam>
 				</listparam>
 			</nestedparam>
-			<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowClause">
+			<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl">
 				<tokensetparam tokenset="WindowRangeType" />
-				<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+				<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
 					<tokensetparam name="dir" tokenset="WindowDirection" />
 					<valueparam />
 				</customparam>
-				<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+				<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
 					<tokensetparam name="dir" tokenset="WindowDirection" />
 					<valueparam />
 				</customparam>
@@ -311,13 +311,13 @@
 					</customparam>
 				</listparam>
 			</nestedparam>
-			<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$WindowClause">
+			<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl">
 				<tokensetparam tokenset="WindowRangeType" />
-				<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+				<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
 					<tokensetparam name="dir" tokenset="WindowDirection" />
 					<valueparam />
 				</customparam>
-				<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowView$LimitClause">
+				<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
 					<tokensetparam name="dir" tokenset="WindowDirection" />
 					<valueparam />
 				</customparam>

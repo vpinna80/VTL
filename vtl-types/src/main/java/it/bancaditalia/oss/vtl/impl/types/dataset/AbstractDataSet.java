@@ -19,20 +19,34 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
+import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +56,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -63,6 +79,9 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
+import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
@@ -154,7 +173,7 @@ public abstract class AbstractDataSet implements DataSet
 
 	@Override
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
 		if (!metadata.getComponents(Identifier.class).equals(identifiers))
@@ -252,6 +271,84 @@ public abstract class AbstractDataSet implements DataSet
 					return Utils.getStream(cache)
 							.map(splitting((k, v) -> finisher.apply(v, k)));
 				}
+			}
+		};
+	}
+
+	@Override
+	public <TT> DataSet analytic(
+			Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> components,
+			WindowClause clause,
+			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
+			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
+	{
+		if (clause.getWindowCriterion().getType() == RANGE)
+			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
+
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = clause.getPartitioningIds();
+		
+		Comparator<DataPoint> comparator = (dp1, dp2) -> {
+				for (SortCriterion criterion: clause.getSortCriteria())
+				{
+					int res = dp1.get(criterion.getComponent()).compareTo(dp2.get(criterion.getComponent()));
+					if (res != 0)
+						return criterion.getMethod() == ASC ? res : -res;
+				}
+
+				return 0;
+			};
+
+		LimitCriterion infBound = clause.getWindowCriterion().getInfBound(),
+				supBound = clause.getWindowCriterion().getSupBound(); 
+		int inf = (infBound.getDirection() == PRECEDING ? -1 : 1) * (int) infBound.getCount(); 
+		int sup = (supBound.getDirection() == PRECEDING ? -1 : 1) * (int) supBound.getCount();
+		
+		SerCollector<DataPoint, ConcurrentSkipListSet<DataPoint>, ConcurrentSkipListSet<DataPoint>> toSortedSet = SerCollector.of(
+				() -> new ConcurrentSkipListSet<>(comparator), ConcurrentSkipListSet::add, 
+				(a, b) -> { a.addAll(b); return a; }, identity(), EnumSet.of(CONCURRENT, IDENTITY_FINISH, UNORDERED));
+		
+		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
+				.removeComponents(components.keySet())
+				.addComponents(components.values())
+				.build();
+		
+		return new AbstractDataSet(newStructure) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return AbstractDataSet.this.streamByKeys(ids, toSortedSet, (group, keyValues) -> {
+						DataPoint[] sorted = group.toArray(new DataPoint[group.size()]);
+						
+						IntStream indexes = IntStream.range(0, sorted.length);
+						if (!Utils.SEQUENTIAL)
+							indexes = indexes.parallel();
+						
+						Stream<DataPoint> result = indexes.mapToObj(index ->
+								Utils.getStream(components)
+									.map(splitting((oldC, newC) -> {  
+										try {
+											Stream<DataPoint> window;
+											if (index + inf >= sorted.length || index + sup < 0)
+												window = Stream.empty();
+											else
+												window = Arrays.stream(sorted, max(0, index + inf), min(1 + index + sup, sorted.length));
+											
+											return window.collect(collectingAndThen(mapping(dp -> dp.get(oldC), collectors.get(oldC)), v -> new SimpleEntry<>(newC, finishers.get(oldC).apply(v, sorted[index].get(oldC)))));
+										}
+										catch (RuntimeException e)
+										{
+											throw e;
+										}
+									})).collect(collectingAndThen(entriesToMap(), map -> new SimpleEntry<>(map, sorted[index]))))
+								.map(splitting((values, dp) -> new DataPointBuilder(dp)
+									.delete(components.keySet())
+									.addAll(values)
+									.build(dp.getLineage(), newStructure)));
+						
+						return result;
+					}).flatMap(identity());
 			}
 		};
 	}
