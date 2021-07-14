@@ -152,6 +152,11 @@
 							<item name="Usage of temporal data"  href="datetime-handling.html" />
 							<item name="VTL examples" href="examples.html" />
 						</item>
+						<item name="Leveraging Spark in VTL">
+							<item name="Setting up Apache Spark™" href="spark-setup.html" />
+							<item name="Using the Spark Environment" href="spark-usage.html" />
+							<item name="Limitations" href="spark-limitations.html" />
+						</item>
 						<item name="VTL command line interface" href="cli-usage.html" />
 						<item name="VTL Engine web services">
 							<item name="Setup" href="rest-setup.html" />
