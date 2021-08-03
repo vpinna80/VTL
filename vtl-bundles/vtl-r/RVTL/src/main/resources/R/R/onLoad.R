@@ -26,11 +26,10 @@
 
   if (spark != '') {
     if (length(formals(.jclassLoader)) == 1) {
-      loader = .jclassLoader(package="RVTL")
+      invisible(lapply(list.files(paste0(spark, '/jars'), full.names = T), .jaddClassPath, .jclassLoader(package="RVTL")))
     } else {
-      loader = .jclassLoader()
+      invisible(lapply(list.files(paste0(spark, '/jars'), full.names = T), .jaddClassPath))
     }
-    invisible(lapply(list.files(paste0(spark, '/jars'), full.names = T), .jaddClassPath, loader))
   } else {
     packageStartupMessage('SPARK_HOME environment variable is not set. The Spark environment will not be available.')
   }
