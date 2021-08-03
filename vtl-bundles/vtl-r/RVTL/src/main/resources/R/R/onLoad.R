@@ -23,10 +23,16 @@
 .onLoad <- function(libname, pkgname) {
   .jpackage(pkgname, lib.loc = libname)
   spark <- Sys.getenv('SPARK_HOME')
+
   if (spark != '') {
-  	invisible(lapply(list.files(paste0(spark, '/jars'), full.names = T), .jaddClassPath, .jclassLoader(package="RVTL")))
+    if (length(formals(.jclassLoader)) == 1) {
+      loader = .jclassLoader(package="RVTL")
+    } else {
+      loader = .jclassLoader()
+    }
+    invisible(lapply(list.files(paste0(spark, '/jars'), full.names = T), .jaddClassPath, loader))
   } else {
-  	packageStartupMessage('SPARK_HOME environment variable is not set. The Spark environment will not be available.')
+    packageStartupMessage('SPARK_HOME environment variable is not set. The Spark environment will not be available.')
   }
   J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
       "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
