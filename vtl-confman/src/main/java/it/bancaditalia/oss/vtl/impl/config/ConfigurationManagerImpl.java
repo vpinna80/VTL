@@ -68,7 +68,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 
 		String[] envNames = ENVIRONMENT_IMPLEMENTATION.getValue().split(",");
 		for (int i = 0; i < envNames.length; i++)
-			result.add(instanceOfClass(envNames[i], Environment.class, "Error initializing enironment " + envNames[i]));
+			result.add(instanceOfClass(envNames[i], Environment.class, "Error initializing environment " + envNames[i]));
 
 		return result ;
 	}
