@@ -79,12 +79,14 @@ public class SparkEnvironment implements Environment
 			new VTLPropertyImpl("vtl.spark.master.connection", "Connection string to an orchestrator or local", "local", true, false, "local");
 	public static final VTLProperty VTL_SPARK_UI_ENABLED = 
 			new VTLPropertyImpl("vtl.spark.ui.enabled", "Indicates if the Spark web UI should be initialized", "true", true, false, "true");
+	public static final VTLProperty VTL_SPARK_UI_PORT = 
+			new VTLPropertyImpl("vtl.spark.ui.port", "Indicates which port the Spark web UI should be listening to", "4040", true, false, "4040");
 	public static final VTLProperty VTL_SPARK_PAGE_SIZE = 
 			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", true, false, "1000");
 
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_PAGE_SIZE, VTL_SPARK_UI_ENABLED);
+		ConfigurationManagerFactory.registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE);
 	}
 	
 	public static class VTLKryoRegistrator implements KryoRegistrator
@@ -117,7 +119,8 @@ public class SparkEnvironment implements Environment
 			  .set("spark.sql.datetime.java8API.enabled", "true")
 			  .set("spark.sql.shuffle.partitions", "4")
 			  .set("spark.sql.catalyst.dateType", "Instant")
-			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString());
+			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
+			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
 		
 		session = SparkSession
 			  .builder()
