@@ -73,7 +73,9 @@ public class CSVParseUtils
 
 	public static ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String stringRepresentation, String mask)
 	{
-		if (component.getDomain() instanceof StringDomainSubset)
+		if (stringRepresentation == null)
+			return NullValue.instanceFrom(component);
+		else if (component.getDomain() instanceof StringDomainSubset)
 			return component.getDomain().cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
 		else if (component.getDomain() instanceof IntegerDomainSubset)
 			try
