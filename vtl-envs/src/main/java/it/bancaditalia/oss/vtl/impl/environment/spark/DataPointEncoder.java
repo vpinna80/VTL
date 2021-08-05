@@ -135,10 +135,10 @@ public class DataPointEncoder implements Serializable
 		components = dataStructure.toArray(new DataStructureComponent<?, ?, ?>[dataStructure.size()]);
 		Arrays.sort(components, DataStructureComponent.byName());
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(components));
+		StructType schemaNoLineage = new StructType(fields.toArray(new StructField[components.length]));
+		rowEncoderNoLineage = RowEncoder.apply(schemaNoLineage);
 		fields.add(new StructField("$lineage$", LineageSparkUDT$.MODULE$, false, null));
-		schema = new StructType(fields.toArray(new StructField[components.length]));
-
-		rowEncoderNoLineage = RowEncoder.apply(new StructType(fields.toArray(new StructField[components.length])));
+		schema = new StructType(fields.toArray(new StructField[components.length + 1]));
 		rowEncoder = RowEncoder.apply(schema);
 	}
 
