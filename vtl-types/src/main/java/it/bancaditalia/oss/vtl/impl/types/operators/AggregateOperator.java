@@ -28,9 +28,14 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.peeking;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.Utils.mappingValues;
+import static it.bancaditalia.oss.vtl.util.Utils.splitting;
+import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
+import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -40,9 +45,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
+import java.util.stream.Collector.Characteristics;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -54,7 +61,11 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.util.SerBiConsumer;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum AggregateOperator  
 {
@@ -113,6 +124,20 @@ public enum AggregateOperator
 	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
 
+	private static class CombinedAccumulator 
+	{
+		final Map<DataStructureComponent<? extends Measure, ?, ?>, Object> accs;
+		final Map<Lineage, Long> lineageAcc;
+		final Map<DataStructureComponent<? extends Measure, ?, ?>, AtomicBoolean> allIntegers;
+
+		public CombinedAccumulator(Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors)
+		{
+			accs = Utils.getStream(collectors).collect(mappingValues(collector -> collector.supplier().get()));
+			lineageAcc = new ConcurrentHashMap<>();
+			allIntegers = Utils.getStream(collectors.keySet()).collect(toMapWithValues(m -> new AtomicBoolean(INTEGERDS.isAssignableFrom(m.getDomain()))));
+		}
+	}
+
 	private AggregateOperator(String name, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this(name, (dp, c) -> dp.get(c), reducer);
@@ -132,22 +157,51 @@ public enum AggregateOperator
 		return reducer;
 	}
 	
-	public SerCollector<DataPoint, ?, Entry<Lineage, ScalarValue<?, ?, ?, ?>>> getReducer(DataStructureComponent<? extends Measure, ?, ?> measure)
+	public SerCollector<DataPoint, ?, Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>>> getReducer(Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures)
 	{
-		AtomicBoolean isInteger = new AtomicBoolean(true);
-		Map<Lineage, Long> lineage = new ConcurrentHashMap<>();
-		return collectingAndThen(
-			collectingAndThen(
-				peeking(dp -> lineage.merge(dp.getLineage(), 1L, Long::sum), 
-					mapping(dp -> extractor.apply(dp, measure),
-						peeking(extracted -> {
-								if (extracted != null && !INTEGERDS.isAssignableFrom(extracted.getDomain()))
-									isInteger.set(false);
-							}, filtering(v -> !(v instanceof NullValue), reducer)))), 
-				v -> v instanceof DoubleValue && isInteger.get() ? IntegerValue.of(((DoubleValue<?>) v).get().longValue()): v),
-			value -> new SimpleEntry<>(LineageGroup.of(lineage), value));
+		// Create a collector for each measure
+		Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors = measures.stream()
+			.collect(toMapWithValues(measure -> mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer))));
+		
+		// and-reduce the characteristics
+		EnumSet<Characteristics> characteristics = EnumSet.of(CONCURRENT, UNORDERED);
+		for (SerCollector<?, ?, ?> collector: collectors.values())
+			characteristics.retainAll(collector.characteristics());
+
+		// Combine all collectors into one
+		return SerCollector.of(
+				() -> new CombinedAccumulator(collectors), 
+				(a, dp) -> {
+					collectors.forEach((measure, collector) -> {
+							@SuppressWarnings("unchecked")
+							SerBiConsumer<Object, DataPoint> accumulator = (SerBiConsumer<Object, DataPoint>) collector.accumulator();
+							accumulator.accept(a.accs.get(measure), dp);
+							a.allIntegers.get(measure).compareAndSet(true, INTEGERDS.isAssignableFrom(dp.get(measure).getDomain()));
+						});
+					a.lineageAcc.merge(dp.getLineage(), 1L, Long::sum);
+				}, (a, b) -> { 
+					Utils.getStream(b.accs)
+						.forEach(splittingConsumer((measure, accumulator) -> {
+							@SuppressWarnings("unchecked")
+							SerBinaryOperator<Object> combiner = (SerBinaryOperator<Object>) collectors.get(measure).combiner();
+							a.accs.merge(measure, accumulator, combiner);
+						}));
+					Utils.getStream(b.lineageAcc)
+						.forEach(splittingConsumer((lineage, value) -> a.lineageAcc.merge(lineage, value, Long::sum)));
+					Utils.getStream(b.allIntegers)
+						.forEach(splittingConsumer((measure, allInt) -> a.allIntegers.merge(measure, allInt, (va, vb) -> { va.compareAndSet(true, vb.get()); return va; })));
+					return a; 
+				}, a -> new SimpleEntry<>(LineageGroup.of(a.lineageAcc), Utils.getStream(collectors).collect(toConcurrentMap(Entry::getKey, splitting((measure, collector) -> {
+					@SuppressWarnings("unchecked")
+					SerFunction<Object, ScalarValue<?, ?, ?, ?>> finisher = (SerFunction<Object, ScalarValue<?, ?, ?, ?>>) collector.finisher(); 
+					ScalarValue<?, ?, ?, ?> result = finisher.apply(a.accs.get(measure));
+					if (a.allIntegers.get(measure).get() && result instanceof DoubleValue)
+						return IntegerValue.of(((DoubleValue<?>) result).get().longValue());
+					else
+						return result;
+				})))), characteristics);
 	}
-	
+
 	@Override
 	public String toString()
 	{

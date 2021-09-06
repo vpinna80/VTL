@@ -28,6 +28,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.afterMapping;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -45,7 +46,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
@@ -118,34 +118,28 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
-		SerCollector<DataPoint, ?, Entry<Lineage, ScalarValue<?, ?, ?, ?>>> reducer = aggregation.getReducer(sourceMeasure);
-		DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
-				? DataStructureComponentImpl.of(name, role, sourceMeasure.getDomain())
-				: DataStructureComponentImpl.of(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
-				: sourceMeasure;
+		SerCollector<DataPoint, ?, Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>>> reducer = aggregation.getReducer(((DataSetMetadata) metadata).getComponents(Measure.class));
 
 		if (groupBy == null)
 			try (Stream<DataPoint> stream = dataset.stream())
 			{
-				Entry<Lineage, ScalarValue<?, ?, ?, ?>> result = stream.collect(reducer);
-				if (operand == null)
-					return result.getValue();
+				Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>> result = stream.collect(reducer);
+				if (operand == null && result.getValue().size() == 1)
+					return result.getValue().values().iterator().next();
 
-				final DataSetMetadata structure = new DataStructureBuilder(sourceMeasure).build();
-				return new LightDataSet(structure, () -> Stream.of(new DataPointBuilder()
-						.add(sourceMeasure, result.getValue())
-						.build(LineageNode.of(this, result.getKey()), structure)));
+				return new LightDataSet((DataSetMetadata) metadata, () -> Stream.of(new DataPointBuilder()
+						.addAll(result.getValue())
+						.build(LineageNode.of(this, result.getKey()), (DataSetMetadata) metadata)));
 			}
 		else
 		{
 			Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = getGroupByComponents(dataset.getMetadata());
 			
 			// dataset-level aggregation
-			return dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (v, keyValues) -> 
+			return dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (result, keyValues) -> 
 					new DataPointBuilder(keyValues)
-						.add(resultComponent, v.getValue())
-						.build(LineageNode.of(this, v.getKey()), (DataSetMetadata) metadata));
+						.addAll(result.getValue())
+						.build(LineageNode.of(this, result.getKey()), (DataSetMetadata) metadata));
 		}
 	}
 
@@ -176,7 +170,7 @@ public class AggregateTransformation extends UnaryTransformation
 				if (measures.size() == 1)
 					return NUMBER;
 				else
-					throw new VTLSingletonComponentRequiredException(Measure.class, measures);
+					return new DataStructureBuilder(measures).build();
 			}
 			else
 			{
