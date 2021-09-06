@@ -20,8 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.environment;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,21 +31,14 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 
 public class WorkspaceImpl implements Workspace
 {
-	private final Map<String, VTLValue>			values		= new ConcurrentHashMap<>();
-	private final Map<String, Statement>		rules		= Collections.synchronizedMap(new LinkedHashMap<>());
+	private final Map<String, VTLValue> values = new ConcurrentHashMap<>();
+	private final Map<String, Statement> rules = new ConcurrentHashMap<>();
 	
 	@Override
 	public synchronized void addRule(Statement statement)
 	{
-		if (rules.containsKey(statement.getId()))
+		if (rules.putIfAbsent(normalize(statement.getId()), statement) != null)
 			throw new IllegalStateException("Object " + statement.getId() + " was already defined");
-		else
-			if (statement.getId().matches("'.*'"))
-				rules.put(statement.getId().replaceAll("'(.*)'", "$1"), statement);
-			else
-				rules.put(statement.getId().toLowerCase(), statement);
-		
-			
 	}
 
 	@Override
@@ -57,20 +48,29 @@ public class WorkspaceImpl implements Workspace
 	}
 	
 	@Override
-	public synchronized boolean contains(String id)
+	public synchronized boolean contains(String alias)
 	{
-		return values.containsKey(id) || rules.containsKey(id);
+		return values.containsKey(normalize(alias)) || rules.containsKey(normalize(alias));
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(String name)
+	public Optional<VTLValue> getValue(String alias)
 	{
-		return Optional.ofNullable(values.get(name));
+		return Optional.ofNullable(values.get(normalize(alias)));
 	}
 	
 	@Override
-	public Optional<Statement> getRule(String name)
+	public Optional<Statement> getRule(String alias)
 	{
-		return Optional.ofNullable(rules.get(name));
+		return Optional.ofNullable(rules.get(normalize(alias)));
+	}
+
+
+	private String normalize(String alias)
+	{
+		if (alias.matches("'.*'"))
+			return alias.replaceAll("'(.*)'", "$1");
+		else
+			return alias;
 	}
 }

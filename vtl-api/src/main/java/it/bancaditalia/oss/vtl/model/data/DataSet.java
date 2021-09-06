@@ -77,7 +77,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
 	 * @param component The component to retain.
-	 * @param lineage TODO
+	 * @param lineage the lineage of the membership operator
 	 * 
 	 * @return The projected dataset
 	 */
@@ -351,6 +351,11 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 		return getMatching(datapoint.getValues(Identifier.class)).stream().findAny().isPresent();
 	}
 
+	/**
+	 * Checks if a DataPoint is not contained in this DataSet.
+	 * 
+	 * <b>NOTE</b>: The default implementation performs a linear search, potentially traversing this DataSet entirely.
+	 */
 	public default boolean notContains(DataPoint datapoint)
 	{
 		return !getMatching(datapoint.getValues(Identifier.class)).stream().findAny().isPresent();

@@ -53,8 +53,8 @@ public class CSVMetadataRepository extends InMemoryMetadataRepository
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(METADATA_CSV_SOURCE.getValue()), UTF_8)))
 		{
 			reader.lines()
-				.map(l -> new SimpleEntry<>(l.split(",", 2)[0], l.split(",", 2)[1]))
-				.collect(groupingByConcurrent(Entry::getKey, mapping(Entry::getValue, toSet())))
+				.map(l -> l.split(",", 2))
+				.collect(groupingByConcurrent(e -> e[0], mapping(e -> e[1], toSet())))
 				.forEach(defineDomainOf(StringEnumeratedDomainSubset.class));
 		}
 	}

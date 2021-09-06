@@ -343,6 +343,7 @@ public class SparkDataSet extends AbstractDataSet
 			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
 			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
 	{
+		// Convert a VTL window clause to a Spark Window Specification
 		WindowSpec windowSpec = null;
 		if (!clause.getPartitioningIds().isEmpty())
 			windowSpec = Window.partitionBy(clause.getPartitioningIds().stream()
@@ -377,15 +378,19 @@ public class SparkDataSet extends AbstractDataSet
 
 		WindowSpec finalWindowSpec = windowSpec == null ? Window$.MODULE$.spec() : windowSpec;
 		
+		// Structure of the result
 		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
 				.removeComponents(components.keySet())
 				.addComponents(components.values())
 				.build();
 		
+		// Create all the analytics for all the components
 		Map<DataStructureComponent<Measure, ?, ?>, AnalyticAggregator<?>> udfs = components.keySet().stream()
 				.collect(toMapWithValues(oldMeasure -> new AnalyticAggregator<>(oldMeasure, components.get(oldMeasure), collectors.get(oldMeasure), session)));
 		DataPointEncoder resultEncoder = new DataPointEncoder(newStructure);
 		List<String> names = components.keySet().stream().map(DataStructureComponent::getName).collect(toList());
+		
+		// Create an udf for each measure with the corresponding VTL analytic invocation
 		List<Column> analytic = components.keySet().stream()
 				.map(measure -> {
 					@SuppressWarnings("unchecked")
@@ -401,6 +406,7 @@ public class SparkDataSet extends AbstractDataSet
 							.over(finalWindowSpec), column);
 				}).collect(toList());
 		
+		// apply all the udfs
 		Dataset<Row> withColumns = dataFrame.withColumns(asScalaBuffer(names), asScalaBuffer(analytic));
 		return new SparkDataSet(session, resultEncoder, withColumns);
 	}
