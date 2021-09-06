@@ -71,6 +71,12 @@ public class LineageCall extends LineageImpl implements LineageSet
 	{
 		return sources;
 	}
+	
+	@Override
+	public long getCount(Lineage source)
+	{
+		return 1;
+	}
 
 	@Override
 	public int hashCode()

@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.lineage;
 
 import java.lang.ref.SoftReference;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -55,15 +56,27 @@ public class LineageGroup extends LineageImpl implements LineageSet
 	public LineageGroup resolveExternal(TransformationScheme scheme)
 	{
 		Map<Lineage, Long> resolvedSources = new HashMap<>((getSources().size()));
-		for (Entry<Lineage, Long> source : getSources().entrySet())
+		for (Entry<Lineage, Long> source : sources.entrySet())
 			resolvedSources.put(source.getKey().resolveExternal(scheme), source.getValue());
 
 		return LineageGroup.of(resolvedSources);
 	}
 
-	public Map<Lineage, Long> getSources()
+	public Map<Lineage, Long> getSourcesMap()
 	{
 		return sources;
+	}
+	
+	@Override
+	public Collection<Lineage> getSources()
+	{
+		return sources.keySet();
+	}
+	
+	@Override
+	public long getCount(Lineage source)
+	{
+		return sources.get(source);
 	}
 
 	@Override

@@ -19,9 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.lineage;
 
+import java.util.Collection;
+
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 
 public interface LineageSet extends Lineage
 {
 	public abstract long size();
+	
+	public Collection<Lineage> getSources();
+	
+	public long getCount(Lineage source);
 }
