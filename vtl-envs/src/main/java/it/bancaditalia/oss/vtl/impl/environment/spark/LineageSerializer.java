@@ -61,7 +61,7 @@ public class LineageSerializer extends Serializer<Lineage>
 		}
 		else if (lineage instanceof LineageGroup)
 		{
-			Map<Lineage, Long> sources = ((LineageGroup) lineage).getSources();
+			Map<Lineage, Long> sources = ((LineageGroup) lineage).getSourcesMap();
 			output.writeInt(sources.size());
 			sources.forEach((l, s) -> {
 				write(kryo, output, l);
