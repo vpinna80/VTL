@@ -19,11 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.summingLong;
+import static it.bancaditalia.oss.vtl.util.Utils.groupingByKeys;
 import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.summingLong;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
@@ -82,8 +83,8 @@ public class LineageViewer
 							.collect(toMapWithValues(k -> count));
 				// in case of grouping transformations, each operand should already have its own count
 				else
-					innerResult = ((LineageGroup) sourceLineages).getSources().entrySet().stream()
-							.collect(groupingByConcurrent(Entry::getKey, summingLong(Entry::getValue)));
+					innerResult = ((LineageGroup) sourceLineages).getSourcesMap().entrySet().stream()
+							.collect(groupingByKeys(summingLong(Entry::getValue)));
 				
 				sources.addAll(innerResult.entrySet());
 				for (Lineage source: innerResult.keySet())

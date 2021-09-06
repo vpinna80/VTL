@@ -124,6 +124,15 @@ public class SerCollectors
                 a -> computeFinalSum(a), emptySet());
     }
 
+    public static <T> SerCollector<T, long[], Long> summingLong(SerToLongFunction<? super T> mapper)
+    {
+        return new SerCollector<>(
+                () -> new long[1],
+                (a, t) -> { a[0] += mapper.applyAsLong(t); },
+                (a, b) -> { a[0] += b[0]; return a; },
+                a -> a[0], emptySet());
+    }
+
     public static <T> SerCollector<T, double[], Double> averagingDouble(SerToDoubleFunction<? super T> mapper) 
     {
         return new SerCollector<>(() -> new double[4],
