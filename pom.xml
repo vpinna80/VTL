@@ -199,6 +199,7 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<bundle.plugin.version>5.1.1</bundle.plugin.version>
+		<sf-fs.version>3.0.0-M3</sf-fs.version>
 		<scala.version>2.12.11</scala.version>
 		<scala.compat.version>2.12</scala.compat.version>
 		<scala-compiler.version>4.5.2</scala-compiler.version>
@@ -639,8 +640,13 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-failsafe-plugin</artifactId>
+					<version>${sf-fs.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.0.0-M3</version>
+					<version>${sf-fs.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>

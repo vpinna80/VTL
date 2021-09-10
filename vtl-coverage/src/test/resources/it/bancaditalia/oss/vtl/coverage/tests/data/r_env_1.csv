@@ -1,0 +1,7 @@
+$id1=string,$id2=number,m1=string,m2=number,m3=boolean,#attr1=string,#attr2=boolean,#attr3=number
+1999,1.06,A1,1.2,true,att1,true,1
+2000,0.92,A2,2.3,false,att2,false,2
+2001,0.89,A3,3.4,true,att3,true,3
+2002,0.94,,4.5,false,,false,4
+2003,1.13,A5,,true,att5,,5
+2004,1.24,A6,6.7,,att6,false,

@@ -1,0 +1,26 @@
+﻿/**
+ * Copyright © 2020 Banca D'Italia
+ *
+ * Licensed under the EUPL, Version 1.2 (the "License");
+ * You may not use this work except in compliance with the
+ * License.
+ * You may obtain a copy of the License at:
+ *
+ * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the License is
+ * distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied.
+ *
+ * See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+/* Load dataset 1 from csv */
+ds1:= 'csv:number_test7.csv';
+result:= ds1[calc Log_1:= log (Num_1,100), Log_2:= log (Num_2,100)];
+ref_output := 'csv:log_2.csv';
+tmp_result1 := (round(result#Log_1, 9) = round(ref_output#Log_1, 9))[rename bool_var to res1];
+tmp_result2 := (round(result#Log_2, 9) = round(ref_output#Log_2, 9))[rename bool_var to res2];
+test_result := inner_join(tmp_result1, tmp_result2);
