@@ -145,7 +145,7 @@ public class CSVFileEnvironmentTest
 		{
 			long count = stream.map(dp -> dp.get(QUOTED))
 				.map(ScalarValue::get)
-				.map(Object::toString)
+				.map(c -> c == null ? "" : c.toString())
 				.peek(s -> assertTrue(results.contains(s), "Result '" + s + "' not found."))
 				.count();
 			assertEquals(7, count, "Wrong number of rows");
