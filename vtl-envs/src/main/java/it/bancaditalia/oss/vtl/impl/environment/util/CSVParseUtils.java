@@ -34,9 +34,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
@@ -62,18 +64,20 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class CSVParseUtils
 {
-	private CSVParseUtils()
-	{
-		
-	}
-	
 	public static final String DATE_DOMAIN_PATTERN = "^[Dd][Aa][Tt][Ee]\\[(.*)\\]$";
 	public static final String BOOLEAN_DOMAIN_PATTERN = "^[Bb][Oo][Oo][Ll](?:[Ee][Aa][Nn])?$";
 	public static final String PERIOD_DOMAIN_PATTERN = "^[Tt][Ii][Mm][Ee]_[Pp][Ee][Rr][Ii][Oo][Dd]\\[(.*)\\]$";
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(CSVParseUtils.class);
+
+	private CSVParseUtils()
+	{
+		
+	}
+
 	public static ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String stringRepresentation, String mask)
 	{
-		if (stringRepresentation == null)
+		if (stringRepresentation == null || stringRepresentation.isEmpty())
 			return NullValue.instanceFrom(component);
 		else if (component.getDomain() instanceof StringDomainSubset)
 			return component.getDomain().cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
@@ -87,7 +91,7 @@ public class CSVParseUtils
 			}
 			catch (NumberFormatException e)
 			{
-				CSVFileEnvironment.LOGGER.error("An Integer was expected but found: " + stringRepresentation);
+				LOGGER.error("An Integer was expected but found: " + stringRepresentation);
 				return NullValue.instance(INTEGERDS);
 			}
 		else if (component.getDomain() instanceof NumberDomainSubset)
@@ -100,7 +104,7 @@ public class CSVParseUtils
 			}
 			catch (NumberFormatException e)
 			{
-				CSVFileEnvironment.LOGGER.error("A Number was expected but found: " + stringRepresentation);
+				LOGGER.error("A Number was expected but found: " + stringRepresentation);
 				return NullValue.instance(NUMBERDS);
 			}
 		else if (component.getDomain() instanceof BooleanDomainSubset)

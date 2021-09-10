@@ -26,10 +26,14 @@ import static java.util.Objects.isNull;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
@@ -63,13 +67,36 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CSVFileEnvironment implements Environment
 {
-	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?:,|\n|^)(\"(?:(?:\"\")*[^\"]*)*\"|([^\",\n]*)|(?:\n|$))");
-	public static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
+	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:(?:\"\")*[^\"]*)*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
 	
 	@Override
 	public boolean contains(String name)
 	{
-		return name.startsWith("csv:") && Files.exists(Paths.get(name.substring(4)));
+		if (!name.startsWith("csv:"))
+			return false;
+			
+		String loc = name.substring(4);
+		
+		try
+		{
+			if (Files.exists(Paths.get(loc)))
+				return true;
+		}
+		catch (InvalidPathException e)
+		{
+
+		}
+
+		try
+		{
+			new URL(loc).openStream().close();
+			return true;
+		}
+		catch (IOException e)
+		{
+			return false;
+		}
 	}
 
 	@Override
@@ -82,7 +109,7 @@ public class CSVFileEnvironment implements Environment
 		
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8)))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
 			final DataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
@@ -94,11 +121,25 @@ public class CSVFileEnvironment implements Environment
 			throw new VTLNestedException("Exception while reading " + fileName, e);
 		}
 	}
+
+	private InputStream aliasToInputStream(String fileName) throws MalformedURLException, IOException
+	{
+		try
+		{
+			if (Files.exists(Paths.get(fileName)))
+				return new FileInputStream(fileName);
+		}
+		catch (InvalidPathException e)
+		{
+
+		}
+
+		return new URL(fileName).openStream();
+	}
 	
-	@SuppressWarnings("resource")
 	protected Stream<DataPoint> streamFileName(String fileName)
 	{
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8)))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
 			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
 			List<DataStructureComponent<?, ?, ?>> metadata = headerInfo.getKey();
@@ -110,7 +151,7 @@ public class CSVFileEnvironment implements Environment
 			LOGGER.info("Reading {} lines from {}...", lineCount, fileName);
 	
 			// Do not close this reader!
-			BufferedReader innerReader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8));
+			BufferedReader innerReader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8));
 			
 			// Skip header
 			innerReader.readLine();
@@ -145,7 +186,7 @@ public class CSVFileEnvironment implements Environment
 							count++;
 						}
 						else
-							throw new IllegalStateException("Expected value for " + metadata.get(count) + " but the row ended before it:\n" + line);
+							throw new IllegalStateException("While parsing " + fileName + ": Expected value for " + metadata.get(count) + " but the row ended before it:\n" + line);
 					if (tokenizer.end() < line.length() - 1)
 						LOGGER.warn("Skipped trailing characters in line: " + line.substring(tokenizer.end() + 1));
 					
@@ -186,7 +227,7 @@ public class CSVFileEnvironment implements Environment
 
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), UTF_8)))
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
 			return Optional.of(new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build());
 		}

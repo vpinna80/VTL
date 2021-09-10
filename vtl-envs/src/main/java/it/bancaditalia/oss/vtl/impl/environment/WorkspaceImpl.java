@@ -66,11 +66,8 @@ public class WorkspaceImpl implements Workspace
 	}
 
 
-	private String normalize(String alias)
+	private static String normalize(String alias)
 	{
-		if (alias.matches("'.*'"))
-			return alias.replaceAll("'(.*)'", "$1");
-		else
-			return alias;
+		return alias.matches("'.*'") ? alias.replaceAll("'(.*)'", "$1") : alias.toLowerCase();
 	}
 }
