@@ -157,8 +157,7 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		return new LightFDataSet<>(metadata, d -> {
 				final Stream<DataPoint> stream = d.stream();
-				return stream
-					.map(dpThis -> {
+				return stream.map(dpThis -> {
 						Collection<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
 						if (otherSubGroup == null)
 							return Stream.<DataPoint>empty();

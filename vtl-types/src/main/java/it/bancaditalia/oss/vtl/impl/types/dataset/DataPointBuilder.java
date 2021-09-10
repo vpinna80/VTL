@@ -201,13 +201,15 @@ public class DataPointBuilder
 
 			if (!structure.equals(dpValues.keySet()))
 			{
-				this.dpValues.keySet().stream().filter(c -> !structure.contains(c))
-						.map(c -> new SimpleEntry<>(c, new IllegalStateException("Component " + c + " has a value but is not defined on " + structure)))
-						.peek(e -> LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", e.getKey(), structure, values,
-								e.getValue()))
-						.map(Map.Entry::getValue).findAny().ifPresent(e -> {
-							throw e;
-						});
+				this.dpValues.keySet()
+					.stream()
+					.filter(c -> !structure.contains(c))
+					.findAny()
+					.ifPresent(nonExistingComp -> {
+						IllegalStateException e = new IllegalStateException("Component " + nonExistingComp + " has a value but is not defined on " + structure);
+						LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", nonExistingComp, structure, values, e);
+						throw e;
+					});
 
 				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
 				missing.removeAll(this.dpValues.keySet());

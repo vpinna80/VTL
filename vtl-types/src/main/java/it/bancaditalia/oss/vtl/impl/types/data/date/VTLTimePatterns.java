@@ -31,6 +31,7 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 
+import java.security.InvalidParameterException;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
@@ -68,9 +69,13 @@ public class VTLTimePatterns
 		PATTERNS.put(Pattern.compile("^(D)(?!D)(.*)$"), dtf -> dtf.appendValue(DAY_OF_MONTH, 1, 2, NOT_NEGATIVE));
 	}
 
-	public static <T extends TimeValue<?, ?, ?, ?>> TemporalAccessor parseString(String string, String mask)
+	public static <T extends TimeValue<?, ?, ?, ?>> TemporalAccessor parseString(String value, String mask)
 	{
-		return getFormatter(mask).parse(string);
+		if (value == null || value.isEmpty())
+			throw new InvalidParameterException("The date to parse is null or empty");
+		if (mask == null || mask.isEmpty())
+			throw new InvalidParameterException("The mask to parse the date is null or empty");
+		return getFormatter(mask).parse(value);
 	}
 
 	public static String parseTemporal(TemporalAccessor temporal, String mask)

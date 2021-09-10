@@ -42,8 +42,16 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	{
 		this.domain = Objects.requireNonNull(domain, "Domain is null");
 		this.role = Objects.requireNonNull(role, "Role is null");
-		this.name = Objects.requireNonNull(name, "Name is null");
+		this.name = Objects.requireNonNull(normalizeAlias(name), "Name is null");
 		this.hashCode = hashCodeInit();
+	}
+	
+	private static String normalizeAlias(String alias)
+	{
+		if (alias.matches("'.*'"))
+			return alias.replaceAll("'(.*)'", "$1");
+		else
+			return alias.toLowerCase();
 	}
 	
 	@SuppressWarnings("unchecked")
