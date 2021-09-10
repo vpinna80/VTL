@@ -43,7 +43,6 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -146,9 +145,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.map(c -> c.as(Identifier.class))
 				.collect(toSet());
 		
-		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
-				.addComponents(dataset.getComponents(Measure.class))
-				.build();
+		return dataset;
 	}
 	
 	@Override
