@@ -161,6 +161,11 @@
 		<tokenmapping name="SINGLE" value="SINGLE" />
 	</tokenset>
 
+	<tokenset name="CheckOutput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation$CheckOutput">
+		<tokenmapping name="ALL" value="ALL" />
+		<tokenmapping name="INVALID" value="INVALID" />
+	</tokenset>
+
 	<recursivecontexts>
 		<context name="AggregateFunctionsContext" />
 		<context name="AggregateFunctionsComponentsContext" />
@@ -177,6 +182,7 @@
 		<context name="GenericFunctionsContext" />
 		<context name="GenericFunctionsComponentsContext" />
 		<context name="HavingClauseContext" />
+		<context name="ImbalanceExprContext" />
 		<context name="JoinFunctionsContext" />
 		<context name="JoinApplyClauseContext" />
 		<context name="NumericFunctionsContext" />
@@ -190,6 +196,7 @@
 		<context name="StringFunctionsComponentsContext" />
 		<context name="TimeFunctionsContext" />
 		<context name="TimeFunctionsComponentsContext" />
+		<context name="ValidationFunctionsContext" />
 		<context name="VarIdExprContext" />
 	</recursivecontexts>
 
@@ -356,15 +363,6 @@
 		</params>
 	</mapping>
 
-	<!-- mapping from="AggrOperatorsGroupingContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
-		<params>
-			<tokensetparam name="op" tokenset="AggregateOperator" />
-			<exprparam name="exprComponent" />
-			<nullparam />
-			<nullparam />
-		</params>
-	</mapping -->
-
 	<mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
 		<tokens name="op">
 			<value>SUM</value>
@@ -447,6 +445,7 @@
 			</listparam>
 		</params>
 	</mapping>
+
 	<mapping from="CalcClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.CalcClauseTransformation">
 		<params>
 			<listparam name="calcClauseItem">
@@ -454,6 +453,7 @@
 			</listparam>
 		</params>
 	</mapping>
+
 	<mapping from="CalcClauseItemContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.CalcClauseTransformation$CalcClauseItem">
 		<params>
 			<roleparam name="componentRole" />
@@ -461,6 +461,7 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="JoinExprContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation">
 		<tokens name="joinKeyword">
 			<value>INNER_JOIN</value>
@@ -489,6 +490,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="UnionAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation">
 		<params>
 			<tokensetparam tokenset="SetOperator" />
@@ -497,6 +499,7 @@
 			</listparam>
 		</params>
 	</mapping>
+
 	<mapping from="IntersectAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation">
 		<params>
 			<tokensetparam tokenset="SetOperator" />
@@ -505,6 +508,7 @@
 			</listparam>
 		</params>
 	</mapping>
+
 	<mapping from="SetOrSYmDiffAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation">
 		<params>
 			<tokensetparam tokenset="SetOperator" />
@@ -520,6 +524,7 @@
 			<stringparam name="alias" />
 		</params>
 	</mapping>
+
 	<mapping from="ClauseExprContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.BracketTransformation">
 		<params>
 			<exprparam name="dataset" />
@@ -527,16 +532,19 @@
 			<nullparam />
 		</params>
 	</mapping>
+
 	<mapping from="PeriodAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.PeriodIndicatorTransformation">
 		<params>
 			<exprparam name="expr" />
 		</params>
 	</mapping>
+
 	<mapping from="PeriodAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.time.PeriodIndicatorTransformation">
 		<params>
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="IfExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation">
 		<params>
 			<exprparam name="conditionalExpr" />
@@ -544,6 +552,7 @@
 			<exprparam name="elseExpr" />
 		</params>
 	</mapping>
+
 	<mapping from="IfExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation">
 		<params>
 			<exprparam name="conditionalExpr" />
@@ -551,6 +560,7 @@
 			<exprparam name="elseExpr" />
 		</params>
 	</mapping>
+
 	<mapping from="BetweenAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.BetweenTransformation">
 		<params>
 			<exprparam name="op" />
@@ -558,6 +568,7 @@
 			<exprparam name="to_" />
 		</params>
 	</mapping>
+
 	<mapping from="BetweenAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.BetweenTransformation">
 		<params>
 			<exprparam name="op" />
@@ -565,18 +576,21 @@
 			<exprparam name="to_" />
 		</params>
 	</mapping>
+
 	<mapping from="FillTimeAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation">
 		<params>
 			<exprparam name="expr" />
 			<tokensetparam tokenset="FillMode" name="op" />
 		</params>
 	</mapping>
+
 	<mapping from="TimeShiftAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeShiftTransformation">
 		<params>
 			<exprparam name="expr" />
 			<valueparam name="signedInteger" />
 		</params>
 	</mapping>
+
 	<mapping from="TimeAggAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
 		<params>
 			<nestedparam name="op">
@@ -585,6 +599,7 @@
 			<stringparam name="periodIndTo" />
 		</params>
 	</mapping>
+
 	<mapping from="TimeAggAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
 		<params>
 			<nestedparam name="op">
@@ -593,6 +608,7 @@
 			<stringparam name="periodIndTo" />
 		</params>
 	</mapping>
+
 	<mapping from="MembershipExprContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.BracketTransformation">
 		<params>
 			<exprparam name="expr" />
@@ -600,6 +616,7 @@
 			<stringparam name="simpleComponentId" />
 		</params>
 	</mapping>
+
 	<mapping from="SubspaceClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.SubspaceClauseTransformation">
 		<params>
 			<mapparam name="subspaceClauseItem">
@@ -608,6 +625,7 @@
 			</mapparam>
 		</params>
 	</mapping>
+
 	<mapping from="RenameClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.RenameClauseTransformation">
 		<params>
 			<mapparam name="renameClauseItem">
@@ -616,6 +634,7 @@
 			</mapparam>
 		</params>
 	</mapping>
+
 	<mapping from="FilterClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.FilterClauseTransformation">
 		<params>
 			<exprparam name="exprComponent" />
@@ -653,6 +672,7 @@
 			<exprparam name="expr" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryStringFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StrlenTransformation">
 		<tokens name="op">
 			<value>LEN</value>
@@ -661,6 +681,7 @@
 			<exprparam name="expr" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryStringFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation">
 		<tokens name="op">
 			<value>TRIM</value>
@@ -674,6 +695,7 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryStringFunctionComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.StrlenTransformation">
 		<tokens name="op">
 			<value>LEN</value>
@@ -682,6 +704,7 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="ExistInAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation">
 		<params>
 			<tokensetparam tokenset="ExistInMode" name="left" />
@@ -707,6 +730,7 @@
 			<valueparam name="constant" />
 		</params>
 	</mapping>
+
 	<mapping from="CastExprDatasetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CastTransformation">
 		<tokens name="basicScalarType">
 			<value>STRING</value>
@@ -725,6 +749,7 @@
 			<stringparam name="STRING_CONSTANT" />
 		</params>
 	</mapping>
+
 	<mapping from="CastExprDatasetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CastTransformation">
 		<params>
 			<exprparam name="expr" />
@@ -732,6 +757,7 @@
 			<stringparam name="STRING_CONSTANT" />
 		</params>
 	</mapping>
+
 	<mapping from="CastExprComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CastTransformation">
 		<tokens name="basicScalarType">
 			<value>STRING</value>
@@ -750,6 +776,7 @@
 			<stringparam name="STRING_CONSTANT" />
 		</params>
 	</mapping>
+
 	<mapping from="CastExprComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CastTransformation">
 		<params>
 			<exprparam name="exprComponent" />
@@ -757,6 +784,7 @@
 			<stringparam name="STRING_CONSTANT" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryExprContext" to="it.bancaditalia.oss.vtl.impl.transform.number.NumericUnaryTransformation">
 		<tokens name="op">
 			<value>PLUS</value>
@@ -767,6 +795,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.number.NumericUnaryTransformation">
 		<tokens name="op">
 			<value>PLUS</value>
@@ -777,6 +806,7 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.NotTransformation">
 		<tokens name="op">
 			<value>NOT</value>
@@ -785,6 +815,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.NotTransformation">
 		<tokens name="op">
 			<value>NOT</value>
@@ -793,6 +824,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ComparisonExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.ComparisonTransformation">
 		<params>
 			<tokensetparam name="comparisonOperand" tokenset="ComparisonOperator" />
@@ -800,6 +832,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ComparisonExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.ComparisonTransformation">
 		<params>
 			<tokensetparam name="comparisonOperand" tokenset="ComparisonOperator" />
@@ -807,6 +840,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ArithmeticExprOrConcatCompContext" to="it.bancaditalia.oss.vtl.impl.transform.string.ConcatTransformation">
 		<tokens name="op">
 			<value>CONCAT</value>
@@ -816,6 +850,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="InstrAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.InStrTransformation">
 		<params>
 			<exprparam name="expr" ordinal="0" />
@@ -828,6 +863,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="InstrAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.InStrTransformation">
 		<params>
 			<exprparam name="exprComponent" ordinal="0" />
@@ -840,40 +876,47 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="CharsetMatchAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.MatchTransformation">
 		<params>
 			<exprparam name="op" />
 			<exprparam name="pattern" />
 		</params>
 	</mapping>
+
 	<mapping from="CharsetMatchAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.MatchTransformation">
 		<params>
 			<exprparam name="op" />
 			<exprparam name="pattern" />
 		</params>
 	</mapping>
+
 	<mapping from="IsNullAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation">
 		<params>
 			<exprparam name="expr" />
 		</params>
 	</mapping>
+
 	<mapping from="IsNullAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation">
 		<params>
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="NvlAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.NvlTransformation">
 		<params>
 			<exprparam name="left" />
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="NvlAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.NvlTransformation">
 		<params>
 			<exprparam name="left" />
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ReplaceAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.ReplaceTransformation">
 		<params>
 			<exprparam name="expr" ordinal="0" />
@@ -883,6 +926,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="ReplaceAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.ReplaceTransformation">
 		<params>
 			<exprparam name="exprComponent" ordinal="0" />
@@ -892,6 +936,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="SubstrAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.string.SubstrTransformation">
 		<params>
 			<exprparam name="expr" />
@@ -903,6 +948,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="SubstrAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.string.SubstrTransformation">
 		<params>
 			<exprparam name="exprComponent" />
@@ -914,6 +960,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="ArithmeticExprOrConcatCompContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<tokens name="op">
 			<value>PLUS</value>
@@ -925,6 +972,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="BinaryNumericContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<tokens name="op">
 			<value>MOD</value>
@@ -937,6 +985,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="BinaryNumericComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<tokens name="op">
 			<value>MOD</value>
@@ -949,6 +998,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryWithOptionalNumericContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<tokens name="op">
 			<value>ROUND</value>
@@ -962,6 +1012,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="UnaryWithOptionalNumericComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<tokens name="op">
 			<value>ROUND</value>
@@ -975,6 +1026,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="BooleanExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="BooleanOperator" />
@@ -982,6 +1034,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="BooleanExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="BooleanOperator" />
@@ -989,6 +1042,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ArithmeticExprOrConcatContext" to="it.bancaditalia.oss.vtl.impl.transform.string.ConcatTransformation">
 		<tokens name="op">
 			<value>CONCAT</value>
@@ -998,6 +1052,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ArithmeticExprOrConcatContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<tokens name="op">
 			<value>PLUS</value>
@@ -1009,6 +1064,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ArithmeticExprContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="ArithmeticOperator" />
@@ -1016,6 +1072,7 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="ArithmeticExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.number.ArithmeticTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="ArithmeticOperator" />
@@ -1023,12 +1080,14 @@
 			<exprparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="FlowAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.DatasetUnaryTransformation">
 		<params>
 			<tokensetparam name="op" tokenset="DatasetOperator" />
 			<exprparam name="expr" />
 		</params>
 	</mapping>
+
 	<mapping from="InNotInExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
 		<context name="right" context="SetExprContext" />
 		<params>
@@ -1041,6 +1100,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="InNotInExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
 		<context name="right" context="ValueDomainExprContext" />
 		<params>
@@ -1049,6 +1109,7 @@
 			<stringparam name="right" />
 		</params>
 	</mapping>
+
 	<mapping from="InNotInExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
 		<context name="right" context="SetExprContext" />
 		<params>
@@ -1061,6 +1122,7 @@
 			</nestedparam>
 		</params>
 	</mapping>
+
 	<mapping from="InNotInExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
 		<context name="right" context="ValueDomainExprContext" />
 		<params>
@@ -1081,6 +1143,7 @@
 			<stringparam name="IDENTIFIER" ordinal="0" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryNumericContext" to="it.bancaditalia.oss.vtl.impl.transform.number.NumericUnaryTransformation">
 		<tokens name="op">
 			<value>CEIL</value>
@@ -1095,6 +1158,7 @@
 			<exprparam name="expr" />
 		</params>
 	</mapping>
+
 	<mapping from="UnaryNumericComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.number.NumericUnaryTransformation">
 		<tokens name="op">
 			<value>CEIL</value>
@@ -1109,6 +1173,7 @@
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
+
 	<mapping from="PivotOrUnpivotClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.PivotClauseTransformation">
 		<tokens name="op">
 			<value>PIVOT</value>
@@ -1118,6 +1183,7 @@
 			<stringparam name="mea" />
 		</params>
 	</mapping>
+
 	<mapping from="PivotOrUnpivotClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.UnpivotClauseTransformation">
 		<tokens name="op">
 			<value>UNPIVOT</value>
@@ -1125,6 +1191,18 @@
 		<params>
 			<stringparam name="id_" />
 			<stringparam name="mea" />
+		</params>
+	</mapping>
+
+	<mapping from="ValidationSimpleContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation">
+		<params>
+			<exprparam name="op" />
+			<exprparam name="codeErr" />
+			<exprparam name="levelCode" />
+			<nestedparam name="imbalanceExpr">
+				<exprparam />
+			</nestedparam>
+			<tokensetparam name="output" tokenset="CheckOutput" />
 		</params>
 	</mapping>
 </parserconfig>

@@ -23,6 +23,8 @@ import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransforma
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation.CheckOutput.ALL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -54,6 +57,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -65,7 +69,7 @@ public class CheckTransformation extends TransformationImpl
 	private static final BooleanUnaryOperator function = CHECK;
 	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS); 
 	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> IMBALANCE = new DataStructureComponentImpl<>("imbalance", Measure.class, NUMBERDS); 
-	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> ERRORCODE = new DataStructureComponentImpl<>("errorcode", Measure.class, NUMBERDS); 
+	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> ERRORCODE = new DataStructureComponentImpl<>("errorcode", Measure.class, STRINGDS); 
 	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> ERRORLEVEL = new DataStructureComponentImpl<>("errorlevel", Measure.class, NUMBERDS); 
 
 	public enum CheckOutput
@@ -82,18 +86,18 @@ public class CheckTransformation extends TransformationImpl
 	public CheckTransformation(Transformation operand, Transformation errorcode, Transformation errorlevel, Transformation imbalance, CheckOutput output)
 	{
 		this.operand = operand;
+		this.output = coalesce(output, ALL);
 
 		if (errorcode != null)
 			throw new UnsupportedOperationException("Errorcode not implemented.");
 		if (errorlevel != null)
 			throw new UnsupportedOperationException("Errorvalue not implemented.");
-		if (output != ALL)
+		if (this.output != ALL)
 			throw new UnsupportedOperationException("Invalid not implemented.");
 		
 		this.errorcodeExpr = errorcode;
 		this.errorlevelExpr = errorlevel;
 		this.imbalanceExpr = imbalance;
-		this.output = output;
 	}
 
 	@Override
@@ -121,7 +125,7 @@ public class CheckTransformation extends TransformationImpl
 				.addAll(a.getValues(Identifier.class))
 				.add(BOOL_VAR, function.apply(BOOLEANDS.cast(a.get(BOOL_VAR))))
 				.add(IMBALANCE, b.getValues(Measure.class).values().iterator().next())
-				.add(ERRORCODE, NullValue.instance(NUMBERDS))
+				.add(ERRORCODE, NullValue.instance(STRINGDS))
 				.add(ERRORLEVEL, NullValue.instance(NUMBERDS))
 				.build(getLineage(), metadata));
 		}
@@ -181,9 +185,10 @@ public class CheckTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return "CHECK(" + operand + (imbalanceExpr != null ? " IMBALANCE " + imbalanceExpr : "") 
-				+ (errorlevelExpr != null ? " ERRORLEVEL " + errorlevelExpr: "")
-				+ (errorcodeExpr != null ? " ERRORCODE " + errorcodeExpr: "")
+		return "check(" + operand 
+				+ (errorlevelExpr != null ? " errorlevel " + errorlevelExpr: "")
+				+ (errorcodeExpr != null ? " errorcode " + errorcodeExpr: "")
+				+ (imbalanceExpr != null ? " imbalance " + imbalanceExpr : "") 
 				+ " " + output + ")";
 	}
 
