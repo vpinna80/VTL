@@ -36,8 +36,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
-import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.VTLValue;
 
 public class IntegrationTestSuite
 {
