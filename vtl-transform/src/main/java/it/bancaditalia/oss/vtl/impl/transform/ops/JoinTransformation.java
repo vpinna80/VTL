@@ -289,14 +289,18 @@ public class JoinTransformation extends TransformationImpl
 		
 		if (filter != null)
 			result = (DataSet) filter.eval(new ThisScope(result, filter.getLineage()));
+		
+		/* apply calc and aggr are mutually exclusive */
 		if (apply != null)
 			result = applyClause(metadata, scheme, result);
-		if (calc != null)
+		else if (calc != null)
 			result = (DataSet) calc.eval(new ThisScope(result, calc.getLineage()));
-		if (aggr != null)
+		else if (aggr != null)
 			result = (DataSet) aggr.eval(new ThisScope(result, aggr.getLineage()));
+		
 		if (keepOrDrop != null)
 			result = (DataSet) keepOrDrop.eval(new ThisScope(result, keepOrDrop.getLineage()));
+		
 		if (rename != null)
 		{
 			result = (DataSet) rename.eval(new ThisScope(result, rename.getLineage()));
@@ -445,9 +449,9 @@ public class JoinTransformation extends TransformationImpl
 					.addComponents(applyComponents)
 					.build();
 		}
-		if (calc != null)
+		else if (calc != null)
 			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result, calc.getLineage()));
-		if (aggr != null)
+		else if (aggr != null)
 			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result, aggr.getLineage()));
 		if (keepOrDrop != null)
 			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result, keepOrDrop.getLineage()));
@@ -649,6 +653,12 @@ public class JoinTransformation extends TransformationImpl
 	{
 		return "inner_join(" + operands.stream().map(Object::toString).collect(joining(", "))
 				+ (usingNames.isEmpty() ? "" : " using " + usingNames.stream().collect(joining(", ")))
+				+ (filter != null ? " " + filter : "")
+				+ (apply != null ? " apply " + apply : "")
+				+ (calc != null ? " " + calc : "")
+				+ (aggr != null ? " " + aggr : "")
+				+ (keepOrDrop != null ? " " + keepOrDrop : "")
+				+ (rename != null ? " " + rename : "")
 				+ ")";
 	}
 
