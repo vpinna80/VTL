@@ -82,7 +82,7 @@ public class BracketTransformation extends UnaryTransformation
 	@Override
 	public String toString()
 	{
-		return operand + (clause != null ? clause.toString() : "") + (componentName != null ? "#" + componentName : "");
+		return operand + (clause != null ? "[" + clause.toString() + "]": "") + (componentName != null ? "#" + componentName : "");
 	}
 
 	@Override

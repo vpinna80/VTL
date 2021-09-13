@@ -145,7 +145,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public String toString()
 	{
-		return "[pivot " + identifierName + ", " + measureName + "]";
+		return "pivot " + identifierName + ", " + measureName;
 	}
 
 	@Override
@@ -175,5 +175,11 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!measureName.equals(other.measureName)) return false;
 		return true;
+	}
+	
+	@Override
+	protected Lineage computeLineage()
+	{
+		return LineageNode.of(toString());
 	}
 }

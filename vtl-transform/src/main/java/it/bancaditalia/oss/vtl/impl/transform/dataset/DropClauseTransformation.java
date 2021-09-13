@@ -38,6 +38,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -101,7 +102,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public String toString()
 	{
-		return names.stream().collect(joining(", ", "[drop ", "]"));
+		return names.stream().collect(joining(", ", "drop ", ""));
 	}
 
 	@Override
@@ -125,5 +126,11 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!names.equals(other.names)) return false;
 		return true;
+	}
+	
+	@Override
+	protected Lineage computeLineage()
+	{
+		return LineageNode.of(toString());
 	}
 }

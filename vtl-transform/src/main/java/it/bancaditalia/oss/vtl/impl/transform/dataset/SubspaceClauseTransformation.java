@@ -38,6 +38,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -99,7 +100,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	{
 		return subspace.entrySet().stream()
 				.map(e -> e.getKey() + "=" + e.getValue())
-				.collect(joining(", ", "[sub ", "]"));
+				.collect(joining(", ", "sub ", ""));
 	}
 
 	@Override
@@ -123,5 +124,11 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!subspace.equals(other.subspace)) return false;
 		return true;
+	}
+	
+	@Override
+	protected Lineage computeLineage()
+	{
+		return LineageNode.of(toString());
 	}
 }

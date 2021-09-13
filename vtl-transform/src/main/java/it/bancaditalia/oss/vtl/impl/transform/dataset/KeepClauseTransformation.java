@@ -38,9 +38,10 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -104,7 +105,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public String toString()
 	{
-		return Arrays.stream(names).collect(joining(", ", "[keep ", "]"));
+		return Arrays.stream(names).collect(joining(", ", "keep ", ""));
 	}
 
 	@Override
@@ -124,5 +125,11 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		KeepClauseTransformation other = (KeepClauseTransformation) obj;
 		if (!Arrays.equals(names, other.names)) return false;
 		return true;
+	}
+	
+	@Override
+	protected Lineage computeLineage()
+	{
+		return LineageNode.of(toString());
 	}
 }

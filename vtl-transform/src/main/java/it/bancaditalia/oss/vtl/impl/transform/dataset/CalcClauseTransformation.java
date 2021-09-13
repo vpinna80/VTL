@@ -20,13 +20,13 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.HashMap;
 import java.util.List;
@@ -360,7 +360,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public String toString()
 	{
-		return calcClauses.stream().map(Object::toString).collect(joining(", ", "[calc ", "]"));
+		return calcClauses.stream().map(Object::toString).collect(joining(", ", "calc ", ""));
 	}
 
 	@Override
@@ -384,5 +384,11 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!calcClauses.equals(other.calcClauses)) return false;
 		return true;
+	}
+	
+	@Override
+	public Lineage computeLineage()
+	{
+		return LineageNode.of("calc", LineageCall.of(calcClauses.stream().map(CalcClauseItem::getLineage).collect(toList())));
 	}
 }

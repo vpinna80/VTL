@@ -36,6 +36,7 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -105,7 +106,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	{
 		return renames.entrySet().stream()
 				.map(e -> e.getKey() + " to " + e.getValue())
-				.collect(joining(", ", "[rename ", "]"));
+				.collect(joining(", ", "rename ", ""));
 	}
 
 	@Override
@@ -129,5 +130,11 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		}
 		else if (!renames.equals(other.renames)) return false;
 		return true;
+	}
+	
+	@Override
+	protected Lineage computeLineage()
+	{
+		return LineageNode.of(toString());
 	}
 }

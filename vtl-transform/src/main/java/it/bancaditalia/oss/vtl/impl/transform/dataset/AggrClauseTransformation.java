@@ -309,7 +309,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	public String toString()
 	{
 		String terminator = (groupBy != null ? groupBy.stream().map(Object::toString).collect(joining(", ", " group by ", "")) : "") + (having != null ? " having " + having : "");
-		return aggrItems.stream().map(Object::toString).collect(joining(", ", "[aggr ", terminator + "]"));
+		return aggrItems.stream().map(Object::toString).collect(joining(", ", "aggr ", terminator));
 	}
 
 	@Override

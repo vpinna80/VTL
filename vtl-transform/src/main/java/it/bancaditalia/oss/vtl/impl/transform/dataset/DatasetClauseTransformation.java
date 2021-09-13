@@ -27,7 +27,6 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -68,10 +67,4 @@ public abstract class DatasetClauseTransformation extends TransformationImpl
 	
 	@Override
 	public abstract boolean equals(Object obj);
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		throw new UnsupportedOperationException();
-	}
 }
