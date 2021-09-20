@@ -26,14 +26,13 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 
 public class VTLSingletonComponentRequiredException extends VTLException
 {
-	public VTLSingletonComponentRequiredException(DataSetMetadata structure, DataStructureComponent<?, ?, ?>... components)
+	public VTLSingletonComponentRequiredException(String name, DataStructureComponent<?, ?, ?>... components)
 	{
-		this(structure, Arrays.asList(components));
+		this(name, Arrays.asList(components));
 	}
 
 	public VTLSingletonComponentRequiredException(Class<? extends ComponentRole> role, Set<? extends DataStructureComponent<?, ?, ?>> components)
@@ -46,9 +45,9 @@ public class VTLSingletonComponentRequiredException extends VTLException
 		super("Required exactly one " + role.getSimpleName() + " of domain " + domain + " but found: " + components);
 	}
 
-	public VTLSingletonComponentRequiredException(DataSetMetadata structure, Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public VTLSingletonComponentRequiredException(String name, Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		super("Required exactly one more component to add to " + structure + " but found: " + components);
+		super("Required exactly one more component to add to " + name + " but found: " + components);
 	}
 
 	private static final long serialVersionUID = 1L;
