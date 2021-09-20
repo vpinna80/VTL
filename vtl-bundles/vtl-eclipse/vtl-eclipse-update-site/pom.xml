@@ -45,7 +45,7 @@
 						<artifact><id>${project.groupId}:vtl-api:${project.version}</id></artifact>
 						<artifact><id>${project.groupId}:vtl-types:${project.version}</id></artifact>
 						<artifact><id>${project.groupId}:vtl-confman:${project.version}</id></artifact>
-						<artifact><id>${project.groupId}:vtl-domains:${project.version}</id></artifact>
+						<artifact><id>${project.groupId}:vtl-meta:${project.version}</id></artifact>
 						<artifact><id>${project.groupId}:vtl-engine:${project.version}</id></artifact>
 						<artifact><id>${project.groupId}:vtl-envs:${project.version}</id></artifact>
 						<artifact><id>${project.groupId}:vtl-parser:${project.version}</id></artifact>

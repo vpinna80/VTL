@@ -89,9 +89,9 @@
 				<module>vtl-bundles</module>
 				<module>vtl-confman</module>
 				<module>vtl-coverage</module>
-				<module>vtl-domains</module>
 				<module>vtl-engine</module>
 				<module>vtl-envs</module>
+				<module>vtl-meta</module>
 				<module>vtl-parser</module>
 				<module>vtl-session</module>
 				<module>vtl-transform</module>
@@ -340,7 +340,7 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-domains</artifactId>
+				<artifactId>vtl-meta</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

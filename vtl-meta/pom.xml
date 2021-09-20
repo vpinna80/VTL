@@ -25,7 +25,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>vtl-domains</artifactId>
+	<artifactId>vtl-meta</artifactId>
 	<packaging>bundle</packaging>
 
 	<parent>
@@ -34,8 +34,8 @@
 		<version>${revision}</version>
 	</parent>
 
-	<name>vtl-domains</name>
-	 <description>Implementation of VTL metadata repository and custom domains</description>
+	<name>vtl-meta</name>
+	<description>Implementation of VTL metadata repository and custom domains</description>
 
 	<dependencies>
 		<dependency>

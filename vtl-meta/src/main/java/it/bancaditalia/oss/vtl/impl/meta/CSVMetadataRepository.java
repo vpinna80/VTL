@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.domains;
+package it.bancaditalia.oss.vtl.impl.meta;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.groupingByConcurrent;
