@@ -34,9 +34,11 @@ import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singleton;
 
+
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Set;
+
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -249,6 +251,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, leftMeasures);
 		if (rightMeasures.size() == 0)
 			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, rightMeasures);
+
+
 
 		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class))
 				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
