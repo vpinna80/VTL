@@ -26,6 +26,7 @@ import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,6 +35,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -64,7 +66,7 @@ public class SerCollectors
         return SerCollector.of(mapSupplier, accumulator, mapMerger(mergeFunction), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
-    public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, R> downstream, SerFunction<R, RR> finisher)
+    public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, R> downstream, SerFunction<? super R, RR> finisher)
 	{
 		Set<Characteristics> characteristics = downstream.characteristics();
 		if (characteristics.contains(IDENTITY_FINISH))
@@ -112,6 +114,11 @@ public class SerCollectors
         		downstream.combiner(), downstream.finisher(), downstream.characteristics());
     }
 
+    public static <T> SerCollector<T, ?, BigDecimal> summingBigDecimal(SerFunction<? super T, BigDecimal> mapper)
+    {
+        return collectingAndThen(mapping(mapper::apply, reducing(BigDecimal::add)), opt -> (BigDecimal) opt.orElse(BigDecimal.valueOf(0)));
+    }
+
     public static <T> SerCollector<T, double[], Double> summingDouble(SerToDoubleFunction<? super T> mapper)
     {
         return new SerCollector<>(
@@ -139,6 +146,11 @@ public class SerCollectors
                 (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); a[2]++; a[3]+= mapper.applyAsDouble(t);},
                 (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
                 a -> (a[2] == 0) ? 0.0d : (computeFinalSum(a) / a[2]), emptySet());
+    }
+
+    public static <T extends Serializable> SerCollector<T, ?, BigDecimal> averagingBigDecimal(SerFunction<? super T, BigDecimal> mapper)
+    {
+		return mapping(mapper, teeing(collectingAndThen(reducing(BigDecimal::add), v -> v.orElse(BigDecimal.valueOf(0))), counting(), (sum, n) -> sum.divide(BigDecimal.valueOf(n))));
     }
 
     public static <T> SerCollector<T, List<T>, List<T>> toList()
@@ -231,11 +243,60 @@ public class SerCollectors
         }
     }
     
-    public static <T extends Serializable> SerCollector<T, ? extends SerConsumer<T>, Optional<T>> reducing(SerBinaryOperator<T> op)
+    public static <T extends Serializable> SerCollector<T, OptionalBox<T>, Optional<T>> reducing(SerBinaryOperator<T> op)
     {
         return new SerCollector<>(() -> new OptionalBox<T>(op), OptionalBox::accept,
                 (a, b) -> { if (b.isPresent()) a.accept(b.get()); return a; },
                 a -> Optional.ofNullable(a.get()), emptySet());
+    }
+
+    public static <T, A1, A2, R1, R2, R> SerCollector<T, PairBox<T, A1, A2, R1, R2, R>, R> teeing(SerCollector<? super T, A1, R1> downstream1, 
+    		SerCollector<? super T, A2, R2> downstream2, SerBiFunction<R1, R2, R> merger) 
+    {
+        EnumSet<Characteristics> characteristics = EnumSet.noneOf(Characteristics.class);
+        characteristics.addAll(downstream1.characteristics());
+        characteristics.retainAll(downstream2.characteristics());
+        characteristics.remove(IDENTITY_FINISH);
+
+        return SerCollector.of(() -> new PairBox<>(downstream1, downstream2, merger), PairBox::accumulate, PairBox::combine, PairBox::finish, characteristics);
+    }
+
+    static class PairBox<T, A1, A2, R1, R2, R>
+    {
+        A1 a1;
+        A2 a2;
+		private final SerCollector<? super T, A1, R1> downstream1;
+		private final SerCollector<? super T, A2, R2> downstream2;
+		private final SerBiFunction<? super R1, ? super R2, R> merger;
+
+        public PairBox(SerCollector<? super T, A1, R1> downstream1, SerCollector<? super T, A2, R2> downstream2, SerBiFunction<? super R1, ? super R2, R> merger)
+		{
+            this.downstream1 = downstream1;
+			this.downstream2 = downstream2;
+			this.merger = merger;
+			a1 = downstream1.supplier().get();
+            a2 = downstream2.supplier().get();
+		}
+
+        void accumulate(T t)
+        {
+        	downstream1.accumulator().accept(a1, t);
+        	downstream2.accumulator().accept(a2, t);
+        }
+
+        PairBox<T, A1, A2, R1, R2, R> combine(PairBox<T, A1, A2, R1, R2, R> other)
+        {
+            a1 = downstream1.combiner().apply(a1, other.a1);
+            a2 = downstream2.combiner().apply(a2, other.a2);
+            return this;
+        }
+
+        R finish()
+        {
+            R1 r1 = downstream1.finisher().apply(a1);
+            R2 r2 = downstream2.finisher().apply(a2);
+            return merger.apply(r1, r2);
+        }
     }
 
     private static double[] sumWithCompensation(double[] intermediateSum, double value)
@@ -276,4 +337,46 @@ public class SerCollectors
     {
         return (u,v) -> { throw new IllegalStateException(String.format("Duplicate key %s", u)); };
     }
+
+	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(SerFunction<? super U, ? extends R> keyMapper)
+	{
+		return toConcurrentMap(keyMapper.compose(Entry::getKey), Entry::getValue);
+	}
+
+	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> mappingConcurrentEntries(SerSupplier<ConcurrentMap<U, V>> factory)
+	{
+		return toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> {
+			throw new UnsupportedOperationException("Duplicate");
+		}, factory);
+	}
+
+	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> groupingByKeys(SerCollector<Entry<U, V>, ?, R> valueMapper)
+	{
+		return groupingByConcurrent(Entry::getKey, valueMapper);
+	}
+
+	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> mappingValues(SerFunction<? super V, ? extends R> valueMapper)
+	{
+		return toConcurrentMap(Entry::getKey, valueMapper.compose(Entry::getValue));
+	}
+
+	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap(SerBinaryOperator<V> combiner)
+	{
+		return toConcurrentMap(Entry::getKey, Entry::getValue, combiner);
+	}
+
+	public static <K, V> SerCollector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(SerFunction<? super V, ? extends K> valueMapper)
+	{
+		return toConcurrentMap(valueMapper, identity());
+	}
+
+	public static <K, V> SerCollector<K, ?, ConcurrentMap<K, V>> toMapWithValues(SerFunction<K, V> keyMapper)
+	{
+		return toConcurrentMap(identity(), keyMapper);
+	}
+
+	public static <U, V> SerCollector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
+	{
+		return toConcurrentMap(Entry::getKey, Entry::getValue);
+	}
 }

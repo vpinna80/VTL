@@ -34,28 +34,28 @@ public interface Environment
 	/**
 	 * Checks if this environment provides a VTL object with the specified name.
 	 * 
-	 * @param name The name of requested object.
+	 * @param alias The name of requested object.
 	 * @return true if this environment provides the specified object.
 	 */
-	public boolean contains(String name);
+	public boolean contains(String alias);
 	
 	/**
 	 * Returns an {@link Optional} reference to a VTL object with the specified name in this environment.
 	 * 
-	 * @param name The name of requested object.
+	 * @param alias The name of requested object.
 	 * @return An Optional with a reference to the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<VTLValue> getValue(String name);
+	public Optional<VTLValue> getValue(String alias);
 
 	/**
 	 * Returns an {@link Optional} reference to the metadata of a VTL object with the specified name in this environment.
 	 * 
-	 * @param name The name of requested object
+	 * @param alias The name of requested object
 	 * @return An Optional with a reference to the metadata of the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public default Optional<VTLValueMetadata> getValueMetadata(String name)
+	public default Optional<VTLValueMetadata> getValueMetadata(String alias)
 	{
-		return getValue(name).map(VTLValue::getMetadata);
+		return getValue(alias).map(VTLValue::getMetadata);
 	}
 	
 	/**

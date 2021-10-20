@@ -41,6 +41,11 @@ public class IntegerValue<S extends IntegerDomainSubset<S>> extends NumberValueI
 		return value == null ? NULL_INSTANCE : new IntegerValue<>(value, INTEGERDS);
 	}
 	
+	public static <S extends IntegerDomainSubset<S>> ScalarValue<?, ?, S, IntegerDomain> of(Long value, S domain)
+	{
+		return value == null ? NullValue.instance(domain) : new IntegerValue<>(value, domain);
+	}
+	
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{

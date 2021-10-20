@@ -103,6 +103,7 @@ public interface VTLProperty
 	 */
 	public default void addValues(String... newValues)
 	{
-		setValue(getValue() + "," + Arrays.stream(newValues).collect(joining(",")));
+		String beginning = hasValue() ? getValue() + "," : "";
+		setValue(Arrays.stream(newValues).collect(joining(",", beginning, "")));
 	}
 }

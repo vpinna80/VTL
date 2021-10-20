@@ -24,8 +24,11 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -59,15 +62,14 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 		{
 			if (value instanceof NullValue)
 				return NullValue.instance(this);
-			Object implValue = value.get();
-			if (implValue instanceof Double)
-				return IntegerValue.of((long)(double)implValue);
-			else if (implValue instanceof Long)
-				return IntegerValue.of((Long)implValue);
-			else if (implValue instanceof String)
-				return IntegerValue.of(Long.parseLong((String)implValue));
+			if (value instanceof DoubleValue || value instanceof BigDecimalValue)
+				return IntegerValue.of(((Number) value.get()).longValue());
+			else if (value instanceof IntegerValue)
+				return IntegerValue.of((Long) value.get());
+			else if (value instanceof StringValue)
+				return IntegerValue.of(Long.parseLong(value.get().toString()));
 			else 
-				throw new UnsupportedOperationException("Cast to double from " + value.getClass());
+				throw new VTLCastException(this, value);
 		}
 		else 
 			throw new VTLCastException(this, value);

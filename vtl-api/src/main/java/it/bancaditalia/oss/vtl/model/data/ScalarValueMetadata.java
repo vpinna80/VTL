@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import java.io.Serializable;
+
 /**
  * A metadata for a {@link ScalarValue} providing information on its {@link ValueDomainSubset}.
  * 
@@ -27,7 +29,7 @@ package it.bancaditalia.oss.vtl.model.data;
  * @param <S> The {@link ValueDomainSubset} type.
  */
 @FunctionalInterface
-public interface ScalarValueMetadata<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends VTLValueMetadata
+public interface ScalarValueMetadata<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends VTLValueMetadata, Serializable
 {
 	/**
 	 * @return the {@link ValueDomainSubset} instance represented by this VTLScalarValueMetadata

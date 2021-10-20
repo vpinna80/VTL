@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
@@ -36,12 +37,6 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	public boolean isComparableWith(ValueDomain other)
 	{
 		return false;
-	}
-
-	@Override
-	public Object getCriterion()
-	{
-		return null;
 	}
 
 	@Override
@@ -72,5 +67,11 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	public boolean equals(Object obj)
 	{
 		return obj != null && obj.getClass() == getClass();
+	}
+	
+	@Override
+	public ScalarValue<?, ?, NullDomain, ValueDomain> getDefaultValue()
+	{
+		return NullValue.instance(this);
 	}
 }

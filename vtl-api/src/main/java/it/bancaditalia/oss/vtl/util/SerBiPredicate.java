@@ -24,5 +24,14 @@ import java.util.function.BiPredicate;
 
 public interface SerBiPredicate<T, U> extends BiPredicate<T, U>, Serializable
 {
-
+	public static <T, U> SerBiPredicate<T, U> not(SerBiPredicate<T, U> biPredicate)
+	{
+		return biPredicate.negate();
+	}
+	
+	@Override
+	public default SerBiPredicate<T, U> negate()
+	{
+		return (a, b) -> !test(a, b);
+	}
 }

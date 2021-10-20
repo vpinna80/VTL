@@ -107,6 +107,6 @@ public class VTLPropertyImpl implements VTLProperty
 	@Override
 	public boolean hasValue()
 	{
-		return hasValue || getValue() != null;
+		return hasValue || (getValue() != null && !getValue().isEmpty());
 	}
 }

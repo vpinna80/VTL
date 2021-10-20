@@ -29,4 +29,15 @@ public interface SerPredicate<T> extends Predicate<T>, Serializable
 	{
 		return u -> test(function.apply(u));
 	}
+	
+	public static <T> SerPredicate<T> not(SerPredicate<T> predicate)
+	{
+		return predicate.negate();
+	}
+	
+	@Override
+	public default SerPredicate<T> negate()
+	{
+		return a -> !test(a);
+	}
 }

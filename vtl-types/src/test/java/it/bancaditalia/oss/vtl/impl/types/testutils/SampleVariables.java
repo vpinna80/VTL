@@ -46,7 +46,7 @@ public enum SampleVariables
 	ATTRIB_STRING_1, ATTRIB_STRING_2, ATTRIB_STRING_3, ATTRIB_STRING_4, 
 	ATTRIB_BOOLEAN_1, ATTRIB_BOOLEAN_2, ATTRIB_BOOLEAN_3, ATTRIB_BOOLEAN_4;
 
-	private final DataStructureComponentImpl<?, ?, ?> component;
+	private final DataStructureComponent<?, ?, ?> component;
 	
 	private SampleVariables()
 	{

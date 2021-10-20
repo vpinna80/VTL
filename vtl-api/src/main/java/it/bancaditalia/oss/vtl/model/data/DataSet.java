@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.emptyMap;
 
 import java.util.Iterator;
@@ -41,6 +40,7 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 
@@ -253,16 +253,16 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
 			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
 	{
-		return analytic(components.stream().collect(toMapWithValues(k -> k)), clause, collectors, finishers);
+		return analytic(components.stream().collect(SerCollectors.toMapWithValues(k -> k)), clause, collectors, finishers);
 	}
 
 	public default DataSet analytic(Set<DataStructureComponent<Measure, ?, ?>> components, WindowClause clause,
 			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors)
 	{
 		Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> measures = components.stream()
-				.collect(toMapWithValues(measure -> measure));
+				.collect(SerCollectors.toMapWithValues(measure -> measure));
 		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers = components.stream()
-				.collect(toMapWithValues(measure -> (value, originalValue) -> value));
+				.collect(SerCollectors.toMapWithValues(measure -> (value, originalValue) -> value));
 		
 		return analytic(measures, clause, collectors, finishers);
 	}

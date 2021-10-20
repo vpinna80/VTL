@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
@@ -52,6 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.Triple;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -151,7 +151,7 @@ public class DataStructureBuilder
 		{
 			this.components = Collections.unmodifiableMap(Utils.getStream(components)
 				.map(toEntry(DataStructureComponent::getName, c -> c))
-				.collect(entriesToMap()));
+				.collect(SerCollectors.entriesToMap()));
 		}
 		
 		@Override

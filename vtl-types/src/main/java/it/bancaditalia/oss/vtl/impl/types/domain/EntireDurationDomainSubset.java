@@ -61,12 +61,6 @@ public class EntireDurationDomainSubset implements DurationDomainSubset<EntireDu
 	}
 
 	@Override
-	public Object getCriterion()
-	{
-		return null;
-	}
-
-	@Override
 	public ScalarValue<?, ?, EntireDurationDomainSubset, DurationDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof NullValue)
@@ -98,5 +92,11 @@ public class EntireDurationDomainSubset implements DurationDomainSubset<EntireDu
 	public boolean equals(Object obj)
 	{
 		return obj != null && obj.getClass() == getClass();
+	}
+	
+	@Override
+	public ScalarValue<?, ?, EntireDurationDomainSubset, DurationDomain> getDefaultValue()
+	{
+		return NullValue.instance(this);
 	}
 }

@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.session;
 
 import java.util.Collection;
 
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
@@ -51,7 +52,15 @@ public interface MetadataRepository
 	 * @return the domain or null if none exists.
 	 */
 	public ValueDomainSubset<?, ?> getDomain(String name);
-	
+
+	/**
+	 * Returns a dataset structure with the specified name if it exists.
+	 * 
+	 * @param name the name of the structure
+	 * @return the structure or null if none exists.
+	 */
+	public DataSetMetadata getStructure(String name);
+
 	/**
 	 * Registers a new domain instance inside this repository (optional operation).
 	 * 
@@ -66,16 +75,16 @@ public interface MetadataRepository
 	}
 	
 	/**
-	 * Creates a new domain instance and registers it inside this repository (optional operation).
+	 * Registers a new domain instance inside this repository if it is not and return the registered domain.
 	 * 
-	 * @param <S> the type of the domain
 	 * @param name the name of the new domain
-	 * @param domainClass the class of the domain
-	 * @param param optional parameters to pass to the domain class constructor
+	 * @para@Override
+	@Override
+	m domain the domain to define 
 	 * 
 	 * @return the created domain instance.
 	 */
-	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> S defineDomain(String name, Class<S> domainClass, Object param)
+	public default ValueDomainSubset<?, ?> defineDomain(String name, ValueDomainSubset<?, ?> domain)
 	{
 		throw new UnsupportedOperationException("defineDomain");
 	}

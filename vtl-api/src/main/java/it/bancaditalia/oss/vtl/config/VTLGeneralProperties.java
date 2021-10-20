@@ -50,7 +50,7 @@ public enum VTLGeneralProperties implements VTLProperty
 	 * 
 	 * The default value may be changed by setting the {@code vtl.metadatarepository.class} system property. 
 	 */
-	METADATA_REPOSITORY("vtl.metadatarepository.class", false, "it.bancaditalia.oss.vtl.impl.domains.InMemoryMetadataRepository"),
+	METADATA_REPOSITORY("vtl.metadatarepository.class", false, "it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository"),
 
 	/**
 	 * This property allows to choose which {@link Engine computing engine} should be used.
@@ -74,7 +74,14 @@ public enum VTLGeneralProperties implements VTLProperty
 	 */
 	ENVIRONMENT_IMPLEMENTATION("vtl.environment.implementation.classes", true, 
 			"it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
-			"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl");
+			"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"),
+
+	/**
+	 * This property allows to choose whether to use BigDecimal as the internal java representation of values of domain Number.
+	 * 
+	 * The default value may be changed by using the {@code vtl.config.use.bigdecimal} system property. 
+	 */
+	USE_BIG_DECIMAL("vtl.config.use.bigdecimal", false, "false");
 
 	private final String name;
 	private final boolean multiple;

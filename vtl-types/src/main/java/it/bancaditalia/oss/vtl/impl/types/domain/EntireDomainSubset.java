@@ -19,17 +19,64 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import java.io.Serializable;
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 
+import java.util.Set;
+
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.model.data.DescribedDomainSubset;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D extends ValueDomain> implements ValueDomainSubset<S, D>, Serializable
+public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D extends ValueDomain> implements DescribedDomainSubset<S, D>
 {
 	private static final long serialVersionUID = 1L;
 
 	private final D parentDomain;
-	private final String varName; 
+	private final String varName;
+	
+	public static final Transformation ENTIRE = new Transformation() {
+		
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public VTLValueMetadata getMetadata(TransformationScheme scheme)
+		{
+			return BOOLEAN;
+		}
+		
+		@Override
+		public VTLValue eval(TransformationScheme scheme)
+		{
+			return TRUE;
+		}
+		
+		@Override
+		public boolean isTerminal()
+		{
+			throw new UnsupportedOperationException();
+		}
+		
+		@Override
+		public Set<LeafTransformation> getTerminals()
+		{
+			throw new UnsupportedOperationException();
+		}
+		
+		@Override
+		public Lineage getLineage()
+		{
+			throw new UnsupportedOperationException();
+		}
+	};
 	
 	public EntireDomainSubset(D parentDomain, String defaultVarName)
 	{
@@ -49,9 +96,9 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	}
 
 	@Override
-	public Object getCriterion()
+	public Transformation getCriterion()
 	{
-		throw new UnsupportedOperationException("getCriterion");
+		return ENTIRE;
 	}
 
 	@Override
@@ -76,5 +123,12 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	public boolean equals(Object obj)
 	{
 		return obj != null && obj.getClass() == getClass();
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public ScalarValue<?, ?, S, D> getDefaultValue()
+	{
+		return NullValue.instance((S) this);
 	}
 }

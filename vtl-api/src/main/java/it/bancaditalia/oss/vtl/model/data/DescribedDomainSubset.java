@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
+
 /**
  * Representation of a described domain subset.
  * TODO
@@ -29,5 +31,5 @@ package it.bancaditalia.oss.vtl.model.data;
  */
 public interface DescribedDomainSubset<S extends DescribedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
 {
-
+	public Transformation getCriterion();
 }

@@ -19,9 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
-import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
@@ -36,16 +33,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 
 /**
  * This class contains various utility SerFunctions used by the VTL Engine implementation.
@@ -112,53 +105,6 @@ public final class Utils
 	public static <K, V> SerFunction<V, Entry<K, V>> toEntryWithKey(SerFunction<? super V, ? extends K> valueToKeyMapper)
 	{
 		return v -> new SimpleEntry<>(valueToKeyMapper.apply(v), v);
-	}
-
-	public static <U, V> SerCollector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
-	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue);
-	}
-
-	public static <K, V> SerCollector<K, ?, ConcurrentMap<K, V>> toMapWithValues(SerFunction<K, V> keyMapper)
-	{
-		return toConcurrentMap(identity(), keyMapper);
-	}
-
-	public static <K, V> SerCollector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(SerFunction<? super V, ? extends K> valueMapper)
-	{
-		return toConcurrentMap(valueMapper, identity());
-	}
-
-	public static <U, V, M extends ConcurrentMap<U, V>> SerCollector<Entry<U, V>, ?, M> entriesToMap(SerSupplier<M> mapSupplier)
-	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue, mergeError(), mapSupplier);
-	}
-
-	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> entriesToMap(SerBinaryOperator<V> combiner)
-	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue, combiner);
-	}
-
-	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> mappingValues(SerFunction<? super V, ? extends R> valueMapper)
-	{
-		return toConcurrentMap(Entry::getKey, valueMapper.compose(Entry::getValue));
-	}
-
-	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(SerFunction<? super U, ? extends R> keyMapper)
-	{
-		return toConcurrentMap(keyMapper.compose(Entry::getKey), Entry::getValue);
-	}
-
-	public static <U, V> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, V>> mappingConcurrentEntries(SerSupplier<ConcurrentMap<U, V>> factory)
-	{
-		return toConcurrentMap(Entry::getKey, Entry::getValue, (a, b) -> {
-			throw new UnsupportedOperationException("Duplicate");
-		}, factory);
-	}
-
-	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<U, R>> groupingByKeys(SerCollector<Entry<U, V>, ?, R> valueMapper)
-	{
-		return groupingByConcurrent(Entry::getKey, valueMapper);
 	}
 
 	public static <T, R> R folding(R accumulator, Stream<T> stream, SerBiFunction<? super R, ? super T, ? extends R> aggregator)
@@ -299,14 +245,6 @@ public final class Utils
 		return ORDERED ? stream : stream.unordered();
 	}
 
-	public static <T, U, A, R> SerCollector<T, A, R> flatMapping(SerFunction<? super T, ? extends Stream<? extends U>> mapper, SerCollector<? super U, A, R> downstream)
-	{
-		final SerBiConsumer<A, T> biConsumer = (r, t) -> 
-			Optional.ofNullable(mapper.apply(t)).ifPresent(s -> s.forEach(u -> downstream.accumulator().accept(r, u)));
-
-		return SerCollector.of(downstream.supplier()::get, biConsumer, downstream.combiner()::apply, downstream.finisher()::apply, downstream.characteristics());
-	}
-
 	public static <A1 extends Serializable, A2 extends Serializable, B extends Serializable, C extends Serializable> SerFunction<Triple<A1, B, C>, Triple<A2, B, C>> changingFirst(SerFunction<? super A1, ? extends A2> mapper)
 	{
 		return t -> new Triple<>(mapper.apply(t.getFirst()), t.getSecond(), t.getThird());
@@ -334,62 +272,6 @@ public final class Utils
 		Map<K, V> classifierMap = new HashMap<>(originalMap);
 		classifierMap.keySet().retainAll(askedKeys);
 		return classifierMap;
-	}
-
-	public static <A, B, C> SerFunction<A, SerFunction<B, C>> curry(SerBiFunction<A, B, C> biFunction)
-	{
-		return a -> b -> biFunction.apply(a, b);
-	}
-
-	public static <A, B> SerFunction<A, SerConsumer<B>> curry(SerBiConsumer<A, B> biconsumer)
-	{
-		return a -> b -> biconsumer.accept(a, b);
-	}
-
-	public static <A, B, C> SerFunction<B, SerFunction<A, C>> curryRev(SerBiFunction<A, B, C> biFunction)
-	{
-		return b -> a -> biFunction.apply(a, b);
-	}
-	
-	public static <A, B> SerFunction<A, B> asFun(SerFunction<? super A, ? extends B> function)
-	{
-		return a -> function.apply(a);
-	}
-	
-	public static <A> SerBinaryOperator<A> reverseIf(SerBinaryOperator<A> binaryOperator, boolean isReverse)
-	{
-		return (a, b) -> isReverse ? binaryOperator.apply(b, a) : binaryOperator.apply(a, b);
-	}
-
-	public static <A, R> SerBiFunction<? super A, ? super A, ? extends R> reverseIf(SerBiFunction<? super A, ? super A, ? extends R> biFunction, boolean isReverse)
-	{
-		return (a, b) -> isReverse ? biFunction.apply(b, a) : biFunction.apply(a, b);
-	}
-
-	public static SerBiPredicate<DataPoint, DataPoint> reverseIf(boolean isReverse, SerBiPredicate<DataPoint, DataPoint> predicate)
-	{
-		return (a, b) -> isReverse ? predicate.test(b, a) : predicate.test(a, b);
-	}
-
-	public static <A, B, C> SerBiFunction<A, B, C> asFun(SerBiFunction<? super A, ? super B, ? extends C> biFunction)
-	{
-		return (a, b) -> biFunction.apply(a, b);
-	}
-	
-	@SuppressWarnings("ReturnValueIgnored")
-	public <T> SerConsumer<T> asConsumer(SerFunction<? super T, ?> function)
-	{
-		return function::apply;
-	}
-
-	public static <T, U> SerBiPredicate<T, U> not(SerBiPredicate<T, U> test)
-	{
-		return (a, b) -> !test.test(a, b);
-	}
-	
-	public static <T, U> SerPredicate<T> not(SerPredicate<T> test)
-	{
-		return a -> !test.test(a);
 	}
 	
 	public static <T, C extends Collection<T>> C coalesce(C value, C defaultValue)

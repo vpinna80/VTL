@@ -35,4 +35,9 @@ public interface SerBinaryOperator<T> extends BinaryOperator<T>, SerBiFunction<T
     	SerIntBiFunction<T, T> op = comparator::compare;
         return (a, b) -> op.apply(a, b) >= 0 ? a : b;
     }
+    
+    public default SerBinaryOperator<T> reverseIf(boolean condition)
+    {
+    	return condition ? (a, b) -> apply(b, a) : this;
+    }
 }

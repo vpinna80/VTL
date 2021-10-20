@@ -36,9 +36,9 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public interface Statement
 {
 	/**
-	 * @return The id of the statement, like the rule name at the left side of an assignment statement. 
+	 * @return The id of the statement, like the rule name at the a1 side of an assignment statement. 
 	 */
-	public String getId();
+	public String getAlias();
 
 	/**
 	 * Computes the metadata of the rule in the context of a Transformation Scheme. 

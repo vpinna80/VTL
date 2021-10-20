@@ -19,12 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKeyValue;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
@@ -35,6 +33,7 @@ import java.util.Map;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 /**
@@ -137,7 +136,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	{
 		return Utils.getStream(components)
 				.filter(this::containsKey)
-				.collect(toMapWithValues(this::get));
+				.collect(SerCollectors.toMapWithValues(this::get));
 	}
 
 	/**
@@ -156,7 +155,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.map(Entry::getKey)
 				.filter(c -> c.is(role))
 				.map(c -> c.as(role))
-				.collect(toMapWithValues(this::get));
+				.collect(SerCollectors.toMapWithValues(this::get));
 	}
 
 	/**
@@ -172,7 +171,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 		return Utils.getStream(getValues(role).entrySet())
 				.filter(entryByKey(components::contains))
 				.map(keepingValue(c -> c.as(role)))
-				.collect(entriesToMap());
+				.collect(SerCollectors.entriesToMap());
 	}
 
 	/**

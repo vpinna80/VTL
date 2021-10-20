@@ -21,28 +21,30 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
+import java.math.BigDecimal;
+
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends NumberValueImpl<DoubleValue<S>, Double, S, NumberDomain>
+public class BigDecimalValue<S extends NumberDomainSubset<S, NumberDomain>> extends NumberValueImpl<BigDecimalValue<S>, BigDecimal, S, NumberDomain>
 {
 	private static final long serialVersionUID = 1L;
 	private static final ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> NULLINSTANCE = NullValue.instance(NUMBERDS);
 
-	private DoubleValue(Double value, S domain)
+	private BigDecimalValue(BigDecimal value, S domain)
 	{
 		super(value, domain);
 	}
 	
-	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(Double value)
+	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(BigDecimal value)
 	{
-		return value == null ? NULLINSTANCE : new DoubleValue<>(value, NUMBERDS);
+		return value == null ? NULLINSTANCE : new BigDecimalValue<>(value, NUMBERDS);
 	}
 
-	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(Double value, S domain)
+	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(BigDecimal value, S domain)
 	{
-		return value == null ? NullValue.instance(domain) : new DoubleValue<>(value, domain);
+		return value == null ? NullValue.instance(domain) : new BigDecimalValue<>(value, domain);
 	}
 }

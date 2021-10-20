@@ -50,4 +50,9 @@ public interface SerBiFunction<T, U, R> extends BiFunction<T, U, R>, Serializabl
 			}
 		};
     }
+    
+    public static <T, R> SerBiFunction<T, T, R> reverseIf(SerBiFunction<T, T, R> biFunction, boolean condition)
+    {
+    	return condition ? (a, b) -> biFunction.apply(b, a): biFunction;
+    }
 }

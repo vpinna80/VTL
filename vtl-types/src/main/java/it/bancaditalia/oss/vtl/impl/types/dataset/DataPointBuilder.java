@@ -19,10 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
@@ -47,6 +45,7 @@ import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -61,6 +60,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataPointBuilder
@@ -115,20 +115,22 @@ public class DataPointBuilder
 	
 	public DataPointBuilder addAll(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> values)
 	{
-		values.forEach(delegate::putIfAbsent);
+		values.forEach(this::add);
 		return checkState();
 	}
 
-	public <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> DataPointBuilder add(Entry<? extends K, ? extends V> value)
+	public DataPointBuilder add(Entry<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> value)
 	{
-		delegate.putIfAbsent(value.getKey(), value.getValue());
-		return checkState();
+		return add(value.getKey(), value.getValue());
 	}
 
 	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
 	{
+		if (!component.getDomain().isAssignableFrom(value.getDomain()))
+			throw new VTLCastException(component.getDomain(), value);
+		
 		if (delegate.putIfAbsent(component, value) != null)
-			throw new NullPointerException();
+			throw new IllegalStateException();
 		return checkState();
 	}
 
@@ -224,14 +226,14 @@ public class DataPointBuilder
 			if (role == Identifier.class)
 			{
 				if (ids == null)
-					ids = Utils.getStream(dpValues).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.as(Identifier.class))).collect(entriesToMap());
+					ids = Utils.getStream(dpValues).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.as(Identifier.class))).collect(SerCollectors.entriesToMap());
 				// safe cast, R is Identifier
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				final Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map) ids;
 				return result;
 			}
 			else
-				return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(toMapWithValues(dpValues::get));
+				return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(SerCollectors.toMapWithValues(dpValues::get));
 		}
 
 		@Override

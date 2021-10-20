@@ -27,7 +27,6 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Math.max;
@@ -86,6 +85,7 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -340,7 +340,7 @@ public abstract class AbstractDataSet implements DataSet
 										{
 											throw e;
 										}
-									})).collect(collectingAndThen(entriesToMap(), map -> new SimpleEntry<>(map, sorted[index]))))
+									})).collect(collectingAndThen(SerCollectors.entriesToMap(), map -> new SimpleEntry<>(map, sorted[index]))))
 								.map(splitting((values, dp) -> new DataPointBuilder(dp)
 									.delete(components.keySet())
 									.addAll(values)

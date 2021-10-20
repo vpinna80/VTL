@@ -20,8 +20,11 @@
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
+import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -59,11 +62,25 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 				return NullValue.instance(this);
 			Object implValue = value.get();
 			if (implValue instanceof Double)
-				return DoubleValue.of((Double) implValue);
+				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
+					return BigDecimalValue.of(BigDecimal.valueOf((Double) implValue));
+				else 
+					return DoubleValue.of((Double) implValue);
+			if (implValue instanceof BigDecimal)
+				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
+					return BigDecimalValue.of((BigDecimal) implValue);
+				else 
+					return DoubleValue.of(((BigDecimal) implValue).doubleValue());
 			else if (implValue instanceof Long)
-				return DoubleValue.of((double) (long) implValue);
+				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
+					return BigDecimalValue.of(BigDecimal.valueOf((long) implValue));
+				else
+					return DoubleValue.of((double) (long) implValue);
 			else if (implValue instanceof String)
-				return DoubleValue.of(Double.parseDouble((String)implValue));
+				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
+					return BigDecimalValue.of(new BigDecimal((String) implValue));
+				else
+					return DoubleValue.of(Double.parseDouble((String)implValue));
 			else 
 				throw new UnsupportedOperationException("Cast to double from " + value.getClass());
 		}
