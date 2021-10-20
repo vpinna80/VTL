@@ -87,5 +87,6 @@ The following map shows the current implementation status:
 
 ## Copyright notice
 
-This software is a copyright of Bank of Italy, 2019-2020.
-The software is distributed under the European Public Licence v1.2.
+This software is a copyright of Bank of Italy, 2019-2020.<br/>
+The software is distributed under the European Public Licence v1.2.<br/>
+This software is optimized using [JProfiler](https://www.ej-technologies.com/products/jprofiler/overview.html).
