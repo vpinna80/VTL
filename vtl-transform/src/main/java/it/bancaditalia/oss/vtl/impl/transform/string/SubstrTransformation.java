@@ -41,7 +41,7 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 
 import java.util.HashSet;

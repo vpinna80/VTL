@@ -24,7 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.model.data.DataPoint.compareBy;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 
 import java.util.HashSet;
 import java.util.LinkedList;

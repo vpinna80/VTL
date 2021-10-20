@@ -29,7 +29,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -270,10 +269,12 @@ public class SDMXEnvironment implements Environment, Serializable
 			return new DataStructureComponentImpl<>(normalizedName, role, STRINGDS);
 		
 		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
-		StringEnumeratedDomainSubset domain = repository.defineDomain(codelist.getId(), StringEnumeratedDomainSubset.class, codelist.keySet());
-		Objects.requireNonNull(domain, "domain null for " + codelist.getId() + " - " + meta);
-		
-		return new DataStructureComponentImpl<>(normalizedName, role, domain);
+	
+		final String codelistId = codelist.getId();
+		if (repository.isDomainDefined(codelistId))
+			return new DataStructureComponentImpl<>(normalizedName, role, (StringEnumeratedDomainSubset) repository.getDomain(codelistId));
+		else
+			return new DataStructureComponentImpl<>(normalizedName, role, STRINGDS);
 	}
 
 	protected VTLValueMetadata getMetadataSDMX(String provider, String dataflow, String[] tokens)

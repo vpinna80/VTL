@@ -67,7 +67,7 @@ class DefineHierarchyStatement extends AbstractStatement
 	@Override
 	public String toString()
 	{
-		return "DEFINE HIERARCHICAL RULESET " + getId() + "(VARIABLE RULE " + hierarchy.getName() + ")";
+		return "DEFINE HIERARCHICAL RULESET " + getAlias() + "(VARIABLE RULE " + hierarchy.getName() + ")";
 	}
 
 	@Override

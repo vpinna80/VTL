@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.mergeError;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.toMap;
 

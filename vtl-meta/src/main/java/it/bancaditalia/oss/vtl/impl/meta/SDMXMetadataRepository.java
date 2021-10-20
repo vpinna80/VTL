@@ -40,8 +40,8 @@ import org.xml.sax.SAXException;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SDMXMetadataRepository extends InMemoryMetadataRepository
@@ -81,7 +81,8 @@ public class SDMXMetadataRepository extends InMemoryMetadataRepository
 			.mapToObj(codelists::item)
 			.map(Element.class::cast)
 			.forEach(codelist -> {
-				LOGGER.trace("Populating codelist {}", codelist.getAttribute("id"));
+				final String codelistName = codelist.getAttribute("id");
+				LOGGER.trace("Populating codelist {}", codelistName);
 				NodeList codes = codelist.getElementsByTagNameNS("http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure", "Code");
 				LOGGER.trace("Codelist {} has {} codes", codes.getLength());
 				Set<String> items = Utils.getStream(codes.getLength())
@@ -89,7 +90,7 @@ public class SDMXMetadataRepository extends InMemoryMetadataRepository
 					.map(Element.class::cast)
 					.map(code -> code.getAttribute("id"))
 					.collect(toSet());
-				defineDomain(codelist.getAttribute("id"), StringEnumeratedDomainSubset.class, items);
+				defineDomain(codelistName, new StringCodeList(codelistName, items));
 			});
 		LOGGER.info("Finished loading metadata", url);
 	}

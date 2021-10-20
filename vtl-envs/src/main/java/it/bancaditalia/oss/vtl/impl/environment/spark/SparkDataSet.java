@@ -30,8 +30,8 @@ import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.Sor
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

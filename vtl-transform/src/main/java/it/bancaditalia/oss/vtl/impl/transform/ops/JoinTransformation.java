@@ -23,13 +23,13 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.onlyIf;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;

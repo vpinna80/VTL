@@ -22,10 +22,10 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.SUM;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 

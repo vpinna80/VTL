@@ -37,8 +37,8 @@ public class WorkspaceImpl implements Workspace
 	@Override
 	public synchronized void addRule(Statement statement)
 	{
-		if (rules.putIfAbsent(normalize(statement.getId()), statement) != null)
-			throw new IllegalStateException("Object " + statement.getId() + " was already defined");
+		if (rules.putIfAbsent(normalize(statement.getAlias()), statement) != null)
+			throw new IllegalStateException("Object " + statement.getAlias() + " was already defined");
 	}
 
 	@Override

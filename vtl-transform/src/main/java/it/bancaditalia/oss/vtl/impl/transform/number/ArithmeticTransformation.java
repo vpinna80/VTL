@@ -23,22 +23,20 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
-import static it.bancaditalia.oss.vtl.util.Utils.reverseIf;
+import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIV;
+import static it.bancaditalia.oss.vtl.util.SerBiFunction.reverseIf;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singleton;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -72,6 +70,8 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ArithmeticTransformation extends BinaryTransformation
@@ -92,14 +92,14 @@ public class ArithmeticTransformation extends BinaryTransformation
 	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
-			if (INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(left.getDomain()))
+			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(left.getDomain()))
 				return NullValue.instance(INTEGERDS);
 			else
 				return NullValue.instance(NUMBERDS);
-		else if (left instanceof IntegerValue && right instanceof IntegerValue)
-			return getOperator().applyAsInt((NumberValue<?, ?, ?, ?>) left, (NumberValue<?, ?, ?, ?>) right);
-		else
-			return getOperator().applyAsDouble((NumberValue<?, ?, ?, ?>) left, (NumberValue<?, ?, ?, ?>) right);
+		else 
+			return getOperator() != DIV && left instanceof IntegerValue && right instanceof IntegerValue 
+					? getOperator().applyAsInt(left, right) 
+					: getOperator().applyAsNumber(left, right);
 	}
 
 	@Override
@@ -108,15 +108,15 @@ public class ArithmeticTransformation extends BinaryTransformation
 		Set<String> measureNames = dataset.getComponents(Measure.class, NUMBERDS).stream().map(DataStructureComponent::getName).collect(toSet());
 		ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> castedScalar = NUMBERDS.cast(scalar);
 		
-		Predicate<String> bothIntegers = name -> ((DataSetMetadata) metadata).getComponent(name)
+		SerPredicate<String> bothIntegers = name -> ((DataSetMetadata) metadata).getComponent(name)
 					.map(DataStructureComponent::getDomain)
 					.map(c -> INTEGERDS.isAssignableFrom(c))
 					.orElseThrow(() -> new VTLMissingComponentsException(name, (DataSetMetadata) metadata)) 
 				&& INTEGERDS.isAssignableFrom(scalar.getDomain());
 		
 		// must remember which is the left operand because some operators are not commutative
-		BiFunction<? super DataPoint, ? super String, ScalarValue<?, ?, ?, ?>> finisher = (dp, name) -> 
-			reverseIf(bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsDouble, !datasetIsLeftOp)
+		SerBiFunction<? super DataPoint, ? super String, ScalarValue<?, ?, ?, ?>> finisher = (dp, name) -> 
+			reverseIf(getOperator() != DIV && bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsNumber, !datasetIsLeftOp)
 				.apply(NUMBERDS.cast(dp.get(dataset.getComponent(name).get())), castedScalar);
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, 
@@ -142,7 +142,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> leftMeasure = streamed.getComponents(Measure.class, NUMBERDS).iterator().next();
 			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> rightMeasure = indexed.getComponents(Measure.class, NUMBERDS).iterator().next();
 			DataStructureComponentImpl<Measure, ? extends NumberDomainSubset<?, ?>, ?> resultComp;
-			if (INTEGERDS.isAssignableFrom(leftMeasure.getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getDomain()))
+			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getDomain()))
 				resultComp = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 			else
 				resultComp = new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS);
@@ -171,7 +171,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
 				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dpl, dpr) -> {
-						boolean isResultInt = INTEGERDS.isAssignableFrom(resultMeasure.getDomain());
+						boolean isResultInt = getOperator() != DIV && INTEGERDS.isAssignableFrom(resultMeasure.getDomain());
 						ScalarValue<?, ?, ?, ?> leftVal = dpl.get(streamedMeasure);
 						ScalarValue<?, ?, ?, ?> rightVal = dpr.get(indexedMeasure);
 						return new DataPointBuilder()
@@ -201,7 +201,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		if (left instanceof NullValue || right instanceof NullValue)
 			return intResult ? NullValue.instance(INTEGERDS) : NullValue.instance(NUMBERDS);
 		
-		return reverseIf(intResult ? getOperator()::applyAsInt : getOperator()::applyAsDouble, swap)
+		return reverseIf(intResult && getOperator() != DIV ? getOperator()::applyAsInt : getOperator()::applyAsNumber, swap)
 			.apply((NumberValue<?, ?, ?, ?>) left, (NumberValue<?, ?, ?, ?>) right);
 	}
 
@@ -250,18 +250,6 @@ public class ArithmeticTransformation extends BinaryTransformation
 		if (rightMeasures.size() == 0)
 			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, rightMeasures);
 
-//		DataStructureComponent<? extends Measure, ?, ?> firstLeft = leftMeasures.iterator().next();
-//		DataStructureComponent<? extends Measure, ?, ?> firstRight = rightMeasures.iterator().next();
-//		
-//		ValueDomainSubset<?, ?> firstLeftDomain = firstLeft.getDomain();
-//		ValueDomainSubset<?, ?> firstRightDomain = firstRight.getDomain();
-//		
-//		boolean areFirstCompatible = !firstLeft.getName().equals(firstRight.getName()) && 
-//				(firstLeftDomain.isAssignableFrom(firstRightDomain) || firstRight.getDomain().isAssignableFrom(firstLeft.getDomain()));
-//		
-//		if (areFirstCompatible && leftMeasures.size() == 1 && rightMeasures.size() == 1)
-//			return NUMBER;
-
 		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class))
 				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
@@ -272,8 +260,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 			resultMeasures = singleton(new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS));
 		else
 		{
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = Utils.getStream(leftMeasures).collect(toMap(DataStructureComponent::getName, identity()));
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = Utils.getStream(rightMeasures).collect(toMap(DataStructureComponent::getName, identity()));
+			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = Utils.getStream(leftMeasures).collect(toConcurrentMap(DataStructureComponent::getName, identity()));
+			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = Utils.getStream(rightMeasures).collect(toConcurrentMap(DataStructureComponent::getName, identity()));
 			
 			resultMeasures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
 				.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))

@@ -53,7 +53,6 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ComparisonTransformation extends BinaryTransformation
 {
@@ -127,7 +126,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted = (a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
-		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = Utils.reverseIf(casted, leftHasMoreIdentifiers);
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = casted.reverseIf(leftHasMoreIdentifiers);
 
 		// Scan the dataset with less identifiers and find the matches
 		return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed,

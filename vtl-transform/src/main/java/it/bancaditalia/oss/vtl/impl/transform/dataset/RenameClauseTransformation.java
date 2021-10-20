@@ -40,7 +40,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 
 public class RenameClauseTransformation extends DatasetClauseTransformation
 {
@@ -70,7 +70,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 						.addAll(renames.entrySet().stream()
 								.map(splitting((oldName, newName) -> new SimpleEntry<>(newComponents.get(newName), 
 										dp.get(oldComponents.get(oldName)))))
-								.collect(Utils.entriesToMap()))
+								.collect(SerCollectors.entriesToMap()))
 						.delete(oldComponents.values())
 						.build(LineageNode.of(this, dp.getLineage()), metadata)
 				), operand);

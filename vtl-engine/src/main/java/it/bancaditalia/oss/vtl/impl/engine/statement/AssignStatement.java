@@ -21,23 +21,27 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 class AssignStatement extends AbstractStatement implements Transformation
 {
 	//private final static Logger LOGGER = LoggerFactory.getLogger(AssignStatement.class);
 	private static final long serialVersionUID = 1L;
 
-	private final Transformation	expression;
-	private final boolean			persistent;
+	private final MetadataRepository repository = ConfigurationManagerFactory.getInstance().getMetadataRepository();
+	private final Transformation expression;
+	private final boolean persistent;
 
 	public AssignStatement(String name, Transformation expression, boolean persistent)
 	{
@@ -54,7 +58,7 @@ class AssignStatement extends AbstractStatement implements Transformation
 	@Override
 	public String toString()
 	{
-		return getId() + (isPersistent() ? " <- " : " := ") + expression;
+		return getAlias() + (isPersistent() ? " <- " : " := ") + expression;
 	}
 
 	@Override
@@ -84,9 +88,15 @@ class AssignStatement extends AbstractStatement implements Transformation
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
+		DataSetMetadata registeredStructure = repository.getStructure(getAlias());
+		
 		try
 		{
-			return expression.getMetadata(session);
+			final VTLValueMetadata structure = expression.getMetadata(session);
+			if (registeredStructure != null && !registeredStructure.equals(structure))
+				throw new VTLException("Dataset " + getAlias() + " having structure " + registeredStructure + " cannot be assigned an expression of type " + structure + "");
+			
+			return structure;
 		}
 		catch (VTLException e)
 		{

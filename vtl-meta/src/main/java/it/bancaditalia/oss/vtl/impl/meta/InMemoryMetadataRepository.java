@@ -19,21 +19,18 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class InMemoryMetadataRepository implements MetadataRepository, Serializable 
@@ -63,42 +60,22 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	@Override
 	public ValueDomainSubset<?, ?> getDomain(String alias) 
 	{
-		if (domains.containsKey(alias))
+		if (domains.containsKey(requireNonNull(alias)))
 			return domains.get(alias);
 		
 		throw new VTLException("Domain '" + alias + "' is undefined in the metadata.");
 	}
 	
 	@Override
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> S defineDomain(String alias, Class<S> domainClass, Object param)
+	public ValueDomainSubset<?, ?> defineDomain(String alias, ValueDomainSubset<?, ?> domain)
 	{
-		return domainClass.cast(domains.computeIfAbsent(alias, a -> {
-			try 
-			{
-				Class<? extends ValueDomain> implementingClass = mapClass(domainClass);
-				Constructor<?>[] constructors = implementingClass.getConstructors();
-				if (constructors.length == 0)
-					throw new IllegalStateException("Implementation '" + implementingClass.getName() + "' of '" 
-							+ domainClass + "' does not have any accessible constructor.");
-				return domainClass.cast(constructors[0].newInstance(alias, param));
-			} 
-			catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) 
-			{
-				throw new VTLNestedException("Error defining domain " + alias, e);
-			}
-		}));
+		domains.putIfAbsent(requireNonNull(alias, "alias"), requireNonNull(domain, "domain"));
+		return domains.get(alias);
 	}
 	
-	protected <S extends ValueDomainSubset<S, D>, D extends ValueDomain> BiConsumer<? super String, ? super Object> defineDomainOf(Class<S> domainClass)
+	@Override
+	public DataSetMetadata getStructure(String name)
 	{
-		return (alias, arg) -> defineDomain(alias, domainClass, arg); 
-	}
-
-	private Class<? extends ValueDomainSubset<?, ?>> mapClass(Class<? extends ValueDomain> domainClass)
-	{
-		if (domainClass == StringEnumeratedDomainSubset.class)
-			return StringCodeList.class;
-		else
-			throw new UnsupportedOperationException(domainClass + " does not have a suitable implementation.");
+		return null;
 	}
 }

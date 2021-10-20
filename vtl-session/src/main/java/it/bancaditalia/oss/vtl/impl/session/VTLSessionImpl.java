@@ -261,7 +261,7 @@ public class VTLSessionImpl implements VTLSession
 	public Map<String, String> getStatements()
 	{
 		return workspace.getRules().stream()
-				.collect(toMap(Statement::getId, Statement::toString, (a, b) -> {
+				.collect(toMap(Statement::getAlias, Statement::toString, (a, b) -> {
 					throw new UnsupportedOperationException();
 				}, LinkedHashMap::new));
 	}
@@ -269,7 +269,7 @@ public class VTLSessionImpl implements VTLSession
 	public List<String> getNodes()
 	{
 		return workspace.getRules().stream()
-				.flatMap(statement -> Stream.concat(Stream.of(statement.getId()), statement.getTerminals().stream().map(LeafTransformation::getText)))
+				.flatMap(statement -> Stream.concat(Stream.of(statement.getAlias()), statement.getTerminals().stream().map(LeafTransformation::getText)))
 				.distinct()
 				.collect(toList());
 	}
@@ -280,7 +280,7 @@ public class VTLSessionImpl implements VTLSession
 
 		workspace.getRules().stream().flatMap(rule -> rule.getTerminals().parallelStream()
 				.map(t -> t.getText())
-				.map(t -> new SimpleEntry<>(rule.getId(), t)))
+				.map(t -> new SimpleEntry<>(rule.getAlias(), t)))
 				.forEach(entry -> {
 					synchronized (result)
 					{

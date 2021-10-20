@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 
 import java.util.Map;

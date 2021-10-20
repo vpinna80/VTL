@@ -54,11 +54,13 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -139,7 +141,9 @@ public class CastTransformation extends UnaryTransformation
 			return STRING;
 		else if (domain instanceof NullDomain)
 			return NULL;
-		else 
+		else if (domain instanceof NumberDomainSubset && target == INTEGER)
+			return INTEGER;
+		else
 			throw new UnsupportedOperationException();
 	}
 
@@ -175,6 +179,8 @@ public class CastTransformation extends UnaryTransformation
 				return IntegerValue.of(Long.parseLong((String) scalar.get()));
 			else if (scalar instanceof StringValue && target == NUMBER)
 				return DoubleValue.of(getNumberFormatter().parse((String) scalar.get()).doubleValue());
+			else if (scalar instanceof NumberValue && target == INTEGER)
+				return IntegerValue.of(((Number) scalar.get()).longValue());
 			else
 				throw new UnsupportedOperationException(scalar.getClass() + " " + target.getClass() + " " + scalar);
 		}

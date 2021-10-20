@@ -47,7 +47,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.util.Utils;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public class BooleanTransformation extends BinaryTransformation
 {
@@ -105,7 +105,11 @@ public class BooleanTransformation extends BinaryTransformation
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(resultMeasure, Utils.<ScalarValue<?, ?, ?, ?>>reverseIf(this::evalTwoScalars, !datasetIsLeftOp).apply(dp.get(datasetMeasure), scalar)));
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(!datasetIsLeftOp);
+
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
+				dp -> singletonMap(resultMeasure, reversedIf.apply(dp.get(datasetMeasure), scalar)));
 	}
 
 	@Override
@@ -119,12 +123,15 @@ public class BooleanTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getComponents(Measure.class, BOOLEANDS).iterator().next();
 
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(leftHasMoreIdentifiers);
+		
 		// Scan the dataset with less identifiers and find the matches
 		return streamed.mappedJoin((DataSetMetadata) metadata, indexed,
 				(dps, dpi) -> new DataPointBuilder()
 					.addAll(dps.getValues(Identifier.class))
 					.addAll(dpi.getValues(Identifier.class))
-					.add(resultMeasure, Utils.<ScalarValue<?, ?, ?, ?>>reverseIf(this::evalTwoScalars, leftHasMoreIdentifiers).apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
+					.add(resultMeasure, reversedIf.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
 					.build(getLineage(), (DataSetMetadata) metadata));
 	}
 

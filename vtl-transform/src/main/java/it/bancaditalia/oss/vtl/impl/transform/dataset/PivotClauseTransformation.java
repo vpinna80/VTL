@@ -21,9 +21,9 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
@@ -128,7 +128,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		SerCollector<DataPoint, ?, Entry<LineageGroup, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>> collector = mapping((DataPoint dp) ->
 			new SimpleEntry<>(DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
 					new SimpleEntry<>(dp.getLineage(), dp.get(measure))), 
-			collectingAndThen(Utils.entriesToMap(), map -> {
+			collectingAndThen(entriesToMap(), map -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> measures = Utils.getStream(map)
 					.map(Utils.keepingKey(Entry::getValue))
 					.collect(entriesToMap());

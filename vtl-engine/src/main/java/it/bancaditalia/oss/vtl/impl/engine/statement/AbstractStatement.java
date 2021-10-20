@@ -35,7 +35,7 @@ abstract class AbstractStatement implements Serializable, Statement
 	}
 
 	@Override
-	public final String getId()
+	public final String getAlias()
 	{
 		return id;
 	}

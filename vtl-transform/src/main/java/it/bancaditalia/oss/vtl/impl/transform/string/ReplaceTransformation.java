@@ -40,6 +40,7 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
@@ -67,7 +68,6 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ReplaceTransformation extends TransformationImpl
 {
@@ -103,7 +103,7 @@ public class ReplaceTransformation extends TransformationImpl
 						.map(measure -> new SimpleEntry<>(measure, (pattern == null || dp.get(measure) instanceof NullValue) 
 							? STRINGDS.cast(NullValue.instance(STRINGDS))
 							: ((StringValue<?, ?>) dp.get(measure)).map(value -> compiled.matcher(value).replaceAll(replace.get().toString()))
-						)).collect(Utils.entriesToMap())
+						)).collect(entriesToMap())
 			); 
 		}
 		else

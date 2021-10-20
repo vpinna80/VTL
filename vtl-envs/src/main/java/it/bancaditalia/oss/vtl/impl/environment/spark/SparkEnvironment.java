@@ -22,9 +22,9 @@ package it.bancaditalia.oss.vtl.impl.environment.spark;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getDataTypeForComponent;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.byName;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.udf;
 

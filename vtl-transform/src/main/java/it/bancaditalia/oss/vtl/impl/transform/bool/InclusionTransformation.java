@@ -21,14 +21,13 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
-import static it.bancaditalia.oss.vtl.util.Utils.not;
+import static it.bancaditalia.oss.vtl.util.SerBiPredicate.not;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.joining;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
@@ -49,20 +48,21 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 
 public class InclusionTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public static enum InOperator implements BiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
+	public static enum InOperator implements SerBiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
 	{
 		IN("in", Set::contains),
 		NOTIN("not_in", not(Set::contains));
 
 		private final String text;
-		private final BiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> test;
+		private final SerBiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> test;
 
-		private InOperator(String text, BiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> test)
+		private InOperator(String text, SerBiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>> test)
 		{
 			this.text = text;
 			this.test = test;
@@ -140,7 +140,7 @@ public class InclusionTransformation extends UnaryTransformation
 	@Override
 	public String toString()
 	{
-		return operand + " " + operator + set.stream().map(Object::toString).collect(Collectors.joining(", ", " {", "}"));
+		return operand + " " + operator + set.stream().map(Object::toString).collect(joining(", ", " {", "}"));
 	}
 
 	@Override

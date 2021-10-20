@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE13;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,6 +50,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 
 public class StrlenTransformationTest
 {
@@ -79,7 +79,7 @@ public class StrlenTransformationTest
 
 		ConcurrentMap<?, ?> resultMap = ds.stream()
 			.map(dp -> new SimpleEntry<>(((StringValue<?, ?>) dp.get(id)).get(), ((IntegerValue<?>) dp.get(measure.get())).get()))
-			.collect(entriesToMap());
+			.collect(SerCollectors.entriesToMap());
 		
 		for (int i = 0; i < resultKeys.length; i++)
 			assertEquals(resultValues[i], resultMap.get(resultKeys[i]), "String length");

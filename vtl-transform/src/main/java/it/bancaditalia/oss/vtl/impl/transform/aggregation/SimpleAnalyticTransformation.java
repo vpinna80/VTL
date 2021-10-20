@@ -23,10 +23,10 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 

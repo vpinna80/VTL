@@ -26,7 +26,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransform
 import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator.UCASE;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE13;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,6 +54,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 
 public class StringUnaryTransformationTest
 {
@@ -91,7 +91,7 @@ public class StringUnaryTransformationTest
 		{
 			ConcurrentMap<String, String> resultMap = stream
 				.map(dp -> new SimpleEntry<>(((StringValue<?, ?>) dp.get(id)).get(), ((StringValue<?, ?>) dp.get(measure.get())).get()))
-				.collect(entriesToMap());
+				.collect(SerCollectors.entriesToMap());
 
 			for (int i = 0; i < resultValues.length; i++)
 				assertArrayEquals(resultValues[i].getBytes(), resultMap.get("" + (char) ('A' + i)).getBytes(), operator.toString() + "[" + i +  "]");

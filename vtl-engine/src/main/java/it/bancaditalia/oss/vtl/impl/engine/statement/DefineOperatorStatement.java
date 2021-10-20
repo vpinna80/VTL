@@ -49,6 +49,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 class DefineOperatorStatement extends AbstractStatement implements NamedOperator
@@ -69,7 +70,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 		this.expression = expression;
 		this.params = params;
 		this.resultType = resultType;
-		this.paramMap = params.stream().collect(Utils.toMapWithKeys(Parameter::getName));
+		this.paramMap = params.stream().collect(SerCollectors.toMapWithKeys(Parameter::getName));
 	}
 
 	public Transformation getExpression()
@@ -161,19 +162,19 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 						Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) actualParamMeta).getComponents(Measure.class);
 						// This condition should never happen, but better to have a check
 						if (measures.size() != 1)
-							throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" 
+							throw new VTLException(getAlias() + ": a " + param.getMetaString() + " was expected for parameter '" 
 									+ param.getName() + "' but " + actualParamMeta + " was found.");
 						else 
 							matchDomains(param.getName(), declaredDomain, measures.iterator().next()::getDomain, repo);
 					}
 					else
-						throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" 
+						throw new VTLException(getAlias() + ": a " + param.getMetaString() + " was expected for parameter '" 
 								+ param.getName() + "' but " + actualParamMeta + " was found.");
 				}
 				else if (param instanceof DataSetParameter)
 				{
 					if (!param.matches(actualParamMeta))
-						throw new VTLException(getId() + ": a " + param.getMetaString() + " was expected for parameter '" + param.getName() 
+						throw new VTLException(getAlias() + ": a " + param.getMetaString() + " was expected for parameter '" + param.getName() 
 						+ "' but " + actualParamMeta + " was found.");
 						
 				}
@@ -185,7 +186,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 		VTLValueMetadata metadata = expression.getMetadata(decoratedScheme);
 		
 		if (!resultType.matches(metadata))
-			throw new VTLException(getId() + ": a result of type " + resultType.getMetaString() + " was expected but "
+			throw new VTLException(getAlias() + ": a result of type " + resultType.getMetaString() + " was expected but "
 					+ metadata + " was found.");
 
 		return metadata;
@@ -217,7 +218,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 	@Override
 	public String toString()
 	{
-		return "define operator " + getId() + "(" + params.stream().map(Parameter::toString).collect(joining(", ")) + ")"
+		return "define operator " + getAlias() + "(" + params.stream().map(Parameter::toString).collect(joining(", ")) + ")"
 				+ (resultType != null ? " returns " + resultType : "") + " is " + expression + " end operator;";
 	}
 

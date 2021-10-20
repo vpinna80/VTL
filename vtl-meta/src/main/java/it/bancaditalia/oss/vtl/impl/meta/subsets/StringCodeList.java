@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.meta;
+package it.bancaditalia.oss.vtl.impl.meta.subsets;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toSet;
@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -83,12 +84,6 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	public StringEnumeratedDomainSubset getDomain()
 	{
 		return this;
-	}
-
-	@Override
-	public Object getCriterion()
-	{
-		return null;
 	}
 
 	@Override
@@ -204,5 +199,11 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	private StringEnumeratedDomainSubset stringCodeListHelper(String newName, UnaryOperator<String> mapper)
 	{
 		return new StringCodeList(newName, items.stream().map(StringCodeItem::get).map(mapper).collect(toSet()));
+	}
+	
+	@Override
+	public ScalarValue<?, ?, StringEnumeratedDomainSubset, StringDomain> getDefaultValue()
+	{
+		return NullValue.instance(this);
 	}
 }

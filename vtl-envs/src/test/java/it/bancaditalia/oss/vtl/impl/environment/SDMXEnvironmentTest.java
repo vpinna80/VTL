@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
-import static it.bancaditalia.oss.vtl.util.Utils.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,6 +71,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = LENIENT)
@@ -120,7 +120,7 @@ public class SDMXEnvironmentTest
 				k.readClass(input);
 				Map<String, Entry<String, String>> dims = ((Map<String, String>) k.readClassAndObject(input)).entrySet().stream()
 						.map(keepingKey(v -> new SimpleEntry<>(v, v)))
-						.collect(entriesToMap());
+						.collect(SerCollectors.entriesToMap());
 				Map<String, String> attrs = (Map<String, String>) k.readClassAndObject(input);
 				int size = (int) k.readClassAndObject(input);
 				PortableTimeSeries<Object> pts = new PortableTimeSeries<>();
@@ -153,7 +153,6 @@ public class SDMXEnvironmentTest
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	@BeforeAll
 	public static void beforeAll()
 	{
@@ -167,7 +166,7 @@ public class SDMXEnvironmentTest
 		HashMap<Object, Object> domains = new HashMap<>();
 		MetadataRepository mockRepo = mock(MetadataRepository.class);
 		when(mockConfman.getMetadataRepository()).thenReturn(mockRepo);
-		when(mockRepo.defineDomain(anyString(), any(StringEnumeratedDomainSubset.class.getClass()), any(Set.class)))
+		when(mockRepo.defineDomain(anyString(), any(StringEnumeratedDomainSubset.class)))
 			.then(answer((String id, Class<? extends ValueDomain> cls, Set<String> set) -> {
 				if (domains.containsKey(id))
 					return domains.get(id);

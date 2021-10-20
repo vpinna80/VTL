@@ -42,8 +42,8 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class ConditionalTransformationTest
 {
 	// cond:  true, true, null, false, false, true
-	// left:   11L,  null,  13L,   14L,   15L,  16L
-	// right:  21L,   22L,  23L,   24L,   25L,  26L
+	// a1:   11L,  null,  13L,   14L,   15L,  16L
+	// a2:  21L,   22L,  23L,   24L,   25L,  26L
 	private static final Long[] INTEGER_RESULTS = { 11L, null, 23L, 24L, 25L, 16L };
 
 	private TransformationScheme session;
