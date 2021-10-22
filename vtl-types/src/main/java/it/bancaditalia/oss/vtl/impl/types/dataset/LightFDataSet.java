@@ -32,16 +32,27 @@ public class LightFDataSet<P> extends LightDataSet
 	private final Function<? super P, ? extends Stream<DataPoint>> function;
 	private final P param;
 
-	public LightFDataSet(DataSetMetadata dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param)
+	public LightFDataSet(DataSetMetadata dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param, boolean cacheable)
 	{
-		super(dataStructure, null);
+		super(dataStructure, null, cacheable);
 		this.function = datapoints;
 		this.param = param;
 	}
 
+	public LightFDataSet(DataSetMetadata dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param)
+	{
+		this(dataStructure, datapoints, param, true);
+	}
+	
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
 		return function.apply(param);
+	}
+	
+	@Override
+	public boolean isCacheable()
+	{
+		return super.isCacheable();
 	}
 }

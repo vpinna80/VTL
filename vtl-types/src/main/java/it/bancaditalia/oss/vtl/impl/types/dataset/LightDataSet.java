@@ -29,16 +29,30 @@ public class LightDataSet extends AbstractDataSet
 {
 	private static final long serialVersionUID = 1L;
 	private final Supplier<? extends Stream<DataPoint>> supplier;
+	private final boolean cacheable;
 
-	public LightDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints)
+	public LightDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints, boolean cacheable)
 	{
 		super(dataStructure);
+		
 		this.supplier = datapoints;
+		this.cacheable = cacheable;
+	}
+	
+	public LightDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints)
+	{
+		this(dataStructure, datapoints, true);
 	}
 
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
 		return supplier.get();
+	}
+	
+	@Override
+	public boolean isCacheable()
+	{
+		return cacheable;
 	}
 }

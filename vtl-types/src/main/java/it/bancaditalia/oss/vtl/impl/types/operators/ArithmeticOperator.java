@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static java.lang.Math.log;
 import static java.lang.Math.pow;
+import static java.math.MathContext.DECIMAL128;
 import static java.math.RoundingMode.DOWN;
 import static java.math.RoundingMode.HALF_UP;
 
@@ -46,8 +47,8 @@ public enum ArithmeticOperator
 {
 	SUM(" + ", (l, r) -> l + r, (l, r) -> l + r, BigDecimal::add),
 	DIFF(" - ", (l, r) -> l - r, (l, r) -> l - r, BigDecimal::subtract), 
-	MULT(" * ", (l, r) -> l * r, (l, r) -> l * r, BigDecimal::multiply), 
-	DIV(" / ", (l, r) -> l / r, (l, r) -> l / r, BigDecimal::divide),
+	MULT(" * ", (l, r) -> l * r, (l, r) -> l * r, (l, r) -> l.multiply(r, DECIMAL128)), 
+	DIV(" / ", (l, r) -> l / r, (l, r) -> l / r, (l, r) -> l.divide(r, DECIMAL128)),
 	MOD("mod", (l, r) -> l % r, (l, r) -> l % r, BigDecimal::remainder),
 	POWER("power", (l, r) -> (long) pow(l, r), Math::pow, (l, r) -> BigDecimal.valueOf(pow(l.doubleValue(), r.doubleValue()))),
 	LOG("log", (l, r) -> (long) (log(l) / log(r)), (l, r) -> log(l) / log(r), (l, r) -> BigDecimal.valueOf(log(l.doubleValue()) / log(r.doubleValue()))),

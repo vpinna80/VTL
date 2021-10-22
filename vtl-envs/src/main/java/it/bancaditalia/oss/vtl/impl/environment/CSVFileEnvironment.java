@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -48,27 +47,36 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils;
+import it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CSVFileEnvironment implements Environment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:(?:\"\")*[^\"]*)*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
+	
+	public static final VTLProperty CSV_PROGRESS_BAR_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", true, false, "1000");
+
+	static
+	{
+		ConfigurationManagerFactory.registerSupportedProperties(CSVFileEnvironment.class, CSV_PROGRESS_BAR_THRESHOLD);
+	}
 	
 	@Override
 	public boolean contains(String name)
@@ -114,7 +122,7 @@ public class CSVFileEnvironment implements Environment
 			// can't use streams, must be ordered for the first line processed to be actually the header 
 			final DataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
 			
-			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName));
+			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName, false));
 		}
 		catch (IOException e)
 		{
@@ -156,7 +164,6 @@ public class CSVFileEnvironment implements Environment
 			// Skip header
 			innerReader.readLine();
 			
-			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Boolean> set = new ConcurrentHashMap<>();
 			return ProgressWindow.of("Loading CSV", lineCount, Utils.getStream(innerReader.lines()))
 				// Skip empty lines
 				.filter(line -> !line.trim().isEmpty())
@@ -194,12 +201,7 @@ public class CSVFileEnvironment implements Environment
 				})
 				.map(m -> new DataPointBuilder(m).build(LineageExternal.of("csv:" + fileName), structure))
 				.peek(dp -> LOGGER.trace("Parsed datapoint from CSV: {}", dp))
-				.peek(dp -> {
-					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> values = dp.getValues(Identifier.class);
-					Boolean a = set.putIfAbsent(values, true);
-					if (a != null)
-						throw new IllegalStateException("Identifiers are not unique: " + values);
-				}).onClose(() -> {
+					.onClose(() -> {
 					try
 					{
 						LOGGER.info("Completed reading of {}.", fileName);
@@ -237,7 +239,7 @@ public class CSVFileEnvironment implements Environment
 		}
 	}
 	
-	public static int countLines(Reader is) throws IOException
+	private static int countLines(Reader is) throws IOException
 	{
 		char[] c = new char[1024];
 

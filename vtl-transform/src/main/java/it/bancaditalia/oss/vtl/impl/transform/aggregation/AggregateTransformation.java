@@ -24,12 +24,15 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
+import static it.bancaditalia.oss.vtl.util.Utils.afterMapping;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
@@ -165,7 +168,7 @@ public class AggregateTransformation extends UnaryTransformation
 			}
 			else
 			{
-				Set<DataStructureComponent<Identifier,?,?>> groupComps = groupingClause.getGroupingComponents(dataset);
+				Set<DataStructureComponent<Identifier, ?, ?>> groupComps = groupingClause.getGroupingComponents(dataset);
 				
 				Optional<DataStructureComponent<Identifier, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
 				if (nonID.isPresent())
@@ -180,6 +183,7 @@ public class AggregateTransformation extends UnaryTransformation
 		else
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class, ScalarValueMetadata.class);
 	}
+
 
 	@Override
 	public String toString()

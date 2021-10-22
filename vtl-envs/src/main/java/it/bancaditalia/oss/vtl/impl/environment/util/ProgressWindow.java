@@ -17,8 +17,9 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.impl.environment.util;
 
+import static it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment.CSV_PROGRESS_BAR_THRESHOLD;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static java.awt.EventQueue.invokeLater;
 import static java.util.function.UnaryOperator.identity;
@@ -36,6 +37,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.Timer;
+
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ProgressWindow
 {
@@ -79,7 +82,7 @@ public class ProgressWindow
 
 	private ProgressWindow(String title, long maxValue)
 	{
-		if (maxValue > 1000)
+		if (maxValue > Long.parseLong(CSV_PROGRESS_BAR_THRESHOLD.getValue()))
 		{
 			window = new JFrame();
 			JProgressBar progressBar = new JProgressBar();

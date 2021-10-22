@@ -78,7 +78,7 @@ public enum AggregateOperator
 	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, toList()), l -> {
 				List<NumberValue<?, ?, ?, ?>> sorted = Utils.getStream(l).sorted().collect(toList());
 				int s = sorted.size();
-				return s % 2 == 0 ? sorted.get(s >> 1) : average(sorted.get(s >> 1), sorted.get(s >> 1 + 1));
+				return s % 2 == 0 ? sorted.get(s / 2) : average(sorted.get(s >> 1), sorted.get(s / 2 + 1));
 			})),
 	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
@@ -149,7 +149,7 @@ public enum AggregateOperator
 		if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
 			return collectingAndThen(summingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
 		else
-			return collectingAndThen(summingDouble(v -> (Double) v.get()), v -> DoubleValue.of(v));
+			return collectingAndThen(summingDouble(v -> ((Number) v.get()).doubleValue()), v -> DoubleValue.of(v));
 	}
 
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector()
@@ -157,7 +157,7 @@ public enum AggregateOperator
 		if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
 			return collectingAndThen(averagingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
 		else
-			return collectingAndThen(averagingDouble(v -> (Double) v.get()), v -> DoubleValue.of(v));
+			return collectingAndThen(averagingDouble(v -> ((Number) v.get()).doubleValue()), v -> DoubleValue.of(v));
 	}
 
 	private static NumberValue<?, ?, ?, ?> average(NumberValue<?, ?, ?, ?> left, NumberValue<?, ?, ?, ?> right)
@@ -206,7 +206,8 @@ public enum AggregateOperator
 							@SuppressWarnings("unchecked")
 							SerBiConsumer<Object, DataPoint> accumulator = (SerBiConsumer<Object, DataPoint>) collector.accumulator();
 							accumulator.accept(a.accs.get(measure), dp);
-							a.allIntegers.get(measure).compareAndSet(true, INTEGERDS.isAssignableFrom(dp.get(measure).getDomain()));
+							if (this != COUNT)
+								a.allIntegers.get(measure).compareAndSet(true, INTEGERDS.isAssignableFrom(dp.get(measure).getDomain()));
 						});
 					a.lineageAcc.merge(dp.getLineage(), 1L, Long::sum);
 				}, (a, b) -> { 

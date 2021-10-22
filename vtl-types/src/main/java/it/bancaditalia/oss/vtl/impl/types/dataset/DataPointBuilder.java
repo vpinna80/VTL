@@ -40,7 +40,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,12 +100,6 @@ public class DataPointBuilder
 		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(lineage, structure), EnumSet.of(CONCURRENT, UNORDERED));
 	}
 
-	public static <T extends DataPoint, K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, T> toDataPoint(
-			Lineage lineage, DataSetMetadata structure, BiFunction<Lineage, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> instancer)
-	{
-		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(lineage, structure, instancer), EnumSet.of(CONCURRENT, UNORDERED));
-	}
-
 	private static DataPointBuilder merge(DataPointBuilder left, DataPointBuilder right)
 	{
 		right.delegate.forEach(left::add);
@@ -129,7 +122,9 @@ public class DataPointBuilder
 		if (!component.getDomain().isAssignableFrom(value.getDomain()))
 			throw new VTLCastException(component.getDomain(), value);
 		
-		if (delegate.putIfAbsent(component, value) != null)
+		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
+		
+		if (oldValue != null && !oldValue.equals(value))
 			throw new IllegalStateException();
 		return checkState();
 	}
@@ -159,15 +154,7 @@ public class DataPointBuilder
 		if (built)
 			throw new IllegalStateException("DataPoint already built");
 		built = true;
-		return new DataPointImpl(requireNonNull(lineage), requireNonNull(structure, "DataSet structure is null for " + delegate), delegate);
-	}
-
-	public <T extends DataPoint> T build(Lineage lineage, DataSetMetadata structure, BiFunction<Lineage, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> instancer)
-	{
-		if (built)
-			throw new IllegalStateException("DataPoint already built");
-		built = true;
-		return instancer.apply(requireNonNull(lineage), delegate);
+		return new DataPointImpl(requireNonNull(lineage), requireNonNull(structure, () -> "DataSet structure is null for " + delegate), delegate);
 	}
 
 	@Override

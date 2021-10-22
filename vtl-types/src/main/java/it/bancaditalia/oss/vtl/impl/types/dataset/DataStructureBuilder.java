@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
@@ -31,7 +32,6 @@ import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,6 @@ import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
-import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.Triple;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -149,9 +148,9 @@ public class DataStructureBuilder
 
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
-			this.components = Collections.unmodifiableMap(Utils.getStream(components)
+			this.components = Utils.getStream(components)
 				.map(toEntry(DataStructureComponent::getName, c -> c))
-				.collect(SerCollectors.entriesToMap()));
+				.collect(entriesToMap());
 		}
 		
 		@Override
@@ -241,30 +240,13 @@ public class DataStructureBuilder
 		@Override
 		public int hashCode()
 		{
-			final int prime = 31;
-			int result = super.hashCode();
-			result = prime * result + ((components == null) ? 0 : components.hashCode());
-			return result;
+			return super.hashCode();
 		}
 
 		@Override
 		public boolean equals(Object obj)
 		{
-			if (this == obj)
-				return true;
-			if (!super.equals(obj))
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			DataStructureImpl other = (DataStructureImpl) obj;
-			if (components == null)
-			{
-				if (other.components != null)
-					return false;
-			}
-			else if (!components.equals(other.components))
-				return false;
-			return true;
+			return super.equals(obj);
 		}
 
 		@Override
