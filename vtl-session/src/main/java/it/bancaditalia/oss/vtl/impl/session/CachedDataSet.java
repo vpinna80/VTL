@@ -150,9 +150,15 @@ public class CachedDataSet extends NamedDataSet
 				while (!Thread.interrupted())
 					try 
 					{
-						Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(REF_QUEUE.remove());
-						if (data != null)
-							LOGGER.trace("Cleaned an index of {} over {}", data.getKey(), data.getValue());
+						Reference<? extends Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> ref;
+						while ((ref = REF_QUEUE.poll()) != null)
+						{
+							Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(ref);
+							if (data != null)
+								LOGGER.trace("Cleaned an index of {} over {}", data.getKey(), data.getValue());
+						}
+						
+						Thread.sleep(5000);
 					}
 					catch (InterruptedException e)
 					{
