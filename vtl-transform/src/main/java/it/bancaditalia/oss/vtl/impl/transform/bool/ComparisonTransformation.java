@@ -61,8 +61,6 @@ public class ComparisonTransformation extends BinaryTransformation
 
 	private final ComparisonOperator operator;
 	
-	private transient boolean castToLeft = false;
-
 	public ComparisonTransformation(ComparisonOperator operator, Transformation left, Transformation right)
 	{
 		super(left, right);
@@ -76,7 +74,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(BOOLEANDS);
 
-		if (castToLeft)
+		if (left.getDomain().isAssignableFrom(right.getDomain()))
 			right = left.getDomain().cast(right);
 		else
 			left = right.getDomain().cast(left);
@@ -90,13 +88,19 @@ public class ComparisonTransformation extends BinaryTransformation
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
 		
-		final ScalarValue<?, ?, ?, ?> castedScalar;
+		boolean castToLeft;
+		if (datasetIsLeftOp)
+			castToLeft = measure.getDomain().isAssignableFrom(scalar.getDomain());
+		else
+			castToLeft = scalar.getDomain().isAssignableFrom(measure.getDomain());
+
+		ScalarValue<?, ?, ?, ?> castedScalar;
 		if (castToLeft && datasetIsLeftOp)
 			castedScalar = measure.cast(scalar);
 		else
 			castedScalar = scalar;
 
-		final Function<DataPoint, ScalarValue<?, ?, ?, ?>> extractor;
+		Function<DataPoint, ScalarValue<?, ?, ?, ?>> extractor;
 		if (castToLeft) 
 			if (datasetIsLeftOp)
 				extractor = dp -> operator.apply(dp.get(measure), castedScalar);
@@ -125,7 +129,11 @@ public class ComparisonTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
-		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted = (a, b) -> castToLeft ? operator.apply(a, a.getDomain().cast(b)) : operator.apply(b.getDomain().cast(a), b);
+		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted;
+		if (!leftHasMoreIdentifiers && streamedMeasure.getDomain().isAssignableFrom(indexedMeasure.getDomain()))
+			casted = (a, b) -> operator.apply(a, a.getDomain().cast(b));
+		else
+			casted = (a, b) -> operator.apply(b.getDomain().cast(a), b);
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = casted.reverseIf(leftHasMoreIdentifiers);
 
 		// Scan the dataset with less identifiers and find the matches
@@ -141,8 +149,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right)
 	{
-		castToLeft = left.getDomain().isAssignableFrom(right.getDomain()); 
-		if (castToLeft || right.getDomain().isAssignableFrom(left.getDomain())) 
+		if (left.getDomain().isAssignableFrom(right.getDomain()) || right.getDomain().isAssignableFrom(left.getDomain())) 
 			return BOOLEAN;
 		else
 			throw new VTLIncompatibleTypesException("comparison branch", left.getDomain(), right.getDomain());
@@ -157,6 +164,7 @@ public class ComparisonTransformation extends BinaryTransformation
 			throw new VTLExpectedComponentException(Measure.class, dataset);
 		DataStructureComponent<?, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
 		
+		boolean castToLeft;
 		if (datasetIsLeftOp)
 			castToLeft = measure.getDomain().isAssignableFrom(scalarDomain);
 		else
@@ -187,9 +195,8 @@ public class ComparisonTransformation extends BinaryTransformation
 		final DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getComponents(Measure.class).iterator().next(),
 				rightMeasure = left.getComponents(Measure.class).iterator().next();
 		
-		if (leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()))
-			castToLeft = true;
-		else if (!rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
+		if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()) && 
+				!rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
 			throw new VTLIncompatibleMeasuresException("comparison", leftMeasure, rightMeasure);
 
 		return new DataStructureBuilder()
