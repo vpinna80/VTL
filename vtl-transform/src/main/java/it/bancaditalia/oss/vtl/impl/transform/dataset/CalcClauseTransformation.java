@@ -248,7 +248,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 							Utils.getStream(nonAnalyticClauses)
 								.map(Transformation::getLineage))
 						.collect(toList()));
-					return new DataPointBuilder(calcValues).addAll(dp).build(LineageNode.of(this, lineageCall), nonAnalyticResultMetadata);
+					return new DataPointBuilder(dp)
+							.delete(calcValues.keySet())
+							.addAll(calcValues)
+							.build(LineageNode.of(this, lineageCall), nonAnalyticResultMetadata);
 				}), operand);
 
 		// TODO: more efficient way to compute this instead of reduction by joining
