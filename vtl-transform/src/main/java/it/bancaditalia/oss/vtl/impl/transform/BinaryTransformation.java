@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
@@ -79,10 +80,15 @@ public abstract class BinaryTransformation extends TransformationImpl
 		final ResultHolder<VTLValueMetadata> holder = ResultHolder.getInstance(scheme, VTLValueMetadata.class);
 		VTLValueMetadata metadata = holder.get(this);
 		if (metadata == null)
-		{
-			metadata = ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)).apply(this); 
-			holder.put(this, metadata);
-		}
+			try
+			{
+				metadata = ThreadUtils.evalFuture(this::metadataCombiner, t -> leftOperand.getMetadata(scheme), t -> rightOperand.getMetadata(scheme)).apply(this); 
+				holder.put(this, metadata);
+			}
+			catch (RuntimeException e)
+			{
+				throw new VTLNestedException("In expression " + toString() + ": " + e.getMessage(), e); 
+			}
 		return metadata;
 	}
 	

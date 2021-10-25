@@ -66,13 +66,13 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class AggregateTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponentImpl<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
+	private static final Set<DataStructureComponentImpl<Measure, EntireIntegerDomainSubset, IntegerDomain>> COUNT_MEASURE = singleton(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS));
 
 	private final AggregateOperator	aggregation;
+	private final GroupingClause groupingClause;
 	private final Transformation having;
 	private final String name;
 	private final Class<? extends ComponentRole> role;
-	private GroupingClause groupingClause;
 	
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, GroupingClause groupingClause, Transformation having)
 	{
@@ -144,7 +144,7 @@ public class AggregateTransformation extends UnaryTransformation
 		else if (opmeta instanceof DataSetMetadata)
 		{
 			DataSetMetadata dataset = (DataSetMetadata) opmeta;
-			final Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 
 			if (groupingClause == null)
 			{
@@ -167,21 +167,14 @@ public class AggregateTransformation extends UnaryTransformation
 			{
 				Set<DataStructureComponent<Identifier,?,?>> groupComps = groupingClause.getGroupingComponents(dataset);
 				
-				Optional<DataStructureComponent<Identifier,?,?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
+				Optional<DataStructureComponent<Identifier, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
 				if (nonID.isPresent())
 					throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
 				
-				Set<DataStructureComponent<Identifier, ?, ?>> keys = groupComps.stream().map(c -> c.as(Identifier.class)).collect(toSet());
-				if (aggregation == COUNT && measures.isEmpty())
-					measures.add(COUNT_MEASURE);
-
-				DataStructureComponent<? extends Measure, ?, ?> sourceMeasure = aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class).iterator().next();
-				DataStructureComponent<?, ?, ?> resultComponent = name != null ? role != null
-						? DataStructureComponentImpl.of(name, role, sourceMeasure.getDomain())
-						: DataStructureComponentImpl.of(name, sourceMeasure.getRole(), sourceMeasure.getDomain())
-						: sourceMeasure;
+				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.as(Identifier.class)).collect(toSet()));
+				builder = builder.addComponents(aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class));
 				
-				return new DataStructureBuilder().addComponents(keys).addComponents(resultComponent).build();
+				return builder.build();
 			}
 		}
 		else

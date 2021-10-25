@@ -19,7 +19,20 @@ public class GroupingClause
 {
 	public enum GroupingMode
 	{
-		GROUP_BY, GROUP_EXCEPT
+		GROUP_BY("group by"), GROUP_EXCEPT("group except");
+
+		private final String repr;
+
+		GroupingMode(String repr)
+		{
+			this.repr = repr;
+		}
+
+		@Override
+		public String toString()
+		{
+			return repr;
+		}
 	}
 
 	private final GroupingMode mode;
@@ -99,6 +112,6 @@ public class GroupingClause
 	@Override
 	public String toString()
 	{
-		return fields.stream().collect(Collectors.joining(", ", "group " + mode, ""));
+		return fields.stream().collect(Collectors.joining(", ", mode + " ", ""));
 	}
 }

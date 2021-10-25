@@ -23,6 +23,7 @@ import static java.util.Collections.emptySet;
 
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -83,10 +84,15 @@ public abstract class UnaryTransformation extends TransformationImpl
 		final ResultHolder<VTLValueMetadata> holder = ResultHolder.getInstance(scheme, VTLValueMetadata.class);
 		VTLValueMetadata metadata = holder.get(this);
 		if (metadata == null)
-		{
-			metadata = computeMetadata(scheme); 
-			holder.put(this, metadata);
-		}
+			try
+			{
+				metadata = computeMetadata(scheme); 
+				holder.put(this, metadata);
+			}
+			catch (RuntimeException e)
+			{
+				throw new VTLNestedException("In expression " + toString() + ": " + e.getMessage(), e); 
+			}
 		return metadata;
 	}
 
