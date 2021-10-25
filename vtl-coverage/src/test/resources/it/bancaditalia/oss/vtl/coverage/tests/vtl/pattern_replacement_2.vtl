@@ -19,6 +19,6 @@
  */
 /* Load dataset 1 from csv*/
 ds1:= 'csv:substring_test.csv';
-result:= replace(ds1#Text1,"^*","-");
+result:= replace(ds1#Text_1,"^*","-");
 ref_output := 'csv:pattern_replacement_2.csv';
 test_result := result#Text_1 = ref_output#Text_1;

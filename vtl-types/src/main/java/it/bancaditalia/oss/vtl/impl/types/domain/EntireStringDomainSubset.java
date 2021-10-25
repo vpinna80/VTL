@@ -26,9 +26,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
@@ -50,11 +47,7 @@ public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDom
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NullDomain || 
-				other instanceof StringDomainSubset || 
-				other instanceof NumberDomainSubset ||
-				other instanceof BooleanDomainSubset ||
-				(other instanceof ValueDomainSubset && isAssignableFrom(((ValueDomainSubset<?, ?>) other).getParentDomain()));
+		return other instanceof NullDomain || other instanceof StringDomainSubset;
 	}
 
 	@Override

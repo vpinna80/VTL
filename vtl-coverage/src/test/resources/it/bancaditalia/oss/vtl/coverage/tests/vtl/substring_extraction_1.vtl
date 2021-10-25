@@ -19,6 +19,6 @@
  */
 /* Load dataset 1 from csv*/
 ds1:= 'csv:substring_test.csv';
-result:= substr(ds1,2,4);
+result:= substr(ds1#Text_1,2,4);
 ref_output := 'csv:substring_extraction_1.csv';
 test_result := result#Text_1 = ref_output#Text_1;

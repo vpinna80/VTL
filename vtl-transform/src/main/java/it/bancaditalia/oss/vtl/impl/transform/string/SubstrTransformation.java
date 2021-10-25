@@ -42,6 +42,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 
 import java.util.HashSet;
@@ -169,11 +170,12 @@ public class SubstrTransformation extends TransformationImpl
 		{
 			DataSetMetadata metadata = (DataSetMetadata) source;
 			
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
-			measures.stream().forEach(c -> {
-				if (!STRINGDS.isAssignableFrom(c.getDomain()))
-					throw new VTLIncompatibleTypesException("substr", c, STRINGDS);
-			});
+			Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getComponents(Measure.class).stream()
+				.filter(c -> !(c.getDomain() instanceof StringDomain))
+				.collect(toSet());
+			
+			if (!invalid.isEmpty())
+				throw new VTLIncompatibleTypesException("substr", invalid, STRINGDS);
 			
 			return metadata;
 		}
