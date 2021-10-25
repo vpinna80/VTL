@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.exceptions;
 
+import java.util.Set;
+
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -31,47 +33,30 @@ public class VTLIncompatibleTypesException extends VTLException
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-
-	private final ValueDomain left, right;
 	
 	public VTLIncompatibleTypesException(String operation, ValueDomain left, ValueDomain right)
 	{
 		super("Found incompatible types in " + operation + ": " + left + ", " + right, null);
-		
-		this.left = left;
-		this.right = right;
 	}
 	
 	public VTLIncompatibleTypesException(String operation, Domains left, ValueDomain right)
 	{
 		super("Found incompatible types in " + operation + ": " + left.getDomain() + ", " + right, null);
-		
-		this.left = left.getDomain();
-		this.right = right;
 	}
 	
 	public VTLIncompatibleTypesException(String operation, ValueDomain left, Domains right)
 	{
 		super("Found incompatible types in " + operation + ": " + left + ", " + right.getDomain(), null);
-		
-		this.left = left;
-		this.right = right.getDomain();
 	}
 	
 	public VTLIncompatibleTypesException(String operation, DataStructureComponent<?, ?, ?> left, ValueDomain right)
 	{
 		super("Found incompatible types in " + operation + ": " + left + ", " + right, null);
-		
-		this.left = left.getDomain();
-		this.right = right;
 	}
 	
 	public VTLIncompatibleTypesException(String operation, ValueDomain left, DataStructureComponent<?, ?, ?> right)
 	{
 		super("Found incompatible types in " + operation + ": " + left + ", " + right, null);
-		
-		this.left = left;
-		this.right = right.getDomain();
 	}
 	
 	public VTLIncompatibleTypesException(String operation, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
@@ -79,13 +64,8 @@ public class VTLIncompatibleTypesException extends VTLException
 		this(operation, left.getDomain(), right.getDomain());
 	}
 	
-	public ValueDomain getLeftDomain()
+	public VTLIncompatibleTypesException(String operation, Set<? extends DataStructureComponent<?, ?, ?>> invalid, ValueDomain domain)
 	{
-		return left;
-	}
-	
-	public ValueDomain getRightDomain()
-	{
-		return right;
+		super("Incompatible types in " + operation + ": found " + invalid + ", but " + domain + " was expected", null);
 	}
 }

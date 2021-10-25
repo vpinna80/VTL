@@ -19,6 +19,6 @@
  */
 /* Load dataset 1 from csv*/
 ds1:= 'csv:substring_test.csv';
-result:= replace(ds1,"lorem","LOREM");
+result:= replace(ds1#Text1,"lorem","LOREM");
 ref_output := 'csv:pattern_replacement_1.csv';
 test_result := result#Text_1 = ref_output#Text_1;

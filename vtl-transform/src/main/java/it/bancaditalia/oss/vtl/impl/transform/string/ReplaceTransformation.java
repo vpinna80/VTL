@@ -41,12 +41,14 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
@@ -120,38 +122,45 @@ public class ReplaceTransformation extends TransformationImpl
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme session)
 	{
-		VTLValueMetadata source = exprOperand.getMetadata(session), pattern = patternOperand.getMetadata(session),
-				replace = replaceOperand.getMetadata(session);
-		
-		if (!(pattern instanceof ScalarValueMetadata))
-			throw new VTLInvalidParameterException(pattern, DataSetMetadata.class);
-		if (!(replace instanceof ScalarValueMetadata))
-			throw new VTLInvalidParameterException(replace, DataSetMetadata.class);
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
-			throw new VTLIncompatibleTypesException("replace: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) replace).getDomain()))
-			throw new VTLIncompatibleTypesException("replace: replacement parameter", STRING, ((ScalarValueMetadata<?, ?>) replace).getDomain());
-		
-		if (source instanceof ScalarValueMetadata)
+		try
 		{
-			ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) source; 
-			if (!(STRING.isAssignableFrom(leftV.getDomain())))
-				throw new VTLIncompatibleTypesException("replace", STRING, leftV.getDomain());
-			else
-				return STRING;
+			VTLValueMetadata source = exprOperand.getMetadata(session), pattern = patternOperand.getMetadata(session),
+					replace = replaceOperand.getMetadata(session);
+			
+			if (!(pattern instanceof ScalarValueMetadata))
+				throw new VTLInvalidParameterException(pattern, DataSetMetadata.class);
+			if (!(replace instanceof ScalarValueMetadata))
+				throw new VTLInvalidParameterException(replace, DataSetMetadata.class);
+			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
+				throw new VTLIncompatibleTypesException("replace: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
+			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) replace).getDomain()))
+				throw new VTLIncompatibleTypesException("replace: replacement parameter", STRING, ((ScalarValueMetadata<?, ?>) replace).getDomain());
+			
+			if (source instanceof ScalarValueMetadata)
+			{
+				ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) source; 
+				if (!(STRING.isAssignableFrom(leftV.getDomain())))
+					throw new VTLIncompatibleTypesException("replace", STRING, leftV.getDomain());
+				else
+					return STRING;
+			}
+			else 
+			{
+				DataSetMetadata metadata = (DataSetMetadata) source;
+				
+				Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getComponents(Measure.class).stream()
+					.filter(c -> !(c.getDomain() instanceof StringDomain))
+					.collect(toSet());
+				
+				if (!invalid.isEmpty())
+					throw new VTLIncompatibleTypesException("replace", invalid, STRINGDS);
+				
+				return metadata;
+			}
 		}
-		else 
+		catch (RuntimeException e)
 		{
-			DataSetMetadata metadata = (DataSetMetadata) source;
-			
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
-			measures.stream()
-				// do not use isAssignableFrom to avoid casting other domains
-				.filter(c -> !(c.getDomain() instanceof StringDomain))
-				.findAny()
-				.ifPresent(c -> { throw new VTLIncompatibleTypesException("replace", c, STRINGDS); });
-			
-			return metadata;
+			throw new VTLNestedException("In expression " + toString() + ": " + e.getMessage(), e);
 		}
 	}
 
