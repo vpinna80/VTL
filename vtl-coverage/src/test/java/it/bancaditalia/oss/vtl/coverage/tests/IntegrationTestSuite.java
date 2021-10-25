@@ -85,8 +85,8 @@ public class IntegrationTestSuite
 	@MethodSource
 	public void test(String testName, String testCode)
 	{
-		if (!"symmetric_difference_2.vtl".equals(testName))
-			return;
+//		if (!"count.vtl".equals(testName))
+//			return;
 		
 		VTLSessionImpl session = new VTLSessionImpl();
 		session.addStatements(testCode);

@@ -416,13 +416,10 @@ public class OpsFactory implements Serializable
 
 	private Object parseCustomParam(ParserRuleContext ctx, int level, Customparam customParam)
 	{
-		Object result = null;
 		ParserRuleContext customCtx = null;
 		List<Nonnullparam> innerParams = null;
 		List<Object> resultList = null;
 		Class<?> customClass = null;
-		Constructor<?> ctor = null;
-		
 		try
 		{
 			// get the nested context by looking up the name attribute of nestedparam in current context
@@ -439,18 +436,28 @@ public class OpsFactory implements Serializable
 			
 			customClass = Class.forName(customParam.getClazz());
 			if (customParam.getMethod() != null)
-				result = Arrays.stream(customClass.getMethods())
+				return Arrays.stream(customClass.getMethods())
 						.filter(m -> m.getName().equals(customParam.getMethod()))
 						.findAny()
 						.orElseThrow(() -> new NoSuchMethodException(customParam.getMethod()))
 						.invoke(null, resultList.toArray());
 			else
-			{
-				ctor = customClass.getConstructors()[0];
-				result = ctor.newInstance(resultList.toArray());
-			}
-				
-			return result;
+				for (Constructor<?> ctor: customClass.getConstructors())
+				{					
+					Class<?>[] types = ctor.getParameterTypes();
+					boolean bad = false;
+					for (int i = 0; !bad && i < ctor.getParameterCount(); i++)
+					{
+						Object ith = resultList.get(i);
+						if (ith != null && !types[i].isAssignableFrom(ith.getClass()))
+							bad = true;
+					}
+					
+					if (!bad)
+						return ctor.newInstance(resultList.toArray());
+				}
+			
+			throw new NoSuchMethodException(customParam.getMethod());
 		}
 		catch (Exception e)
 		{
