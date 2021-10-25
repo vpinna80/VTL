@@ -49,7 +49,7 @@ public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainS
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof DateDomainSubset;
+		return other instanceof NullDomain || other instanceof DateDomainSubset;
 	}
 
 	@Override

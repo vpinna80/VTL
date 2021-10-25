@@ -24,9 +24,11 @@ import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.Sor
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Math.max;
@@ -85,7 +87,6 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -165,7 +166,7 @@ public abstract class AbstractDataSet implements DataSet
 							return otherSubGroup.stream()
 								.filter(dpOther -> predicate.test(dpThis, dpOther))
 								.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
-					}).collect(concatenating(Utils.ORDERED))
+					}).collect(concatenating(ORDERED))
 					.onClose(stream::close);
 			}, streamed);
 	}
@@ -281,7 +282,7 @@ public abstract class AbstractDataSet implements DataSet
 			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
 			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
 	{
-		if (clause.getWindowCriterion().getType() == RANGE)
+		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
 
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = clause.getPartitioningIds();
@@ -297,10 +298,19 @@ public abstract class AbstractDataSet implements DataSet
 				return 0;
 			};
 
-		LimitCriterion infBound = clause.getWindowCriterion().getInfBound(),
-				supBound = clause.getWindowCriterion().getSupBound(); 
-		int inf = (infBound.getDirection() == PRECEDING ? -1 : 1) * (int) infBound.getCount(); 
-		int sup = (supBound.getDirection() == PRECEDING ? -1 : 1) * (int) supBound.getCount();
+		int inf, sup;
+		if (clause.getWindowCriterion() != null)
+		{
+			LimitCriterion infBound = clause.getWindowCriterion().getInfBound();
+			LimitCriterion supBound = clause.getWindowCriterion().getSupBound();
+			inf = (infBound.getDirection() == PRECEDING ? -1 : 1) * (int) infBound.getCount(); 
+			sup = (supBound.getDirection() == PRECEDING ? -1 : 1) * (int) supBound.getCount();
+		}
+		else
+		{
+			inf = Integer.MIN_VALUE;
+			sup = Integer.MAX_VALUE;
+		}
 		
 		SerCollector<DataPoint, ConcurrentSkipListSet<DataPoint>, ConcurrentSkipListSet<DataPoint>> toSortedSet = SerCollector.of(
 				() -> new ConcurrentSkipListSet<>(comparator), ConcurrentSkipListSet::add, 
@@ -332,7 +342,7 @@ public abstract class AbstractDataSet implements DataSet
 											if (index + inf >= sorted.length || index + sup < 0)
 												window = Stream.empty();
 											else
-												window = Arrays.stream(sorted, max(0, index + inf), min(1 + index + sup, sorted.length));
+												window = Arrays.stream(sorted, max(0, safeSum(index, inf)), min(safeInc(safeSum(index, sup)), sorted.length));
 											
 											return window.collect(collectingAndThen(mapping(dp -> dp.get(oldC), collectors.get(oldC)), v -> new SimpleEntry<>(newC, finishers.get(oldC).apply(v, sorted[index].get(oldC)))));
 										}
@@ -340,7 +350,7 @@ public abstract class AbstractDataSet implements DataSet
 										{
 											throw e;
 										}
-									})).collect(collectingAndThen(SerCollectors.entriesToMap(), map -> new SimpleEntry<>(map, sorted[index]))))
+									})).collect(collectingAndThen(entriesToMap(), map -> new SimpleEntry<>(map, sorted[index]))))
 								.map(splitting((values, dp) -> new DataPointBuilder(dp)
 									.delete(components.keySet())
 									.addAll(values)
@@ -350,6 +360,17 @@ public abstract class AbstractDataSet implements DataSet
 					}).flatMap(identity());
 			}
 		};
+	}
+	
+	private static int safeSum(int x, int y)
+	{
+		int r = x + y;
+		return ((x ^ r) & (y ^ r)) < 0 ? Integer.MAX_VALUE : r;
+	}
+	
+	private static int safeInc(int a)
+	{
+		return safeSum(a, 1);
 	}
 	
 	@Override

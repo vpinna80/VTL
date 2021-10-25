@@ -27,10 +27,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
 public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanDomainSubset, BooleanDomain> implements BooleanDomainSubset<EntireBooleanDomainSubset>
 {
@@ -50,9 +48,7 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof BooleanDomainSubset || 
-				other instanceof NumberDomainSubset ||
-				(other instanceof ValueDomainSubset && isAssignableFrom(((ValueDomainSubset<?, ?>) other).getParentDomain()));
+		return other instanceof NullDomain || other instanceof BooleanDomainSubset;
 	}
 
 	@Override

@@ -50,7 +50,8 @@ public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDom
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof StringDomainSubset || 
+		return other instanceof NullDomain || 
+				other instanceof StringDomainSubset || 
 				other instanceof NumberDomainSubset ||
 				other instanceof BooleanDomainSubset ||
 				(other instanceof ValueDomainSubset && isAssignableFrom(((ValueDomainSubset<?, ?>) other).getParentDomain()));

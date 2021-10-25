@@ -50,7 +50,7 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NumberDomainSubset;
+		return other instanceof NullDomain || other instanceof NumberDomainSubset;
 	}
 
 	@Override

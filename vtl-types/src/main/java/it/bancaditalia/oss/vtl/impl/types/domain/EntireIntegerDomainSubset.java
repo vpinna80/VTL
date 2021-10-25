@@ -52,7 +52,7 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof IntegerDomainSubset;
+		return other instanceof NullDomain || other instanceof IntegerDomainSubset;
 	}
 
 	@Override

@@ -45,7 +45,7 @@ public class EntireDurationDomainSubset implements DurationDomainSubset<EntireDu
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof DurationDomain;
+		return other instanceof NullDomain || other instanceof DurationDomain;
 	}
 
 	@Override
