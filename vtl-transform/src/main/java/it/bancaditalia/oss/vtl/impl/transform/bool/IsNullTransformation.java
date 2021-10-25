@@ -31,7 +31,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -81,10 +80,7 @@ public class IsNullTransformation extends UnaryTransformation
 		VTLValueMetadata meta = operand.getMetadata(session);
 
 		if (meta instanceof ScalarValueMetadata)
-			if (BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
-				return BOOLEAN;
-			else
-				throw new VTLIncompatibleTypesException("isnull", BOOLEANDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
+			return BOOLEAN;
 		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
