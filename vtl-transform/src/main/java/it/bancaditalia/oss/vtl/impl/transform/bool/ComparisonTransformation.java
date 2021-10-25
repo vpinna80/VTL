@@ -182,7 +182,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		
 		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class)) 
 				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
-			throw new UnsupportedOperationException("One operand of comparison must contain all identifiers of the other.");
+			throw new UnsupportedOperationException("Identifiers do not match: " + left.getComponents(Identifier.class) + " and " + right.getComponents(Identifier.class));
 
 		final DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getComponents(Measure.class).iterator().next(),
 				rightMeasure = left.getComponents(Measure.class).iterator().next();

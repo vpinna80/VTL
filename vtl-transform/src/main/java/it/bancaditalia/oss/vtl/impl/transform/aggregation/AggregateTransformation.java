@@ -24,18 +24,15 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
-import static it.bancaditalia.oss.vtl.util.Utils.afterMapping;
 import static java.util.stream.Collectors.toSet;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
@@ -72,17 +69,17 @@ public class AggregateTransformation extends UnaryTransformation
 	private static final DataStructureComponentImpl<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 
 	private final AggregateOperator	aggregation;
-	private final List<String> groupBy;
 	private final Transformation having;
 	private final String name;
 	private final Class<? extends ComponentRole> role;
+	private GroupingClause groupingClause;
 	
-	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, List<String> groupBy, Transformation having)
+	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, GroupingClause groupingClause, Transformation having)
 	{
 		super(operand);
 		
 		this.aggregation = aggregation;
-		this.groupBy = groupBy == null || groupBy.isEmpty() ? null : groupBy;
+		this.groupingClause = groupingClause;
 		this.having = having;
 		this.name = null;
 		this.role = null;
@@ -92,21 +89,15 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 
 	// constructor for COUNT operator
-	public AggregateTransformation(List<String> groupBy, Transformation having)
+	public AggregateTransformation(GroupingClause groupingClause, Transformation having)
 	{
-		this(COUNT, null, groupBy, having);
+		this(COUNT, null, groupingClause, having);
 	}
 	
 	// constructor for AGGR clause
-	public AggregateTransformation(AggregateTransformation other, List<String> groupBy, String name, Class<? extends ComponentRole> role)
+	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, String name, Class<? extends ComponentRole> role)
 	{
-		super(other.operand);
-		
-		this.aggregation = other.aggregation;
-		this.groupBy = groupBy == null || groupBy.isEmpty() ? null : groupBy;
-		this.having = null;
-		this.name = name;
-		this.role = role;
+		this(other.aggregation, other.operand, groupingClause, null);
 	}
 	
 	@Override
@@ -120,7 +111,7 @@ public class AggregateTransformation extends UnaryTransformation
 	{
 		SerCollector<DataPoint, ?, Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>>> reducer = aggregation.getReducer(((DataSetMetadata) metadata).getComponents(Measure.class));
 
-		if (groupBy == null)
+		if (groupingClause == null)
 			try (Stream<DataPoint> stream = dataset.stream())
 			{
 				Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>> result = stream.collect(reducer);
@@ -133,7 +124,7 @@ public class AggregateTransformation extends UnaryTransformation
 			}
 		else
 		{
-			Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = getGroupByComponents(dataset.getMetadata());
+			Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause.getGroupingComponents(dataset.getMetadata());
 			
 			// dataset-level aggregation
 			return dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (result, keyValues) -> 
@@ -155,7 +146,7 @@ public class AggregateTransformation extends UnaryTransformation
 			DataSetMetadata dataset = (DataSetMetadata) opmeta;
 			final Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
 
-			if (groupBy == null)
+			if (groupingClause == null)
 			{
 				if (measures.isEmpty())
 					throw new VTLExpectedComponentException(Measure.class, dataset);
@@ -174,7 +165,7 @@ public class AggregateTransformation extends UnaryTransformation
 			}
 			else
 			{
-				Set<DataStructureComponent<Identifier,?,?>> groupComps = getGroupByComponents(dataset);
+				Set<DataStructureComponent<Identifier,?,?>> groupComps = groupingClause.getGroupingComponents(dataset);
 				
 				Optional<DataStructureComponent<Identifier,?,?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
 				if (nonID.isPresent())
@@ -197,25 +188,10 @@ public class AggregateTransformation extends UnaryTransformation
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class, ScalarValueMetadata.class);
 	}
 
-	private Set<DataStructureComponent<Identifier, ?, ?>> getGroupByComponents(DataSetMetadata dataset)
-	{
-		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = groupBy.stream()
-				.map(name -> name.matches("'.*'")
-						? dataset.getComponent(name.replaceAll("'(.*)'", "$1"))
-						: dataset.stream().filter(afterMapping(DataStructureComponent::getName, name::equalsIgnoreCase)).findAny()
-				).map(o -> o.orElseThrow(() -> new VTLMissingComponentsException(dataset, groupBy.toArray(new String[0]))))
-				.peek(component -> {
-					if (!component.is(Identifier.class))
-						throw new VTLIncompatibleRolesException("aggregation group by", component, Identifier.class);
-				}).map(component -> component.as(Identifier.class))
-				.collect(toSet());
-		return groupComps;
-	}
-	
 	@Override
 	public String toString()
 	{
-		return aggregation + "(" + operand + (groupBy != null ? groupBy.stream().collect(Collectors.joining(", ", " group by ", "")) : "") + ")";
+		return aggregation + "(" + operand + (groupingClause != null ? " " + groupingClause.toString() : " ") + ")";
 	}
 
 	@Override
@@ -224,7 +200,7 @@ public class AggregateTransformation extends UnaryTransformation
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((aggregation == null) ? 0 : aggregation.hashCode());
-		result = prime * result + ((groupBy == null) ? 0 : groupBy.hashCode());
+		result = prime * result + ((groupingClause == null) ? 0 : groupingClause.hashCode());
 		result = prime * result + ((having == null) ? 0 : having.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((role == null) ? 0 : role.hashCode());
@@ -234,31 +210,43 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	public boolean equals(Object obj)
 	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof AggregateTransformation)) return false;
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
 		AggregateTransformation other = (AggregateTransformation) obj;
-		if (aggregation != other.aggregation) return false;
-		if (groupBy == null)
+		if (aggregation != other.aggregation)
+			return false;
+		if (groupingClause == null)
 		{
-			if (other.groupBy != null) return false;
+			if (other.groupingClause != null)
+				return false;
 		}
-		else if (!groupBy.equals(other.groupBy)) return false;
+		else if (!groupingClause.equals(other.groupingClause))
+			return false;
 		if (having == null)
 		{
-			if (other.having != null) return false;
+			if (other.having != null)
+				return false;
 		}
-		else if (!having.equals(other.having)) return false;
+		else if (!having.equals(other.having))
+			return false;
 		if (name == null)
 		{
-			if (other.name != null) return false;
+			if (other.name != null)
+				return false;
 		}
-		else if (!name.equals(other.name)) return false;
+		else if (!name.equals(other.name))
+			return false;
 		if (role == null)
 		{
-			if (other.role != null) return false;
+			if (other.role != null)
+				return false;
 		}
-		else if (!role.equals(other.role)) return false;
+		else if (!role.equals(other.role))
+			return false;
 		return true;
 	}
 }

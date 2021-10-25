@@ -25,6 +25,11 @@
 		<tokenmapping name="PRECEDING" value="PRECEDING" />
 		<tokenmapping name="FOLLOWING" value="FOLLOWING" />
 	</tokenset>
+
+	<tokenset name="GroupingMode" class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause$GroupingMode">
+		<tokenmapping name="BY" value="GROUP_BY" />
+		<tokenmapping name="EXCEPT" value="GROUP_EXCEPT" />
+	</tokenset>
 	
 	<tokenset name="OffsetDirection" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation$OffsetDirection">
 		<tokenmapping name="LAG" value="LAG" />
@@ -355,9 +360,12 @@
 			<tokensetparam name="op" tokenset="AggregateOperator" />
 			<exprparam name="expr" />
 			<nestedparam name="groupingClause">
-				<listparam name="componentID">
-					<stringparam />
-				</listparam>
+				<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause">
+					<tokensetparam name="op" tokenset="GroupingMode" />
+					<listparam name="componentID">
+						<stringparam />
+					</listparam>
+				</customparam>
 			</nestedparam>
 			<exprparam name="havingClause" />
 		</params>
@@ -416,9 +424,12 @@
 				</listparam>
 			</nestedparam>
 			<nestedparam name="groupingClause">
-				<listparam name="componentID">
-					<stringparam />
-				</listparam>
+				<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause">
+					<tokensetparam name="op" tokenset="GroupingMode" />
+					<listparam name="componentID">
+						<stringparam />
+					</listparam>
+				</customparam>
 			</nestedparam>
 			<exprparam name="havingClause" />
 		</params>

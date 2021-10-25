@@ -31,10 +31,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
@@ -51,7 +50,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -131,9 +129,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			return operand.getMetadata(scheme);
 		}
 
-		public AggrClauseItem withGroupBy(List<String> groupBy)
+		public AggrClauseItem withGroupBy(GroupingClause groupingClause)
 		{
-			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupBy, name, role));
+			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupingClause, name, role));
 		}
 
 		@Override
@@ -179,13 +177,13 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	}
 
 	private final List<AggrClauseItem> aggrItems;
-	private final List<String> groupBy;
+	private final GroupingClause groupingClause;
 	private final Transformation having;
 
-	public AggrClauseTransformation(List<AggrClauseItem> operands, List<String> groupBy, Transformation having)
+	public AggrClauseTransformation(List<AggrClauseItem> aggrItems, GroupingClause groupingClause, Transformation having)
 	{
-		this.aggrItems = operands.stream().map(clause -> clause.withGroupBy(groupBy)).collect(toList());
-		this.groupBy = groupBy == null || groupBy.isEmpty() ? null : groupBy;
+		this.aggrItems = aggrItems;
+		this.groupingClause = groupingClause;
 		this.having = having;
 	}
 
@@ -237,21 +235,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		if (meta instanceof DataSetMetadata)
 		{
 			DataSetMetadata operand = (DataSetMetadata) meta;
-
 			Set<DataStructureComponent<Identifier, ?, ?>> identifiers = emptySet();
-			if (groupBy != null)
-			{
-				Set<DataStructureComponent<?, ?, ?>> groupComps = groupBy.stream()
-						.map(operand::getComponent)
-						.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, groupBy.toArray(new String[0]))))
-						.collect(toSet());
-				
-				Optional<DataStructureComponent<?, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
-				if (nonID.isPresent())
-					throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
-				
-				identifiers = groupComps.stream().map(c -> c.as(Identifier.class)).collect(toSet());
-			}
+			if (groupingClause != null)
+				identifiers = groupingClause.getGroupingComponents(operand);
 
 			DataStructureBuilder builder = new DataStructureBuilder().addComponents(identifiers);
 
@@ -306,10 +292,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public String toString()
+	public Lineage computeLineage()
 	{
-		String terminator = (groupBy != null ? groupBy.stream().map(Object::toString).collect(joining(", ", " group by ", "")) : "") + (having != null ? " having " + having : "");
-		return aggrItems.stream().map(Object::toString).collect(joining(", ", "aggr ", terminator));
+		return LineageNode.of(this, LineageCall.of(aggrItems.stream().map(Transformation::getLineage).collect(toList())));
 	}
 
 	@Override
@@ -318,7 +303,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((aggrItems == null) ? 0 : aggrItems.hashCode());
-		result = prime * result + ((groupBy == null) ? 0 : groupBy.hashCode());
+		result = prime * result + ((groupingClause == null) ? 0 : groupingClause.hashCode());
 		result = prime * result + ((having == null) ? 0 : having.hashCode());
 		return result;
 	}
@@ -326,30 +311,41 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public boolean equals(Object obj)
 	{
-		if (this == obj) return true;
-		if (!(obj instanceof AggrClauseTransformation)) return false;
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
 		AggrClauseTransformation other = (AggrClauseTransformation) obj;
 		if (aggrItems == null)
 		{
-			if (other.aggrItems != null) return false;
+			if (other.aggrItems != null)
+				return false;
 		}
-		else if (!aggrItems.equals(other.aggrItems)) return false;
-		if (groupBy == null)
+		else if (!aggrItems.equals(other.aggrItems))
+			return false;
+		if (groupingClause == null)
 		{
-			if (other.groupBy != null) return false;
+			if (other.groupingClause != null)
+				return false;
 		}
-		else if (!groupBy.equals(other.groupBy)) return false;
+		else if (!groupingClause.equals(other.groupingClause))
+			return false;
 		if (having == null)
 		{
-			if (other.having != null) return false;
+			if (other.having != null)
+				return false;
 		}
-		else if (!having.equals(other.having)) return false;
+		else if (!having.equals(other.having))
+			return false;
 		return true;
 	}
 
 	@Override
-	public Lineage computeLineage()
+	public String toString()
 	{
-		return LineageNode.of(this, LineageCall.of(aggrItems.stream().map(Transformation::getLineage).collect(toList())));
+		String terminator = (groupingClause != null ? " " + groupingClause.toString() : "") + (having != null ? " having " + having : "");
+		return aggrItems.stream().map(Object::toString).collect(joining(", ", "aggr ", terminator));
 	}
 }
