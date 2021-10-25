@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.operators;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.USE_BIG_DECIMAL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static java.lang.Double.NaN;
 import static java.lang.Math.log;
 import static java.lang.Math.pow;
 import static java.math.MathContext.DECIMAL128;
@@ -87,8 +88,15 @@ public enum ArithmeticOperator
 		else if (left instanceof NullValue || right instanceof NullValue)
 				return NullValue.instance(NUMBERDS);
 			else
-				return DoubleValue.of(opDouble.applyAsDouble(((Number) (NUMBERDS.cast(left)).get()).doubleValue(), 
-						(((Number) NUMBERDS.cast(right).get()).doubleValue())));
+			{
+				double leftD = ((Number) (NUMBERDS.cast(left)).get()).doubleValue();
+				double rightD = ((Number) (NUMBERDS.cast(right)).get()).doubleValue();
+				
+				if (!Double.isFinite(leftD) || !Double.isFinite(rightD))
+					return DoubleValue.of(NaN);
+				
+				return DoubleValue.of(opDouble.applyAsDouble(leftD, rightD));
+			}
 	}
 
 	private static BigDecimal toBigDecimal(Number number)
