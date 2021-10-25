@@ -156,9 +156,9 @@ public class InStrTransformation extends TransformationImpl
 			throw new VTLInvalidParameterException(start, ScalarValueMetadata.class);
 		if (!(occurrence instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(occurrence, ScalarValueMetadata.class);
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
+		if (!INTEGER.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
 			throw new VTLIncompatibleTypesException("instr: start parameter", INTEGER, ((ScalarValueMetadata<?, ?>) start).getDomain());
-		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) occurrence).getDomain()))
+		if (!INTEGER.isAssignableFrom(((ScalarValueMetadata<?, ?>) occurrence).getDomain()))
 			throw new VTLIncompatibleTypesException("instr: occurrence parameter", INTEGER, ((ScalarValueMetadata<?, ?>) occurrence).getDomain());
 		
 		if (left instanceof ScalarValueMetadata)
