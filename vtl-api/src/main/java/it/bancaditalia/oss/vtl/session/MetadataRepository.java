@@ -78,9 +78,7 @@ public interface MetadataRepository
 	 * Registers a new domain instance inside this repository if it is not and return the registered domain.
 	 * 
 	 * @param name the name of the new domain
-	 * @para@Override
-	@Override
-	m domain the domain to define 
+	 * @param domain the domain to define 
 	 * 
 	 * @return the created domain instance.
 	 */
