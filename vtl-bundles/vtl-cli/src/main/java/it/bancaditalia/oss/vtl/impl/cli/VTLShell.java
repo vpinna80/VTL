@@ -73,7 +73,7 @@ public class VTLShell implements Callable<Void>
 				for (String name: names)
 					System.out.println(session.resolve(name));
 			else
-				for (String name: session.getWorkspace().getRules().stream().map(Statement::getId).collect(toList()))
+				for (String name: session.getWorkspace().getRules().stream().map(Statement::getAlias).collect(toList()))
 					System.out.println(session.resolve(name));
 		}
 		

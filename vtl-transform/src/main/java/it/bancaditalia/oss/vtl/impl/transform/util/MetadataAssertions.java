@@ -1,3 +1,22 @@
+/*
+ * Copyright © 2020 Banca D'Italia
+ *
+ * Licensed under the EUPL, Version 1.2 (the "License");
+ * You may not use this work except in compliance with the
+ * License.
+ * You may obtain a copy of the License at:
+ *
+ * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the License is
+ * distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied.
+ *
+ * See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
@@ -27,15 +46,9 @@ public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSu
 	private final S domain;
 	private final String name;
 
-	public static <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> MetadataAssertions<R, S, D> asserts(String name, Set<? extends DataStructureComponent<R, S, D>> components)
+	public static <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> MetadataAssertions<R, S, D> asserts(String name, Set<DataStructureComponent<R, S, D>> components)
 	{
 		return new MetadataAssertions<>(name, components, null, null);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> MetadataAssertions<R, S, D> asserts(String name, DataSetMetadata structure)
-	{
-		return new MetadataAssertions<>(name, (Set<? extends DataStructureComponent<R, S, D>>) structure, null, null);
 	}
 	
 	private MetadataAssertions(String name, Set<? extends DataStructureComponent<R, S, D>> components, Class<R> role, S domain)

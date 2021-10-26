@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByKeys;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingLong;
-import static it.bancaditalia.oss.vtl.util.Utils.groupingByKeys;
-import static it.bancaditalia.oss.vtl.util.Utils.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingByConcurrent;

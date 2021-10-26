@@ -66,7 +66,7 @@ public class SerCollectors
         return SerCollector.of(mapSupplier, accumulator, mapMerger(mergeFunction), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
-    public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, R> downstream, SerFunction<? super R, RR> finisher)
+    public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, ? extends R> downstream, SerFunction<? super R, RR> finisher)
 	{
 		Set<Characteristics> characteristics = downstream.characteristics();
 		if (characteristics.contains(IDENTITY_FINISH))
@@ -155,7 +155,7 @@ public class SerCollectors
 
     public static <T> SerCollector<T, List<T>, List<T>> toList()
     {
-        return new SerCollector<>(ArrayList::new, List::add, (left, right) -> { left.addAll(right); return left; }, SerFunction.identity(), emptySet());
+        return new SerCollector<>(ArrayList::new, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), emptySet());
     }
 
 	public static <T, A, R> SerCollector<T, A, R> filtering(SerPredicate<? super T> predicate, SerCollector<? super T, A, R> downstream)

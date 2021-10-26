@@ -32,8 +32,8 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingBigDecimal;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
@@ -41,11 +41,13 @@ import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.math.BigDecimal;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
@@ -64,6 +66,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerBiConsumer;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
@@ -75,8 +78,8 @@ public enum AggregateOperator
 	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::of)),
 	SUM("sum", getSummingCollector()), 
 	AVG("avg", getAveragingCollector()),
-	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, toList()), l -> {
-				List<NumberValue<?, ?, ?, ?>> sorted = Utils.getStream(l).sorted().collect(toList());
+	MEDIAN("median", collectingAndThen(toCollection(TreeSet::new), ts -> {
+				List<ScalarValue<?, ?, ?, ?>> sorted = new ArrayList<>(ts);
 				int s = sorted.size();
 				return s % 2 == 0 ? sorted.get(s / 2) : average(sorted.get(s >> 1), sorted.get(s / 2 + 1));
 			})),
@@ -122,7 +125,7 @@ public enum AggregateOperator
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get()))));
 
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
-	private final BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
+	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
 
 	private static class CombinedAccumulator 
@@ -160,13 +163,13 @@ public enum AggregateOperator
 			return collectingAndThen(averagingDouble(v -> ((Number) v.get()).doubleValue()), v -> DoubleValue.of(v));
 	}
 
-	private static NumberValue<?, ?, ?, ?> average(NumberValue<?, ?, ?, ?> left, NumberValue<?, ?, ?, ?> right)
+	private static NumberValue<?, ?, ?, ?> average(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		Number leftN = left.get(), rightN = right.get();
+		Number leftN = (Number) left.get(), rightN = (Number) right.get();
 		if (Boolean.valueOf(USE_BIG_DECIMAL.getValue()))
 		{
-			leftN = leftN instanceof BigDecimal ? leftN : BigDecimal.valueOf(left.get().doubleValue());
-			rightN = rightN instanceof BigDecimal ? rightN : BigDecimal.valueOf(right.get().doubleValue());
+			leftN = leftN instanceof BigDecimal ? leftN : BigDecimal.valueOf(leftN.doubleValue());
+			rightN = rightN instanceof BigDecimal ? rightN : BigDecimal.valueOf(rightN.doubleValue());
 			return (NumberValue<?, ?, ?, ?>) BigDecimalValue.of(((BigDecimal) leftN).add((BigDecimal) rightN).divide(BigDecimal.valueOf(2)));
 		}
 		else
@@ -174,7 +177,7 @@ public enum AggregateOperator
 	}
 
 	private AggregateOperator(String name,
-			BiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor,
+			SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor,
 			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this.name = name;
