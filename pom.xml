@@ -214,7 +214,7 @@
 		<build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
 		<spring.boot.version>2.3.2.RELEASE</spring.boot.version>
 		<node.version>v10.20.1</node.version>
-		<antlr4.version>4.7.2</antlr4.version>
+		<antlr4.version>4.8</antlr4.version>
 		<scm-url>https://github.com/vpinna80/VTL</scm-url>
 		<site-url>https://vpinna80.github.io/VTL</site-url>
 		<license-url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
