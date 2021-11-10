@@ -60,9 +60,19 @@ public class SerCollectors
     public static <T, K, U, M extends ConcurrentMap<K, U>> SerCollector<T, M, M> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
     		SerFunction<? super T, ? extends U> valueMapper, SerBinaryOperator<U> mergeFunction, SerSupplier<M> mapSupplier)
     {
-        SerBiConsumer<M, T> accumulator
-                = (map, element) -> map.merge(keyMapper.apply(element),
-                                              valueMapper.apply(element), mergeFunction);
+        SerBiConsumer<M, T> accumulator = (map, element) -> {
+        	final K key = keyMapper.apply(element);
+			final U value = valueMapper.apply(element);
+			
+			SerBinaryOperator<U> decoratedMerge = (u, v) -> {
+				if (map.containsKey(key))
+					System.out.println(String.format("Duplicate key %s", key));
+				return mergeFunction.apply(u, v);
+			};
+			
+			map.merge(key, value, decoratedMerge);
+        };
+                                              
         return SerCollector.of(mapSupplier, accumulator, mapMerger(mergeFunction), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
@@ -150,7 +160,7 @@ public class SerCollectors
 
     public static <T extends Serializable> SerCollector<T, ?, BigDecimal> averagingBigDecimal(SerFunction<? super T, BigDecimal> mapper)
     {
-		return mapping(mapper, teeing(collectingAndThen(reducing(BigDecimal::add), v -> v.orElse(BigDecimal.valueOf(0))), counting(), (sum, n) -> sum.divide(BigDecimal.valueOf(n))));
+		return null;//mapping(mapper, teeing(collectingAndThen(reducing(BigDecimal::add), v -> v.orElse(BigDecimal.valueOf(0))), counting(), (sum, n) -> sum.divide(BigDecimal.valueOf(n))));
     }
 
     public static <T> SerCollector<T, List<T>, List<T>> toList()
@@ -335,7 +345,9 @@ public class SerCollectors
 
     private static <T> SerBinaryOperator<T> throwingMerger()
     {
-        return (u,v) -> { throw new IllegalStateException(String.format("Duplicate key %s", u)); };
+        return (u, v) -> { 
+        	throw new IllegalStateException(String.format("Duplicate key %s", u)); 
+        };
     }
 
 	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(SerFunction<? super U, ? extends R> keyMapper)
@@ -365,14 +377,14 @@ public class SerCollectors
 		return toConcurrentMap(Entry::getKey, Entry::getValue, combiner);
 	}
 
-	public static <K, V> SerCollector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(SerFunction<? super V, ? extends K> valueMapper)
+	public static <K, V> SerCollector<V, ?, ConcurrentMap<K, V>> toMapWithKeys(SerFunction<? super V, ? extends K> valueToKeyMapper)
 	{
-		return toConcurrentMap(valueMapper, identity());
+		return toConcurrentMap(valueToKeyMapper, identity());
 	}
 
-	public static <K, V> SerCollector<K, ?, ConcurrentMap<K, V>> toMapWithValues(SerFunction<K, V> keyMapper)
+	public static <K, V> SerCollector<K, ?, ConcurrentMap<K, V>> toMapWithValues(SerFunction<K, V> keyToValueMapper)
 	{
-		return toConcurrentMap(identity(), keyMapper);
+		return toConcurrentMap(identity(), keyToValueMapper);
 	}
 
 	public static <U, V> SerCollector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()

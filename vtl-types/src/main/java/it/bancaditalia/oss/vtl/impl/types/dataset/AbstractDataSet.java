@@ -38,10 +38,8 @@ import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.groupingByConcurrent;
-import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
-import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -98,7 +95,6 @@ public abstract class AbstractDataSet implements DataSet
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
 	private final DataSetMetadata dataStructure;
-	private SoftReference<String> cacheString  = null;
 
 	protected AbstractDataSet(DataSetMetadata dataStructure)
 	{
@@ -362,6 +358,9 @@ public abstract class AbstractDataSet implements DataSet
 		};
 	}
 	
+	/*
+	 * Detects overflows in sum and caps it to Integer.MAX_VALUE 
+	 */
 	private static int safeSum(int x, int y)
 	{
 		int r = x + y;
@@ -380,34 +379,17 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
+	public String toString()
+	{
+		return "#UNNAMED#" + getMetadata();
+	}
+	
+	@Override
 	public final Stream<DataPoint> stream()
 	{
 		LOGGER.trace("Streaming dataset of {}", dataStructure);
 
 		return streamDataPoints();
-	}
-
-	public String toString()
-	{
-		String result = null;
-		if (cacheString != null)
-			result = cacheString.get();
-
-		if (result != null)
-			return result;
-
-		final DataSetMetadata metadata = getMetadata();
-
-		try (Stream<DataPoint> stream = stream())
-		{
-			result = stream
-					.peek(Objects::requireNonNull)
-					.map(DataPoint::toString)
-					.collect(joining(",\n\t", "(" + metadata + ") -> {\n\t", "\n}"));
-		}
-
-		cacheString = new SoftReference<>(result);
-		return result;
 	}
 
 	protected abstract Stream<DataPoint> streamDataPoints();

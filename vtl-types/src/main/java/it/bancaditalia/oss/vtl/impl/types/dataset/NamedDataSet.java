@@ -19,10 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -38,8 +34,6 @@ public class NamedDataSet extends AbstractDataSet
 
 	private final DataSet delegate;
 	private final String alias;
-
-	private SoftReference<String> cacheString  = null;
 
 	public NamedDataSet(String alias, DataSet delegate)
 	{
@@ -61,44 +55,6 @@ public class NamedDataSet extends AbstractDataSet
 		return alias;
 	}
 
-	public void streamTo(PrintWriter output)
-	{
-		output.println(alias + " = {");
-		output.print("\t");
-		try (Stream<DataPoint> stream = stream())
-		{
-			stream.forEach(dp -> {
-				String datapoint = dp.toString();
-				output.println(",");
-				output.print("\t");
-				output.print(datapoint);
-			});
-		}
-		output.println();
-		output.println("}");
-	}
-
-	@Override
-	public String toString()
-	{
-		String result = null;
-		if (cacheString != null)
-			result = cacheString.get();
-
-		if (result != null)
-			return result;
-
-		result = alias + " = " + getDelegate();
-
-		cacheString = new SoftReference<>(result);
-		return result;
-	}
-
-	public void streamTo(PrintStream output)
-	{
-		streamTo(new PrintWriter(new OutputStreamWriter(output)));
-	}
-
 	public DataSet getDelegate()
 	{
 		return delegate;
@@ -113,7 +69,12 @@ public class NamedDataSet extends AbstractDataSet
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		// TODO Auto-generated method stub
 		return delegate.stream();
+	}
+	
+	@Override
+	public String toString()
+	{
+		return alias + getMetadata();
 	}
 }
