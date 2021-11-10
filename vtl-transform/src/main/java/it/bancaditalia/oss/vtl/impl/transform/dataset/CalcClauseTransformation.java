@@ -234,7 +234,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			? operand
 			: new LightFDataSet<>(nonAnalyticResultMetadata, ds -> ds.stream()
 				.map(dp -> {
-					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata, scheme);
+					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata);
 					
 					// place calculated components (eventually overriding existing ones 
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 

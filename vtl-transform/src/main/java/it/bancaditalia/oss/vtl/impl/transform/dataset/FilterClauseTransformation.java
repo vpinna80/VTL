@@ -70,11 +70,11 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
+		final DataSetMetadata metadata = getMetadata(scheme);
 
 		return operand.filter(dp -> {
-			final DatapointScope dpScope = new DatapointScope(dp, getMetadata(scheme), scheme);
-			final ScalarValue<?, ?, ?, ?> result = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
-			return (TRUE.equals(BOOLEANDS.cast(result)));
+			final DatapointScope dpScope = new DatapointScope(dp, metadata);
+			return (TRUE.equals(BOOLEANDS.cast((ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope))));
 		});
 	}
 

@@ -170,6 +170,8 @@ public class DataPointBuilder
 
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
 		private final Lineage lineage;
+		private final int hashCode; 
+
 		private transient Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
 
 		private DataPointImpl(Lineage lineage, DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
@@ -186,7 +188,7 @@ public class DataPointBuilder
 						filledValues.put(component, NullValue.instanceFrom(component));
 				this.dpValues = filledValues;
 			} else
-				this.dpValues = new HashMap<>(values);
+				this.dpValues = values;
 
 			if (!structure.equals(dpValues.keySet()))
 			{
@@ -205,6 +207,8 @@ public class DataPointBuilder
 				if (missing.size() > 0)
 					throw new VTLMissingComponentsException(missing, this.dpValues);
 			}
+			
+			hashCode = dpValues.hashCode();
 		}
 
 		@Override
@@ -310,7 +314,7 @@ public class DataPointBuilder
 		@Override
 		public int hashCode()
 		{
-			return dpValues.hashCode();
+			return hashCode;
 		}
 
 		@Override

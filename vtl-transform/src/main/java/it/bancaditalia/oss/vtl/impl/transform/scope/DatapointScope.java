@@ -48,13 +48,11 @@ public class DatapointScope implements TransformationScheme
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatapointScope.class); 
 	private final DataPoint dp;
 	private final DataSetMetadata structure;
-	private final TransformationScheme parent;
 	
-	public DatapointScope(DataPoint dp, DataSetMetadata structure, TransformationScheme parent) 
+	public DatapointScope(DataPoint dp, DataSetMetadata structure) 
 	{
 		this.dp = dp;
 		this.structure = structure;
-		this.parent = parent;
 	}
 
 	@Override
@@ -103,7 +101,7 @@ public class DatapointScope implements TransformationScheme
 	@Override
 	public Statement getRule(String node)
 	{
-		return parent.getRule(node);
+		return null;
 	}
 
 	@Override
