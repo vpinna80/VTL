@@ -48,29 +48,31 @@ final class SparkSpliterator implements Spliterator<Row>
 	public boolean tryAdvance(Consumer<? super Row> action)
 	{
 		while (current >= section.size())
-			if (finished.get())
+			try
+			{
+				updateSection();
+
+				if (finished.get())
+					return false;
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+				Thread.currentThread().interrupt();
 				return false;
-			else
-				synchronized (this)
-				{
-					section.clear();
-					queue.drainTo(section);
-					current = 0;
-					if (section.size() == 0)
-						try
-						{
-							wait(500);
-						}
-						catch (InterruptedException e)
-						{
-							Thread.currentThread().interrupt();
-							e.printStackTrace();
-							return false;
-						}
-				}
+			}
 		
 		action.accept(requireNonNull(section.get(current++)));
 		return true;
+	}
+
+	private synchronized void updateSection() throws InterruptedException
+	{
+		section.clear();
+		queue.drainTo(section);
+		current = 0;
+		if (section.size() == 0)
+			wait(500);
 	}
 
 	@Override

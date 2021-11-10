@@ -35,7 +35,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,7 +60,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -122,7 +120,7 @@ public class CSVFileEnvironment implements Environment
 			// can't use streams, must be ordered for the first line processed to be actually the header 
 			final DataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
 			
-			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName, false));
+			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName, true));
 		}
 		catch (IOException e)
 		{
@@ -169,7 +167,7 @@ public class CSVFileEnvironment implements Environment
 				.filter(line -> !line.trim().isEmpty())
 				.peek(line -> LOGGER.trace("Parsing line from CSV: {}", line))
 				.map(line -> {
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
+					DataPointBuilder builder = new DataPointBuilder();
 
 					// Perform split by repeatedly matching the line against the regex
 					int count = 0;
@@ -189,7 +187,7 @@ public class CSVFileEnvironment implements Environment
 								token = token.trim();
 							// parse field value into a VTL scalar 
 							DataStructureComponent<?, ?, ?> component = metadata.get(count);
-							result.put(component, CSVParseUtils.mapValue(component, token, masks.get(component)));
+							builder.add(component, CSVParseUtils.mapValue(component, token, masks.get(component)));
 							count++;
 						}
 						else
@@ -197,9 +195,9 @@ public class CSVFileEnvironment implements Environment
 					if (tokenizer.end() < line.length() - 1)
 						LOGGER.warn("Skipped trailing characters in line: " + line.substring(tokenizer.end() + 1));
 					
-					return result;
+					return builder;
 				})
-				.map(m -> new DataPointBuilder(m).build(LineageExternal.of("csv:" + fileName), structure))
+				.map(b -> b.build(LineageExternal.of("csv:" + fileName), structure))
 				.peek(dp -> LOGGER.trace("Parsed datapoint from CSV: {}", dp))
 					.onClose(() -> {
 					try
