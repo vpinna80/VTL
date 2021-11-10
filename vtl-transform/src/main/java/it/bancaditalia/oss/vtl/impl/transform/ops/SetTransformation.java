@@ -163,7 +163,7 @@ public class SetTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return operands.stream().map(Object::toString).collect(joining(", ", setOperator + "(", ")"));
+		return operands.stream().map(Object::toString).map(String::toLowerCase).collect(joining(", ", setOperator + "(", ")"));
 	}
 
 	@Override
