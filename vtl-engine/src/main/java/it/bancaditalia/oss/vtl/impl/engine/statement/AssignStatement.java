@@ -68,11 +68,14 @@ class AssignStatement extends AbstractStatement implements Transformation
 	}
 
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
 		try
 		{
-			return expression.eval(session);
+			final VTLValue value = expression.eval(scheme);
+			if (isPersistent())
+				scheme.persist(value, getAlias());
+			return value;
 		}
 		catch (VTLException e)
 		{

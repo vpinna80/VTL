@@ -107,6 +107,18 @@ public interface TransformationScheme
 	}
 
 	/**
+	 * Tries to persist a value in one of the environments managed by this scheme
+	 * 
+	 * @param value The value to persist
+	 * @param alias The alias under which the value must be persisted
+	 * @return true if the persist is successful 
+	 */
+	public default boolean persist(VTLValue value, String alias)
+	{
+		return false;
+	}
+	
+	/**
 	 * Tries to resolve a lineage link specified by a given alias for a VTL rule defined in this scheme.
 	 * 
 	 * @param alias The alias referring to a rule

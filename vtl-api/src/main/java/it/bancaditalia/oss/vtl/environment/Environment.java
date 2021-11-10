@@ -48,6 +48,18 @@ public interface Environment
 	public Optional<VTLValue> getValue(String alias);
 
 	/**
+	 * Persistently store the given value in this environment for later use
+	 * 
+	 * @param value The value to store
+	 * @param alias The alias under which the value must be stored
+	 * @return true if this environment was able to store the value.
+	 */
+	public default boolean store(VTLValue value, String alias)
+	{
+		return false;
+	}
+	
+	/**
 	 * Returns an {@link Optional} reference to the metadata of a VTL object with the specified name in this environment.
 	 * 
 	 * @param alias The name of requested object

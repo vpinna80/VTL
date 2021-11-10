@@ -79,6 +79,12 @@ public class SetTransformation extends TransformationImpl
 		{
 			return reducer.apply(metadata);
 		}
+		
+		@Override
+		public String toString()
+		{
+			return name().toLowerCase();
+		}
 	}
 
 	private static DataSet setDiff(DataSet left, DataSet right)
@@ -163,7 +169,7 @@ public class SetTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return operands.stream().map(Object::toString).map(String::toLowerCase).collect(joining(", ", setOperator + "(", ")"));
+		return operands.stream().map(Object::toString).collect(joining(", ", setOperator + "(", ")"));
 	}
 
 	@Override

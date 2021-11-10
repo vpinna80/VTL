@@ -22,12 +22,17 @@ package it.bancaditalia.oss.vtl.impl.environment;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
+import static java.util.stream.Collectors.joining;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -35,12 +40,14 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -57,7 +64,10 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
+import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -234,6 +244,46 @@ public class CSVFileEnvironment implements Environment
 		catch (IOException e)
 		{
 			throw new VTLNestedException("Exception while reading " + fileName, e);
+		}
+	}
+	
+	@Override
+	public boolean store(VTLValue value, String alias)
+	{
+		if (!(value instanceof DataSet) || !alias.matches("^'csv:.+'$"))
+			return false;
+		
+		String fileName = alias.substring(5, alias.length() - 1);
+		
+		try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(fileName))))
+		{
+			final DataSet ds = (DataSet) value;
+			ArrayList<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>(ds.getMetadata());
+			LOGGER.info("Writing csv file in " + fileName);
+			
+			String headerLine = metadata.stream()
+				.map(c -> {
+					String prefix = c.is(Identifier.class) ? "$" : c.is(Attribute.class) ? "#" : "";
+					return prefix + c.getName() + "=" + c.getDomain();
+				})
+				.collect(joining(","));
+			writer.println(headerLine);
+			
+			try (Stream<DataPoint> stream = ds.stream())
+			{
+				stream.forEach(dp -> writer.println(metadata.stream()
+					.map(dp::get)
+					.map(Object::toString)
+					.collect(joining(","))));
+			}
+			
+			LOGGER.info("Finished writing csv file in " + fileName);
+			return true;
+		}
+		catch (FileNotFoundException e)
+		{
+			LOGGER.error("Error writing csv file " + fileName, e);
+			return false;
 		}
 	}
 	

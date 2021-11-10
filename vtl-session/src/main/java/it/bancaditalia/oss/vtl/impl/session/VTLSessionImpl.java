@@ -123,7 +123,7 @@ public class VTLSessionImpl implements VTLSession
 	{
 		final String normalizedAlias = normalizeAlias(alias);
 
-		Optional<? extends Statement> rule = workspace.getRule(normalizedAlias);
+		Optional<? extends Statement> rule = workspace.getRule(alias);
 		if (rule.isPresent())
 		{
 			Statement statement = rule.get();
@@ -142,7 +142,7 @@ public class VTLSessionImpl implements VTLSession
 	{
 		final String normalizedAlias = normalizeAlias(alias);
 
-		Optional<? extends Statement> rule = workspace.getRule(normalizedAlias);
+		Optional<? extends Statement> rule = workspace.getRule(alias);
 		if (rule.isPresent())
 		{
 			Statement statement = rule.get();
@@ -167,6 +167,16 @@ public class VTLSessionImpl implements VTLSession
 			return true;
 		else
 			return cacheHelper(normalizedAlias, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
+	}
+	
+	@Override
+	public boolean persist(VTLValue value, String alias)
+	{
+		return Utils.getStream(environments)
+			.map(e -> e.store(value, alias))
+			.filter(s -> s)
+			.findAny()
+			.isPresent();
 	}
 
 	private <T> T cacheHelper(final String alias, Map<String, SoftReference<T>> cache, Function<? super String, ? extends T> mapper)
