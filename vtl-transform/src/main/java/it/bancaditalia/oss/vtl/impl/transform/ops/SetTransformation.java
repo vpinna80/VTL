@@ -19,28 +19,26 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
-import static java.util.function.Function.identity;
+import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.UNION;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.minBy;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -53,55 +51,46 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SetTransformation extends TransformationImpl
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(SetTransformation.class);
+//	private final static Logger LOGGER = LoggerFactory.getLogger(SetTransformation.class);
 	private static final long serialVersionUID = 1L;
 
 	public enum SetOperator
 	{
-		UNION((left, right) -> (structure) -> new LightFDataSet<>(structure, 
-				ds -> Stream.concat(left.stream(), ds.stream()), setDiff(right, left))),
-		INTERSECT((left, right) -> (structure) -> setDiff(left, setDiff(left, right))), 
-		SETDIFF((left, right) -> (structure) -> setDiff(left, right)), 
-		SYMDIFF((left, right) -> (structure) -> new LightFDataSet<>(structure,  
-				ds -> Stream.concat(setDiff(left, right).stream(), ds.stream()), setDiff(right, left)));
+		UNION(null),
+		INTERSECT((structure) -> (left, right) -> setDiff(left, setDiff(left, right))), 
+		SETDIFF((structure) -> (left, right) -> setDiff(left, right)), 
+		SYMDIFF((structure) -> (left, right) -> new LightF2DataSet<>(structure,  
+				(l, r) -> Stream.concat(setDiff(l, r).stream(), setDiff(r, l).stream()), left, right));
 
-		private final BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer;
+		private final SerFunction<DataSetMetadata, SerBinaryOperator<DataSet>> reducer;
 
-		SetOperator(BiFunction<DataSet, DataSet, Function<DataSetMetadata, DataSet>> reducer)
+		SetOperator(SerFunction<DataSetMetadata, SerBinaryOperator<DataSet>> reducer)
 		{
 			this.reducer = reducer;
 		}
 		
-		public BinaryOperator<DataSet> getReducer(DataSetMetadata metadata)
+		public SerBinaryOperator<DataSet> getReducer(DataSetMetadata metadata)
 		{
-			return (left, right) -> reducer.apply(left, right).apply(metadata);
+			return reducer.apply(metadata);
 		}
 	}
 
 	private static DataSet setDiff(DataSet left, DataSet right)
 	{
-		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index = extractIndex(right);
-		
-		return left.filter(dp -> !index.contains(dp.getValues(Identifier.class)));
-	}
-
-	private static Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> extractIndex(DataSet right)
-	{
-		String alias = right instanceof NamedDataSet ? ((NamedDataSet) right).getAlias() : "unnamed dataset";
-		LOGGER.debug("Started indexing {}.", alias);
-		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
-		try (Stream<DataPoint> stream = right.stream())
-		{
-			index = new HashSet<>(stream
-				.map(dp -> dp.getValues(Identifier.class))
-				.collect(toConcurrentMap(identity(), x -> Boolean.TRUE))
-				.keySet());
-		}
-		LOGGER.debug("Finished indexing {}.", alias);
-		return index;
+		return new LightF2DataSet<>(left.getMetadata(), (l, r) -> {
+			try (Stream<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> stream = r.streamByKeys(right.getComponents(Identifier.class), counting(), (c, keyValues) -> keyValues))
+			{
+				Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index = stream.collect(toSet());
+				
+				return left.filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
+			}
+		}, left, right);
 	}
 
 	private final List<Transformation> operands;
@@ -116,22 +105,31 @@ public class SetTransformation extends TransformationImpl
 	@Override
 	public DataSet eval(TransformationScheme scheme)
 	{
-		DataSet accumulator = null;
-		boolean first = true;
-		for (Transformation operand: operands)
+		if (setOperator != UNION)
 		{
-			DataSet other = (DataSet) operand.eval(scheme);
-			
-			if (first)
-			{
-				first = false;
-				accumulator = other;
-			}
-			else
-				accumulator = setOperator.getReducer(accumulator.getMetadata()).apply(accumulator, other);
+			DataSet left = (DataSet) operands.get(0).eval(scheme);
+			DataSet right = (DataSet) operands.get(1).eval(scheme);
+		
+			return setOperator.getReducer(left.getMetadata()).apply(left, right);
 		}
-
-		return accumulator;
+		// Special case for UNION as it has the largest memory requirements
+		else
+		{
+			return new LightFDataSet<>(getMetadata(scheme), ops -> {
+				// take the index of each operand and link each datapoint with the index
+				Optional<Stream<Entry<DataPoint, Integer>>> supplier = Utils.getStream(ops.size())
+					.mapToObj(i -> ((DataSet) operands.get(i).eval(scheme)).stream().map(toEntryWithValue(k -> i)))
+					.reduce(Stream::concat);
+				
+				try (Stream<Entry<DataPoint, Integer>> stream = supplier.get())
+				{
+					// choose the datapoint coming from the LEFTMOST operand (that correspond to the minimum index)
+					return Utils.getStream(stream.collect(groupingByConcurrent(e -> e.getKey().getValues(Identifier.class), 
+									collectingAndThen(minBy((e1, e2) -> e1.getValue().compareTo(e2.getValue())), o -> o.get().getKey()))
+							).values());
+				}
+			}, operands);
+		}
 	}
 
 	@Override
@@ -141,7 +139,7 @@ public class SetTransformation extends TransformationImpl
 				.map(t -> t.getMetadata(scheme))
 				.collect(toList());
 		
-		if (!(meta.get(0) instanceof DataSetMetadata))
+		if (meta.stream().filter(m -> !(m instanceof DataSetMetadata)).findAny().isPresent())
 			throw new UnsupportedOperationException("In set operation expected all datasets but found a scalar"); 
 			
 		if (meta.stream().distinct().limit(2).count() != 1)
@@ -196,6 +194,6 @@ public class SetTransformation extends TransformationImpl
 	@Override
 	public Lineage computeLineage()
 	{
-		return LineageNode.of(this, operands.stream().map(Transformation::getLineage).collect(Collectors.toList()).toArray(new Lineage[0]));
+		return LineageNode.of(this, operands.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
 	}
 }
