@@ -70,8 +70,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -251,7 +251,7 @@ public class JoinTransformation extends TransformationImpl
 			
 			LOGGER.debug("Joining all datapoints");
 			
-			result = new LightFDataSet<>(totalStructure, dataset -> dataset.stream()
+			result = new FunctionDataSet<>(totalStructure, dataset -> dataset.stream()
 				.peek(refDP -> LOGGER.trace("Joining {}", refDP))
 				.map(refDP -> {
 					// Get all datapoints from other datasets (there is no more than 1 for each dataset)
@@ -310,7 +310,7 @@ public class JoinTransformation extends TransformationImpl
 			remaining.removeAll(metadata);
 			
 			DataSet finalResult = result;
-			result = new LightDataSet(metadata, () -> finalResult.stream()
+			result = new StreamWrapperDataSet(metadata, () -> finalResult.stream()
 				.map(dp -> Utils.getStream(dp)
 						.map(keepingValue(onlyIf(comp -> comp.getName().contains("#"), 
 								comp -> comp.rename(comp.getName().split("#", 2)[1])))
@@ -351,7 +351,7 @@ public class JoinTransformation extends TransformationImpl
 				LOGGER.trace("Structure of dataset {} will be changed to {}", oldStructure, newStructure);
 				
 				// Create the dataset operand renaming components in all its datapoints
-				return new NamedDataSet(op.getId(), new LightFDataSet<>(newStructure, dataset -> dataset.stream()
+				return new NamedDataSet(op.getId(), new FunctionDataSet<>(newStructure, dataset -> dataset.stream()
 						.map(dp -> Utils.getStream(dp)
 								.map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c))
 								.collect(toDataPoint(getLineage(), newStructure))

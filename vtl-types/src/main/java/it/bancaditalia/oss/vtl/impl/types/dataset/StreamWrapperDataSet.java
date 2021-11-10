@@ -19,30 +19,40 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
-public class LightF2DataSet<P, Q> extends LightDataSet
+public class StreamWrapperDataSet extends AbstractDataSet
 {
 	private static final long serialVersionUID = 1L;
-	private final BiFunction<? super P, ? super Q, ? extends Stream<DataPoint>> function;
-	private final P p1;
-	private final Q p2;
+	private final Supplier<? extends Stream<DataPoint>> supplier;
+	private final boolean cacheable;
 
-	public LightF2DataSet(DataSetMetadata dataStructure, BiFunction<? super P, ? super Q, Stream<DataPoint>> datapoints, P p1, Q p2)
+	public StreamWrapperDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints, boolean cacheable)
 	{
-		super(dataStructure, null);
-		this.function = datapoints;
-		this.p1 = p1;
-		this.p2 = p2;
+		super(dataStructure);
+		
+		this.supplier = datapoints;
+		this.cacheable = cacheable;
+	}
+	
+	public StreamWrapperDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints)
+	{
+		this(dataStructure, datapoints, true);
 	}
 
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		return function.apply(p1, p2);
+		return supplier.get();
+	}
+	
+	@Override
+	public boolean isCacheable()
+	{
+		return cacheable;
 	}
 }

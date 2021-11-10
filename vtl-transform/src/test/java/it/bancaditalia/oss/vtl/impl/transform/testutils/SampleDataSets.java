@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -116,7 +116,7 @@ public enum SampleDataSets implements DataSet
 	{
 		DataSetMetadata structure = createStructure(variables);
 		
-		return new LightDataSet(structure, () -> Utils.getStream(VAR_SAMPLE_LEN)
+		return new StreamWrapperDataSet(structure, () -> Utils.getStream(VAR_SAMPLE_LEN)
 				.mapToObj(dpIdx -> {
 					Map<String, AtomicInteger> counts = new HashMap<>(); 
 					for (SampleVariables variable: variables)

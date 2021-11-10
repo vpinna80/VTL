@@ -152,7 +152,7 @@ public abstract class AbstractDataSet implements DataSet
 			Set<DataStructureComponent<Identifier, ?, ?>> commonIds,
 			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> index)
 	{
-		return new LightFDataSet<>(metadata, d -> {
+		return new FunctionDataSet<>(metadata, d -> {
 				final Stream<DataPoint> stream = d.stream();
 				return stream.map(dpThis -> {
 						Collection<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
@@ -375,7 +375,7 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public DataSet filter(SerPredicate<DataPoint> predicate)
 	{
-		return new LightDataSet(dataStructure, () -> stream().filter(predicate));
+		return new StreamWrapperDataSet(dataStructure, () -> stream().filter(predicate));
 	}
 
 	@Override

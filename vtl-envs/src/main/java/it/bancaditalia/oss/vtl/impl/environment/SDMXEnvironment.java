@@ -93,7 +93,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
@@ -204,7 +204,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				.map(keepingKey(SDMXEnvironment::extractAttrs))
 				.collect(entriesToMap());
 
-		return new LightFDataSet<>(metadata, t -> Utils.getStream(t) // for each series
+		return new FunctionDataSet<>(metadata, t -> Utils.getStream(t) // for each series
 				.map(s -> s.stream() // build a dp
 						.map(o -> obsToCompValues(seriesMeta.get(s), o)
 							.map(keepingValue(k -> metadata.getComponent(k).orElseThrow(() -> new VTLMissingComponentsException(k, metadata))))

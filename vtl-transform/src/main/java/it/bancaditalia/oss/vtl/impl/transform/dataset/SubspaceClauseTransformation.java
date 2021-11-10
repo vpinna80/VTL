@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -63,7 +63,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().as(Identifier.class), Entry::getValue));
 		
 		final DataSetMetadata metadata = getMetadata(scheme);
-		return new LightDataSet(metadata, () -> operand.stream()
+		return new StreamWrapperDataSet(metadata, () -> operand.stream()
 				.filter(dp -> subspaceKeyValues.equals(dp.getValues(subspaceKeyValues.keySet(), Identifier.class)))
 				.map(dp -> new DataPointBuilder(dp)
 						.delete(subspaceKeyValues.keySet())

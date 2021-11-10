@@ -40,7 +40,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightF2DataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
@@ -138,7 +138,7 @@ public class ConditionalTransformation extends TransformationImpl
 		DataSet thenFiltered = thenD.filter(dp -> partitions.get(true).contains(dp.getValues(Identifier.class)));
 		DataSet elseFiltered = elseD.filter(dp -> partitions.get(false).contains(dp.getValues(Identifier.class)));
 		
-		return new LightF2DataSet<>((DataSetMetadata) metadata, 
+		return new BiFunctionDataSet<>((DataSetMetadata) metadata, 
 				(dsThen, dsElse) -> {
 					final Stream<DataPoint> thenStream = dsThen.stream();
 					final Stream<DataPoint> elseStream = dsElse.stream();

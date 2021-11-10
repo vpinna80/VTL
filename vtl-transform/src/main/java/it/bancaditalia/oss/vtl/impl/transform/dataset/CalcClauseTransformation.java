@@ -51,7 +51,7 @@ import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
@@ -232,7 +232,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
-			: new LightFDataSet<>(nonAnalyticResultMetadata, ds -> ds.stream()
+			: new FunctionDataSet<>(nonAnalyticResultMetadata, ds -> ds.stream()
 				.map(dp -> {
 					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata);
 					

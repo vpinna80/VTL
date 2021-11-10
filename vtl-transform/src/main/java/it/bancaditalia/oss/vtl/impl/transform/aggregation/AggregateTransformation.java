@@ -41,7 +41,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -119,7 +119,7 @@ public class AggregateTransformation extends UnaryTransformation
 				if (operand == null && result.getValue().size() == 1)
 					return result.getValue().values().iterator().next();
 
-				return new LightDataSet((DataSetMetadata) metadata, () -> Stream.of(new DataPointBuilder()
+				return new StreamWrapperDataSet((DataSetMetadata) metadata, () -> Stream.of(new DataPointBuilder()
 						.addAll(result.getValue())
 						.build(LineageNode.of(this, result.getKey()), (DataSetMetadata) metadata)));
 			}

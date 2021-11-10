@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -120,7 +120,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			max = null;
 		}
 
-		return new LightFDataSet<>(structure, dataset -> {
+		return new FunctionDataSet<>(structure, dataset -> {
 				String alias = ds instanceof NamedDataSet ? ((NamedDataSet) ds).getAlias() : "Unnamed data set";
 				LOGGER.debug("Filling time series for {}", alias);
 				Stream<DataPoint> result = dataset.streamByKeys(ids, toCollection(() -> new ConcurrentSkipListSet<>(compareBy(timeID))), 

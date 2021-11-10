@@ -31,7 +31,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -65,7 +65,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> newComponents = renames.values().stream()
 				.collect(Collectors.toMap(name -> name, name -> metadata.getComponent(name).get()));
 
-		return new LightFDataSet<>(metadata, ds -> ds.stream()
+		return new FunctionDataSet<>(metadata, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
 						.addAll(renames.entrySet().stream()
 								.map(splitting((oldName, newName) -> new SimpleEntry<>(newComponents.get(newName), 

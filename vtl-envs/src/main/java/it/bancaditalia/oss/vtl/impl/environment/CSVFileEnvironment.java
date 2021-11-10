@@ -44,11 +44,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Spliterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,10 +64,11 @@ import it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -130,7 +133,7 @@ public class CSVFileEnvironment implements Environment
 			// can't use streams, must be ordered for the first line processed to be actually the header 
 			final DataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
 			
-			return Optional.of(new LightFDataSet<>(structure, this::streamFileName, fileName, true));
+			return Optional.of(new FunctionDataSet<>(structure, this::streamFileName, fileName, true));
 		}
 		catch (IOException e)
 		{
@@ -260,27 +263,61 @@ public class CSVFileEnvironment implements Environment
 			final DataSet ds = (DataSet) value;
 			ArrayList<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>(ds.getMetadata());
 			LOGGER.info("Writing csv file in " + fileName);
-			
-			String headerLine = metadata.stream()
-				.map(c -> {
-					String prefix = c.is(Identifier.class) ? "$" : c.is(Attribute.class) ? "#" : "";
-					return prefix + c.getName() + "=" + c.getDomain();
-				})
-				.collect(joining(","));
-			writer.println(headerLine);
-			
-			try (Stream<DataPoint> stream = ds.stream())
+
+			final Spliterator<DataPoint> spliterator = ds.stream().spliterator();
+			long size = spliterator.estimateSize();
+			Stream<DataPoint> data = StreamSupport.stream(spliterator, !Utils.SEQUENTIAL);
+
+			try (Stream<DataPoint> stream = size < Long.MAX_VALUE && size > 0 ? ProgressWindow.of("Writing " + fileName, size, data) : data)
 			{
-				stream.forEach(dp -> writer.println(metadata.stream()
-					.map(dp::get)
-					.map(Object::toString)
-					.collect(joining(","))));
+				String headerLine = metadata.stream()
+					.sorted((c1, c2) -> {
+						if (c1.is(Attribute.class) && !c2.is(Attribute.class))
+							return 1;
+						else if (c1.is(Identifier.class) && !c2.is(Identifier.class))
+							return -1;
+						else if (c1.is(Measure.class) && c2.is(Identifier.class))
+							return 1;
+						else if (c1.is(Measure.class) && c2.is(Attribute.class))
+							return -1;
+	
+						String n1 = c1.getName(), n2 = c2.getName();
+						Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
+						Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
+						if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
+							return Integer.compare(Integer.parseInt(m1.group(2)), Integer.parseInt(m2.group(2)));
+						else
+							return n1.compareTo(n2);
+					})
+					.map(c -> {
+						String prefix = c.is(Identifier.class) ? "$" : c.is(Attribute.class) ? "#" : "";
+						return prefix + c.getName() + "=" + c.getDomain();
+					})
+					.collect(joining(","));
+				writer.println(headerLine);
+			
+				stream.map(dp -> {
+					try 
+					{
+						writer.println(metadata.stream()
+								.map(dp::get)
+								.map(Object::toString)
+								.collect(joining(",")));
+						return null;
+					}
+					catch (RuntimeException e)
+					{
+						return e;
+					}
+				}).filter(Objects::nonNull)
+				.findAny()
+				.ifPresent(e -> { throw e; });
 			}
 			
 			LOGGER.info("Finished writing csv file in " + fileName);
 			return true;
 		}
-		catch (FileNotFoundException e)
+		catch (RuntimeException | FileNotFoundException e)
 		{
 			LOGGER.error("Error writing csv file " + fileName, e);
 			return false;

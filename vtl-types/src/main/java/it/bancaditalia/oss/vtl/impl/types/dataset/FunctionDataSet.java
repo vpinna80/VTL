@@ -19,40 +19,40 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 
-public class LightDataSet extends AbstractDataSet
+public class FunctionDataSet<P> extends StreamWrapperDataSet
 {
 	private static final long serialVersionUID = 1L;
-	private final Supplier<? extends Stream<DataPoint>> supplier;
-	private final boolean cacheable;
+	private final Function<? super P, ? extends Stream<DataPoint>> function;
+	private final P param;
 
-	public LightDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints, boolean cacheable)
+	public FunctionDataSet(DataSetMetadata dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param, boolean cacheable)
 	{
-		super(dataStructure);
-		
-		this.supplier = datapoints;
-		this.cacheable = cacheable;
+		super(dataStructure, null, cacheable);
+		this.function = datapoints;
+		this.param = param;
+	}
+
+	public FunctionDataSet(DataSetMetadata dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param)
+	{
+		this(dataStructure, datapoints, param, true);
 	}
 	
-	public LightDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints)
-	{
-		this(dataStructure, datapoints, true);
-	}
-
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		return supplier.get();
+		return function.apply(param);
 	}
 	
 	@Override
 	public boolean isCacheable()
 	{
-		return cacheable;
+		return super.isCacheable();
 	}
 }

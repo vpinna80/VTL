@@ -58,7 +58,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.LightFDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -128,7 +128,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new LightFDataSet<>(getMetadata(scheme), ds -> ds.streamByKeys(
+		return new FunctionDataSet<>(getMetadata(scheme), ds -> ds.streamByKeys(
 				partitionIDs, 
 				toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
 				(partition, keyValues) -> rankPartition(scheme, partition, keyValues)
