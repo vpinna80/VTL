@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.cli;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.stream.Collectors.toList;
 
 import java.io.File;
@@ -27,11 +28,20 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Spliterator;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
+import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
+import it.bancaditalia.oss.vtl.util.Utils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -68,13 +78,32 @@ public class VTLShell implements Callable<Void>
 		try (Reader reader = new InputStreamReader(file != null ? new FileInputStream(file) : System.in, StandardCharsets.UTF_8))
 		{
 			session.addStatements(reader);
-			
-			if (names != null)
-				for (String name: names)
-					System.out.println(session.resolve(name));
-			else
-				for (String name: session.getWorkspace().getRules().stream().map(Statement::getAlias).collect(toList()))
-					System.out.println(session.resolve(name));
+			session.compile();
+		}
+
+		List<String> outNames = coalesce(Arrays.asList(names), session.getWorkspace().getRules().stream().map(Statement::getAlias).collect(toList())); 
+		for (String name: outNames)
+		{
+			final VTLValue result = session.resolve(name);
+			System.out.println(result + " := {");
+			if (result instanceof DataSet)
+				try (Stream<DataPoint> stream = ((DataSet) result).stream())
+				{
+					final Spliterator<DataPoint> spliterator = stream.spliterator();
+					spliterator.tryAdvance(dp -> {
+						System.out.print("\t");
+						System.out.print(dp);
+					});
+					
+					try (Stream<DataPoint> stream2 = StreamSupport.stream(spliterator, !Utils.SEQUENTIAL))
+					{
+						stream2.forEach(dp -> {
+							System.out.print(",\n\t");
+							System.out.print(dp);
+						});
+						System.out.println("\n}");
+					}
+				}
 		}
 		
 		return null;

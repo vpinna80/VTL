@@ -160,6 +160,8 @@ public class SparkDataSet extends AbstractDataSet
 		BlockingQueue<Row> queue = new ArrayBlockingQueue<>(bufferSize);
 		AtomicBoolean finished = new AtomicBoolean(false);
 		
+		LOGGER.warn("A trasformation is moving data from Spark into the driver. OutOfMemoryError may occur.");
+		
 		Thread pushingThread = new Thread(() -> {
 			LOGGER.info("Getting datapoints from Spark...");
 			try
