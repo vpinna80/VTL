@@ -136,10 +136,21 @@ public class SparkDataSet extends AbstractDataSet
 	public SparkDataSet(SparkSession session, DataSetMetadata dataStructure, DataSet toWrap)
 	{
 		super(dataStructure);
-		
+
+		LOGGER.info("Loading data into Spark dataframe...", dataStructure);
+
 		this.session = session;
 		this.encoder = new DataPointEncoder(dataStructure);
-		this.dataFrame = session.createDataFrame(toWrap.stream().map(encoder::encode).collect(toList()), encoder.getSchema()).cache();
+
+		List<Row> datapoints;
+		try (Stream<DataPoint> stream = toWrap.stream())
+		{
+			datapoints = stream.map(encoder::encode).collect(toList());
+		}
+		this.dataFrame = session.createDataset(datapoints, encoder.getRowEncoder());
+
+		LOGGER.info("Spark execution plan prepared for {}", dataStructure);
+		LOGGER.trace("{}", dataFrame.queryExecution().explainString(ExplainMode.fromString("formatted")));
 	}
 
 	@Override
@@ -184,6 +195,17 @@ public class SparkDataSet extends AbstractDataSet
 
 		return StreamSupport.stream(new SparkSpliterator(queue, finished), !Utils.SEQUENTIAL)
 				.map(encoder::decode);
+	}
+	
+	@Override
+	public boolean isCacheable()
+	{
+		return false;
+	}
+
+	/*package*/ Dataset<Row> getDataFrame()
+	{
+		return dataFrame;
 	}
 
 	@Override
@@ -394,9 +416,11 @@ public class SparkDataSet extends AbstractDataSet
 		List<Column> analytic = components.keySet().stream()
 				.map(measure -> {
 					@SuppressWarnings("unchecked")
+					// Safe as all scalars are Serializable
 					Encoder<Serializable> measureEncoder = (Encoder<Serializable>) getEncoderForComponent(measure);
 					Column column = dataFrame.col(measure.getName());
-					return udf((newV, oldV) -> { 
+					return udf((newV, oldV) -> {
+								// This is supposing that TT (i.e. the computed value) is ScalarValue
 								TT result = (TT) scalarFromColumnValue(newV, measure);
 								ScalarValue<?, ?, ?, ?> original = scalarFromColumnValue(oldV, measure);
 								return finishers.get(measure).apply(result, original).get();
@@ -460,34 +484,37 @@ public class SparkDataSet extends AbstractDataSet
 		Encoder<Row> keyEncoder = RowEncoder.apply(new StructType(idFields.toArray(new StructField[keys.size()])));
 		
 		// Compute a single item to determine the encoder for type T
-		DataPoint sample = encoder.decode(dataFrame.limit(1).collectAsList().iterator().next());
-		T sampleResult = finisher.apply(Stream.of(sample).collect(groupCollector), sample.getValues(keys, Identifier.class));
+		List<DataPoint> sample = dataFrame.limit(1).collectAsList().stream().map(encoder::decode).collect(toList());
+		T sampleResult = finisher.apply(sample.stream().collect(groupCollector), sample.get(0).getValues(keys, Identifier.class));
 
-		// TODO: only supports List<DataPoint> for now, from fill_time_series
-		if (!(sampleResult instanceof List) || 
-				((Collection<?>) sampleResult).isEmpty() || 
-				!(((Collection<?>) sampleResult).iterator().next() instanceof DataPoint))
+		if (sampleResult instanceof List && !((List<?>) sampleResult).isEmpty() && 
+				(((List<?>) sampleResult).get(0) instanceof DataPoint))
+		{
+			// case: supports decoding into a List<DataPoint> for fill_time_series
+
+			List<DataStructureComponent<?, ?, ?>> resultComponents = getMetadata().stream()
+					.sorted(byName())
+					.collect(toList());
+			
+			// Use kryo encoder hoping that the class has been registered beforehand
+			Encoder<Serializable[][]> resultEncoder = Encoders.kryo(Serializable[][].class);
+			
+			Dataset<Serializable[][]> result = dataFrame.groupBy(groupingCols).as(keyEncoder, encoder.getRowEncoder())
+				.mapGroups(groupMapper(groupCollector, finisher, sortedKeys, encoder), resultEncoder);
+			
+			LOGGER.warn("A trasformation is moving data from Spark into the driver. OutOfMemoryError may occur.");
+			return StreamSupport.stream(spliteratorUnknownSize(result.toLocalIterator(), 0), !Utils.SEQUENTIAL)
+					// decode Row[] from the UDF into List<DataPoint>
+					.map(group -> Arrays.stream(group)
+						.map(array -> IntStream.range(0, array.length - 1)
+							.mapToObj(i -> new SimpleEntry<>(resultComponents.get(i), scalarFromColumnValue(array[i], resultComponents.get(i))))
+							.collect(toDataPoint((Lineage) array[array.length - 1], getMetadata())))
+						.collect(toList()))
+					.map(out -> (T) out);
+		}
+		else
+			// Other cases not supported
 			throw new UnsupportedOperationException(sampleResult.getClass().getName() + " not supported in Spark datasets");
-		
-		List<DataStructureComponent<?, ?, ?>> resultComponents = getMetadata().stream()
-				.sorted(byName())
-				.collect(toList());
-		
-		// Use kryo encoder hoping that the class has been registered beforehand
-		Encoder<Serializable[][]> resultEncoder = Encoders.kryo(Serializable[][].class);
-		
-		Dataset<Serializable[][]> result = dataFrame.groupBy(groupingCols).as(keyEncoder, encoder.getRowEncoder())
-			.mapGroups(groupMapper(groupCollector, finisher, sortedKeys, encoder), resultEncoder);
-		
-		LOGGER.warn("A trasformation is moving data from Spark into the driver. OutOfMemoryError may occur.");
-		return StreamSupport.stream(spliteratorUnknownSize(result.toLocalIterator(), 0), !Utils.SEQUENTIAL)
-				// decode Row[] from the UDF into List<DataPoint>
-				.map(group -> Arrays.stream(group)
-					.map(array -> IntStream.range(0, array.length - 1)
-						.mapToObj(i -> new SimpleEntry<>(resultComponents.get(i), scalarFromColumnValue(array[i], resultComponents.get(i))))
-						.collect(toDataPoint((Lineage) array[array.length - 1], getMetadata())))
-					.collect(toList()))
-				.map(out -> (T) out);
 	}
 
 	private static <TT, A, T> MapGroupsFunction<Row, Row, Serializable[][]> groupMapper(SerCollector<DataPoint, A, TT> groupCollector,
@@ -512,11 +539,5 @@ public class SparkDataSet extends AbstractDataSet
 			
 			return array;
 		};
-	}
-	
-	@Override
-	public boolean isCacheable()
-	{
-		return false;
 	}
 }

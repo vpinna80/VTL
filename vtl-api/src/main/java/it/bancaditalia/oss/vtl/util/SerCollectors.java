@@ -57,23 +57,12 @@ public class SerCollectors
         return toConcurrentMap(keyMapper, valueMapper, mergeFunction, ConcurrentHashMap::new);
     }
 
-    public static <T, K, U, M extends ConcurrentMap<K, U>> SerCollector<T, M, M> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
-    		SerFunction<? super T, ? extends U> valueMapper, SerBinaryOperator<U> mergeFunction, SerSupplier<M> mapSupplier)
+    public static <T, K, U, M extends ConcurrentMap<K, U>> SerCollector<T, M, M> toConcurrentMap(SerFunction<? super T, ? extends K> kMapper,
+    		SerFunction<? super T, ? extends U> vMapper, SerBinaryOperator<U> mergeFun, SerSupplier<M> mapSupplier)
     {
-        SerBiConsumer<M, T> accumulator = (map, element) -> {
-        	final K key = keyMapper.apply(element);
-			final U value = valueMapper.apply(element);
-			
-			SerBinaryOperator<U> decoratedMerge = (u, v) -> {
-				if (map.containsKey(key))
-					System.out.println(String.format("Duplicate key %s", key));
-				return mergeFunction.apply(u, v);
-			};
-			
-			map.merge(key, value, decoratedMerge);
-        };
+        SerBiConsumer<M, T> acc = (map, e) -> map.merge(kMapper.apply(e), vMapper.apply(e), mergeFun);
                                               
-        return SerCollector.of(mapSupplier, accumulator, mapMerger(mergeFunction), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
+        return SerCollector.of(mapSupplier, acc, mapMerger(mergeFun), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
     public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, ? extends R> downstream, SerFunction<? super R, RR> finisher)

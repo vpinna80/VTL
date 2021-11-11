@@ -257,6 +257,9 @@ public class CSVFileEnvironment implements Environment
 			return false;
 		
 		String fileName = alias.substring(5, alias.length() - 1);
+		boolean simpleHeader = !fileName.startsWith("*");
+		if (!simpleHeader)
+			fileName = fileName.substring(1);
 		
 		try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(fileName))))
 		{
@@ -283,11 +286,9 @@ public class CSVFileEnvironment implements Environment
 						else
 							return n1.compareTo(n2);
 					})
-					.map(c -> {
-						String prefix = c.is(Identifier.class) ? "$" : c.is(Attribute.class) ? "#" : "";
-						return prefix + c.getName() + "=" + c.getDomain();
-					})
-					.collect(joining(","));
+					.map(c -> simpleHeader ? c.getName() 
+							: (c.is(Identifier.class) ? "$" : c.is(Attribute.class) ? "#" : "") + c.getName() + "=" + c.getDomain()
+					).collect(joining(","));
 				writer.println(headerLine);
 
 			long size;

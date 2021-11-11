@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.model.transform;
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -111,11 +112,10 @@ public interface TransformationScheme
 	 * 
 	 * @param value The value to persist
 	 * @param alias The alias under which the value must be persisted
-	 * @return true if the persist is successful 
 	 */
-	public default boolean persist(VTLValue value, String alias)
+	public default void persist(VTLValue value, String alias) throws VTLException
 	{
-		return false;
+		throw new UnsupportedOperationException();
 	}
 	
 	/**

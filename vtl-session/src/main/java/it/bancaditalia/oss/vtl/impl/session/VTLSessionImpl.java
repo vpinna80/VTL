@@ -170,13 +170,23 @@ public class VTLSessionImpl implements VTLSession
 	}
 	
 	@Override
-	public boolean persist(VTLValue value, String alias)
+	public void persist(VTLValue value, String alias)
 	{
-		return Utils.getStream(environments)
-			.map(e -> e.store(value, alias))
-			.filter(s -> s)
-			.findAny()
-			.isPresent();
+		try
+		{
+			boolean saved = environments.stream()
+				.map(e -> e.store(value, alias))
+				.filter(s -> s)
+				.findAny()
+				.isPresent();
+			
+			if (!saved)
+				throw new VTLUnboundAliasException(alias);
+		}
+		catch (RuntimeException e)
+		{
+			throw new VTLNestedException("Error while saving " + alias, e);
+		}
 	}
 
 	private <T> T cacheHelper(final String alias, Map<String, SoftReference<T>> cache, Function<? super String, ? extends T> mapper)

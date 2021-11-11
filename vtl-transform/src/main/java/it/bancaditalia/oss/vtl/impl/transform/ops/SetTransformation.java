@@ -20,10 +20,12 @@
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.UNION;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static java.lang.Boolean.TRUE;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
@@ -91,12 +93,13 @@ public class SetTransformation extends TransformationImpl
 	private static DataSet setDiff(DataSet left, DataSet right)
 	{
 		return new BiFunctionDataSet<>(left.getMetadata(), (l, r) -> {
-			try (Stream<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> stream = r.streamByKeys(right.getComponents(Identifier.class), counting(), (c, keyValues) -> keyValues))
+			Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
+			try (Stream<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> stream = r.stream().map(dp -> dp.getValues(Identifier.class)))
 			{
-				Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index = stream.collect(toSet());
-				
-				return left.filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
+				index = stream.collect(toConcurrentMap(identity(), k -> TRUE)).keySet();
 			}
+			
+			return left.filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
 		}, left, right);
 	}
 

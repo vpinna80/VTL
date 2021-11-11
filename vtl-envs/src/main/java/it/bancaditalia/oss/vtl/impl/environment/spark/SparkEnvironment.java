@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.byName;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
+import static org.apache.spark.sql.SaveMode.Overwrite;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.udf;
 
@@ -36,6 +37,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import org.apache.spark.SparkConf;
@@ -66,10 +69,15 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import scala.collection.JavaConverters;
 
 public class SparkEnvironment implements Environment
 {
@@ -175,6 +183,62 @@ public class SparkEnvironment implements Environment
 
 		String normalizedName = (name.matches("'.*'") ? name.replaceAll("'(.*)'", "$1") : name.toLowerCase()).substring(6);
 		return Optional.of(frames.get(normalizedName));
+	}
+	
+	@Override
+	public boolean store(VTLValue value, String alias)
+	{
+		alias = alias.matches("'.*'") ? alias.replaceAll("'(.*)'", "$1") : alias.toLowerCase();
+		if (!(value instanceof DataSet) || !alias.startsWith("spark:"))
+			return false;
+		
+		alias = alias.substring(6);
+		String[] parts = alias.split(":", 2);
+		if (parts.length != 2)
+			return false;
+		
+		final DataSetMetadata metadata = ((DataSet) value).getMetadata();
+		final SparkDataSet dataSet = value instanceof SparkDataSet ? (SparkDataSet) value : new SparkDataSet(session, metadata, (DataSet) value);
+		Dataset<Row> dataFrame = dataSet.getDataFrame();
+		List<Column> headerLine = dataSet.getMetadata().stream()
+				.sorted((c1, c2) -> {
+					if (c1.is(Attribute.class) && !c2.is(Attribute.class))
+						return 1;
+					else if (c1.is(Identifier.class) && !c2.is(Identifier.class))
+						return -1;
+					else if (c1.is(Measure.class) && c2.is(Identifier.class))
+						return 1;
+					else if (c1.is(Measure.class) && c2.is(Attribute.class))
+						return -1;
+
+					String n1 = c1.getName(), n2 = c2.getName();
+					Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
+					Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
+					if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
+						return Integer.compare(Integer.parseInt(m1.group(2)), Integer.parseInt(m2.group(2)));
+					else
+						return n1.compareTo(n2);
+				}).map(DataStructureComponent::getName)
+				.map(dataFrame::col)
+				.collect(toList());
+		
+		try
+		{
+			dataFrame.select(JavaConverters.asScalaBuffer(headerLine))
+				.write()
+				.format(parts[0])
+				.mode(Overwrite)
+				.option("mapreduce.fileoutputcommitter.marksuccessfuljobs","false")
+				.option("header","true")
+				.save(parts[1]);
+
+			return true;
+		}
+		catch (RuntimeException e)
+		{
+			LOGGER.error("Error saving Spark dataframe " + alias, e);
+			return false;
+		}
 	}
 	
 	private SparkDataSet inferSchema(Dataset<Row> sourceDataFrame, String alias)
