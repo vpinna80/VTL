@@ -264,13 +264,7 @@ public class CSVFileEnvironment implements Environment
 			ArrayList<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>(ds.getMetadata());
 			LOGGER.info("Writing csv file in " + fileName);
 
-			final Spliterator<DataPoint> spliterator = ds.stream().spliterator();
-			long size = spliterator.estimateSize();
-			Stream<DataPoint> data = StreamSupport.stream(spliterator, !Utils.SEQUENTIAL);
-
-			try (Stream<DataPoint> stream = size < Long.MAX_VALUE && size > 0 ? ProgressWindow.of("Writing " + fileName, size, data) : data)
-			{
-				String headerLine = metadata.stream()
+			String headerLine = metadata.stream()
 					.sorted((c1, c2) -> {
 						if (c1.is(Attribute.class) && !c2.is(Attribute.class))
 							return 1;
@@ -295,23 +289,34 @@ public class CSVFileEnvironment implements Environment
 					})
 					.collect(joining(","));
 				writer.println(headerLine);
+
+			long size;
+			Stream<DataPoint> data;
+			try (Stream<DataPoint> stream = ds.stream())
+			{
+				final Spliterator<DataPoint> spliterator = stream.spliterator();
+				size = spliterator.estimateSize();
+				data = StreamSupport.stream(spliterator, !Utils.SEQUENTIAL);
 			
-				stream.map(dp -> {
-					try 
-					{
-						writer.println(metadata.stream()
-								.map(dp::get)
-								.map(Object::toString)
-								.collect(joining(",")));
-						return null;
-					}
-					catch (RuntimeException e)
-					{
-						return e;
-					}
-				}).filter(Objects::nonNull)
-				.findAny()
-				.ifPresent(e -> { throw e; });
+				try (Stream<DataPoint> wrapper = size < Long.MAX_VALUE && size > 0 ? ProgressWindow.of("Writing " + fileName, size, data) : data)
+				{
+					wrapper.map(dp -> {
+						try 
+						{
+							writer.println(metadata.stream()
+									.map(dp::get)
+									.map(Object::toString)
+									.collect(joining(",")));
+							return null;
+						}
+						catch (RuntimeException e)
+						{
+							return e;
+						}
+					}).filter(Objects::nonNull)
+					.findAny()
+					.ifPresent(e -> { throw e; });
+				}
 			}
 			
 			LOGGER.info("Finished writing csv file in " + fileName);
