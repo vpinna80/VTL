@@ -257,11 +257,11 @@ public class CachedDataSet extends NamedDataSet
 			return cache.stream();
 		}
 		else
-			return createUnindexedCache(true);
+			return getUnindexedCache(true);
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp)
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
 		if (!lock())
 			return new StreamWrapperDataSet(metadata, Stream::empty);
@@ -280,7 +280,7 @@ public class CachedDataSet extends NamedDataSet
 
 		BiPredicate<DataPoint, DataPoint> newPredicate = (a, b) -> predicate.test(b, a);
 		BinaryOperator<DataPoint> newMergeOp = (a, b) -> mergeOp.apply(b, a);
-		return filteredMappedJoinWithIndex(other, metadata, newPredicate, newMergeOp, commonIds, value);
+		return filteredMappedJoinWithIndex(other, metadata, newPredicate, newMergeOp, commonIds, value, leftJoin);
 	}
 
 	private boolean lock()
@@ -297,13 +297,16 @@ public class CachedDataSet extends NamedDataSet
 		}
 	}
 
-	protected Stream<DataPoint> createUnindexedCache(boolean unlockWhenComplete)
+	protected Stream<DataPoint> getUnindexedCache(boolean unlockWhenComplete)
 	{
 		String alias = getAlias();
 
 		LOGGER.debug("Cache miss for {}, start caching.", alias);
-		Set<DataPoint> cache = newSetFromMap(new ConcurrentHashMap<>());
-		unindexed = new SoftReference<Set<DataPoint>>(cache);
+		Set<DataPoint> cache = unindexed.get();
+		if (cache != null)
+			return cache.stream();
+		
+		unindexed = new SoftReference<>(newSetFromMap(new ConcurrentHashMap<>()));
 		
 		AtomicBoolean alreadyInterrupted = new AtomicBoolean(false);
 		return getDelegate().stream()
@@ -335,8 +338,7 @@ public class CachedDataSet extends NamedDataSet
 		LOGGER.debug("Index miss for {}, start indexing on {}.", alias, keys);
 
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;
-		Set<DataPoint> unindexedCache = unindexed.get();
-		try (Stream<DataPoint> stream = unindexedCache != null ? Utils.getStream(unindexedCache) : createUnindexedCache(false))
+		try (Stream<DataPoint> stream = getUnindexedCache(false))
 		{
 			if (getComponents(Identifier.class).equals(keys))
 				result = stream.collect(toConcurrentMap(dp -> dp.getValues(keys, Identifier.class), Collections::singleton));
