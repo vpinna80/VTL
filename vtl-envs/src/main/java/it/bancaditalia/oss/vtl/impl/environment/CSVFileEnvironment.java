@@ -175,7 +175,7 @@ public class CSVFileEnvironment implements Environment
 			// Skip header
 			innerReader.readLine();
 			
-			return ProgressWindow.of("Loading CSV", lineCount, Utils.getStream(innerReader.lines()))
+			return ProgressWindow.of("Loading CSV", lineCount, innerReader.lines())
 				// Skip empty lines
 				.filter(line -> !line.trim().isEmpty())
 				.peek(line -> LOGGER.trace("Parsing line from CSV: {}", line))
