@@ -25,11 +25,14 @@ import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.L
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
-import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithKey;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -37,7 +40,6 @@ import static java.util.Collections.singletonMap;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
-import static java.util.stream.Collectors.groupingByConcurrent;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
@@ -46,19 +48,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -130,46 +130,54 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp)
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
-		commonIds.retainAll(other.getComponents(Identifier.class));
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = getComponents(Identifier.class);
+		Set<DataStructureComponent<Identifier, ?, ?>> otherIds = other.getComponents(Identifier.class);
+		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = new HashSet<>(ids);
+		commonIds.retainAll(otherIds);
 		
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, List<DataPoint>> index;
+		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> index;
 		try (Stream<DataPoint> stream = other.stream())
 		{
-			// performance if
-			if (commonIds.equals(other.getComponents(Identifier.class)))
-				index = stream.collect(toConcurrentMap(dp -> dp.getValues(commonIds, Identifier.class), Collections::singletonList));
+			if (otherIds.equals(ids))
+				// more performance if joining over all keys
+				try
+				{
+					index = stream.collect(toConcurrentMap(dp -> dp.getValues(commonIds, Identifier.class), Collections::singleton));
+				}
+				catch (RuntimeException e)
+				{
+					throw e;
+				}
 			else
-				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class)));
+				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class), toConcurrentSet()));
 		}
 		
-		return filteredMappedJoinWithIndex(this, metadata, predicate, mergeOp, commonIds, index);
+		return filteredMappedJoinWithIndex(this, metadata, predicate, mergeOp, commonIds, index, leftJoin);
 	}
 
-	protected static DataSet filteredMappedJoinWithIndex(DataSet streamed, DataSetMetadata metadata, BiPredicate<DataPoint, DataPoint> predicate, BinaryOperator<DataPoint> mergeOp,
-			Set<DataStructureComponent<Identifier, ?, ?>> commonIds,
-			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> index)
+	protected static DataSet filteredMappedJoinWithIndex(DataSet streamed, DataSetMetadata metadata, BiPredicate<DataPoint, DataPoint> predicate, 
+			BinaryOperator<DataPoint> mergeOp, Set<DataStructureComponent<Identifier, ?, ?>> commonIds, 
+			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> indexed, boolean leftJoin)
 	{
-		return new FunctionDataSet<>(metadata, d -> {
-				final Stream<DataPoint> stream = d.stream();
-				return stream.map(dpThis -> {
-						Collection<DataPoint> otherSubGroup = index.get(dpThis.getValues(commonIds, Identifier.class));
-						if (otherSubGroup == null)
-							return Stream.<DataPoint>empty();
+		return flatMapInternal(streamed, metadata, dpThis -> {
+					Collection<DataPoint> otherSubGroup = indexed.get(dpThis.getValues(commonIds, Identifier.class));
+					if (otherSubGroup == null)
+						if (leftJoin)
+							return Stream.of(mergeOp.apply(dpThis, null));
 						else
-							return otherSubGroup.stream()
-								.filter(dpOther -> predicate.test(dpThis, dpOther))
-								.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
-					}).collect(concatenating(ORDERED))
-					.onClose(stream::close);
-			}, streamed);
+							return Stream.<DataPoint>empty();
+					else
+						return otherSubGroup.stream()
+							.filter(dpOther -> predicate.test(dpThis, dpOther))
+							.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
+				});
 	}
 
 	@Override
-	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, 
+			SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
 		if (!metadata.getComponents(Identifier.class).equals(identifiers))
@@ -181,6 +189,11 @@ public abstract class AbstractDataSet implements DataSet
 				.addAll(operator.apply(dp))
 				.build(lineageOperator.apply(dp), metadata);
 		
+		return mapInternal(this, metadata, extendingOperator);
+	}
+
+	private static AbstractDataSet mapInternal(DataSet source, DataSetMetadata metadata, SerUnaryOperator<DataPoint> operator)
+	{
 		return new AbstractDataSet(metadata)
 		{
 			private static final long serialVersionUID = 1L;
@@ -188,7 +201,7 @@ public abstract class AbstractDataSet implements DataSet
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
-				return AbstractDataSet.this.stream().map(extendingOperator);
+				return source.stream().map(operator);
 			}
 			
 			@Override
@@ -197,7 +210,21 @@ public abstract class AbstractDataSet implements DataSet
 					SerCollector<DataPoint, A, TT> groupCollector,
 					SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 			{
-				return AbstractDataSet.this.streamByKeys(keys, filter, mapping(extendingOperator, groupCollector), finisher);
+				return source.streamByKeys(keys, filter, mapping(operator, groupCollector), finisher);
+			}
+		};
+	}
+
+	private static AbstractDataSet flatMapInternal(DataSet source, DataSetMetadata metadata, SerFunction<DataPoint, Stream<DataPoint>> operator)
+	{
+		return new AbstractDataSet(metadata)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return source.stream().map(operator).collect(concatenating(ORDERED));
 			}
 		};
 	}
@@ -212,9 +239,9 @@ public abstract class AbstractDataSet implements DataSet
 		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
 		
 		// Decorated collector that keeps track of grouping key values for the finisher
-		final Set<Characteristics> characteristics = new HashSet<>(groupCollector.characteristics());
+		Set<Characteristics> characteristics = EnumSet.copyOf(groupCollector.characteristics());
 		characteristics.remove(IDENTITY_FINISH);
-		Collector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, A, T> decoratedCollector = Collector.of(
+		SerCollector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, A, T> decoratedCollector = SerCollector.of(
 				// supplier
 				groupCollector.supplier(),
 				// accumulator
@@ -227,22 +254,22 @@ public abstract class AbstractDataSet implements DataSet
 					keyValues.putIfAbsent(combinedAcc, keyValues.get(accLeft));
 					keyValues.putIfAbsent(combinedAcc, keyValues.get(accRight));
 					return combinedAcc;
-				},
-				// finisher
+				}, // finisher
 				acc -> groupCollector.finisher().andThen(tt -> finisher.apply(tt, keyValues.get(acc))).apply(acc),
 				// characteristics
-				characteristics.toArray(new Characteristics[0]));
+				characteristics);
 		
+		Collection<T> result;
 		try (Stream<DataPoint> stream = stream())
 		{
-			ConcurrentMap<?, T> result = stream
+			result = stream
 					.filter(dp -> dp.matches(filter))
 					.map(toEntryWithValue(dp -> dp.getValues(keys, Identifier.class)))
-					.collect(groupingByConcurrent(e -> e.getValue(), decoratedCollector))
-					;
-			
-			return Utils.getStream(result.values());
+					.collect(groupingByConcurrent(Entry::getValue, decoratedCollector))
+					.values();
 		}
+			
+		return Utils.getStream(result);
 	}
 
 	@Override
@@ -257,26 +284,32 @@ public abstract class AbstractDataSet implements DataSet
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
-				try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
-				{
-					if (cache == null)
+				createCache(keys, groupCollector);
+
+				return Utils.getStream(cache)
+						.map(splitting((k, v) -> finisher.apply(v, k)));
+			}
+
+			private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,
+					SerCollector<DataPoint, ?, TT> groupCollector)
+			{
+				if (cache == null)
+					try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
+					{
 						cache = stream
 								.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), groupCollector))
 								.entrySet();
-
-					return Utils.getStream(cache)
-							.map(splitting((k, v) -> finisher.apply(v, k)));
-				}
+					}
 			}
 		};
 	}
 
 	@Override
 	public <TT> DataSet analytic(
-			Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> components,
+			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
 			WindowClause clause,
-			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
-			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
+			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
+			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
 	{
 		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
@@ -310,7 +343,7 @@ public abstract class AbstractDataSet implements DataSet
 		
 		SerCollector<DataPoint, ConcurrentSkipListSet<DataPoint>, ConcurrentSkipListSet<DataPoint>> toSortedSet = SerCollector.of(
 				() -> new ConcurrentSkipListSet<>(comparator), ConcurrentSkipListSet::add, 
-				(a, b) -> { a.addAll(b); return a; }, identity(), EnumSet.of(CONCURRENT, IDENTITY_FINISH, UNORDERED));
+				(a, b) -> { a.addAll(b); return a; }, EnumSet.of(CONCURRENT, IDENTITY_FINISH, UNORDERED));
 		
 		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
 				.removeComponents(components.keySet())
@@ -323,37 +356,65 @@ public abstract class AbstractDataSet implements DataSet
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
-				return AbstractDataSet.this.streamByKeys(ids, toSortedSet, (group, keyValues) -> {
-						DataPoint[] sorted = group.toArray(new DataPoint[group.size()]);
+				return AbstractDataSet.this.streamByKeys(ids, toSortedSet, (part, keyValues) -> {
+						DataPoint[] partArray = part.toArray(new DataPoint[part.size()]);
 						
-						IntStream indexes = IntStream.range(0, sorted.length);
+						IntStream indexes = IntStream.range(0, partArray.length);
 						if (!Utils.SEQUENTIAL)
 							indexes = indexes.parallel();
 						
-						Stream<DataPoint> result = indexes.mapToObj(index ->
-								Utils.getStream(components)
-									.map(splitting((oldC, newC) -> {  
-										try {
-											Stream<DataPoint> window;
-											if (index + inf >= sorted.length || index + sup < 0)
-												window = Stream.empty();
-											else
-												window = Arrays.stream(sorted, max(0, safeSum(index, inf)), min(safeInc(safeSum(index, sup)), sorted.length));
-											
-											return window.collect(collectingAndThen(mapping(dp -> dp.get(oldC), collectors.get(oldC)), v -> new SimpleEntry<>(newC, finishers.get(oldC).apply(v, sorted[index].get(oldC)))));
-										}
-										catch (RuntimeException e)
-										{
-											throw e;
-										}
-									})).collect(collectingAndThen(entriesToMap(), map -> new SimpleEntry<>(map, sorted[index]))))
-								.map(splitting((values, dp) -> new DataPointBuilder(dp)
-									.delete(components.keySet())
-									.addAll(values)
-									.build(dp.getLineage(), newStructure)));
-						
-						return result;
-					}).flatMap(identity());
+						return indexes.mapToObj(index -> {
+							final int safeInf = max(0, safeSum(index, inf));
+							final int safeSup = min(safeInc(safeSum(index, sup)), partArray.length);
+
+							return Utils.getStream(components)
+								.map(splitting((oldC, newC) -> {  
+									// stream the array slice containing all the datapoints in current window
+									Stream<DataPoint> window = Stream.empty();
+									if (index + inf < partArray.length && index + sup >= 0)
+									{
+										window = Arrays.stream(partArray, safeInf, safeSup);
+										if (!Utils.SEQUENTIAL)
+											window = window.parallel();
+									}
+									else
+										window = Stream.empty();
+									
+									// Compute the analytic invocation over current window and measure and pair the result with the old value
+									return window.collect(collectingAndThen(mapping(dp -> dp.get(oldC), collectors.get(oldC)), 
+										v -> new SimpleEntry<>(newC, finishers.get(oldC).apply(v, partArray[index].get(oldC)))));
+								})).collect(collectingAndThen(entriesToMap(), toEntryWithValue(key -> partArray[index])));
+							}).map(splitting((colls, dp) -> Utils.getStream(colls)
+								.map(coll -> Utils.getStream(coll.getValue()).map(toEntryWithKey(v -> coll.getKey())).collect(toList()))
+								// Generate all possible combinations of measure results of the window function
+								.collect(SerCollector.of(
+										// supplier: long line because of eclipse bad type inference...
+										() -> (Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>) ConcurrentHashMap.<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>newKeySet(), 
+										// Accumulator: generate a map for each measure value
+										(a, l) -> l.stream().forEach(e -> {
+												Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> measure = new HashMap<>();
+												measure.put(e.getKey(), e.getValue());
+												a.add(measure);
+											}), 
+										// Combiner: generate a new map combining all measure values from the first map to all measure values of the second
+										(a1, a2) -> a1.stream()
+											.map(m1v -> a2.stream()
+												.map(m2v -> {
+													Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> a = new HashMap<>(m1v);
+													a.putAll(m2v);
+													return a;
+												}))
+											.collect(concatenating(ORDERED))
+										.collect(toConcurrentSet()), 
+										EnumSet.of(CONCURRENT, UNORDERED))
+								).stream()
+								.map(toEntryWithValue(map -> dp))
+							)).collect(concatenating(ORDERED))
+							.map(splitting((values, dp) -> new DataPointBuilder(dp)
+								.delete(components.keySet())
+								.addAll(values)
+								.build(dp.getLineage(), newStructure)));
+					}).collect(concatenating(ORDERED));
 			}
 		};
 	}
@@ -387,9 +448,8 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public final Stream<DataPoint> stream()
 	{
-		LOGGER.trace("Streaming dataset of {}", dataStructure);
-
-		return streamDataPoints();
+		LOGGER.debug("Starting stream for {}", this);
+		return streamDataPoints().onClose(() -> LOGGER.trace("Closing stream for {}", this));
 	}
 
 	protected abstract Stream<DataPoint> streamDataPoints();

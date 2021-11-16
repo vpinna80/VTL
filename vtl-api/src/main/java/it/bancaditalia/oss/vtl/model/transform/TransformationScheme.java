@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.transform;
 
+import java.util.Map;
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -106,6 +107,15 @@ public interface TransformationScheme
 	{
 		return null;
 	}
+	
+	/**
+	 * Returns a holder map for computed values of type T
+	 *  
+	 * @param <T> The type of the holder
+	 * @param type The type of the holder
+	 * @return The holder for computed values of type T
+	 */
+	public <T> Map<Transformation, T> getResultHolder(Class<T> type);
 
 	/**
 	 * Tries to persist a value in one of the environments managed by this scheme

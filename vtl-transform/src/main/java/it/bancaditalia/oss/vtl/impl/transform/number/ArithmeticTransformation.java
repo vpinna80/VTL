@@ -159,7 +159,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 						.add(resultComp, compute(swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
-						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), newStructure));
+						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), newStructure), false);
 		}
 		else
 		{
@@ -181,7 +181,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 								.addAll(dpl.getValues(Identifier.class))
 								.addAll(dpr.getValues(Identifier.class))
 								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata);						
-					});
+					}, false);
 			}
 			else
 				// Scan the dataset with less identifiers and find the matches
@@ -193,7 +193,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 							)).collect(entriesToMap()))		
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
-						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata));
+						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata), false);
 		}
 	}
 

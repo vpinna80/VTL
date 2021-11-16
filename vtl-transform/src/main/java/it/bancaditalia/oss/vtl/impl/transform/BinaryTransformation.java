@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
@@ -29,7 +30,6 @@ import java.util.stream.Stream;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.transform.util.ThreadUtils;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -77,7 +77,7 @@ public abstract class BinaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		final ResultHolder<VTLValueMetadata> holder = ResultHolder.getInstance(scheme, VTLValueMetadata.class);
+		Map<Transformation, VTLValueMetadata> holder = scheme.getResultHolder(VTLValueMetadata.class);
 		VTLValueMetadata metadata = holder.get(this);
 		if (metadata == null)
 			try

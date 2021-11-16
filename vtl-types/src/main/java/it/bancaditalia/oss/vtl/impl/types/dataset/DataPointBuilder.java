@@ -125,7 +125,7 @@ public class DataPointBuilder
 		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
 		
 		if (oldValue != null && !oldValue.equals(value))
-			throw new IllegalStateException();
+			throw new IllegalStateException("Different values for " + component + ": " + value.toString() + ", " + oldValue.toString());
 		return checkState();
 	}
 

@@ -20,7 +20,9 @@
 package it.bancaditalia.oss.vtl.util;
 
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
@@ -29,7 +31,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -43,21 +44,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collector.Characteristics;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+
 public class SerCollectors
 {
-    public static <T, K, U> SerCollector<T, ConcurrentMap<K, U>, ConcurrentMap<K, U>> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
+    public static <T, K, U> SerCollector<T, ?, ConcurrentMap<K, U>> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
                                                         SerFunction<? super T, ? extends U> valueMapper)
     {
-        return toConcurrentMap(keyMapper, valueMapper, throwingMerger(), ConcurrentHashMap::new);
+        return SerCollector.of(ConcurrentHashMap::new, throwingPutter(keyMapper, valueMapper), throwingMerger(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
-    public static <T, K, U> SerCollector<T, ConcurrentMap<K, U>, ConcurrentMap<K, U>> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
+    public static <T, K, U> SerCollector<T, ?, ConcurrentMap<K, U>> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
                     SerFunction<? super T, ? extends U> valueMapper, SerBinaryOperator<U> mergeFunction)
     {
         return toConcurrentMap(keyMapper, valueMapper, mergeFunction, ConcurrentHashMap::new);
     }
 
-    public static <T, K, U, M extends ConcurrentMap<K, U>> SerCollector<T, M, M> toConcurrentMap(SerFunction<? super T, ? extends K> kMapper,
+    public static <T, K, U, M extends ConcurrentMap<K, U>> SerCollector<T, ?, M> toConcurrentMap(SerFunction<? super T, ? extends K> kMapper,
     		SerFunction<? super T, ? extends U> vMapper, SerBinaryOperator<U> mergeFun, SerSupplier<M> mapSupplier)
     {
         SerBiConsumer<M, T> acc = (map, e) -> map.merge(kMapper.apply(e), vMapper.apply(e), mergeFun);
@@ -71,7 +74,7 @@ public class SerCollectors
 		if (characteristics.contains(IDENTITY_FINISH))
 		{
 			if (characteristics.size() == 1)
-				characteristics = Collections.emptySet();
+				characteristics = emptySet();
 			else
 			{
 				characteristics = EnumSet.copyOf(characteristics);
@@ -106,7 +109,7 @@ public class SerCollectors
                 a -> a[0], emptySet());
     }
 
-    public static <T, U, A, R> SerCollector<T, A, R> mapping(SerFunction<? super T, ? extends U> mapper, SerCollector<? super U, A, R> downstream)
+    public static <T, U, A, R> SerCollector<T, A, R> mapping(SerFunction<T, ? extends U> mapper, SerCollector<? super U, A, R> downstream)
     {
         SerBiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
         return new SerCollector<>(downstream.supplier(), (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
@@ -136,7 +139,7 @@ public class SerCollectors
                 () -> new long[1],
                 (a, t) -> { a[0] += mapper.applyAsLong(t); },
                 (a, b) -> { a[0] += b[0]; return a; },
-                a -> a[0], emptySet());
+                a -> a[0], EnumSet.of(CONCURRENT, UNORDERED));
     }
 
     public static <T> SerCollector<T, double[], Double> averagingDouble(SerToDoubleFunction<? super T> mapper) 
@@ -326,20 +329,44 @@ public class SerCollectors
     private static <K, V, M extends Map<K,V>> SerBinaryOperator<M> mapMerger(SerBinaryOperator<V> mergeFunction)
     {
         return (m1, m2) -> {
-            for (Map.Entry<K,V> e : m2.entrySet())
-                m1.merge(e.getKey(), e.getValue(), mergeFunction);
+            for (Map.Entry<K,V> e: m2.entrySet())
+            	try
+            	{
+            		m1.merge(e.getKey(), e.getValue(), mergeFunction);
+            	}
+            	catch (IllegalStateException ex)
+	            {
+	            	throw new VTLNestedException("Error merging key " + e.getKey(), ex);
+	            }
             return m1;
         };
     }
 
-    private static <T> SerBinaryOperator<T> throwingMerger()
+    private static <T, K, V, M extends Map<K, V>> SerBiConsumer<M, T> throwingPutter(SerFunction<? super T, ? extends K> keyMapper, SerFunction<? super T, ? extends V> valueMapper)
     {
-        return (u, v) -> { 
-        	throw new IllegalStateException(String.format("Duplicate key %s", u)); 
+        return (m, t) -> {
+    		final K key = keyMapper.apply(t);
+			final V value = valueMapper.apply(t);
+			if (m.putIfAbsent(key, requireNonNull(value)) != null)
+            	throw new IllegalStateException(String.format("Duplicate key %s with values %s and %s", key, value, m.get(key)));
         };
     }
 
-	public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(SerFunction<? super U, ? extends R> keyMapper)
+    private static <K, V, T extends Map<K, V>> SerBinaryOperator<T> throwingMerger()
+    {
+        return (u, v) -> {
+        	for (Entry<K, V> e: v.entrySet())
+        	{
+        		final K key = e.getKey();
+				final V value = e.getValue();
+				if (u.putIfAbsent(key, requireNonNull(value)) != null)
+                	throw new IllegalStateException(String.format("Duplicate key %s with values %s and %s", key, value, u.get(key)));
+        	}
+    		return u;
+        };
+    }
+
+    public static <U, V, R> SerCollector<Entry<U, V>, ?, ConcurrentMap<R, V>> mappingKeys(SerFunction<? super U, ? extends R> keyMapper)
 	{
 		return toConcurrentMap(keyMapper.compose(Entry::getKey), Entry::getValue);
 	}
@@ -374,6 +401,11 @@ public class SerCollectors
 	public static <K, V> SerCollector<K, ?, ConcurrentMap<K, V>> toMapWithValues(SerFunction<K, V> keyToValueMapper)
 	{
 		return toConcurrentMap(identity(), keyToValueMapper);
+	}
+	
+	public static <K> SerCollector<K, ?, Set<K>> toConcurrentSet()
+	{
+		return collectingAndThen(toConcurrentMap(identity(), k -> TRUE, (a, b) -> a, () -> new ConcurrentHashMap<>(1000, 1f, 32)), ConcurrentHashMap::keySet);
 	}
 
 	public static <U, V> SerCollector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()

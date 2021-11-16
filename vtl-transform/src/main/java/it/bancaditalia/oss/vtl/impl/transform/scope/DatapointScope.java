@@ -39,13 +39,14 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class DatapointScope implements TransformationScheme
+public class DatapointScope extends AbstractScope
 {
+	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatapointScope.class); 
+	
 	private final DataPoint dp;
 	private final DataSetMetadata structure;
 	

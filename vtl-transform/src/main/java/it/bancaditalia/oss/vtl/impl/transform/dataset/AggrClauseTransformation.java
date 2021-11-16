@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformatio
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -213,7 +212,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			DataSet other = resultList.get(i);
 			DataSetMetadata otherStructure = result.getMetadata();
 			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
-			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> dp1.combine(this, dp2));
+			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> dp1.combine(this, dp2), false);
 		}
 
 		if (having != null)
@@ -225,7 +224,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

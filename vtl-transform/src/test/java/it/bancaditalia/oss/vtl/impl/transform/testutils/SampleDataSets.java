@@ -46,6 +46,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -57,7 +58,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -161,9 +161,9 @@ public enum SampleDataSets implements DataSet
 	}
 
 	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet rightDataset, SerBiPredicate<DataPoint, DataPoint> filter,
-			SerBinaryOperator<DataPoint> mergeOp)
+			SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
-		return dataset.filteredMappedJoin(metadata, rightDataset, filter, mergeOp);
+		return dataset.filteredMappedJoin(metadata, rightDataset, filter, mergeOp, false);
 	}
 
 	public DataSet filter(SerPredicate<DataPoint> predicate)
@@ -195,10 +195,10 @@ public enum SampleDataSets implements DataSet
 
 	@Override
 	public <TT> DataSet analytic(
-			Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> components,
+			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
 			WindowClause clause,
-			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
-			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
+			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
+			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
 	{
 		return dataset.analytic(components, clause, collectors, finishers);
 	}

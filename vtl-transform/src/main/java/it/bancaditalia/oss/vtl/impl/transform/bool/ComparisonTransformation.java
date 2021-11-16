@@ -143,7 +143,7 @@ public class ComparisonTransformation extends BinaryTransformation
 						.addAll(dps.getValues(Identifier.class))
 						.addAll(dpi.getValues(Identifier.class))
 						.add(resultMeasure, function.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-						.build(getLineage(), (DataSetMetadata) metadata));
+						.build(getLineage(), (DataSetMetadata) metadata), false);
 	}
 
 	@Override

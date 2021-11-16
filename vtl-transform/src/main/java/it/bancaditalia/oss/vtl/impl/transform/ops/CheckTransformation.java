@@ -34,7 +34,6 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -127,14 +126,14 @@ public class CheckTransformation extends TransformationImpl
 				.add(IMBALANCE, b.getValues(Measure.class).values().iterator().next())
 				.add(ERRORCODE, NullValue.instance(STRINGDS))
 				.add(ERRORLEVEL, NullValue.instance(NUMBERDS))
-				.build(getLineage(), metadata));
+				.build(getLineage(), metadata), false);
 		}
 	}
 
 	@Override
 	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

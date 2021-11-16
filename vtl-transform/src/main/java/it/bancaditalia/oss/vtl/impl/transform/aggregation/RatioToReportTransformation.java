@@ -27,8 +27,10 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -99,12 +101,12 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		
 		Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = dataset.getComponents(Measure.class).stream()
 			.collect(toMapWithValues(measure -> SUM.getReducer()));
-		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers = dataset.getComponents(Measure.class).stream()
+		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = dataset.getComponents(Measure.class).stream()
 			.collect(toMapWithValues(measure -> (newV, oldV) -> {
 				if (newV instanceof NullValue || oldV instanceof NullValue)
-					return newV;
+					return singleton(newV);
 				else if (newV instanceof NumberValue && oldV instanceof NumberValue)
-					return DoubleValue.of(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue());
+					return singleton(DoubleValue.of(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
 				else
 					throw new UnsupportedOperationException();
 			}));

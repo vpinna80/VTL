@@ -141,6 +141,12 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 				{
 					throw new UnsupportedOperationException();
 				}
+
+				@Override
+				public <T> Map<Transformation, T> getResultHolder(Class<T> type)
+				{
+					return scheme.getResultHolder(type);
+				}
 			};
 		
 		// check if each parameter metadata matches its definition			

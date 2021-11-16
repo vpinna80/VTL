@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -81,7 +80,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

@@ -37,10 +37,9 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
@@ -100,7 +99,7 @@ public class ConditionalTransformation extends TransformationImpl
 				DataSet dataset = thenV instanceof DataSet ? (DataSet) thenV : (DataSet) elseV;
 				ScalarValue<?, ?, ?, ?> scalar = thenV instanceof ScalarValue ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
 				return condD.mappedJoin((DataSetMetadata) metadata, dataset, (dpCond, dp) -> 
-						evalDatasetAndScalar((DataSetMetadata) metadata, checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV == dataset, dp, scalar, booleanConditionMeasure));
+						evalDatasetAndScalar((DataSetMetadata) metadata, checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV == dataset, dp, scalar, booleanConditionMeasure), false);
 			}
 		}
 	}
@@ -172,7 +171,7 @@ public class ConditionalTransformation extends TransformationImpl
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

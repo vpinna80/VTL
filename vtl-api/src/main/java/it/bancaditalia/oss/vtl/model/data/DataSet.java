@@ -19,8 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +38,6 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -128,9 +131,40 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
 	 * @param filter a {@link BiPredicate} used to select only a subset of the joined {@link DataPoint}s.
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
+	 * @param leftJoin true if a left outer join is to be performed, false for inner join
 	 * @return The new DataSet.
 	 */
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> filter, SerBinaryOperator<DataPoint> merge);
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> filter, SerBinaryOperator<DataPoint> merge, boolean leftJoin);
+
+	/**
+	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
+	 * The same as {@code filteredMappedJoin(metadata, other, filter, merge, false)}.
+	 * 
+	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
+	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
+	 * @param filter a {@link BiPredicate} used to select only a subset of the joined {@link DataPoint}s.
+	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
+	 * @return The new DataSet.
+	 */
+	public default DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> filter, SerBinaryOperator<DataPoint> merge)
+	{
+		return filteredMappedJoin(metadata, indexed, filter, merge, false);
+	}
+
+	/**
+	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
+	 * The same as {@code filteredMappedJoin(metadata, other, (a,  b) -> true, merge, leftJoin)}.
+	 * 
+	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
+	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
+	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
+	 * @param leftJoin true if a left outer join is to be performed, false for inner join
+	 * @return The new DataSet.
+	 */
+	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, SerBinaryOperator<DataPoint> merge, boolean leftJoin)
+	{
+		return filteredMappedJoin(metadata, indexed, (a,  b) -> true, merge, leftJoin);
+	}
 
 	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
@@ -235,24 +269,31 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 			SerCollector<DataPoint, ?, TT> groupCollector,
 			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
 	
-	public <TT> DataSet analytic(Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> components, 
-			WindowClause clause, Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
-			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers);
+	public <TT> DataSet analytic(Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components, 
+			WindowClause clause, Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
+			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers);
 
-	public default <TT> DataSet analytic(Set<DataStructureComponent<Measure, ?, ?>> components, WindowClause clause,
-			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
-			Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers)
+	public default <TT> DataSet analytic(DataStructureComponent<?, ?, ?> measure, 
+			WindowClause clause, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT> collector, 
+			SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
+	{
+		return analytic(singletonMap(measure, measure), clause, singletonMap(measure, collector), singletonMap(measure, finisher));
+	}
+	
+	public default <TT> DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause clause,
+			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
+			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
 	{
 		return analytic(components.stream().collect(SerCollectors.toMapWithValues(k -> k)), clause, collectors, finishers);
 	}
 
-	public default DataSet analytic(Set<DataStructureComponent<Measure, ?, ?>> components, WindowClause clause,
-			Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors)
+	public default DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause clause,
+			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors)
 	{
-		Map<DataStructureComponent<Measure, ?, ?>, DataStructureComponent<Measure, ?, ?>> measures = components.stream()
-				.collect(SerCollectors.toMapWithValues(measure -> measure));
-		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> finishers = components.stream()
-				.collect(SerCollectors.toMapWithValues(measure -> (value, originalValue) -> value));
+		Map<? extends DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>> measures = components.stream()
+				.collect(toMapWithValues(measure -> measure));
+		Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = components.stream()
+				.collect(toMapWithValues(measure -> (value, originalValue) -> singleton(value)));
 		
 		return analytic(measures, clause, collectors, finishers);
 	}

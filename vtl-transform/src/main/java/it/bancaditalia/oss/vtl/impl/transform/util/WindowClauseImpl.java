@@ -38,14 +38,14 @@ public class WindowClauseImpl implements WindowClause, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private final List<SortCriterion> sortCriteria;
 	private final Set<DataStructureComponent<Identifier, ?, ?>> partitioningIds;
+	private final List<SortCriterion> sortCriteria;
 	private final WindowCriterion windowCriterion;
 	
 	public WindowClauseImpl(Set<DataStructureComponent<Identifier, ?, ?>> partitioningIds, List<? extends SortCriterion> sortCriteria, WindowCriterion windowCriterion)
 	{
-		this.sortCriteria = Utils.coalesce(sortCriteria, emptyList()).stream().map(SortCriterion.class::cast).collect(toList());
 		this.partitioningIds = Utils.coalesce(partitioningIds, emptySet());
+		this.sortCriteria = Utils.coalesce(sortCriteria, emptyList()).stream().map(SortCriterion.class::cast).collect(toList());
 		this.windowCriterion = windowCriterion;
 	}
 

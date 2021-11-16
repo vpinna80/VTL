@@ -53,7 +53,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -181,7 +180,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	@Override
 	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 
 	private VTLValueMetadata computeMetadata(TransformationScheme scheme)

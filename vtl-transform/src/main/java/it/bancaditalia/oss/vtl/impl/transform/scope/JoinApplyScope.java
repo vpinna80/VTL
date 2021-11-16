@@ -38,8 +38,10 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-public class JoinApplyScope implements TransformationScheme
+public class JoinApplyScope extends AbstractScope
 {
+	private static final long serialVersionUID = 1L;
+
 	private final Map<String, ScalarValue<?, ?, ?, ?>> joinValues;
 	private final Map<String, ScalarValueMetadata<?, ?>> joinMeta;
 	private final TransformationScheme parent;

@@ -112,7 +112,7 @@ public class ConcatTransformation extends BinaryTransformation
 				.add(resultMeasure, finalOperator.apply(dps.getValue(streamedMeasure), dpi.getValue(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build(getLineage(), (DataSetMetadata) metadata));
+				.build(getLineage(), (DataSetMetadata) metadata), false);
 		}
 		else
 		{
@@ -127,7 +127,7 @@ public class ConcatTransformation extends BinaryTransformation
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build(getLineage(), (DataSetMetadata) metadata));
+					.build(getLineage(), (DataSetMetadata) metadata), false);
 		}
 	}
 

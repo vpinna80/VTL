@@ -36,8 +36,10 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class ParamScope implements TransformationScheme
+public class ParamScope extends AbstractScope
 {
+	private static final long serialVersionUID = 1L;
+	
 	private final TransformationScheme parent;
 	private final Map<String, Transformation> params;
 

@@ -19,13 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Collections.emptySet;
 
+import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
-import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
@@ -61,7 +61,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValue eval(TransformationScheme scheme)
 	{
-		VTLValue value = operand == null ? scheme.resolve(ThisScope.THIS) : operand.eval(scheme);
+		VTLValue value = operand == null ? scheme.resolve(THIS) : operand.eval(scheme);
 		
 		if (value instanceof DataSet)
 			return evalOnDataset((DataSet) value, getMetadata(scheme));
@@ -81,7 +81,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		final ResultHolder<VTLValueMetadata> holder = ResultHolder.getInstance(scheme, VTLValueMetadata.class);
+		Map<Transformation, VTLValueMetadata> holder = scheme.getResultHolder(VTLValueMetadata.class);
 		VTLValueMetadata metadata = holder.get(this);
 		if (metadata == null)
 			try

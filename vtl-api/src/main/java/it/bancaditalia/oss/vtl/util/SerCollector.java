@@ -20,8 +20,10 @@
 package it.bancaditalia.oss.vtl.util;
 
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Collector;
 
@@ -33,7 +35,7 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	private final SerBiConsumer<A, T> accumulator;
 	private final SerBinaryOperator<A> combiner;
 	private final SerFunction<A, R> finisher;
-	private final Set<Characteristics> characteristics;
+	private final EnumSet<Characteristics> characteristics;
 
 	public static <T, A, R> SerCollector<T, A, R> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
 			SerFunction<A, R> finisher, Set<Characteristics> characteristics)
@@ -44,7 +46,9 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	public static <T, A> SerCollector<T, A, A> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
 			Set<Characteristics> characteristics)
 	{
-		return new SerCollector<>(supplier, accumulator, combiner, identity(), characteristics);
+		EnumSet<Characteristics> newCharacteristics = EnumSet.of(IDENTITY_FINISH);
+		newCharacteristics.addAll(characteristics);
+		return new SerCollector<>(supplier, accumulator, combiner, identity(), newCharacteristics);
 	}
 
 	protected SerCollector(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
@@ -54,7 +58,7 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 		this.accumulator = accumulator;
 		this.combiner = combiner;
 		this.finisher = finisher;
-		this.characteristics = characteristics;
+		this.characteristics = characteristics.isEmpty() ? EnumSet.noneOf(Characteristics.class) : EnumSet.copyOf(characteristics);
 	}
 
 	@Override
@@ -82,7 +86,7 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	}
 
 	@Override
-	public Set<Characteristics> characteristics()
+	public EnumSet<Characteristics> characteristics()
 	{
 		return characteristics;
 	}

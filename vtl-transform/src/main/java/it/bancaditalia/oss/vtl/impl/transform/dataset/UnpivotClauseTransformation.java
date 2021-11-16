@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
@@ -98,7 +97,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

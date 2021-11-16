@@ -137,7 +137,7 @@ public class AbstractDataSetTest
 			assertEquals(dp1, dp2, "Joining unrelated datapoints");
 			return true;
 		};
-		DataSet result = INSTANCE.filteredMappedJoin(STRUCTURE, INSTANCE, filter, (a, b) -> a);
+		DataSet result = INSTANCE.filteredMappedJoin(STRUCTURE, INSTANCE, filter, (a, b) -> a, false);
 		assertEquals(STRUCTURE, result.getMetadata());
 		assertEquals(new HashSet<>(Arrays.asList(DATAPOINTS)), result.stream().collect(toSet()));
 	}

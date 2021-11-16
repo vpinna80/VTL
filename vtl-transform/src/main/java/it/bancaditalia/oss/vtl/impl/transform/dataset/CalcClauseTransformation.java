@@ -47,7 +47,6 @@ import it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -290,13 +289,13 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	private DataSet joinByIDs(DataSet left, DataSet right)
 	{
 		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, 
-				(dpl, dpr) -> dpl.combine(this, dpr));
+				(dpl, dpr) -> dpl.combine(this, dpr), false);
 	}
 
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

@@ -38,6 +38,16 @@ public class LimitClause implements LimitCriterion, Serializable
 	private final LimitDirection direction;
 	private final long count;
 	
+	public static final LimitClause following(long count)
+	{
+		return new LimitClause(FOLLOWING, count);
+	}
+	
+	public static final LimitClause preceding(long count)
+	{
+		return new LimitClause(PRECEDING, count);
+	}	
+	
 	public LimitClause(LimitDirection direction, IntegerValue<?> limitCount)
 	{
 		this(direction, limitCount.get().longValue());

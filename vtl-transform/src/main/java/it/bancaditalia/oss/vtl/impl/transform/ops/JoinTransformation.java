@@ -65,14 +65,13 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLAmbiguousComponentEx
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.JoinApplyScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.transform.util.ResultHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -386,7 +385,7 @@ public class JoinTransformation extends TransformationImpl
 	@Override
 	public DataSetMetadata getMetadata(TransformationScheme scheme)
 	{
-		return (DataSetMetadata) ResultHolder.getInstance(scheme, VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
+		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

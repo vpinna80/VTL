@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLNullCompareException;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomain;
@@ -43,10 +44,15 @@ public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> 
 	@SuppressWarnings("unchecked")
 	public static <T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> T instance(S domain)
 	{
-		return (T) INSTANCES.computeIfAbsent(domain, d -> new NullValue<>((S) d));
+		NullValue<?, ?, ?, ?> nullValue = (T) INSTANCES.get(domain);
+		if (nullValue != null)
+			return (T) nullValue;
+		nullValue = new NullValue<>(domain);
+		INSTANCES.put(domain, nullValue);
+		return (T) nullValue;
 	}
 
-	public static <T extends NullValue<T, R, S, D>, C extends DataStructureComponent<?, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> T instanceFrom(C component)
+	public static <T extends NullValue<T, R, S, D>, K extends ComponentRole, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> T instanceFrom(DataStructureComponent<K, S, D> component)
 	{
 		return instance(component.getDomain());
 	}

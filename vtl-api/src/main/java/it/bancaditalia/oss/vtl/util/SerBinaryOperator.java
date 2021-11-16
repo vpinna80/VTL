@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.util;
 import java.util.Comparator;
 import java.util.function.BinaryOperator;
 
+@FunctionalInterface
 public interface SerBinaryOperator<T> extends BinaryOperator<T>, SerBiFunction<T, T, T>
 {
     public static <T> SerBinaryOperator<T> minBy(Comparator<? super T> comparator)

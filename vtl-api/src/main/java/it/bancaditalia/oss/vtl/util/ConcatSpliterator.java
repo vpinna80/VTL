@@ -19,16 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.SEQUENTIAL;
 import static java.lang.Long.MAX_VALUE;
 
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Spliterator;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -40,103 +39,111 @@ import java.util.stream.StreamSupport;
  *
  * @param <T>
  */
-public class ConcatSpliterator<T, C extends Collection<Stream<T>>> implements Spliterator<T>
+public class ConcatSpliterator<T> implements Spliterator<T>
 {
-	private final Queue<Spliterator<T>> spliterators;
-	private volatile long estimatedSize = 0;
+	private final Spliterator<T>[] array;
+	private volatile int current = 0;
+	private volatile int index = 0;
+	private transient long estimateSize = 0;
 	
 	public static <T> SerCollector<Stream<T>, ?, Stream<T>> concatenating(boolean keepOrder)
 	{
-		if (keepOrder)
-			return collectingAndThen(toList(), 
-				list -> StreamSupport.stream(new ConcatSpliterator<>(list), !Utils.SEQUENTIAL)
-						.onClose(() -> list.forEach(Stream::close)));
-		else
-			return collectingAndThen(toSet(), 
-				set -> StreamSupport.stream(new ConcatSpliterator<>(set), !Utils.SEQUENTIAL)
-						.onClose(() -> set.forEach(Stream::close)));
+		SerCollector<Stream<T>, ?, ? extends Collection<Stream<T>>> collector1 = keepOrder ? toList() : toConcurrentSet();
+		SerCollector<Spliterator<T>, ?, ? extends Collection<Spliterator<T>>> collector2 = keepOrder ? toList() : toConcurrentSet();
+
+		return teeing(collector1, mapping(Stream::spliterator, collector2), 
+				(str, spl) -> StreamSupport.stream(new ConcatSpliterator<>(spl), !SEQUENTIAL)
+						.onClose(() -> Utils.getStream(str).forEach(Stream::close)));
 	}
 	
-	public ConcatSpliterator(C streams)
+	@SuppressWarnings("unchecked")
+	public ConcatSpliterator(Collection<Spliterator<T>> streams)
 	{
-		spliterators = Utils.SEQUENTIAL ? new LinkedList<>() : new ConcurrentLinkedQueue<>(); 
-		for (Stream<T> stream: streams)
+		this.array = (Spliterator<T>[]) streams.toArray(new Spliterator<?>[streams.size()]);
+		
+		for (int i = array.length - 1; i >= 0; i--)
 		{
-			Spliterator<T> spliterator = stream.spliterator();
-			spliterators.add(spliterator);
-			if (estimatedSize < MAX_VALUE)
-				estimatedSize += spliterator.estimateSize();
-			if (estimatedSize < 0)
-				estimatedSize = MAX_VALUE;
+			long estimatedSize = array[i].estimateSize();
+			if (estimatedSize == MAX_VALUE)
+				estimateSize = MAX_VALUE;
+			else
+			{
+				estimateSize += estimatedSize;
+				if (estimateSize < 0)
+					estimateSize = MAX_VALUE;
+			}
 		}
 	}
-	
-	public ConcatSpliterator(Queue<Spliterator<T>> spliterators)
-	{
-		this.spliterators = spliterators;
-	}
-	
+
 	@Override
 	public Spliterator<T> trySplit()
 	{
-		final Spliterator<T> polled = spliterators.poll();
-		if (polled != null && estimatedSize < MAX_VALUE)
-		{
-			estimatedSize -= polled.estimateSize();
-			if (estimatedSize < 0)
-				estimatedSize = MAX_VALUE;
-		}
-		return polled;
+		index = current++;
+		if (index >= array.length)
+			return null;
+		
+		if (estimateSize != MAX_VALUE)
+			estimateSize -= array[index].estimateSize();
+		
+		final Spliterator<T> spliterator = array[index];
+		array[index] = null;
+		return spliterator;
 	}
 
 	@Override
 	public boolean tryAdvance(Consumer<? super T> consumer)
 	{
-		while (!spliterators.isEmpty())
-			if (spliterators.peek().tryAdvance(consumer))
+		while (index < array.length)
+			if (array[index].tryAdvance(consumer))
 			{
-				if (estimatedSize < MAX_VALUE)
-					estimatedSize--;
+				if (estimateSize != MAX_VALUE)
+					estimateSize--;
 				return true;
 			}
 			else
-				spliterators.remove();
+			{
+				array[index] = null;
+				index = current++;
+			}
+		
 		return false;
 	}
 
 	@Override
 	public void forEachRemaining(Consumer<? super T> consumer)
 	{
-		Spliterator<T> spliterator;
-		while ((spliterator = spliterators.poll()) != null)
-			spliterator.forEachRemaining(consumer);
-		estimatedSize = 0;
+		while (index < array.length)
+		{
+			final Spliterator<T> spliterator = array[index];
+			array[index] = null;
+			index = current++;
+			
+			if (spliterator != null)
+				spliterator.forEachRemaining(consumer);
+		}
+		
+		estimateSize = 0;
 	}
 
 	@Override
 	public long estimateSize()
 	{
-		return estimatedSize;
+		return estimateSize;
 	}
 
 	@Override
 	public int characteristics()
 	{
-		// The initial value 0 is not actually used
-		int characteristics = 0; 
-		boolean first = true;
-		for (Spliterator<T> spliterator: spliterators)
-		{
-			if (first)
-			{
-				first = false;
-				characteristics = spliterator.characteristics();
-			}
-			else
-				// distinct and sorted lost if more than 1 spliterator in queue
-				characteristics &= spliterator.characteristics() & ~(DISTINCT | SORTED);
-		}
+		// Report all characteristics if the spliterator is completely empty
+		if (index >= array.length)
+			return IMMUTABLE | NONNULL | SIZED | SUBSIZED | ORDERED;
 		
-		return characteristics;
+		int characteristics = IMMUTABLE | NONNULL | SIZED | SUBSIZED | ORDERED; 
+		for (int i = index; i < array.length; i++)
+			if (array[i] != null)
+				characteristics &= array[i].characteristics();
+		
+		// distinct and sorted lost when combining spliterators
+		return characteristics & ~(DISTINCT | SORTED);
 	}
 }
