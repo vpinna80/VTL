@@ -20,22 +20,17 @@
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.UNION;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
-import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static java.lang.Boolean.TRUE;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingByConcurrent;
+import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.minBy;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -90,19 +85,6 @@ public class SetTransformation extends TransformationImpl
 		}
 	}
 
-	private static DataSet setDiff(DataSet left, DataSet right)
-	{
-		return new BiFunctionDataSet<>(left.getMetadata(), (l, r) -> {
-			Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
-			try (Stream<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> stream = r.stream().map(dp -> dp.getValues(Identifier.class)))
-			{
-				index = stream.collect(toConcurrentMap(identity(), k -> TRUE)).keySet();
-			}
-			
-			return left.filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
-		}, left, right);
-	}
-
 	private final List<Transformation> operands;
 	private final SetOperator setOperator;
 
@@ -125,24 +107,25 @@ public class SetTransformation extends TransformationImpl
 		// Special case for UNION as it has the largest memory requirements
 		else
 		{
-			return new FunctionDataSet<>(getMetadata(scheme), ops -> {
-				// take the index of each operand and link each datapoint with the index
-				Optional<Stream<Entry<DataPoint, Integer>>> supplier = Utils.getStream(ops.size())
-					.mapToObj(i -> ((DataSet) operands.get(i).eval(scheme)).stream().map(toEntryWithValue(k -> i)))
-					.reduce(Stream::concat);
+			final DataSetMetadata metadata = getMetadata(scheme);
+			Set<DataStructureComponent<Identifier, ?, ?>> ids = metadata.getComponents(Identifier.class);
+			List<DataSet> datasets = operands.stream().map(op -> (DataSet) op.eval(scheme)).collect(toList());
+			
+			return new FunctionDataSet<>(metadata, list -> {
+				Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> seen = newKeySet();
+				List<Set<DataPoint>> diffs = new ArrayList<>(list.size());
+				for (int i = 0; i < list.size(); i++)
+					try (Stream<DataPoint> stream = list.get(i).stream())
+					{
+						diffs.add(stream 
+								.filter(dp -> seen.add(dp.getValues(ids)))
+								.collect(toConcurrentSet()));
+					}
 				
-				Collection<DataPoint> values;
-				try (Stream<Entry<DataPoint, Integer>> stream = supplier.get())
-				{
-					// choose the datapoint coming from the LEFTMOST operand (that corresponds to the minimum index)
-					values = stream.collect(groupingByConcurrent(e -> e.getKey().getValues(Identifier.class), 
-								collectingAndThen(minBy((e1, e2) -> e1.getValue().compareTo(e2.getValue())), 
-										o -> o.get().getKey()))
-							).values();
-				}
-
-				return Utils.getStream(values);
-			}, operands);
+				return Utils.getStream(diffs)
+						.map(Utils::getStream)
+						.collect(concatenating(ORDERED));
+			}, datasets);
 		}
 	}
 
@@ -209,5 +192,18 @@ public class SetTransformation extends TransformationImpl
 	public Lineage computeLineage()
 	{
 		return LineageNode.of(this, operands.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
+	}
+
+	private static DataSet setDiff(DataSet left, DataSet right)
+	{
+		return new BiFunctionDataSet<>(left.getMetadata(), (l, r) -> {
+			Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
+			try (Stream<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> stream = r.stream().map(dp -> dp.getValues(Identifier.class)))
+			{
+				index = stream.collect(toConcurrentSet());
+			}
+			
+			return left.filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
+		}, left, right);
 	}
 }
