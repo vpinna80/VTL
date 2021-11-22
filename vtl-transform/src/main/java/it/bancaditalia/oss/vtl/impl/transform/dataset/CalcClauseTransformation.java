@@ -47,10 +47,8 @@ import it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
@@ -58,6 +56,7 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -231,11 +230,15 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
-			: new FunctionDataSet<>(nonAnalyticResultMetadata, ds -> ds.stream()
-				.map(dp -> {
+			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> {
+				// The lineage for the new datapoint as the combination of lineage of each clause
+				return LineageCall.of(Stream.concat(Stream.of(dp.getLineage()), 
+						Utils.getStream(nonAnalyticClauses).map(Transformation::getLineage))
+					.collect(toList()));
+			}, dp -> {
 					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata);
 					
-					// place calculated components (eventually overriding existing ones 
+					// place calculated components (eventually overriding existing ones) 
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
 						Utils.getStream(nonAnalyticClauses)
 							.collect(toConcurrentMap(
@@ -243,15 +246,11 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 								clause -> clause.eval(dpSession))
 							);
 					
-					Lineage lineageCall = LineageCall.of(Stream.concat(Stream.of(dp.getLineage()), 
-							Utils.getStream(nonAnalyticClauses)
-								.map(Transformation::getLineage))
-						.collect(toList()));
-					return new DataPointBuilder(dp)
-							.delete(calcValues.keySet())
-							.addAll(calcValues)
-							.build(LineageNode.of(this, lineageCall), nonAnalyticResultMetadata);
-				}), operand);
+					HashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+					map.keySet().removeAll(calcValues.keySet());
+					map.putAll(calcValues);
+					return map;
+				});
 
 		// TODO: more efficient way to compute this instead of reduction by joining
 		return Utils.getStream(analyticClauses)

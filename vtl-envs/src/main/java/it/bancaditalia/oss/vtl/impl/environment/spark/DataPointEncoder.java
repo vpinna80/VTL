@@ -81,7 +81,6 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerFunction;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataPointEncoder implements Serializable
 {
@@ -163,7 +162,7 @@ public class DataPointEncoder implements Serializable
 				.sorted(byName())
 				.map(dp::get)
 				.map(ScalarValue::get)
-				.map(Object.class::cast)
+				.map(Serializable.class::cast)
 				.map(value -> value instanceof DayHolder ? ((DayHolder) value).getLocalDate() : value)
 				.collect(collectingAndThen(collectingAndThen(
 						toList(),
@@ -172,63 +171,18 @@ public class DataPointEncoder implements Serializable
 		}
 		catch (RuntimeException e)
 		{
-			stack.printStackTrace();
 			throw new VTLNestedException("Exception while encoding datapoint " + dp + " with " + structure, e);
-		}
-	}
-
-	public DataPoint decode(Object[] row)
-	{
-		return decode(row, 0);
-	}
-
-	public DataPoint decode(Object[] row, int startFrom)
-	{
-		try
-		{
-			Object lineageValue = row[startFrom + components.length];
-			Lineage lineage = lineageValue instanceof byte[] ? LineageSparkUDT$.MODULE$.deserialize(lineageValue) : (Lineage) lineageValue;
-			return IntStream.range(0, components.length)
-				.parallel()
-				.mapToObj(i -> new SimpleEntry<>(components[i], scalarFromColumnValue(row[startFrom + i], components[i])))
-				.collect(toDataPoint(lineage, getStructure()));
-		}
-		catch (RuntimeException e)
-		{
-			stack.printStackTrace();
-			throw new VTLNestedException("Exception while decoding row " + row + " with " + structure, e);
 		}
 	}
 
 	public DataPoint decode(Row row)
 	{
-		return decode(row, 0);
-	}
-
-	public SerFunction<Row, DataPoint> decodeFrom(int startFrom)
-	{
-		return new SerFunction<Row, DataPoint>()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public DataPoint apply(Row row)
-			{
-				return decode(row, startFrom);
-			}
-		};
-	}
-
-	public DataPoint decode(Row row, int startFrom)
-	{
 		try
 		{
-			Object lineageValue = row.get(startFrom + components.length);
+			Object lineageValue = row.get(components.length);
 			Lineage lineage = lineageValue instanceof byte[] ? LineageSparkUDT$.MODULE$.deserialize(lineageValue) : (Lineage) lineageValue;
-			IntStream range = IntStream.range(0, components.length);
-			return (Utils.SEQUENTIAL ? range : range.parallel())
-				.parallel()
-				.mapToObj(i -> new SimpleEntry<>(components[i], scalarFromColumnValue(row.get(startFrom + i), components[i])))
+			return IntStream.range(0, components.length)
+				.mapToObj(i -> new SimpleEntry<>(components[i], scalarFromColumnValue(row.get(i), components[i])))
 				.collect(toDataPoint(lineage, getStructure()));
 		}
 		catch (RuntimeException e)
@@ -256,9 +210,9 @@ public class DataPointEncoder implements Serializable
 			{
 				return builder.apply(serialized);
 			}
-			catch (ClassCastException e)
+			catch (RuntimeException e)
 			{
-				throw e;
+				throw new VTLNestedException("Error creating value for component " + component + " from " + serialized, e);
 			}
 		else
 			throw new UnsupportedOperationException();
@@ -266,9 +220,7 @@ public class DataPointEncoder implements Serializable
 
 	static StructField componentToField(DataStructureComponent<?, ?, ?> component)
 	{
-		DataType type = DOMAIN_DATATYPES.get(component.getDomain());
-		if (type == null)
-			throw new UnsupportedOperationException("Spark type not supported for " + component.getDomain());
+		DataType type = getDataTypeForComponent(component);
 
 		MetadataBuilder metadataBuilder = new MetadataBuilder();
 		if (component.getRole() == Identifier.class)
@@ -293,17 +245,18 @@ public class DataPointEncoder implements Serializable
 		return structure;
 	}
 	
-	public static Encoder<?> getEncoderForComponent(DataStructureComponent<?, ?, ?> component)
+	@SuppressWarnings("unchecked")
+	static Encoder<? extends Serializable> getEncoderForComponent(DataStructureComponent<?, ?, ?> component)
 	{
 		Encoder<?> encoder = DOMAIN_ENCODERS.get(component.getDomain());
 		if (encoder != null)
-			return encoder;
+			return (Encoder<? extends Serializable>) encoder;
 		else
 			throw new UnsupportedOperationException(component.getDomain().toString());
 	}
 
 	
-	public static DataType getDataTypeForComponent(DataStructureComponent<?, ?, ?> component)
+	static DataType getDataTypeForComponent(DataStructureComponent<?, ?, ?> component)
 	{
 		DataType type = DOMAIN_DATATYPES.get(component.getDomain());
 		if (type != null)

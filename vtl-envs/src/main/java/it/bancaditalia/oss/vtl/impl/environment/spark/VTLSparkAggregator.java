@@ -21,46 +21,66 @@ package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getEncoderForComponent;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.scalarFromColumnValue;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.expressions.Aggregator;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.OptionalBox;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
-public class AnalyticAggregator<A> extends Aggregator<Serializable, A, Serializable>
+public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializable>
 {
 	private static final long serialVersionUID = 1L;
 
 	private final Encoder<A> accEncoder;
 	private final Encoder<?> resultEncoder;
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, A, A> coll;
-	private final DataStructureComponent<?, ?, ?> oldMeasure;
+	private final DataStructureComponent<?, ?, ?> oldComp;
 
 	@SuppressWarnings("unchecked")
-	public AnalyticAggregator(DataStructureComponent<?, ?, ?> oldMeasure, DataStructureComponent<?, ?, ?> newMeasure,
+	public VTLSparkAggregator(DataStructureComponent<?, ?, ?> oldComp, DataStructureComponent<?, ?, ?> newComp,
 			SerCollector<ScalarValue<?, ?, ?, ?>, ?, A> collector, SparkSession session)
 	{
-		this.resultEncoder = getEncoderForComponent(newMeasure);
-		
-		A zero = (A) collector.supplier().get();
-		if (zero instanceof double[])
-			accEncoder = (Encoder<A>) session.implicits().newDoubleArrayEncoder();
-		else if (zero instanceof OptionalBox)
-			accEncoder = (Encoder<A>) Encoders.kryo(OptionalBox.class);
-		else
-			throw new UnsupportedOperationException("Spark encoder not found for " + zero.getClass().getName());
-
-		this.coll = (SerCollector<ScalarValue<?, ?, ?, ?>, A, A>) collector;
-		this.oldMeasure = oldMeasure;
+		try
+		{
+			this.coll = (SerCollector<ScalarValue<?, ?, ?, ?>, A, A>) collector;
+			this.oldComp = oldComp;
+			
+			A zero = zero();
+			if (zero instanceof double[])
+			{
+				accEncoder = (Encoder<A>) session.implicits().newDoubleArrayEncoder();
+				resultEncoder = getEncoderForComponent(oldComp);
+			}
+			else if (zero instanceof OptionalBox)
+			{
+				accEncoder = (Encoder<A>) Encoders.kryo(OptionalBox.class);
+				resultEncoder = getEncoderForComponent(oldComp);
+			}
+			else if (zero instanceof ArrayList)
+			{
+				accEncoder = (Encoder<A>) Encoders.kryo(ArrayList.class);
+				resultEncoder = Encoders.kryo(Serializable[].class);
+			}
+			else
+				throw new UnsupportedOperationException("Spark encoder not found for " + zero.getClass().getName());
+		}
+		catch (RuntimeException e) 
+		{
+			throw e;
+		}
 	}
-
+	
 	@Override
 	public A zero()
 	{
@@ -76,7 +96,7 @@ public class AnalyticAggregator<A> extends Aggregator<Serializable, A, Serializa
 	@Override
 	public A reduce(A acc, Serializable value)
 	{
-		coll.accumulator().accept(acc, scalarFromColumnValue(value, oldMeasure));
+		coll.accumulator().accept(acc, scalarFromColumnValue(value, oldComp));
 		return acc;
 	}
 
@@ -89,7 +109,20 @@ public class AnalyticAggregator<A> extends Aggregator<Serializable, A, Serializa
 	@Override
 	public Serializable finish(A reduction)
 	{
-		return ((ScalarValue<?, ?, ?, ?>) coll.finisher().apply(reduction)).get();
+		final A result = coll.finisher().apply(reduction);
+		if (result instanceof ArrayList)
+			return ((ArrayList<?>) result).stream()
+				.map(ScalarValue.class::cast)
+				.map(ScalarValue::get)
+				.map(v -> v instanceof DayHolder ? ((DayHolder) v).getLocalDate() : v)
+				.collect(toList())
+				.toArray(new Serializable[0]);
+		else if (result instanceof DateValue)
+			return ((DayHolder) ((DateValue<?>) result).get()).getLocalDate();
+		else if (result instanceof ScalarValue)
+			return ((ScalarValue<?, ?, ?, ?>) result).get();
+		else
+			throw new UnsupportedOperationException("Class not implemented as finished value in spark aggregator: " + result.getClass().getName());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -102,6 +135,6 @@ public class AnalyticAggregator<A> extends Aggregator<Serializable, A, Serializa
 	@Override
 	public String toString()
 	{
-		return "VTLAggregator(" + oldMeasure + ")";
+		return "VTLSparkAggregator(" + oldComp + ")";
 	}
 };

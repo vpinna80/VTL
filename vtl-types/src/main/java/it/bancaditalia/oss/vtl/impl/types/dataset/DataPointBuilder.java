@@ -121,6 +121,8 @@ public class DataPointBuilder
 	{
 		if (!component.getDomain().isAssignableFrom(value.getDomain()))
 			throw new VTLCastException(component.getDomain(), value);
+		if (component.is(Identifier.class) && value instanceof NullValue)
+			throw new NullPointerException("Null value for identifier " + component);
 		
 		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
 		

@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.apache.spark.sql.Row;
@@ -33,15 +32,15 @@ import org.apache.spark.sql.Row;
 final class SparkSpliterator implements Spliterator<Row>
 {
 	private final BlockingQueue<Row> queue;
-	private final AtomicBoolean finished;
+	private final Thread collector;
 	private final List<Row> section = new ArrayList<>();
 	
 	private volatile int current = 0;
 
-	SparkSpliterator(BlockingQueue<Row> queue, AtomicBoolean finished)
+	SparkSpliterator(BlockingQueue<Row> queue, Thread collector)
 	{
 		this.queue = queue;
-		this.finished = finished;
+		this.collector = collector;
 	}
 
 	@Override
@@ -52,7 +51,7 @@ final class SparkSpliterator implements Spliterator<Row>
 			{
 				updateSection();
 
-				if (finished.get())
+				if (!collector.isAlive())
 					return false;
 			}
 			catch (InterruptedException e)
@@ -78,7 +77,7 @@ final class SparkSpliterator implements Spliterator<Row>
 	@Override
 	public Spliterator<Row> trySplit()
 	{
-		return finished.get() ? null : new SparkSpliterator(queue, finished);
+		return collector.isAlive() ? new SparkSpliterator(queue, collector) : null;
 	}
 
 	@Override
@@ -90,6 +89,6 @@ final class SparkSpliterator implements Spliterator<Row>
 	@Override
 	public int characteristics()
 	{
-		return CONCURRENT | NONNULL | IMMUTABLE | DISTINCT;
+		return CONCURRENT | NONNULL;
 	}
 }

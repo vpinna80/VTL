@@ -32,20 +32,21 @@ import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValue<S>, DateHolder<?>, S, DateDomain>
 {
 	private static final long serialVersionUID = 1L;
+	private static final ScalarValue<?, ?, EntireDateDomainSubset, DateDomain> NULLINSTANCE = NullValue.instance(DATEDS);
 
 	public DateValue(DateHolder<?> value, S domain)
 	{
 		super(value, domain);
 	}
 	
-	public static DateValue<EntireDateDomainSubset> of(TemporalAccessor value)
+	public static ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> of(TemporalAccessor value)
 	{
-		return new DateValue<>(DateHolder.of(value), DATEDS);
+		return value == null ? NULLINSTANCE : new DateValue<>(DateHolder.of(value), DATEDS);
 	}
 	
-	public static DateValue<EntireDateDomainSubset> of(DateHolder<?> value)
+	public static ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> of(DateHolder<?> value)
 	{
-		return new DateValue<>(value, DATEDS);
+		return value == null ? NULLINSTANCE : new DateValue<>(value, DATEDS);
 	}
 
 	public <S1 extends DateDomainSubset<S1>> DateValue<S1> as(S1 domain2)

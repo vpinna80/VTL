@@ -202,4 +202,16 @@ public enum SampleDataSets implements DataSet
 	{
 		return dataset.analytic(components, clause, collectors, finishers);
 	}
+	
+	@Override
+	public DataSet union(DataSet... others)
+	{
+		return dataset.union(others);
+	}
+	
+	@Override
+	public DataSet setDiff(DataSet other)
+	{
+		return dataset.setDiff(other);
+	}
 }

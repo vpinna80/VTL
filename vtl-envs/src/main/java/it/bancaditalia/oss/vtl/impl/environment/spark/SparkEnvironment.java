@@ -28,6 +28,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static org.apache.spark.sql.SaveMode.Overwrite;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.udf;
+import static scala.collection.JavaConverters.asScalaBuffer;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
@@ -77,7 +78,6 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import scala.collection.JavaConverters;
 
 public class SparkEnvironment implements Environment
 {
@@ -125,8 +125,10 @@ public class SparkEnvironment implements Environment
 			  .set("spark.executor.processTreeMetrics.enabled", "false")
 			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
 			  .set("spark.sql.datetime.java8API.enabled", "true")
-			  .set("spark.sql.shuffle.partitions", "4")
+			  .set("spark.sql.shuffle.partitions", "16")
 			  .set("spark.sql.catalyst.dateType", "Instant")
+			  .set("spark.executor.instances", "16")
+			  .set("spark.executor.cores", "1")
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
 		
@@ -224,14 +226,15 @@ public class SparkEnvironment implements Environment
 		
 		try
 		{
-			dataFrame.select(JavaConverters.asScalaBuffer(headerLine))
+			LOGGER.info("Writing {} file {}...", parts[0], parts[1]);
+			dataFrame.select(asScalaBuffer(headerLine))
 				.write()
 				.format(parts[0])
 				.mode(Overwrite)
-				.option("mapreduce.fileoutputcommitter.marksuccessfuljobs","false")
 				.option("header","true")
 				.save(parts[1]);
 
+			LOGGER.debug("Finished writing {} file {}...", parts[0], parts[1]);
 			return true;
 		}
 		catch (RuntimeException e)

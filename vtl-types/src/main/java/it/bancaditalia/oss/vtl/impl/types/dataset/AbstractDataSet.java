@@ -37,12 +37,16 @@ import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.singletonMap;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
+import static java.util.stream.Stream.concat;
 
 import java.io.Serializable;
+import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,6 +54,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -126,7 +131,7 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public DataSetMetadata getMetadata()
 	{
-		return dataStructure instanceof DataSetMetadata ? (DataSetMetadata) dataStructure : null;
+		return dataStructure;
 	}
 
 	@Override
@@ -419,6 +424,25 @@ public abstract class AbstractDataSet implements DataSet
 		};
 	}
 	
+	@Override
+	public DataSet union(DataSet... others)
+	{
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getComponents(Identifier.class);
+		for (DataSet other: others)
+			if (!dataStructure.equals(other.getMetadata()))
+				throw new InvalidParameterException("Union between two datasets with different structures: " + dataStructure + " and " + other.getMetadata()); 
+
+		List<Set<DataPoint>> results = new ArrayList<>();
+		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> seen = newKeySet();
+		// eagerly compute the differences (one set at a time to avoid OutOfMemory)
+		for (DataSet other: others)
+			results.add(other.stream().filter(dp -> seen.add(dp.getValues(ids))).collect(toConcurrentSet()));
+		
+		// concat all datapoints from all sets
+		return new FunctionDataSet<>(dataStructure, list -> concat(Stream.of(stream()), Utils.getStream(results).map(Utils::getStream))
+					.collect(concatenating(ORDERED)), results);
+	}
+	
 	/*
 	 * Detects overflows in sum and caps it to Integer.MAX_VALUE 
 	 */
@@ -453,4 +477,18 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	protected abstract Stream<DataPoint> streamDataPoints();
+
+	@Override
+	public DataSet setDiff(DataSet right)
+	{
+		return new BiFunctionDataSet<>(getMetadata(), (l, r) -> {
+			Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
+			try (Stream<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> stream = r.stream().map(dp -> dp.getValues(Identifier.class)))
+			{
+				index = stream.collect(toConcurrentSet());
+			}
+			
+			return filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
+		}, this, right);
+	}
 }
