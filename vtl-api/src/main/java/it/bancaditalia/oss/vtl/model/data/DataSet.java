@@ -299,6 +299,23 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	}
 
 	/**
+	 * Creates a new DataSet as the union of this and other datasets.
+	 * The datasets must have the same structure, and duplicated datapoints are taken from the leftmost operand
+	 * 
+	 * @param others The datasets to perform the union with
+	 * @return The result of the union. 
+	 */
+	public DataSet union(DataSet... others);
+
+	/**
+	 * Creates a new dataset as containing all the datapoints of this dataset that don't have the same identifiers as the ones in the other dataset.
+	 * 
+	 * @param other the other dataset
+	 * @return the set difference between the two datasets.
+	 */
+	public DataSet setDiff(DataSet other);
+
+	/**
 	 * Obtains a component with given name, and checks that it belongs to the specified domain.
 	 * 
 	 * @param name The requested component's name.

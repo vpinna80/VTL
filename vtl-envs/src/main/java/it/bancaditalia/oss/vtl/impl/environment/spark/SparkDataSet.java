@@ -40,7 +40,6 @@ import static org.apache.spark.sql.expressions.Window.partitionBy;
 import static org.apache.spark.sql.functions.explode;
 import static org.apache.spark.sql.functions.first;
 import static org.apache.spark.sql.functions.lit;
-import static org.apache.spark.sql.functions.struct;
 import static org.apache.spark.sql.functions.udaf;
 import static org.apache.spark.sql.functions.udf;
 import static org.apache.spark.sql.types.DataTypes.createArrayType;
@@ -73,6 +72,7 @@ import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.functions;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
@@ -300,9 +300,11 @@ public class SparkDataSet extends AbstractDataSet
 		StructType structType = new StructType(fields.toArray(new StructField[fields.size()]));
 		
 		// wrap the source row into a struct for passing to the UDF
-		Column wrappedRow = struct(Arrays.stream(dataFrame.columns())
+		Column wrappedRow = Arrays.stream(dataFrame.columns())
 			.map(dataFrame::col)
-			.collect(collectingAndThen(toList(), JavaConverters::asScalaBuffer)));
+			.collect(collectingAndThen(collectingAndThen(toList(), 
+					JavaConverters::asScalaBuffer),
+					functions::struct));
 		
 		// the columns to keep
 		String[] ids = originalIDs.stream()
