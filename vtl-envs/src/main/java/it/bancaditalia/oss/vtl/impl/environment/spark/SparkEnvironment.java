@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.createComponentsFromStruct;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.createMetadataForComponent;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getColumnsFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getDataTypeForComponent;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
@@ -76,13 +77,14 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 
 public class SparkEnvironment implements Environment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SparkEnvironment.class);
 
 	public static final VTLProperty VTL_SPARK_MASTER_CONNECTION = 
-			new VTLPropertyImpl("vtl.spark.master.connection", "Connection string to an orchestrator or local", "local", true, false, "local");
+			new VTLPropertyImpl("vtl.spark.master.connection", "Connection string to an orchestrator or local", "local[*]", true, false, "local[*]");
 	public static final VTLProperty VTL_SPARK_UI_ENABLED = 
 			new VTLPropertyImpl("vtl.spark.ui.enabled", "Indicates if the Spark web UI should be initialized", "true", true, false, "true");
 	public static final VTLProperty VTL_SPARK_UI_PORT = 
@@ -254,7 +256,7 @@ public class SparkEnvironment implements Environment
 		String[] normalizedNames = newToOldNames.keySet().toArray(new String[newToOldNames.size()]);
 		Arrays.sort(normalizedNames, 0, normalizedNames.length);
 		
-		// array of parsers for CSV fields
+		// Array of parsers for CSV fields (strings) into scalars
 		Map<DataStructureComponent<?, ?, ?>, DataType> types = structure.stream()
 			.collect(toMapWithValues(c -> getDataTypeForComponent(c)));
 		Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
@@ -270,8 +272,10 @@ public class SparkEnvironment implements Environment
 		// add a column and a converter for the lineage
 		byte[] serializedLineage = LineageSparkUDT$.MODULE$.serialize(LineageExternal.of("spark:" + alias));
 		converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
-		
-		return new SparkDataSet(session, structure, sourceDataFrame.select(converters));
+
+		Dataset<Row> converted = sourceDataFrame.select(converters);
+		Column[] ids = getColumnsFromComponents(converted, structure.getComponents(Identifier.class)).toArray(new Column[0]);
+		return new SparkDataSet(session, structure, converted.repartition(ids));
 	}
 	
 	private static UDF1<String, Serializable> valueMapper(DataStructureComponent<?, ?, ?> component, String mask, DataType type)

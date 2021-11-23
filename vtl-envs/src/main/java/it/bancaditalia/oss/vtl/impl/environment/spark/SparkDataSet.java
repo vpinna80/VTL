@@ -32,7 +32,10 @@ import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.Li
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static java.util.Spliterator.ORDERED;
@@ -406,20 +409,15 @@ public class SparkDataSet extends AbstractDataSet
 
 		WindowSpec finalWindowSpec = windowSpec == null ? Window$.MODULE$.spec() : windowSpec;
 		
-		// Structure of the result
-		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
-				.removeComponents(components.keySet())
-				.addComponents(components.values())
-				.build();
 		
-		// Create a window function for each nonid component
+		// Create a window function for each component listed in the map
 		Map<DataStructureComponent<?, ?, ?>, VTLSparkAggregator<?>> udafs = new HashMap<>();
 		for (DataStructureComponent<?, ?, ?> oldComp: components.keySet())
 				udafs.put(oldComp, new VTLSparkAggregator<>(oldComp, components.get(oldComp), collectors.get(oldComp), session));
 
-		DataPointEncoder resultEncoder = new DataPointEncoder(newStructure);
 		DataStructureComponent<?, ?, ?>[] sourceComponents = components.keySet().toArray(new DataStructureComponent<?, ?, ?>[0]);
 		
+		// Mapping from source component to its analytic function
 		Map<DataStructureComponent<?, ?, ?>, Column> analytic = Arrays.stream(sourceComponents)
 				.collect(toMapWithValues(comp -> {
 					@SuppressWarnings("unchecked")
@@ -433,16 +431,39 @@ public class SparkDataSet extends AbstractDataSet
 							.apply(udaf, column);
 				}));
 		
-		// apply all the udfs and explode the array columns
-		Dataset<Row> withColumns = dataFrame;
-		for (DataStructureComponent<?, ?, ?> source: sourceComponents)
-		{
-			final String destName = components.get(source).getName();
-			withColumns = withColumns.withColumn(destName, analytic.get(source));
-			withColumns = withColumns.withColumn(destName, explode(withColumns.col(destName)));
-		}
 		
-		return new SparkDataSet(session, resultEncoder, withColumns);
+		// Invert the original components map
+		Map<DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>> destToSrc = components.entrySet().stream()
+				.sorted((e1, e2) -> sorter(e1.getValue(), e2.getValue()))
+				.collect(toConcurrentMap(Entry::getValue, Entry::getKey));
+		
+		// create the column array for transformation
+		Entry<List<String>, List<Column>> destComponents = destToSrc.entrySet().stream()
+				.sorted((e1, e2) -> sorter(e1.getValue(), e2.getValue()))
+				.map(e -> new SimpleEntry<>(e.getValue().getName(), analytic.get(e.getKey())))
+				.collect(teeing(mapping(Entry::getKey, toList()), 
+						mapping(Entry::getValue, toList()), 
+						(l1, l2) -> new SimpleEntry<List<String>, List<Column>>(l1, l2)));
+		
+		// apply all the udfs
+		Dataset<Row> withColumns = dataFrame.withColumns(asScalaBuffer(destComponents.getKey()), asScalaBuffer(destComponents.getValue()));
+		
+		// explode each column that is the result of the analytic invocation
+		for (String name: destComponents.getKey())
+			withColumns = withColumns.withColumn(name, explode(withColumns.col(name)));
+		Dataset<Row> exploded = withColumns;
+		
+		// Structure of the result
+		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
+				.removeComponents(components.keySet())
+				.addComponents(components.values())
+				.build();
+		
+		DataPointEncoder resultEncoder = new DataPointEncoder(newStructure);
+		Column[] cols = getColumnsFromComponents(exploded, newStructure).toArray(new Column[newStructure.size() + 1]);
+		cols[cols.length - 1] = exploded.col("$lineage$");
+
+		return new SparkDataSet(session, resultEncoder, exploded.select(cols));
 	}
 
 	private <TT> Object[] udfForComponent(DataStructureComponent<?, ?, ?> comp, Object newV, Object oldV, 

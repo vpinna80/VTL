@@ -160,6 +160,25 @@ public class SerCollectors
         return new SerCollector<>(ArrayList::new, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), emptySet());
     }
 
+    public static <T> SerCollector<T, ?, T[]> toArray(T[] result)
+    {
+    	class ArrayHolder
+    	{
+    		volatile int index;
+    		
+    		private void accumulate(T v)
+			{
+    			result[index++] = v;
+			}
+
+    		private ArrayHolder merge(ArrayHolder other)
+			{
+    			throw new UnsupportedOperationException();
+			}
+    	}
+        return new SerCollector<>(ArrayHolder::new, ArrayHolder::accumulate, ArrayHolder::merge, acc -> result, EnumSet.of(CONCURRENT));
+    }
+
 	public static <T, A, R> SerCollector<T, A, R> filtering(SerPredicate<? super T> predicate, SerCollector<? super T, A, R> downstream)
 	{
 		final SerBiConsumer<A, T> biConsumer = (r, t) -> {

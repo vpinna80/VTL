@@ -36,21 +36,26 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 public class LineageSparkUDT$ extends LineageSparkUDT
 {
 	public static final LineageSparkUDT$ MODULE$ = new LineageSparkUDT$();
-	public static final Kryo KRYO;
+
 	private static final long serialVersionUID = 1L;
-	
-	static {
-		KRYO = new Kryo();
-		LineageSerializer lineageSerializer = new LineageSerializer();
-		KRYO.register(LineageExternal.class, lineageSerializer);
-		KRYO.register(LineageGroup.class, lineageSerializer);
-		KRYO.register(LineageCall.class, lineageSerializer);
-		KRYO.register(LineageNode.class, lineageSerializer);
-		KRYO.register(LineageImpl.class, lineageSerializer);
-		KRYO.register(LineageSet.class, lineageSerializer);
-		KRYO.register(Lineage.class, lineageSerializer);
-	}
-	
+    public static final ThreadLocal<Kryo> KRYO = new ThreadLocal<Kryo>() {
+
+    	@Override
+    	protected Kryo initialValue() {
+    		Kryo kryo = new Kryo();
+    		LineageSerializer lineageSerializer = new LineageSerializer();
+    		kryo.register(LineageExternal.class, lineageSerializer);
+    		kryo.register(LineageGroup.class, lineageSerializer);
+    		kryo.register(LineageCall.class, lineageSerializer);
+    		kryo.register(LineageNode.class, lineageSerializer);
+    		kryo.register(LineageImpl.class, lineageSerializer);
+    		kryo.register(LineageSet.class, lineageSerializer);
+    		kryo.register(Lineage.class, lineageSerializer);
+    		
+    		return kryo;
+    	}
+    };
+    
 	public static LineageSparkUDT$ apply()
 	{
 		return MODULE$;
@@ -59,6 +64,6 @@ public class LineageSparkUDT$ extends LineageSparkUDT
 	@Override
 	protected Kryo getKryoInstance()
 	{
-		return KRYO;
+		return KRYO.get();
 	}
 }

@@ -123,20 +123,9 @@ public class DataPointEncoder implements Serializable
 	private final StructType schema;
 	private final Encoder<Row> rowEncoder;
 	private final Encoder<Row> rowEncoderNoLineage;
-	private final NullPointerException stack;
 	
 	public DataPointEncoder(Set<? extends DataStructureComponent<?, ?, ?>> dataStructure)
 	{
-		try
-		{
-			throw new NullPointerException();
-		}
-		catch (NullPointerException e)
-		{
-			e.getStackTrace();
-			stack = e;
-		}
-
 		structure = dataStructure instanceof DataSetMetadata ? (DataSetMetadata) dataStructure : new DataStructureBuilder(dataStructure).build();
 		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
 		Arrays.sort(components, DataPointEncoder::sorter);
@@ -243,18 +232,33 @@ public class DataPointEncoder implements Serializable
 
 	public DataPoint decode(Row row)
 	{
+		Object lineageValue;
+		Lineage lineage;
 		try
 		{
-			Object lineageValue = row.get(components.length);
-			Lineage lineage = lineageValue instanceof byte[] ? LineageSparkUDT$.MODULE$.deserialize(lineageValue) : (Lineage) lineageValue;
+			lineageValue = row.get(components.length);
+		}
+		catch (RuntimeException e)
+		{
+			throw new VTLNestedException("Exception while decoding row " + row + " with " + Arrays.toString(components), e);
+		}
+		try
+		{
+			lineage = lineageValue instanceof byte[] ? LineageSparkUDT$.MODULE$.deserialize(lineageValue) : (Lineage) lineageValue;
+		}
+		catch (RuntimeException e)
+		{
+			throw new VTLNestedException("Exception while decoding row " + row + " with " + Arrays.toString(components), e);
+		}
+		try
+		{
 			return IntStream.range(0, components.length)
 				.mapToObj(i -> new SimpleEntry<>(components[i], scalarFromColumnValue(row.get(i), components[i])))
 				.collect(toDataPoint(lineage, getStructure()));
 		}
 		catch (RuntimeException e)
 		{
-			stack.printStackTrace();
-			throw new VTLNestedException("Exception while decoding row " + row + " with " + structure, e);
+			throw new VTLNestedException("Exception while decoding row " + row + " with " + Arrays.toString(components), e);
 		}
 	}
 
