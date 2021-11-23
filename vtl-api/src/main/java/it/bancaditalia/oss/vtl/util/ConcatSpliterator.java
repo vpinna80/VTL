@@ -94,7 +94,9 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	public boolean tryAdvance(Consumer<? super T> consumer)
 	{
 		while (index < array.length)
-			if (array[index].tryAdvance(consumer))
+		{
+			Spliterator<T> spliterator = array[index];
+			if (spliterator != null && spliterator.tryAdvance(consumer))
 			{
 				if (estimateSize != MAX_VALUE)
 					estimateSize--;
@@ -105,6 +107,7 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 				array[index] = null;
 				index = current++;
 			}
+		}
 		
 		return false;
 	}
