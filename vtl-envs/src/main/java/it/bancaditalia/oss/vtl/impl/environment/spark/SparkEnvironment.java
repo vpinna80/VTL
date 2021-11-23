@@ -19,16 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
+import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.createComponentsFromStruct;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.createMetadataForComponent;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getDataTypeForComponent;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.byName;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static org.apache.spark.sql.SaveMode.Overwrite;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.udf;
-import static scala.collection.JavaConverters.asScalaBuffer;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
@@ -38,8 +38,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import org.apache.spark.SparkConf;
@@ -50,7 +48,10 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.api.java.UDF1;
+import org.apache.spark.sql.catalyst.expressions.Literal;
+import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.UDTRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,9 +71,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -125,10 +123,7 @@ public class SparkEnvironment implements Environment
 			  .set("spark.executor.processTreeMetrics.enabled", "false")
 			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
 			  .set("spark.sql.datetime.java8API.enabled", "true")
-			  .set("spark.sql.shuffle.partitions", "16")
 			  .set("spark.sql.catalyst.dateType", "Instant")
-			  .set("spark.executor.instances", "16")
-			  .set("spark.executor.cores", "1")
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
 		
@@ -166,11 +161,9 @@ public class SparkEnvironment implements Environment
 			case "csv":
 				dataset = inferSchema(reader.format("csv").option("header", "true").load(parts[1]), name); 
 				break;
-			case "text": case "parquet": case "json": 
+			default: 
 				dataset = inferSchema(reader.format(parts[0]).load(parts[1]), name); 
 				break;
-			default: 
-				throw new UnsupportedOperationException("Unsupported dataset format: " + parts[0]);
 		}
 		
 		frames.put(name, dataset);
@@ -202,32 +195,20 @@ public class SparkEnvironment implements Environment
 		final DataSetMetadata metadata = ((DataSet) value).getMetadata();
 		final SparkDataSet dataSet = value instanceof SparkDataSet ? (SparkDataSet) value : new SparkDataSet(session, metadata, (DataSet) value);
 		Dataset<Row> dataFrame = dataSet.getDataFrame();
-		List<Column> headerLine = dataSet.getMetadata().stream()
-				.sorted((c1, c2) -> {
-					if (c1.is(Attribute.class) && !c2.is(Attribute.class))
-						return 1;
-					else if (c1.is(Identifier.class) && !c2.is(Identifier.class))
-						return -1;
-					else if (c1.is(Measure.class) && c2.is(Identifier.class))
-						return 1;
-					else if (c1.is(Measure.class) && c2.is(Attribute.class))
-						return -1;
-
-					String n1 = c1.getName(), n2 = c2.getName();
-					Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
-					Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
-					if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
-						return Integer.compare(Integer.parseInt(m1.group(2)), Integer.parseInt(m2.group(2)));
-					else
-						return n1.compareTo(n2);
-				}).map(DataStructureComponent::getName)
-				.map(dataFrame::col)
-				.collect(toList());
 		
 		try
 		{
 			LOGGER.info("Writing {} file {}...", parts[0], parts[1]);
-			dataFrame.select(asScalaBuffer(headerLine))
+			
+			// Add metadata in case it was lost
+			for (String name: dataFrame.columns())
+			{
+				final Optional<DataStructureComponent<?, ?, ?>> component = metadata.getComponent(name);
+				if (component.isPresent())
+					dataFrame = dataFrame.withColumn(name, dataFrame.col(name).as(name, createMetadataForComponent(component.get())));
+			}
+			
+			dataFrame.drop("$lineage$")
 				.write()
 				.format(parts[0])
 				.mode(Overwrite)
@@ -247,7 +228,19 @@ public class SparkEnvironment implements Environment
 	private SparkDataSet inferSchema(Dataset<Row> sourceDataFrame, String alias)
 	{
 		// infer structure from header
-		String[] fieldNames = sourceDataFrame.schema().fieldNames();
+		StructType schema = sourceDataFrame.schema();
+		
+		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
+		{
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(createComponentsFromStruct(schema)).build();
+			Column[] names = DataPointEncoder.getColumnsFromComponents(sourceDataFrame, structure).toArray(new Column[structure.size() + 1]);
+			Column lineage = new Column(Literal.create(LineageSparkUDT$.MODULE$.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT$.MODULE$));
+			return new SparkDataSet(session, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
+		}
+		
+		LOGGER.debug("Using header because scheme is missing metadata: {}", schema);
+		
+		String[] fieldNames = schema.fieldNames();
 		Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = CSVParseUtils.extractMetadata(fieldNames);
 		DataSetMetadata structure = new DataStructureBuilder(metaInfo.getKey()).build();
 		
@@ -267,10 +260,10 @@ public class SparkEnvironment implements Environment
 		Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
 				.map(structure::getComponent)
 				.map(Optional::get)
-				.sorted(byName())
+				.sorted(DataPointEncoder::sorter)
 				.map(c -> udf(valueMapper(c, masks.get(c), types.get(c)), types.get(c))
 						.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
-						.alias(c.getName()))
+						.as(c.getName(), createMetadataForComponent(c)))
 				.collect(toList())
 				.toArray(new Column[normalizedNames.length + 1]);
 		

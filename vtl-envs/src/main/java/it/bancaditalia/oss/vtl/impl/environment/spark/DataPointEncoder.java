@@ -25,10 +25,8 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.byName;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static org.apache.spark.sql.Encoders.BOOLEAN;
 import static org.apache.spark.sql.Encoders.DOUBLE;
 import static org.apache.spark.sql.Encoders.LOCALDATE;
@@ -47,16 +45,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.apache.spark.sql.Column;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -69,6 +75,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -129,10 +137,9 @@ public class DataPointEncoder implements Serializable
 			stack = e;
 		}
 
-		structure = new DataStructureBuilder(dataStructure).build();
-
-		components = dataStructure.toArray(new DataStructureComponent<?, ?, ?>[dataStructure.size()]);
-		Arrays.sort(components, DataStructureComponent.byName());
+		structure = dataStructure instanceof DataSetMetadata ? (DataSetMetadata) dataStructure : new DataStructureBuilder(dataStructure).build();
+		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
+		Arrays.sort(components, DataPointEncoder::sorter);
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(components));
 		StructType schemaNoLineage = new StructType(fields.toArray(new StructField[components.length]));
 		rowEncoderNoLineage = RowEncoder.apply(schemaNoLineage);
@@ -141,17 +148,77 @@ public class DataPointEncoder implements Serializable
 		rowEncoder = RowEncoder.apply(schema);
 	}
 
+	static Set<DataStructureComponent<?, ?, ?>> createComponentsFromStruct(StructType schema)
+	{
+		Set<DataStructureComponent<?, ?, ?>> result = new HashSet<>();
+		for (StructField field: schema.fields())
+		{
+			ValueDomainSubset<?, ?> domain = DOMAIN_DATATYPES.entrySet().stream()
+					.filter(e -> field.dataType().equals(e.getValue()))
+					.findAny()
+					.map(Entry::getKey)
+					.orElseThrow(() -> new UnsupportedOperationException("No VTL type corresponding to " + field.dataType()));
+			Class<? extends ComponentRole> role;
+			switch ((int) field.metadata().getLong("Role"))
+			{
+				case 1: role = Identifier.class; break;
+				case 2: role = Measure.class; break;
+				case 3: role = Attribute.class; break;
+				case 4: role = ViralAttribute.class; break;
+				default: throw new UnsupportedOperationException("No VTL role corresponding to metadata.");
+			}
+			result.add(DataStructureComponentImpl.of(field.name(), role, domain));
+		}
+		
+		return result;
+	}
+
 	static List<StructField> createStructFromComponents(DataStructureComponent<?, ?, ?>[] components)
 	{
-		return Arrays.stream(components)
-			.sorted(byName())
-			.map(DataPointEncoder::componentToField)
-			.collect(toCollection(ArrayList::new));
+		return structHelper(Arrays.stream(components), DataPointEncoder::componentToField);
 	}
 
 	static List<StructField> createStructFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		return createStructFromComponents(components.toArray(new DataStructureComponent<?, ?, ?>[components.size()]));
+		return structHelper(components.stream(), DataPointEncoder::componentToField);
+	}
+	
+	static List<String> getNamesFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	{
+		return structHelper(components.stream(), DataStructureComponent::getName);
+	}
+
+	static List<Column> getColumnsFromComponents(Dataset<Row> dataFrame, Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	{
+		return structHelper(components.stream(), c -> dataFrame.col(c.getName()));
+	}
+
+	private static <F> List<F> structHelper(Stream<? extends DataStructureComponent<?, ?, ?>> stream, SerFunction<? super DataStructureComponent<?, ?, ?>, F> mapper)
+	{
+		return stream
+			.sorted(DataPointEncoder::sorter)
+			.map(mapper)
+			.collect(toList());
+	}
+	
+	static int sorter(DataStructureComponent<?, ?, ?> c1, DataStructureComponent<?, ?, ?> c2)
+	{
+		if (c1.is(Attribute.class) && !c2.is(Attribute.class))
+			return 1;
+		else if (c1.is(Identifier.class) && !c2.is(Identifier.class))
+			return -1;
+		else if (c1.is(Measure.class) && c2.is(Identifier.class))
+			return 1;
+		else if (c1.is(Measure.class) && c2.is(Attribute.class))
+			return -1;
+
+		String n1 = c1.getName(), n2 = c2.getName();
+		Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
+		Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
+		if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
+			return Integer.compare(Integer.parseInt(m1.group(2)), Integer.parseInt(m2.group(2)));
+		else
+			return n1.compareTo(n2);
 	}
 
 	public Row encode(DataPoint dp)
@@ -159,7 +226,6 @@ public class DataPointEncoder implements Serializable
 		try
 		{
 			return Arrays.stream(components)
-				.sorted(byName())
 				.map(dp::get)
 				.map(ScalarValue::get)
 				.map(Serializable.class::cast)
@@ -206,22 +272,21 @@ public class DataPointEncoder implements Serializable
 	{
 		SerFunction<Object, ScalarValue<?, ?, ?, ?>> builder = DOMAIN_BUILDERS.get(component.getDomain());
 		if (builder != null)
-			try
-			{
-				return builder.apply(serialized);
-			}
-			catch (RuntimeException e)
-			{
-				throw new VTLNestedException("Error creating value for component " + component + " from " + serialized, e);
-			}
+			return builder.apply(serialized);
 		else
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("Unsupported decoding of domain " + component.getDomain());
 	}
 
 	static StructField componentToField(DataStructureComponent<?, ?, ?> component)
 	{
 		DataType type = getDataTypeForComponent(component);
+		Metadata metadata = createMetadataForComponent(component);
+		
+		return new StructField(component.getName(), type, component.is(NonIdentifier.class), metadata);
+	}
 
+	static Metadata createMetadataForComponent(DataStructureComponent<?, ?, ?> component)
+	{
 		MetadataBuilder metadataBuilder = new MetadataBuilder();
 		if (component.getRole() == Identifier.class)
 			metadataBuilder.putLong("Role", 1);
@@ -231,8 +296,7 @@ public class DataPointEncoder implements Serializable
 			metadataBuilder.putLong("Role", 3);
 		else if (component.getRole() == ViralAttribute.class)
 			metadataBuilder.putLong("Role", 4);
-		
-		return new StructField(component.getName(), type, component.is(NonIdentifier.class), metadataBuilder.build());
+		return metadataBuilder.build();
 	}
 
 	public Encoder<Row> getRowEncoderNoLineage()
@@ -252,9 +316,8 @@ public class DataPointEncoder implements Serializable
 		if (encoder != null)
 			return (Encoder<? extends Serializable>) encoder;
 		else
-			throw new UnsupportedOperationException(component.getDomain().toString());
+			throw new UnsupportedOperationException("Unsupported serialization for domain " + component.getDomain());
 	}
-
 	
 	static DataType getDataTypeForComponent(DataStructureComponent<?, ?, ?> component)
 	{
@@ -262,6 +325,6 @@ public class DataPointEncoder implements Serializable
 		if (type != null)
 			return type;
 		else
-			throw new UnsupportedOperationException(component.getDomain().toString());
+			throw new UnsupportedOperationException("Unsupported datatype for domain " + component.getDomain());
 	}
 }

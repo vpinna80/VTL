@@ -70,7 +70,7 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 			else if (zero instanceof ArrayList)
 			{
 				accEncoder = (Encoder<A>) Encoders.kryo(ArrayList.class);
-				resultEncoder = Encoders.kryo(Serializable[].class);
+				resultEncoder = accEncoder;
 			}
 			else
 				throw new UnsupportedOperationException("Spark encoder not found for " + zero.getClass().getName());
