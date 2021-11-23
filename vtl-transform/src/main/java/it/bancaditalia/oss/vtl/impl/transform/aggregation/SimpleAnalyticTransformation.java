@@ -45,7 +45,6 @@ import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -118,10 +117,11 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				throw new VTLException("Cannot order by " + orderingComponent.getName() + " because the component is used in partition by " + partitionBy);
 
 		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, windowCriterion);
-		Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = dataset.getComponents(Measure.class).stream()
+		Set<DataStructureComponent<NonIdentifier, ?, ?>> nonIDs = dataset.getComponents(NonIdentifier.class);
+		Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = nonIDs.stream()
 			.collect(toMapWithValues(k -> aggregation.getReducer()));
 		
-		return dataset.analytic(dataset.getComponents(Measure.class), clause, collectors);
+		return dataset.analytic(nonIDs, clause, collectors);
 	}
 
 	@Override
