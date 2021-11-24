@@ -127,7 +127,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		final Comparator<DataPoint> comparator = comparator(ordering);
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new FunctionDataSet<>(getMetadata(scheme), ds -> ds.streamByKeys(
+		return new FunctionDataSet<>((DataSetMetadata) getMetadata(scheme), ds -> ds.streamByKeys(
 				partitionIDs, 
 				toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
 				(partition, keyValues) -> rankPartition(scheme, partition, keyValues)
@@ -156,7 +156,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				
 			result.add(new DataPointBuilder(dp.getValues(Identifier.class))
 				.add(RANK_MEASURE, rankResult)
-				.build(getLineage(), getMetadata(scheme)));
+				.build(getLineage(), (DataSetMetadata) getMetadata(scheme)));
 		}
 		
 		return result.stream();
@@ -177,13 +177,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		};
 	}
 
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
-	}
-
-	private VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata opmeta = scheme.getMetadata(THIS);
 		if (opmeta instanceof ScalarValueMetadata)

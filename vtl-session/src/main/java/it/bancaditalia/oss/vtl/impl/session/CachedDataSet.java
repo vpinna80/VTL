@@ -47,6 +47,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ManagedBlocker;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
@@ -54,8 +55,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -92,7 +93,7 @@ public class CachedDataSet extends NamedDataSet
 		private final Semaphore semaphore = new Semaphore(1);
 		private final Map<Set<DataStructureComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>> cache = new ConcurrentHashMap<>();
 		
-		private transient volatile Thread lockingThread;
+		private transient AtomicReference<Thread> lockingRef = new AtomicReference<>();
 
 		public CacheWaiter()
 		{
@@ -105,8 +106,7 @@ public class CachedDataSet extends NamedDataSet
 						Set<DataStructureComponent<Identifier, ?, ?>> newSet = new HashSet<>(set);
 						newSet.add(key);
 						return Stream.of(set, newSet);
-					})
-					.collect(toCollection(ArrayList::new));
+					}).collect(toCollection(ArrayList::new));
 			for (Set<DataStructureComponent<Identifier, ?, ?>> keySet: accumulator)
 				cache.put(keySet, new SoftReference<>(null));
 		}
@@ -116,22 +116,26 @@ public class CachedDataSet extends NamedDataSet
 		{
 			LOGGER.trace("++++ Acquiring semaphore for {}", getAlias());
 			Thread currentThread = Thread.currentThread();
-			while (lockingThread != currentThread)
-				if (semaphore.tryAcquire(500, MILLISECONDS))
-					lockingThread = Thread.currentThread();
+			int count = 0;
+			Thread lockingThread;
+			while ((lockingThread = lockingRef.get()) != currentThread)
+				if (count++ > 0 && semaphore.tryAcquire(500, MILLISECONDS))
+					return lockingRef.compareAndSet(lockingThread, currentThread);
+				else if (count > 10)
+					return false;
 			return true;
 		}
 
 		@Override
 		public boolean isReleasable()
 		{
-			if (Thread.currentThread() == lockingThread)
+			if (Thread.currentThread() == lockingRef.get())
 				return true;
 			final boolean tryAcquire = semaphore.tryAcquire();
 			if (tryAcquire)
 			{
 				LOGGER.trace("++++ Acquired semaphore for {}", getAlias());
-				lockingThread = Thread.currentThread();
+				lockingRef.set(Thread.currentThread());
 			}
 			return tryAcquire;
 		}
@@ -156,8 +160,8 @@ public class CachedDataSet extends NamedDataSet
 		public void done()
 		{
 			LOGGER.trace("---- Releasing semaphore for {}", getAlias());
-			lockingThread = null;
 			semaphore.release();
+			lockingRef.set(null);
 		}
 	}
 	

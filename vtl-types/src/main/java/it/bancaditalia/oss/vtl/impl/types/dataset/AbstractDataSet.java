@@ -41,7 +41,6 @@ import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
-import static java.util.stream.Stream.concat;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
@@ -434,13 +433,22 @@ public abstract class AbstractDataSet implements DataSet
 
 		List<Set<DataPoint>> results = new ArrayList<>();
 		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> seen = newKeySet();
+		try (Stream<DataPoint> stream = stream())
+		{
+			results.add(stream.peek(dp -> seen.add(dp.getValues(ids))).collect(toConcurrentSet()));
+		}
+		
 		// eagerly compute the differences (one set at a time to avoid OutOfMemory)
 		for (DataSet other: others)
-			results.add(other.stream().filter(dp -> seen.add(dp.getValues(ids))).collect(toConcurrentSet()));
+			try (Stream<DataPoint> stream = other.stream())
+			{
+				results.add(stream.filter(dp -> seen.add(dp.getValues(ids))).collect(toConcurrentSet()));
+			}
 		
 		// concat all datapoints from all sets
-		return new FunctionDataSet<>(dataStructure, list -> concat(Stream.of(stream()), Utils.getStream(results).map(Utils::getStream))
-					.collect(concatenating(ORDERED)), results);
+		return new FunctionDataSet<>(dataStructure, list -> Utils.getStream(results)
+				.map(Utils::getStream)
+				.collect(concatenating(ORDERED)), results);
 	}
 	
 	/*

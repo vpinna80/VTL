@@ -21,12 +21,15 @@ package it.bancaditalia.oss.vtl.impl.transform;
 
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public abstract class TransformationImpl implements Transformation, Serializable
 {
@@ -56,4 +59,20 @@ public abstract class TransformationImpl implements Transformation, Serializable
 	}
 
 	protected abstract Lineage computeLineage();
+	
+	@Override
+	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
+	{
+		Map<Transformation, VTLValueMetadata> holder = scheme.getResultHolder(VTLValueMetadata.class);
+		VTLValueMetadata metadata = holder.get(this);
+		if (metadata == null)
+		{
+			metadata = computeMetadata(scheme);
+			holder.put(this, metadata);
+		}
+		
+		return metadata;
+	}
+
+	protected abstract VTLValueMetadata computeMetadata(TransformationScheme scheme);
 }

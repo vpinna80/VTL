@@ -167,12 +167,6 @@ public class ConditionalTransformation extends TransformationImpl
 				concat(thenExpr.getTerminals().stream(), elseExpr.getTerminals().stream()))
 					.collect(toSet());
 	}
-
-	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme scheme)
-	{
-		return scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
-	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{

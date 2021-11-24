@@ -58,18 +58,12 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSetMetadata metadata = getMetadata(scheme);
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 					Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 					map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
 					return map;
 				});
-	}
-
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

@@ -76,7 +76,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet dataset = (DataSet) getThisValue(scheme);
-		DataSetMetadata metadata = getMetadata(scheme);
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> oldIdentifiers = dataset.getComponents(Identifier.class);
 		Set<DataStructureComponent<Measure,?,?>> oldMeasures = dataset.getComponents(Measure.class);
@@ -92,12 +92,6 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 							.add(newID, StringValue.of(e.getKey().getName()))
 							.build(getLineage(), metadata))
 			).collect(concatenating(Utils.ORDERED)), dataset);
-	}
-
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

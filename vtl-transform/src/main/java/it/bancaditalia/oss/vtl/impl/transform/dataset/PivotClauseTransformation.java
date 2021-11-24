@@ -88,7 +88,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata value = getThisMetadata(session);
 

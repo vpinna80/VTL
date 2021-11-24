@@ -103,7 +103,7 @@ public class CheckTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet dataset = (DataSet) operand.eval(scheme);
-		DataSetMetadata metadata = getMetadata(scheme);
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		if (imbalanceExpr == null)
 			// TODO: INVALID
@@ -129,14 +129,8 @@ public class CheckTransformation extends TransformationImpl
 				.build(getLineage(), metadata), false);
 		}
 	}
-
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
-	}
 	
-	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata meta = operand.getMetadata(scheme),
 				imbalanceValue = imbalanceExpr != null ? imbalanceExpr.getMetadata(scheme) : null;

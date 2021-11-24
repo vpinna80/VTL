@@ -22,10 +22,8 @@ package it.bancaditalia.oss.vtl.impl.transform;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Collections.emptySet;
 
-import java.util.Map;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
@@ -77,26 +75,6 @@ public abstract class UnaryTransformation extends TransformationImpl
 	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata);
 
 	protected abstract VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata);
-
-	@Override
-	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
-	{
-		Map<Transformation, VTLValueMetadata> holder = scheme.getResultHolder(VTLValueMetadata.class);
-		VTLValueMetadata metadata = holder.get(this);
-		if (metadata == null)
-			try
-			{
-				metadata = computeMetadata(scheme); 
-				holder.put(this, metadata);
-			}
-			catch (RuntimeException e)
-			{
-				throw new VTLNestedException("In expression " + toString() + ": " + e.getMessage(), e); 
-			}
-		return metadata;
-	}
-
-	protected abstract VTLValueMetadata computeMetadata(TransformationScheme scheme);
 
 	@Override
 	public int hashCode()

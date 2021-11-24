@@ -45,6 +45,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -208,11 +209,11 @@ public class JoinTransformation extends TransformationImpl
 	{
 		LOGGER.debug("Preparing renamed datasets for join");
 		
-		Map<JoinOperand, DataSet> values = Utils.getStream(operands)
+		Map<JoinOperand, DataSet> values = operands.stream()
 			.collect(toMapWithValues(operand -> (DataSet) operand.getOperand().eval(scheme)));
 		
 		DataSet result;
-		DataSetMetadata metadata = getMetadata(scheme);
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		if (usingNames.isEmpty())
 		{
@@ -381,12 +382,6 @@ public class JoinTransformation extends TransformationImpl
 							return (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp));
 						})));
 	}
-
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
-	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
@@ -414,8 +409,9 @@ public class JoinTransformation extends TransformationImpl
 					throw new VTLSyntaxException("Join aliases must be unique: " + alias);
 				});
 
-		Map<JoinOperand, DataSetMetadata> datasetsMeta = operands.stream()
-				.collect(toMap(op -> op, op -> (DataSetMetadata) op.getOperand().getMetadata(scheme)));
+		Map<JoinOperand, DataSetMetadata> datasetsMeta = new HashMap<>();
+		for (JoinOperand op: operands)
+			datasetsMeta.put(op, (DataSetMetadata) op.getOperand().getMetadata(scheme));
 		
 		Optional<JoinOperand> caseAorB1 = isCaseAorB1(datasetsMeta);
 		Optional<JoinOperand> caseB2 = isCaseB2(caseAorB1, datasetsMeta);

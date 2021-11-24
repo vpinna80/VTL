@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.stream.Collectors.joining;
 
@@ -56,7 +57,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet operand = (DataSet) getThisValue(session);
-		DataSetMetadata metadata = getMetadata(session);
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata(session);
 		DataSetMetadata oldStructure = operand.getMetadata();
 		
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
@@ -70,14 +71,14 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 						.addAll(renames.entrySet().stream()
 								.map(splitting((oldName, newName) -> new SimpleEntry<>(newComponents.get(newName), 
 										dp.get(oldComponents.get(oldName)))))
-								.collect(SerCollectors.entriesToMap()))
+								.collect(entriesToMap()))
 						.delete(oldComponents.values())
 						.build(LineageNode.of(this, dp.getLineage()), metadata)
 				), operand);
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme session)
+	public DataSetMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata operand = getThisMetadata(session);
 		

@@ -42,7 +42,7 @@ public class CurrentDateOperand extends TransformationImpl implements LeafTransf
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme scheme)
+	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		return TIME_PERIOD_DAYS;
 	}

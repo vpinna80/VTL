@@ -25,7 +25,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransform
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +39,10 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Hierarchy;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -70,8 +69,6 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	private final Output output;
 	private final Hierarchy.CheckMode mode;
 	private final Input input;
-	
-	private final AtomicReference<DataSetMetadata> metadata = new AtomicReference<>();
 	
 //	private DataStructureComponent<? extends Measure, ?, ?> measure;
 //	private DataStructureComponent<?, ?, ?> ruleKey;
@@ -102,11 +99,8 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
-		if (metadata.get() != null)
-			return metadata.get();
-		
 		if (input == DATASET_PRIORITY)
 			throw new UnsupportedOperationException("check_hierarchy: " + input + " not supported");	
 
@@ -145,10 +139,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		if (output != INVALID)
 			builder = builder.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, Domains.BOOLEANDS));
 
-		metadata.compareAndSet(null, builder.build());
-		LOGGER.trace("Metadata: {}", metadata);
-		
-		return metadata.get();
+		return builder.build();
 	}
 
 	@Override

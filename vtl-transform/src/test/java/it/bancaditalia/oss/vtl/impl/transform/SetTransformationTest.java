@@ -23,8 +23,8 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOp
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.SETDIFF;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.SYMDIFF;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.UNION;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE5;
 import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE10;
+import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE5;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

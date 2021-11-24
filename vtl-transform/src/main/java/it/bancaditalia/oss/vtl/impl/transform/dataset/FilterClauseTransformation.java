@@ -69,7 +69,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
-		final DataSetMetadata metadata = getMetadata(scheme);
+		final DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 
 		return operand.filter(dp -> {
 			final DatapointScope dpScope = new DatapointScope(dp, metadata);
@@ -77,12 +77,6 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		});
 	}
 
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
-	}
-	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata filterMetadata = filterClause.getMetadata(scheme);

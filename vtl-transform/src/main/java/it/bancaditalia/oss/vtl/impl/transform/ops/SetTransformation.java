@@ -101,19 +101,19 @@ public class SetTransformation extends TransformationImpl
 	}
 
 	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
+	protected DataSetMetadata computeMetadata(TransformationScheme scheme)
 	{
-		List<VTLValueMetadata> meta = operands.stream()
+		List<VTLValueMetadata> allMetadata = operands.stream()
 				.map(t -> t.getMetadata(scheme))
 				.collect(toList());
 		
-		if (meta.stream().filter(m -> !(m instanceof DataSetMetadata)).findAny().isPresent())
+		if (allMetadata.stream().anyMatch(m -> !(m instanceof DataSetMetadata)))
 			throw new UnsupportedOperationException("In set operation expected all datasets but found a scalar"); 
 			
-		if (meta.stream().distinct().limit(2).count() != 1)
-			throw new UnsupportedOperationException("In set operation expected all datasets with equal structure but found: " + meta); 
+		if (allMetadata.stream().distinct().limit(2).count() != 1)
+			throw new UnsupportedOperationException("In set operation expected all datasets with equal structure but found: " + allMetadata); 
 
-		return (DataSetMetadata) meta.get(0);
+		return (DataSetMetadata) allMetadata.get(0);
 	}
 	
 	@Override

@@ -61,7 +61,7 @@ public class ConstantOperand extends TransformationImpl implements LeafTransform
 	}
 
 	@Override
-	public ScalarValueMetadata<?, ?> getMetadata(TransformationScheme scheme)
+	public ScalarValueMetadata<?, ?> computeMetadata(TransformationScheme scheme)
 	{
 		return metadata;
 	}

@@ -61,18 +61,12 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
 				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().as(Identifier.class), Entry::getValue));
 		
-		final DataSetMetadata metadata = getMetadata(scheme);
+		final DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		return new StreamWrapperDataSet(metadata, () -> operand.stream()
 				.filter(dp -> subspaceKeyValues.equals(dp.getValues(subspaceKeyValues.keySet(), Identifier.class)))
 				.map(dp -> new DataPointBuilder(dp)
 						.delete(subspaceKeyValues.keySet())
 						.build(LineageNode.of(this, dp.getLineage()), metadata)));
-	}
-
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

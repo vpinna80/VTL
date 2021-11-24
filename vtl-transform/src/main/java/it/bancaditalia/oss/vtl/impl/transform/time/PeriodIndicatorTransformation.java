@@ -102,7 +102,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata value;
 		if (operand == null)

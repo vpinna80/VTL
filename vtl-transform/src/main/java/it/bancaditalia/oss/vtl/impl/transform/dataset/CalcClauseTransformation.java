@@ -128,7 +128,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		}
 
 		@Override
-		public VTLValueMetadata getMetadata(TransformationScheme scheme)
+		public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 		{
 			return calcClause.getMetadata(scheme);
 		}
@@ -291,12 +291,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				(dpl, dpr) -> dpl.combine(this, dpr), false);
 	}
 
-	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
-	}
-	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata operand = getThisMetadata(scheme);

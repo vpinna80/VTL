@@ -120,7 +120,7 @@ public class ReplaceTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		try
 		{

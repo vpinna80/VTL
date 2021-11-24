@@ -122,12 +122,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			return operand.eval(session);
 		}
 
-		@Override
-		public VTLValueMetadata getMetadata(TransformationScheme scheme)
-		{
-			return operand.getMetadata(scheme);
-		}
-
 		public AggrClauseItem withGroupBy(GroupingClause groupingClause)
 		{
 			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupingClause, name, role));
@@ -173,6 +167,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		{
 			return LineageNode.of(this, operand.getLineage());
 		}
+
+		@Override
+		protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
+		{
+			return operand.getMetadata(scheme);
+		}
 	}
 
 	private final List<AggrClauseItem> aggrItems;
@@ -195,7 +195,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSetMetadata metadata = getMetadata(scheme);
+		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet operand = (DataSet) getThisValue(scheme);
 		
 		TransformationScheme thisScope = new ThisScope(operand, getLineage());
@@ -221,13 +221,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		return result;
 	}
 
-	@Override
-	public DataSetMetadata getMetadata(TransformationScheme scheme)
-	{
-		return (DataSetMetadata) scheme.getResultHolder(VTLValueMetadata.class).computeIfAbsent(this, t -> computeMetadata(scheme));
-	}
-	
-	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata meta = getThisMetadata(scheme);
 

@@ -147,7 +147,7 @@ public class InStrTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session),
 				start = startOperand.getMetadata(session), occurrence = occurrenceOperand.getMetadata(session);

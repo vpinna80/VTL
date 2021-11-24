@@ -144,7 +144,7 @@ public class SubstrTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	protected VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata source = exprOperand.getMetadata(session), start = startOperand.getMetadata(session),
 				len = lenOperand.getMetadata(session);

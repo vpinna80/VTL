@@ -83,7 +83,7 @@ public class CallTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme scheme)
+	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		Statement statement = scheme.getRule(operator);
 		if (statement instanceof NamedOperator)
