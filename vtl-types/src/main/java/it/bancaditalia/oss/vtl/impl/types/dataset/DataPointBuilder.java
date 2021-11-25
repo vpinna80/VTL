@@ -64,7 +64,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataPointBuilder
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(DataPointBuilder.class);
 
 	private final ConcurrentHashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
 
@@ -84,7 +84,6 @@ public class DataPointBuilder
 	{
 		if (built)
 			throw new IllegalStateException("DataPoint already built.");
-		LOGGER.trace("Datapoint@{} is {}", hashCode(), delegate);
 		return this;
 	}
 
@@ -156,7 +155,10 @@ public class DataPointBuilder
 		if (built)
 			throw new IllegalStateException("DataPoint already built");
 		built = true;
-		return new DataPointImpl(requireNonNull(lineage), requireNonNull(structure, () -> "DataSet structure is null for " + delegate), delegate);
+		
+		DataPoint dp = new DataPointImpl(requireNonNull(lineage), requireNonNull(structure, () -> "DataSet structure is null for " + delegate), delegate);
+		LOGGER.trace("Datapoint@{} is {}", hashCode(), dp);
+		return dp;
 	}
 
 	@Override

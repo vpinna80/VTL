@@ -62,6 +62,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils;
 import it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
@@ -73,6 +74,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -198,9 +200,15 @@ public class CSVFileEnvironment implements Environment
 							else
 								// trim unquoted string
 								token = token.trim();
+
 							// parse field value into a VTL scalar 
 							DataStructureComponent<?, ?, ?> component = metadata.get(count);
-							builder.add(component, CSVParseUtils.mapValue(component, token, masks.get(component)));
+							ScalarValue<?, ?, ?, ?> value = CSVParseUtils.mapValue(component, token, masks.get(component));
+							
+							if (value instanceof NullValue && component.is(Identifier.class))
+								throw new NullPointerException("Parsed a null value for identifier " + component + ": " + token);
+								
+							builder.add(component, value);
 							count++;
 						}
 						else
