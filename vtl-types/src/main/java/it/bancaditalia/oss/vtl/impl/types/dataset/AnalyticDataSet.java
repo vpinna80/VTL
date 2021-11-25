@@ -64,15 +64,15 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 	private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticDataSet.class);
 
 	private final DataSet source; 
-	private final Set<DataStructureComponent<Identifier, ?, ?>> ids;
+	private final Set<DataStructureComponent<Identifier, ?, ?>> partitionIds;
 	private final Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers;
 	private final int sup;
 	private final Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components;
 	private final int inf;
 	private final Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors;
-	private final SerCollector<DataPoint, ConcurrentSkipListSet<DataPoint>, ConcurrentSkipListSet<DataPoint>> toSortedSet;
+	private final SerCollector<DataPoint, ConcurrentSkipListSet<DataPoint>, ConcurrentSkipListSet<DataPoint>> sortingCollector;
 
-	public AnalyticDataSet(DataSet source, DataSetMetadata newStructure, Set<DataStructureComponent<Identifier, ?, ?>> ids,
+	public AnalyticDataSet(DataSet source, DataSetMetadata newStructure, Set<DataStructureComponent<Identifier, ?, ?>> partitionIds,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers,
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
@@ -83,32 +83,32 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		super(newStructure);
 		
 		this.source = source;
-		this.ids = ids;
+		this.partitionIds = partitionIds;
 		this.finishers = finishers;
 		this.sup = sup;
 		this.components = components;
 		this.inf = inf;
 		this.collectors = collectors;
-		this.toSortedSet = sortingCollector;
+		this.sortingCollector = sortingCollector;
 	}
 
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		return source.streamByKeys(ids, toSortedSet, (part, keyValues) -> applyToWindow(part))
+		return source.streamByKeys(partitionIds, sortingCollector, (window, keyValues) -> applyToWindow(window))
 				.collect(concatenating(ORDERED));
 	}
 
-	private Stream<DataPoint> applyToWindow(ConcurrentSkipListSet<DataPoint> part)
+	private Stream<DataPoint> applyToWindow(ConcurrentSkipListSet<DataPoint> windowSet)
 	{
 		// Sorted window
-		DataPoint[] partArray = part.toArray(new DataPoint[part.size()]);
+		DataPoint[] window = windowSet.toArray(new DataPoint[windowSet.size()]);
 		
-		IntStream indexes = IntStream.range(0, partArray.length);
+		IntStream indexes = IntStream.range(0, window.length);
 		if (!Utils.SEQUENTIAL)
 			indexes = indexes.parallel();
 		
-		return indexes.mapToObj(index -> applyAtIndex(partArray, index))
+		return indexes.mapToObj(index -> applyAtIndex(window, index))
 			.map(splitting(AnalyticDataSet::explode))
 			.collect(concatenating(ORDERED))
 			.map(splitting((values, dp) -> new DataPointBuilder(dp)
@@ -128,13 +128,22 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 					// Accumulator: combine all the values for a measure with each of the existing results
 					(a, l) -> {
 						Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> results = new HashSet<>();
-						for (Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> acc: a)
+						if (a.isEmpty())
 							for (Entry<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> e: l)
 							{
-								Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> combination = new HashMap<>(acc);
+								Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> combination = new HashMap<>();
 								combination.put(e.getKey(), e.getValue());
 								results.add(combination);
-							};
+							}
+						else
+							for (Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> acc: a)
+								for (Entry<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> e: l)
+								{
+									Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> combination = new HashMap<>(acc);
+									combination.put(e.getKey(), e.getValue());
+									results.add(combination);
+								};
+						
 						a.clear();
 						a.addAll(results);						
 					}, 

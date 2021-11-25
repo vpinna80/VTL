@@ -141,25 +141,35 @@ public abstract class AbstractDataSet implements DataSet
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class), toConcurrentSet()));
 		}
 		
-		return filteredMappedJoinWithIndex(this, metadata, predicate, mergeOp, commonIds, index, leftJoin);
+		return new AbstractDataSet(metadata)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return AbstractDataSet.this.stream()
+						.map(dpThis -> flatMapDataPoint(predicate, mergeOp, commonIds, index, leftJoin, dpThis))
+						.collect(concatenating(ORDERED));
+			}
+		};
 	}
 
-	protected static DataSet filteredMappedJoinWithIndex(DataSet streamed, DataSetMetadata metadata, BiPredicate<DataPoint, DataPoint> predicate, 
-			BinaryOperator<DataPoint> mergeOp, Set<DataStructureComponent<Identifier, ?, ?>> commonIds, 
-			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> indexed, boolean leftJoin)
+	protected static Stream<DataPoint> flatMapDataPoint(BiPredicate<DataPoint, DataPoint> predicate,
+			BinaryOperator<DataPoint> mergeOp, Set<DataStructureComponent<Identifier, ?, ?>> commonIds,
+			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> indexed,
+			boolean leftJoin, DataPoint dpThis)
 	{
-		return flatMapInternal(streamed, metadata, dpThis -> {
-					Collection<DataPoint> otherSubGroup = indexed.get(dpThis.getValues(commonIds, Identifier.class));
-					if (otherSubGroup == null)
-						if (leftJoin)
-							return Stream.of(mergeOp.apply(dpThis, null));
-						else
-							return Stream.<DataPoint>empty();
-					else
-						return otherSubGroup.stream()
-							.filter(dpOther -> predicate.test(dpThis, dpOther))
-							.map(dpOther -> mergeOp.apply(dpThis, dpOther)); 
-				});
+		Collection<DataPoint> otherSubGroup = indexed.get(dpThis.getValues(commonIds, Identifier.class));
+		if (otherSubGroup == null)
+			if (leftJoin)
+				return Stream.of(mergeOp.apply(dpThis, null));
+			else
+				return Stream.<DataPoint>empty();
+		else
+			return otherSubGroup.stream()
+				.filter(dpOther -> predicate.test(dpThis, dpOther))
+				.map(dpOther -> mergeOp.apply(dpThis, dpOther));
 	}
 
 	@Override
@@ -177,20 +187,6 @@ public abstract class AbstractDataSet implements DataSet
 				.build(lineageOperator.apply(dp), metadata);
 		
 		return new MappedDataSet(metadata, this, extendingOperator);
-	}
-
-	private static AbstractDataSet flatMapInternal(DataSet source, DataSetMetadata metadata, SerFunction<DataPoint, Stream<DataPoint>> operator)
-	{
-		return new AbstractDataSet(metadata)
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected Stream<DataPoint> streamDataPoints()
-			{
-				return source.stream().map(operator).collect(concatenating(ORDERED));
-			}
-		};
 	}
 
 	@Override

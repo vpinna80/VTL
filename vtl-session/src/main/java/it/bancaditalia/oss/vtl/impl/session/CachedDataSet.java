@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.session;
 
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
@@ -55,6 +57,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -284,7 +287,20 @@ public class CachedDataSet extends NamedDataSet
 
 		BiPredicate<DataPoint, DataPoint> newPredicate = (a, b) -> predicate.test(b, a);
 		BinaryOperator<DataPoint> newMergeOp = (a, b) -> mergeOp.apply(b, a);
-		return filteredMappedJoinWithIndex(other, metadata, newPredicate, newMergeOp, commonIds, value, leftJoin);
+		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> finalValue = value;
+		
+		return new AbstractDataSet(metadata)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return other.stream()
+						.map(dpThis -> flatMapDataPoint(newPredicate, newMergeOp, commonIds, finalValue, leftJoin, dpThis))
+						.collect(concatenating(ORDERED));
+			}
+		};
 	}
 
 	private boolean lock()
