@@ -570,9 +570,9 @@ public class SparkDataSet extends AbstractDataSet
 	}
 	
 	@Override
-	public DataSet union(DataSet... others)
+	public DataSet union(List<DataSet> others)
 	{
-		List<Dataset<Row>> allSparkDs = Stream.concat(Stream.of(this), Arrays.stream(others))
+		List<Dataset<Row>> allSparkDs = Stream.concat(Stream.of(this), others.stream())
 				.map(other -> other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other))
 				.map(sds -> sds.dataFrame)
 				.collect(toList());

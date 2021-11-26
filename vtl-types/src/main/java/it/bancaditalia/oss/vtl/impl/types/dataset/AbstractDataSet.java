@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
@@ -31,9 +30,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
-import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
-import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
@@ -50,7 +47,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
@@ -71,13 +68,13 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerConsumer;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -274,9 +271,9 @@ public abstract class AbstractDataSet implements DataSet
 		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
 
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = clause.getPartitioningIds();
+		Set<DataStructureComponent<Identifier, ?, ?>> partitionIds = clause.getPartitioningIds();
 		
-		Comparator<DataPoint> comparator = (dp1, dp2) -> {
+		Comparator<DataPoint> orderBy = (dp1, dp2) -> {
 				for (SortCriterion criterion: clause.getSortCriteria())
 				{
 					int res = dp1.get(criterion.getComponent()).compareTo(dp2.get(criterion.getComponent()));
@@ -287,34 +284,16 @@ public abstract class AbstractDataSet implements DataSet
 				return 0;
 			};
 
-		int inf, sup;
-		if (clause.getWindowCriterion() != null)
-		{
-			LimitCriterion infBound = clause.getWindowCriterion().getInfBound();
-			LimitCriterion supBound = clause.getWindowCriterion().getSupBound();
-			inf = (infBound.getDirection() == PRECEDING ? -1 : 1) * (int) infBound.getCount(); 
-			sup = (supBound.getDirection() == PRECEDING ? -1 : 1) * (int) supBound.getCount();
-		}
-		else
-		{
-			inf = Integer.MIN_VALUE;
-			sup = Integer.MAX_VALUE;
-		}
-		
-		SerCollector<DataPoint, ConcurrentSkipListSet<DataPoint>, ConcurrentSkipListSet<DataPoint>> toSortedSet = SerCollector.of(
-				() -> new ConcurrentSkipListSet<>(comparator), ConcurrentSkipListSet::add, 
-				(a, b) -> { a.addAll(b); return a; }, EnumSet.of(CONCURRENT, IDENTITY_FINISH, UNORDERED));
-		
 		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
 				.removeComponents(components.keySet())
 				.addComponents(components.values())
 				.build();
 		
-		return new AnalyticDataSet<>(this, newStructure, ids, collectors, finishers, components, inf, sup, toSortedSet);
+		return new AnalyticDataSet<>(this, newStructure, partitionIds, orderBy, clause.getWindowCriterion(), collectors, finishers, components);
 	}
 	
 	@Override
-	public DataSet union(DataSet... others)
+	public DataSet union(List<DataSet> others)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getComponents(Identifier.class);
 		for (DataSet other: others)
@@ -328,11 +307,20 @@ public abstract class AbstractDataSet implements DataSet
 			results.add(stream.peek(dp -> seen.add(dp.getValues(ids))).collect(toConcurrentSet()));
 		}
 		
-		// eagerly compute the differences (one set at a time to avoid OutOfMemory)
+		// eagerly compute the differences (one set at a time to avoid OutOfMemory and preserve "leftmost rule")
 		for (DataSet other: others)
 			try (Stream<DataPoint> stream = other.stream())
 			{
-				results.add(stream.filter(dp -> seen.add(dp.getValues(ids))).collect(toConcurrentSet()));
+				Stream<DataPoint> stream2 = stream;
+				if (LOGGER.isTraceEnabled())
+					stream2 = stream2.peek(dp -> {
+						if (seen.contains(dp.getValues(ids)))
+							LOGGER.trace("Union: Found a duplicated datapoint in {}: {}", other, dp);
+					});
+
+				results.add(stream2
+						.filter(dp -> seen.add(dp.getValues(ids)))
+						.collect(toConcurrentSet()));
 			}
 		
 		// concat all datapoints from all sets
@@ -357,18 +345,30 @@ public abstract class AbstractDataSet implements DataSet
 	public final Stream<DataPoint> stream()
 	{
 		LOGGER.debug("Requested streaming of {}", this);
-		if (LOGGER.isTraceEnabled())
-			try (Stream<DataPoint> stream = streamDataPoints())
-			{
-				Map<Map<?, ?>, Integer> seen = new HashMap<>();
-				LOGGER.trace("START {}", this);
-				stream.sequential().peek(dp -> seen.merge(dp.getValues(Identifier.class), 1, Integer::sum)).map(Object::toString).map(s -> "    " + s).forEach(LOGGER::trace);
-				for (Entry<Map<?, ?>, Integer> keyCount: seen.entrySet())
-					if (keyCount.getValue() > 1)
-						throw new IllegalStateException("Duplicated keys " + keyCount.getKey());
-				LOGGER.trace("STOP {}", this);
-			}
-		return streamDataPoints().onClose(() -> LOGGER.trace("Closing stream for {}", this));
+		
+		Stream<DataPoint> stream = streamDataPoints();
+		if (LOGGER.isTraceEnabled() && (!(this instanceof NamedDataSet) || !((NamedDataSet) this).getAlias().startsWith("csv:")))
+		{
+			AtomicBoolean dontpeek = new AtomicBoolean(false);
+			Map<Map<?, ?>, Integer> seen = new HashMap<>();
+			stream = stream.peek(dp -> {
+					if (!dontpeek.get() && !dp.getLineage().toString().startsWith("csv:"))
+					{
+						if (this instanceof NamedDataSet)
+							LOGGER.trace("Dataset {} output datapoint {}", ((NamedDataSet) this).getAlias(),  dp);
+						else
+							LOGGER.trace("Dataset {} output datapoint {}", dp.getLineage(), dp);
+						Map<?, ?> keyVals = dp.getValues(Identifier.class);
+						int times = seen.merge(keyVals, 1, Integer::sum);
+						if (times > 1)
+							throw new IllegalStateException("Keys " + keyVals + " appear " + times + " times.");
+					}
+					else
+						dontpeek.set(true);
+				});
+		}
+		
+		return stream.onClose(() -> LOGGER.trace("Closing stream for {}", this));
 	}
 
 	protected abstract Stream<DataPoint> streamDataPoints();
@@ -376,14 +376,35 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public DataSet setDiff(DataSet right)
 	{
-		return new BiFunctionDataSet<>(getMetadata(), (l, r) -> {
+		return new FunctionDataSet<>(getMetadata(), r -> {
 			Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
-			try (Stream<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> stream = r.stream().map(dp -> dp.getValues(Identifier.class)))
+			try (Stream<DataPoint> stream = r.stream())
 			{
-				index = stream.collect(toConcurrentSet());
+				index = stream.map(dp -> dp.getValues(Identifier.class))
+						.collect(toConcurrentSet());
 			}
 			
-			return filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
-		}, this, right);
+			return peekIfTrace(dp -> {
+					final Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keys = dp.getValues(Identifier.class);
+					LOGGER.trace("Setdiff: {} datapoint with keys {}.", index.contains(keys) ? "removed" : "passed", keys);
+				}).filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
+		}, right);
+	}
+	
+	private AbstractDataSet peekIfTrace(SerConsumer<DataPoint> consumer)
+	{
+		if (!LOGGER.isTraceEnabled())
+			return this;
+		
+		return new AbstractDataSet(dataStructure) 
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return AbstractDataSet.this.stream().sequential().peek(consumer);
+			}
+		};
 	}
 }

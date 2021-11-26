@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static java.util.stream.Collectors.joining;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -95,7 +96,13 @@ public class SetTransformation extends TransformationImpl
 		// Special case for UNION as it has the largest memory requirements
 		else
 		{
-			DataSet[] datasets = operands.stream().skip(1).map(op -> (DataSet) op.eval(scheme)).collect(toList()).toArray(new DataSet[0]);
+			List<DataSet> datasets = new ArrayList<>();
+			boolean first = true;
+			for (Transformation operand: operands)
+				if (!first)
+					datasets.add((DataSet) operand.eval(scheme));
+				else
+					first = false;
 			return ((DataSet) operands.get(0).eval(scheme)).union(datasets);
 		}
 	}

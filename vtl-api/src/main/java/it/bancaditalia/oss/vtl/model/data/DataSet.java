@@ -26,6 +26,7 @@ import static java.util.Collections.singletonMap;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -305,7 +306,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param others The datasets to perform the union with
 	 * @return The result of the union. 
 	 */
-	public DataSet union(DataSet... others);
+	public DataSet union(List<DataSet> others);
 
 	/**
 	 * Creates a new dataset as containing all the datapoints of this dataset that don't have the same identifiers as the ones in the other dataset.

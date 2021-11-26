@@ -60,7 +60,7 @@ public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> 
 	@Override
 	public String toString()
 	{
-		return "null";
+		return "#NULL#";
 	}
 
 	@Override

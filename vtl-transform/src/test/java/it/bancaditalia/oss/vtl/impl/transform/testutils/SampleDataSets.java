@@ -48,6 +48,7 @@ import static org.mockito.Mockito.mock;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -204,7 +205,7 @@ public enum SampleDataSets implements DataSet
 	}
 	
 	@Override
-	public DataSet union(DataSet... others)
+	public DataSet union(List<DataSet> others)
 	{
 		return dataset.union(others);
 	}
