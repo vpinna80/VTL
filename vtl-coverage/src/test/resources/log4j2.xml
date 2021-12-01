@@ -43,8 +43,7 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="it.bancaditalia.oss.vtl.impl.session" level="trace" />
-		<Logger name="it.bancaditalia.oss.vtl.impl.types.dataset.AnalyticDataSet" level="trace" />
+		<Logger name="it.bancaditalia.oss.vtl" level="trace" />
 
 		<Root level="warn">
 			<AppenderRef ref="STDERR1" />

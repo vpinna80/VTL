@@ -26,14 +26,24 @@ import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransfor
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.SINGLE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
+import static java.util.stream.Collectors.groupingBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,10 +59,12 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class FillTimeSeriesTransformationTest
 {
@@ -92,24 +104,47 @@ public class FillTimeSeriesTransformationTest
 		DataStructureComponent<Identifier, EntireDateDomainSubset, DateDomain> time_id = computedResult.getComponent("date_1", Identifier.class, DATEDS).get();
 		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> string_id = computedResult.getComponent("string_1", Identifier.class, STRINGDS).get();
 		
-		Collection<List<DataPoint>> splitResult = computedResult.stream().sequential()
-				.sorted((dp1, dp2) -> (dp1.get(time_id)).compareTo(dp2.get(time_id)))
-				.collect(Collectors.groupingBy(dp -> dp.get(string_id).get().toString()))
-				.values();
-		
-		
-		for (List<DataPoint> series: splitResult)
+		if (mode == SINGLE)
 		{
-			DateValue<?> prev = null;
-			for (DataPoint dp: series)
+			Collection<List<DataPoint>> splitResult = computedResult.stream().sequential()
+				.sorted((dp1, dp2) -> (dp1.get(time_id)).compareTo(dp2.get(time_id)))
+				.collect(groupingBy(dp -> dp.get(string_id).get().toString()))
+				.values();
+			
+			for (List<DataPoint> series: splitResult)
 			{
-				DateValue<?> curr = (DateValue<?>) dp.get(time_id);
-				if (prev != null)
-					assertTrue(prev.compareTo(curr) == 0, "Found hole: " + prev + " -- " + curr);
-				else
-					prev = curr;
-				
-				prev = prev.increment(1);
+				DateValue<?> prev = null;
+				for (DataPoint dp: series)
+				{
+					DateValue<?> curr = (DateValue<?>) dp.get(time_id);
+					if (prev != null)
+						assertTrue(prev.compareTo(curr) == 0, "Found hole: " + prev + " -- " + curr);
+					else
+						prev = curr;
+					
+					prev = prev.increment(1);
+				}
+			}
+		}
+		else
+		{
+			ConcurrentMap<ScalarValue<?, ?, ?, ?>, Long> results = computedResult.stream()
+				.collect(groupingByConcurrent(dp -> dp.get(time_id), counting()));
+			
+			long nSeries = results.values().stream().mapToLong(a -> a).max().getAsLong();
+			
+			Entry<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>> minMax = Utils.getStream(results.keySet())
+				.collect(teeing(
+						collectingAndThen(minBy(ScalarValue::compareTo), Optional::get),
+						collectingAndThen(minBy(ScalarValue::compareTo), Optional::get),
+						SimpleEntry::new));
+			
+			DateValue<?> curr = (DateValue<?>) minMax.getKey();
+			while (curr.compareTo(minMax.getValue()) < 0)
+			{
+				assertNotNull(results.get(curr), "Found hole: " + curr);
+				assertEquals(nSeries, results.get(curr), "Found hole: " + curr);
+				curr = curr.increment(1);
 			}
 		}
 	}

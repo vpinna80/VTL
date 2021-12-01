@@ -55,8 +55,6 @@ public class AggregateTransformationTest
 {
 	public static Stream<Arguments> test()
 	{
-		// "Filled String", "    Leading spaces", "Trailing spaces    ", "    Leading and trailing     ", "\"Quoted\" 'String'", "\t\b \n\r\f"
-
 		return Stream.of(
 				Arguments.of(SUM, SAMPLE5,  69L),
 				Arguments.of(SUM, SAMPLE6,  141L),

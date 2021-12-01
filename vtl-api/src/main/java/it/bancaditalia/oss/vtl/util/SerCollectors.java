@@ -109,7 +109,7 @@ public class SerCollectors
                 a -> a[0], emptySet());
     }
 
-    public static <T, U, A, R> SerCollector<T, A, R> mapping(SerFunction<T, ? extends U> mapper, SerCollector<? super U, A, R> downstream)
+    public static <T, U, A, R> SerCollector<T, ?, R> mapping(SerFunction<? super T, ? extends U> mapper, SerCollector<? super U, A, R> downstream)
     {
         SerBiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
         return new SerCollector<>(downstream.supplier(), (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
@@ -199,7 +199,7 @@ public class SerCollectors
 		return new SerCollector<>(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
 	}
 
-    public static <T extends Serializable> SerCollector<T, ? extends SerConsumer<T>, Optional<T>> minBy(Comparator<? super T> comparator)
+    public static <T extends Serializable> SerCollector<T, ?, Optional<T>> minBy(Comparator<? super T> comparator)
     {
         return reducing(SerBinaryOperator.minBy(comparator));
     }
@@ -271,8 +271,8 @@ public class SerCollectors
                 a -> Optional.ofNullable(a.get()), emptySet());
     }
 
-    public static <T, A1, A2, R1, R2, R> SerCollector<T, PairBox<T, A1, A2, R1, R2, R>, R> teeing(SerCollector<? super T, A1, R1> downstream1, 
-    		SerCollector<? super T, A2, R2> downstream2, SerBiFunction<R1, R2, R> merger) 
+    public static <T, R1, R2, R> SerCollector<T, ?, R> teeing(SerCollector<? super T, ?, R1> downstream1, 
+    		SerCollector<? super T, ?, R2> downstream2, SerBiFunction<R1, R2, R> merger) 
     {
         EnumSet<Characteristics> characteristics = EnumSet.noneOf(Characteristics.class);
         characteristics.addAll(downstream1.characteristics());

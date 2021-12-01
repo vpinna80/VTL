@@ -44,7 +44,6 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 
@@ -270,25 +269,72 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 			SerCollector<DataPoint, ?, TT> groupCollector,
 			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
 	
+	/**
+	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet.
+	 * Each application can produce one or more results that will be exploded into multiple datapoints. 
+	 * 
+	 * @param <TT> The intermediate result of a single analytic function on one window
+	 * @param components A map from source components to result components 
+	 * @param windowSpec The clause specifying the window 
+	 * @param collectors Collectors that compute the intermediate results for each source component and window
+	 * @param finishers Finishers to transform intermediate results and partition keys into a collection of new values
+	 * 
+	 * @return The dataset result of the analytic invocation
+	 */
 	public <TT> DataSet analytic(Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components, 
-			WindowClause clause, Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
+			WindowClause windowSpec, Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers);
 
-	public default <TT> DataSet analytic(DataStructureComponent<?, ?, ?> measure, 
-			WindowClause clause, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT> collector, 
+	/**
+	 * Creates a new DataSet by applying a window function over a single component of this DataSet. 
+	 * Each application can produce one or more results that will be exploded into multiple datapoints. 
+	 *  
+	 * @param <TT> The intermediate result of the analytic function on one window
+	 * @param component The source component 
+	 * @param windowSpec The clause specifying the window 
+	 * @param collector Collector that compute the intermediate result for each window
+	 * @param finisher Finisher to transform intermediate result and partition keys into a collection of new values
+	 * 
+	 * @return The dataset result of the analytic invocation
+	 */
+	public default <TT> DataSet analytic(DataStructureComponent<?, ?, ?> component, 
+			WindowClause windowSpec, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT> collector, 
 			SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
 	{
-		return analytic(singletonMap(measure, measure), clause, singletonMap(measure, collector), singletonMap(measure, finisher));
+		return analytic(singletonMap(component, component), windowSpec, singletonMap(component, collector), singletonMap(component, finisher));
 	}
-	
-	public default <TT> DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause clause,
+
+	/**
+	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet. 
+	 * Each application can produce one or more results that will be exploded into multiple datapoints. 
+	 * 
+	 * @param <TT> The intermediate result of a single analytic function on one window
+	 * @param components The set of source components. Result components will be the same. 
+	 * @param windowSpec The clause specifying the window 
+	 * @param collectors Collectors that compute the intermediate results for each source component and window
+	 * @param finishers Finishers to transform intermediate results and partition keys into a collection of new values
+	 * 
+	 * @return The dataset result of the analytic invocation
+	 */
+	public default <TT> DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause windowSpec,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
 	{
-		return analytic(components.stream().collect(SerCollectors.toMapWithValues(k -> k)), clause, collectors, finishers);
+		return analytic(components.stream().collect(toMapWithValues(k -> k)), windowSpec, collectors, finishers);
 	}
 
-	public default DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause clause,
+	/**
+	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet.
+	 * Each window function will produce a single result value and the result will have the same cardinality as this dataset.
+	 * This is the standard VTL analytic invocation.
+	 * 
+	 * @param components The set of source components. Result components will be the same. 
+	 * @param windowSpec The clause specifying the window 
+	 * @param collectors Collectors that compute the results for each source component and window
+	 * 
+	 * @return The dataset result of the analytic invocation
+	 */
+	public default DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause windowSpec,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors)
 	{
 		Map<? extends DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>> measures = components.stream()
@@ -296,7 +342,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 		Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = components.stream()
 				.collect(toMapWithValues(measure -> (value, originalValue) -> singleton(value)));
 		
-		return analytic(measures, clause, collectors, finishers);
+		return analytic(measures, windowSpec, collectors, finishers);
 	}
 
 	/**
