@@ -192,7 +192,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.1.0</revision>
+		<revision>1.1.1</revision>
 		<sdmx.version>2.3.3</sdmx.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -206,7 +206,7 @@
 		<spark.version>3.1.2</spark.version>
 		<tycho.version>2.1.0</tycho.version>
 		<slf4j.version>1.7.26</slf4j.version>
-		<log4j.version>2.13.3</log4j.version>
+		<log4j.version>2.16.0</log4j.version>
 		<jetty.version>9.4.43.v20210629</jetty.version>
 		<junit.version>5.6.1</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
@@ -370,8 +370,10 @@
 			</dependency>
 			<dependency>
 				<groupId>org.apache.logging.log4j</groupId>
-				<artifactId>log4j-web</artifactId>
+				<artifactId>log4j-bom</artifactId>
 				<version>${log4j.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.junit.jupiter</groupId>
