@@ -133,14 +133,14 @@ public class FillTimeSeriesTransformationTest
 			
 			long nSeries = results.values().stream().mapToLong(a -> a).max().getAsLong();
 			
-			Entry<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>> minMax = Utils.getStream(results.keySet())
+			Entry<?, ?> minMax = Utils.getStream(results.keySet())
 				.collect(teeing(
 						collectingAndThen(minBy(ScalarValue::compareTo), Optional::get),
 						collectingAndThen(minBy(ScalarValue::compareTo), Optional::get),
 						SimpleEntry::new));
 			
 			DateValue<?> curr = (DateValue<?>) minMax.getKey();
-			while (curr.compareTo(minMax.getValue()) < 0)
+			while (curr.compareTo((ScalarValue<?, ?, ?, ?>) minMax.getValue()) < 0)
 			{
 				assertNotNull(results.get(curr), "Found hole: " + curr);
 				assertEquals(nSeries, results.get(curr), "Found hole: " + curr);

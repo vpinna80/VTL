@@ -272,7 +272,7 @@ public class SerCollectors
     }
 
     public static <T, R1, R2, R> SerCollector<T, ?, R> teeing(SerCollector<? super T, ?, R1> downstream1, 
-    		SerCollector<? super T, ?, R2> downstream2, SerBiFunction<R1, R2, R> merger) 
+    		SerCollector<? super T, ?, R2> downstream2, SerBiFunction<? super R1, ? super R2, R> merger) 
     {
         EnumSet<Characteristics> characteristics = EnumSet.noneOf(Characteristics.class);
         characteristics.addAll(downstream1.characteristics());
