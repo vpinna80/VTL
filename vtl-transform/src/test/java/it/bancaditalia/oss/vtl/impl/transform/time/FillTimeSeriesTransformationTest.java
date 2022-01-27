@@ -30,6 +30,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
 import static java.util.stream.Collectors.groupingBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -131,12 +132,12 @@ public class FillTimeSeriesTransformationTest
 			ConcurrentMap<ScalarValue<?, ?, ?, ?>, Long> results = computedResult.stream()
 				.collect(groupingByConcurrent(dp -> dp.get(time_id), counting()));
 			
-			long nSeries = results.values().stream().mapToLong(a -> a).max().getAsLong();
+			long nSeries = results.values().stream().mapToLong(Long::longValue).max().getAsLong();
 			
 			Entry<?, ?> minMax = Utils.getStream(results.keySet())
 				.collect(teeing(
 						collectingAndThen(minBy(ScalarValue::compareTo), Optional::get),
-						collectingAndThen(minBy(ScalarValue::compareTo), Optional::get),
+						collectingAndThen(maxBy(ScalarValue::compareTo), Optional::get),
 						SimpleEntry::new));
 			
 			DateValue<?> curr = (DateValue<?>) minMax.getKey();
