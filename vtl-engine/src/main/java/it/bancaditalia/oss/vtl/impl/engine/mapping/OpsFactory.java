@@ -135,7 +135,7 @@ public class OpsFactory implements Serializable
 		paramMappers.put(Exprparam.class, (b, c, d) -> parseExprParam(b, c, (Exprparam) d));
 
 		JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
-		Enumeration<URL> files = this.getClass().getClassLoader().getResources(MAPPING_FILENAME);
+		Enumeration<URL> files = Thread.currentThread().getContextClassLoader().getResources(MAPPING_FILENAME);
 		if (!files.hasMoreElements())
 		{
 			IllegalStateException ex = new IllegalStateException("Cannot find VTL mapping file, " + MAPPING_FILENAME);

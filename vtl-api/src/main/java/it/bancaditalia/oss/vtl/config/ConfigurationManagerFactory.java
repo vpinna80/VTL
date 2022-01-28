@@ -79,7 +79,7 @@ public class ConfigurationManagerFactory
 		
 		try 
 		{
-	        Class.forName(implementationClass.getName(), true, implementationClass.getClassLoader());
+	        Class.forName(implementationClass.getName(), true, Thread.currentThread().getContextClassLoader());
 	    } 
 		catch (ClassNotFoundException e) 
 		{
