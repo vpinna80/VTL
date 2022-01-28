@@ -99,6 +99,21 @@
 			</modules>
 		</profile>
 		<profile>
+			<id>with-r</id>
+		</profile>
+		<profile>
+			<id>with-spark</id>
+		</profile>
+		<profile>
+			<id>with-cli</id>
+		</profile>
+		<profile>
+			<id>with-python</id>
+		</profile>
+		<profile>
+			<id>with-rest</id>
+		</profile>
+		<profile>
 			<id>for-eclipse</id>
 			<activation>
 				<property>
@@ -192,7 +207,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.1.1</revision>
+		<revision>1.1.2-SNAPSHOT</revision>
 		<sdmx.version>2.3.3</sdmx.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

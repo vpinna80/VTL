@@ -35,23 +35,28 @@ To build this project, you will need:
 > Building on a MacOS machine should be possible by now but **it is untested**.
 
 * JDK >= 8;
-* [Apache Maven](https://maven.apache.org/) 3.6.3;
-* [GNU R](https://www.r-project.org/) >= 3.5.3 for building RVTL package;
+* [Apache Maven](https://maven.apache.org/) 3.8.4;
+* [GNU R](https://www.r-project.org/) >= 4.0.0 for building RVTL package;
 * [Python 3.7](https://www.python.org/) >= 3.7 for building the Jupyter notebook kernel;
 * Configured internet connection (to download [node.js](https://nodejs.org/)).
 
 To build the project, launch the command:
 
-    mvn [-P with-r,with-python,with-cli,with-rest] [-Dsdmx.version=x.x.x] clean package
+    mvn [-P with-r,with-spark,with-python,with-cli,with-rest] [-Dsdmx.version=x.x.x] clean package
 
 Each artifact will be generated inside the `target` folder of each module.
 The optional maven profiles allow you to build any of the provided VTL bundles for
 the different front-ends capable of communicating with the VTL engine.
 
+If you want to build with support for the Spark evironment, activate the 
+`with-spark` maven profile. Each bundle created with this build will contain the 
+Spark environment.
+
 If you want to build the editor and the R package along with the engine, activate the 
 `with-r` maven profile; you may need to configure your internet connection in 
-Maven. The R package, ready for installation in R (with install.packages), will 
-be located there.
+Maven settings. The R package, ready for installation in R (with install.packages), 
+will be located there. Moreover, each artifact you build will have support for the R 
+environment.
 
 If you want to build the RESTful web services for VTL along with the engine, activate the
 `with-rest` maven profile. A WAR file ready to be deployed in your application server

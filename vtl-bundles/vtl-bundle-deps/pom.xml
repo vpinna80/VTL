@@ -52,9 +52,6 @@
 	<profiles>
 		<profile>
 			<id>with-spark</id>
-			<modules>
-				<module>vtl-spark</module>
-			</modules>
 			<dependencies>
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -64,9 +61,6 @@
 		</profile>
 		<profile>
 			<id>with-r</id>
-			<modules>
-				<module>vtl-renv</module>
-			</modules>
 			<dependencies>
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -92,6 +86,10 @@
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-engine</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-envbase</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
