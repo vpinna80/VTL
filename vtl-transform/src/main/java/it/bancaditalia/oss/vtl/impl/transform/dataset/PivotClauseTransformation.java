@@ -86,7 +86,6 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		LOGGER.debug("Pivoting " + measureName + " over " + identifierName);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
@@ -97,19 +96,15 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 
 		DataSetMetadata dataset = (DataSetMetadata) value;
 
-		DataStructureComponent<Identifier, ?, ?> tempIdentifier = dataset.getComponent(identifierName, Identifier.class).get();
-		measure = dataset.getComponent(measureName, Measure.class).get();
-
-		if (tempIdentifier == null)
-			throw new VTLMissingComponentsException(identifierName, dataset.getComponents(Identifier.class));
-		if (measure == null)
-			throw new VTLMissingComponentsException(measureName, dataset.getComponents(Measure.class));
+		DataStructureComponent<Identifier, ?, ?> tempIdentifier = dataset.getComponent(identifierName, Identifier.class)
+				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getComponents(Identifier.class)));
 		if (!(tempIdentifier.getDomain() instanceof StringEnumeratedDomainSubset))
 			throw new VTLException("pivot: " + tempIdentifier.getName() + " is of type " + tempIdentifier.getDomain() + " but should be of a StringEnumeratedDomainSubset.");
-
-		// safe
-		identifier = (DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain>) tempIdentifier;
+		identifier = tempIdentifier.as((StringEnumeratedDomainSubset) tempIdentifier.getDomain());
 		
+		measure = dataset.getComponent(measureName, Measure.class)
+				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getComponents(Measure.class)));
+
 		return Utils.getStream(((StringEnumeratedDomainSubset) identifier.getDomain()).getCodeItems())
 				.map(i -> DataStructureComponentImpl.of(i.get(), Measure.class, measure.getDomain()))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)

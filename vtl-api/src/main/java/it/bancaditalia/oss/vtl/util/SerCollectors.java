@@ -85,7 +85,7 @@ public class SerCollectors
 				downstream.finisher().andThen(finisher), characteristics);
 	}
 	
-    public static <T> SerCollector<T, Set<T>, Set<T>> toSet()
+    public static <T> SerCollector<T, ?, Set<T>> toSet()
     {
         return new SerCollector<>(HashSet::new, Set::add, (left, right) -> { left.addAll(right); return left; }, 
         		identity(), EnumSet.of(UNORDERED, IDENTITY_FINISH));

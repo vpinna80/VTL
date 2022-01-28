@@ -19,14 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
@@ -79,8 +78,8 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata dataset = (DataSetMetadata) operand;
 		
 		Set<String> missing = subspace.keySet().stream()
-				.filter(name -> dataset.getComponent(name, Identifier.class) == null)
-				.collect(Collectors.toSet());
+				.filter(name -> !dataset.getComponent(name, Identifier.class).isPresent())
+				.collect(toSet());
 		
 		if (missing.size() > 0)
 			throw new VTLMissingComponentsException(missing, dataset);
