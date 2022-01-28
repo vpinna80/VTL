@@ -95,29 +95,6 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 				.map(e -> e.getKey() + "=" + e.getValue())
 				.collect(joining(", ", "sub ", ""));
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((subspace == null) ? 0 : subspace.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof SubspaceClauseTransformation)) return false;
-		SubspaceClauseTransformation other = (SubspaceClauseTransformation) obj;
-		if (subspace == null)
-		{
-			if (other.subspace != null) return false;
-		}
-		else if (!subspace.equals(other.subspace)) return false;
-		return true;
-	}
 	
 	@Override
 	protected Lineage computeLineage()

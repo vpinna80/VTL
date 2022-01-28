@@ -130,30 +130,4 @@ public class TimeAggTransformation extends UnaryTransformation
 	{
 		return "time_agg(\"" + frequency + "\", " + operand + ")";
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((frequency == null) ? 0 : frequency.hashCode());
-		result = prime * result + ((periodComponent == null) ? 0 : periodComponent.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof TimeAggTransformation)) return false;
-		TimeAggTransformation other = (TimeAggTransformation) obj;
-		if (frequency != other.frequency) return false;
-		if (periodComponent == null)
-		{
-			if (other.periodComponent != null) return false;
-		}
-		else if (!periodComponent.equals(other.periodComponent)) return false;
-		return true;
-	}
 }

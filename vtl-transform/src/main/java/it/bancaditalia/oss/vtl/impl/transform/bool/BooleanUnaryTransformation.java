@@ -119,19 +119,4 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 			return dataset;
 		}
 	}
-
-	@Override
-	public int hashCode()
-	{
-		return super.hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof BooleanUnaryTransformation)) return false;
-		return true;
-	}
 }

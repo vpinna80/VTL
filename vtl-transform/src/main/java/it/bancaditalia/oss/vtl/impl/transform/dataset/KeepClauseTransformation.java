@@ -102,25 +102,6 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + Arrays.hashCode(names);
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof KeepClauseTransformation)) return false;
-		KeepClauseTransformation other = (KeepClauseTransformation) obj;
-		if (!Arrays.equals(names, other.names)) return false;
-		return true;
-	}
-	
-	@Override
 	protected Lineage computeLineage()
 	{
 		return LineageNode.of(toString());

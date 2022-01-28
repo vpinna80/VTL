@@ -37,12 +37,6 @@ public abstract class TransformationImpl implements Transformation, Serializable
 	private final static Logger LOGGER = LoggerFactory.getLogger(TransformationImpl.class);
 	
 	private transient SoftReference<Lineage> lineageCache = new SoftReference<>(null);
-
-	@Override
-	public abstract int hashCode();
-	
-	@Override
-	public abstract boolean equals(Object obj);
 	
 	@Override
 	public final Lineage getLineage()

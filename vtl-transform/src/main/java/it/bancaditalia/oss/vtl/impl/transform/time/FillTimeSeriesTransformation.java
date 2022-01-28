@@ -249,24 +249,4 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	{
 		return metadata;
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((mode == null) ? 0 : mode.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof FillTimeSeriesTransformation)) return false;
-		FillTimeSeriesTransformation other = (FillTimeSeriesTransformation) obj;
-		if (mode != other.mode) return false;
-		return true;
-	}
 }

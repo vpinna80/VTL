@@ -143,28 +143,4 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
 				+ "))";
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((partitionBy == null) ? 0 : partitionBy.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof RatioToReportTransformation)) return false;
-		RatioToReportTransformation other = (RatioToReportTransformation) obj;
-		if (partitionBy == null)
-		{
-			if (other.partitionBy != null) return false;
-		}
-		else if (!partitionBy.equals(other.partitionBy)) return false;
-		return true;
-	}
 }

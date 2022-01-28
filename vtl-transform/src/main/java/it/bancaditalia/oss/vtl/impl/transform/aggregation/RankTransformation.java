@@ -219,35 +219,6 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	}
 
 	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((orderByClause == null) ? 0 : orderByClause.hashCode());
-		result = prime * result + ((partitionBy == null) ? 0 : partitionBy.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof RankTransformation)) return false;
-		RankTransformation other = (RankTransformation) obj;
-		if (orderByClause == null)
-		{
-			if (other.orderByClause != null) return false;
-		}
-		else if (!orderByClause.equals(other.orderByClause)) return false;
-		if (partitionBy == null)
-		{
-			if (other.partitionBy != null) return false;
-		}
-		else if (!partitionBy.equals(other.partitionBy)) return false;
-		return true;
-	}
-	
-	@Override
 	public Lineage computeLineage()
 	{
 		return LineageExternal.of("RANK:" + this);

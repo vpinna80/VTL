@@ -108,29 +108,6 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	{
 		return "filter " + filterClause;
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((filterClause == null) ? 0 : filterClause.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof FilterClauseTransformation)) return false;
-		FilterClauseTransformation other = (FilterClauseTransformation) obj;
-		if (filterClause == null)
-		{
-			if (other.filterClause != null) return false;
-		}
-		else if (!filterClause.equals(other.filterClause)) return false;
-		return true;
-	}
 	
 	@Override
 	protected Lineage computeLineage()

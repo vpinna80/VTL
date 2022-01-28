@@ -100,19 +100,4 @@ public class IsNullTransformation extends UnaryTransformation
 	{
 		return "isnull(" + operand + ")";
 	}
-
-	@Override
-	public int hashCode()
-	{
-		return super.hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof IsNullTransformation)) return false;
-		return true;
-	}
 }

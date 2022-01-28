@@ -205,41 +205,6 @@ public class SubstrTransformation extends TransformationImpl
 				(lenOperand != null ? ", " + lenOperand : "") + 
 				")";
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((exprOperand == null) ? 0 : exprOperand.hashCode());
-		result = prime * result + ((lenOperand == null) ? 0 : lenOperand.hashCode());
-		result = prime * result + ((startOperand == null) ? 0 : startOperand.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof SubstrTransformation)) return false;
-		SubstrTransformation other = (SubstrTransformation) obj;
-		if (exprOperand == null)
-		{
-			if (other.exprOperand != null) return false;
-		}
-		else if (!exprOperand.equals(other.exprOperand)) return false;
-		if (lenOperand == null)
-		{
-			if (other.lenOperand != null) return false;
-		}
-		else if (!lenOperand.equals(other.lenOperand)) return false;
-		if (startOperand == null)
-		{
-			if (other.startOperand != null) return false;
-		}
-		else if (!startOperand.equals(other.startOperand)) return false;
-		return true;
-	}
 	
 	@Override
 	public Lineage computeLineage()

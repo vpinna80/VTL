@@ -108,29 +108,6 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 				.map(e -> e.getKey() + " to " + e.getValue())
 				.collect(joining(", ", "rename ", ""));
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((renames == null) ? 0 : renames.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof RenameClauseTransformation)) return false;
-		RenameClauseTransformation other = (RenameClauseTransformation) obj;
-		if (renames == null)
-		{
-			if (other.renames != null) return false;
-		}
-		else if (!renames.equals(other.renames)) return false;
-		return true;
-	}
 	
 	@Override
 	protected Lineage computeLineage()

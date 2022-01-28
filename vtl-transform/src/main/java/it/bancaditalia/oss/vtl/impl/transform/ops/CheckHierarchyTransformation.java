@@ -179,41 +179,6 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	{
 		return "CHECK_HIERARCHY(" + operand + ", " + hierarchyId + " " + mode + " " + input + " " + output + ")"; 
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((hierarchyId == null) ? 0 : hierarchyId.hashCode());
-		result = prime * result + ((input == null) ? 0 : input.hashCode());
-		result = prime * result + ((mode == null) ? 0 : mode.hashCode());
-		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
-		result = prime * result + ((output == null) ? 0 : output.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof CheckHierarchyTransformation)) return false;
-		CheckHierarchyTransformation other = (CheckHierarchyTransformation) obj;
-		if (hierarchyId == null)
-		{
-			if (other.hierarchyId != null) return false;
-		}
-		else if (!hierarchyId.equals(other.hierarchyId)) return false;
-		if (input != other.input) return false;
-		if (mode != other.mode) return false;
-		if (operand == null)
-		{
-			if (other.operand != null) return false;
-		}
-		else if (!operand.equals(other.operand)) return false;
-		if (output != other.output) return false;
-		return true;
-	}
 	
 	@Override
 	public Lineage computeLineage()

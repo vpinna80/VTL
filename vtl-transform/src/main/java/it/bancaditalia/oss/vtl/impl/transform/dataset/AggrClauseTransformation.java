@@ -128,41 +128,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 
 		@Override
-		public int hashCode()
-		{
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + ((name == null) ? 0 : name.hashCode());
-			result = prime * result + ((operand == null) ? 0 : operand.hashCode());
-			result = prime * result + ((role == null) ? 0 : role.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj)
-		{
-			if (this == obj) return true;
-			if (!(obj instanceof AggrClauseItem)) return false;
-			AggrClauseItem other = (AggrClauseItem) obj;
-			if (name == null)
-			{
-				if (other.name != null) return false;
-			}
-			else if (!name.equals(other.name)) return false;
-			if (operand == null)
-			{
-				if (other.operand != null) return false;
-			}
-			else if (!operand.equals(other.operand)) return false;
-			if (role == null)
-			{
-				if (other.role != null) return false;
-			}
-			else if (!role.equals(other.role)) return false;
-			return true;
-		}
-		
-		@Override
 		public Lineage computeLineage()
 		{
 			return LineageNode.of(this, operand.getLineage());
@@ -288,51 +253,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	public Lineage computeLineage()
 	{
 		return LineageNode.of(this, LineageCall.of(aggrItems.stream().map(Transformation::getLineage).collect(toList())));
-	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((aggrItems == null) ? 0 : aggrItems.hashCode());
-		result = prime * result + ((groupingClause == null) ? 0 : groupingClause.hashCode());
-		result = prime * result + ((having == null) ? 0 : having.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		AggrClauseTransformation other = (AggrClauseTransformation) obj;
-		if (aggrItems == null)
-		{
-			if (other.aggrItems != null)
-				return false;
-		}
-		else if (!aggrItems.equals(other.aggrItems))
-			return false;
-		if (groupingClause == null)
-		{
-			if (other.groupingClause != null)
-				return false;
-		}
-		else if (!groupingClause.equals(other.groupingClause))
-			return false;
-		if (having == null)
-		{
-			if (other.having != null)
-				return false;
-		}
-		else if (!having.equals(other.having))
-			return false;
-		return true;
 	}
 
 	@Override

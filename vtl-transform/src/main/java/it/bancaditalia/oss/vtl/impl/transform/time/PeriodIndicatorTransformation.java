@@ -163,29 +163,6 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	{
 		return operand != null ? operand.getTerminals() : emptySet();
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof PeriodIndicatorTransformation)) return false;
-		PeriodIndicatorTransformation other = (PeriodIndicatorTransformation) obj;
-		if (operand == null)
-		{
-			if (other.operand != null) return false;
-		}
-		else if (!operand.equals(other.operand)) return false;
-		return true;
-	}
 	
 	@Override
 	public Lineage computeLineage()

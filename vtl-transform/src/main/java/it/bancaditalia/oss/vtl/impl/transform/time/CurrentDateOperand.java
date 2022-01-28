@@ -60,19 +60,6 @@ public class CurrentDateOperand extends TransformationImpl implements LeafTransf
 	}
 
 	@Override
-	public int hashCode()
-	{
-		return 1;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (!(obj instanceof CurrentDateOperand)) return false;
-		return true;
-	}
-	
-	@Override
 	public Lineage computeLineage()
 	{
 		return LineageExternal.of("current_date()");

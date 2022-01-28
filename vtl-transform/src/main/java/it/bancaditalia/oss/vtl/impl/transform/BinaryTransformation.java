@@ -140,35 +140,6 @@ public abstract class BinaryTransformation extends TransformationImpl
 	{
 		return rightOperand;
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((leftOperand == null) ? 0 : leftOperand.hashCode());
-		result = prime * result + ((rightOperand == null) ? 0 : rightOperand.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof BinaryTransformation)) return false;
-		BinaryTransformation other = (BinaryTransformation) obj;
-		if (leftOperand == null)
-		{
-			if (other.leftOperand != null) return false;
-		}
-		else if (!leftOperand.equals(other.leftOperand)) return false;
-		if (rightOperand == null)
-		{
-			if (other.rightOperand != null) return false;
-		}
-		else if (!rightOperand.equals(other.rightOperand)) return false;
-		return true;
-	}
 	
 	@Override
 	public Lineage computeLineage()

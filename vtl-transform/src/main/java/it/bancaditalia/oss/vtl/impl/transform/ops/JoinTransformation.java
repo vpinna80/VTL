@@ -129,35 +129,6 @@ public class JoinTransformation extends TransformationImpl
 		{
 			return operand + (id != null ? " AS " + id : "");
 		}
-
-		@Override
-		public int hashCode()
-		{
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + ((id == null) ? 0 : id.hashCode());
-			result = prime * result + ((operand == null) ? 0 : operand.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj)
-		{
-			if (this == obj) return true;
-			if (!(obj instanceof JoinOperand)) return false;
-			JoinOperand other = (JoinOperand) obj;
-			if (id == null)
-			{
-				if (other.id != null) return false;
-			}
-			else if (!id.equals(other.id)) return false;
-			if (operand == null)
-			{
-				if (other.operand != null) return false;
-			}
-			else if (!operand.equals(other.operand)) return false;
-			return true;
-		}
 	}
 
 	private final JoinOperator operator;
@@ -655,73 +626,6 @@ public class JoinTransformation extends TransformationImpl
 				+ (keepOrDrop != null ? " " + keepOrDrop : "")
 				+ (rename != null ? " " + rename : "")
 				+ ")";
-	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((aggr == null) ? 0 : aggr.hashCode());
-		result = prime * result + ((apply == null) ? 0 : apply.hashCode());
-		result = prime * result + ((calc == null) ? 0 : calc.hashCode());
-		result = prime * result + ((filter == null) ? 0 : filter.hashCode());
-		result = prime * result + ((keepOrDrop == null) ? 0 : keepOrDrop.hashCode());
-		result = prime * result + ((operands == null) ? 0 : operands.hashCode());
-		result = prime * result + ((operator == null) ? 0 : operator.hashCode());
-		result = prime * result + ((rename == null) ? 0 : rename.hashCode());
-		result = prime * result + ((usingNames == null) ? 0 : usingNames.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof JoinTransformation)) return false;
-		JoinTransformation other = (JoinTransformation) obj;
-		if (aggr == null)
-		{
-			if (other.aggr != null) return false;
-		}
-		else if (!aggr.equals(other.aggr)) return false;
-		if (apply == null)
-		{
-			if (other.apply != null) return false;
-		}
-		else if (!apply.equals(other.apply)) return false;
-		if (calc == null)
-		{
-			if (other.calc != null) return false;
-		}
-		else if (!calc.equals(other.calc)) return false;
-		if (filter == null)
-		{
-			if (other.filter != null) return false;
-		}
-		else if (!filter.equals(other.filter)) return false;
-		if (keepOrDrop == null)
-		{
-			if (other.keepOrDrop != null) return false;
-		}
-		else if (!keepOrDrop.equals(other.keepOrDrop)) return false;
-		if (operands == null)
-		{
-			if (other.operands != null) return false;
-		}
-		else if (!operands.equals(other.operands)) return false;
-		if (operator != other.operator) return false;
-		if (rename == null)
-		{
-			if (other.rename != null) return false;
-		}
-		else if (!rename.equals(other.rename)) return false;
-		if (usingNames == null)
-		{
-			if (other.usingNames != null) return false;
-		}
-		else if (!usingNames.equals(other.usingNames)) return false;
-		return true;
 	}
 	
 	@Override

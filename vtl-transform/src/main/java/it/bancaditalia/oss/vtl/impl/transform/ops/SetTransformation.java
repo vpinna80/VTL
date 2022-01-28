@@ -140,31 +140,6 @@ public class SetTransformation extends TransformationImpl
 	{
 		return operands.stream().map(Object::toString).collect(joining(", ", setOperator + "(", ")"));
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((operands == null) ? 0 : operands.hashCode());
-		result = prime * result + ((setOperator == null) ? 0 : setOperator.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof SetTransformation)) return false;
-		SetTransformation other = (SetTransformation) obj;
-		if (operands == null)
-		{
-			if (other.operands != null) return false;
-		}
-		else if (!operands.equals(other.operands)) return false;
-		if (setOperator != other.setOperator) return false;
-		return true;
-	}
 	
 	@Override
 	public Lineage computeLineage()

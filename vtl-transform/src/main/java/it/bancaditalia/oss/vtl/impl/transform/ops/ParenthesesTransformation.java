@@ -59,19 +59,4 @@ public class ParenthesesTransformation extends UnaryTransformation
 	{
 		return dataset;
 	}
-
-	@Override
-	public int hashCode()
-	{
-		return super.hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof ParenthesesTransformation)) return false;
-		return true;
-	}
 }

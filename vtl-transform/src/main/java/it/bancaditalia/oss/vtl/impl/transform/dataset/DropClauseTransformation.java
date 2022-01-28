@@ -97,29 +97,6 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 	{
 		return names.stream().collect(joining(", ", "drop ", ""));
 	}
-
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((names == null) ? 0 : names.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!(obj instanceof DropClauseTransformation)) return false;
-		DropClauseTransformation other = (DropClauseTransformation) obj;
-		if (names == null)
-		{
-			if (other.names != null) return false;
-		}
-		else if (!names.equals(other.names)) return false;
-		return true;
-	}
 	
 	@Override
 	protected Lineage computeLineage()

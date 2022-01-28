@@ -105,19 +105,4 @@ public class NotTransformation extends UnaryTransformation
 	{
 		return "not " + operand;
 	}
-
-	@Override
-	public int hashCode()
-	{
-		return super.hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (!(obj instanceof NotTransformation)) return false;
-		return true;
-	}
 }
