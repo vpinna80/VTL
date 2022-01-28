@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.session;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
@@ -38,7 +39,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
  * @author Valentino Pinna
  *
  */
-public interface VTLSession extends TransformationScheme
+public interface VTLSession extends TransformationScheme, Serializable
 {
 	/**
 	 * @return the computing {@link Engine} used by this session
