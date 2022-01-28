@@ -59,7 +59,7 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 		else if (value instanceof BooleanValue)
 			return BooleanValue.of((Boolean) value.get());
 		else if (value instanceof NumberValue)
-			return BooleanValue.of(((NumberValue<?, ?, ?, ?>) value).get().doubleValue() != 0);
+			return BooleanValue.of(((NumberValue<?, ?, ?, ?>) value).get().doubleValue() <= 1e-300);
 		else
 			throw new VTLCastException(BOOLEANDS, value);
 	}
