@@ -94,7 +94,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
-			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(left.getDomain()))
+			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(right.getDomain()))
 				return NullValue.instance(INTEGERDS);
 			else
 				return NullValue.instance(NUMBERDS);
