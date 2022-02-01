@@ -46,6 +46,20 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-meta</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-conf</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -57,6 +71,10 @@
 					<groupId>it.bancaditalia.oss.vtl</groupId>
 					<artifactId>vtl-spark</artifactId>
 				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
+				</dependency>
 			</dependencies>
 		</profile>
 		<profile>
@@ -65,6 +83,35 @@
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
 					<artifactId>vtl-renv</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>with-aws</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-metaaws</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confaws</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault></activeByDefault>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
 				</dependency>
 			</dependencies>
 		</profile>
@@ -81,10 +128,6 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-confman</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-engine</artifactId>
 		</dependency>
 		<dependency>
@@ -93,7 +136,7 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-meta</artifactId>
+			<artifactId>vtl-metarepo</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>

@@ -53,11 +53,6 @@ public class Triple<A extends Serializable, B extends Serializable, C extends Se
 		this(e.getKey(), e.getValue(), c);
 	}
 	
-	public <D extends Serializable> Quadruple<A, B, C, D> extend(D d)
-	{
-		return new Quadruple<>(first, second, third, d);
-	}
-	
 	public A getFirst()
 	{
 		return first;

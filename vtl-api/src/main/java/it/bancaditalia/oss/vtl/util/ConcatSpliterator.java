@@ -46,6 +46,15 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	private volatile int index = 0;
 	private transient long estimateSize = 0;
 	
+	/**
+	 * Constructs a collector that concatenates a Stream<Stream<T>>, similar to {@link Stream#flatMap}.
+	 * It maintains the parallelism of the stream, and optionally the encounter order of elements.
+	 * It avoids the overhead of executing many {@link Stream#concat} operations.
+	 * 
+	 * @param <T> The type of elements.
+	 * @param keepOrder True if the collector should maintain the encounter order.
+	 * @return The collector.
+	 */
 	public static <T> SerCollector<Stream<T>, ?, Stream<T>> concatenating(boolean keepOrder)
 	{
 		SerCollector<Stream<T>, ?, ? extends Collection<Stream<T>>> collector1 = keepOrder ? toList() : toConcurrentSet();
@@ -57,9 +66,9 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	}
 	
 	@SuppressWarnings("unchecked")
-	public ConcatSpliterator(Collection<Spliterator<T>> streams)
+	private ConcatSpliterator(Collection<Spliterator<T>> spliterators)
 	{
-		this.array = (Spliterator<T>[]) streams.toArray(new Spliterator<?>[streams.size()]);
+		this.array = (Spliterator<T>[]) spliterators.toArray(new Spliterator<?>[spliterators.size()]);
 		
 		for (int i = array.length - 1; i >= 0; i--)
 		{

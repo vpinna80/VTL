@@ -131,7 +131,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		return new BiFunctionDataSet<>((DataSetMetadata) metadata, Utils.partial(operator::apply, getLineage()), dataset, main);
+		return new BiFunctionDataSet<>((DataSetMetadata) metadata, (ds, timeId) -> operator.apply(getLineage(), ds, timeId), dataset, main);
 	}
 	
 	@Override

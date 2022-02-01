@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--
 
     Copyright © 2020 Banca D'Italia
@@ -25,7 +24,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>vtl-meta</artifactId>
+	<artifactId>vtl-conf</artifactId>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -34,42 +33,41 @@
 		<version>${revision}</version>
 	</parent>
 
-	<name>vtl-meta</name>
-	<description>Verious metadata repositories and domains implementations</description>
-	
+	<name>vtl-conf</name>
+	<description>VTL configuration managers</description>
+
 	<profiles>
 		<profile>
-      		<id>with-aws</id>
-      		<modules>
-				<module>vtl-metaaws</module>
-      		</modules>
-	    </profile>
+			<id>with-aws</id>
+			<modules>
+				<module>vtl-confaws</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>vtl-confman</module>
+			</modules>
+		</profile>
 	</profiles>
-	
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-metabase</artifactId>
+				<artifactId>vtl-confman</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-metarepo</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-metaaws</artifactId>
+				<artifactId>vtl-confaws</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-	<modules>
-		<module>vtl-metabase</module>
-		<module>vtl-metarepo</module>
-	</modules>
 
 	<build>
 		<plugins>

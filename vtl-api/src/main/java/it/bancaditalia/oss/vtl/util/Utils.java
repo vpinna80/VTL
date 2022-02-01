@@ -164,26 +164,6 @@ public final class Utils
 		return e -> consumer.accept(e.getKey(), e.getValue());
 	}
 
-	public static <A extends Serializable, B extends Serializable, C extends Serializable, R> SerFunction<Triple<A, B, C>, R> splitting(SerTriFunction<? super A, ? super B, ? super C, ? extends R> trifunction)
-	{
-		return t -> trifunction.apply(t.getFirst(), t.getSecond(), t.getThird());
-	}
-
-	public static <A extends Serializable, B extends Serializable, C extends Serializable> SerConsumer<Triple<A, B, C>> triple(TriConsumer<? super A, ? super B, ? super C> triconsumer)
-	{
-		return t -> triconsumer.accept(t.getFirst(), t.getSecond(), t.getThird());
-	}
-
-	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable> SerConsumer<Quadruple<A, B, C, D>> quartet(QuadConsumer<? super A, ? super B, ? super C, ? super D> quadconsumer)
-	{
-		return q -> quadconsumer.accept(q.getFirst(), q.getSecond(), q.getThird(), q.getFourth());
-	}
-
-	public static <A extends Serializable, B extends Serializable, C extends Serializable, D extends Serializable, R> SerFunction<Quadruple<A, B, C, D>, R> splitting(QuadFunction<? super A, ? super B, ? super C, ? super D, ? extends R> quadfunction)
-	{
-		return q -> quadfunction.apply(q.getFirst(), q.getSecond(), q.getThird(), q.getFourth());
-	}
-
 	public static <T> Stream<T> getStream(Spliterator<T> source)
 	{
 		Stream<T> stream = StreamSupport.stream(source, !SEQUENTIAL);
@@ -296,15 +276,5 @@ public final class Utils
 		for (T elem: elements)
 			result.add(elem);
 		return Collections.unmodifiableSet(result);
-	}
-
-	public static <A extends Serializable, B extends Serializable, C extends Serializable, R extends Serializable> SerBiFunction<B, C, R> partial(SerTriFunction<A, B, C, R> triFunction, A a)
-	{
-		return (b, c) -> triFunction.apply(a, b, c);
-	}
-
-	public static <A, B, C, R> SerBiFunction<B, C, R> partial(SerTriFunction<A, B, C, R> triFunction, A a)
-	{
-		return (b, c) -> triFunction.apply(a, b, c);
 	}
 }

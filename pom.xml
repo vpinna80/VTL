@@ -87,7 +87,7 @@
 			<modules>
 				<module>vtl-api</module>
 				<module>vtl-bundles</module>
-				<module>vtl-confman</module>
+				<module>vtl-conf</module>
 				<module>vtl-coverage</module>
 				<module>vtl-engine</module>
 				<module>vtl-envs</module>
@@ -214,6 +214,7 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<bundle.plugin.version>5.1.1</bundle.plugin.version>
+		<aws.version>1.12.150</aws.version>
 		<sf-fs.version>3.0.0-M3</sf-fs.version>
 		<scala.version>2.12.11</scala.version>
 		<scala.compat.version>2.12</scala.compat.version>
@@ -324,7 +325,7 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-confman</artifactId>
+				<artifactId>vtl-conf</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -506,6 +507,11 @@
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-math3</artifactId>
 				<version>3.4.1</version>
+			</dependency>
+			<dependency>
+				<groupId>com.amazonaws</groupId>
+				<artifactId>aws-java-sdk-s3</artifactId>
+				<version>${aws.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.scala-lang</groupId>

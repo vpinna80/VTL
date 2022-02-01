@@ -56,6 +56,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -67,6 +68,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class VTLSessionImpl implements VTLSession
 {
+	private static final long serialVersionUID = 1L;
 	private final static Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 
 	private final ConfigurationManager config = ConfigurationManager.getDefault();
@@ -144,6 +146,10 @@ public class VTLSessionImpl implements VTLSession
 	{
 		final String normalizedAlias = normalizeAlias(alias);
 
+		DataSetMetadata definedStructure = (DataSetMetadata) cacheHelper(normalizedAlias, metacache, n -> repository.getStructure(normalizedAlias));
+		if (definedStructure != null)
+			return definedStructure;
+		
 		Optional<? extends Statement> rule = workspace.getRule(alias);
 		if (rule.isPresent())
 		{
@@ -212,7 +218,8 @@ public class VTLSessionImpl implements VTLSession
 			if (result == null)
 			{
 				result = mapper.apply(alias);
-				cache.put(alias, new SoftReference<>(result));
+				if (result != null)
+					cache.put(alias, new SoftReference<>(result));
 			}
 			
 			return result;

@@ -29,20 +29,17 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static java.util.stream.Collectors.groupingBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
@@ -134,14 +131,13 @@ public class FillTimeSeriesTransformationTest
 			
 			long nSeries = results.values().stream().mapToLong(Long::longValue).max().getAsLong();
 			
-			Entry<?, ?> minMax = Utils.getStream(results.keySet())
-				.collect(teeing(
-						collectingAndThen(minBy(ScalarValue::compareTo), Optional::get),
-						collectingAndThen(maxBy(ScalarValue::compareTo), Optional::get),
-						SimpleEntry::new));
+			ScalarValue<?, ?, ?, ?> min = Utils.getStream(results.keySet())
+					.collect(collectingAndThen(minBy(ScalarValue::compareTo), Optional::get));
+			ScalarValue<?, ?, ?, ?> max = Utils.getStream(results.keySet())
+					.collect(collectingAndThen(maxBy(ScalarValue::compareTo), Optional::get));
 			
-			DateValue<?> curr = (DateValue<?>) minMax.getKey();
-			while (curr.compareTo((ScalarValue<?, ?, ?, ?>) minMax.getValue()) < 0)
+			DateValue<?> curr = (DateValue<?>) min;
+			while (curr.compareTo(max) < 0)
 			{
 				assertNotNull(results.get(curr), "Found hole: " + curr);
 				assertEquals(nSeries, results.get(curr), "Found hole: " + curr);
