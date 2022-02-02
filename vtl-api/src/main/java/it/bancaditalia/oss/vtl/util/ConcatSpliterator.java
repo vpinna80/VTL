@@ -47,7 +47,7 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	private transient long estimateSize = 0;
 	
 	/**
-	 * Constructs a collector that concatenates a Stream<Stream<T>>, similar to {@link Stream#flatMap}.
+	 * Constructs a collector that concatenates a {@code Stream<Stream<T>>}, similar to {@link Stream#flatMap}.
 	 * It maintains the parallelism of the stream, and optionally the encounter order of elements.
 	 * It avoids the overhead of executing many {@link Stream#concat} operations.
 	 * 
