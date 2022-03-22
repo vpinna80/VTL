@@ -57,6 +57,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -66,8 +68,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -130,7 +130,11 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		@Override
 		public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 		{
-			return calcClause.getMetadata(scheme);
+			VTLValueMetadata metadata = calcClause.getMetadata(scheme);
+			if (metadata instanceof ScalarValueMetadata)
+				return metadata;
+			else
+				throw new VTLInvalidParameterException(metadata, ScalarValueMetadata.class);
 		}
 		
 		public boolean isAnalytic()
@@ -197,9 +201,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			? operand
 			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> {
 				// The lineage for the new datapoint as the combination of lineage of each clause
-				return LineageCall.of(Stream.concat(Stream.of(dp.getLineage()), 
+				return LineageNode.of(this, LineageCall.of(Stream.concat(Stream.of(dp.getLineage()), 
 						Utils.getStream(nonAnalyticClauses).map(Transformation::getLineage))
-					.collect(toList()));
+					.collect(toList())));
 			}, dp -> {
 					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata);
 					
@@ -292,18 +296,22 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// existing component
 				DataStructureComponent<?, ? extends ValueDomainSubset<?, ?>, ? extends ValueDomain> definedComponent = maybePresent.get();
+				ValueDomainSubset<?, ?> itemDomain = ((ScalarValueMetadata<?, ?>) item.getMetadata(scheme)).getDomain();
 
 				// disallow override of ids
 				if (definedComponent.is(Identifier.class))
-					throw new VTLInvariantIdentifiersException("calc", singleton(definedComponent.as(Identifier.class)));
-				else if (!definedComponent.getDomain().isAssignableFrom(definedComponent.getDomain()))
-					throw new VTLIncompatibleTypesException("Calc", definedComponent.getDomain(), definedComponent.getDomain());
-				else if (item.getRole() != null && !definedComponent.is(item.getRole()))
+					throw new VTLInvariantIdentifiersException("calc", singleton(definedComponent.asRole(Identifier.class)));
+				else
 				{
-					// switch role (from a non-id to any)
-					builder.removeComponent(definedComponent);
-					DataStructureComponent<?, ?, ?> newComponent = DataStructureComponentImpl.of(item.getName(), item.getRole(), definedComponent.getDomain());
-					builder.addComponent(newComponent);
+					if (!definedComponent.getDomain().isAssignableFrom(itemDomain))
+						throw new VTLIncompatibleTypesException("calc", definedComponent.getDomain(), itemDomain);
+					else if (item.getRole() != null && !definedComponent.is(item.getRole()))
+					{
+						// switch role (from a non-id to any)
+						builder.removeComponent(definedComponent);
+						DataStructureComponent<?, ?, ?> newComponent = DataStructureComponentImpl.of(item.getName(), item.getRole(), itemDomain);
+						builder.addComponent(newComponent);
+					}
 				}
 			}
 			else

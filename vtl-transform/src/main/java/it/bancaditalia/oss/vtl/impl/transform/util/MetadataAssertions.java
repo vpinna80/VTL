@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequir
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Supplier<Set<? extends DataStructureComponent<R, S, D>>>
 {
@@ -81,7 +81,7 @@ public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSu
 	{
 		return new MetadataAssertions<>(name, this.components.stream()
 				.filter(c -> c.is(role))
-				.map(c -> c.as(role))
+				.map(c -> c.asRole(role))
 				.collect(toSet()), role, domain);
 	}
 
@@ -102,7 +102,7 @@ public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSu
 	{
 		Set<DataStructureComponent<R, S1, D1>> components = this.components.stream()
 			.filter(c -> domain.isAssignableFrom(c.getDomain()))
-			.map(c -> c.as(domain))
+			.map(c -> c.asDomain(domain))
 			.collect(toSet());
 		
 		return new MetadataAssertions<>(name, components, role, domain);

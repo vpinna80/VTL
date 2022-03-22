@@ -22,10 +22,10 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainSubset, TimeDomain> implements TimeDomainSubset<EntireTimeDomainSubset, TimeDomain>, Serializable
 {

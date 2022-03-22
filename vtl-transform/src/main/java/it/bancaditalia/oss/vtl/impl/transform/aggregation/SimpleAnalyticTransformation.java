@@ -43,6 +43,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesExc
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -105,7 +106,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 			partitionIDs = partitionBy.stream()
 				.map(dataset::getComponent)
 				.map(Optional::get)
-				.map(c -> c.as(Identifier.class))
+				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		else
 			partitionIDs = Utils.getStream(dataset.getComponents(Identifier.class))
@@ -121,7 +122,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = nonIDs.stream()
 			.collect(toMapWithValues(k -> aggregation.getReducer()));
 		
-		return dataset.analytic(nonIDs, clause, collectors);
+		return dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), nonIDs, clause, collectors);
 	}
 
 	@Override
@@ -143,7 +144,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
 				.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
 				.peek(c -> { if (ordering.containsKey(c)) throw new VTLException("Partitioning component " + c + " cannot be used in order by"); })
-				.map(c -> c.as(Identifier.class))
+				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		
 		return dataset;

@@ -82,7 +82,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 				return NullValue.instance(NUMBERDS);
 			if (number instanceof IntegerValue)
 			{
-				Number res = longOp.apply(((IntegerValue<?>) number).get());
+				Number res = longOp.apply(((IntegerValue<?, ?>) number).get());
 				return res instanceof Long ? IntegerValue.of(res.longValue()) : DoubleValue.of(res.doubleValue());
 			}
 			else

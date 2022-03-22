@@ -25,6 +25,8 @@ import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 /**
  * The immutable representation of a component of a dataset.
@@ -111,7 +113,7 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @throws ClassCastException if the role cannot be narrowed.
 	 */
 	@SuppressWarnings("unchecked")
-	public default <R2 extends ComponentRole> DataStructureComponent<R2, S, D> as(Class<R2> role)
+	public default <R2 extends ComponentRole> DataStructureComponent<R2, S, D> asRole(Class<R2> role)
 	{
 		if (is(role))
 			// safe
@@ -128,7 +130,7 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @throws ClassCastException if the domain cannot be narrowed.
 	 */
 	@SuppressWarnings("unchecked")
-	public default <S2 extends ValueDomainSubset<S2, D2>, D2 extends ValueDomain> DataStructureComponent<R, S2, D2> as(S2 domain)
+	public default <S2 extends ValueDomainSubset<S2, D2>, D2 extends ValueDomain> DataStructureComponent<R, S2, D2> asDomain(ValueDomainSubset<S2, D2> domain)
 	{
 		if (domain.isAssignableFrom(getDomain()))
 			// safe

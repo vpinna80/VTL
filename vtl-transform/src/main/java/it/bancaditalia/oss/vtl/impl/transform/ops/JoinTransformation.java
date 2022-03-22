@@ -77,6 +77,7 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -85,7 +86,6 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -340,7 +340,7 @@ public class JoinTransformation extends TransformationImpl
 				.distinct()
 				.map(name -> {
 					ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(session, name, dataset.getMetadata()))).getDomain();
-					return DataStructureComponentImpl.of(name, Measure.class, domain).as(Measure.class);
+					return DataStructureComponentImpl.of(name, Measure.class, domain).asRole(Measure.class);
 				}).collect(toSet());
 		
 		DataSetMetadata applyMetadata = dataset.getMetadata().stream()
@@ -406,7 +406,7 @@ public class JoinTransformation extends TransformationImpl
 					.distinct()
 					.map(name -> {
 						ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(scheme, name, applyResult))).getDomain();
-						return DataStructureComponentImpl.of(name, Measure.class, domain).as(Measure.class);
+						return DataStructureComponentImpl.of(name, Measure.class, domain).asRole(Measure.class);
 					}).collect(toSet());
 			
 			result = applyResult.stream()

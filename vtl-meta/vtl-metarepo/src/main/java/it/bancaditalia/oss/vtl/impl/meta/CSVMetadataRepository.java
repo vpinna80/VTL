@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.mapping;
@@ -53,7 +54,7 @@ public class CSVMetadataRepository extends InMemoryMetadataRepository
 			reader.lines()
 				.map(l -> l.split(",", 2))
 				.collect(groupingByConcurrent(e -> e[0], mapping(e -> e[1], toSet())))
-				.forEach((name, items) -> new StringCodeList(name, items));
+				.forEach((name, items) -> new StringCodeList<>(STRINGDS, name, items));
 		}
 	}
 }

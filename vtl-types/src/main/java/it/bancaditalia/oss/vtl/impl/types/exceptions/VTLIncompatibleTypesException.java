@@ -25,7 +25,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class VTLIncompatibleTypesException extends VTLException
 {

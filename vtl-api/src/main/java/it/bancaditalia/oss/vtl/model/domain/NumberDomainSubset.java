@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.model.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 
 /**
  * Representation of a subset of the VTL "Number" domain.

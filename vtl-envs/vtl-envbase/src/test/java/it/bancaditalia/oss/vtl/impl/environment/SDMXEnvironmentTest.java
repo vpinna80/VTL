@@ -68,8 +68,8 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 
@@ -170,7 +170,7 @@ public class SDMXEnvironmentTest
 			.then(answer((String id, Class<? extends ValueDomain> cls, Set<String> set) -> {
 				if (domains.containsKey(id))
 					return domains.get(id);
-				StringEnumeratedDomainSubset domainMock = mock(StringEnumeratedDomainSubset.class, id + ":string");
+				StringEnumeratedDomainSubset<?, ?, ?, ?> domainMock = mock(StringEnumeratedDomainSubset.class, id + ":string");
 				domains.put(id, domainMock);
 				when(domainMock.getName()).thenReturn(id);
 				when(domainMock.cast(any())).then(answer(v -> v));

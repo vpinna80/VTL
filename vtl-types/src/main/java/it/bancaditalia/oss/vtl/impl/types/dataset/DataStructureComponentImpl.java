@@ -26,9 +26,9 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class DataStructureComponentImpl<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
 {
@@ -55,9 +55,9 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureComponent<?, ?, ?> of(String name, Class<? extends ComponentRole> role, ValueDomainSubset<?, ?> domain)
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain, R extends ComponentRole> DataStructureComponent<R, S, D> of(String name, Class<R> role, ValueDomainSubset<S, D> domain)
 	{
-		return new DataStructureComponentImpl<>(name, (Class<ComponentRole>) role, (S) domain);
+		return new DataStructureComponentImpl<>(name, role, (S) domain);
 	}
 
 	public DataStructureComponentImpl(Class<R> role, S domain)

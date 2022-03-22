@@ -113,18 +113,21 @@ defaultProxy <- (function() {
 
 defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
 
-repositoryImplementations <- list(`In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.domains.InMemoryMetadataRepository',
-                                  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.domains.CSVMetadataRepository',
-                                  `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.domains.SDMXMetadataRepository')
+repositoryImplementations <- list(`In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
+                                  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
+                                  `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.SDMXMetadataRepository')
 
-ui <- shinydashboard::dashboardPage(
+ui <- shinydashboard::dashboardPage(title="VTL Studio!",
   
   shinydashboard::dashboardHeader(disable = T),
 
   shinydashboard::dashboardSidebar(
        div(style = "text-align: center",
           img(src="logo.svg", class="vtlLogo"),
-          div(style="display:inline-block",titlePanel("VTL Studio!"))
+          div(style="display:inline-block; vertical-align: bottom",
+              h2(style="margin-bottom: 0", "VTL Studio!"),
+              div(style = "text-align: right", "Version ${r.package.version}")       
+             )
        ),
        hr(),
        fileInput(inputId = 'datafile', label = 'Load CSV', accept = 'csv'),

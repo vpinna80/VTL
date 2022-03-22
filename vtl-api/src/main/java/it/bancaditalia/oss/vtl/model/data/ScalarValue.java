@@ -22,6 +22,9 @@ package it.bancaditalia.oss.vtl.model.data;
 import java.io.Serializable;
 import java.util.function.Supplier;
 
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+
 /**
  * An interface describing VTL scalar values, as defined by the specification.
  * 

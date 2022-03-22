@@ -28,29 +28,32 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList.StringCodeItemImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringCodeItem;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class StringCodeList implements StringEnumeratedDomainSubset, Serializable
+public class StringCodeList<I extends StringDomainSubset<I>> implements StringEnumeratedDomainSubset<StringCodeList<I>, I, StringCodeItemImpl<I>, String>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
 	private final String name; 
-	private final Set<StringCodeItemImpl> items = new HashSet<>();
+	private final Set<StringCodeItemImpl<I>> items = new HashSet<>();
 	private final int hashCode;
+	private final StringDomainSubset<I> parent;
 
-	public class StringCodeItemImpl extends StringValue<StringCodeItemImpl, StringEnumeratedDomainSubset> implements StringCodeItem<StringCodeItemImpl>
+	public static class StringCodeItemImpl<I extends StringDomainSubset<I>> extends StringValue<StringCodeItemImpl<I>, StringCodeList<I>> implements StringCodeItem<StringCodeItemImpl<I>, String, StringCodeList<I>, I>
 	{
 		private static final long serialVersionUID = 1L;
 
-		public StringCodeItemImpl(String value)
+		public StringCodeItemImpl(String value, StringCodeList<I> codeList)
 		{
-			super(value, StringCodeList.this);
+			super(value, codeList);
 		}
 
 		@Override
@@ -66,12 +69,13 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 		}
 	}
 	
-	public StringCodeList(String name, Set<? extends String> items)
+	public StringCodeList(StringDomainSubset<I> parent, String name, Set<? extends String> items)
 	{
+		this.parent = parent;
 		this.name = name;
 		this.hashCode = 31 + name.hashCode();
 		for (String item: items)
-			this.items.add(new StringCodeItemImpl(item));
+			this.items.add(new StringCodeItemImpl<>(item, this));
 	}
 	
 	@Override
@@ -81,25 +85,23 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	}
 
 	@Override
-	public StringEnumeratedDomainSubset getDomain()
+	public StringCodeList<I> getDomain()
 	{
 		return this;
 	}
 
 	@Override
-	public StringDomain getParentDomain()
+	public StringDomainSubset<I> getParentDomain()
 	{
-		return Domains.STRINGDS;
+		return parent;
 	}
 
 	@Override
-	public StringCodeItemImpl cast(ScalarValue<?, ?, ?, ?> value)
+	public StringCodeItemImpl<I> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (value instanceof StringCodeItem && items.contains(value))
-			return (StringCodeItemImpl) value;
-		else if (value instanceof StringValue)
+		if (value instanceof StringValue)
 		{
-			StringCodeItemImpl item = new StringCodeItemImpl((String) value.get());
+			StringCodeItemImpl<I> item = new StringCodeItemImpl<>((String) value.get(), this);
 			if (items.contains(item))
 				return item;
 		}
@@ -116,7 +118,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	@Override
 	public boolean isComparableWith(ValueDomain other)
 	{
-		return Domains.STRINGDS.isComparableWith(other);
+		return STRINGDS.isComparableWith(other);
 	}
 
 	@Override
@@ -126,7 +128,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	}
 
 	@Override
-	public Set<StringCodeItemImpl> getCodeItems()
+	public Set<StringCodeItemImpl<I>> getCodeItems()
 	{
 		return items;
 	}
@@ -134,7 +136,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	@Override
 	public String toString()
 	{
-		return name + ":" + Domains.STRINGDS;
+		return name + ":" + parent;
 	}
 
 	@Override
@@ -152,7 +154,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		StringCodeList other = (StringCodeList) obj;
+		StringCodeList<?> other = (StringCodeList<?>) obj;
 		if (name == null)
 		{
 			if (other.name != null)
@@ -167,42 +169,42 @@ public class StringCodeList implements StringEnumeratedDomainSubset, Serializabl
 	}
 
 	@Override
-	public StringEnumeratedDomainSubset trim()
+	public StringCodeList<I> trim()
 	{
 		return stringCodeListHelper("TRIM("+name+")", String::trim);
 	}
 
 	@Override
-	public StringEnumeratedDomainSubset ltrim()
+	public StringCodeList<I> ltrim()
 	{
 		return stringCodeListHelper("LTRIM("+name+")", s -> s.replaceAll("^\\s+",""));
 	}
 
 	@Override
-	public StringEnumeratedDomainSubset rtrim()
+	public StringCodeList<I> rtrim()
 	{
 		return stringCodeListHelper("RTRIM("+name+")", s -> s.replaceAll("\\s+$",""));
 	}
 
 	@Override
-	public StringEnumeratedDomainSubset ucase()
+	public StringCodeList<I> ucase()
 	{
 		return stringCodeListHelper("UCASE("+name+")", String::toUpperCase);
 	}
 
 	@Override
-	public StringEnumeratedDomainSubset lcase()
+	public StringCodeList<I> lcase()
 	{
 		return stringCodeListHelper("LCASE("+name+")", String::toLowerCase);
 	}
 
-	private StringEnumeratedDomainSubset stringCodeListHelper(String newName, UnaryOperator<String> mapper)
+	private StringCodeList<I> stringCodeListHelper(String newName, UnaryOperator<String> mapper)
 	{
-		return new StringCodeList(newName, items.stream().map(StringCodeItem::get).map(mapper).collect(toSet()));
+		return new StringCodeList<>(parent, newName, items.stream().map(StringCodeItem::get).map(mapper).collect(toSet()));
 	}
 	
 	@Override
-	public ScalarValue<?, ?, StringEnumeratedDomainSubset, StringDomain> getDefaultValue()
+	public ScalarValue<?, ?, StringCodeList<I>, StringDomain> getDefaultValue()
 	{
 		return NullValue.instance(this);
 	}

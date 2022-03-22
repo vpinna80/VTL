@@ -26,9 +26,9 @@ import java.io.Serializable;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainSubset, DateDomain> implements DateDomainSubset<EntireDateDomainSubset>, Serializable
 {

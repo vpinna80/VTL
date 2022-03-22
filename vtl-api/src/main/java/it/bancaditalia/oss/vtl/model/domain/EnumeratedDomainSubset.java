@@ -17,19 +17,25 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.model.data;
+package it.bancaditalia.oss.vtl.model.domain;
 
+import java.io.Serializable;
 import java.util.Set;
+
+import it.bancaditalia.oss.vtl.model.data.CodeItem;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 /**
  * The representation of an enumerated domain subset (finite enumeration).
  * 
  * @author Valentino Pinna
  *
- * @param <S> the domain subset
- * @param <D> the domain
+ * @param <S> the enumerated domain subset
+ * @param <I> the parent domain subset
+ * @param <D> the base domain
+ * @param <C> the code
  */
-public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
+public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, I, D, C, R>, I extends ValueDomainSubset<I, D>, D extends ValueDomain, C extends CodeItem<C, R, S, I, D>, R extends Comparable<?> & Serializable> extends ValueDomainSubset<S, D>
 {
 	/**
 	 * @return the domain name.
@@ -46,7 +52,7 @@ public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, 
 	 * 
 	 * @return the set of all the code items in this domain.
 	 */
-	public Set<? extends CodeItem<?, ?, S, D>> getCodeItems();
+	public Set<C> getCodeItems();
 	
 	@Override ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
 }

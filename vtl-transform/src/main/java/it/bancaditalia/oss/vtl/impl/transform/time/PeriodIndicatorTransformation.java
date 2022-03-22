@@ -49,10 +49,10 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -125,7 +125,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			if (operand == null)
 			{
 				Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ds.getComponents(Identifier.class).stream()
-						.map(c -> c.as(Identifier.class))
+						.map(c -> c.asRole(Identifier.class))
 						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 						.collect(toSet());
 				if (timeIDs.size() != 1)
@@ -143,7 +143,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 				if (!TIME.isAssignableFrom(anyDomainComponent.getDomain()))
 					throw new VTLIncompatibleTypesException("period_indicator", TIMEDS, anyDomainComponent);
 				
-				componentName = anyDomainComponent.as(TIMEDS).getName();
+				componentName = anyDomainComponent.asDomain(TIMEDS).getName();
 			}
 
 			return new DataStructureBuilder(ds.getComponents(Identifier.class))

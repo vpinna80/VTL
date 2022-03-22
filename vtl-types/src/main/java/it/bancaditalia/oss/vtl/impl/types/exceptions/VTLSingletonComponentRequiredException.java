@@ -26,7 +26,7 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class VTLSingletonComponentRequiredException extends VTLException
 {

@@ -60,6 +60,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -160,7 +161,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			DataSetMetadata timeStructure = new DataStructureBuilder(structure.getComponents(Identifier.class)).build();
 			// Remove all measures and attributes then left-join the time-filled dataset with the old one
 			return ds.mapKeepingKeys(timeStructure, DataPoint::getLineage, dp -> emptyMap())
-					.analytic(timeID, windowClause, toList(), timeFinisher)
+					.analytic(dp -> LineageNode.of(this, dp.getLineage()), timeID, windowClause, toList(), timeFinisher)
 					.mappedJoin(structure, ds, (a, b) -> Utils.coalesce(b, fill(a, structure)), true);
 		}
 	}

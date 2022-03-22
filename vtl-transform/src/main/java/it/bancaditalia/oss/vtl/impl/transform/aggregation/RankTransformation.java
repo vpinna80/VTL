@@ -112,7 +112,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 			partitionIDs = partitionBy.stream()
 				.map(dataset::getComponent)
 				.map(Optional::get)
-				.map(c -> c.as(Identifier.class))
+				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		else
 			partitionIDs = Utils.getStream(dataset.getComponents(Identifier.class))
@@ -195,7 +195,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
 				.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
 				.peek(c -> { if (ordering.containsKey(c)) throw new VTLException("Partitioning component " + c + " cannot be used in order by"); })
-				.map(c -> c.as(Identifier.class))
+				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		
 		return new DataStructureBuilder(dataset.getComponents(Identifier.class))

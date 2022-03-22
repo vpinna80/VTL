@@ -22,11 +22,12 @@ package it.bancaditalia.oss.vtl.impl.meta.subsets;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.DescribedDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.operators.CriterionTransformation;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDomainRangeSubset, IntegerDomain>, IntegerDomainSubset<IntegerDomainRangeSubset>
@@ -37,6 +38,15 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 	private final long minInclusive;
 	private final long maxInclusive;
 	private final IntegerDomainSubset<?> parent;
+	private final Transformation range = new CriterionTransformation() {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public boolean test(ScalarValue<?, ?, ?, ?> scalar)
+		{
+			return scalar instanceof IntegerValue && minInclusive <= (long) scalar.get() && (long) scalar.get() <= maxInclusive;
+		}
+	};
 	
  	public IntegerDomainRangeSubset(String name, long minInclusive, long maxInclusive, IntegerDomainSubset<?> parent)
 	{
@@ -47,7 +57,7 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 	}
 
 	@Override
-	public IntegerDomain getParentDomain()
+	public IntegerDomainSubset<?> getParentDomain()
 	{
 		return parent;
 	}
@@ -87,12 +97,18 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 	@Override
 	public Transformation getCriterion()
 	{
-		throw new UnsupportedOperationException();
+		return range;
 	}
 	
 	@Override
 	public ScalarValue<?, ?, IntegerDomainRangeSubset, IntegerDomain> getDefaultValue()
 	{
 		return NullValue.instance(this);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name + "(" + parent + "{" + minInclusive + "," + maxInclusive + "})";
 	}
 }

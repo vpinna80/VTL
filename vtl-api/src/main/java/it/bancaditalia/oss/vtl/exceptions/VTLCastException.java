@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.exceptions;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class VTLCastException extends VTLException
 {

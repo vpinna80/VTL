@@ -19,18 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
-import java.util.Set;
-
-import it.bancaditalia.oss.vtl.model.data.CodeItem;
-import it.bancaditalia.oss.vtl.model.data.EnumeratedDomainSubset;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import java.io.Serializable;
 
 /**
  * Representation of a finite enumerated subset of the VTL "String" domain (essentially, a code list).
  * 
  * @author Valentino Pinna
  */
-public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<StringEnumeratedDomainSubset, StringDomain>, StringDomainSubset<StringEnumeratedDomainSubset>
+public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, I, C, R>, I extends StringDomainSubset<I>, C extends StringCodeItem<C, R, S, I>, R extends Comparable<?> & Serializable> extends EnumeratedDomainSubset<S, I, StringDomain, C, R>, StringDomainSubset<S>
 {
 	/**
 	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading and 
@@ -38,7 +34,7 @@ public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<Str
 	 *  
 	 * @return the new domain.
 	 */
-	public StringEnumeratedDomainSubset trim();
+	public S trim();
 
 	/**
 	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading 
@@ -46,7 +42,7 @@ public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<Str
 	 *  
 	 * @return the new domain.
 	 */
-	public StringEnumeratedDomainSubset ltrim();
+	public S ltrim();
 
 	/**
 	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all trailing 
@@ -54,7 +50,7 @@ public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<Str
 	 *  
 	 * @return the new domain.
 	 */
-	public StringEnumeratedDomainSubset rtrim();
+	public S rtrim();
 
 	/**
 	 * Creates a new {@link StringEnumeratedDomainSubset} by converting in upper 
@@ -62,7 +58,7 @@ public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<Str
 	 *  
 	 * @return the new domain.
 	 */
-	public StringEnumeratedDomainSubset ucase();
+	public S ucase();
 	
 	/**
 	 * Creates a new {@link StringEnumeratedDomainSubset} by converting in lower
@@ -70,21 +66,5 @@ public interface StringEnumeratedDomainSubset extends EnumeratedDomainSubset<Str
 	 *  
 	 * @return the new domain.
 	 */
-	public StringEnumeratedDomainSubset lcase();
-
-	/**
-	 * A {@link CodeItem} having a String value that is allowed in a {@link StringEnumeratedDomainSubset}.
-	 * 
-	 * @author Valentino Pinna
-	 */
-	public interface StringCodeItem<I extends StringCodeItem<I>> extends CodeItem<I, String, StringEnumeratedDomainSubset, StringDomain>
-	{
-
-	}
-	
-	@Override
-	ScalarValue<?, ?, StringEnumeratedDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value);
-	
-	@Override
-	Set<? extends StringCodeItem<?>> getCodeItems();
+	public S lcase();
 }

@@ -47,11 +47,10 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
-import it.bancaditalia.oss.vtl.util.Triple;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataStructureBuilder
@@ -82,18 +81,6 @@ public class DataStructureBuilder
 	public DataStructureBuilder addComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		this.components.addAll(components);
-		return this;
-	}
-
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureBuilder addComponent(String alias, Class<? extends ComponentRole> type, ValueDomainSubset<?, ?> domain)
-	{
-		this.components.add(DataStructureComponentImpl.of(getNormalizedAlias(alias), type, domain));
-		return this;
-	}
-
-	public <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureBuilder addComponent(Triple<String, Class<? extends R>, S> characteristics)
-	{
-		this.components.add(new DataStructureComponentImpl<>(characteristics.getFirst(), characteristics.getSecond(), characteristics.getThird()));
 		return this;
 	}
 
@@ -158,7 +145,7 @@ public class DataStructureBuilder
 		{
 			return Utils.getStream(components.values())
 					.filter(c -> c.is(typeOfComponent))
-					.map(c -> c.as(typeOfComponent))
+					.map(c -> c.asRole(typeOfComponent))
 					.collect(toSet());
 		}
 
@@ -268,7 +255,7 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier,
+		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?, ?>, StringDomain> identifier,
 				DataStructureComponent<Measure, S, D> measure)
 		{
 			return Utils.getStream(identifier.getDomain().getCodeItems())

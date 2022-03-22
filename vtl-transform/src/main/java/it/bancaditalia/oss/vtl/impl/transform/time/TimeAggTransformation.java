@@ -42,10 +42,10 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -60,7 +60,7 @@ public class TimeAggTransformation extends UnaryTransformation
 		super(operand);
 		frequency = Durations.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
 		TimePeriodDomainSubset<?> periodDomain = frequency.getRelatedTimePeriodDomain();
-		periodComponent = DataStructureComponentImpl.of(periodDomain.getVarName(), Measure.class, periodDomain).as(Measure.class);
+		periodComponent = DataStructureComponentImpl.of(periodDomain.getVarName(), Measure.class, periodDomain).asRole(Measure.class);
 	}
 
 	@Override
@@ -111,7 +111,7 @@ public class TimeAggTransformation extends UnaryTransformation
 //			else
 //			{
 				Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getComponents(Measure.class).stream()
-						.map(c -> c.as(Measure.class))
+						.map(c -> c.asRole(Measure.class))
 						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 						.collect(toSet());
 				

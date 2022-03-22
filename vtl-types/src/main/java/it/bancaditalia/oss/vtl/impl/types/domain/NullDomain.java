@@ -21,8 +21,8 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain> 
 {

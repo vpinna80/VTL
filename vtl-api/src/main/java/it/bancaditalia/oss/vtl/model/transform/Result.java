@@ -21,7 +21,7 @@ package it.bancaditalia.oss.vtl.model.transform;
 
 import java.util.function.Supplier;
 
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 /**
  * TODO

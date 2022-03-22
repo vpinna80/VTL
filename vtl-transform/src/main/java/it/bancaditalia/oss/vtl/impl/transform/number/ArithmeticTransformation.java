@@ -68,9 +68,9 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
@@ -126,7 +126,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				dp -> Utils.getStream(measureNames)
 						.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata)
 								.getComponent(name)
-								.map(c -> c.as(Measure.class))
+								.map(c -> c.asRole(Measure.class))
 								.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())
 							), name -> finisher.apply(dp, name))));
 	}

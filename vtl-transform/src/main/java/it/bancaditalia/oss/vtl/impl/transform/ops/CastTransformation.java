@@ -59,10 +59,10 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -101,7 +101,7 @@ public class CastTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getComponents(Measure.class).iterator().next();
-		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getDomain().getVarName(), Measure.class, target.getDomain()).as(Measure.class);
+		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getDomain().getVarName(), Measure.class, target.getDomain()).asRole(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(measure)
 				.build();

@@ -46,7 +46,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	{
 		super(operand);
 		
-		this.amount = ((IntegerValue<?>) amount).get();
+		this.amount = ((IntegerValue<?, ?>) amount).get();
 	}
 
 	@Override

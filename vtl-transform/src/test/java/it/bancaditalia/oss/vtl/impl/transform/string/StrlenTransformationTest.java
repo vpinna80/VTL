@@ -78,7 +78,7 @@ public class StrlenTransformationTest
 		DataSet ds = (DataSet) st.eval(session);
 
 		ConcurrentMap<?, ?> resultMap = ds.stream()
-			.map(dp -> new SimpleEntry<>(((StringValue<?, ?>) dp.get(id)).get(), ((IntegerValue<?>) dp.get(measure.get())).get()))
+			.map(dp -> new SimpleEntry<>(((StringValue<?, ?>) dp.get(id)).get(), ((IntegerValue<?, ?>) dp.get(measure.get())).get()))
 			.collect(SerCollectors.entriesToMap());
 		
 		for (int i = 0; i < resultKeys.length; i++)

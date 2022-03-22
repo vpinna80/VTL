@@ -22,11 +22,11 @@ package it.bancaditalia.oss.vtl.impl.meta.subsets;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class NumberDomainRangeSubset implements DescribedDomainSubset<NumberDomainRangeSubset, NumberDomain>, NumberDomainSubset<NumberDomainRangeSubset, NumberDomain>

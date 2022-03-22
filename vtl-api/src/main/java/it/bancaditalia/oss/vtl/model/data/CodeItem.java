@@ -21,16 +21,22 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+
 /**
  * Representation of an item in an {@link EnumeratedDomainSubset}
  * 
  * @author Valentino Pinna
  *
- * @param <I> Implementation type
+ * @param <C> Implementation type
+ * @param <R> The representation value type
  * @param <S> The domain subset of the item
+ * @param <I> The subset of the code type
  * @param <D> The domain of the type
  */
-public interface CodeItem<I extends CodeItem<I, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> extends ScalarValue<I, R, S, D>
+public interface CodeItem<C extends CodeItem<C, R, S, I, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, I, D, C, R>, I extends ValueDomainSubset<I, D>, D extends ValueDomain> extends ScalarValue<C, R, S, D>
 {
 
 }

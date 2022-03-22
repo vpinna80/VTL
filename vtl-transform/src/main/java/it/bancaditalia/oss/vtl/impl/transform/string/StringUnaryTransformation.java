@@ -33,7 +33,6 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -63,10 +62,10 @@ public class StringUnaryTransformation extends UnaryTransformation
 		LCASE("LCASE", String::toLowerCase, StringEnumeratedDomainSubset::lcase);
 
 		private final String name;
-		private final UnaryOperator<StringEnumeratedDomainSubset> codeListMapper;
+		private final UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?, ?>> codeListMapper;
 		private final UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain>> function;
 
-		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<StringEnumeratedDomainSubset> codeListMapper)
+		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?, ?>> codeListMapper)
 		{
 			this.name = name;
 			this.codeListMapper = codeListMapper;
@@ -79,7 +78,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 			return name;
 		}
 		
-		public UnaryOperator<StringEnumeratedDomainSubset> getCodeListMapper()
+		public UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?, ?>> getCodeListMapper()
 		{
 			return codeListMapper;
 		}
@@ -141,10 +140,11 @@ public class StringUnaryTransformation extends UnaryTransformation
 				throw new UnsupportedOperationException("Expected only string measures but found: " + nonstring);
 			
 			Set<DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class).stream()
-					.map(m -> m.getDomain() instanceof StringEnumeratedDomainSubset
-							? new DataStructureComponentImpl<>(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringEnumeratedDomainSubset) m.getDomain()))
-							: m
-					).collect(toSet());
+//					.map(m -> m.getDomain() instanceof StringEnumeratedDomainSubset
+//							? new DataStructureComponentImpl<>(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringEnumeratedDomainSubset<?, ?>) m.getDomain()))
+//							: m
+//					)
+					.collect(toSet());
 			
 			Set<DataStructureComponent<?, ?, ?>> components = new HashSet<>(dataset);
 			components.removeAll(dataset.getComponents(Measure.class));

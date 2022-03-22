@@ -32,8 +32,11 @@ import java.util.Map;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 /**
@@ -154,7 +157,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.filter(entryByValue(names::contains))
 				.map(Entry::getKey)
 				.filter(c -> c.is(role))
-				.map(c -> c.as(role))
+				.map(c -> c.asRole(role))
 				.collect(SerCollectors.toMapWithValues(this::get));
 	}
 
@@ -170,7 +173,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	{
 		return Utils.getStream(getValues(role).entrySet())
 				.filter(entryByKey(components::contains))
-				.map(keepingValue(c -> c.as(role)))
+				.map(keepingValue(c -> c.asRole(role)))
 				.collect(SerCollectors.entriesToMap());
 	}
 
@@ -180,4 +183,12 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @return the transformation from where the datapoint originated 
 	 */
 	public Lineage getLineage();
+
+
+	/**
+	 * Create a new DataPoint by enriching its lineage information with the provided function.
+	 * 
+	 * @return the new enriched datapoint 
+	 */
+	public DataPoint enrichLineage(SerUnaryOperator<Lineage> enricher);
 }

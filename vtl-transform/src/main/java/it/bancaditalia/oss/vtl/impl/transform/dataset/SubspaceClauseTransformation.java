@@ -58,7 +58,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
-				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().as(Identifier.class), Entry::getValue));
+				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().asRole(Identifier.class), Entry::getValue));
 		
 		final DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		return new StreamWrapperDataSet(metadata, () -> operand.stream()

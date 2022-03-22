@@ -41,6 +41,7 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class SetTransformation extends TransformationImpl
 {
@@ -49,20 +50,21 @@ public class SetTransformation extends TransformationImpl
 
 	public enum SetOperator
 	{
-		UNION(null),
-		INTERSECT((structure) -> (left, right) -> left.setDiff(left.setDiff(right))), 
-		SETDIFF((structure) -> (left, right) -> left.setDiff(right)), 
-		SYMDIFF((structure) -> (left, right) -> new BiFunctionDataSet<>(structure,  
-				(l, r) -> Stream.concat(l.setDiff(r).stream(), r.setDiff(l).stream()), left, right));
+		UNION(null), // Particular support because of multi-argument possibility
+		INTERSECT(structure -> lineageOp -> (left, right) -> left.setDiff(left.setDiff(right))), 
+		SETDIFF(structure -> lineageOp -> (left, right) -> left.setDiff(right)), 
+		SYMDIFF(structure -> enricher -> (left, right) -> new BiFunctionDataSet<>(structure,  
+				(l, r) -> Stream.concat(l.setDiff(r).stream(), r.setDiff(l).stream())
+					.map(dp -> dp.enrichLineage(enricher)), left, right));
 
-		private final SerFunction<DataSetMetadata, SerBinaryOperator<DataSet>> reducer;
+		private final SerFunction<DataSetMetadata, SerFunction<SerUnaryOperator<Lineage>, SerBinaryOperator<DataSet>>> reducer;
 
-		SetOperator(SerFunction<DataSetMetadata, SerBinaryOperator<DataSet>> reducer)
+		SetOperator(SerFunction<DataSetMetadata, SerFunction<SerUnaryOperator<Lineage>, SerBinaryOperator<DataSet>>> reducer)
 		{
 			this.reducer = reducer;
 		}
 		
-		public SerBinaryOperator<DataSet> getReducer(DataSetMetadata metadata)
+		public SerFunction<SerUnaryOperator<Lineage>,SerBinaryOperator<DataSet>> getReducer(DataSetMetadata metadata)
 		{
 			return reducer.apply(metadata);
 		}
@@ -91,7 +93,7 @@ public class SetTransformation extends TransformationImpl
 			DataSet left = (DataSet) operands.get(0).eval(scheme);
 			DataSet right = (DataSet) operands.get(1).eval(scheme);
 		
-			return setOperator.getReducer(left.getMetadata()).apply(left, right);
+			return setOperator.getReducer(left.getMetadata()).apply(l -> LineageNode.of(this, l)).apply(left, right);
 		}
 		// Special case for UNION as it has the largest memory requirements
 		else
@@ -103,7 +105,7 @@ public class SetTransformation extends TransformationImpl
 					datasets.add((DataSet) operand.eval(scheme));
 				else
 					first = false;
-			return ((DataSet) operands.get(0).eval(scheme)).union(datasets);
+			return ((DataSet) operands.get(0).eval(scheme)).union(dp -> LineageNode.of(this, dp.getLineage()), datasets);
 		}
 	}
 

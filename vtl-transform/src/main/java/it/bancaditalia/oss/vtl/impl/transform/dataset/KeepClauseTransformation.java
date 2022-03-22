@@ -86,7 +86,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 				.map(o -> o.orElse(null))
 				.filter(Objects::nonNull)
 				.filter(c -> c.is(Identifier.class))
-				.map(c -> c.as(Identifier.class))
+				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		
 		if (!namedIDs.isEmpty())

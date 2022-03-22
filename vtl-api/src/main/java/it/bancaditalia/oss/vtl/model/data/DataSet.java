@@ -39,6 +39,8 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -281,7 +283,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return The dataset result of the analytic invocation
 	 */
-	public <TT> DataSet analytic(Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components, 
+	public <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components, 
 			WindowClause windowSpec, Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers);
 
@@ -297,11 +299,11 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return The dataset result of the analytic invocation
 	 */
-	public default <TT> DataSet analytic(DataStructureComponent<?, ?, ?> component, 
+	public default <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> component, 
 			WindowClause windowSpec, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT> collector, 
 			SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
 	{
-		return analytic(singletonMap(component, component), windowSpec, singletonMap(component, collector), singletonMap(component, finisher));
+		return analytic(lineageOp, singletonMap(component, component), windowSpec, singletonMap(component, collector), singletonMap(component, finisher));
 	}
 
 	/**
@@ -316,11 +318,11 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return The dataset result of the analytic invocation
 	 */
-	public default <TT> DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause windowSpec,
-			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
+	public default <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, Set<? extends DataStructureComponent<?, ?, ?>> components,
+			WindowClause windowSpec, Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
 	{
-		return analytic(components.stream().collect(toMapWithValues(k -> k)), windowSpec, collectors, finishers);
+		return analytic(lineageOp, components.stream().collect(toMapWithValues(k -> k)), windowSpec, collectors, finishers);
 	}
 
 	/**
@@ -334,7 +336,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return The dataset result of the analytic invocation
 	 */
-	public default DataSet analytic(Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause windowSpec,
+	public default DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause windowSpec,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors)
 	{
 		Map<? extends DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>> measures = components.stream()
@@ -342,7 +344,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 		Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = components.stream()
 				.collect(toMapWithValues(measure -> (value, originalValue) -> singleton(value)));
 		
-		return analytic(measures, windowSpec, collectors, finishers);
+		return analytic(lineageOp, measures, windowSpec, collectors, finishers);
 	}
 
 	/**
@@ -352,7 +354,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param others The datasets to perform the union with
 	 * @return The result of the union. 
 	 */
-	public DataSet union(List<DataSet> others);
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others);
 
 	/**
 	 * Creates a new dataset as containing all the datapoints of this dataset that don't have the same identifiers as the ones in the other dataset.

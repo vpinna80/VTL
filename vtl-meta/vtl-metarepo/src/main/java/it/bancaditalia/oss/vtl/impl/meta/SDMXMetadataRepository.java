@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
@@ -90,7 +91,7 @@ public class SDMXMetadataRepository extends InMemoryMetadataRepository
 					.map(Element.class::cast)
 					.map(code -> code.getAttribute("id"))
 					.collect(toSet());
-				defineDomain(codelistName, new StringCodeList(codelistName, items));
+				defineDomain(codelistName, new StringCodeList<>(STRINGDS, codelistName, items));
 			});
 		LOGGER.info("Finished loading metadata", url);
 	}

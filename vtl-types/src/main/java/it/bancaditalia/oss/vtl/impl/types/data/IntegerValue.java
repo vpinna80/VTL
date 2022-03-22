@@ -26,31 +26,31 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 
-public class IntegerValue<S extends IntegerDomainSubset<S>> extends NumberValueImpl<IntegerValue<S>, Long, S, IntegerDomain>
+public class IntegerValue<C extends IntegerValue<C, S>, S extends IntegerDomainSubset<S>> extends NumberValueImpl<C, Long, S, IntegerDomain>
 {
 	private static final long serialVersionUID = 1L;
-	private static final ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> NULL_INSTANCE = NullValue.instance(INTEGERDS);
 
-	private IntegerValue(Long value, S domain)
+	public IntegerValue(Long value, S domain)
 	{
 		super(value, domain);
 	}
 	
 	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(Long value)
 	{
-		return value == null ? NULL_INSTANCE : new IntegerValue<>(value, INTEGERDS);
+		return value == null ? NullValue.instance(INTEGERDS) : new IntegerValue<>(value, INTEGERDS);
 	}
-	
-	public static <S extends IntegerDomainSubset<S>> ScalarValue<?, ?, S, IntegerDomain> of(Long value, S domain)
+
+	public static <S extends IntegerDomainSubset<S>> ScalarValue<?, ?, S, IntegerDomain> of(Long value, IntegerDomainSubset<? extends S> domain)
 	{
-		return value == null ? NullValue.instance(domain) : new IntegerValue<>(value, domain);
+		@SuppressWarnings("unchecked") S casted = (S) domain;
+		return value == null ? NullValue.instance(casted) : new IntegerValue<>(value, casted);
 	}
 	
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof IntegerValue)
-			return get().compareTo(((IntegerValue<?>) o).get());
+			return get().compareTo(((IntegerValue<?, ?>) o).get());
 			
 		return super.compareTo(o);
 	}

@@ -47,6 +47,7 @@ import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -92,7 +93,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 			partitionIDs = partitionBy.stream()
 				.map(dataset::getComponent)
 				.map(Optional::get)
-				.map(c -> c.as(Identifier.class))
+				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		else
 			partitionIDs = dataset.getComponents(Identifier.class);
@@ -111,7 +112,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 					throw new UnsupportedOperationException();
 			}));
 		
-		return dataset.analytic(dataset.getComponents(Measure.class), clause, collectors, finishers);	
+		return dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), dataset.getComponents(Measure.class), clause, collectors, finishers);	
 	}
 
 	@Override
@@ -128,7 +129,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 			.map(toEntryWithValue(dataset::getComponent))
 			.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
 			.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
-			.map(c -> c.as(Identifier.class))
+			.map(c -> c.asRole(Identifier.class))
 			.collect(toSet());
 		
 		return new DataStructureBuilder(dataset.getComponents(Identifier.class))

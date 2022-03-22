@@ -48,7 +48,7 @@ public class LimitClause implements LimitCriterion, Serializable
 		return new LimitClause(PRECEDING, count);
 	}	
 	
-	public LimitClause(LimitDirection direction, IntegerValue<?> limitCount)
+	public LimitClause(LimitDirection direction, IntegerValue<?, ?> limitCount)
 	{
 		this(direction, limitCount.get().longValue());
 	}

@@ -28,9 +28,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDomainSubset, NumberDomain> implements NumberDomainSubset<EntireNumberDomainSubset, NumberDomain>, Serializable
 {

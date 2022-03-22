@@ -83,7 +83,7 @@ public class GroupingClause
 				.peek(component -> {
 					if (!component.is(Identifier.class))
 						throw new VTLIncompatibleRolesException("aggregation group by", component, Identifier.class);
-				}).map(component -> component.as(Identifier.class))
+				}).map(component -> component.asRole(Identifier.class))
 				.collect(toSet());
 		
 		if (mode == GROUP_EXCEPT)

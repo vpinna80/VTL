@@ -172,7 +172,7 @@ public class AggregateTransformation extends UnaryTransformation
 				if (nonID.isPresent())
 					throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
 				
-				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.as(Identifier.class)).collect(toSet()));
+				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.asRole(Identifier.class)).collect(toSet()));
 				builder = builder.addComponents(aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class));
 				
 				return builder.build();

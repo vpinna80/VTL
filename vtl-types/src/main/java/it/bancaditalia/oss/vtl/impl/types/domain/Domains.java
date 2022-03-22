@@ -28,8 +28,8 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.S
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.WeeksDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.YearsDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 @SuppressWarnings("rawtypes")
 public enum Domains implements ScalarValueMetadata

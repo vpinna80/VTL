@@ -32,6 +32,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 /**
  * The immutable representation of the data structure of a {@link DataSet}.
@@ -68,7 +70,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	{
 		return getComponents(role).stream()
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
-				.map(c -> c.as(role).as(domain))
+				.map(c -> c.asRole(role).asDomain(domain))
 				.collect(toSet());
 	}
 
@@ -101,7 +103,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	{
 		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
-				.map(c -> c.as(domain));
+				.map(c -> c.asDomain(domain));
 	}
 
 	/**
@@ -116,7 +118,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	{
 		return getComponent(name)
 				.filter(c -> c.is(role))
-				.map(c -> c.as(role));
+				.map(c -> c.asRole(role));
 	}
 
 	/**
@@ -135,8 +137,8 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
 				.filter(c -> c.is(role))
-				.map(c -> c.as(domain))
-				.map(c -> c.as(role));
+				.map(c -> c.asDomain(domain))
+				.map(c -> c.asRole(role));
 	}
 
 	/**
@@ -185,7 +187,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	{
 		return getComponents(names.toArray(new String[0])).stream()
 				.filter(c -> c.is(role))
-				.map(c -> c.as(role))
+				.map(c -> c.asRole(role))
 				.collect(toSet());
 	}
 
@@ -249,5 +251,5 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param measure the measure
 	 * @return the new structure.
 	 */
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, StringEnumeratedDomainSubset, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?, ?>, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
 }

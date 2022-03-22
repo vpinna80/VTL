@@ -17,3 +17,12 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
+dsi:='spark:csv:D:\Dati\enrichedObservation.csv';
+
+filled := fill_time_series(dsi, single);
+
+d1 := lag(filled, 1 over (partition by mkmvid order by edfdate))[filter currency <> ""];
+
+ds_u := union(dsi, d1);
+
+ds_r := setdiff(ds_u, dsi)[calc attribute quality_status := "FILLED"];

@@ -58,11 +58,13 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public final class AnalyticDataSet<TT> extends AbstractDataSet
@@ -77,9 +79,10 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 	private final Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components;
 	private final int inf;
 	private final int sup;
+	private final SerFunction<DataPoint, Lineage> lineageOp;
 
-	public AnalyticDataSet(DataSet source, DataSetMetadata newStructure, Set<DataStructureComponent<Identifier, ?, ?>> partitionIds,
-			Comparator<DataPoint> orderBy, WindowCriterion range,
+	public AnalyticDataSet(DataSet source, DataSetMetadata newStructure, SerFunction<DataPoint, Lineage> lineageOp, 
+			Set<DataStructureComponent<Identifier, ?, ?>> partitionIds, Comparator<DataPoint> orderBy, WindowCriterion range,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers, 
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components)
@@ -87,6 +90,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		super(newStructure);
 		
 		this.source = source;
+		this.lineageOp = lineageOp;
 		this.partitionIds = partitionIds;
 		this.orderBy = orderBy;
 		this.collectors = collectors;
@@ -152,7 +156,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 			.map(splitting((values, dp) -> new DataPointBuilder(dp)
 				.delete(components.keySet())
 				.addAll(values)
-				.build(dp.getLineage(), getMetadata())));
+				.build(lineageOp.apply(dp), getMetadata())));
 	}
 
 	// Explode the collections resulting from the application of the window function to single components

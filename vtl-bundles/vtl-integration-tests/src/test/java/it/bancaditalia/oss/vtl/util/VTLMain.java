@@ -24,20 +24,20 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
-import it.bancaditalia.oss.vtl.session.VTLSession;
+import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
+import it.bancaditalia.oss.vtl.model.data.DataSet;
 
 public class VTLMain
 {
-	public static void main(String[] args) throws IOException
+	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
-		try (Reader reader = new InputStreamReader(VTLMain.class.getResourceAsStream("script.vtl"), StandardCharsets.UTF_8))
-		{
-			System.out.println(System.getProperty("user.dir"));
-			VTLSession session = ConfigurationManager.getDefault().createSession();
-			session.addStatements(reader);
-			session.compile();
-			System.out.println(session.resolve("T1.MAN.A.1.10"));
-		};
+		Reader reader = new InputStreamReader(VTLMain.class.getResourceAsStream("script.vtl"), StandardCharsets.UTF_8);
+		VTLSessionImpl session = new VTLSessionImpl();
+		session.addStatements(reader);
+		session.compile();
+		DataSet ds = session.resolve("ds_u", DataSet.class);
+		Triple<String[], String[], Long[]> t = new LineageViewer(ds).generateAdiacenceMatrix(session);
+		for (int i = 0; i < t.getFirst().length; i++)
+			System.out.println(t.getFirst()[i] + " --- " + t.getSecond()[i] + " --- " + t.getThird()[i]);
 	}
 }

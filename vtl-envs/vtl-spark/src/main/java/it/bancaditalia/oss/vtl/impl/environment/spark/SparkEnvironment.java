@@ -119,19 +119,24 @@ public class SparkEnvironment implements Environment
 
 	public SparkEnvironment()
 	{
+		String master = VTL_SPARK_MASTER_CONNECTION.getValue();
+		LOGGER.info("Connecting to Spark master {}", master);
+		
 		SparkConf conf = new SparkConf()
-			  .setMaster(VTL_SPARK_MASTER_CONNECTION.getValue())
+			  .setMaster(master)
 			  .setAppName("Spark SQL Environment for VTL Engine [" + hashCode() + "]")
 			  .set("spark.executor.processTreeMetrics.enabled", "false")
 			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
 			  .set("spark.sql.datetime.java8API.enabled", "true")
 			  .set("spark.sql.catalyst.dateType", "Instant")
+			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
 		
 		session = SparkSession
 			  .builder()
 			  .config(conf)
+			  .master(master)
 			  .getOrCreate();
 		
 		reader = session.read();

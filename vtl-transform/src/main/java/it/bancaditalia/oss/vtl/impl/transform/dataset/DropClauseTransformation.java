@@ -62,7 +62,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		Set<DataStructureComponent<NonIdentifier, ?, ?>> toDrop = Utils.getStream(names)
 				.map(n -> dataset.getComponent(n))
 				.map(Optional::get)
-				.map(c -> c.as(NonIdentifier.class))
+				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
@@ -83,7 +83,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 				.map(((DataSetMetadata)operand)::getComponent)
 				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names.toArray(new String[0]))))
 				.filter(c -> c.is(Identifier.class))
-				.map(c -> c.as(Identifier.class))
+				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		
 		if (!namedIDs.isEmpty())

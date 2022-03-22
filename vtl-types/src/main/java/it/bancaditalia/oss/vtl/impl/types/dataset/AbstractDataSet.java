@@ -262,7 +262,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <TT> DataSet analytic(
+	public <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, 
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
 			WindowClause clause,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
@@ -289,11 +289,11 @@ public abstract class AbstractDataSet implements DataSet
 				.addComponents(components.values())
 				.build();
 		
-		return new AnalyticDataSet<>(this, newStructure, partitionIds, orderBy, clause.getWindowCriterion(), collectors, finishers, components);
+		return new AnalyticDataSet<>(this, newStructure, lineageOp, partitionIds, orderBy, clause.getWindowCriterion(), collectors, finishers, components);
 	}
 	
 	@Override
-	public DataSet union(List<DataSet> others)
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getComponents(Identifier.class);
 		for (DataSet other: others)
@@ -304,7 +304,11 @@ public abstract class AbstractDataSet implements DataSet
 		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> seen = newKeySet();
 		try (Stream<DataPoint> stream = stream())
 		{
-			results.add(stream.peek(dp -> seen.add(dp.getValues(ids))).collect(toConcurrentSet()));
+			results.add(stream
+					.peek(dp -> seen.add(dp.getValues(ids)))
+					.map(dp -> dp.enrichLineage(l -> lineageOp.apply(dp)))
+					.collect(toConcurrentSet())
+			);
 		}
 		
 		// eagerly compute the differences (one set at a time to avoid OutOfMemory and preserve "leftmost rule")
@@ -320,6 +324,7 @@ public abstract class AbstractDataSet implements DataSet
 
 				results.add(stream2
 						.filter(dp -> seen.add(dp.getValues(ids)))
+						.map(dp -> dp.enrichLineage(l -> lineageOp.apply(dp)))
 						.collect(toConcurrentSet()));
 			}
 		

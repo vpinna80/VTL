@@ -45,7 +45,7 @@ public class OffsetTransformation extends SimpleAnalyticTransformation
 	
 	private final ScalarValue<?, ?, ?, ?> defaultValue;
 
-	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue<?> offset, ScalarValue<?, ?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
+	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue<?, ?> offset, ScalarValue<?, ?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
 	{
 		super(FIRST_VALUE, operand, partitionBy, orderByClause, 
 				new WindowCriterionImpl(DATAPOINTS, 

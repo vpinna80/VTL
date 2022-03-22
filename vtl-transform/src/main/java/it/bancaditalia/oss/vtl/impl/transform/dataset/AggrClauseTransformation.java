@@ -221,7 +221,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				{
 					DataStructureComponent<?, ?, ?> existingComponent = maybeExistingComponent.get();
 					if (existingComponent.is(Identifier.class))
-						throw new VTLInvariantIdentifiersException("aggr", existingComponent.as(Identifier.class), requestedRole);
+						throw new VTLInvariantIdentifiersException("aggr", existingComponent.asRole(Identifier.class), requestedRole);
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else

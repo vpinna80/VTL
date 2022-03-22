@@ -109,7 +109,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -248,8 +247,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		return Utils.getStream(attrs.entrySet())
 				.filter(e -> !UNSUPPORTED.contains(e.getKey()))
-				.map(keepingKey(StringValue::of))
-				.map(keepingKey(v -> (ScalarValue<?, ?, ?, ?>) v))
+				.map(keepingKey(str -> (ScalarValue<?, ?, ?, ?>) StringValue.of(str)))
 				.collect(entriesToMap());
 	}
 
@@ -272,7 +270,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	
 		final String codelistId = codelist.getId();
 		if (repository.isDomainDefined(codelistId))
-			return new DataStructureComponentImpl<>(normalizedName, role, (StringEnumeratedDomainSubset) repository.getDomain(codelistId));
+			return DataStructureComponentImpl.of(normalizedName, role, (StringDomainSubset<?>) repository.getDomain(codelistId));
 		else
 			return new DataStructureComponentImpl<>(normalizedName, role, STRINGDS);
 	}

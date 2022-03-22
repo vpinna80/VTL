@@ -340,27 +340,26 @@ public class SparkDataSet extends AbstractDataSet
 		
 		DataPointEncoder newEncoder = new DataPointEncoder(metadata);
 		MapPartitionsFunction<Tuple2<Row, Row>, Row> sparkMerge = iterator -> new Iterator<Row>() {
+				@Override
+				public boolean hasNext()
+				{
+					return iterator.hasNext();
+				}
 
-			@Override
-			public boolean hasNext()
-			{
-				return iterator.hasNext();
-			}
-
-			@Override
-			public Row next()
-			{
-				Tuple2<Row, Row> rows = iterator.next();
-				final DataPoint left = encoder.decode(rows._1);
-				DataPoint result;
-				if (leftJoin && IntStream.range(0, rows._2.length()).allMatch(i -> rows._2.get(i) == null))
-					result = mergeOp.apply(left, null);
-				else
-					result = mergeOp.apply(left, sparkOther.encoder.decode(rows._2));
-				
-				return newEncoder.encode(result);
-			}
-		};
+				@Override
+				public Row next()
+				{
+					Tuple2<Row, Row> rows = iterator.next();
+					final DataPoint left = encoder.decode(rows._1);
+					DataPoint result;
+					if (leftJoin && IntStream.range(0, rows._2.length()).allMatch(i -> rows._2.get(i) == null))
+						result = mergeOp.apply(left, null);
+					else
+						result = mergeOp.apply(left, sparkOther.encoder.decode(rows._2));
+					
+					return newEncoder.encode(result);
+				}
+			};
 		
 		Dataset<Row> joined = finalLeft.joinWith(finalRight, joinKeys, leftJoin ? "left" : "inner")
 				.filter(sparkFilter)
@@ -370,7 +369,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public <TT> DataSet analytic(
+	public <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, 
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
 			WindowClause clause,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
@@ -570,7 +569,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 	
 	@Override
-	public DataSet union(List<DataSet> others)
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
 	{
 		List<Dataset<Row>> allSparkDs = Stream.concat(Stream.of(this), others.stream())
 				.map(other -> other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other))

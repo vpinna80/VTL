@@ -21,6 +21,9 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+
 /**
  * A metadata for a {@link ScalarValue} providing information on its {@link ValueDomainSubset}.
  * 

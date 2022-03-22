@@ -195,19 +195,19 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public <TT> DataSet analytic(
+	public <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, 
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
 			WindowClause clause,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
 	{
-		return dataset.analytic(components, clause, collectors, finishers);
+		return dataset.analytic(DataPoint::getLineage, components, clause, collectors, finishers);
 	}
 	
 	@Override
-	public DataSet union(List<DataSet> others)
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
 	{
-		return dataset.union(others);
+		return dataset.union(lineageOp, others);
 	}
 	
 	@Override

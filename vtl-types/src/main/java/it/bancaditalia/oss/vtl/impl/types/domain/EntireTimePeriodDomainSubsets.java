@@ -30,9 +30,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDomainSubsets<S>> extends EntireDomainSubset<S, TimePeriodDomain> implements TimePeriodDomainSubset<S>
 {

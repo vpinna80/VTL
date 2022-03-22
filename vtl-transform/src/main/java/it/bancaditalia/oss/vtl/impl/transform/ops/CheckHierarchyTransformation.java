@@ -127,10 +127,10 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			throw new VTLIncompatibleTypesException("check_hierarchy", NUMBERDS, measure.getDomain());
 
 		DataStructureBuilder builder = new DataStructureBuilder(dataset.getComponents(Identifier.class))
-				.addComponent("ruleid",     Identifier.class, Domains.STRINGDS)
-				.addComponent("imbalance",  Measure.class,    measure.getDomain())
-				.addComponent("errorcode",  Measure.class,    Domains.STRINGDS)
-				.addComponent("errorlevel", Measure.class,    Domains.INTEGERDS)
+				.addComponent(DataStructureComponentImpl.of("ruleid",     Identifier.class, Domains.STRINGDS))
+				.addComponent(DataStructureComponentImpl.of("imbalance",  Measure.class,    measure.getDomain()))
+				.addComponent(DataStructureComponentImpl.of("errorcode",  Measure.class,    Domains.STRINGDS))
+				.addComponent(DataStructureComponentImpl.of("errorlevel", Measure.class,    Domains.INTEGERDS))
 				.removeComponent(ruleKey);
 		
 		if (output != ALL)

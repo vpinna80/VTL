@@ -17,9 +17,11 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.model.data;
+package it.bancaditalia.oss.vtl.model.domain;
 
 import java.io.Serializable;
+
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 /**
  * A standard unrestricted VTL valuedomain as defined in VTL specification. 

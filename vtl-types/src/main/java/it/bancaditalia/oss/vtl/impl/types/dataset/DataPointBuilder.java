@@ -60,6 +60,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataPointBuilder
@@ -215,20 +216,27 @@ public class DataPointBuilder
 			hashCode = dpValues.hashCode();
 		}
 
+		private DataPointImpl(SerUnaryOperator<Lineage> enricher, DataPointImpl other)
+		{
+			this.lineage = enricher.apply(other.lineage);
+			this.dpValues = other.dpValues;
+			hashCode = dpValues.hashCode();
+		}
+
 		@Override
 		public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
 		{
 			if (role == Identifier.class)
 			{
 				if (ids == null)
-					ids = Utils.getStream(dpValues).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.as(Identifier.class))).collect(SerCollectors.entriesToMap());
+					ids = Utils.getStream(dpValues).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.asRole(Identifier.class))).collect(SerCollectors.entriesToMap());
 				// safe cast, R is Identifier
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				final Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map) ids;
 				return result;
 			}
 			else
-				return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.as(role)).collect(SerCollectors.toMapWithValues(dpValues::get));
+				return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.asRole(role)).collect(SerCollectors.toMapWithValues(dpValues::get));
 		}
 
 		@Override
@@ -338,6 +346,12 @@ public class DataPointBuilder
 		public Lineage getLineage()
 		{
 			return lineage;
+		}
+		
+		@Override
+		public DataPoint enrichLineage(SerUnaryOperator<Lineage> enricher)
+		{
+			return new DataPointImpl(enricher, this);
 		}
 	}
 }

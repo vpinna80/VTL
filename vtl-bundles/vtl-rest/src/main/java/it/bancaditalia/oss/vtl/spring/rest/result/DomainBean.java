@@ -21,7 +21,7 @@ package it.bancaditalia.oss.vtl.spring.rest.result;
 
 import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.model.data.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class DomainBean implements Serializable
 {

@@ -17,7 +17,9 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.model.data;
+package it.bancaditalia.oss.vtl.model.domain;
+
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 /**
  * A subset of a {@link ValueDomain} as defined by VTL specification.
@@ -48,10 +50,4 @@ public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends 
 	 * @return the default value for this domain if defined. 
 	 */
 	public ScalarValue<?, ?, S, D> getDefaultValue();
-	
-	@Override
-	boolean equals(Object obj);
-	
-	@Override
-	int hashCode();
 }

@@ -30,9 +30,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerDomainSubset, IntegerDomain> implements IntegerDomainSubset<EntireIntegerDomainSubset>, Serializable
 {
