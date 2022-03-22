@@ -44,7 +44,8 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 		@Override
 		public boolean test(ScalarValue<?, ?, ?, ?> scalar)
 		{
-			return scalar instanceof IntegerValue && minInclusive <= (long) scalar.get() && (long) scalar.get() <= maxInclusive;
+			return scalar instanceof NullValue ||
+					scalar instanceof IntegerValue && minInclusive <= (Long) scalar.get() && (Long) scalar.get() <= maxInclusive;
 		}
 	};
 	
