@@ -62,9 +62,16 @@
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-confman</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-bundle-deps</artifactId>
 			<version>${project.version}</version>
 			<type>pom</type>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

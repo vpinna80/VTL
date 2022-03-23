@@ -209,7 +209,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		return "rank(over (" 
 				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
 				+ (orderByClause != null ? orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")) : "")
-				+ ")";
+				+ "))";
 	}
 
 	@Override
