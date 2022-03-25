@@ -61,53 +61,24 @@ jobs:
       with:
         r-version: ${{ matrix.r }}
     
-    - name: Cache Maven packages
+    - name: Cache build artifacts
       uses: actions/cache@v2
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-
-    - name: Cache R packages (MacOS and Linux)
-      if: runner.os != 'Windows'
-      uses: actions/cache@v2
-      with:
-        path: ${{ env.R_LIBS_USER }}
-        key: ${{ runner.os }}-R-${{ matrix.r }}-Java-${{ matrix.java }}
-        restore-keys: ${{ runner.os }}-R-${{ matrix.r }}-Java-${{ matrix.java }}
     
-    - name: Install R package installer
-      run: Rscript -e "install.packages('remotes')"
-
     - name: Generate RVTL DESCRIPTION file
-      run: mvn -pl ".,RVTL" -P with-r --file pom.xml "-Dgpg.skip=true" "org.apache.maven.plugins:maven-resources-plugin:3.1.0:resources"
-
-    - name: Install R system dependencies (Linux)
-      if: runner.os == 'Linux'
-      env:
-        RHUB_PLATFORM: linux-x86_64-ubuntu-gcc
-      run: |
-        Rscript -e "remotes::install_github('r-hub/sysreqs')"
-        sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('RVTL/target/classes/R/DESCRIPTION'))")
-        sudo -s eval "$sysreqs"
-    
-    - name: Restore Java ${{ matrix.java }} (Linux)
-      if: runner.os == 'Linux'
-      uses: actions/setup-java@v2
-      with:
-        java-version: ${{ matrix.java }}
-        distribution: "temurin"
+      run: mvn -pl ".,:RVTL" -P with-r "build-helper:regex-properties@gen-version" "resources:resources"
     
     - name: Link R to Java (MacOS and Linux)
       if: runner.os != 'Windows'
       run: sudo -E R CMD javareconf
 
-    - name: Install RVTL dependencies
-      run: |
-        type <- ifelse(Sys.info()[["sysname"]] == "Linux", "source", "both")
-        remotes::install_cran(c('devtools', 'rJava', 'roxygen2'),  type = type)
-        remotes::install_deps(pkgdir = 'RVTL/target/classes/R', dependencies = TRUE,  type = type)
-      shell: Rscript {0}
+    - name: Install RVTL R dependencies
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        working-directory: './vtl-bundles/vtl-r/RVTL/target/classes/R'
     
     - name: Build with Maven
       run: mvn -P with-r --file pom.xml "-Dgpg.skip=true" clean verify
