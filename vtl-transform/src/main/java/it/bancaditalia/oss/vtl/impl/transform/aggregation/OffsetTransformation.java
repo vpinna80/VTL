@@ -31,6 +31,7 @@ import java.util.List;
 import it.bancaditalia.oss.vtl.impl.transform.util.LimitClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
@@ -60,10 +61,12 @@ public class OffsetTransformation extends SimpleAnalyticTransformation
 	{
 		String operator = windowCriterion.getInfBound().getDirection() == FOLLOWING ? "lead" : "lag";
 		long offset = Math.abs(windowCriterion.getInfBound().getCount());
-		return operator + "(" + operand + ", " + offset + ", " + defaultValue + " over (" 
+		return operator + "(" + operand + ", " + offset + 
+				(defaultValue == null || defaultValue instanceof NullValue ? "" : ", " + defaultValue)
+				+ " over (" 
 				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().collect(joining(", ", " partition by ", " ")))
 				+ (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")))
-				+ ")";
+				+ "))";
 	}
 
 }
