@@ -78,7 +78,6 @@ jobs:
     - name: Install RVTL R dependencies
       uses: r-lib/actions/setup-r-dependencies@v2
       with:
-        packages: floidgilbert/jdx, deps::., any::sessioninfo
         working-directory: './vtl-bundles/vtl-r/RVTL/target/classes/R'
     
     - name: Build with Maven
