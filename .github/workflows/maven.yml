@@ -40,7 +40,7 @@ jobs:
           - os: windows-latest
           - os: macOS-latest
           - { os: ubuntu-18.04, rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest" }
-        r: [ release ]
+        r: [ 4.0.1, release ]
         java: [ 8, 11 ]
 
     env:
@@ -69,7 +69,7 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
     
     - name: Generate RVTL DESCRIPTION file
-      run: mvn -pl ".,:RVTL" -P with-r "build-helper:regex-properties@gen-version" "resources:resources"
+      run: mvn -pl ".,:RVTL" -P with-r clean "build-helper:regex-properties@gen-version" "resources:resources"
     
     - name: Link R to Java (MacOS and Linux)
       if: runner.os != 'Windows'
@@ -78,10 +78,11 @@ jobs:
     - name: Install RVTL R dependencies
       uses: r-lib/actions/setup-r-dependencies@v2
       with:
+        packages: floidgilbert/jdx, deps::., any::sessioninfo
         working-directory: './vtl-bundles/vtl-r/RVTL/target/classes/R'
     
     - name: Build with Maven
-      run: mvn -P with-r --file pom.xml "-Dgpg.skip=true" clean verify
+      run: mvn -P with-r --file pom.xml "-Dgpg.skip=true" verify
 
     - name: Run codacy-coverage-reporter
       uses: codacy/codacy-coverage-reporter-action@master
