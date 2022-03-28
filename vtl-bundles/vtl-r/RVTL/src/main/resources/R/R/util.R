@@ -44,38 +44,32 @@ vtlTryCatch <- function(expr) {
 }
 
 convertToDF <- function(jnode) {
-  names <- jnode$keySet()
-  node <- lapply(names, function(name) {
-    vals <- lapply(.jcast(jnode$get(name), "java.util.List"), function(x) {
-      if (x %instanceof% java.lang.Double) {
+  nodenames <- sapply(jnode$keySet(), .jstrVal)
+  nodesvals <- lapply(nodenames, function (nodename) .jcast(jnode$get(nodename), "java.util.List"))
+  dateidxes <- which(sapply(nodesvals, function (nodevals) any(sapply(nodevals, `%instanceof%`, "java.time.LocalDate"))))
+  node <- lapply(nodesvals, function(node) {
+    sapply(node, function(x) {
+      if (is.jnull(x)) {
+      	return(NA)
+      } else if (!is(x, 'jobjRef')) {
+        return(x)
+      } else if (x %instanceof% "java.lang.Double") {
       	return(x$doubleValue())
-      } else if (x %instanceof% java.lang.Long) {
+      } else if (x %instanceof% "java.lang.Long") {
       	return(x$longValue())
-      } else if (x %instanceof% java.lang.String) {
+      } else if (x %instanceof% "java.lang.String") {
       	return(.jstrVal(x))
-      } else if (x %instanceof% java.lang.Boolean) {
+      } else if (x %instanceof% "java.lang.Boolean") {
       	return(as.logical(x$booleanValue()))
-      } else if (x %instanceof% java.time.LocalDate) {
+      } else if (x %instanceof% "java.time.LocalDate") {
       	return(as.Date(.jstrVal(x$toString())))
       } else {
       	return(x)
       }
     })
   })
-  if(is.list(node) && length(node) > 0) {
-    #there are columns with all nulls
-    nulls = which(sapply(node, is.list))
-    for(item in nulls) {
-      unlisted = unlist(node[[item]])
-      if(is.null(unlisted)){
-        #all nulls
-        unlisted = rep(NA, times = length(node[[item]]))
-      }
-      node[[item]] = unlisted
-    }
-  }
   
-  names(node) <- names
+  names(node) <- nodenames
+  node[dateidxes] <- lapply(dateidxes, function(dateidx) as.Date(node[[dateidx]], as.Date('1970-01-01')))
   return(as.data.frame(node, stringsAsFactors = F))
 }
-
