@@ -44,7 +44,24 @@ vtlTryCatch <- function(expr) {
 }
 
 convertToDF <- function(jnode) {
-  node <- jdx::convertToR(jnode, strings.as.factors = F)
+  names <- jnode$keySet()
+  node <- lapply(names, function(name) {
+    vals <- lapply(.jcast(jnode$get(name), "java.util.List"), function(x) {
+      if (x %instanceof% java.lang.Double) {
+      	return(x$doubleValue())
+      } else if (x %instanceof% java.lang.Long) {
+      	return(x$longValue())
+      } else if (x %instanceof% java.lang.String) {
+      	return(.jstrVal(x))
+      } else if (x %instanceof% java.lang.Boolean) {
+      	return(as.logical(x$booleanValue()))
+      } else if (x %instanceof% java.time.LocalDate) {
+      	return(as.Date(.jstrVal(x$toString())))
+      } else {
+      	return(x)
+      }
+    })
+  })
   if(is.list(node) && length(node) > 0) {
     #there are columns with all nulls
     nulls = which(sapply(node, is.list))
@@ -58,6 +75,7 @@ convertToDF <- function(jnode) {
     }
   }
   
+  names(node) <- names
   return(as.data.frame(node, stringsAsFactors = F))
 }
 
