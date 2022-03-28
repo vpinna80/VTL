@@ -70,14 +70,11 @@ jobs:
     
     - name: Generate RVTL DESCRIPTION file
       run: mvn -pl ".,:RVTL" -P with-r clean "build-helper:regex-properties@gen-version" "resources:resources"
-    
-    - name: Link R to Java (MacOS and Linux)
-      if: runner.os != 'Windows'
-      run: sudo -E R CMD javareconf
 
     - name: Install RVTL R dependencies
       uses: r-lib/actions/setup-r-dependencies@v2
       with:
+        extra-packages: roxygen2
         working-directory: './vtl-bundles/vtl-r/RVTL/target/classes/R'
     
     - name: Build with Maven
