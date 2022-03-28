@@ -134,8 +134,8 @@ public class ConditionalTransformation extends TransformationImpl
 					mapping(dp -> dp.getValues(valueIDs, Identifier.class), toSet())));
 		}
 		
-		DataSet thenFiltered = thenD.filter(dp -> partitions.get(true).contains(dp.getValues(Identifier.class)));
-		DataSet elseFiltered = elseD.filter(dp -> partitions.get(false).contains(dp.getValues(Identifier.class)));
+		DataSet thenFiltered = thenD.filter(dp -> partitions.get(true).contains(dp.getValues(Identifier.class)), dp -> LineageNode.of(thenExpr, dp.getLineage()));
+		DataSet elseFiltered = elseD.filter(dp -> partitions.get(false).contains(dp.getValues(Identifier.class)), dp -> LineageNode.of(elseExpr, dp.getLineage()));
 		
 		return new BiFunctionDataSet<>((DataSetMetadata) metadata, 
 				(dsThen, dsElse) -> {

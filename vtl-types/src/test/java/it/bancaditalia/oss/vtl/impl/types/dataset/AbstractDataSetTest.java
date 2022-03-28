@@ -153,7 +153,7 @@ public class AbstractDataSetTest
 	@Test
 	void testFilter()
 	{
-		DataSet result = INSTANCE.filter(dp -> true);
+		DataSet result = INSTANCE.filter(dp -> true, DataPoint::getLineage);
 		assertEquals(STRUCTURE, result.getMetadata());
 		assertEquals(new HashSet<>(Arrays.asList(DATAPOINTS)), result.stream().collect(toSet()));
 	}

@@ -75,7 +75,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 			final DatapointScope dpScope = new DatapointScope(dp, metadata);
 			final ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
 			return (TRUE.equals(BOOLEANDS.cast(filterValue)));
-		});
+		}, dp -> LineageNode.of(this,  dp.getLineage()));
 	}
 
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

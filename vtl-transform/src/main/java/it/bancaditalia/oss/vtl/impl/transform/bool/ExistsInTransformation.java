@@ -110,7 +110,7 @@ public class ExistsInTransformation extends BinaryTransformation
 					return map;
 				};
 			
-		return left.filter(filter).mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), mapper);
+		return left.filter(filter, DataPoint::getLineage).mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), mapper);
 	}
 
 	@Override

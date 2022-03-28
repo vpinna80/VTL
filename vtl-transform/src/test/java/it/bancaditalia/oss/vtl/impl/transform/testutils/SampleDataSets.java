@@ -167,11 +167,13 @@ public enum SampleDataSets implements DataSet
 		return dataset.filteredMappedJoin(metadata, rightDataset, filter, mergeOp, false);
 	}
 
-	public DataSet filter(SerPredicate<DataPoint> predicate)
+	@Override
+	public DataSet filter(SerPredicate<DataPoint> predicate,
+			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
 	{
-		return dataset.filter(predicate);
+		return dataset.filter(predicate, DataPoint::getLineage);
 	}
-
+	
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
 			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{

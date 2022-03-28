@@ -69,6 +69,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.spark.api.java.function.FilterFunction;
+import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.MapGroupsFunction;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Column;
@@ -96,6 +97,7 @@ import com.esotericsoftware.kryo.io.Input;
 
 import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -226,16 +228,23 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet filter(SerPredicate<DataPoint> predicate)
+	public DataSet filter(SerPredicate<DataPoint> predicate,
+			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
 	{
 		FilterFunction<Row> func = row -> predicate.test(encoder.decode(row));
-		return new SparkDataSet(session, getMetadata(), dataFrame.filter(func));
+		DataSetMetadata structure = getMetadata();
+		MapFunction<Row, Row> lineage = row -> {
+			DataPoint dp = encoder.decode(row);
+			DataPoint newDp = new DataPointBuilder(dp).build(lineageOperator.apply(dp), structure);
+			return encoder.encode(newDp);
+		};
+		return new SparkDataSet(session, getMetadata(), dataFrame.filter(func).map(lineage, encoder.getRowEncoder()));
 	}
-
+	
 	@Override
 	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
-		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)));	
+		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)), DataPoint::getLineage);	
 	}
 	
 	@Override

@@ -105,7 +105,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public default DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
-		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)));	
+		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)), DataPoint::getLineage);	
 	}
 
 	/**
@@ -114,7 +114,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param predicate The {@link Predicate} to be applied.
 	 * @return A new filtered DataSet. 
 	 */
-	public DataSet filter(SerPredicate<DataPoint> predicate);
+	public DataSet filter(SerPredicate<DataPoint> predicate, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator);
 
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.

@@ -333,13 +333,14 @@ public abstract class AbstractDataSet implements DataSet
 				.map(Utils::getStream)
 				.collect(concatenating(ORDERED)), results);
 	}
-	
-	@Override
-	public DataSet filter(SerPredicate<DataPoint> predicate)
-	{
-		return new StreamWrapperDataSet(dataStructure, () -> stream().filter(predicate));
-	}
 
+	@Override
+	public DataSet filter(SerPredicate<DataPoint> predicate,
+			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
+	{
+		return new StreamWrapperDataSet(dataStructure, () -> stream().filter(predicate).map(dp -> new DataPointBuilder(dp).build(lineageOperator.apply(dp), dataStructure)));
+	}
+	
 	@Override
 	public String toString()
 	{
@@ -392,7 +393,7 @@ public abstract class AbstractDataSet implements DataSet
 			return peekIfTrace(dp -> {
 					final Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keys = dp.getValues(Identifier.class);
 					LOGGER.trace("Setdiff: {} datapoint with keys {}.", index.contains(keys) ? "removed" : "passed", keys);
-				}).filter(dp -> !index.contains(dp.getValues(Identifier.class))).stream();
+				}).filter(dp -> !index.contains(dp.getValues(Identifier.class)), DataPoint::getLineage).stream();
 		}, right);
 	}
 	

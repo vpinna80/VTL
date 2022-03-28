@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -164,7 +163,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		@Override
 		public Lineage computeLineage()
 		{
-			return calcClause.getLineage();
+			throw new UnsupportedOperationException();
 		}
 	}
 
@@ -199,12 +198,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
-			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> {
-				// The lineage for the new datapoint as the combination of lineage of each clause
-				return LineageNode.of(this, LineageCall.of(Stream.concat(Stream.of(dp.getLineage()), 
-						Utils.getStream(nonAnalyticClauses).map(Transformation::getLineage))
-					.collect(toList())));
-			}, dp -> {
+			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata);
 					
 					// place calculated components (eventually overriding existing ones) 
