@@ -5,6 +5,10 @@
 ![Maven metadata URL](https://img.shields.io/maven-metadata/v?label=maven-release&metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fit%2Fbancaditalia%2Foss%2Fvtl%2Fvtl%2Fmaven-metadata.xml)
 ![CRAN/METACRAN](https://img.shields.io/cran/v/RVTL?label=cran-release)
 
+> :warning: As of 28/03/2022, RVTL package requires the **jdx** dependency that has unfortunately been removed from CRAN.
+> Thus, running RVTL and VTL Studio will fail unless you also have **jdx** already installed.
+> We are working to resolve the issue.
+
 # VTL E&E
 
 An engine and editor for the 
