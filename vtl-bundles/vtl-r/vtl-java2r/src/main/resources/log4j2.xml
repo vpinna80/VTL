@@ -48,7 +48,7 @@
 			<AppenderRef ref="STDERR2" />
 		</Logger>
 
-		<Root level="debug">
+		<Root level="info">
 			<AppenderRef ref="STDERR1" />
 			<AppenderRef ref="STDERR2" />
 		</Root>
