@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.PreparedStatement;
@@ -110,9 +111,11 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				String url = Objects.requireNonNull(METADATA_JDBC_URL.getValue(), "JDBC URL must not be null");
 				try
 				{
-					return Class.forName(drv).asSubclass(Driver.class).newInstance().connect(url, new Properties());
+					return Thread.currentThread().getContextClassLoader().loadClass(drv).asSubclass(Driver.class)
+							.getConstructor().newInstance().connect(url, new Properties());
 				}
-				catch (InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException e)
+				catch (InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException | IllegalArgumentException 
+						| InvocationTargetException | NoSuchMethodException | SecurityException e)
 				{
 					throw new IllegalStateException("Error estabilishing connection to " + url, e);
 				}
