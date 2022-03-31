@@ -45,31 +45,11 @@ vtlTryCatch <- function(expr) {
 
 convertToDF <- function(jnode) {
   nodenames <- sapply(jnode$keySet(), .jstrVal)
-  nodesvals <- lapply(nodenames, function (nodename) .jcast(jnode$get(nodename), "java.util.List"))
-  dateidxes <- which(sapply(nodesvals, function (nodevals) any(sapply(nodevals, `%instanceof%`, "java.time.LocalDate"))))
-  node <- lapply(nodesvals, function(node) {
-    sapply(node, function(x) {
-      if (is.jnull(x)) {
-      	return(NA)
-      } else if (!is(x, 'jobjRef')) {
-        return(x)
-      } else if (x %instanceof% "java.lang.Double") {
-      	return(x$doubleValue())
-      } else if (x %instanceof% "java.lang.Long") {
-      	return(x$longValue())
-      } else if (x %instanceof% "java.lang.String") {
-      	return(.jstrVal(x))
-      } else if (x %instanceof% "java.lang.Boolean") {
-      	return(as.logical(x$booleanValue()))
-      } else if (x %instanceof% "java.time.LocalDate") {
-      	return(as.Date(.jstrVal(x$toString())))
-      } else {
-      	return(x)
-      }
-    })
-  })
-  
-  names(node) <- nodenames
-  node[dateidxes] <- lapply(dateidxes, function(dateidx) as.Date(node[[dateidx]], as.Date('1970-01-01')))
-  return(as.data.frame(node, stringsAsFactors = F))
+  nodesvals <- lapply(nodenames, jnode$get)
+  names(nodesvals) <- nodenames
+  bools <- which(sapply(nodesvals, function(array) is.integer(array) && all(array %in% as.integer(c(1L, 0L, NA)))))
+  dates <- which(sapply(nodesvals, function(array) is.integer(array) && !all(array %in% as.integer(c(1L, 0L, NA)))))
+  nodesvals[dates] <- lapply(nodesvals[dates], as.Date, as.Date("1970-01-01"))
+  nodesvals[bools] <- lapply(nodesvals[dates], as.logical)
+  return(as.data.frame(nodesvals))
 }
