@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ManagedBlocker;
@@ -78,13 +79,46 @@ public class CachedDataSet extends NamedDataSet
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedDataSet.class);
-	private static final Map<VTLSession, Map<String, CacheWaiter>> SESSION_CACHES = new ConcurrentHashMap<>();
+	private static final WeakHashMap<VTLSession, Map<String, CacheWaiter>> SESSION_CACHES = new WeakHashMap<>(); 
 	private static final ReferenceQueue<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> REF_QUEUE = new ReferenceQueue<>();
 	private static final Map<Reference<?>, Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
 
 	private final transient CacheWaiter waiter;
 	private transient volatile SoftReference<Set<DataPoint>> unindexed = new SoftReference<>(null);
 	
+	static {
+		new Thread() {
+			
+			{
+				setName("CachedDataSet gc watcher");
+				setDaemon(true);
+			}
+			
+			@Override
+			public void run() 
+			{
+				while (!Thread.interrupted())
+					try 
+					{
+						Reference<? extends Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> ref;
+						while ((ref = REF_QUEUE.poll()) != null)
+						{
+							Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(ref);
+							if (data != null)
+								LOGGER.warn("Cleaned an index of {} over {}", data.getKey(), data.getValue());
+						}
+						
+						Thread.sleep(5000);
+					}
+					catch (InterruptedException e)
+					{
+						Thread.currentThread().interrupt();
+					}
+			}
+			
+		}.start();
+	}
+
 	/**
 	 * Waits for cache completion on a dataset if caching has already started.
 	 * Prevents different threads from starting to cache the same dataset.
@@ -167,45 +201,21 @@ public class CachedDataSet extends NamedDataSet
 			lockingRef.set(null);
 		}
 	}
-	
-	static {
-		new Thread() {
-			
-			{
-				setName("CachedDataSet gc watcher");
-				setDaemon(true);
-			}
-			
-			@Override
-			public void run() 
-			{
-				while (!Thread.interrupted())
-					try 
-					{
-						Reference<? extends Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> ref;
-						while ((ref = REF_QUEUE.poll()) != null)
-						{
-							Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(ref);
-							if (data != null)
-								LOGGER.warn("Cleaned an index of {} over {}", data.getKey(), data.getValue());
-						}
-						
-						Thread.sleep(5000);
-					}
-					catch (InterruptedException e)
-					{
-						Thread.currentThread().interrupt();
-					}
-			}
-			
-		}.start();
-	}
 
 	public CachedDataSet(VTLSessionImpl session, String alias, DataSet delegate)
 	{
 		super(alias, delegate);
 		
-		waiter = SESSION_CACHES.computeIfAbsent(session, s -> new ConcurrentHashMap<>()).computeIfAbsent(alias, a -> new CacheWaiter());
+		synchronized (SESSION_CACHES)
+		{
+			Map<String, CacheWaiter> waitersMap = SESSION_CACHES.get(session);
+			if (waitersMap == null)
+			{
+				waitersMap = new ConcurrentHashMap<>();
+				SESSION_CACHES.put(session, waitersMap);
+			}
+			waiter = waitersMap.computeIfAbsent(alias, a -> new CacheWaiter());
+		}
 	}
 
 	public CachedDataSet(VTLSessionImpl session, NamedDataSet delegate)
