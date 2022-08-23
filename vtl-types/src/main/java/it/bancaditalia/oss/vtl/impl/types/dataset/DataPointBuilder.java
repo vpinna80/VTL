@@ -175,25 +175,21 @@ public class DataPointBuilder
 
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
 		private final Lineage lineage;
+		private final SerUnaryOperator<Lineage> enricher;
 		private final int hashCode; 
-
+		
 		private transient Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
 
 		private DataPointImpl(Lineage lineage, DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
 			this.lineage = lineage;
-			if (!(values instanceof Serializable))
-				throw new IllegalStateException("The values map must be serializable");
+			this.dpValues = new HashMap<>(structure.size(), 1.0f);
+			dpValues.putAll(values);
 
 			if (values.size() != structure.size())
-			{
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> filledValues = new HashMap<>(values);
 				for (DataStructureComponent<?, ?, ?> component: structure)
 					if (!component.is(Identifier.class) && !values.containsKey(component))
-						filledValues.put(component, NullValue.instanceFrom(component));
-				this.dpValues = filledValues;
-			} else
-				this.dpValues = values;
+						dpValues.put(component, NullValue.instanceFrom(component));
 
 			if (!structure.equals(dpValues.keySet()))
 			{
@@ -214,11 +210,13 @@ public class DataPointBuilder
 			}
 			
 			hashCode = dpValues.hashCode();
+			enricher = SerUnaryOperator.identity();
 		}
 
 		private DataPointImpl(SerUnaryOperator<Lineage> enricher, DataPointImpl other)
 		{
-			this.lineage = enricher.apply(other.lineage);
+			this.lineage = other.lineage;
+			this.enricher = other.enricher.andThen(enricher);
 			this.dpValues = other.dpValues;
 			hashCode = dpValues.hashCode();
 		}
@@ -345,7 +343,7 @@ public class DataPointBuilder
 		@Override
 		public Lineage getLineage()
 		{
-			return lineage;
+			return enricher == SerUnaryOperator.<Lineage>identity() ? lineage : enricher.apply(lineage);
 		}
 		
 		@Override

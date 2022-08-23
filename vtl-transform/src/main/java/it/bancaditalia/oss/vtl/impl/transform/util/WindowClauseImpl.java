@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
@@ -42,10 +41,10 @@ public class WindowClauseImpl implements WindowClause, Serializable
 	private final List<SortCriterion> sortCriteria;
 	private final WindowCriterion windowCriterion;
 	
-	public WindowClauseImpl(Set<DataStructureComponent<Identifier, ?, ?>> partitioningIds, List<? extends SortCriterion> sortCriteria, WindowCriterion windowCriterion)
+	public WindowClauseImpl(Set<DataStructureComponent<Identifier, ?, ?>> partitioningIds, List<SortCriterion> sortCriteria, WindowCriterion windowCriterion)
 	{
 		this.partitioningIds = Utils.coalesce(partitioningIds, emptySet());
-		this.sortCriteria = Utils.coalesce(sortCriteria, emptyList()).stream().map(SortCriterion.class::cast).collect(toList());
+		this.sortCriteria = Utils.coalesce(sortCriteria, emptyList());
 		this.windowCriterion = windowCriterion;
 	}
 
@@ -66,5 +65,52 @@ public class WindowClauseImpl implements WindowClause, Serializable
 	public WindowCriterion getWindowCriterion()
 	{
 		return windowCriterion;
+	}
+
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((partitioningIds == null) ? 0 : partitioningIds.hashCode());
+		result = prime * result + ((sortCriteria == null) ? 0 : sortCriteria.hashCode());
+		result = prime * result + ((windowCriterion == null) ? 0 : windowCriterion.hashCode());
+		return result;
+	}
+
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		WindowClauseImpl other = (WindowClauseImpl) obj;
+		if (partitioningIds == null)
+		{
+			if (other.partitioningIds != null)
+				return false;
+		}
+		else if (!partitioningIds.equals(other.partitioningIds))
+			return false;
+		if (sortCriteria == null)
+		{
+			if (other.sortCriteria != null)
+				return false;
+		}
+		else if (!sortCriteria.equals(other.sortCriteria))
+			return false;
+		if (windowCriterion == null)
+		{
+			if (other.windowCriterion != null)
+				return false;
+		}
+		else if (!windowCriterion.equals(other.windowCriterion))
+			return false;
+		return true;
 	}
 }

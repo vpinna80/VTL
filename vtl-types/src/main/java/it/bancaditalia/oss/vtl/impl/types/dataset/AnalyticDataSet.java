@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
@@ -35,10 +36,10 @@ import static java.lang.Math.min;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
+import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -47,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -61,6 +64,8 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
+import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
@@ -71,6 +76,9 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticDataSet.class);
+	
+	private static final Map<Entry<Set<DataStructureComponent<Identifier, ?, ?>>, List<SortCriterion>>, WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>>> CACHES = new ConcurrentHashMap<>();
+	
 	private final DataSet source;
 	private final Set<DataStructureComponent<Identifier, ?, ?>> partitionIds;
 	private final Comparator<DataPoint> orderBy;
@@ -80,9 +88,10 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 	private final int inf;
 	private final int sup;
 	private final SerFunction<DataPoint, Lineage> lineageOp;
+	
+	private final transient WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>> cache;
 
-	public AnalyticDataSet(DataSet source, DataSetMetadata newStructure, SerFunction<DataPoint, Lineage> lineageOp, 
-			Set<DataStructureComponent<Identifier, ?, ?>> partitionIds, Comparator<DataPoint> orderBy, WindowCriterion range,
+	public AnalyticDataSet(DataSet source, DataSetMetadata newStructure, SerFunction<DataPoint, Lineage> lineageOp, WindowClause clause,
 			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
 			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers, 
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components)
@@ -91,15 +100,26 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		
 		this.source = source;
 		this.lineageOp = lineageOp;
-		this.partitionIds = partitionIds;
-		this.orderBy = orderBy;
+		this.partitionIds = clause.getPartitioningIds();
 		this.collectors = collectors;
 		this.finishers = finishers;
 		this.components = components;
 		
-		if (range != null)
+		this.orderBy = (dp1, dp2) -> {
+				for (SortCriterion criterion: clause.getSortCriteria())
+				{
+					int res = dp1.get(criterion.getComponent()).compareTo(dp2.get(criterion.getComponent()));
+					if (res != 0)
+						return criterion.getMethod() == ASC ? res : -res;
+				}
+
+				return 0;
+			};
+
+		WindowCriterion window = clause.getWindowCriterion();
+		if (window != null)
 		{
-			LimitCriterion infBound = range.getInfBound(), supBound = range.getSupBound();
+			LimitCriterion infBound = window.getInfBound(), supBound = window.getSupBound();
 			inf = (infBound.getDirection() == PRECEDING ? -1 : 1) * (int) infBound.getCount(); 
 			sup = (supBound.getDirection() == PRECEDING ? -1 : 1) * (int) supBound.getCount();
 		}
@@ -108,6 +128,11 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 			inf = Integer.MIN_VALUE;
 			sup = Integer.MAX_VALUE;
 		}
+
+		this.cache = CACHES.computeIfAbsent(new SimpleEntry<>(partitionIds, clause.getSortCriteria()), c -> {
+			LOGGER.info("Creating cache for partitioning {}@{} with clause #{}", source.getClass().getSimpleName(), source.hashCode(), clause.hashCode());
+			return new WeakHashMap<>();
+		});
 	}
 
 	@Override
@@ -118,13 +143,42 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		// when partition by all, each window has a single data point in it (though the result can have any number) 
 		if (partitionIds.equals(getComponents(Identifier.class)))
 			original = source.stream()
-					.map(Collections::singletonList)
+					.map(v -> new DataPoint[] { v })
 					.map(this::applyToWindow);
 		else
-			original = Utils.getStream(source.stream()
-					.collect(groupingByConcurrent(dp -> dp.getValues(partitionIds), 
-							collectingAndThen(toList(), this::applyToWindow)))
-					.values());
+		{
+			Collection<DataPoint[]> partitioned;
+			
+			synchronized (cache)
+			{
+				SoftReference<Collection<DataPoint[]>> cacheEntry = cache.get(source);
+				partitioned = cacheEntry != null ? cacheEntry.get() : null;
+			}
+			
+			if (partitioned == null)
+			{
+				LOGGER.info("Caching partitioning for {}@{}", source.getClass().getSimpleName(), source.hashCode());
+				partitioned = source.stream()
+					.collect(groupingByConcurrent(dp -> dp.getValues(partitionIds), collectingAndThen(toList(), list -> {
+							DataPoint[] window = list.toArray(new DataPoint[list.size()]);
+							Arrays.sort(window, orderBy); 
+							return window;
+						}))
+					).values();
+
+				synchronized (cache)
+				{
+					cache.put(source, new SoftReference<>(partitioned));
+				}
+			}
+			else
+			{
+				LOGGER.info("Using cached partitioning for {}@{}", source.getClass().getSimpleName(), source.hashCode());
+			}
+			
+			original = Utils.getStream(partitioned)
+					.map(this::applyToWindow);
+		}
 		
 		Stream<DataPoint> result = original.collect(concatenating(ORDERED));
 		
@@ -136,12 +190,8 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		return result;
 	}
 
-	private Stream<DataPoint> applyToWindow(List<DataPoint> windowSet)
+	private Stream<DataPoint> applyToWindow(DataPoint[] window)
 	{
-		// Sorted window
-		DataPoint[] window = windowSet.toArray(new DataPoint[windowSet.size()]);
-		Arrays.sort(window, orderBy);
-		
 		LOGGER.debug("Analyzing window of {} datapoints with keys {}", window.length, window[0].getValues(partitionIds));
 		if (LOGGER.isTraceEnabled())
 			Arrays.stream(window).forEach(dp -> LOGGER.trace("\tcontaining {}", dp));

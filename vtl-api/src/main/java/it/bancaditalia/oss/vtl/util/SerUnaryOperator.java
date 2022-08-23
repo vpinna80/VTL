@@ -23,5 +23,13 @@ import java.util.function.UnaryOperator;
 
 public interface SerUnaryOperator<T> extends UnaryOperator<T>, SerFunction<T, T>
 {
-
+	public static <T> SerUnaryOperator<T> identity()
+	{
+		return t -> t;
+	}
+	
+	public default SerUnaryOperator<T> andThen(SerUnaryOperator<T> after)
+	{
+		return t -> after.apply(apply(t));
+	}
 }

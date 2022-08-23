@@ -125,19 +125,21 @@ public class CachedDataSet extends NamedDataSet
 	 *  
 	 * @author m027907
 	 */
-	private class CacheWaiter implements ManagedBlocker
+	private static class CacheWaiter implements ManagedBlocker
 	{
 		private final Semaphore semaphore = new Semaphore(1);
 		private final Map<Set<DataStructureComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>> cache = new ConcurrentHashMap<>();
 		
+		private final transient String alias;
 		private transient AtomicReference<Thread> lockingRef = new AtomicReference<>();
 
-		public CacheWaiter()
+		public CacheWaiter(String alias, Set<DataStructureComponent<Identifier, ?, ?>> ids)
 		{
 			List<Set<DataStructureComponent<Identifier, ?, ?>>> accumulator = new ArrayList<>();
+			this.alias = alias;
 			accumulator.add(emptySet());
 			// build all ids subsets
-			for (DataStructureComponent<Identifier, ?, ?> key: CachedDataSet.this.getComponents(Identifier.class))
+			for (DataStructureComponent<Identifier, ?, ?> key: ids)
 				accumulator = accumulator.stream()
 					.flatMap(set -> {
 						Set<DataStructureComponent<Identifier, ?, ?>> newSet = new HashSet<>(set);
@@ -151,7 +153,7 @@ public class CachedDataSet extends NamedDataSet
 		@Override
 		public boolean block() throws InterruptedException
 		{
-			LOGGER.trace("++++ Acquiring semaphore for {}", getAlias());
+			LOGGER.trace("++++ Acquiring semaphore for {}", alias);
 			Thread currentThread = Thread.currentThread();
 			int count = 0;
 			Thread lockingThread;
@@ -171,7 +173,7 @@ public class CachedDataSet extends NamedDataSet
 			final boolean tryAcquire = semaphore.tryAcquire();
 			if (tryAcquire)
 			{
-				LOGGER.trace("++++ Acquired semaphore for {}", getAlias());
+				LOGGER.trace("++++ Acquired semaphore for {}", alias);
 				lockingRef.set(Thread.currentThread());
 			}
 			return tryAcquire;
@@ -185,7 +187,7 @@ public class CachedDataSet extends NamedDataSet
 		public void putCache(Set<DataStructureComponent<Identifier, ?, ?>> keys, Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> newCache)
 		{
 			SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> cacheRef = new SoftReference<>(newCache, REF_QUEUE);
-			REF_NAMES.put(cacheRef, new SimpleEntry<>(getAlias(), keys));
+			REF_NAMES.put(cacheRef, new SimpleEntry<>(alias, keys));
 			cache.put(keys, cacheRef);
 		}
 		
@@ -196,7 +198,7 @@ public class CachedDataSet extends NamedDataSet
 		
 		public void done()
 		{
-			LOGGER.trace("---- Releasing semaphore for {}", getAlias());
+			LOGGER.trace("---- Releasing semaphore for {}", alias);
 			semaphore.release();
 			lockingRef.set(null);
 		}
@@ -214,7 +216,7 @@ public class CachedDataSet extends NamedDataSet
 				waitersMap = new ConcurrentHashMap<>();
 				SESSION_CACHES.put(session, waitersMap);
 			}
-			waiter = waitersMap.computeIfAbsent(alias, a -> new CacheWaiter());
+			waiter = waitersMap.computeIfAbsent(alias, a -> new CacheWaiter(alias, getMetadata().getComponents(Identifier.class)));
 		}
 	}
 

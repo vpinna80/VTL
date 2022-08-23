@@ -84,4 +84,31 @@ public class LimitClause implements LimitCriterion, Serializable
 		else
 			return count + " " + direction.toString().toLowerCase();
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (count ^ (count >>> 32));
+		result = prime * result + ((direction == null) ? 0 : direction.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		LimitClause other = (LimitClause) obj;
+		if (count != other.count)
+			return false;
+		if (direction != other.direction)
+			return false;
+		return true;
+	}
 }

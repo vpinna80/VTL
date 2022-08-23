@@ -73,4 +73,44 @@ public class WindowCriterionImpl implements WindowCriterion, Serializable
 	{
 		return (type == RANGE ? "range" : "data points") + " between " + infBound + " and " + supBound;
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((infBound == null) ? 0 : infBound.hashCode());
+		result = prime * result + ((supBound == null) ? 0 : supBound.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		WindowCriterionImpl other = (WindowCriterionImpl) obj;
+		if (infBound == null)
+		{
+			if (other.infBound != null)
+				return false;
+		}
+		else if (!infBound.equals(other.infBound))
+			return false;
+		if (supBound == null)
+		{
+			if (other.supBound != null)
+				return false;
+		}
+		else if (!supBound.equals(other.supBound))
+			return false;
+		if (type != other.type)
+			return false;
+		return true;
+	}
 }

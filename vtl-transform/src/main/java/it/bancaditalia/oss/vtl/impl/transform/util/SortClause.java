@@ -51,4 +51,36 @@ public class SortClause implements SortCriterion, Serializable
 	{
 		return method;
 	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((component == null) ? 0 : component.hashCode());
+		result = prime * result + ((method == null) ? 0 : method.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SortClause other = (SortClause) obj;
+		if (component == null)
+		{
+			if (other.component != null)
+				return false;
+		}
+		else if (!component.equals(other.component))
+			return false;
+		if (method != other.method)
+			return false;
+		return true;
+	}
 }

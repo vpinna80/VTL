@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
@@ -37,7 +36,6 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,7 +66,6 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -271,25 +268,12 @@ public abstract class AbstractDataSet implements DataSet
 		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
 
-		Set<DataStructureComponent<Identifier, ?, ?>> partitionIds = clause.getPartitioningIds();
-		
-		Comparator<DataPoint> orderBy = (dp1, dp2) -> {
-				for (SortCriterion criterion: clause.getSortCriteria())
-				{
-					int res = dp1.get(criterion.getComponent()).compareTo(dp2.get(criterion.getComponent()));
-					if (res != 0)
-						return criterion.getMethod() == ASC ? res : -res;
-				}
-
-				return 0;
-			};
-
 		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
 				.removeComponents(components.keySet())
 				.addComponents(components.values())
 				.build();
 		
-		return new AnalyticDataSet<>(this, newStructure, lineageOp, partitionIds, orderBy, clause.getWindowCriterion(), collectors, finishers, components);
+		return new AnalyticDataSet<>(this, newStructure, lineageOp, clause, collectors, finishers, components);
 	}
 	
 	@Override
@@ -302,6 +286,7 @@ public abstract class AbstractDataSet implements DataSet
 
 		List<Set<DataPoint>> results = new ArrayList<>();
 		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> seen = newKeySet();
+		LOGGER.info("Evaluating first union operand");
 		try (Stream<DataPoint> stream = stream())
 		{
 			results.add(stream
@@ -312,9 +297,11 @@ public abstract class AbstractDataSet implements DataSet
 		}
 		
 		// eagerly compute the differences (one set at a time to avoid OutOfMemory and preserve "leftmost rule")
+		int nOperand = 2;
 		for (DataSet other: others)
 			try (Stream<DataPoint> stream = other.stream())
 			{
+				LOGGER.info("Evaluating union operand {}", nOperand++);
 				Stream<DataPoint> stream2 = stream;
 				if (LOGGER.isTraceEnabled())
 					stream2 = stream2.peek(dp -> {
