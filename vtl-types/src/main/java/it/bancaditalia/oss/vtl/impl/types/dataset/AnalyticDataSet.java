@@ -157,7 +157,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 			
 			if (partitioned == null)
 			{
-				LOGGER.info("Caching partitioning for {}@{}", source.getClass().getSimpleName(), source.hashCode());
+				LOGGER.debug("Caching partitioning for {}@{}", source.getClass().getSimpleName(), source.hashCode());
 				partitioned = source.stream()
 					.collect(groupingByConcurrent(dp -> dp.getValues(partitionIds), collectingAndThen(toList(), list -> {
 							DataPoint[] window = list.toArray(new DataPoint[list.size()]);
@@ -173,7 +173,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 			}
 			else
 			{
-				LOGGER.info("Using cached partitioning for {}@{}", source.getClass().getSimpleName(), source.hashCode());
+				LOGGER.debug("Using cached partitioning for {}@{}", source.getClass().getSimpleName(), source.hashCode());
 			}
 			
 			original = Utils.getStream(partitioned)
@@ -213,6 +213,14 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 	private static Stream<Entry<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> explode(
 			Map<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> colls, DataPoint original)
 	{
+		// Shortcut when analytic mapping 	is 1:1
+		if (Utils.getStream(colls.values()).allMatch(coll -> coll.size() == 1))
+		{
+			return Stream.of(new SimpleEntry<>(Utils.getStream(colls)
+					.map(Utils.keepingKey(coll -> coll.iterator().next()))
+					.collect(entriesToMap()), original));
+		}
+		
 		final Stream<Entry<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> stream = Utils.getStream(colls);
 		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> collected = stream.collect(
 				SerCollector.of(() -> (Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>) new HashSet<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>(),
