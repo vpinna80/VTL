@@ -43,8 +43,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 
 public class Paginator implements AutoCloseable
 {
@@ -169,7 +167,7 @@ public class Paginator implements AutoCloseable
 						array[i] = (int) DAYS.between(LocalDate.of(1970, 1, 1), ((DayHolder) v).getLocalDate());
 				}
 			}
-			else if (c.getDomain() instanceof StringDomain || c.getDomain() instanceof TimePeriodDomain)
+			else // StringDomain, TimeDomain, TimePeriodDomain
 			{
 				String[] array = (String[]) result.computeIfAbsent(c.getName(), n -> new String[datapoints.size()]);
 				for (int i = 0; i < datapoints.size(); i++)
@@ -178,8 +176,6 @@ public class Paginator implements AutoCloseable
 					array[i] = v == null ? null : v.toString();
 				}
 			}
-			else
-				throw new UnsupportedOperationException("Values of domain " + c.getDomain() + " cannot be exported to R.");
 
 		return result;
 	}
