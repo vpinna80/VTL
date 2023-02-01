@@ -255,7 +255,7 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?, ?>, StringDomain> identifier,
+		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?>, StringDomain> identifier,
 				DataStructureComponent<Measure, S, D> measure)
 		{
 			return Utils.getStream(identifier.getDomain().getCodeItems())

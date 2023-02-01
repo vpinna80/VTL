@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -55,6 +56,11 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	public boolean isDomainDefined(String domain) 
 	{
 		return domains.containsKey(domain); 
+	}
+
+	protected Optional<ValueDomainSubset<?, ?>> getDomainOrNull(String alias)
+	{
+		return Optional.ofNullable(domains.get(alias));
 	}
 
 	@Override

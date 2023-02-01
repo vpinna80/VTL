@@ -31,11 +31,10 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * @author Valentino Pinna
  *
  * @param <S> the enumerated domain subset
- * @param <I> the parent domain subset
  * @param <D> the base domain
  * @param <C> the code
  */
-public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, I, D, C, R>, I extends ValueDomainSubset<I, D>, D extends ValueDomain, C extends CodeItem<C, R, S, I, D>, R extends Comparable<?> & Serializable> extends ValueDomainSubset<S, D>
+public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain, C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable> extends ValueDomainSubset<S, D>
 {
 	/**
 	 * @return the domain name.
@@ -43,16 +42,11 @@ public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, I, D
 	public String getName();
 	
 	/**
-	 * @return the original domain.
-	 */
-	public S getDomain();
-	
-	/**
 	 * The returned set should not be altered in any way.
 	 * 
 	 * @return the set of all the code items in this domain.
 	 */
 	public Set<C> getCodeItems();
-	
+
 	@Override ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
 }

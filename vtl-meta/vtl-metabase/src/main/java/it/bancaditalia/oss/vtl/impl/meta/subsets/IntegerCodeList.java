@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList.IntegerCodeItemImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -36,22 +35,22 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements IntegerEnumeratedDomainSubset<IntegerCodeList<I>, I, IntegerCodeItemImpl<I>, Long>, Serializable
+public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements IntegerEnumeratedDomainSubset<IntegerCodeList<I>, IntegerCodeList<I>.IntegerCodeItemImpl, Long>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
 	private final String name; 
-	private final Set<IntegerCodeItemImpl<I>> items = new HashSet<>();
+	private final Set<IntegerCodeItemImpl> items = new HashSet<>();
 	private final int hashCode;
 	private final IntegerDomainSubset<I> parent;
 
-	public static class IntegerCodeItemImpl<I extends IntegerDomainSubset<I>> extends IntegerValue<IntegerCodeItemImpl<I>, IntegerCodeList<I>> implements IntegerCodeItem<IntegerCodeItemImpl<I>, Long, IntegerCodeList<I>, I>
+	public class IntegerCodeItemImpl extends IntegerValue<IntegerCodeItemImpl, IntegerCodeList<I>> implements IntegerCodeItem<IntegerCodeItemImpl, Long, IntegerCodeList<I>>
 	{
 		private static final long serialVersionUID = 1L;
 
-		public IntegerCodeItemImpl(Long value, IntegerCodeList<I> codeList)
+		public IntegerCodeItemImpl(Long value)
 		{
-			super(value, codeList);
+			super(value, IntegerCodeList.this);
 		}
 
 		@Override
@@ -73,7 +72,7 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 		this.name = name;
 		this.hashCode = 31 + name.hashCode();
 		for (Long item: items)
-			this.items.add(new IntegerCodeItemImpl<>(item, this));
+			this.items.add(new IntegerCodeItemImpl(item));
 	}
 	
 	@Override
@@ -83,23 +82,17 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 	}
 
 	@Override
-	public IntegerCodeList<I> getDomain()
-	{
-		return this;
-	}
-
-	@Override
 	public IntegerDomainSubset<I> getParentDomain()
 	{
 		return parent;
 	}
 
 	@Override
-	public IntegerCodeItemImpl<I> cast(ScalarValue<?, ?, ?, ?> value)
+	public IntegerCodeItemImpl cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof IntegerValue)
 		{
-			IntegerCodeItemImpl<I> item = new IntegerCodeItemImpl<>((Long) value.get(), this);
+			IntegerCodeItemImpl item = new IntegerCodeItemImpl((Long) value.get());
 			if (items.contains(item))
 				return item;
 		}
@@ -126,7 +119,7 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 	}
 
 	@Override
-	public Set<IntegerCodeItemImpl<I>> getCodeItems()
+	public Set<IntegerCodeItemImpl> getCodeItems()
 	{
 		return items;
 	}

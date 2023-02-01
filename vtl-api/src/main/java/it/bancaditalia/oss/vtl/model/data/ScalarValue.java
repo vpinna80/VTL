@@ -35,7 +35,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
  * @param <S> the {@link ValueDomainSubset} of this value. 
  * @param <D> the basic {@link ValueDomain} as defined by VTL specification.
  */
-public interface ScalarValue<T extends ScalarValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
+public interface ScalarValue<C extends ScalarValue<C, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
 		extends VTLValue, Supplier<R>, Serializable, Comparable<ScalarValue<?, ?, ?, ?>>
 {
 	/**

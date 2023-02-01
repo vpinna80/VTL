@@ -26,7 +26,7 @@ import java.io.Serializable;
  * 
  * @author Valentino Pinna
  */
-public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, I, C, R>, I extends StringDomainSubset<I>, C extends StringCodeItem<C, R, S, I>, R extends Comparable<?> & Serializable> extends EnumeratedDomainSubset<S, I, StringDomain, C, R>, StringDomainSubset<S>
+public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C, R>, C extends StringCodeItem<C, R, S>, R extends Comparable<?> & Serializable> extends EnumeratedDomainSubset<S, StringDomain, C, R>, StringDomainSubset<S>
 {
 	/**
 	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading and 
@@ -67,4 +67,16 @@ public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSu
 	 * @return the new domain.
 	 */
 	public S lcase();
+	
+	@Override
+	public default boolean isAssignableFrom(ValueDomain other)
+	{
+		return other instanceof StringEnumeratedDomainSubset && getVarName().equals(other.getVarName());
+	}
+
+	@Override
+	public default String getVarName()
+	{
+		return getName() + "_var";
+	}
 }

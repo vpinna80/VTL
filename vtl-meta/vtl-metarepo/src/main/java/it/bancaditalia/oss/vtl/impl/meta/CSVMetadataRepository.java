@@ -54,7 +54,7 @@ public class CSVMetadataRepository extends InMemoryMetadataRepository
 			reader.lines()
 				.map(l -> l.split(",", 2))
 				.collect(groupingByConcurrent(e -> e[0], mapping(e -> e[1], toSet())))
-				.forEach((name, items) -> new StringCodeList<>(STRINGDS, name, items));
+				.forEach((name, items) -> new StringCodeList(STRINGDS, name, items));
 		}
 	}
 }

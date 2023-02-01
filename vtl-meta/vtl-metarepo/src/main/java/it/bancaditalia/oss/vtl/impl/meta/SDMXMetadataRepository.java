@@ -91,7 +91,7 @@ public class SDMXMetadataRepository extends InMemoryMetadataRepository
 					.map(Element.class::cast)
 					.map(code -> code.getAttribute("id"))
 					.collect(toSet());
-				defineDomain(codelistName, new StringCodeList<>(STRINGDS, codelistName, items));
+				defineDomain(codelistName, new StringCodeList(STRINGDS, codelistName, items));
 			});
 		LOGGER.info("Finished loading metadata", url);
 	}

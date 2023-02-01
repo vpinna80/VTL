@@ -28,7 +28,7 @@ import it.bancaditalia.oss.vtl.model.data.CodeItem;
  * 
  * @author Valentino Pinna
  */
-public interface IntegerEnumeratedDomainSubset<S extends IntegerEnumeratedDomainSubset<S, I, C, R>, I extends IntegerDomainSubset<I>, C extends CodeItem<C, R, S, I, IntegerDomain>, R extends Comparable<?> & Serializable> extends EnumeratedDomainSubset<S, I, IntegerDomain, C, R>, IntegerDomainSubset<S>
+public interface IntegerEnumeratedDomainSubset<S extends IntegerEnumeratedDomainSubset<S, C, R>, C extends CodeItem<C, R, S, IntegerDomain>, R extends Comparable<?> & Serializable> extends EnumeratedDomainSubset<S, IntegerDomain, C, R>, IntegerDomainSubset<S>
 {
 
 }
