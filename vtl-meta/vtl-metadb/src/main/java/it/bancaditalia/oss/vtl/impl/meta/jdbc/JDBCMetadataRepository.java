@@ -257,7 +257,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 					return new IntegerCodeList<>((IntegerDomainSubset<?>) domain, setId, stream.filter(JDBCMetadataRepository::matchesLong).map(JDBCMetadataRepository::extractLong)
 							.map(Long::valueOf).peek(c -> LOGGER.trace("Subset {} has code {}", setId, c)).collect(toSet()));
 				else
-					return new StringCodeList<>((StringDomainSubset<?>) domain, setId, stream.peek(c -> LOGGER.trace("Found code {}" + c)).collect(toSet()));
+					return new StringCodeList((StringDomainSubset<?>) domain, setId, stream.peek(c -> LOGGER.trace("Found code {}" + c)).collect(toSet()));
 			}
 			else
 			{

@@ -44,6 +44,12 @@
 				<module>vtl-metaaws</module>
       		</modules>
 	    </profile>
+		<profile>
+      		<id>with-fmr</id>
+      		<modules>
+				<module>vtl-metafmr</module>
+      		</modules>
+	    </profile>
 	</profiles>
 	
 	<dependencyManagement>
@@ -66,6 +72,11 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-metadb</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-metafmr</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>

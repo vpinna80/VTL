@@ -25,7 +25,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>vtl-metadb</artifactId>
+	<artifactId>vtl-metafmr</artifactId>
 	<packaging>bundle</packaging>
 
 	<parent>
@@ -34,8 +34,8 @@
 		<version>${revision}</version>
 	</parent>
 
-	<name>vtl-metadb</name>
-	<description>Implementation of jdbc metadata repository</description>
+	<name>vtl-metarepo</name>
+	<description>Implementation of advanced metadata repositories</description>
 
 	<dependencies>
 		<dependency>
@@ -75,9 +75,14 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.hsqldb</groupId>
-			<artifactId>hsqldb</artifactId>
-			<scope>test</scope>
+			<groupId>io.sdmx</groupId>
+			<artifactId>fusion-core-sdmx</artifactId>
+			<version>1.0.28</version>
+		</dependency>
+		<dependency>
+			<groupId>io.sdmx</groupId>
+			<artifactId>fusion-sdmx-rest</artifactId>
+			<version>1.0.28</version>
 		</dependency>
 	</dependencies>
 
