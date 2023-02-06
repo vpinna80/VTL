@@ -66,7 +66,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	private final String measureName;
 
 	private transient DataStructureComponent<Measure, ?, ?> measure;
-	private transient DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?, ?>, StringDomain> identifier;
+	private transient DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?>, StringDomain> identifier;
 
 	private static String sanitize(String string)
 	{
@@ -100,12 +100,12 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getComponents(Identifier.class)));
 		if (!(tempIdentifier.getDomain() instanceof StringEnumeratedDomainSubset))
 			throw new VTLException("pivot: " + tempIdentifier.getName() + " is of type " + tempIdentifier.getDomain() + " but should be of a StringEnumeratedDomainSubset.");
-		identifier = tempIdentifier.asDomain((StringEnumeratedDomainSubset<?, ?, ?, ?>) tempIdentifier.getDomain());
+		identifier = tempIdentifier.asDomain((StringEnumeratedDomainSubset<?, ?, ?>) tempIdentifier.getDomain());
 		
 		measure = dataset.getComponent(measureName, Measure.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getComponents(Measure.class)));
 
-		return Utils.getStream(((StringEnumeratedDomainSubset<?, ?, ?, ?>) identifier.getDomain()).getCodeItems())
+		return Utils.getStream(((StringEnumeratedDomainSubset<?, ?, ?>) identifier.getDomain()).getCodeItems())
 				.map(i -> DataStructureComponentImpl.of(i.get().toString(), Measure.class, measure.getDomain()))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(dataset.getComponents(Identifier.class))

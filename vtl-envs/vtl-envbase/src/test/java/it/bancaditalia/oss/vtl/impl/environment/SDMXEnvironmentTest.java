@@ -170,7 +170,7 @@ public class SDMXEnvironmentTest
 			.then(answer((String id, Class<? extends ValueDomain> cls, Set<String> set) -> {
 				if (domains.containsKey(id))
 					return domains.get(id);
-				StringEnumeratedDomainSubset<?, ?, ?, ?> domainMock = mock(StringEnumeratedDomainSubset.class, id + ":string");
+				StringEnumeratedDomainSubset<?, ?, ?> domainMock = mock(StringEnumeratedDomainSubset.class, id + ":string");
 				domains.put(id, domainMock);
 				when(domainMock.getName()).thenReturn(id);
 				when(domainMock.cast(any())).then(answer(v -> v));

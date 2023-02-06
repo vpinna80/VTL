@@ -62,10 +62,10 @@ public class StringUnaryTransformation extends UnaryTransformation
 		LCASE("LCASE", String::toLowerCase, StringEnumeratedDomainSubset::lcase);
 
 		private final String name;
-		private final UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?, ?>> codeListMapper;
+		private final UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?>> codeListMapper;
 		private final UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain>> function;
 
-		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?, ?>> codeListMapper)
+		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?>> codeListMapper)
 		{
 			this.name = name;
 			this.codeListMapper = codeListMapper;
@@ -78,7 +78,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 			return name;
 		}
 		
-		public UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?, ?>> getCodeListMapper()
+		public UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?>> getCodeListMapper()
 		{
 			return codeListMapper;
 		}
