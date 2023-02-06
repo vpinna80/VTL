@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.meta;
 
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.CODE_LIST;
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.DATAFLOW;
-import static io.sdmx.fusion.service.constant.REST_API_VERSION.v2_0_0;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
@@ -53,7 +52,13 @@ import io.sdmx.api.sdmx.model.beans.datastructure.DataflowBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DimensionBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
 import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
+import io.sdmx.core.sdmx.manager.structure.StructureReaderManagerImpl;
+import io.sdmx.format.ml.factory.structure.SdmxMLStructureReaderFactory;
+import io.sdmx.fusion.service.builder.StructureQueryBuilderRest;
+import io.sdmx.fusion.service.constant.REST_API_VERSION;
+import io.sdmx.fusion.service.engine.RESTQueryBrokerEngineImpl;
 import io.sdmx.fusion.service.manager.RESTSdmxBeanRetrievalManager;
+import io.sdmx.utils.core.application.SingletonStore;
 import io.sdmx.utils.http.api.model.IHttpProxy;
 import io.sdmx.utils.http.broker.RestMessageBroker;
 import io.sdmx.utils.sdmx.xs.StructureReferenceBeanImpl;
@@ -75,10 +80,13 @@ public class FMRRepository extends InMemoryMetadataRepository
 
 	public static final VTLProperty FM_REGISTRY_ENDPOINT = 
 			new VTLPropertyImpl("vtl.fmr.endpoint", "Fusion Metadata Registry base URL", "https://www.myurl.com/service", true);
+	public static final VTLProperty FM_API_VERSION = 
+			new VTLPropertyImpl("vtl.fmr.version", "Fusion Metadata Registry Rest API version", "1.5.0", true, false, "1.5.0");
 	
 	static
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT);
+		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_API_VERSION);
 	}
 
 	private final String url = FM_REGISTRY_ENDPOINT.getValue();
@@ -88,6 +96,12 @@ public class FMRRepository extends InMemoryMetadataRepository
 	{
 		if (url == null)
 			throw new IllegalStateException("No endpoint configured for FMR repository.");
+
+		// FMR client configuration
+		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
+		SingletonStore.registerInstance(new StructureQueryBuilderRest());
+		SingletonStore.registerInstance(new StructureReaderManagerImpl());
+		SdmxMLStructureReaderFactory.registerInstance();
 
 		URI uri = new URI(url);
 		Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
@@ -104,7 +118,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 		else
 			RestMessageBroker.setProxies(emptyMap());
 		
-		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, v2_0_0));
+		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(FM_API_VERSION.getValue())));
 		
 		LOGGER.info("Loading metadata from {}", url);
 	}
@@ -154,7 +168,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 	
 	private StructureReferenceBean vtlName2SdmxRef(String alias, SDMX_STRUCTURE_TYPE type)
 	{
-		Matcher matcher = Pattern.compile("^([[\\\\p{Alnum}][_.]]+):([[\\\\p{Alnum}][_.]]+)\\(([0-9._]+)\\)").matcher(alias);
+		Matcher matcher = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)\\(([0-9._]+)\\)").matcher(alias);
 		if (matcher.matches())
 		{
 			String agencyId = matcher.group(1); 

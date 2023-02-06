@@ -37,6 +37,10 @@
 	<name>vtl-metarepo</name>
 	<description>Implementation of advanced metadata repositories</description>
 
+	<properties>
+		<io.sdmx.version>1.0.28</io.sdmx.version>
+	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -47,8 +51,14 @@
 			<artifactId>vtl-api</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-types</artifactId>
+			<groupId>io.sdmx</groupId>
+			<artifactId>fusion-core-sdmx</artifactId>
+			<version>${io.sdmx.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.sdmx</groupId>
+			<artifactId>fusion-sdmx-rest</artifactId>
+			<version>${io.sdmx.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -70,19 +80,26 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-slf4j-impl</artifactId>
+		    <groupId>org.mock-server</groupId>
+		    <artifactId>mockserver-junit-jupiter</artifactId>
+		    <version>5.15.0</version>
+		    <scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-confman</artifactId>
+			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.sdmx</groupId>
-			<artifactId>fusion-core-sdmx</artifactId>
-			<version>1.0.28</version>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-types</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.sdmx</groupId>
-			<artifactId>fusion-sdmx-rest</artifactId>
-			<version>1.0.28</version>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
