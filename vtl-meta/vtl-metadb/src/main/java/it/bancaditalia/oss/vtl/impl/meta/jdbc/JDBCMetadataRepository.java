@@ -25,15 +25,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
-import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -64,7 +62,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.util.SerSupplier;
+import it.bancaditalia.oss.vtl.util.SerThrowingSupplier;
 
 public class JDBCMetadataRepository extends InMemoryMetadataRepository
 {
@@ -72,54 +70,36 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 	private static final Logger LOGGER = LoggerFactory.getLogger(JDBCMetadataRepository.class);
 	private static final Pattern EXTRACTOR = Pattern.compile("^.*?([+-]?\\d+).*?$");
 
-	public static final VTLProperty METADATA_JDBC_DRIVER_CLASS = new VTLPropertyImpl("vtl.metadata.jdbc.driver", "JDBC driver class name", "", false, false);
 	public static final VTLProperty METADATA_JDBC_URL = new VTLPropertyImpl("vtl.metadata.jdbc.url", "JDBC URL for the metadata db", "jdbc:", false, false);
 	public static final VTLProperty METADATA_JDBC_JNDI_POOL = new VTLPropertyImpl("vtl.metadata.jdbc.jndi", "jndi path to defined a JDBC DataSource", "jndi/myDB", false, false);
 	public static final VTLProperty METADATA_JDBC_SIZE_REGEX = new VTLPropertyImpl("vtl.metadata.jdbc.regex", "Regex to recognize length restriction; must contain three groups", "jndi/myDB", 
 			true, false, "_(POS|POSNEG)_L(\\d+)_D(\\d+)$");
 
-	private final SerSupplier<Connection> pool;
+	private final SerThrowingSupplier<Connection, SQLException> pool;
 	private final Pattern sizePattern;
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_DRIVER_CLASS);
 		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_URL);
 		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_JNDI_POOL);
 		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_SIZE_REGEX);
 	}
 
-	public JDBCMetadataRepository() throws InstantiationException, IllegalAccessException, ClassNotFoundException
+	public JDBCMetadataRepository() throws NamingException
 	{
 		sizePattern = Pattern.compile(METADATA_JDBC_SIZE_REGEX.getValue());
 		
 		if (METADATA_JDBC_JNDI_POOL.hasValue())
-			pool = () -> {
-				String ds = METADATA_JDBC_JNDI_POOL.getValue();
-				try
-				{
-					return ((DataSource) new InitialContext().lookup(ds)).getConnection();
-				}
-				catch (SQLException | NamingException e)
-				{
-					throw new IllegalStateException("Error estabilishing connection via jndi path " + ds, e);
-				}
-			};
+		{
+			String dsName = METADATA_JDBC_JNDI_POOL.getValue();
+			DataSource dataSource = (DataSource) new InitialContext().lookup(dsName);
+			pool = dataSource::getConnection;
+		}
 		else
-			pool = () -> {
-				String drv = Objects.requireNonNull(METADATA_JDBC_DRIVER_CLASS.getValue(), "JDBC driver class name must not be null");
-				String url = Objects.requireNonNull(METADATA_JDBC_URL.getValue(), "JDBC URL must not be null");
-				try
-				{
-					return Thread.currentThread().getContextClassLoader().loadClass(drv).asSubclass(Driver.class)
-							.getConstructor().newInstance().connect(url, new Properties());
-				}
-				catch (InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException | IllegalArgumentException 
-						| InvocationTargetException | NoSuchMethodException | SecurityException e)
-				{
-					throw new IllegalStateException("Error estabilishing connection to " + url, e);
-				}
-			};
+		{
+			String url = Objects.requireNonNull(METADATA_JDBC_URL.getValue(), "JDBC URL must not be null");
+			pool = () -> DriverManager.getConnection(url);
+		}
 	}
 
 	@Override

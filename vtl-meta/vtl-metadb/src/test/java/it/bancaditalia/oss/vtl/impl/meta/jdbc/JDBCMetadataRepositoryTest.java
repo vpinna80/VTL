@@ -1,6 +1,5 @@
 package it.bancaditalia.oss.vtl.impl.meta.jdbc;
 
-import static it.bancaditalia.oss.vtl.impl.meta.jdbc.JDBCMetadataRepository.METADATA_JDBC_DRIVER_CLASS;
 import static it.bancaditalia.oss.vtl.impl.meta.jdbc.JDBCMetadataRepository.METADATA_JDBC_URL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,7 +39,6 @@ public class JDBCMetadataRepositoryTest
 				}
 		}
 
-		METADATA_JDBC_DRIVER_CLASS.setValue(JDBCDriver.class.getName());
 		METADATA_JDBC_URL.setValue(TEST_DB);
 	}
 	
