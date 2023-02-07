@@ -808,7 +808,7 @@
 				<plugin>
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
-					<version>4.0.rc2</version>
+					<version>4.1</version>
 					<executions>
 						<execution>
 							<phase>validate</phase>
