@@ -44,10 +44,4 @@ public class StringCodeList extends AbstractStringCodeList implements Serializab
 	{
 		return items;
 	}
-	
-	@Override
-	public boolean equals(Object obj)
-	{
-		return super.equals(obj) && getClass() == obj.getClass() && ((StringCodeList) obj).items.equals(items);
-	}
 }

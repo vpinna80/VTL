@@ -81,7 +81,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class CSVFileEnvironment implements Environment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileEnvironment.class);
-	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:(?:\"\")*[^\"]*)*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
+	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
 	
 	static
 	{

@@ -62,18 +62,15 @@ public class FMRRepositoryTest
 
 	public FMRRepositoryTest(MockServerClient client) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		try (InputStream resource = Objects.requireNonNull(FMRRepositoryTest.class.getResourceAsStream("CL_CURRENCY.xml")))
-		{
-			client.when(request().withPath("/codelist/ECB/CL_CURRENCY/1.0/")).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
-		}
-		try (InputStream resource = Objects.requireNonNull(FMRRepositoryTest.class.getResourceAsStream("EXR.xml")))
-		{
-			client.when(request().withPath("/dataflow/ECB/EXR/1.0/")).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
-		}
-		try (InputStream resource = Objects.requireNonNull(FMRRepositoryTest.class.getResourceAsStream("ECB_EXR1.xml")))
-		{
-			client.when(request().withPath("/datastructure/ECB/ECB_EXR1/1.0/")).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
-		}
+		for (String[] entry: new String[][] { 
+					{ "CL_CURRENCY.xml", "/codelist/ECB/CL_CURRENCY/1.0/" }, 
+					{ "EXR.xml", "/dataflow/ECB/EXR/1.0/" }, 
+					{ "ECB_EXR1.xml", "/datastructure/ECB/ECB_EXR1/1.0/" } 
+				})
+			try (InputStream resource = Objects.requireNonNull(FMRRepositoryTest.class.getResourceAsStream(entry[1])))
+			{
+				client.when(request().withPath(entry[0])).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
+			}
 
 		System.setProperty("vtl.fmr.endpoint", "http://localhost:" + client.getPort());
 		METADATA_REPOSITORY.setValue(FMRRepository.class.getName());

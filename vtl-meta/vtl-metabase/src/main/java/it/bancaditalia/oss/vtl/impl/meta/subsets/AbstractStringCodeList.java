@@ -107,18 +107,13 @@ public abstract class AbstractStringCodeList implements StringEnumeratedDomainSu
 			return true;
 		if (obj == null)
 			return false;
-		if (obj instanceof AbstractStringCodeList)
+		if (!(obj instanceof StringEnumeratedDomainSubset))
 			return false;
-		AbstractStringCodeList other = (AbstractStringCodeList) obj;
-		if (name == null)
-		{
-			if (other.name != null)
-				return false;
-		}
-		else if (!name.equals(other.name))
+		StringEnumeratedDomainSubset<?, ?, ?> other = (StringEnumeratedDomainSubset<?, ?, ?>) obj;
+		if (!name.equals(other.getName()))
 			return false;
 
-		return true;
+		return getCodeItems().equals(other.getCodeItems());
 	}
 
 	@Override

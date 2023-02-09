@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
-import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+import static java.util.stream.Collectors.toMap;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -43,12 +43,15 @@ public class ParamScope extends AbstractScope
 	private final TransformationScheme parent;
 	private final Map<String, Transformation> params;
 
-	private volatile transient Map<String, VTLValueMetadata> parametersMeta;
+	private final Map<String, VTLValueMetadata> parametersMeta;
 
 	public ParamScope(TransformationScheme parent, Map<String, Transformation> params)
 	{
 		this.parent = parent;
 		this.params = params;
+
+		parametersMeta = Utils.getStream(params)
+				.collect(toMap(Entry::getKey, entry -> entry.getValue().getMetadata(parent)));
 	}
 
 	@Override
@@ -63,8 +66,6 @@ public class ParamScope extends AbstractScope
 	@Override
 	public VTLValueMetadata getMetadata(String alias)
 	{
-		initParams();
-
 		if (parametersMeta.containsKey(alias))
 			return parametersMeta.get(alias);
 		else
@@ -100,17 +101,7 @@ public class ParamScope extends AbstractScope
 	@Override
 	public boolean contains(String alias)
 	{
-		initParams();
-
 		return parametersMeta.containsKey(alias);
-	}
-
-	private synchronized void initParams()
-	{
-		if (parametersMeta == null)
-			parametersMeta = Utils.getStream(params)
-				.map(keepingKey(transformation -> transformation.getMetadata(parent)))
-				.collect(entriesToMap());
 	}
 
 	@Override
