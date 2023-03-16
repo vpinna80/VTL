@@ -91,6 +91,30 @@ vtlListStatements <- function(sessionID) {
   return(sapply(jstatements$entrySet(), function (x) stats::setNames(list(x$getValue()), x$getKey())))
 }
 
+#' @title Show node structure
+#' @description Show identifiers, measures and attributes with data type of the input node.
+#' @usage vtlGetStructure(sessionID, node)
+#' @param sessionID The symbolic name of an active VTL session
+#' @param node The symbolic name of a node of the session
+#' @details This function returns the structure of a node.
+#' @export
+#' @examples \dontrun{
+#'   vtlAddStatements(session = 'test', statements = 'a := r_input;
+#'                                b := 3;
+#'                                c := abs(sqrt(14 + a));
+#'                                d := a + b + c;
+#'                                e := c + d / a;
+#'                                f := e - d;
+#'                                g := -f;
+#'                                test := a * b + c / a;')
+#'                                
+#'   vtlGetStructure('test', 'test')
+#' }
+vtlGetStructure <- function(sessionID, node) {
+  jstructure = VTLSessionManager$find(sessionID)$getMetadata(node)
+  return(jstructure)
+}
+
 #' @title Compile a VTL session
 #' @description Compiles all code submitted in  an existing VTL session.
 #' @usage vtlCompile(sessionID)

@@ -195,6 +195,14 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
                                               })
                                             })'))
                  ),
+                 tabPanel("Structure Explorer",
+                          fluidRow(
+                            column(width=5,
+                                   uiOutput(outputId = "dsNamesStr")
+                            )
+                          ),
+                          textOutput(outputId = 'dsStr')
+                 ),
                  tabPanel("Dataset Explorer",
                           fluidRow(
                             column(width=5,

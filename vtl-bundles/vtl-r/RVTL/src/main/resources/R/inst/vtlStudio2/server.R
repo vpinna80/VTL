@@ -136,6 +136,20 @@ shinyServer(function(input, output, session) {
                 choices = c('', currentSession()$getNodes()), selected ='')
   })
 
+  # render the structure of a dataset
+  output$dsStr<- renderText({
+    req(input$sessionID)
+    req(input$selectDatasetsStr)
+    jstr = currentSession()$getMetadata(req(input$selectDatasetsStr))
+    jstr$toString()
+  })
+  
+  # Select dataset to browse
+  output$dsNamesStr<- renderUI({
+    selectInput(inputId = 'selectDatasetsStr', label = 'Select Node', multiple = F, 
+                choices = c('', currentSession()$getNodes()), selected ='')
+  })
+  
   # output dataset lineage 
   output$lineage <- networkD3::renderSankeyNetwork({
     req(input$sessionID)

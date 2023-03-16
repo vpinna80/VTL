@@ -96,6 +96,10 @@ VTLSession <- R6Class("VTLSession",
       #' @description
       #' Obtains a named list of all the VTL statements submitted for this session.
       getStatements = function () { private$checkInstance()$getStatements() },
+
+      #' @description
+      #' Obtains the structure of the input dataset.
+      getMetadata = function (node) { private$checkInstance()$getMetadata(node) },
       
       #' @description
       #' Obtains a named list of all rules and values submitted for this session.
