@@ -37,7 +37,7 @@ public class IntegerValue<C extends IntegerValue<C, S>, S extends IntegerDomainS
 	
 	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(Long value)
 	{
-		return value == null ? NullValue.instance(INTEGERDS) : new IntegerValue<>(value, INTEGERDS);
+		return value == null || value == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : new IntegerValue<>(value, INTEGERDS);
 	}
 
 	public static <S extends IntegerDomainSubset<S>> ScalarValue<?, ?, S, IntegerDomain> of(Long value, IntegerDomainSubset<? extends S> domain)

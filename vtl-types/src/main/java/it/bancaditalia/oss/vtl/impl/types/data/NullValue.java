@@ -42,7 +42,7 @@ public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> 
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> T instance(S domain)
+	public static <T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain, SS extends S> T instance(SS domain)
 	{
 		NullValue<?, ?, ?, ?> nullValue = (T) INSTANCES.get(domain);
 		if (nullValue != null)

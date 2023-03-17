@@ -28,15 +28,27 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static java.lang.String.format;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL;
+import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL_INT;
+import static org.rosuda.JRI.REXP.XT_ARRAY_DOUBLE;
+import static org.rosuda.JRI.REXP.XT_ARRAY_INT;
+import static org.rosuda.JRI.REXP.XT_ARRAY_STR;
+import static org.rosuda.JRI.REXP.XT_BOOL;
+import static org.rosuda.JRI.REXP.XT_DOUBLE;
+import static org.rosuda.JRI.REXP.XT_INT;
+import static org.rosuda.JRI.REXP.XT_STR;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.rosuda.JRI.REXP;
@@ -45,7 +57,9 @@ import org.rosuda.JRI.Rengine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.environment.dataset.ColumnarDataSet;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
@@ -59,12 +73,13 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class REnvironment implements Environment
@@ -85,11 +100,11 @@ public class REnvironment implements Environment
 		if (values.containsKey(name))
 			return Optional.of(values.get(name).getMetadata());
 
-		if (getEngine().eval("exists('" + name + "')").asBool().isTRUE())
+		if (reval("exists('???')", name).asBool().isTRUE())
 		{
-			if (getEngine().eval("is.data.frame(" + name + ")").asBool().isTRUE()) 
+			if (reval("is.data.frame(???)", name).asBool().isTRUE()) 
 			{
-				REXP data = getEngine().eval(name + "[1,]");
+				REXP data = reval("???[1, ]", name);
 				RList dataFrame = data.asList();
 
 				// manage measure and identifier attributes
@@ -102,7 +117,7 @@ public class REnvironment implements Environment
 				List<String> identifiers = new ArrayList<>();
 				REXP idAttr = data.getAttribute("identifiers");
 				if(idAttr != null) {
-					if (getEngine().eval("any(duplicated(" + name + "[,attr(" + name + ", 'identifiers')]))").asBool().isTRUE())
+					if (reval("any(duplicated(???[, attr(???, 'identifiers')]))", name).asBool().isTRUE())
 						throw new IllegalStateException("Found duplicated rows in data frame " + name);
 					identifiers = Arrays.asList(idAttr.asStringArray());
 				}
@@ -123,16 +138,16 @@ public class REnvironment implements Environment
 					ValueDomainSubset<?, ?> domain;
 					switch (columnData.getType())
 					{
-						case REXP.XT_DOUBLE: case REXP.XT_ARRAY_DOUBLE:
+						case XT_DOUBLE: case XT_ARRAY_DOUBLE:
 							domain = NUMBERDS;
 							break;
-						case REXP.XT_INT: case REXP.XT_ARRAY_INT:
+						case XT_INT: case XT_ARRAY_INT:
 							domain = INTEGERDS;
 							break;
-						case REXP.XT_STR: case REXP.XT_ARRAY_STR:
+						case XT_STR: case XT_ARRAY_STR:
 							domain = STRINGDS;
 							break;
-						case REXP.XT_BOOL: case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
+						case XT_BOOL: case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
 							domain = BOOLEANDS;
 							break;
 						default:
@@ -145,19 +160,18 @@ public class REnvironment implements Environment
 				
 				return Optional.of(builder.build());
 			}
-			else if (getEngine().eval("is.integer(" + name + ") || is.numeric(" + name + ") || is.character(" + name + ") || is.logical(" + name + ")")
-					.asBool().isTRUE())
+			else if (reval("is.integer(???) || is.numeric(???) || is.character(???) || is.logical(???)", name).asBool().isTRUE())
 			{
-				REXP data = getEngine().eval(name);
+				REXP data = reval("???", name);
 				switch (data.getType())
 				{
-					case REXP.XT_STR:
+					case XT_STR:
 						return Optional.of(STRING);
-					case REXP.XT_ARRAY_DOUBLE:
+					case XT_ARRAY_DOUBLE:
 						return Optional.of(NUMBER);
-					case REXP.XT_ARRAY_INT:
+					case XT_ARRAY_INT:
 						return Optional.of(INTEGER);
-					case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
+					case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
 						return Optional.of(BOOLEAN);
 					default:
 						throw new UnsupportedOperationException(
@@ -175,31 +189,31 @@ public class REnvironment implements Environment
 		if (values.containsKey(name))
 			return Optional.of(values.get(name));
 
-		if (getEngine().eval("exists('" + name + "')").asBool().isTRUE())
+		if (reval("exists('???')", name).asBool().isTRUE())
 		{
 			VTLValue result;
 
-			if (getEngine().eval("is.data.frame(" + name + ")").asBool().isTRUE()) {
-				result = parseDataFrame(name);
+			if (reval("is.data.frame(???)", name).asBool().isTRUE()) {
+				DataSetMetadata metadata = ConfigurationManagerFactory.getInstance().getMetadataRepository().getStructure(name);
+				result = parseDataFrame(name, metadata);
 				values.put(name, result);
 				return Optional.of(result);
 			}
-			else if (getEngine().eval("is.integer(" + name + ") || is.numeric(" + name + ") || is.character(" + name +
-					")").asBool().isTRUE())
+			else if (reval("is.integer(???) || is.numeric(???) || is.character(???)", name).asBool().isTRUE())
 			{
-				REXP data = getEngine().eval(name);
+				REXP data = reval("???", name);
 				switch (data.getType())
 				{
-					case REXP.XT_STR:
+					case XT_STR:
 						result = StringValue.of(data.asString());
 						break;
-					case REXP.XT_ARRAY_DOUBLE:
+					case XT_ARRAY_DOUBLE:
 						result = DoubleValue.of(data.asDoubleArray()[0]);
 						break;
-					case REXP.XT_ARRAY_INT:
+					case XT_ARRAY_INT:
 						result = IntegerValue.of((long) data.asIntArray()[0]);
 						break;
-					case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
+					case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
 						result = BooleanValue.of(data.asBool().isTRUE());
 					break;
 					default:
@@ -213,78 +227,55 @@ public class REnvironment implements Environment
 		return Optional.empty();
 	}
 
-	private DataSet parseDataFrame(String name)
+	private DataSet parseDataFrame(String name, DataSetMetadata metadata)
 	{
-		List<String> identifiers = new ArrayList<>();
-		List<String> measures = new ArrayList<>();
 		List<String> dateColumns = new ArrayList<>();
  
 		// transform factors into strings
-		getEngine().eval("if(any(sapply(" + name + ", is.factor))) " + name + "[which(sapply(" + name + ", is.factor))] <- sapply(" + name + "[which(sapply(" + name
-				+ ", is.factor))], as.character)");
+		reval("if(any(sapply(???, is.factor))) ???[which(sapply(???, is.factor))] <- sapply(???[which(sapply(???, is.factor))], as.character)", name);
 
-		// transform dates into strings for now, otherwise they'll be interpreted as numbers
-		if (getEngine().eval("any(sapply(names(" + name + "), function(x, y) class(y[,x]), y=" + name + ") == 'Date')").asBool().isTRUE()){
-			REXP dates = getEngine().eval("names(which(sapply(names(" + name + "), function(x, y) class(y[,x]), y=" + name + ") == 'Date'))");
-			if(dates != null) {
-				dateColumns = Arrays.asList(dates.asStringArray());
-			}
-		}
-		System.err.println(dateColumns);
-		REXP data = getEngine().eval(name);
+		// Determine if R data.frame column values have class Date
+		REXP dates = reval("names(which(sapply(names(???), function(x, y) class(y[,x]), y = ???) == 'Date'))", name);
+		if(dates != null)
+			dateColumns = Arrays.asList(dates.asStringArray());
+		
+		REXP data = reval("???", name);
 		RList dataFrame = data.asList();
-
-		// manage measure and identifier attributes
-		REXP measureAttr = data.getAttribute("measures");
-		if (measureAttr != null && (measureAttr.getType() == REXP.XT_ARRAY_STR || measureAttr.getType() == REXP.XT_STR))
-			measures = Arrays.asList(measureAttr.asStringArray());
-
-		REXP idAttr = data.getAttribute("identifiers");
-		if (idAttr != null && (idAttr.getType() == REXP.XT_ARRAY_STR || idAttr.getType() == REXP.XT_STR))
-			identifiers = Arrays.asList(idAttr.asStringArray());
+		int len = reval("length(???)", name).asInt();
 
 		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> dataContainer = new HashMap<>();
 		// get column data
 		for (String key: dataFrame.keys())
 		{
 			REXP columnData = dataFrame.at(key);
-
-			Class<? extends ComponentRole> type;
-			if (measures.contains(key))
-				type = Measure.class;
-			else if (identifiers.contains(key))
-				type = Identifier.class;
-			else
-				type = Attribute.class;
-
 			Stream<? extends ScalarValue<?, ?, ?, ?>> values;
 			ValueDomainSubset<?, ?> domain;
 			switch (columnData.getType())
 			{
-				case REXP.XT_ARRAY_DOUBLE:
-					if(dateColumns.contains(key)){
-						// this is a date, not a number...
+				case XT_ARRAY_DOUBLE:
+					if(dateColumns.contains(key))
+					{
 						domain = DATEDS;
-						//now transform in date
-						// NAs are mapped to something that retrns true to is.NaN()
-						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  DateValue.of(LocalDate.of(1970, 1, 1).plus((long) val  , ChronoUnit.DAYS) )));   
+						// NAs are mapped to something that returns true to is.NaN()
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  DateValue.of(LocalDate.of(1970, 1, 1).plus((long) val, DAYS) )));   
 					}
-					else {
+					else
+					{
 						// NAs are mapped to something that retrns true to is.NaN()
 						domain = NUMBERDS;
-						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(NUMBERDS) : DoubleValue.of(val)));
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(DoubleValue::of);
 					}
 					break;
-				case REXP.XT_ARRAY_INT:
+				case XT_ARRAY_INT:
 					// NAs are mapped to Integer.MIN_VALUE
 					domain = INTEGERDS;
-					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (val == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : IntegerValue.of(val)));
+					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(IntegerValue::of);
 					break;
-				case REXP.XT_ARRAY_STR:
+				case XT_ARRAY_STR:
 					domain = STRINGDS;
-					values = Utils.getStream(columnData.asStringArray()).map(val -> (ScalarValue<?, ?, ?, ?>) (val == null ? NullValue.instance(STRINGDS) : StringValue.of(val)));
+					values = Utils.getStream(columnData.asStringArray()).map(StringValue::of);
 					break;
-				case REXP.XT_ARRAY_BOOL: case REXP.XT_ARRAY_BOOL_INT:
+				case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
 					domain = BOOLEANDS;
 					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) ((val != 1 && val != 0) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
 					break;
@@ -293,7 +284,50 @@ public class REnvironment implements Environment
 							"In node: " + name + " there is a column (" + key + ") of type " + REXP.xtName(columnData.getType()) + ". This is not supported.");
 			}
 			
-			dataContainer.put(DataStructureComponentImpl.of(key, type, domain), values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
+			final DataStructureComponent<?, ?, ?> comp;
+			if (metadata != null)
+			{
+				comp = metadata.getComponent(key).orElseThrow(() -> new VTLMissingComponentsException(metadata, key));
+				values = values.map(comp::cast);
+			}
+			else
+			{
+				// manage measure and identifier attributes
+				List<String> identifiers = new ArrayList<>();
+				List<String> measures = new ArrayList<>();
+				REXP measureAttr = data.getAttribute("measures");
+				if (measureAttr != null && (measureAttr.getType() == XT_ARRAY_STR || measureAttr.getType() == XT_STR))
+					measures = Arrays.asList(measureAttr.asStringArray());
+				REXP idAttr = data.getAttribute("identifiers");
+				if (idAttr != null && (idAttr.getType() == XT_ARRAY_STR || idAttr.getType() == XT_STR))
+					identifiers = Arrays.asList(idAttr.asStringArray());
+
+				Class<? extends ComponentRole> type;
+				if (measures.contains(key))
+					type = Measure.class;
+				else if (identifiers.contains(key))
+					type = Identifier.class;
+				else
+					type = Attribute.class;
+				comp = DataStructureComponentImpl.of(key, type, domain);
+			}
+			
+			dataContainer.put(comp, values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
+		}
+		
+		if (metadata != null)
+		{
+			for (DataStructureComponent<Attribute, ?, ?> comp: metadata.getComponents(Attribute.class))
+				if (!dataContainer.containsKey(comp))
+				{
+					ScalarValue<?, ?, ?, ?>[] array = new ScalarValue<?, ?, ?, ?>[len];
+					Arrays.fill(array, NullValue.instance(comp.getDomain()));
+				}
+			
+			Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(metadata);
+			missing.removeAll(dataContainer.keySet());
+			if (missing.size() > 0)
+				throw new VTLMissingComponentsException(metadata, missing);
 		}
 		
 		return new ColumnarDataSet(name, dataContainer);
@@ -303,5 +337,10 @@ public class REnvironment implements Environment
 	public boolean contains(String id)
 	{
 		return values.containsKey(id);
+	}
+	
+	private REXP reval(String format, String name) 
+	{
+		return getEngine().eval(format(format, name));
 	}
 }
