@@ -24,7 +24,6 @@ configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
 vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
 
 environments <- list(
-  `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
   `CSV Path environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
   `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
   `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
