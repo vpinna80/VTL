@@ -38,7 +38,7 @@ public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends 
 	
 	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(Double value)
 	{
-		return value == null || Double.isNaN(value) ? NULLINSTANCE : new DoubleValue<>(value, NUMBERDS);
+		return value == null ? NULLINSTANCE : new DoubleValue<>(value, NUMBERDS);
 	}
 
 	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(Double value, S domain)
