@@ -85,8 +85,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT);
-		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_API_VERSION);
+		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT, FM_API_VERSION);
 	}
 
 	private final String url = FM_REGISTRY_ENDPOINT.getValue();
@@ -168,7 +167,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 	
 	private StructureReferenceBean vtlName2SdmxRef(String alias, SDMX_STRUCTURE_TYPE type)
 	{
-		Matcher matcher = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)\\(([0-9._]+)\\)").matcher(alias);
+		Matcher matcher = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)(?:\\(([0-9._]+)\\))?").matcher(alias);
 		if (matcher.matches())
 		{
 			String agencyId = matcher.group(1); 

@@ -81,12 +81,13 @@ shinyServer(function(input, output, session) {
   output$repoProperties <- renderUI({
     supportedProperties <- configManager$getSupportedProperties(J(req(input$repoClass))@jobj)
     supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
-    tags$div(
+    divs <- do.call(tags$div,
       lapply(supportedProperties, function (property) {
         textInput(inputId = property$getName(), label = property$getDescription(), 
                   value = property$getValue(), placeholder = property$getPlaceholder())
       })
     )
+    return(divs)
   })
   
   # Sortable environments

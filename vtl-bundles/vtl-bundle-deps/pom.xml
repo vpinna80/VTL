@@ -104,6 +104,19 @@
 			</dependencies>
 		</profile>
 		<profile>
+			<id>with-fmr</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-metafmr</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
 			<id>default</id>
 			<activation>
 				<activeByDefault></activeByDefault>

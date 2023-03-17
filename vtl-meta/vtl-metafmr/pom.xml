@@ -34,13 +34,9 @@
 		<version>${revision}</version>
 	</parent>
 
-	<name>vtl-metarepo</name>
-	<description>Implementation of advanced metadata repositories</description>
+	<name>vtl-metafmr</name>
+	<description>Fusion metadata registry as metadata repository</description>
 
-	<properties>
-		<io.sdmx.version>1.0.28</io.sdmx.version>
-	</properties>
-	
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -57,12 +53,10 @@
 		<dependency>
 			<groupId>io.sdmx</groupId>
 			<artifactId>fusion-core-sdmx</artifactId>
-			<version>${io.sdmx.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.sdmx</groupId>
 			<artifactId>fusion-sdmx-rest</artifactId>
-			<version>${io.sdmx.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>

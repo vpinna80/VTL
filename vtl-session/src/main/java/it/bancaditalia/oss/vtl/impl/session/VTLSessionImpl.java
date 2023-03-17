@@ -164,7 +164,6 @@ public class VTLSessionImpl implements VTLSession
 					.orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias)));
 	}
 
-
 	@Override
 	public boolean contains(String alias)
 	{

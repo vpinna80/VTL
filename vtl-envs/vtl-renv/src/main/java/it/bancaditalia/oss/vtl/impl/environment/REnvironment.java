@@ -321,7 +321,7 @@ public class REnvironment implements Environment
 				if (!dataContainer.containsKey(comp))
 				{
 					ScalarValue<?, ?, ?, ?>[] array = new ScalarValue<?, ?, ?, ?>[len];
-					Arrays.fill(array, NullValue.instance(comp.getDomain()));
+					Arrays.fill(array, NullValue.instanceFrom(comp));
 				}
 			
 			Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(metadata);

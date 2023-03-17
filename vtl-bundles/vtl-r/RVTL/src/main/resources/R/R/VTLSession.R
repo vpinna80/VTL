@@ -98,7 +98,9 @@ VTLSession <- R6Class("VTLSession",
       getStatements = function () { private$checkInstance()$getStatements() },
 
       #' @description
-      #' Obtains the structure of the input dataset.
+      #' Obtains the structure of a VTL dataset with the given name.
+      #' @param node
+      #' The name of the dataset
       getMetadata = function (node) { private$checkInstance()$getMetadata(node) },
       
       #' @description
