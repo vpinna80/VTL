@@ -56,7 +56,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -146,7 +145,7 @@ public class VTLSessionImpl implements VTLSession
 	{
 		final String normalizedAlias = normalizeAlias(alias);
 
-		DataSetMetadata definedStructure = (DataSetMetadata) cacheHelper(normalizedAlias, metacache, n -> repository.getStructure(normalizedAlias));
+		VTLValueMetadata definedStructure = cacheHelper(normalizedAlias, metacache, n -> repository.getStructure(normalizedAlias));
 		if (definedStructure != null)
 			return definedStructure;
 		

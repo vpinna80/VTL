@@ -102,9 +102,9 @@ public class REnvironment implements Environment
 
 		if (reval("exists('???')", name).asBool().isTRUE())
 		{
-			if (reval("is.data.frame(???)", name).asBool().isTRUE()) 
+			if (reval("is.data.frame(`???`)", name).asBool().isTRUE()) 
 			{
-				REXP data = reval("???[1, ]", name);
+				REXP data = reval("`???`[1, ]", name);
 				RList dataFrame = data.asList();
 
 				// manage measure and identifier attributes
@@ -117,7 +117,7 @@ public class REnvironment implements Environment
 				List<String> identifiers = new ArrayList<>();
 				REXP idAttr = data.getAttribute("identifiers");
 				if(idAttr != null) {
-					if (reval("any(duplicated(???[, attr(???, 'identifiers')]))", name).asBool().isTRUE())
+					if (reval("any(duplicated(`???`[, attr(`???`, 'identifiers')]))", name).asBool().isTRUE())
 						throw new IllegalStateException("Found duplicated rows in data frame " + name);
 					identifiers = Arrays.asList(idAttr.asStringArray());
 				}
@@ -160,9 +160,9 @@ public class REnvironment implements Environment
 				
 				return Optional.of(builder.build());
 			}
-			else if (reval("is.integer(???) || is.numeric(???) || is.character(???) || is.logical(???)", name).asBool().isTRUE())
+			else if (reval("is.integer(`???`) || is.numeric(`???`) || is.character(`???`) || is.logical(`???`)", name).asBool().isTRUE())
 			{
-				REXP data = reval("???", name);
+				REXP data = reval("`???`", name);
 				switch (data.getType())
 				{
 					case XT_STR:
@@ -193,15 +193,15 @@ public class REnvironment implements Environment
 		{
 			VTLValue result;
 
-			if (reval("is.data.frame(???)", name).asBool().isTRUE()) {
+			if (reval("is.data.frame(`???`)", name).asBool().isTRUE()) {
 				DataSetMetadata metadata = ConfigurationManagerFactory.getInstance().getMetadataRepository().getStructure(name);
 				result = parseDataFrame(name, metadata);
 				values.put(name, result);
 				return Optional.of(result);
 			}
-			else if (reval("is.integer(???) || is.numeric(???) || is.character(???)", name).asBool().isTRUE())
+			else if (reval("is.integer(`???`) || is.numeric(`???`) || is.character(`???`)", name).asBool().isTRUE())
 			{
-				REXP data = reval("???", name);
+				REXP data = reval("`???`", name);
 				switch (data.getType())
 				{
 					case XT_STR:
@@ -232,16 +232,16 @@ public class REnvironment implements Environment
 		List<String> dateColumns = new ArrayList<>();
  
 		// transform factors into strings
-		reval("if(any(sapply(???, is.factor))) ???[which(sapply(???, is.factor))] <- sapply(???[which(sapply(???, is.factor))], as.character)", name);
+		reval("if(any(sapply(`???`, is.factor))) `???`[which(sapply(`???`, is.factor))] <- sapply(`???`[which(sapply(`???`, is.factor))], as.character)", name);
 
 		// Determine if R data.frame column values have class Date
-		REXP dates = reval("names(which(sapply(names(???), function(x, y) class(y[,x]), y = ???) == 'Date'))", name);
+		REXP dates = reval("names(which(sapply(names(`???`), function(x, y) class(y[,x]), y = `???`) == 'Date'))", name);
 		if(dates != null)
 			dateColumns = Arrays.asList(dates.asStringArray());
 		
-		REXP data = reval("???", name);
+		REXP data = reval("`???`", name);
 		RList dataFrame = data.asList();
-		int len = reval("length(???)", name).asInt();
+		int len = reval("length(`???`)", name).asInt();
 
 		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> dataContainer = new HashMap<>();
 		// get column data

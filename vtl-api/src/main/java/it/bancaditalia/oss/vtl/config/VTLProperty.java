@@ -66,7 +66,12 @@ public interface VTLProperty
 	 * @return {@code true} if the property allows multiple values
 	 */
 	public boolean isMultiple();
-
+	
+	/**
+	 * @return {@code true} if the property represents a password
+	 */
+	public boolean isPassword();
+	
 	/**
 	 * @return {@code true} if the property must have a value set before using the component
 	 */

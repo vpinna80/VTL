@@ -35,6 +35,7 @@ import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +51,7 @@ import io.sdmx.api.sdmx.model.beans.datastructure.AttributeBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataStructureBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataflowBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DimensionBean;
+import io.sdmx.api.sdmx.model.beans.reference.CrossReferenceBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
 import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
 import io.sdmx.core.sdmx.manager.structure.StructureReaderManagerImpl;
@@ -78,14 +80,14 @@ public class FMRRepository extends InMemoryMetadataRepository
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(FMRRepository.class);
 
-	public static final VTLProperty FM_REGISTRY_ENDPOINT = 
-			new VTLPropertyImpl("vtl.fmr.endpoint", "Fusion Metadata Registry base URL", "https://www.myurl.com/service", true);
-	public static final VTLProperty FM_API_VERSION = 
-			new VTLPropertyImpl("vtl.fmr.version", "Fusion Metadata Registry Rest API version", "1.5.0", true, false, "1.5.0");
+	public static final VTLProperty FM_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.fmr.endpoint", "Fusion Metadata Registry base URL", "https://www.myurl.com/service", true);
+	public static final VTLProperty FMR_API_VERSION = new VTLPropertyImpl("vtl.fmr.version", "Fusion Metadata Registry Rest API version", "1.5.0", true, false, "1.5.0");
+	public static final VTLProperty FMR_USERNAME = new VTLPropertyImpl("vtl.fmr.global.user", "Fusion Metadata Registry user name", "", false);
+	public static final VTLProperty FMR_PASSWORD = new VTLPropertyImpl("vtl.fmr.global.password", "Fusion Metadata Registry password", "", false);
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT, FM_API_VERSION);
+		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT, FMR_API_VERSION, FMR_USERNAME, FMR_PASSWORD);
 	}
 
 	private final String url = FM_REGISTRY_ENDPOINT.getValue();
@@ -117,7 +119,12 @@ public class FMRRepository extends InMemoryMetadataRepository
 		else
 			RestMessageBroker.setProxies(emptyMap());
 		
-		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(FM_API_VERSION.getValue())));
+		String userName = FMR_USERNAME.getValue();
+		String password = FMR_PASSWORD.getValue();
+		if (userName != null && !userName.isEmpty() && password != null && !password.isEmpty())
+			RestMessageBroker.storeGlobalAuthorization(userName, password);
+		
+		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(FMR_API_VERSION.getValue())));
 		
 		LOGGER.info("Loading metadata from {}", url);
 	}
@@ -137,11 +144,16 @@ public class FMRRepository extends InMemoryMetadataRepository
 	public DataSetMetadata getStructure(String alias)
 	{
 		StructureReferenceBean ref = vtlName2SdmxRef(alias, DATAFLOW);
-		SdmxRestToBeanRetrievalManager rbrm = getBeanRetrievalManager();
+		if (ref == null)
+			return super.getStructure(alias);
 		
 		try
 		{
-			DataStructureBean dsd = rbrm.getIdentifiableBean(rbrm.getIdentifiableBean(ref, DataflowBean.class).getDataStructureRef(), DataStructureBean.class);
+			SdmxRestToBeanRetrievalManager rbrm = getBeanRetrievalManager();
+			Set<DataflowBean> k = rbrm.getIdentifiables(DataflowBean.class);
+			System.out.println(k);
+			CrossReferenceBean dsdRef = rbrm.getIdentifiableBean(ref, DataflowBean.class).getDataStructureRef();
+			DataStructureBean dsd = rbrm.getIdentifiableBean(dsdRef, DataStructureBean.class);
 			DataStructureBuilder builder = new DataStructureBuilder();
 			builder.addComponent(DataStructureComponentImpl.of(dsd.getPrimaryMeasure().getId(), Measure.class, NUMBERDS));
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
@@ -167,7 +179,8 @@ public class FMRRepository extends InMemoryMetadataRepository
 	
 	private StructureReferenceBean vtlName2SdmxRef(String alias, SDMX_STRUCTURE_TYPE type)
 	{
-		Matcher matcher = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)(?:\\(([0-9._]+)\\))?").matcher(alias);
+		Matcher matcher = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)(?:\\(([0-9._+*~]+)\\))(?:/.*)?$")
+				.matcher(alias);
 		if (matcher.matches())
 		{
 			String agencyId = matcher.group(1); 

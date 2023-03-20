@@ -33,6 +33,7 @@ public class VTLPropertyImpl implements VTLProperty
 	private final boolean required;
 	private final boolean multiple;
 	private final String defaultValue;
+	private final boolean password;
 
 	private String value;
 	private boolean hasValue;
@@ -42,6 +43,20 @@ public class VTLPropertyImpl implements VTLProperty
 		this.name = name;
 		this.description = description;
 		this.placeholder = placeholder;
+		this.password = false;
+		this.required = required;
+		this.multiple = false;
+		this.defaultValue = "";
+		this.value = null;
+		this.hasValue = false;
+	}
+
+	public VTLPropertyImpl(String name, String description, boolean password, boolean required)
+	{
+		this.name = name;
+		this.description = description;
+		this.placeholder = "";
+		this.password = password;
 		this.required = required;
 		this.multiple = false;
 		this.defaultValue = "";
@@ -54,6 +69,7 @@ public class VTLPropertyImpl implements VTLProperty
 		this.name = name;
 		this.description = description;
 		this.placeholder = placeholder;
+		this.password = false;
 		this.required = required;
 		this.multiple = multiple;
 		this.defaultValue = Arrays.stream(defaultValue).collect(joining(","));
@@ -90,6 +106,12 @@ public class VTLPropertyImpl implements VTLProperty
 	public boolean isMultiple()
 	{
 		return multiple;
+	}
+
+	@Override
+	public boolean isPassword()
+	{
+		return password;
 	}
 
 	@Override

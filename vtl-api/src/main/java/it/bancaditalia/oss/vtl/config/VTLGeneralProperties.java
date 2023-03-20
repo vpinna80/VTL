@@ -127,6 +127,12 @@ public enum VTLGeneralProperties implements VTLProperty
 	}
 	
 	@Override
+	public boolean isPassword()
+	{
+		return false;
+	}
+	
+	@Override
 	public boolean isRequired()
 	{
 		return true;
