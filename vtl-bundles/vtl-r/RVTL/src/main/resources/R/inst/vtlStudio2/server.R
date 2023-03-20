@@ -137,11 +137,21 @@ shinyServer(function(input, output, session) {
   })
 
   # render the structure of a dataset
-  output$dsStr<- renderText({
+  output$dsStr<- DT::renderDataTable({
     req(input$sessionID)
     req(input$selectDatasetsStr)
     jstr = currentSession()$getMetadata(req(input$selectDatasetsStr))
-    jstr$toString()
+    if (jstr %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata") {
+      df <- data.table::transpose(data.frame(c(jstr$getDomain()$toString()), check.names = FALSE))
+      colnames(df) <- c("Domain")
+      df
+    } else if (jstr %instanceof% "it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder$DataStructureImpl") {
+      df <- data.table::transpose(data.frame(lapply(jstr, function(x) { c(x$getName(), x$getDomain()$toString(), x$getRole()$getSimpleName()) } ), check.names = FALSE))
+      colnames(df) <- c("Name", "Domain", "Role")
+      df
+    } else {
+      data.frame(c("ERROR", check.names = FALSE))
+    }
   })
   
   # Select dataset to browse

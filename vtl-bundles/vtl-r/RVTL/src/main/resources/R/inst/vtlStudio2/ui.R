@@ -202,7 +202,7 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
                                    uiOutput(outputId = "dsNamesStr")
                             )
                           ),
-                          textOutput(outputId = 'dsStr')
+                           DT::dataTableOutput(outputId = 'dsStr')
                  ),
                  tabPanel("Dataset Explorer",
                           fluidRow(
