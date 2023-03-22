@@ -84,10 +84,11 @@ public class FMRRepository extends InMemoryMetadataRepository
 	public static final VTLProperty FMR_API_VERSION = new VTLPropertyImpl("vtl.fmr.version", "Fusion Metadata Registry Rest API version", "1.5.0", true, false, "1.5.0");
 	public static final VTLProperty FMR_USERNAME = new VTLPropertyImpl("vtl.fmr.global.user", "Fusion Metadata Registry user name", "", false);
 	public static final VTLProperty FMR_PASSWORD = new VTLPropertyImpl("vtl.fmr.global.password", "Fusion Metadata Registry password", "", false);
+	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", false, false, "false");
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT, FMR_API_VERSION, FMR_USERNAME, FMR_PASSWORD);
+		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT, FMR_API_VERSION, FMR_USERNAME, FMR_PASSWORD, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
 	}
 
 	private final String url = FM_REGISTRY_ENDPOINT.getValue();
@@ -146,7 +147,15 @@ public class FMRRepository extends InMemoryMetadataRepository
 		StructureReferenceBean ref = vtlName2SdmxRef(alias, DATAFLOW);
 		if (ref == null)
 			return super.getStructure(alias);
+
+		boolean removeSubs = Boolean.parseBoolean(SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS.getValue());
+		String[] dims;
+		if (removeSubs && alias.indexOf('/') > 0)
+			dims = alias.split("/", 2)[1].split("\\.");
+		else
+			dims = new String[] {};
 		
+		int iDim = 0;
 		try
 		{
 			SdmxRestToBeanRetrievalManager rbrm = getBeanRetrievalManager();
@@ -155,14 +164,18 @@ public class FMRRepository extends InMemoryMetadataRepository
 			CrossReferenceBean dsdRef = rbrm.getIdentifiableBean(ref, DataflowBean.class).getDataStructureRef();
 			DataStructureBean dsd = rbrm.getIdentifiableBean(dsdRef, DataStructureBean.class);
 			DataStructureBuilder builder = new DataStructureBuilder();
-			builder.addComponent(DataStructureComponentImpl.of(dsd.getPrimaryMeasure().getId(), Measure.class, NUMBERDS));
+			builder.addComponent(DataStructureComponentImpl.of('\'' + dsd.getPrimaryMeasure().getId() + '\'', Measure.class, NUMBERDS));
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
-				builder.addComponent(DataStructureComponentImpl.of(dimBean.getId(), Identifier.class, 
-						(ValueDomainSubset<?, ?>) (dimBean.isTimeDimension() ? TIMEDS : getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation())))));
+				if (!removeSubs || iDim >= dims.length || dims[iDim++].isEmpty())
+				{
+					String id = dimBean.getId();
+					builder.addComponent(DataStructureComponentImpl.of('\'' + id + '\'', Identifier.class, 
+							(ValueDomainSubset<?, ?>) (dimBean.isTimeDimension() ? TIMEDS : getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation())))));
+				}
 //			for (MeasureDimensionBean measureBean: dsd.getMeasures())
 //				builder.addComponent(DataStructureComponentImpl.of(measureBean.getId(), Measure.class, NUMBERDS));
 			for (AttributeBean attrBean: dsd.getAttributeList().getAttributes())
-				builder.addComponent(DataStructureComponentImpl.of(attrBean.getId(), Attribute.class, STRINGDS));
+				builder.addComponent(DataStructureComponentImpl.of('\'' + attrBean.getId() + '\'', Attribute.class, STRINGDS));
 
 			return builder.build();
 		}

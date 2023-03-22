@@ -24,11 +24,12 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static java.lang.String.format;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL;
 import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL_INT;
@@ -41,6 +42,8 @@ import static org.rosuda.JRI.REXP.XT_INT;
 import static org.rosuda.JRI.REXP.XT_STR;
 
 import java.time.LocalDate;
+import java.time.Year;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.rosuda.JRI.REXP;
@@ -59,6 +63,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.environment.dataset.ColumnarDataSet;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
@@ -67,6 +72,10 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
@@ -76,18 +85,26 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class REnvironment implements Environment
 {
+	public static final Rengine RENGINE;
+	
+	static {
+		RENGINE = new Rengine(new String[] { "--vanilla" }, false, null);
+	}
+	
 	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
 	private final Map<String, VTLValue>	values	= new HashMap<>();
-	private final Rengine engine = new Rengine();
+	private final Rengine engine = RENGINE != null ? RENGINE : new Rengine();
 
 	public Rengine getEngine()
 	{
@@ -241,7 +258,7 @@ public class REnvironment implements Environment
 		
 		REXP data = reval("`???`", name);
 		RList dataFrame = data.asList();
-		int len = reval("length(`???`)", name).asInt();
+		int len = reval("nrow(`???`)", name).asInt();
 
 		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> dataContainer = new HashMap<>();
 		// get column data
@@ -287,8 +304,13 @@ public class REnvironment implements Environment
 			final DataStructureComponent<?, ?, ?> comp;
 			if (metadata != null)
 			{
-				comp = metadata.getComponent(key).orElseThrow(() -> new VTLMissingComponentsException(metadata, key));
-				values = values.map(comp::cast);
+				comp = metadata.getComponent('\'' + key + '\'').orElseThrow(() -> {
+					return new VTLMissingComponentsException(metadata, key);
+				});
+				if (comp.getDomain() instanceof TimeDomainSubset)
+					values = values.map(REnvironment.toTime(comp));
+				else
+					values = values.map(comp::cast);
 			}
 			else
 			{
@@ -322,6 +344,7 @@ public class REnvironment implements Environment
 				{
 					ScalarValue<?, ?, ?, ?>[] array = new ScalarValue<?, ?, ?, ?>[len];
 					Arrays.fill(array, NullValue.instanceFrom(comp));
+					dataContainer.put(comp, array);
 				}
 			
 			Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(metadata);
@@ -341,6 +364,31 @@ public class REnvironment implements Environment
 	
 	private REXP reval(String format, String name) 
 	{
-		return getEngine().eval(format(format, name));
+		return getEngine().eval(format.replace("???", name));
+	}
+
+	private static UnaryOperator<ScalarValue<?, ?, ?, ?>> toTime(DataStructureComponent<?, ?, ?> comp)
+	{
+		return value -> {
+			if (value instanceof NullValue)
+				return NullValue.instanceFrom(comp);
+			else if (value instanceof NumberValue)
+			{
+				int year = ((Number) value.get()).intValue();
+				return new TimePeriodValue<>(new YearPeriodHolder(Year.of(year)), YEARSDS);
+			}
+			else if (value instanceof StringValue)
+			{
+				String dt = value.get().toString(); 
+				if (dt.matches("^\\d{4}-\\d{2}$"))
+					return new TimePeriodValue<>(new MonthPeriodHolder(YearMonth.parse(dt)), MONTHSDS);
+				else if (dt.matches("^\\d{4}-\\d{2}-\\d{2}$"))
+					return new DateValue<>(new DayHolder(LocalDate.parse(dt)), DATEDS);
+				else
+					throw new UnsupportedOperationException("Date format not supported: " + dt);
+			}
+			else
+				throw new VTLCastException(comp.getDomain(), value);
+		};
 	}
 }
