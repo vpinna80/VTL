@@ -35,7 +35,6 @@ import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -92,6 +91,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 	}
 
 	private final String url = FM_REGISTRY_ENDPOINT.getValue();
+	private final boolean drop = Boolean.parseBoolean(SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS.getValue());
 	private final SdmxRestToBeanRetrievalManager rbrm;
 
 	public FMRRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
@@ -148,9 +148,8 @@ public class FMRRepository extends InMemoryMetadataRepository
 		if (ref == null)
 			return super.getStructure(alias);
 
-		boolean removeSubs = Boolean.parseBoolean(SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS.getValue());
 		String[] dims;
-		if (removeSubs && alias.indexOf('/') > 0)
+		if (isDrop() && alias.indexOf('/') > 0)
 			dims = alias.split("/", 2)[1].split("\\.");
 		else
 			dims = new String[] {};
@@ -159,14 +158,13 @@ public class FMRRepository extends InMemoryMetadataRepository
 		try
 		{
 			SdmxRestToBeanRetrievalManager rbrm = getBeanRetrievalManager();
-			Set<DataflowBean> k = rbrm.getIdentifiables(DataflowBean.class);
-			System.out.println(k);
+			
 			CrossReferenceBean dsdRef = rbrm.getIdentifiableBean(ref, DataflowBean.class).getDataStructureRef();
 			DataStructureBean dsd = rbrm.getIdentifiableBean(dsdRef, DataStructureBean.class);
 			DataStructureBuilder builder = new DataStructureBuilder();
 			builder.addComponent(DataStructureComponentImpl.of('\'' + dsd.getPrimaryMeasure().getId() + '\'', Measure.class, NUMBERDS));
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
-				if (!removeSubs || iDim >= dims.length || dims[iDim++].isEmpty())
+				if (!isDrop() || iDim >= dims.length || dims[iDim++].isEmpty())
 				{
 					String id = dimBean.getId();
 					builder.addComponent(DataStructureComponentImpl.of('\'' + id + '\'', Identifier.class, 
@@ -187,7 +185,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 
 	SdmxRestToBeanRetrievalManager getBeanRetrievalManager()
 	{
-		return rbrm;
+		return getRbrm();
 	}
 	
 	private StructureReferenceBean vtlName2SdmxRef(String alias, SDMX_STRUCTURE_TYPE type)
@@ -208,5 +206,15 @@ public class FMRRepository extends InMemoryMetadataRepository
 	private String sdmxRef2VtlName(StructureReferenceBean ref)
 	{
 		return ref.getAgencyId() + ":" + ref.getMaintainableId() + "(" + ref.getVersion() + ")";
+	}
+
+	public SdmxRestToBeanRetrievalManager getRbrm()
+	{
+		return rbrm;
+	}
+
+	public boolean isDrop()
+	{
+		return drop;
 	}
 }

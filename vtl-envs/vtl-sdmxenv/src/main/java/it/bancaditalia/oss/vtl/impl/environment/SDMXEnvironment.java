@@ -247,10 +247,8 @@ public class SDMXEnvironment implements Environment, Serializable
 							.orElseThrow(() -> new NoSuchElementException(normalizedDimName));
 						dmap.put(dim, dim.cast(StringValue.of(k.getCode())));
 				}
-			keys = dre.getCurrentKey().getAttributes();
-			for (int i = 0; i < keys.size(); i++)
+			for (KeyValue k: dre.getCurrentKey().getAttributes())
 			{
-				KeyValue k = keys.get(i);
 				String normalizedAttrName = '\'' + k.getConcept() + '\'';
 				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(normalizedAttrName, Attribute.class)
 						.orElseThrow(() -> new NoSuchElementException(normalizedAttrName));

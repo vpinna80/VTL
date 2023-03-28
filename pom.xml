@@ -102,6 +102,9 @@
 			<id>with-r</id>
 		</profile>
 		<profile>
+			<id>with-fmr</id>
+		</profile>
+		<profile>
 			<id>with-spark</id>
 		</profile>
 		<profile>
@@ -231,7 +234,7 @@
 		<spring.boot.version>2.3.2.RELEASE</spring.boot.version>
 		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.8</antlr4.version>
-		<io.sdmx.version>1.0.28</io.sdmx.version>
+		<io.sdmx.version>1.0.32</io.sdmx.version>
 		<scm-url>https://github.com/vpinna80/VTL</scm-url>
 		<site-url>https://vpinna80.github.io/VTL</site-url>
 		<license-url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
