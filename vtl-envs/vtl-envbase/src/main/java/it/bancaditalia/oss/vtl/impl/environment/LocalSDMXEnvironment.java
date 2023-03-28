@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.impl.environment.exceptions.VTLInputException;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
-class LocalSDMXEnvironment extends SDMXEnvironment
+class LocalSDMXEnvironment extends SDMXConnEnvironment
 {
 	private static final long serialVersionUID = 1L;
 	private final String dirPath;

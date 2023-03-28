@@ -47,6 +47,12 @@
 				<module>vtl-renv</module>
 			</modules>
 		</profile>
+		<profile>
+      		<id>with-fmr</id>
+      		<modules>
+				<module>vtl-sdmxenv</module>
+      		</modules>
+	    </profile>
 	</profiles>
 
 	<dependencyManagement>
@@ -69,6 +75,11 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-spark</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-sdmxenv</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>

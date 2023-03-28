@@ -115,10 +115,10 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class SDMXEnvironment implements Environment, Serializable
+public class SDMXConnEnvironment implements Environment, Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
+	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXConnEnvironment.class); 
 	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> OBS_VALUE_MEASURE = new DataStructureComponentImpl<>(OBS_LABEL.toLowerCase(), Measure.class, NUMBERDS);
 	private static final DataStructureComponent<?, ?, ?> TIME_PERIOD_IDENTIFIER = DataStructureComponentImpl.of(TIME_LABEL.toLowerCase(), Identifier.class, TIMEDS);
 	private static final Set<String> UNSUPPORTED = Stream.of("CONNECTORS_AUTONAME", "action", "validFromDate", "ID").collect(toSet());
@@ -131,7 +131,7 @@ public class SDMXEnvironment implements Environment, Serializable
 
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(SDMXEnvironment.class, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
+		ConfigurationManagerFactory.registerSupportedProperties(SDMXConnEnvironment.class, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
 		
 		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateHolder::of);
 		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateHolder::of);
@@ -200,7 +200,7 @@ public class SDMXEnvironment implements Environment, Serializable
 					attrs.putAll(e.getKey().getDimensionsMap());
 					return new SimpleEntry<>(e.getKey(), attrs);
 				})
-				.map(keepingKey(SDMXEnvironment::extractAttrs))
+				.map(keepingKey(SDMXConnEnvironment::extractAttrs))
 				.collect(entriesToMap());
 
 		return new FunctionDataSet<>(metadata, t -> Utils.getStream(t) // for each series
