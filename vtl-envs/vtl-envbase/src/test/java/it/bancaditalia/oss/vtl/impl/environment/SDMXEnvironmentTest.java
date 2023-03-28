@@ -190,13 +190,13 @@ public class SDMXEnvironmentTest
 	@Test
 	public void containsTest()
 	{
-		assertTrue(new SDMXEnvironment().contains(SDMX_ALIAS));
+		assertTrue(new SDMXConnEnvironment().contains(SDMX_ALIAS));
 	}
 	
 	@Test
 	public void getValueTest()
 	{
-		Optional<? extends VTLValue> search = new SDMXEnvironment().getValue(SDMX_ALIAS);
+		Optional<? extends VTLValue> search = new SDMXConnEnvironment().getValue(SDMX_ALIAS);
 
 		assertTrue(search.isPresent(), "Cannot find " + SDMX_ALIAS);
 		assertTrue(DataSet.class.isInstance(search.get()), "CSVALIAS is not a DataSet");
@@ -210,7 +210,7 @@ public class SDMXEnvironmentTest
 	@Test
 	public void getValueMetadataTest() throws SdmxException, KryoException, FileNotFoundException
 	{
-		Optional<VTLValueMetadata> search = new SDMXEnvironment().getValueMetadata(SDMX_ALIAS);
+		Optional<VTLValueMetadata> search = new SDMXConnEnvironment().getValueMetadata(SDMX_ALIAS);
 
 		assertTrue(search.isPresent(), "Cannot find " + SDMX_ALIAS);
 		assertTrue(DataSetMetadata.class.isInstance(search.get()), SDMX_ALIAS + " is not a DataSet");
