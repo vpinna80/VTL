@@ -52,6 +52,9 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.sdmx.api.collection.KeyValue;
 import io.sdmx.api.io.ReadableDataLocation;
 import io.sdmx.api.sdmx.engine.DataReaderEngine;
@@ -61,7 +64,6 @@ import io.sdmx.core.data.manager.DataFormatManagerImpl;
 import io.sdmx.core.data.manager.DataReaderManagerImpl;
 import io.sdmx.core.sdmx.error.FirstFailureErrorHandler;
 import io.sdmx.core.sdmx.manager.format.InformationFormatManager;
-import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
 import io.sdmx.core.sdmx.manager.structure.StructureReaderManagerImpl;
 import io.sdmx.format.ml.factory.data.SdmxMLDataFormatFactory;
 import io.sdmx.format.ml.factory.data.SdmxMLDataReaderFactory;
@@ -106,20 +108,19 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SDMXEnvironment implements Environment, Serializable
 {
-	private static final long serialVersionUID = 1L;
-//	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
-	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
-	private static final DataStructureComponent<Identifier,EntireTimeDomainSubset,TimeDomain> TIME_PERIOD = DataStructureComponentImpl.of("'TIME_PERIOD'", Identifier.class, TIMEDS);
-	
 	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX 2.1 data REST base URL", "https://www.myurl.com/service", true);
 
-	private final MetadataRepository repo = ConfigurationManagerFactory.getInstance().getMetadataRepository();
-	private final DataReaderManager drm = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
+	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
+	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
+	private static final DataStructureComponent<Identifier,EntireTimeDomainSubset,TimeDomain> TIME_PERIOD = DataStructureComponentImpl.of("'TIME_PERIOD'", Identifier.class, TIMEDS);
+	private static final DataReaderManager DR_MANAGER = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
+	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
+
+	private final FMRRepository repo;
 	private final String endpoint = SDMX_DATA_ENDPOINT.getValue();
-	private final SdmxRestToBeanRetrievalManager rbrm;
 	private final boolean drop;
-	private final SdmxSourceReadableDataLocationFactory rdlf = new SdmxSourceReadableDataLocationFactory();
-	
+
 	static
 	{
 		registerSupportedProperties(SDMXEnvironment.class, SDMX_DATA_ENDPOINT);
@@ -138,13 +139,16 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		if (endpoint == null)
 			throw new IllegalStateException("No endpoint configured for FMR repository.");
-		if (repo instanceof FMRRepository)
-		{
-			rbrm = ((FMRRepository) repo).getRbrm();
-			drop = ((FMRRepository) repo).isDrop();
-		}
+		
+		MetadataRepository maybeRepo = ConfigurationManagerFactory.getInstance().getMetadataRepository();
+		if (maybeRepo instanceof FMRRepository)
+			repo = (FMRRepository) maybeRepo;
 		else
 			throw new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository.");
+
+		LOGGER.info("Loading SDMX data from {}", endpoint);
+
+		drop = repo.isDrop();
 		
 		// FMR client configuration
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
@@ -157,15 +161,19 @@ public class SDMXEnvironment implements Environment, Serializable
 		URI uri = new URI(endpoint);
 		Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
 		if (proxy.type() == Type.HTTP)
+		{
+			String proxyHost = ((InetSocketAddress) proxy.address()).getHostName();
+			LOGGER.info("Fetching SDMX data through proxy {}", proxyHost);
 			RestMessageBroker.setProxies(singletonMap(uri.getHost(), 
 			new IHttpProxy() {
 				@Override public String getProxyUser() { return null; }
-				@Override public String getProxyUrl() { return ((InetSocketAddress) proxy.address()).getHostName(); }
+				@Override public String getProxyUrl() { return proxyHost; }
 				@Override public Integer getProxyPort() { return ((InetSocketAddress) proxy.address()).getPort(); }
 				@Override public String getProxyPassword() { return null; }
 				@Override public String getDomain() { return null; }
 				@Override public String getDecryptedPassword() { return null; }
 			}));
+		}
 		else
 			RestMessageBroker.setProxies(emptyMap());
 	}
@@ -191,8 +199,8 @@ public class SDMXEnvironment implements Environment, Serializable
 		String[] dims = drop && alias.indexOf('/') > 0 ? resource.split("\\.") : new String[] {};
 
 		String path = endpoint + "/data/" + dataflow + resource;
-		ReadableDataLocation rdl = rdlf.getReadableDataLocation(path);
-		DataReaderEngine dre = drm.getDataReaderEngine(rdl, rbrm, new FirstFailureErrorHandler());
+		ReadableDataLocation rdl = RDL_FACTORY.getReadableDataLocation(path);
+		DataReaderEngine dre = DR_MANAGER.getDataReaderEngine(rdl, repo.getBeanRetrievalManager(), new FirstFailureErrorHandler());
 		
 		return Optional.of(new AbstractDataSet(structure) {
 			private static final long serialVersionUID = 1L;
@@ -289,10 +297,13 @@ public class SDMXEnvironment implements Environment, Serializable
 			builder.add(TIME_PERIOD, value);
 			
 			if (!(no = dre.moveNextObservation()))
+			{
 				if (!(no = dre.moveNextKeyable() && dre.moveNextObservation()))
 					no = dre.moveNextDataset() && dre.moveNextKeyable() && dre.moveNextObservation();
-				else
+			
+				if (no)
 					setDims(dre, structure);
+			}
 
 			return builder.build(LineageExternal.of(alias), structure);
 		}

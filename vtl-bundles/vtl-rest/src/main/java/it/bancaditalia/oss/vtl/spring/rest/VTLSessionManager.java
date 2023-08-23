@@ -37,7 +37,7 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 public class VTLSessionManager
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionManager.class);
-	
+
 	@Autowired private HttpSession httpSession;
 
 	public UUID createSession()

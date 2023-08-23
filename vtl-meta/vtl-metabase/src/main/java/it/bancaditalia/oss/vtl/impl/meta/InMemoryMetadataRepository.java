@@ -58,7 +58,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 		return domains.containsKey(domain); 
 	}
 
-	protected Optional<ValueDomainSubset<?, ?>> getDomainOrNull(String alias)
+	protected Optional<ValueDomainSubset<?, ?>> maybeGetDomain(String alias)
 	{
 		return Optional.ofNullable(domains.get(alias));
 	}

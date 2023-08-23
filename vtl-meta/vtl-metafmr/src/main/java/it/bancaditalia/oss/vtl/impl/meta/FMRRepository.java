@@ -84,6 +84,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 	public static final VTLProperty FMR_USERNAME = new VTLPropertyImpl("vtl.fmr.global.user", "Fusion Metadata Registry user name", "", false);
 	public static final VTLProperty FMR_PASSWORD = new VTLPropertyImpl("vtl.fmr.global.password", "Fusion Metadata Registry password", "", false);
 	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", false, false, "false");
+	public static final Pattern SDMX_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)(?:\\(([0-9._+*~]+)\\))(?:/.*)?$");
 	
 	static
 	{
@@ -92,7 +93,8 @@ public class FMRRepository extends InMemoryMetadataRepository
 
 	private final String url = FM_REGISTRY_ENDPOINT.getValue();
 	private final boolean drop = Boolean.parseBoolean(SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS.getValue());
-	private final SdmxRestToBeanRetrievalManager rbrm;
+	
+	private transient SdmxRestToBeanRetrievalManager rbrm;
 
 	public FMRRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
@@ -108,15 +110,19 @@ public class FMRRepository extends InMemoryMetadataRepository
 		URI uri = new URI(url);
 		Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
 		if (proxy.type() == Type.HTTP)
+		{
+			String proxyHost = ((InetSocketAddress) proxy.address()).getHostName();
+			LOGGER.info("Fetching SDMX data through proxy {}", proxyHost);
 			RestMessageBroker.setProxies(singletonMap(uri.getHost(), 
 			new IHttpProxy() {
 				@Override public String getProxyUser() { return null; }
-				@Override public String getProxyUrl() { return ((InetSocketAddress) proxy.address()).getHostName(); }
+				@Override public String getProxyUrl() { return proxyHost; }
 				@Override public Integer getProxyPort() { return ((InetSocketAddress) proxy.address()).getPort(); }
 				@Override public String getProxyPassword() { return null; }
 				@Override public String getDomain() { return null; }
 				@Override public String getDecryptedPassword() { return null; }
 			}));
+		}
 		else
 			RestMessageBroker.setProxies(emptyMap());
 		
@@ -125,20 +131,18 @@ public class FMRRepository extends InMemoryMetadataRepository
 		if (userName != null && !userName.isEmpty() && password != null && !password.isEmpty())
 			RestMessageBroker.storeGlobalAuthorization(userName, password);
 		
-		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(FMR_API_VERSION.getValue())));
-		
 		LOGGER.info("Loading metadata from {}", url);
 	}
 	
 	@Override
 	public ValueDomainSubset<?, ?> getDomain(String alias)
 	{
-		Optional<ValueDomainSubset<?, ?>> maybeDomain = getDomainOrNull(alias);
+		Optional<ValueDomainSubset<?, ?>> maybeDomain = maybeGetDomain(alias);
 		if (maybeDomain.isPresent())
 			return maybeDomain.get();
 		
 		StructureReferenceBean refBean = vtlName2SdmxRef(alias, CODE_LIST);
-		return refBean != null ? defineDomain(alias, new LazyCodeList(STRINGDS, refBean)) : super.getDomain(alias);
+		return refBean != null ? defineDomain(alias, new LazyCodeList(STRINGDS, refBean, this)) : super.getDomain(alias);
 	}
 	
 	@Override
@@ -149,7 +153,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 			return super.getStructure(alias);
 
 		String[] dims;
-		if (isDrop() && alias.indexOf('/') > 0)
+		if (drop && alias.indexOf('/') > 0)
 			dims = alias.split("/", 2)[1].split("\\.");
 		else
 			dims = new String[] {};
@@ -157,21 +161,23 @@ public class FMRRepository extends InMemoryMetadataRepository
 		int iDim = 0;
 		try
 		{
+			// SDMX to VTL mapping
 			SdmxRestToBeanRetrievalManager rbrm = getBeanRetrievalManager();
-			
+						
 			CrossReferenceBean dsdRef = rbrm.getIdentifiableBean(ref, DataflowBean.class).getDataStructureRef();
 			DataStructureBean dsd = rbrm.getIdentifiableBean(dsdRef, DataStructureBean.class);
 			DataStructureBuilder builder = new DataStructureBuilder();
-			builder.addComponent(DataStructureComponentImpl.of('\'' + dsd.getPrimaryMeasure().getId() + '\'', Measure.class, NUMBERDS));
+			
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
-				if (!isDrop() || iDim >= dims.length || dims[iDim++].isEmpty())
-				{
-					String id = dimBean.getId();
-					builder.addComponent(DataStructureComponentImpl.of('\'' + id + '\'', Identifier.class, 
+				if (!drop || iDim >= dims.length || dims[iDim++].isEmpty())
+					builder.addComponent(DataStructureComponentImpl.of('\'' + dimBean.getId() + '\'', Identifier.class, 
 							(ValueDomainSubset<?, ?>) (dimBean.isTimeDimension() ? TIMEDS : getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation())))));
-				}
+
+			builder.addComponent(DataStructureComponentImpl.of('\'' + dsd.getPrimaryMeasure().getId() + '\'', Measure.class, NUMBERDS));
+			// Support for multiple measures (SDMX 3.0)
 //			for (MeasureDimensionBean measureBean: dsd.getMeasures())
 //				builder.addComponent(DataStructureComponentImpl.of(measureBean.getId(), Measure.class, NUMBERDS));
+			
 			for (AttributeBean attrBean: dsd.getAttributeList().getAttributes())
 				builder.addComponent(DataStructureComponentImpl.of('\'' + attrBean.getId() + '\'', Attribute.class, STRINGDS));
 
@@ -183,15 +189,26 @@ public class FMRRepository extends InMemoryMetadataRepository
 		}
 	}
 
-	SdmxRestToBeanRetrievalManager getBeanRetrievalManager()
+	public boolean isDrop()
 	{
-		return getRbrm();
+		return drop;
+	}
+
+	public SdmxRestToBeanRetrievalManager getBeanRetrievalManager()
+	{
+		if (rbrm == null)
+			synchronized (this) 
+			{
+				if (rbrm == null)
+					rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(FMR_API_VERSION.getValue())));
+			}
+		
+		return rbrm;
 	}
 	
 	private StructureReferenceBean vtlName2SdmxRef(String alias, SDMX_STRUCTURE_TYPE type)
 	{
-		Matcher matcher = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)(?:\\(([0-9._+*~]+)\\))(?:/.*)?$")
-				.matcher(alias);
+		Matcher matcher = SDMX_PATTERN.matcher(alias);
 		if (matcher.matches())
 		{
 			String agencyId = matcher.group(1); 
@@ -206,15 +223,5 @@ public class FMRRepository extends InMemoryMetadataRepository
 	private String sdmxRef2VtlName(StructureReferenceBean ref)
 	{
 		return ref.getAgencyId() + ":" + ref.getMaintainableId() + "(" + ref.getVersion() + ")";
-	}
-
-	public SdmxRestToBeanRetrievalManager getRbrm()
-	{
-		return rbrm;
-	}
-
-	public boolean isDrop()
-	{
-		return drop;
 	}
 }

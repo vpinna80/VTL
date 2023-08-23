@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!--
 
-    Copyright © 2020 Banca D'Italia
+	Copyright © 2020 Banca D'Italia
 
-    Licensed under the EUPL, Version 1.2 (the "License");
-    You may not use this work except in compliance with the
-    License.
-    You may obtain a copy of the License at:
+	Licensed under the EUPL, Version 1.2 (the "License");
+	You may not use this work except in compliance with the
+	License.
+	You may obtain a copy of the License at:
 
-    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+	https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
 
-    Unless required by applicable law or agreed to in
-    writing, software distributed under the License is
-    distributed on an "AS IS" basis,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-    express or implied.
+	Unless required by applicable law or agreed to in
+	writing, software distributed under the License is
+	distributed on an "AS IS" basis,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+	express or implied.
 
-    See the License for the specific language governing
-    permissions and limitations under the License.
+	See the License for the specific language governing
+	permissions and limitations under the License.
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -216,25 +216,25 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<bundle.plugin.version>5.1.1</bundle.plugin.version>
+		<bundle.plugin.version>5.1.9</bundle.plugin.version>
 		<aws.version>1.12.150</aws.version>
 		<sf-fs.version>3.0.0-M3</sf-fs.version>
 		<scala.version>2.12.11</scala.version>
 		<scala.compat.version>2.12</scala.compat.version>
 		<scala-compiler.version>4.5.2</scala-compiler.version>
 		<spark.version>3.1.2</spark.version>
-		<tycho.version>2.1.0</tycho.version>
-		<slf4j.version>1.7.26</slf4j.version>
-		<log4j.version>2.17.1</log4j.version>
-		<jetty.version>9.4.44.v20210927</jetty.version>
-		<junit.version>5.6.1</junit.version>
+		<tycho.version>4.0.0</tycho.version>
+		<slf4j.version>2.0.7</slf4j.version>
+		<log4j.version>2.20.0</log4j.version>
+		<jetty.version>11.0.15</jetty.version>
+		<junit.version>5.9.3</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
-		<mockito.version>3.5.7</mockito.version>
-		<build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
-		<spring.boot.version>2.3.2.RELEASE</spring.boot.version>
+		<mockito.version>5.2.0</mockito.version>
+		<build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
+		<spring.boot.version>2.7.13</spring.boot.version>
 		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.8</antlr4.version>
-		<io.sdmx.version>1.0.32</io.sdmx.version>
+		<io.sdmx.version>1.0.42</io.sdmx.version>
 		<scm-url>https://github.com/vpinna80/VTL</scm-url>
 		<site-url>https://vpinna80.github.io/VTL</site-url>
 		<license-url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
@@ -253,9 +253,11 @@
 							<report>dependencies</report>
 							<report>dependency-convergence</report>
 							<report>dependency-info</report>
+							<report>dependency-management</report>
 							<report>index</report>
 							<report>issue-management</report>
 							<report>licenses</report>
+							<report>modules</report>
 							<report>plugin-management</report>
 							<report>plugins</report>
 							<report>scm</report>
@@ -576,6 +578,34 @@
 				<groupId>io.sdmx</groupId>
 				<artifactId>fusion-sdmx-rest</artifactId>
 				<version>${io.sdmx.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>info.picocli</groupId>
+				<artifactId>picocli</artifactId>
+				<version>4.3.2</version>
+			</dependency>
+			<dependency>
+				<groupId>com.esotericsoftware</groupId>
+				<artifactId>kryo</artifactId>
+				<version>4.0.2</version>
+				<scope>test</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>org.objenesis</groupId>
+						<artifactId>objenesis</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>com.github.lucarosellini.rJava</groupId>
+				<artifactId>JRI</artifactId>
+				<version>0.9-7</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mock-server</groupId>
+				<artifactId>mockserver-junit-jupiter</artifactId>
+				<version>5.15.0</version>
+				<scope>test</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

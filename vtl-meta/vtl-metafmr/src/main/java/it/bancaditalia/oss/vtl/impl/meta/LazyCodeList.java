@@ -25,11 +25,12 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.sdmx.api.sdmx.model.beans.codelist.CodeBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
-import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
@@ -38,13 +39,16 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class LazyCodeList extends AbstractStringCodeList implements Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(LazyCodeList.class);
 	
 	private final StructureReferenceBean clRef;
-	private transient final Set<StringCodeItemImpl> cache = new HashSet<>();
+	private final FMRRepository fmrRepo;
+	private final Set<StringCodeItemImpl> cache = new HashSet<>();
 
-	public LazyCodeList(StringDomainSubset<?> parent, StructureReferenceBean clRef)
+	public LazyCodeList(StringDomainSubset<?> parent, StructureReferenceBean clRef, FMRRepository fmrRepo)
 	{
 		super(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")", s -> new StringCodeList(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")", s));
+		this.fmrRepo = fmrRepo;
 		this.clRef = clRef;
 	}
 
@@ -56,8 +60,9 @@ public class LazyCodeList extends AbstractStringCodeList implements Serializable
 			{
 				if (cache.isEmpty())
 				{
-					SdmxRestToBeanRetrievalManager rbrm = ((FMRRepository) ConfigurationManagerFactory.getInstance().getMetadataRepository()).getBeanRetrievalManager();
-					cache.addAll(Utils.getStream(rbrm.getIdentifiableBean(clRef, CodelistBean.class).getRootCodes())
+					LOGGER.info("Fetching maintainable codelist {}", clRef.getMaintainableId());
+					CodelistBean cl = fmrRepo.getBeanRetrievalManager().getIdentifiableBean(clRef, CodelistBean.class);
+					cache.addAll(Utils.getStream(cl.getRootCodes())
 							.map(CodeBean::getId)
 							.map(StringCodeItemImpl::new)
 							.collect(toSet()));
