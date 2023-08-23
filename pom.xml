@@ -217,12 +217,12 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<bundle.plugin.version>5.1.9</bundle.plugin.version>
-		<aws.version>1.12.150</aws.version>
+		<aws.version>1.12.161</aws.version>
 		<sf-fs.version>3.0.0-M3</sf-fs.version>
 		<scala.version>2.12.11</scala.version>
 		<scala.compat.version>2.12</scala.compat.version>
 		<scala-compiler.version>4.5.2</scala-compiler.version>
-		<spark.version>3.1.2</spark.version>
+		<spark.version>3.3.3</spark.version>
 		<tycho.version>4.0.0</tycho.version>
 		<slf4j.version>2.0.7</slf4j.version>
 		<log4j.version>2.20.0</log4j.version>
@@ -236,6 +236,7 @@
 		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.8</antlr4.version>
 		<io.sdmx.version>1.0.42</io.sdmx.version>
+		<guava.version>30.1.1-jre</guava.version>
 		<scm-url>https://github.com/vpinna80/VTL</scm-url>
 		<site-url>https://vpinna80.github.io/VTL</site-url>
 		<license-url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
@@ -478,7 +479,7 @@
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>30.1.1-jre</version>
+				<version>${guava.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
@@ -558,7 +559,7 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-text</artifactId>
-				<version>1.6</version>
+				<version>1.10.0</version>
 			</dependency>
 			<dependency>
 				<groupId>com.nimbusds</groupId>
