@@ -30,8 +30,8 @@
 	<version>${revision}</version>
 	<packaging>pom</packaging>
 
-	<name>VTL Engine</name>
-	<description>VTL prototypal engine</description>
+	<name>VTL Engine &amp; Editor</name>
+	<description>VTL engine end editor for VTL 2.x specification</description>
 	<url>${site-url}</url>
 
 	<inceptionYear>2020</inceptionYear>
@@ -373,6 +373,11 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-spark</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>it.bancaditalia.oss</groupId>
 				<artifactId>sdmx</artifactId>
 				<version>${sdmx.version}</version>
@@ -652,6 +657,11 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>3.6.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-site-plugin</artifactId>
 					<version>3.9.0</version>
 					<dependencies>
@@ -719,7 +729,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
-					<version>3.2.1</version>
+					<version>3.5.0</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -759,7 +769,7 @@
 					<version>1.6</version>
 					<executions>
 						<execution>
-							<phase>verify</phase>
+							<phase>validate</phase>
 							<goals>
 								<goal>sign</goal>
 							</goals>
@@ -932,9 +942,10 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.0.0-M3</version>
+				<version>3.4.0</version>
 				<executions>
 					<execution>
+						<id>enforcerules</id>
 						<phase>validate</phase>
 						<configuration>
 							<rules>

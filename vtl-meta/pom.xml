@@ -61,11 +61,6 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-metarepo</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-metaaws</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -84,7 +79,6 @@
 
 	<modules>
 		<module>vtl-metabase</module>
-		<module>vtl-metarepo</module>
 		<module>vtl-metadb</module>
 	</modules>
 

@@ -87,7 +87,9 @@
 					</execution>
 				</executions>
 				<configuration>
-					<descriptor>src/assembly/grammar.xml</descriptor>
+					<descriptors>
+						<descriptor>src/assembly/grammar.xml</descriptor>
+					</descriptors>
 					<attach>true</attach>
 				</configuration>
 			</plugin>
