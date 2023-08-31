@@ -69,7 +69,7 @@
 			</modules>
 		</profile>
 		<profile>
-			<id>with-spark</id>
+			<id>with-aws</id>
 			<modules>
 				<module>vtl-sparkaws</module>
 			</modules>
