@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
@@ -132,7 +133,7 @@ public class DataPointEncoder implements Serializable
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(components));
 		StructType schemaNoLineage = new StructType(fields.toArray(new StructField[components.length]));
 		rowEncoderNoLineage = RowEncoder.apply(schemaNoLineage);
-		fields.add(new StructField("$lineage$", LineageSparkUDT$.MODULE$, false, null));
+		fields.add(new StructField("$lineage$", LineageSparkUDT, false, null));
 		schema = new StructType(fields.toArray(new StructField[components.length + 1]));
 		rowEncoder = RowEncoder.apply(schema);
 	}
@@ -244,7 +245,7 @@ public class DataPointEncoder implements Serializable
 		}
 		try
 		{
-			lineage = lineageValue instanceof byte[] ? LineageSparkUDT$.MODULE$.deserialize(lineageValue) : (Lineage) lineageValue;
+			lineage = lineageValue instanceof byte[] ? LineageSparkUDT.deserialize(lineageValue) : (Lineage) lineageValue;
 		}
 		catch (RuntimeException e)
 		{

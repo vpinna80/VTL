@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.ge
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getNamesFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.scalarFromColumnValue;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.sorter;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.byName;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
@@ -223,7 +224,7 @@ public class SparkDataSet extends AbstractDataSet
 		// order columns alphabetically
 		newDF = newDF.select(columns);
 		
-		byte[] serializedLineage = LineageSparkUDT$.MODULE$.serialize(lineage);
+		byte[] serializedLineage = LineageSparkUDT.serialize(lineage);
 		return new SparkDataSet(session, membershipStructure, newDF.withColumn("$lineage$", lit(serializedLineage)));
 	}
 
@@ -286,7 +287,7 @@ public class SparkDataSet extends AbstractDataSet
 		Set<DataStructureComponent<?, ?, ?>> newComponents = new HashSet<>(metadata);
 		newComponents.removeAll(originalIDs);
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(newComponents));
-		fields.add(new StructField("$lineage$", LineageSparkUDT$.MODULE$, false, null));
+		fields.add(new StructField("$lineage$", LineageSparkUDT, false, null));
 		StructType structType = new StructType(fields.toArray(new StructField[fields.size()]));
 		
 		// wrap the source row into a struct for passing to the UDF
@@ -604,7 +605,7 @@ public class SparkDataSet extends AbstractDataSet
 		// remove duplicates and add lineage
 		Column[] ids = getColumnsFromComponents(result, getMetadata().getComponents(Identifier.class)).toArray(new Column[0]);
 		Column[] cols = getColumnsFromComponents(result, getMetadata()).toArray(new Column[getMetadata().size()]);
-		Column lineage = new Column(Literal.create(LineageSparkUDT$.MODULE$.serialize(LineageExternal.of("Union")), LineageSparkUDT$.MODULE$));
+		Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("Union")), LineageSparkUDT));
 		result = result.withColumn("__index", first("__index").over(partitionBy(ids).orderBy(result.col("__index"))))
 				.drop("__index")
 				.select(cols)

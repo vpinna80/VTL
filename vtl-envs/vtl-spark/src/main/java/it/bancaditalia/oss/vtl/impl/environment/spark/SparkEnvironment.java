@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.serializer.KryoRegistrator;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.DataFrameReader;
@@ -72,12 +73,12 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 
 public class SparkEnvironment implements Environment
 {
@@ -92,6 +93,8 @@ public class SparkEnvironment implements Environment
 	public static final VTLProperty VTL_SPARK_PAGE_SIZE = 
 			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", true, false, "1000");
 
+	static final LineageSparkUDT LineageSparkUDT = LineageSparkUDT$.MODULE$;
+	
 	static
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE);
@@ -137,6 +140,21 @@ public class SparkEnvironment implements Environment
 			  .builder()
 			  .config(conf)
 			  .master(master)
+			  .getOrCreate();
+		
+		reader = session.read();
+		
+		if (!UDTRegistration.exists(Lineage.class.getName()))
+			UDTRegistration.register(Lineage.class.getName(), LineageSparkUDT.class.getName());
+		if (!UDTRegistration.exists(DayHolder.class.getName()))
+			UDTRegistration.register(DayHolder.class.getName(), DayHolderSparkUDT.class.getName());
+	}
+	
+	public SparkEnvironment(SparkContext sc)
+	{
+		session = SparkSession
+			  .builder()
+			  .config(sc.getConf())
 			  .getOrCreate();
 		
 		reader = session.read();
@@ -241,7 +259,7 @@ public class SparkEnvironment implements Environment
 		{
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(createComponentsFromStruct(schema)).build();
 			Column[] names = DataPointEncoder.getColumnsFromComponents(sourceDataFrame, structure).toArray(new Column[structure.size() + 1]);
-			Column lineage = new Column(Literal.create(LineageSparkUDT$.MODULE$.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT$.MODULE$));
+			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			return new SparkDataSet(session, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
 		}
 		
@@ -275,7 +293,7 @@ public class SparkEnvironment implements Environment
 				.toArray(new Column[normalizedNames.length + 1]);
 		
 		// add a column and a converter for the lineage
-		byte[] serializedLineage = LineageSparkUDT$.MODULE$.serialize(LineageExternal.of("spark:" + alias));
+		byte[] serializedLineage = LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias));
 		converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
 
 		Dataset<Row> converted = sourceDataFrame.select(converters);
