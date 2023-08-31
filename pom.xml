@@ -782,8 +782,15 @@
 					<version>3.2.0</version>
 					<executions>
 						<execution>
+							<id>sources</id>
 							<goals>
-								<goal>jar</goal>
+								<goal>jar-no-fork</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>test-sources</id>
+							<goals>
+								<goal>test-jar-no-fork</goal>
 							</goals>
 						</execution>
 					</executions>
