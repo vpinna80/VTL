@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.meta;
+package it.bancaditalia.oss.vtl.impl.meta.fmr;
 
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.CODE_LIST;
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.DATAFLOW;
@@ -65,6 +65,8 @@ import io.sdmx.utils.http.broker.RestMessageBroker;
 import io.sdmx.utils.sdmx.xs.StructureReferenceBeanImpl;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -98,7 +100,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 
 	public FMRRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		if (url == null)
+		if (url == null || url.isEmpty())
 			throw new IllegalStateException("No endpoint configured for FMR repository.");
 
 		// FMR client configuration
@@ -142,6 +144,8 @@ public class FMRRepository extends InMemoryMetadataRepository
 			return maybeDomain.get();
 		
 		StructureReferenceBean refBean = vtlName2SdmxRef(alias, CODE_LIST);
+		if (refBean != null)
+			LOGGER.info("Found codelist {} in Fusion Metadata Registry", alias);
 		return refBean != null ? defineDomain(alias, new LazyCodeList(STRINGDS, refBean, this)) : super.getDomain(alias);
 	}
 	
@@ -150,7 +154,10 @@ public class FMRRepository extends InMemoryMetadataRepository
 	{
 		StructureReferenceBean ref = vtlName2SdmxRef(alias, DATAFLOW);
 		if (ref == null)
+		{
+			LOGGER.debug("{} is not an SDMX dataflow reference.", alias);
 			return super.getStructure(alias);
+		}
 
 		String[] dims;
 		if (drop && alias.indexOf('/') > 0)
@@ -164,7 +171,10 @@ public class FMRRepository extends InMemoryMetadataRepository
 			// SDMX to VTL mapping
 			SdmxRestToBeanRetrievalManager rbrm = getBeanRetrievalManager();
 						
-			CrossReferenceBean dsdRef = rbrm.getIdentifiableBean(ref, DataflowBean.class).getDataStructureRef();
+			DataflowBean sourceBean = rbrm.getIdentifiableBean(ref, DataflowBean.class);
+			if (sourceBean == null)
+				throw new VTLException("Cannot find SDMX dataflow with " + ref);
+			CrossReferenceBean dsdRef = sourceBean.getDataStructureRef();
 			DataStructureBean dsd = rbrm.getIdentifiableBean(dsdRef, DataStructureBean.class);
 			DataStructureBuilder builder = new DataStructureBuilder();
 			

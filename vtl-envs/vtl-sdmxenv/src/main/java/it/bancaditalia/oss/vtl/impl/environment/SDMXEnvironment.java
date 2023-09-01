@@ -30,18 +30,26 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Spliterator.IMMUTABLE;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.net.Authenticator;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.Proxy.Type;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -51,11 +59,13 @@ import java.util.Optional;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.GZIPInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.sdmx.api.collection.KeyValue;
+import io.sdmx.api.exception.SdmxUnauthorisedException;
 import io.sdmx.api.io.ReadableDataLocation;
 import io.sdmx.api.sdmx.engine.DataReaderEngine;
 import io.sdmx.api.sdmx.model.data.Observation;
@@ -77,7 +87,8 @@ import io.sdmx.utils.http.broker.RestMessageBroker;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.impl.meta.FMRRepository;
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
@@ -109,6 +120,8 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class SDMXEnvironment implements Environment, Serializable
 {
 	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX 2.1 data REST base URL", "https://www.myurl.com/service", true);
+	public static final VTLProperty SDMX_DATA_USERNAME = new VTLPropertyImpl("vtl.sdmx.data.user", "SDMX Data Provider user name", "", false);
+	public static final VTLProperty SDMX_DATA_PASSWORD = new VTLPropertyImpl("vtl.sdmx.data.password", "SDMX Data Provider password", "", false);
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
@@ -123,7 +136,7 @@ public class SDMXEnvironment implements Environment, Serializable
 
 	static
 	{
-		registerSupportedProperties(SDMXEnvironment.class, SDMX_DATA_ENDPOINT);
+		registerSupportedProperties(SDMXEnvironment.class, SDMX_DATA_ENDPOINT, SDMX_DATA_USERNAME, SDMX_DATA_PASSWORD);
 		
 		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateHolder::of);
 		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateHolder::of);
@@ -137,8 +150,9 @@ public class SDMXEnvironment implements Environment, Serializable
 	
 	public SDMXEnvironment() throws URISyntaxException
 	{
-		if (endpoint == null)
-			throw new IllegalStateException("No endpoint configured for FMR repository.");
+		LOGGER.info("Initializing SDMX Environment...");
+		if (endpoint == null || endpoint.isEmpty())
+			throw new IllegalStateException("No endpoint configured for SDMX Environment.");
 		
 		MetadataRepository maybeRepo = ConfigurationManagerFactory.getInstance().getMetadataRepository();
 		if (maybeRepo instanceof FMRRepository)
@@ -176,6 +190,8 @@ public class SDMXEnvironment implements Environment, Serializable
 		}
 		else
 			RestMessageBroker.setProxies(emptyMap());
+		
+		LOGGER.info("SDMX Environment initialization complete.");
 	}
 	
 	@Override
@@ -199,7 +215,32 @@ public class SDMXEnvironment implements Environment, Serializable
 		String[] dims = drop && alias.indexOf('/') > 0 ? resource.split("\\.") : new String[] {};
 
 		String path = endpoint + "/data/" + dataflow + resource;
-		ReadableDataLocation rdl = RDL_FACTORY.getReadableDataLocation(path);
+		ReadableDataLocation rdl;
+		try 
+		{
+			rdl = RDL_FACTORY.getReadableDataLocation(path);
+		}
+		catch (SdmxUnauthorisedException e)
+		{
+			try
+			{
+				URL url = new URI(path).toURL();
+				URLConnection urlc = url.openConnection();
+				urlc.setDoOutput(true);
+				urlc.setAllowUserInteraction(false);
+				urlc.addRequestProperty("Accept-Encoding", "gzip");
+				urlc.addRequestProperty("Accept", "*/*;q=1.0");
+				urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((SDMX_DATA_USERNAME.getValue() + ":" + SDMX_DATA_PASSWORD.getValue()).getBytes()));
+				((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
+				InputStream is = urlc.getInputStream();
+				rdl = RDL_FACTORY.getReadableDataLocation("gzip".equals(urlc.getContentEncoding()) ? new GZIPInputStream(is) : is);
+			}
+			catch (IOException | URISyntaxException e1)
+			{
+				throw new VTLException("Error in creating readableDataLocation", e);
+			}
+		}
+		
 		DataReaderEngine dre = DR_MANAGER.getDataReaderEngine(rdl, repo.getBeanRetrievalManager(), new FirstFailureErrorHandler());
 		
 		return Optional.of(new AbstractDataSet(structure) {
@@ -216,7 +257,10 @@ public class SDMXEnvironment implements Environment, Serializable
 	@Override
 	public Optional<VTLValueMetadata> getValueMetadata(String alias)
 	{
-		return Optional.ofNullable(repo.getStructure(alias));
+		Optional<VTLValueMetadata> structure = Optional.ofNullable(repo.getStructure(alias));
+		if (!structure.isPresent())
+			LOGGER.info("No structure in FMR corresponding to {}", alias);
+		return structure;
 	}
 
 	private static class ObsIterator implements Iterator<DataPoint>
