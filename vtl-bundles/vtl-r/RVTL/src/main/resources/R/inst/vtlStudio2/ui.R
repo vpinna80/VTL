@@ -116,7 +116,7 @@ defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ME
 repositoryImplementations <- list(`In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
                                   `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
                                   `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.SDMXMetadataRepository',
-                                  `Fusion (Metadata) Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.FMRRepository')
+                                  `Fusion (Metadata) Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository')
 
 ui <- shinydashboard::dashboardPage(title="VTL Studio!",
   
@@ -127,7 +127,7 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
           img(src="logo.svg", class="vtlLogo"),
           div(style="display:inline-block; vertical-align: bottom",
               h2(style="margin-bottom: 0", "VTL Studio!"),
-              div(style = "text-align: right", "Version ${r.package.version}")       
+              div(style = "text-align: right", "Version 1.1.2-20230831140954")       
              )
        ),
        hr(),
@@ -255,8 +255,8 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
                           ),
                           shinydashboard::box(title = 'Environment Properties', status = 'primary', solidHeader = T, collapsible = T,
                                               uiOutput(outputId = "envList"),
-                                              uiOutput(outputId = "propertyList"),
-                                              uiOutput(outputId = "propertyValueInput"),
+                                              selectInput('selectProp', 'Select Property', character(0)),
+                                              textInput('propertyValue', 'Value:', ''),
                                               actionButton(inputId = 'setProperty', label = 'Change property')
                           ),
                           shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
