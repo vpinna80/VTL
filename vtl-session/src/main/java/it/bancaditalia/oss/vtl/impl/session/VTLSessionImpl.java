@@ -91,6 +91,7 @@ public class VTLSessionImpl implements VTLSession
 			if (env instanceof Workspace)
 				selectedWorkspace = (Workspace) env;
 		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
+		LOGGER.info("Created new VTL session.");
 	}
 
 	@Override
@@ -124,6 +125,7 @@ public class VTLSessionImpl implements VTLSession
 	@Override
 	public VTLValue resolve(String alias)
 	{
+		LOGGER.info("Retrieving value for {}", alias);
 		final String normalizedAlias = normalizeAlias(alias);
 
 		Optional<? extends Statement> rule = workspace.getRule(alias);
@@ -239,11 +241,13 @@ public class VTLSessionImpl implements VTLSession
 		LOGGER.info("Resolving value of {}", alias);
 
 		Optional<T> maybeResult = environments.stream()
-				.map(env -> mapper.apply(env, alias))
-				.filter(Optional::isPresent)
-				.map(Optional::get)
+				.map(env -> new SimpleEntry<>(env, mapper.apply(env, alias)))
+				.filter(Utils.entryByValue(Optional::isPresent))
+				.map(Utils.keepingKey(Optional::get))
 				.findAny()
-				.map(result -> {
+				.map(e -> {
+					LOGGER.info("{} is bound to {}", alias, e.getKey().getClass().getSimpleName());
+					T result = e.getValue();
 					if (result instanceof DataSet && ((DataSet) result).isCacheable())
 					{
 						@SuppressWarnings("unchecked")
@@ -280,17 +284,21 @@ public class VTLSessionImpl implements VTLSession
 	@Override
 	public List<VTLValueMetadata> compile()
 	{
-		return workspace.getRules().stream()
+		List<VTLValueMetadata> statements = workspace.getRules().stream()
 				.map(s -> s.getMetadata(this))
 				.collect(toList());
+		LOGGER.info("Compiled {} statements.", statements.size());
+		return statements;
 	}
 
 	public Map<String, String> getStatements()
 	{
-		return workspace.getRules().stream()
+		LinkedHashMap<String, String> statements = workspace.getRules().stream()
 				.collect(toMap(Statement::getAlias, Statement::toString, (a, b) -> {
 					throw new UnsupportedOperationException();
 				}, LinkedHashMap::new));
+		LOGGER.info("Compiled {} statements.", statements.size());
+		return statements;
 	}
 
 	public List<String> getNodes()

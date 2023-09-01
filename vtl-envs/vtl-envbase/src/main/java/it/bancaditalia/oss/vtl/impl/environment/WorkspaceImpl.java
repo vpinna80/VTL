@@ -24,6 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
@@ -31,6 +36,10 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 
 public class WorkspaceImpl implements Workspace
 {
+	private final static Logger LOGGER = LoggerFactory.getLogger(WorkspaceImpl.class);
+	private static final Pattern QUOTED_ID = Pattern.compile("^'(.*)'$");
+	private static final Pattern UNQUOTED_ID = Pattern.compile("^[A-Za-z0-9./]+$");
+
 	private final Map<String, VTLValue> values = new ConcurrentHashMap<>();
 	private final Map<String, Statement> rules = new ConcurrentHashMap<>();
 	
@@ -39,6 +48,7 @@ public class WorkspaceImpl implements Workspace
 	{
 		if (rules.putIfAbsent(normalize(statement.getAlias()), statement) != null)
 			throw new IllegalStateException("Object " + statement.getAlias() + " was already defined");
+		LOGGER.info("Added a nre rfule for {}", statement.getAlias());
 	}
 
 	@Override
@@ -68,6 +78,16 @@ public class WorkspaceImpl implements Workspace
 
 	private static String normalize(String alias)
 	{
-		return alias.matches("'.*'") ? alias.replaceAll("'(.*)'", "$1") : alias.toLowerCase();
+		String normalizedAlias = alias;
+		Matcher m;
+		if ((m = QUOTED_ID.matcher(alias)).matches())
+		{
+			normalizedAlias = m.replaceAll("$1");
+			LOGGER.info("Using unquoted alias {}", normalizedAlias);
+		} else if ((m = UNQUOTED_ID.matcher(alias)).matches()) {
+			normalizedAlias = alias.toLowerCase();
+			LOGGER.info("Using lowercase alias {}", normalizedAlias);
+		}
+		return normalizedAlias;
 	}
 }
