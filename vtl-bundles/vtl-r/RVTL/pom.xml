@@ -35,21 +35,29 @@
 	<name>RVTL</name>
 	<description>R package interface to VTL Engine</description>
 
-	<dependencies>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-bundle-deps</artifactId>
-			<version>${project.version}</version>
-			<type>pom</type>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-java2r</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-	</dependencies>
-
 	<profiles>
+		<profile>
+			<id>with-spark</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-spark</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>with-fmr</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-metafmr</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-sdmxenv</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
 		<profile>
 			<id>unix</id>
 			<activation>
@@ -131,6 +139,34 @@
 		<r.prepend.path></r.prepend.path>
 		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-bundle-deps</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-java2r</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-confman</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j2-impl</artifactId>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<resources>
