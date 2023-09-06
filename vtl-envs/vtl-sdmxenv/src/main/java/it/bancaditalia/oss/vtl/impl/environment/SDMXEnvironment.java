@@ -20,6 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.registerSupportedProperties;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.PASSWORD;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.MONTH_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.QUARTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
@@ -33,10 +35,8 @@ import static java.util.Spliterator.IMMUTABLE;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.Proxy.Type;
 import java.net.ProxySelector;
@@ -50,6 +50,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Base64;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -90,6 +91,7 @@ import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
@@ -119,9 +121,9 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SDMXEnvironment implements Environment, Serializable
 {
-	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX 2.1 data REST base URL", "https://www.myurl.com/service", true);
-	public static final VTLProperty SDMX_DATA_USERNAME = new VTLPropertyImpl("vtl.sdmx.data.user", "SDMX Data Provider user name", "", false);
-	public static final VTLProperty SDMX_DATA_PASSWORD = new VTLPropertyImpl("vtl.sdmx.data.password", "SDMX Data Provider password", "", false);
+	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX 2.1 data REST base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
+	public static final VTLProperty SDMX_DATA_USERNAME = new VTLPropertyImpl("vtl.sdmx.data.user", "SDMX Data Provider user name", "", EnumSet.noneOf(Flags.class));
+	public static final VTLProperty SDMX_DATA_PASSWORD = new VTLPropertyImpl("vtl.sdmx.data.password", "SDMX Data Provider password", "", EnumSet.of(PASSWORD));
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 

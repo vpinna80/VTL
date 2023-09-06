@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.groupingByConcurrent;
@@ -29,6 +30,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.EnumSet;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
@@ -40,7 +42,7 @@ public class CSVMetadataRepository extends InMemoryMetadataRepository
 	private static final long serialVersionUID = 1L;
 	
 	public static final VTLProperty METADATA_CSV_SOURCE = 
-			new VTLPropertyImpl("vtl.metadata.csv.source", "Path of a CSV file containing codelists", "C:/metadata.csv", true, false);
+			new VTLPropertyImpl("vtl.metadata.csv.source", "Path of a CSV file containing codelists", "C:/metadata.csv", EnumSet.of(REQUIRED));
 	
 	static
 	{

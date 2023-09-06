@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.util;
 
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static java.awt.EventQueue.invokeLater;
 import static java.util.function.UnaryOperator.identity;
@@ -28,6 +29,7 @@ import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -43,7 +45,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ProgressWindow
 {
-	public static final VTLProperty CSV_PROGRESS_BAR_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", true, false, "1000");
+	public static final VTLProperty CSV_PROGRESS_BAR_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", EnumSet.of(REQUIRED), "1000");
 
 	private final JFrame window;
 	private final Timer timer;

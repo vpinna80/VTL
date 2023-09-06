@@ -128,7 +128,7 @@ public class ConfigurationManagerFactory
 	{
 		try
 		{
-			return Class.forName(className).asSubclass(instanceClass).getDeclaredConstructor().newInstance();
+			return Class.forName(className, true, Thread.currentThread().getContextClassLoader()).asSubclass(instanceClass).getDeclaredConstructor().newInstance();
 		}
 		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
 		{

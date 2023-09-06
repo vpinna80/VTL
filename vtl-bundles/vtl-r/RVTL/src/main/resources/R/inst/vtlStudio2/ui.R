@@ -223,45 +223,39 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
                             tabPanel("Lineage", networkD3::sankeyNetworkOutput("lineage", height = "100%"))
                           ),
                  ),
-                 tabPanel("Graph Explorer",
-                          sliderInput(inputId = 'distance', label = "Nodes distance", min=50, max=500, step=10, value=100),
-                          fillPage(networkD3::forceNetworkOutput("topology", height = '90vh'))
-                 ),
-                 tabPanel("Settings",
-                          shinydashboard::box(title = 'VTL Engine', status = 'primary', solidHeader = T, collapsible = T,
-                            selectInput(inputId = 'engineClass', label = NULL, 
-                                        multiple = F, choices = c("In-Memory engine"), selected = c("In-Memory engine"))
-                          ),
-                          shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T, collapsible = T,
-                            selectInput(inputId = 'repoClass', label = NULL, 
-                                        multiple = F, choices = repositoryImplementations, selected = defaultRepository),
-                            uiOutput(outputId = "repoProperties"),
-                            actionButton(inputId = 'setRepo', label = 'Change repository')
-                          ),
-                          shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T, collapsible = T,
-                                              textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
-                                              textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
-                                              textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy$user),
-                                              passwordInput(inputId = 'proxyPassword', label = 'Password:'),
-                                              actionButton(inputId = 'setProxy', label = 'Save')
-                          ),
-                          shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
-                            verbatimTextOutput(outputId = "conf_output", placeholder = T)
-                          )
-                 ),
-                 tabPanel("Environment Settings",
-                          shinydashboard::box(title = 'VTL Environments', status = 'primary', solidHeader = T, collapsible = T,
-                                              uiOutput(outputId = "sortableEnvs")
-                          ),
-                          shinydashboard::box(title = 'Environment Properties', status = 'primary', solidHeader = T, collapsible = T,
-                                              uiOutput(outputId = "envList"),
-                                              selectInput('selectProp', 'Select Property', character(0)),
-                                              textInput('propertyValue', 'Value:', ''),
-                                              actionButton(inputId = 'setProperty', label = 'Change property')
-                          ),
-                          shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
-                                              verbatimTextOutput(outputId = "env_conf_output", placeholder = T)
-                          )
+                tabPanel("Graph Explorer",
+                  sliderInput(inputId = 'distance', label = "Nodes distance", min=50, max=500, step=10, value=100),
+                  fillPage(networkD3::forceNetworkOutput("topology", height = '90vh'))
+                ),
+                tabPanel("Engine settings",
+                  shinydashboard::box(title = 'VTL Environments', status = 'primary', solidHeader = T, collapsible = T, width = 12,
+                    uiOutput(outputId = "sortableEnvs")
+                  ),
+                  shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T, collapsible = T,
+                    selectInput(inputId = 'repoClass', label = NULL, choices = repositoryImplementations, selected = defaultRepository),
+                    uiOutput(outputId = "repoProperties"),
+                    actionButton(inputId = 'setRepo', label = 'Change repository')
+                  ),
+                  shinydashboard::box(title = 'Environment Properties', status = 'primary', solidHeader = T, collapsible = T,
+                    selectInput(inputId = 'selectEnv', label = NULL, choices = c("Select an environment..." = "")),
+                    uiOutput(outputId = "envprops"),
+                    actionButton(inputId = 'saveenvprops', label = 'Save properties')
+                  ),
+                  shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
+                    verbatimTextOutput(outputId = "eng_conf_output", placeholder = T)
+                  )
+                ),
+                tabPanel("Network Settings",
+                  shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T, collapsible = T,
+                    textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
+                    textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
+                    textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy$user),
+                    passwordInput(inputId = 'proxyPassword', label = 'Password:'),
+                    actionButton(inputId = 'setProxy', label = 'Save')
+                  ),
+                  shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
+                    verbatimTextOutput(outputId = "conf_output", placeholder = T)
+                  )
                  )
                )                 
   )

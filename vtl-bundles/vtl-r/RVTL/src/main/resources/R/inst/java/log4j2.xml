@@ -23,32 +23,20 @@
 <Configuration status="info" strict="true" name="it.bancaditalia.oss.vtl" xmlns="http://logging.apache.org/log4j/2.0/config">
                
 	<Appenders>
-		<Appender name="STDERR1" type="Console">
+		<Appender name="FILE" type="File">
+			<append>false</append>
+			<filename>d:/dati/VTL.log</filename>
 			<Layout type="PatternLayout" pattern="%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n" />
-			<Filters>
- 				<Filter type="ThresholdFilter" level="TRACE"/>
-    			<Filter type="ThresholdFilter" level="INFO" onMatch="DENY" onMismatch="NEUTRAL"/>
-   			</Filters>
-		</Appender>
-		<Appender name="STDERR2" type="Console" target="SYSTEM_ERR">
-			<Layout type="PatternLayout">
-				<Pattern>%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%t] - %m%n</Pattern>
-			</Layout>
-			<Filters>
- 				<Filter type="ThresholdFilter" level="INFO"/>
-   			</Filters>
 		</Appender>
 	</Appenders>
 
 	<Loggers>
 		<Logger name="it.bancaditalia.oss.vtl" level="debug" additivity="false">
-			<AppenderRef ref="STDERR1" />
-			<AppenderRef ref="STDERR2" />
+			<AppenderRef ref="FILE" />
 		</Logger>
 
-		<Root level="info">
-			<AppenderRef ref="STDERR1" />
-			<AppenderRef ref="STDERR2" />
+		<Root level="warn">
+			<AppenderRef ref="FILE" />
 		</Root>
 	</Loggers>
 </Configuration>

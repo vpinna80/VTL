@@ -19,59 +19,46 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.config;
 
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.MULTIPLE;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.PASSWORD;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static java.util.stream.Collectors.joining;
 
+import java.security.InvalidParameterException;
 import java.util.Arrays;
+import java.util.EnumSet;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 
 public class VTLPropertyImpl implements VTLProperty
 {
+	public enum Flags
+	{
+		REQUIRED, PASSWORD, MULTIPLE
+	}
+	
 	private final String name;
 	private final String description;
 	private final String placeholder;
-	private final boolean required;
-	private final boolean multiple;
 	private final String defaultValue;
-	private final boolean password;
+	private final EnumSet<Flags> flags;
 
 	private String value;
 	private boolean hasValue;
 	
-	public VTLPropertyImpl(String name, String description, String placeholder, boolean required)
+	public VTLPropertyImpl(String name, String description, String placeholder, EnumSet<Flags> flags, String... defaultValue)
 	{
+		if (flags.contains(PASSWORD) && defaultValue.length > 0)
+			throw new InvalidParameterException("VTLProperty cannot have a default value if it is a password.");
+
+		if (flags.contains(MULTIPLE) && defaultValue.length > 0)
+			throw new InvalidParameterException("VTLProperty cannot have multiple values if it is a password.");
+		
 		this.name = name;
+		this.flags = flags;
 		this.description = description;
 		this.placeholder = placeholder;
-		this.password = false;
-		this.required = required;
-		this.multiple = false;
-		this.defaultValue = "";
-		this.value = null;
-		this.hasValue = false;
-	}
 
-	public VTLPropertyImpl(String name, String description, boolean password, boolean required)
-	{
-		this.name = name;
-		this.description = description;
-		this.placeholder = "";
-		this.password = password;
-		this.required = required;
-		this.multiple = false;
-		this.defaultValue = "";
-		this.value = null;
-		this.hasValue = false;
-	}
-
-	public VTLPropertyImpl(String name, String description, String placeholder, boolean required, boolean multiple, String... defaultValue)
-	{
-		this.name = name;
-		this.description = description;
-		this.placeholder = placeholder;
-		this.password = false;
-		this.required = required;
-		this.multiple = multiple;
 		this.defaultValue = Arrays.stream(defaultValue).collect(joining(","));
 		this.value = null;
 		this.hasValue = !this.defaultValue.isEmpty();
@@ -105,19 +92,19 @@ public class VTLPropertyImpl implements VTLProperty
 	@Override
 	public boolean isMultiple()
 	{
-		return multiple;
+		return flags.contains(MULTIPLE);
 	}
 
 	@Override
 	public boolean isPassword()
 	{
-		return password;
+		return flags.contains(PASSWORD);
 	}
 
 	@Override
 	public boolean isRequired()
 	{
-		return required;
+		return flags.contains(REQUIRED);
 	}
 
 	@Override

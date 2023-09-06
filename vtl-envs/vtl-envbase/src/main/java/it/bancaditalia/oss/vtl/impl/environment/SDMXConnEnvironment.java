@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.sdmx.api.PortableDataSet.OBS_LABEL;
 import static it.bancaditalia.oss.sdmx.api.PortableDataSet.TIME_LABEL;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.MONTH_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.QUARTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
@@ -46,6 +47,7 @@ import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +129,7 @@ public class SDMXConnEnvironment implements Environment, Serializable
 	private static final Pattern SDMX_PATTERN = Pattern.compile("^(.+):(?:(.+?)(?:\\((.+)\\))?)/(.+)$");
 
 	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = 
-			new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", false, false, "false");
+			new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", EnumSet.of(REQUIRED), "false");
 
 	static
 	{

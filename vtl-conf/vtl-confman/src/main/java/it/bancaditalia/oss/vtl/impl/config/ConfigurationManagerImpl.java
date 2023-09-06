@@ -28,14 +28,20 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEM
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class ConfigurationManagerImpl implements ConfigurationManager
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationManagerImpl.class);
+	
 	private final MetadataRepository metadataRepositoryInstance;
 
 	public ConfigurationManagerImpl() 
@@ -68,8 +74,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 
 		String[] envNames = ENVIRONMENT_IMPLEMENTATION.getValue().split(",");
 		for (int i = 0; i < envNames.length; i++)
-			result.add(instanceOfClass(envNames[i], Environment.class, "Error initializing environment " + envNames[i]));
+			try 
+			{
+				result.add(instanceOfClass(envNames[i], Environment.class, "Error initializing environment " + envNames[i]));
+			}
+			catch (VTLNestedException e)
+			{
+				LOGGER.error("Error initializing environment " + envNames[i], e.getCause());
+			}
 
-		return result ;
+		return result;
 	}
 }

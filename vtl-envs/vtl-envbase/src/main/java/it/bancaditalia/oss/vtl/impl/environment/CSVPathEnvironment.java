@@ -19,10 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +43,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVPathEnvironment.class);
 	public static final VTLProperty VTL_CSV_ENVIRONMENT_SEARCH_PATH = 
-			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), true, false, System.getenv("VTL_PATH"));
+			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), EnumSet.of(REQUIRED), System.getenv("VTL_PATH"));
 
 	static
 	{

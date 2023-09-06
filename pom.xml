@@ -770,7 +770,7 @@
 					<version>1.6</version>
 					<executions>
 						<execution>
-							<phase>validate</phase>
+							<phase>verify</phase>
 							<goals>
 								<goal>sign</goal>
 							</goals>
@@ -830,14 +830,14 @@
 					<version>1.2.5</version>
 					<executions>
 						<execution>
-							<id>flatten.flatten</id>
+							<id>flattening</id>
 							<phase>validate</phase>
 							<goals>
 								<goal>flatten</goal>
 							</goals>
 						</execution>
 						<execution>
-							<id>flatten.clean</id>
+							<id>cleaning</id>
 							<phase>clean</phase>
 							<goals>
 								<goal>clean</goal>
@@ -868,14 +868,6 @@
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
 					<version>4.2</version>
-					<executions>
-						<execution>
-							<phase>validate</phase>
-							<goals>
-								<goal>check</goal>
-							</goals>
-						</execution>
-					</executions>
 					<configuration>
 						<licenseSets>
 							<licenseSet>
@@ -948,28 +940,6 @@
 
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.4.0</version>
-				<executions>
-					<execution>
-						<id>enforcerules</id>
-						<phase>validate</phase>
-						<configuration>
-							<rules>
-								<dependencyConvergence />
-								<requireJavaVersion>
-									<version>[1.8.0-242,)</version>
-								</requireJavaVersion>
-							</rules>
-						</configuration>
-						<goals>
-							<goal>enforce</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>com.mycila</groupId>
 				<artifactId>license-maven-plugin</artifactId>
 			</plugin>
@@ -978,6 +948,28 @@
 				<artifactId>flatten-maven-plugin</artifactId>
 				<configuration>
 					<flattenMode>bom</flattenMode>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.4.0</version>
+				<executions>
+					<execution>
+						<id>enforcerules</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<rules>
+						<dependencyConvergence />
+						<requireJavaVersion>
+							<version>[1.8.0-242,)</version>
+						</requireJavaVersion>
+					</rules>
 				</configuration>
 			</plugin>
 			<plugin>

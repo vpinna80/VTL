@@ -90,6 +90,7 @@ public class VTLSessionImpl implements VTLSession
 		for (Environment env: environments)
 			if (env instanceof Workspace)
 				selectedWorkspace = (Workspace) env;
+		
 		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
 		LOGGER.info("Created new VTL session.");
 	}

@@ -21,18 +21,13 @@
 #' @import rJava
 #' @import R6
 .onLoad <- function(libname, pkgname) {
-  .jpackage(pkgname, lib.loc = libname)
-  spark <- Sys.getenv('SPARK_HOME')
 
-  if (spark != '') {
-    if (length(formals(.jclassLoader)) == 1) {
-      invisible(lapply(list.files(paste0(spark, '/jars'), full.names = T), .jaddClassPath, .jclassLoader(package="RVTL")))
-    } else {
-      invisible(lapply(list.files(paste0(spark, '/jars'), full.names = T), .jaddClassPath))
-    }
-  } else {
-    packageStartupMessage('SPARK_HOME environment variable is not set. The Spark environment will not be available.')
-  }
+  spark <- Sys.getenv('SPARK_HOME')
+  files <- if (spark != '') list.files(paste0(spark, '/jars'), full.names = T) else ''
+  files <- c(files, list.files(paste0(find.package("rJava"), "/jri/"), pattern = '.*\\.jar', full.names = T))
+  
+  .jpackage(pkgname, morePaths = files, lib.loc = libname)
+
   J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
       "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
       "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",

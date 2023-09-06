@@ -155,12 +155,18 @@
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-bundle-deps</artifactId>
+			<version>${project.version}</version>
+			<type>pom</type>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-java2r</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-confman</artifactId>
+			<artifactId>vtl-renv</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>

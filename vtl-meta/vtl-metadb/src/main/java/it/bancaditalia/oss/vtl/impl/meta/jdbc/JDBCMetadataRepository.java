@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.jdbc;
 
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -31,6 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,6 +53,7 @@ import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerDomainRangeSubset;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.SizedStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
@@ -70,10 +73,10 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 	private static final Logger LOGGER = LoggerFactory.getLogger(JDBCMetadataRepository.class);
 	private static final Pattern EXTRACTOR = Pattern.compile("^.*?([+-]?\\d+).*?$");
 
-	public static final VTLProperty METADATA_JDBC_URL = new VTLPropertyImpl("vtl.metadata.jdbc.url", "JDBC URL for the metadata db", "jdbc:", false, false);
-	public static final VTLProperty METADATA_JDBC_JNDI_POOL = new VTLPropertyImpl("vtl.metadata.jdbc.jndi", "jndi path to defined a JDBC DataSource", "jndi/myDB", false, false);
+	public static final VTLProperty METADATA_JDBC_URL = new VTLPropertyImpl("vtl.metadata.jdbc.url", "JDBC URL for the metadata db", "jdbc:", EnumSet.noneOf(Flags.class));
+	public static final VTLProperty METADATA_JDBC_JNDI_POOL = new VTLPropertyImpl("vtl.metadata.jdbc.jndi", "jndi path to defined a JDBC DataSource", "jndi/myDB", EnumSet.noneOf(Flags.class));
 	public static final VTLProperty METADATA_JDBC_SIZE_REGEX = new VTLPropertyImpl("vtl.metadata.jdbc.regex", "Regex to recognize length restriction; must contain three groups", "jndi/myDB", 
-			true, false, "_(POS|POSNEG)_L(\\d+)_D(\\d+)$");
+			EnumSet.of(REQUIRED), "_(POS|POSNEG)_L(\\d+)_D(\\d+)$");
 
 	private final SerThrowingSupplier<Connection, SQLException> pool;
 	private final Pattern sizePattern;

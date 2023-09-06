@@ -111,4 +111,16 @@ public interface VTLProperty
 		String beginning = hasValue() ? getValue() + "," : "";
 		setValue(Arrays.stream(newValues).collect(joining(",", beginning, "")));
 	}
+	
+	/**
+	 * Verifies if this and/or other properties match a custom rule.
+	 * By default this method returns true.
+	 * Implementers should override this method to check if the value satisfies a speficic rule.
+	 * 
+	 * @return true if this property value satisfies a speficic rule.
+	 */
+	public default boolean validate() 
+	{
+		return true;
+	}
 }

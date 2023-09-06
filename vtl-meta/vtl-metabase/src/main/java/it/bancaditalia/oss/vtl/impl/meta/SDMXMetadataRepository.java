@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toSet;
 
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.EnumSet;
 import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,7 +53,7 @@ public class SDMXMetadataRepository extends InMemoryMetadataRepository
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXMetadataRepository.class);
 
 	public static final VTLProperty METADATA_SDMX_PROVIDER_ENDPOINT = 
-			new VTLPropertyImpl("vtl.metadata.sdmx.provider.endpoint", "SDMX service provider endpoint", "https://www.myurl.com/service", true);
+			new VTLPropertyImpl("vtl.metadata.sdmx.provider.endpoint", "SDMX service provider endpoint", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
 	
 	static
 	{

@@ -41,6 +41,7 @@ import static org.rosuda.JRI.REXP.XT_DOUBLE;
 import static org.rosuda.JRI.REXP.XT_INT;
 import static org.rosuda.JRI.REXP.XT_STR;
 
+import java.io.PrintStream;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -55,6 +56,7 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.RList;
 import org.rosuda.JRI.Rengine;
@@ -95,13 +97,17 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class REnvironment implements Environment
 {
-	public static final Rengine RENGINE;
+	public static final Rengine RENGINE = new Rengine();
 	
-	static {
-		RENGINE = new Rengine(new String[] { "--vanilla" }, false, null);
+	static 
+	{
+		if (RENGINE == null)
+			throw new ExceptionInInitializerError("Cannot initialize Rengine outside R");
+
+		System.setOut(new PrintStream(new RConsoleOutputStream(RENGINE, 0)));
+		System.setErr(new PrintStream(new RConsoleOutputStream(RENGINE, 1)));
 	}
 	
-	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
 	private final Map<String, VTLValue>	values	= new HashMap<>();
 	private final Rengine engine = RENGINE != null ? RENGINE : new Rengine();
@@ -114,13 +120,18 @@ public class REnvironment implements Environment
 	@Override
 	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
+		if (!name.matches("[A-Za-z0-9._]+"))
+			return Optional.empty();
+		
 		if (values.containsKey(name))
 			return Optional.of(values.get(name).getMetadata());
 
+		LOGGER.info("Searching for {} in R global environment...");
 		if (reval("exists('???')", name).asBool().isTRUE())
 		{
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE()) 
 			{
+				LOGGER.info("Found a data.frame, constructing VTL metadata...");
 				REXP data = reval("`???`[1, ]", name);
 				RList dataFrame = data.asList();
 
@@ -175,10 +186,12 @@ public class REnvironment implements Environment
 					builder.addComponent(DataStructureComponentImpl.of(key, type, domain));
 				}
 				
+				LOGGER.info("VTL metadata for {} completed.", name);
 				return Optional.of(builder.build());
 			}
 			else if (reval("is.integer(`???`) || is.numeric(`???`) || is.character(`???`) || is.logical(`???`)", name).asBool().isTRUE())
 			{
+				LOGGER.info("Found a scalar value.");
 				REXP data = reval("`???`", name);
 				switch (data.getType())
 				{
@@ -203,6 +216,9 @@ public class REnvironment implements Environment
 	@Override
 	public Optional<VTLValue> getValue(String name)
 	{
+		if (!name.matches("[A-Za-z0-9._]+"))
+			return Optional.empty();
+
 		if (values.containsKey(name))
 			return Optional.of(values.get(name));
 

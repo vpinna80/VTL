@@ -35,12 +35,22 @@
 	<name>vtl-java2r</name>
 	<description>VTL R/Java Integration</description>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-bundle-deps</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-bundle-deps</artifactId>
-			<version>${project.version}</version>
-			<type>pom</type>
+			<artifactId>vtl-types</artifactId>
 		</dependency>
 	</dependencies>
 

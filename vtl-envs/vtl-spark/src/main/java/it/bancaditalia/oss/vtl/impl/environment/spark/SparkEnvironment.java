@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.cr
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getColumnsFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getDataTypeForComponent;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
@@ -34,6 +35,7 @@ import static org.apache.spark.sql.functions.udf;
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -85,13 +87,13 @@ public class SparkEnvironment implements Environment
 	private static final Logger LOGGER = LoggerFactory.getLogger(SparkEnvironment.class);
 
 	public static final VTLProperty VTL_SPARK_MASTER_CONNECTION = 
-			new VTLPropertyImpl("vtl.spark.master.connection", "Connection string to an orchestrator or local", "local[*]", true, false, "local[*]");
+			new VTLPropertyImpl("vtl.spark.master.connection", "Connection string to an orchestrator or local", "local[*]", EnumSet.of(REQUIRED), "local[*]");
 	public static final VTLProperty VTL_SPARK_UI_ENABLED = 
-			new VTLPropertyImpl("vtl.spark.ui.enabled", "Indicates if the Spark web UI should be initialized", "true", true, false, "true");
+			new VTLPropertyImpl("vtl.spark.ui.enabled", "Indicates if the Spark web UI should be initialized", "true", EnumSet.of(REQUIRED), "true");
 	public static final VTLProperty VTL_SPARK_UI_PORT = 
-			new VTLPropertyImpl("vtl.spark.ui.port", "Indicates which port the Spark web UI should be listening to", "4040", true, false, "4040");
+			new VTLPropertyImpl("vtl.spark.ui.port", "Indicates which port the Spark web UI should be listening to", "4040", EnumSet.of(REQUIRED), "4040");
 	public static final VTLProperty VTL_SPARK_PAGE_SIZE = 
-			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", true, false, "1000");
+			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", EnumSet.of(REQUIRED), "1000");
 
 	static final LineageSparkUDT LineageSparkUDT = LineageSparkUDT$.MODULE$;
 	

@@ -78,48 +78,87 @@ shinyServer(function(input, output, session) {
 
   # Repository Properties box
   output$repoProperties <- renderUI({
-    supportedProperties <- configManager$getSupportedProperties(J(req(input$repoClass))@jobj)
-    supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
-    divs <- do.call(tags$div,
-      lapply(supportedProperties, function (property) {
-        textInput(inputId = property$getName(), label = property$getDescription(), 
-                  value = property$getValue(), placeholder = property$getPlaceholder())
-      })
-    )
-    return(divs)
-  })
-  
-  # Sortable environments
+    ctrls <- lapply(configManager$getSupportedProperties(J(input$repoClass)@jobj), function (prop) {
+      val <- prop$getValue()
+      if (val == 'null')
+        val <- ''
+
+      if (prop$isPassword()) {
+        passwordInput(prop$getName(), prop$getDescription(), val)
+      } else {
+        textInput(prop$getName(), prop$getDescription(), val, placeholder = prop$getPlaceholder())
+      }
+    })
+    
+    do.call(tagList, ctrls)
+  }) |> bindEvent(input$repoClass)
+
+  # configure and change repository
+  output$eng_conf_output <- renderPrint({
+    lapply(configManager$getSupportedProperties(J(input$repoClass)@jobj), function (prop) {
+      val <- input[[prop$getName()]]
+      if (val == '')
+        val <- .jnull(class = "java/lang/String")
+      prop$setValue(val)
+      
+      if (prop$isPassword()) {
+        cat("Set property", prop$getDescription(), "to <masked value>\n")
+      } else {
+        cat("Set property", prop$getDescription(), "to", val, "\n")
+      }
+    })
+    
+    vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
+    cat("Set metadata repository to", input$repoClass, "\n")
+  }) |> bindEvent(input$setRepo)
+
+  # Drag&drop to activate environments
   output$sortableEnvs <- renderUI({
-    sortable::bucket_list(header = NULL, 
-    sortable::add_rank_list(text = tags$label("Available"), labels = activeEnvs(F)),
-    sortable::add_rank_list(input_id = "envs", text = tags$label("Active"), labels = activeEnvs(T)),
-    orientation = 'horizontal')
+    sortable::bucket_list(header = NULL, orientation = 'horizontal',
+      sortable::add_rank_list(text = "Available", labels = activeEnvs(F)),
+      sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T)),
+    )
+  })
+
+  # Initially populate environment list
+  envlistdone <- observe({
+    updateSelectInput(inputId = 'selectEnv', label = NULL, choices = unlist(environments))
+    envlistdone$destroy()
   })
   
-  # Environment list
-  output$envList <- renderUI({
-    selectInput(inputId = 'selectEnv', label = 'Select Environment', multiple = F, 
-                choices = unlist(environments))
-  })
-  
-  # Property list
-  observe({
-    req(input$selectEnv)
-    supportedProperties <- as.list(configManager$getSupportedProperties(J(input$selectEnv)@jobj))
-    props = sapply(supportedProperties, function (x) x$getName())
-    names(props) = sapply(supportedProperties, function (x) x$getDescription())
-    updateSelectInput(inputId = 'selectProp', label = 'Select Property', selected = '', choices = props)
-  })
-  
-  # Property value
-  observe({
-    req(input$selectProp)
-    selectedEnv = J(input$selectEnv)@jobj
-    prop = configManager$findSupportedProperty(selectedEnv, input$selectProp)
-    value <- prop$isPresent() ? req(prop$get()$getValue()) : ''
-    updateTextInput(inputId = 'propertyValue', label = 'Value:', value = value)
-  })
+  # Environment properties list
+  output$envprops <- renderUI({
+    ctrls <- lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
+      val <- prop$getValue()
+      if (val == 'null')
+        val <- ''
+      
+      if (prop$isPassword()) {
+        passwordInput(prop$getName(), prop$getDescription(), val)
+      } else {
+        textInput(prop$getName(), prop$getDescription(), val, placeholder = prop$getPlaceholder())
+      }
+    })
+    
+    do.call(tagList, ctrls)
+  }) |> bindEvent(input$selectEnv, ignoreInit = T)
+
+  # save environment properties
+  output$eng_conf_output <- renderPrint({
+    lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
+      val <- input[[prop$getName()]]
+      if (val == '')
+        val <- .jnull(class = "java/lang/String")
+      prop$setValue(val)
+      
+      if (prop$isPassword()) {
+        cat("Set property", prop$getDescription(), "to <masked value>\n")
+      } else {
+        cat("Set property", prop$getDescription(), "to", val, "\n")
+      }
+    })
+    cat("Finished setting properties for", input$selectEnv, "\n")
+  }) |> bindEvent(input$saveenvprops)
   
   # Select dataset to browse
   output$dsNames<- renderUI({
@@ -242,12 +281,6 @@ shinyServer(function(input, output, session) {
       }))
     }
     shinyjs::toggleState("setRepo", canChange)
-  })
-  
-  # Disable changing environment props if fields are no ready
-  observe({
-    canChange <- isTruthy(input$selectEnv) & isTruthy(input$selectProp) & isTruthy(input$propertyValue)
-    shinyjs::toggleState("setProperty", canChange)
   })
   
   # Disable navigator and graph if the session was not compiled
@@ -422,31 +455,6 @@ shinyServer(function(input, output, session) {
       J("java.lang.System")$setProperty("http.proxyPort", input$proxyPort)
       J("java.lang.System")$setProperty("https.proxyPort", input$proxyPort)
       print('OK.')
-    })
-  })
-  
-  # configure repository
-  observeEvent(input$setRepo, {
-    supportedProperties <- configManager$getSupportedProperties(J(req(input$repoClass))@jobj)
-    supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
-    sapply(supportedProperties, function (property) {
-      if (isTruthy(input[[property$getName()]]))
-        property$setValue(input[[property$getName()]])
-    })
-    vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
-  })
-  
-  # configure environment property
-  observeEvent(input$setProperty, {
-    output$env_conf_output <- renderPrint({
-      print(paste('Setting property', input$selectProp))
-      selectedEnv = J(input$selectEnv)@jobj
-      prop = configManager$findSupportedProperty(selectedEnv, req(input$selectProp))
-      if(prop$isPresent()){
-        prop = prop$get()
-        prop$setValue(input$propertyValue)
-        print('OK.')
-      }
     })
   })
   

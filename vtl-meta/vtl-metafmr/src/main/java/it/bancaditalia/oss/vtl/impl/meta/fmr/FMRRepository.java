@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.meta.fmr;
 
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.CODE_LIST;
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.DATAFLOW;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.PASSWORD;
+import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
@@ -34,6 +36,7 @@ import java.net.Proxy.Type;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -68,6 +71,7 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
@@ -81,11 +85,11 @@ public class FMRRepository extends InMemoryMetadataRepository
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(FMRRepository.class);
 
-	public static final VTLProperty FM_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.fmr.endpoint", "Fusion Metadata Registry base URL", "https://www.myurl.com/service", true);
-	public static final VTLProperty FMR_API_VERSION = new VTLPropertyImpl("vtl.fmr.version", "Fusion Metadata Registry Rest API version", "1.5.0", true, false, "1.5.0");
-	public static final VTLProperty FMR_USERNAME = new VTLPropertyImpl("vtl.fmr.global.user", "Fusion Metadata Registry user name", "", false);
-	public static final VTLProperty FMR_PASSWORD = new VTLPropertyImpl("vtl.fmr.global.password", "Fusion Metadata Registry password", "", false);
-	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", false, false, "false");
+	public static final VTLProperty FM_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.fmr.endpoint", "Fusion Metadata Registry base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
+	public static final VTLProperty FMR_API_VERSION = new VTLPropertyImpl("vtl.fmr.version", "Fusion Metadata Registry Rest API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
+	public static final VTLProperty FMR_USERNAME = new VTLPropertyImpl("vtl.fmr.global.user", "Fusion Metadata Registry user name", "", EnumSet.noneOf(Flags.class));
+	public static final VTLProperty FMR_PASSWORD = new VTLPropertyImpl("vtl.fmr.global.password", "Fusion Metadata Registry password", "", EnumSet.of(PASSWORD));
+	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", EnumSet.noneOf(Flags.class), "false");
 	public static final Pattern SDMX_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)(?:\\(([0-9._+*~]+)\\))(?:/.*)?$");
 	
 	static
