@@ -51,7 +51,7 @@ final class SparkSpliterator implements Spliterator<Row>
 			{
 				updateSection();
 
-				if (!collector.isAlive())
+				if (current >= section.size() && !collector.isAlive())
 					return false;
 			}
 			catch (InterruptedException e)

@@ -19,6 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.config;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.List;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
@@ -65,4 +68,26 @@ public interface ConfigurationManager
 	 * @return The {@link List} of {@link Environment} instances
 	 */
 	public List<? extends Environment> getEnvironments();
+	
+	/**
+	 * Load the current configuration from a provided Reader as a list of Java properties.
+	 * 
+	 * @param input The stream to read the properties from.
+	 * @throws IOException
+	 */
+	public default void loadConfiguration(Reader input) throws IOException
+	{
+		throw new UnsupportedOperationException("Loading properties not supported.");
+	}
+	
+	/**
+	 * Saves the current configuration to the provided Writer as a list of Java properties.
+	 * 
+	 * @param output The stream to write the properties to.
+	 * @throws IOException
+	 */
+	public default void saveConfiguration(Writer output) throws IOException
+	{
+		throw new UnsupportedOperationException("Saving properties not supported.");
+	}
 }

@@ -29,8 +29,11 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static org.apache.spark.sql.SaveMode.Overwrite;
+import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.lit;
+import static org.apache.spark.sql.functions.to_date;
 import static org.apache.spark.sql.functions.udf;
+import static org.apache.spark.sql.types.DataTypes.LongType;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
@@ -55,7 +58,11 @@ import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.catalyst.expressions.Literal;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.IntegerType;
+import org.apache.spark.sql.types.StringType;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.types.TimestampType;
 import org.apache.spark.sql.types.UDTRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -252,55 +259,76 @@ public class SparkEnvironment implements Environment
 		}
 	}
 	
-	private SparkDataSet inferSchema(Dataset<Row> sourceDataFrame, String alias)
+	private SparkDataSet inferSchema(final Dataset<Row> sourceDataFrame, String alias)
 	{
-		// infer structure from header
 		StructType schema = sourceDataFrame.schema();
 		
 		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
 		{
+			// infer structure from the schema metadata
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(createComponentsFromStruct(schema)).build();
-			Column[] names = DataPointEncoder.getColumnsFromComponents(sourceDataFrame, structure).toArray(new Column[structure.size() + 1]);
+			Column[] names = DataPointEncoder.getColumnsFromComponents(sourceDataFrame, structure).toArray(new Column[structure.size()]);
 			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			return new SparkDataSet(session, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
 		}
-		
-		LOGGER.debug("Using header because scheme is missing metadata: {}", schema);
-		
-		String[] fieldNames = schema.fieldNames();
-		Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = CSVParseUtils.extractMetadata(fieldNames);
-		DataSetMetadata structure = new DataStructureBuilder(metaInfo.getKey()).build();
-		
-		// masks for decoding CSV rows
-		Map<DataStructureComponent<?, ?, ?>, String> masks = metaInfo.getValue();
-		
-		// normalized column names in alphabetical order
-		Map<String, String> newToOldNames = IntStream.range(0, fieldNames.length)
-				.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getName(), fieldNames[i]))
-				.collect(entriesToMap());
-		String[] normalizedNames = newToOldNames.keySet().toArray(new String[newToOldNames.size()]);
-		Arrays.sort(normalizedNames, 0, normalizedNames.length);
-		
-		// Array of parsers for CSV fields (strings) into scalars
-		Map<DataStructureComponent<?, ?, ?>, DataType> types = structure.stream()
-			.collect(toMapWithValues(c -> getDataTypeForComponent(c)));
-		Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
-				.map(structure::getComponent)
-				.map(Optional::get)
-				.sorted(DataPointEncoder::sorter)
-				.map(c -> udf(valueMapper(c, masks.get(c), types.get(c)), types.get(c))
-						.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
-						.as(c.getName(), createMetadataForComponent(c)))
-				.collect(toList())
-				.toArray(new Column[normalizedNames.length + 1]);
-		
-		// add a column and a converter for the lineage
-		byte[] serializedLineage = LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias));
-		converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
-
-		Dataset<Row> converted = sourceDataFrame.select(converters);
-		Column[] ids = getColumnsFromComponents(converted, structure.getComponents(Identifier.class)).toArray(new Column[0]);
-		return new SparkDataSet(session, structure, converted.repartition(ids));
+		else if (!schema.forall(field -> field.dataType() instanceof StringType))
+		{
+			// infer structure from the schema field types
+			LOGGER.warn("Reading a non-csv file missing VTL metadata, the inferred schema may not be exact.");
+			Dataset<Row> sourceDataFrame2 = sourceDataFrame;
+			
+			for (StructField field: schema.fields())
+				if (field.dataType() instanceof TimestampType)
+					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), to_date(col(field.name())));
+				else if (field.dataType() instanceof IntegerType)
+					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), col(field.name()).cast(LongType));
+			
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(createComponentsFromStruct(sourceDataFrame2.schema())).build();
+			Column[] names = DataPointEncoder.getColumnsFromComponents(sourceDataFrame2, structure).toArray(new Column[structure.size()]);
+			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
+			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
+			return new SparkDataSet(session, new DataPointEncoder(structure), enriched);
+		}
+		else
+		{
+			LOGGER.debug("Using CSV header because scheme is missing metadata: {}", schema);
+			// infer structure from the column header names
+	
+			String[] fieldNames = schema.fieldNames();
+			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = CSVParseUtils.extractMetadata(fieldNames);
+			DataSetMetadata structure = new DataStructureBuilder(metaInfo.getKey()).build();
+			
+			// masks for decoding CSV rows
+			Map<DataStructureComponent<?, ?, ?>, String> masks = metaInfo.getValue();
+			
+			// normalized column names in alphabetical order
+			Map<String, String> newToOldNames = IntStream.range(0, fieldNames.length)
+					.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getName(), fieldNames[i]))
+					.collect(entriesToMap());
+			String[] normalizedNames = newToOldNames.keySet().toArray(new String[newToOldNames.size()]);
+			Arrays.sort(normalizedNames, 0, normalizedNames.length);
+			
+			// Array of parsers for CSV fields (strings) into scalars
+			Map<DataStructureComponent<?, ?, ?>, DataType> types = structure.stream()
+				.collect(toMapWithValues(c -> getDataTypeForComponent(c)));
+			Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
+					.map(structure::getComponent)
+					.map(Optional::get)
+					.sorted(DataPointEncoder::sorter)
+					.map(c -> udf(valueMapper(c, masks.get(c), types.get(c)), types.get(c))
+							.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
+							.as(c.getName(), createMetadataForComponent(c)))
+					.collect(toList())
+					.toArray(new Column[normalizedNames.length + 1]);
+			
+			// add a column and a converter for the lineage
+			byte[] serializedLineage = LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias));
+			converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
+	
+			Dataset<Row> converted = sourceDataFrame.select(converters);
+			Column[] ids = getColumnsFromComponents(converted, structure.getComponents(Identifier.class)).toArray(new Column[0]);
+			return new SparkDataSet(session, structure, converted.repartition(ids));
+		}
 	}
 	
 	private static UDF1<String, Serializable> valueMapper(DataStructureComponent<?, ?, ?> component, String mask, DataType type)

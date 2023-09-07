@@ -91,7 +91,7 @@ public class InclusionTransformation extends UnaryTransformation
 		this.set = new HashSet<>(list);
 	}
 
-	public InclusionTransformation(InOperator operator, Transformation operand, String dname)
+	public InclusionTransformation(InOperator operator, Transformation operand, String dname) throws ClassNotFoundException
 	{
 		super(operand);
 		this.operator = operator;

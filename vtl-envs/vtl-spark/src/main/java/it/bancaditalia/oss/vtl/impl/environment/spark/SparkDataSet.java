@@ -46,10 +46,11 @@ import static org.apache.spark.sql.expressions.Window.partitionBy;
 import static org.apache.spark.sql.functions.explode;
 import static org.apache.spark.sql.functions.first;
 import static org.apache.spark.sql.functions.lit;
+import static org.apache.spark.sql.functions.struct;
 import static org.apache.spark.sql.functions.udaf;
 import static org.apache.spark.sql.functions.udf;
 import static org.apache.spark.sql.types.DataTypes.createArrayType;
-import static scala.collection.JavaConverters.asScalaBuffer;
+import static scala.collection.JavaConverters.asScala;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
@@ -79,7 +80,6 @@ import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.functions;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
@@ -121,8 +121,6 @@ import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.Utils;
 import scala.Tuple2;
-import scala.collection.JavaConverters;
-import scala.reflect.ClassTag;
 
 public class SparkDataSet extends AbstractDataSet
 {
@@ -189,7 +187,7 @@ public class SparkDataSet extends AbstractDataSet
 				LOGGER.error("Error while getting datapoints from Spark", e);
 			}
 		}, "VTL Spark retriever");
-		pushingThread.setDaemon(true);
+//		pushingThread.setDaemon(true);
 		pushingThread.start();
 
 		return StreamSupport.stream(new SparkSpliterator(queue, pushingThread), !Utils.SEQUENTIAL)
@@ -293,9 +291,7 @@ public class SparkDataSet extends AbstractDataSet
 		// wrap the source row into a struct for passing to the UDF
 		Column wrappedRow = Arrays.stream(dataFrame.columns())
 			.map(dataFrame::col)
-			.collect(collectingAndThen(collectingAndThen(toList(), 
-					JavaConverters::asScalaBuffer),
-					functions::struct));
+			.collect(collectingAndThen(toList(), list -> struct(asScala((Iterable<Column>) list).toSeq())));
 		
 		// the columns to keep
 		String[] ids = originalIDs.stream()
@@ -455,7 +451,7 @@ public class SparkDataSet extends AbstractDataSet
 						(l1, l2) -> new SimpleEntry<List<String>, List<Column>>(l1, l2)));
 		
 		// apply all the udfs
-		Dataset<Row> withColumns = dataFrame.withColumns(asScalaBuffer(destComponents.getKey()), asScalaBuffer(destComponents.getValue()));
+		Dataset<Row> withColumns = dataFrame.withColumns(asScala((Iterable<String>) destComponents.getKey()).toSeq(), asScala((Iterable<Column>) destComponents.getValue()).toSeq());
 		
 		// explode each column that is the result of the analytic invocation
 		for (String name: destComponents.getKey())
@@ -619,7 +615,7 @@ public class SparkDataSet extends AbstractDataSet
 	{
 		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other);
 		List<String> ids = getMetadata().getComponents(Identifier.class).stream().map(DataStructureComponent::getName).collect(toList());
-		Dataset<Row> result = dataFrame.join(sparkOther.dataFrame, asScalaBuffer(ids), "leftanti");
+		Dataset<Row> result = dataFrame.join(sparkOther.dataFrame, asScala((Iterable<String>) ids).toSeq(), "leftanti");
 
 		Column[] cols = getColumnsFromComponents(result, getMetadata()).toArray(new Column[getMetadata().size() + 1]);
 		cols[cols.length - 1] = result.col("$lineage$");
@@ -644,7 +640,6 @@ public class SparkDataSet extends AbstractDataSet
 			Serializable[][] array = ((Collection<?>) finisher.apply(before, keyMap)).stream()
 				.map(DataPoint.class::cast)
 				.map(encoder::encode)
-				.map(row -> (Serializable[]) row.toSeq().toArray(ClassTag.apply(Serializable.class)))
 				.collect(collectingAndThen(toList(), l -> l.toArray(new Serializable[l.size()][])));
 			
 			return array;

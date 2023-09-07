@@ -94,22 +94,24 @@ shinyServer(function(input, output, session) {
   }) |> bindEvent(input$repoClass)
 
   # configure and change repository
-  output$eng_conf_output <- renderPrint({
-    lapply(configManager$getSupportedProperties(J(input$repoClass)@jobj), function (prop) {
-      val <- input[[prop$getName()]]
-      if (val == '')
-        val <- .jnull(class = "java/lang/String")
-      prop$setValue(val)
+  observe({
+    output$eng_conf_output <- renderPrint({
+      lapply(configManager$getSupportedProperties(J(req(input$repoClass))@jobj), function (prop) {
+        val <- input[[prop$getName()]]
+        if (val == '')
+          val <- NULL
+        prop$setValue(val)
+        
+        if (prop$isPassword()) {
+          cat("Set property", prop$getDescription(), "to <masked value>\n")
+        } else {
+          cat("Set property", prop$getDescription(), "to", val, "\n")
+        }
+      })
       
-      if (prop$isPassword()) {
-        cat("Set property", prop$getDescription(), "to <masked value>\n")
-      } else {
-        cat("Set property", prop$getDescription(), "to", val, "\n")
-      }
+      vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
+      cat("Set metadata repository to", input$repoClass, "\n")
     })
-    
-    vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
-    cat("Set metadata repository to", input$repoClass, "\n")
   }) |> bindEvent(input$setRepo)
 
   # Drag&drop to activate environments
@@ -120,8 +122,18 @@ shinyServer(function(input, output, session) {
     )
   })
 
-  # Initially populate environment list
+  # Initially populate environment list and load properties
   envlistdone <- observe({
+    propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
+    if (file.exists(propfile)) {
+      reader = .jnew("java.io.FileReader", propfile)
+      tryCatch({
+        configManager$getInstance()$loadConfiguration(reader)
+      }, finally = {
+        reader$close()
+      })
+    }
+      
     updateSelectInput(inputId = 'selectEnv', label = NULL, choices = unlist(environments))
     envlistdone$destroy()
   })
@@ -144,21 +156,34 @@ shinyServer(function(input, output, session) {
   }) |> bindEvent(input$selectEnv, ignoreInit = T)
 
   # save environment properties
-  output$eng_conf_output <- renderPrint({
-    lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
-      val <- input[[prop$getName()]]
-      if (val == '')
-        val <- .jnull(class = "java/lang/String")
-      prop$setValue(val)
-      
-      if (prop$isPassword()) {
-        cat("Set property", prop$getDescription(), "to <masked value>\n")
-      } else {
-        cat("Set property", prop$getDescription(), "to", val, "\n")
-      }
+  observe({
+    output$eng_conf_output <- renderPrint({
+      lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
+        val <- input[[prop$getName()]]
+        if (val == '')
+          val <- .jnull(class = "java/lang/String")
+        prop$setValue(val)
+        
+        if (prop$isPassword()) {
+          cat("Set property", prop$getDescription(), "to <masked value>\n")
+        } else {
+          cat("Set property", prop$getDescription(), "to", val, "\n")
+        }
+      })
+      cat("Finished setting properties for", input$selectEnv, "\n")
     })
-    cat("Finished setting properties for", input$selectEnv, "\n")
   }) |> bindEvent(input$saveenvprops)
+  
+  # Save user configuration
+  bindEvent(input$saveconf, x = observe({
+    propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
+    writer = .jnew("java.io.FileWriter", propfile)
+    tryCatch({
+      configManager$getInstance()$saveConfiguration(writer)
+    }, finally = {
+      writer$close()
+    })
+  }))
   
   # Select dataset to browse
   output$dsNames<- renderUI({
@@ -270,19 +295,6 @@ shinyServer(function(input, output, session) {
     shinyjs::toggleState("setProxy", isTruthy(input$proxyHost) && isTruthy(input$proxyPort))
   })
   
-  # Disable changing repo if required properties not set
-  observe({
-    canChange <- req(input$repoClass) != vtlProperties$METADATA_REPOSITORY$getValue()
-    if (canChange) {
-      supportedProperties <- configManager$getSupportedProperties(J(input$repoClass)@jobj)
-      supportedProperties <- .jcast(supportedProperties, 'java/util/Collection')
-      canChange <- all(sapply(supportedProperties, function (property) {
-        !property$isRequired() || isTruthy(input[[property$getName()]])
-      }))
-    }
-    shinyjs::toggleState("setRepo", canChange)
-  })
-  
   # Disable navigator and graph if the session was not compiled
   observe({
     shinyjs::toggleCssClass(selector = ".nav-tabs li:nth-child(2)", class = "tab-disabled", condition = !isCompiled())
@@ -299,13 +311,13 @@ shinyServer(function(input, output, session) {
 
   # Change editor theme
   observe({
-    session$sendCustomMessage("editor-theme", req(input$editorTheme))
-  })
+    session$sendCustomMessage("editor-theme", input$editorTheme)
+  }) |> bindEvent(input$editorTheme)
   
   # Change editor font size
   observe({
-    session$sendCustomMessage("editor-fontsize", req(input$editorFontSize))
-  })
+    session$sendCustomMessage("editor-fontsize", input$editorFontSize)
+  }) |> bindEvent(input$editorFontSize)
   
   # switch VTL session
   observe({
@@ -322,14 +334,14 @@ shinyServer(function(input, output, session) {
   })
     
   # load vl script
-  observeEvent(input$scriptFile, {
+  observe({
     lines = suppressWarnings(readLines(input$scriptFile$datapath))
     lines = paste0(lines, collapse = '\n')
     vtlSession <- VTLSessionManager$getOrCreate(input$scriptFile$name)$setText(lines)
     isCompiled(vtlSession$isCompiled())
     #update current session
     updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = input$scriptFile$name)
-  })
+  }) |> bindEvent(input$scriptFile)
   
   # load CSV file to GlobalEnv
   observeEvent(input$datafile, {
@@ -369,16 +381,16 @@ shinyServer(function(input, output, session) {
   })
   
   # create new session
-  observeEvent(input$createSession, {
+  observe({
     name <- req(input$newSession)
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
     updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = name)
     updateTextInput(session = session, inputId = 'newSession', value = '')
-  })
+  }) |> bindEvent(input$createSession)
   
   # duplicate session
-  observeEvent(input$dupSession, {
+  observe({
     newName <- req(input$newSession)
     text <- currentSession()$text
     newSession <- VTLSessionManager$getOrCreate(newName)
@@ -386,7 +398,7 @@ shinyServer(function(input, output, session) {
     isCompiled(newSession$isCompiled())
     updateTextInput(session = session, inputId = 'newSession', value = '')
     updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = newName)
-  })
+  }) |> bindEvent(input$dupSession)
   
   # compile VTL code
   observeEvent(input$compile, {

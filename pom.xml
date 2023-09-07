@@ -220,14 +220,15 @@
 		<bundle.plugin.version>5.1.9</bundle.plugin.version>
 		<aws.version>1.12.161</aws.version>
 		<sf-fs.version>3.0.0-M3</sf-fs.version>
-		<scala.version>2.12.11</scala.version>
-		<scala.compat.version>2.12</scala.compat.version>
-		<scala-compiler.version>4.5.2</scala-compiler.version>
-		<spark.version>3.3.3</spark.version>
+		<scala.version>2.13.11</scala.version>
+		<scala.compat.version>2.13</scala.compat.version>
+		<scala-compiler.version>4.8.1</scala-compiler.version>
+		<spark.version>3.4.1</spark.version>
 		<tycho.version>4.0.0</tycho.version>
 		<slf4j.version>2.0.7</slf4j.version>
 		<log4j.version>2.20.0</log4j.version>
 		<jetty.version>11.0.15</jetty.version>
+		<jackson.version>2.14.2</jackson.version>
 		<junit.version>5.10.0</junit.version>
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
 		<mockito.version>5.2.0</mockito.version>
@@ -543,6 +544,21 @@
 				<version>2.5.1</version>
 			</dependency>
 			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.curator</groupId>
 				<artifactId>curator-framework</artifactId>
 				<version>2.13.0</version>
@@ -598,11 +614,6 @@
 						<artifactId>objenesis</artifactId>
 					</exclusion>
 				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>com.github.lucarosellini.rJava</groupId>
-				<artifactId>JRI</artifactId>
-				<version>0.9-7</version>
 			</dependency>
 			<dependency>
 				<groupId>org.mock-server</groupId>

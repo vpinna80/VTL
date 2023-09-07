@@ -25,13 +25,20 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IM
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -72,17 +79,61 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	{
 		List<Environment> result = new ArrayList<>();
 
-		String[] envNames = ENVIRONMENT_IMPLEMENTATION.getValue().split(",");
-		for (int i = 0; i < envNames.length; i++)
+		List<String> envNames = ENVIRONMENT_IMPLEMENTATION.getValues();
+		for (String envName: envNames)
 			try 
 			{
-				result.add(instanceOfClass(envNames[i], Environment.class, "Error initializing environment " + envNames[i]));
+				result.add(instanceOfClass(envName, Environment.class, "Error initializing environment " + envName));
 			}
 			catch (VTLNestedException e)
 			{
-				LOGGER.error("Error initializing environment " + envNames[i], e.getCause());
+				LOGGER.error("Error initializing environment " + envName, e.getCause());
 			}
 
 		return result;
+	}
+	
+	@Override
+	public void loadConfiguration(Reader input) throws IOException
+	{
+		Properties props = new Properties();
+		props.load(input);
+		props.forEach((k, v) -> {
+			if (k != null && v != null && k instanceof String && ((String) k).startsWith("vtl."))
+				System.setProperty(k.toString(), v.toString());
+		});
+	}
+	
+	@Override
+	public void saveConfiguration(Writer output) throws IOException
+	{
+		Properties props = new Properties();
+		for (VTLGeneralProperties prop: VTLGeneralProperties.values())
+			props.setProperty(prop.getName(), prop.getValue());
+		
+		List<VTLProperty> vtlProps = new ArrayList<>();
+		for (String envName: ENVIRONMENT_IMPLEMENTATION.getValues())
+			try
+			{
+				vtlProps.addAll(ConfigurationManagerFactory.getSupportedProperties(Class.forName(envName, true, Thread.currentThread().getContextClassLoader())));
+			}
+			catch (ClassNotFoundException e)
+			{
+				LOGGER.error("Error loading environment class " + envName, e.getCause());
+			}
+		
+		try
+		{
+			vtlProps.addAll(ConfigurationManagerFactory.getSupportedProperties(Class.forName(METADATA_REPOSITORY.getValue(), true, Thread.currentThread().getContextClassLoader())));
+		}
+		catch (ClassNotFoundException e)
+		{
+			LOGGER.error("Error loading metadata repository class " + METADATA_REPOSITORY.getValue(), e);
+		}
+		
+		for (VTLProperty prop: vtlProps)
+			props.setProperty(prop.getName(), prop.getValue());
+		
+		props.store(output, null);
 	}
 }

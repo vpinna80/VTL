@@ -149,14 +149,17 @@ public class DataPointEncoder implements Serializable
 					.map(Entry::getKey)
 					.orElseThrow(() -> new UnsupportedOperationException("No VTL type corresponding to " + field.dataType()));
 			Class<? extends ComponentRole> role;
-			switch ((int) field.metadata().getLong("Role"))
-			{
-				case 1: role = Identifier.class; break;
-				case 2: role = Measure.class; break;
-				case 3: role = Attribute.class; break;
-				case 4: role = ViralAttribute.class; break;
-				default: throw new UnsupportedOperationException("No VTL role corresponding to metadata.");
-			}
+			if (field.metadata().contains("Role"))
+				switch ((int) field.metadata().getLong("Role"))
+				{
+					case 1: role = Identifier.class; break;
+					case 2: role = Measure.class; break;
+					case 3: role = Attribute.class; break;
+					case 4: role = ViralAttribute.class; break;
+					default: throw new UnsupportedOperationException("No VTL role corresponding to metadata.");
+				}
+			else
+				role = Measure.class;
 			result.add(DataStructureComponentImpl.of(field.name(), role, domain));
 		}
 		

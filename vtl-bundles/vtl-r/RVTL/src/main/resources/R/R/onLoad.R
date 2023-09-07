@@ -29,8 +29,8 @@
   .jpackage(pkgname, morePaths = files, lib.loc = libname)
 
   J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
-      "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
-      "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
+      # "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
+      # "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
       "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
       "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
       "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl")
