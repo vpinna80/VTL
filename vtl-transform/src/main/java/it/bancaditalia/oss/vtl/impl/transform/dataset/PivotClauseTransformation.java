@@ -55,7 +55,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class PivotClauseTransformation extends DatasetClauseTransformation
@@ -120,7 +119,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
 		
-		SerCollector<DataPoint, ?, Entry<LineageGroup, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>> collector = mapping((DataPoint dp) ->
+		var collector = mapping((DataPoint dp) ->
 			new SimpleEntry<>(DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
 					new SimpleEntry<>(dp.getLineage(), dp.get(measure))), 
 			collectingAndThen(entriesToMap(), map -> {

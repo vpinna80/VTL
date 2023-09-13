@@ -19,76 +19,84 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static java.util.Objects.requireNonNull;
+import static org.apache.spark.sql.functions.col;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Spliterator;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
 final class SparkSpliterator implements Spliterator<Row>
 {
-	private final BlockingQueue<Row> queue;
-	private final Thread collector;
-	private final List<Row> section = new ArrayList<>();
-	
-	private volatile int current = 0;
+	private final long numPartitions;
+	private final int batchSize;
+	private final Dataset<Row> dataframe;
+	private final AtomicInteger reservedPartitionNumber;
+	private int currentPartitionNumber;
+	private Iterator<Row> currentPartition;
 
-	SparkSpliterator(BlockingQueue<Row> queue, Thread collector)
+	public SparkSpliterator(Dataset<Row> dataframe, int batchSize, long numPartitions)
 	{
-		this.queue = queue;
-		this.collector = collector;
+		this.numPartitions = numPartitions;
+		this.batchSize = batchSize;
+		this.dataframe = dataframe;
+		this.reservedPartitionNumber = new AtomicInteger(0);
+		this.currentPartitionNumber = 0;
+		this.currentPartition = dataframe.where(col("$id$").eqNullSafe(0)).drop("$id$").toLocalIterator();
 	}
 
-	@Override
-	public boolean tryAdvance(Consumer<? super Row> action)
+	public SparkSpliterator(Dataset<Row> partitioned, int batchSize, long numPartitions, AtomicInteger reservedPartitionNumber)
 	{
-		while (current >= section.size())
-			try
-			{
-				updateSection();
-
-				if (current >= section.size() && !collector.isAlive())
-					return false;
-			}
-			catch (InterruptedException e)
-			{
-				e.printStackTrace();
-				Thread.currentThread().interrupt();
-				return false;
-			}
-		
-		action.accept(requireNonNull(section.get(current++)));
-		return true;
-	}
-
-	private synchronized void updateSection() throws InterruptedException
-	{
-		section.clear();
-		queue.drainTo(section);
-		current = 0;
-		if (section.size() == 0)
-			wait(500);
-	}
-
-	@Override
-	public Spliterator<Row> trySplit()
-	{
-		return collector.isAlive() ? new SparkSpliterator(queue, collector) : null;
+		this.numPartitions = numPartitions;
+		this.batchSize = batchSize;
+		this.dataframe = partitioned;
+		this.reservedPartitionNumber = reservedPartitionNumber;
+		updatePartition();
 	}
 
 	@Override
 	public long estimateSize()
 	{
-		return -1;
+		return (numPartitions + 1 - reservedPartitionNumber.get()) * batchSize;
 	}
 
 	@Override
 	public int characteristics()
 	{
 		return CONCURRENT | NONNULL;
+	}
+
+	@Override
+	public synchronized boolean tryAdvance(Consumer<? super Row> action)
+	{
+		if (currentPartition != null && currentPartition.hasNext())
+		{
+			action.accept(currentPartition.next());
+			return true;
+		}
+		
+		updatePartition();
+		return currentPartition != null ? tryAdvance(action) : false;
+	}
+
+	private void updatePartition()
+	{
+		if (currentPartition != null)
+		{
+			currentPartitionNumber = reservedPartitionNumber.getAndIncrement();
+			if (currentPartitionNumber < numPartitions)
+				currentPartition = dataframe.where(col("$id$").eqNullSafe(currentPartitionNumber)).toLocalIterator();
+			else
+				currentPartition = null;
+		}
+	}
+
+	@Override
+	public Spliterator<Row> trySplit()
+	{
+		return currentPartitionNumber < numPartitions ? new SparkSpliterator(dataframe, batchSize, numPartitions, reservedPartitionNumber) : null;
 	}
 }

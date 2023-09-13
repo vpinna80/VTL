@@ -23,10 +23,13 @@
 .onLoad <- function(libname, pkgname) {
 
   spark <- Sys.getenv('SPARK_HOME')
+  jars = c("log4j2.xml", list.files(system.file("java", package = pkgname), ".*\\.jar"))
   files <- if (spark != '') list.files(paste0(spark, '/jars'), full.names = T) else ''
   files <- c(files, list.files(paste0(find.package("rJava"), "/jri/"), pattern = '.*\\.jar', full.names = T))
+  files <- files[!grepl("log4j", files)]
+  files <- files[!grepl("slf4j", files)]
   
-  .jpackage(pkgname, morePaths = files, lib.loc = libname)
+  .jpackage(pkgname, jars, files, lib.loc = libname)
 
   J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
       # "it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
@@ -35,4 +38,19 @@
       "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
       "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl")
   )
+
+  if (!any(grepl("roxygenize", sys.calls())) && !any(grepl("test_load_package", sys.calls())))
+  {
+    message(paste0("JRI Rengine initialized: ", J("it.bancaditalia.oss.vtl.impl.environment.RUtils")$RENGINE$hashCode()))
+    propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
+    if (file.exists(propfile)) {
+      reader = .jnew("java.io.FileReader", propfile)
+      tryCatch({
+        J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
+        message("VTL settings loaded from ", propfile, ".")
+      }, finally = {
+        reader$close()
+      })
+    }
+  }
 }

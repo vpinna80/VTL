@@ -48,7 +48,7 @@ public class WorkspaceImpl implements Workspace
 	{
 		if (rules.putIfAbsent(normalize(statement.getAlias()), statement) != null)
 			throw new IllegalStateException("Object " + statement.getAlias() + " was already defined");
-		LOGGER.info("Added a nre rfule for {}", statement.getAlias());
+		LOGGER.info("Added a VTL rule with alias {}", statement.getAlias());
 	}
 
 	@Override

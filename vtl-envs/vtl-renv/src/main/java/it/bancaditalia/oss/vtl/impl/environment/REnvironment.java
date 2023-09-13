@@ -41,7 +41,6 @@ import static org.rosuda.JRI.REXP.XT_DOUBLE;
 import static org.rosuda.JRI.REXP.XT_INT;
 import static org.rosuda.JRI.REXP.XT_STR;
 
-import java.io.PrintStream;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -56,7 +55,6 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.RList;
 import org.rosuda.JRI.Rengine;
@@ -97,20 +95,10 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class REnvironment implements Environment
 {
-	public static final Rengine RENGINE = new Rengine();
+	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);;
 	
-	static 
-	{
-		if (RENGINE == null)
-			throw new ExceptionInInitializerError("Cannot initialize Rengine outside R");
-
-		System.setOut(new PrintStream(new RConsoleOutputStream(RENGINE, 0)));
-		System.setErr(new PrintStream(new RConsoleOutputStream(RENGINE, 1)));
-	}
-	
-	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
 	private final Map<String, VTLValue>	values	= new HashMap<>();
-	private final Rengine engine = RENGINE != null ? RENGINE : new Rengine();
+	private final Rengine engine = RUtils.RENGINE;
 
 	public Rengine getEngine()
 	{

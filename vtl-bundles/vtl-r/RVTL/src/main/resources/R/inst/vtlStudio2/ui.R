@@ -18,11 +18,6 @@
 # permissions and limitations under the License.
 #
 
-# Main class for consuming SDMX web services
-#
-# Author: Attilio Mattiocco
-###############################################################################
-
 library(RVTL)
 
 labels <- list(
@@ -110,15 +105,6 @@ defaultProxy <- (function() {
 
   return(list(host = '', port = '', user = ''))
 })()
-
-defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
-
-repositoryImplementations <- list(
-  `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
-  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
-  `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.SDMXMetadataRepository',
-  `Fusion (Metadata) Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository'
-)
 
 ui <- shinydashboard::dashboardPage(title="VTL Studio!",
   
@@ -238,7 +224,7 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
           uiOutput(outputId = "sortableEnvs")
         ),
         shinydashboard::box(title = 'Metadata Repository', status = 'primary', solidHeader = T, collapsible = T,
-          selectInput(inputId = 'repoClass', label = NULL, choices = repositoryImplementations, selected = defaultRepository),
+          selectInput(inputId = 'repoClass', label = NULL, choices = c("Select a repository..." = "")),
           uiOutput(outputId = "repoProperties"),
           actionButton(inputId = 'setRepo', label = 'Change repository')
         ),

@@ -227,7 +227,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <TT> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+	public <TT extends Serializable> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
 			SerCollector<DataPoint, ?, TT> groupCollector,
 			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{

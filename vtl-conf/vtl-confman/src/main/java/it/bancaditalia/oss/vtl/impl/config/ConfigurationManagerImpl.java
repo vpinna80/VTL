@@ -26,7 +26,6 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOS
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,17 +90,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 			}
 
 		return result;
-	}
-	
-	@Override
-	public void loadConfiguration(Reader input) throws IOException
-	{
-		Properties props = new Properties();
-		props.load(input);
-		props.forEach((k, v) -> {
-			if (k != null && v != null && k instanceof String && ((String) k).startsWith("vtl."))
-				System.setProperty(k.toString(), v.toString());
-		});
 	}
 	
 	@Override

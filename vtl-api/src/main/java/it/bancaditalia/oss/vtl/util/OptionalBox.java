@@ -19,9 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
-import java.io.Serializable;
-
-public class OptionalBox<T extends Serializable> implements SerConsumer<T>
+public class OptionalBox<T> implements SerConsumer<T>
 {
 	private static final long serialVersionUID = 1L;
 	

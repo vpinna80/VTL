@@ -28,17 +28,20 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mappingValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingBigDecimal;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -128,15 +131,17 @@ public enum AggregateOperator
 	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
 
-	private static class CombinedAccumulator 
+	private static class CombinedAccumulator implements Serializable
 	{
+		private static final long serialVersionUID = 1L;
+		
 		final Map<DataStructureComponent<? extends Measure, ?, ?>, Object> accs;
 		final Map<Lineage, Long> lineageAcc;
 		final Map<DataStructureComponent<? extends Measure, ?, ?>, AtomicBoolean> allIntegers;
 
 		public CombinedAccumulator(Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors)
 		{
-			accs = Utils.getStream(collectors).collect(SerCollectors.mappingValues(collector -> collector.supplier().get()));
+			accs = Utils.getStream(collectors).collect(mappingValues(collector -> collector.supplier().get()));
 			lineageAcc = new ConcurrentHashMap<>();
 			allIntegers = Utils.getStream(collectors.keySet()).collect(SerCollectors.toMapWithValues(m -> new AtomicBoolean(INTEGERDS.isAssignableFrom(m.getDomain()))));
 		}
@@ -190,11 +195,11 @@ public enum AggregateOperator
 		return reducer;
 	}
 	
-	public SerCollector<DataPoint, ?, Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>>> getReducer(Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures)
+	public SerCollector<DataPoint, ?, SimpleEntry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>>> getReducer(Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures)
 	{
 		// Create a collector for each measure
 		Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors = measures.stream()
-			.collect(SerCollectors.toMapWithValues(measure -> mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer))));
+			.collect(toMapWithValues(measure -> mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer))));
 		
 		// and-reduce the characteristics
 		EnumSet<Characteristics> characteristics = EnumSet.of(CONCURRENT, UNORDERED);
@@ -205,7 +210,7 @@ public enum AggregateOperator
 		return SerCollector.of(
 				() -> new CombinedAccumulator(collectors), 
 				(a, dp) -> {
-					collectors.forEach((measure, collector) -> {
+					collectors.forEach((SerBiConsumer<DataStructureComponent<?, ?, ?>, SerCollector<?, ?, ?>>) (measure, collector) -> {
 							@SuppressWarnings("unchecked")
 							SerBiConsumer<Object, DataPoint> accumulator = (SerBiConsumer<Object, DataPoint>) collector.accumulator();
 							accumulator.accept(a.accs.get(measure), dp);

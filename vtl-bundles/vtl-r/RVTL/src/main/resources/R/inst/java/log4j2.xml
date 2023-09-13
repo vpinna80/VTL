@@ -20,23 +20,25 @@
     permissions and limitations under the License.
 
 -->
-<Configuration status="info" strict="true" name="it.bancaditalia.oss.vtl" xmlns="http://logging.apache.org/log4j/2.0/config">
+<Configuration status="info" strict="true" name="it.bancaditalia.oss.vtl"
+           xmlns="http://logging.apache.org/log4j/2.0/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://logging.apache.org/log4j/2.0/config 
+           https://raw.githubusercontent.com/apache/logging-log4j2/master/log4j-core/src/main/resources/Log4j-config.xsd">
                
 	<Appenders>
-		<Appender name="FILE" type="File">
-			<append>false</append>
-			<filename>d:/dati/VTL.log</filename>
-			<Layout type="PatternLayout" pattern="%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n" />
+		<Appender name="RCONSOLE" type="Console" follow="true">
+			<Layout type="PatternLayout">
+			 	<Pattern>%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n</Pattern>
+			 </Layout>
 		</Appender>
 	</Appenders>
 
 	<Loggers>
-		<Logger name="it.bancaditalia.oss.vtl" level="debug" additivity="false">
-			<AppenderRef ref="FILE" />
-		</Logger>
+		<Logger name="it.bancaditalia.oss.vtl" level="debug" />
 
 		<Root level="warn">
-			<AppenderRef ref="FILE" />
+			<AppenderRef ref="RCONSOLE" />
 		</Root>
 	</Loggers>
 </Configuration>

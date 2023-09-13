@@ -39,13 +39,16 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
+import static java.util.Collections.emptyMap;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.spark.sql.expressions.Window.partitionBy;
 import static org.apache.spark.sql.functions.explode;
 import static org.apache.spark.sql.functions.first;
+import static org.apache.spark.sql.functions.floor;
 import static org.apache.spark.sql.functions.lit;
+import static org.apache.spark.sql.functions.max;
+import static org.apache.spark.sql.functions.monotonically_increasing_id;
 import static org.apache.spark.sql.functions.struct;
 import static org.apache.spark.sql.functions.udaf;
 import static org.apache.spark.sql.functions.udf;
@@ -64,8 +67,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -74,6 +75,7 @@ import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.MapGroupsFunction;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
+import org.apache.spark.api.java.function.ReduceFunction;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
@@ -100,6 +102,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -156,42 +159,18 @@ public class SparkDataSet extends AbstractDataSet
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		int bufferSize = Integer.parseInt(SparkEnvironment.VTL_SPARK_PAGE_SIZE.getValue());
-		BlockingQueue<Row> queue = new ArrayBlockingQueue<>(bufferSize);
+		int batchSize = Integer.parseInt(SparkEnvironment.VTL_SPARK_PAGE_SIZE.getValue());
 		
 		LOGGER.warn("A trasformation is moving data from Spark into the driver. OutOfMemoryError may occur.");
 		
-		Thread pushingThread = new Thread(() -> {
-			LOGGER.info("Getting datapoints from Spark...");
-			try
-			{
-				Iterator<Row> iterator = dataFrame.toLocalIterator();
-				if (LOGGER.isTraceEnabled())
-					LOGGER.trace("{}", dataFrame.queryExecution().explainString(ExplainMode.fromString("formatted")));
-				while (iterator.hasNext())
-					try
-					{
-						Row row = iterator.next();
-						while (!queue.offer(row, 200, MILLISECONDS))
-							;
-					}
-					catch (InterruptedException e)
-					{
-						LOGGER.error("Interrupted", e);
-						Thread.currentThread().interrupt();
-						break;
-					}
-			}
-			catch (Exception e)
-			{
-				LOGGER.error("Error while getting datapoints from Spark", e);
-			}
-		}, "VTL Spark retriever");
-//		pushingThread.setDaemon(true);
-		pushingThread.start();
-
-		return StreamSupport.stream(new SparkSpliterator(queue, pushingThread), !Utils.SEQUENTIAL)
-				.map(encoder::decode);
+		Dataset<Row> partitioned = dataFrame.withColumn("$id$", floor(monotonically_increasing_id().divide(lit(20))));
+		Dataset<Row> head = partitioned.agg(max("$id$"));
+		if (head.count() == 0)
+			return Stream.empty();
+		
+		long numPartitions = ((Number) head.head().get(0)).longValue() + 1;
+		
+		return StreamSupport.stream(new SparkSpliterator(partitioned, batchSize, numPartitions), !Utils.SEQUENTIAL).map(encoder::decode);
 	}
 	
 	@Override
@@ -498,30 +477,44 @@ public class SparkDataSet extends AbstractDataSet
 	}
 	
 	@Override
-	public <TT> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+	public <TT extends Serializable> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
 			SerCollector<DataPoint, ?, TT> groupCollector,
 			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{
 		DataPointEncoder keyEncoder = new DataPointEncoder(keys);
 		DataPointEncoder resultEncoder = new DataPointEncoder(structure);
-		Column[] keyNames = keys.stream()
-				.map(DataStructureComponent::getName)
-				.map(dataFrame::col)
-				.collect(toArray(new Column[keys.size()]));
 		
-		MapGroupsFunction<Row, Row, Row> aggregator = (keyRow, s) -> {
-					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = keys.stream()
-						.collect(toMapWithValues(c -> scalarFromColumnValue(keyRow.getAs(c.getName()), c)));
-					return StreamSupport.stream(spliteratorUnknownSize(s, 0), !Utils.SEQUENTIAL)
-							.map(encoder::decode)
-							.collect(collectingAndThen(groupCollector, r -> resultEncoder.encode(finisher.apply(r, keyValues))));
-				};
-		
-		Dataset<Row> grouped = dataFrame.groupBy(keyNames)
-				.as(keyEncoder.getRowEncoderNoLineage(), encoder.getRowEncoder())
-				.mapGroups(aggregator, resultEncoder.getRowEncoder());
-		
-		return new SparkDataSet(session, structure, grouped);
+		if (keys.isEmpty())
+		{
+			ReduceFunction<Row> aggregator = (left, right) -> Stream.of(left, right)
+					.map(encoder::decode)
+					.collect(collectingAndThen(groupCollector, r -> resultEncoder.encode(finisher.apply(r, emptyMap()))));
+			
+			DataPoint dp = resultEncoder.decode(dataFrame.reduce(aggregator));
+			
+			return new StreamWrapperDataSet(structure, () -> Stream.of(dp));
+		}
+		else
+		{
+			Column[] keyNames = keys.stream()
+					.map(DataStructureComponent::getName)
+					.map(dataFrame::col)
+					.collect(toArray(new Column[keys.size()]));
+	
+			MapGroupsFunction<Row, Row, Row> aggregator = (keyRow, s) -> {
+						Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = keys.stream()
+							.collect(toMapWithValues(c -> scalarFromColumnValue(keyRow.getAs(c.getName()), c)));
+						return StreamSupport.stream(spliteratorUnknownSize(s, 0), !Utils.SEQUENTIAL)
+								.map(encoder::decode)
+								.collect(collectingAndThen(groupCollector, r -> resultEncoder.encode(finisher.apply(r, keyValues))));
+					};
+					
+			Dataset<Row> grouped = dataFrame.groupBy(keyNames)
+					.as(keyEncoder.getRowEncoderNoLineage(), encoder.getRowEncoder())
+					.mapGroups(aggregator, resultEncoder.getRowEncoder());
+	
+			return new SparkDataSet(session, structure, grouped);
+		}
 	}
 	
 	

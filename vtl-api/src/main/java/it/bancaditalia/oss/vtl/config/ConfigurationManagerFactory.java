@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.config;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 
@@ -47,6 +50,21 @@ public class ConfigurationManagerFactory
 	
 	private ConfigurationManagerFactory() {}
 	
+	/**
+	 * Initialize the configuration reading VTL properties 
+	 * @param input The reader used to initialize a {@link Properties} object
+	 * @throws IOException if the load fails
+	 */
+	public static void loadConfiguration(Reader input) throws IOException
+	{
+		Properties props = new Properties();
+		props.load(input);
+		props.forEach((k, v) -> {
+			if (k != null && v != null && k instanceof String && ((String) k).startsWith("vtl."))
+				System.setProperty(k.toString(), v.toString());
+		});
+	}
+
 	/**
 	 * @return an application-wide {@link ConfigurationManager} instance.
 	 */

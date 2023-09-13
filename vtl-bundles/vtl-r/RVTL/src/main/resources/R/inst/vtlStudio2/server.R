@@ -42,38 +42,30 @@ activeEnvs <- function(active) {
   else
     NULL
 }
-shinyServer(function(input, output, session) {
-  
-  ######
-  ###### reactive functions
-  ######
-  
-  currentSession <- reactive({
-    VTLSessionManager$find(req(input$sessionID))
-  })
 
-  evalNode <- reactive({
-    return(currentSession()$getValues(req(input$selectDatasets)))
-  })
+repoImpls <- c(
+  `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
+  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
+  `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.SDMXMetadataRepository',
+  `Fusion (Metadata) Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository'
+)
+
+shinyServer(function(input, output, session) {
+
+  currentSession <- reactive(VTLSessionManager$find(input$sessionID)) |> bindEvent(input$sessionID)
+
+  evalNode <- reactive(currentSession()$getValues(input$selectDatasets)) |> bindEvent(input$selectDatasets)
 
   isCompiled <- reactiveVal(F)
   
-  ######
-  ###### end reactive functions
-  ######
-  
-  #####
-  ##### Dynamic Input controls
-  #####
-
   # Upload vtl script button
   output$saveas <- downloadHandler(
-      filename = function() {
-        req(input$sessionID)
-        paste0(isolate(input$sessionID), ".vtl")
-      }, content = function (file) {
-        writeLines(currentSession()$text, file)
-      }
+    filename = function() {
+      req(input$sessionID)
+      paste0(isolate(input$sessionID), ".vtl")
+    }, content = function (file) {
+      writeLines(currentSession()$text, file)
+    }
   )
 
   # Repository Properties box
@@ -114,27 +106,17 @@ shinyServer(function(input, output, session) {
     })
   }) |> bindEvent(input$setRepo)
 
-  # Drag&drop to activate environments
-  output$sortableEnvs <- renderUI({
-    sortable::bucket_list(header = NULL, orientation = 'horizontal',
-      sortable::add_rank_list(text = "Available", labels = activeEnvs(F)),
-      sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T)),
-    )
-  })
-
   # Initially populate environment list and load properties
   envlistdone <- observe({
-    propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
-    if (file.exists(propfile)) {
-      reader = .jnew("java.io.FileReader", propfile)
-      tryCatch({
-        configManager$getInstance()$loadConfiguration(reader)
-      }, finally = {
-        reader$close()
-      })
-    }
-      
-    updateSelectInput(inputId = 'selectEnv', label = NULL, choices = unlist(environments))
+    defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
+    updateSelectInput(inputId = 'selectEnv', choices = unlist(environments))
+    updateSelectInput(inputId = 'repoClass', choices = repoImpls, selected = defaultRepository)
+    output$sortableEnvs <- renderUI({
+      sortable::bucket_list(header = NULL, orientation = 'horizontal',
+        sortable::add_rank_list(text = "Available", labels = activeEnvs(F)),
+        sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T)),
+      )
+    })
     envlistdone$destroy()
   })
   
@@ -175,7 +157,7 @@ shinyServer(function(input, output, session) {
   }) |> bindEvent(input$saveenvprops)
   
   # Save user configuration
-  bindEvent(input$saveconf, x = observe({
+  observe({
     propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
     writer = .jnew("java.io.FileWriter", propfile)
     tryCatch({
@@ -183,7 +165,7 @@ shinyServer(function(input, output, session) {
     }, finally = {
       writer$close()
     })
-  }))
+  }) |> bindEvent(input$saveconf)
   
   # Select dataset to browse
   output$dsNames<- renderUI({
@@ -370,12 +352,12 @@ shinyServer(function(input, output, session) {
       attr(x = body, which = 'measures') = names[measures]
       assign(x = datasetName, value = body, envir = .GlobalEnv)
       output$vtl_output <- renderPrint({
-        print(paste('File ', input$datafile$name, 'correctly loaded into R Environment. Dataset name to be used:', datasetName))
+        cat(paste('File ', input$datafile$name, 'correctly loaded into R Environment. Dataset name to be used:', datasetName, '\n'))
       })
     }
     else{
       output$vtl_output <- renderPrint({
-        print(paste('Error: file ', input$datafile$name, 'is malformed.'))
+        message('Error: file ', input$datafile$name, ' is malformed.\n')
       })
     }
   })
@@ -408,8 +390,6 @@ shinyServer(function(input, output, session) {
       try({
         vtlSession <- currentSession()
         statements <- input$vtlStatements
-        print(vtlSession$name)
-        print(statements)
         withProgress(message = 'Compiling current session', value = 0, {
           tryCatch({ 
             vtlSession$addStatements(statements, restart = T) 
@@ -417,27 +397,26 @@ shinyServer(function(input, output, session) {
             tryCatch({ 
               vtlSession$compile()
               setProgress(value = 1)
-              print("Compilation successful")
               isCompiled(T)
             }, error = function(e) {
-              message = conditionMessage(e)
+              msg = conditionMessage(e)
               if (is.list(e) && !is.null(e[['jobj']]))
               {
                 e$jobj$printStackTrace()
-                message = e$jobj$getLocalizedMessage()
+                msg = e$jobj$getLocalizedMessage()
               }
               setProgress(value = 1)
-              print(paste0("Compilation error: ", message))
+              message("Compilation error: ", msg)
             })
           }, error = function(e) {
-            message = conditionMessage(e)
+            msg = conditionMessage(e)
             if (is.list(e) && !is.null(e[['jobj']]))
             {
               e$jobj$printStackTrace()
-              message = e$jobj$getLocalizedMessage()
+              msg = e$jobj$getLocalizedMessage()
             }
             setProgress(value = 1)
-            print(paste0("Syntax error: ", message))
+            message("Compilation error: ", msg)
           })
         })
         

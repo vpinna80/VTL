@@ -45,6 +45,7 @@ import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toData
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static org.mockito.Mockito.mock;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -189,7 +190,7 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public <TT> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+	public <TT extends Serializable> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
 			SerCollector<DataPoint, ?, TT> groupCollector,
 			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{
