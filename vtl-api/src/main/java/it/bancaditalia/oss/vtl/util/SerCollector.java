@@ -37,14 +37,14 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	private final SerFunction<A, R> finisher;
 	private final EnumSet<Characteristics> characteristics;
 
-	public static <T, A, R> SerCollector<T, A, R> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
-			SerFunction<A, R> finisher, Set<Characteristics> characteristics)
+	public static <T, A, R> SerCollector<T, A, R> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, 
+			SerBinaryOperator<A> combiner, SerFunction<A, R> finisher, Set<Characteristics> characteristics)
 	{
 		return new SerCollector<>(supplier, accumulator, combiner, finisher, characteristics);
 	}
 
-	public static <T, A> SerCollector<T, A, A> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
-			Set<Characteristics> characteristics)
+	public static <T, A> SerCollector<T, A, A> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, 
+			SerBinaryOperator<A> combiner, Set<Characteristics> characteristics)
 	{
 		EnumSet<Characteristics> newCharacteristics = EnumSet.of(IDENTITY_FINISH);
 		newCharacteristics.addAll(characteristics);

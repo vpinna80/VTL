@@ -53,9 +53,7 @@ repoImpls <- c(
 shinyServer(function(input, output, session) {
 
   currentSession <- reactive(VTLSessionManager$find(input$sessionID)) |> bindEvent(input$sessionID)
-
   evalNode <- reactive(currentSession()$getValues(input$selectDatasets)) |> bindEvent(input$selectDatasets)
-
   isCompiled <- reactiveVal(F)
   
   # Upload vtl script button
@@ -117,6 +115,7 @@ shinyServer(function(input, output, session) {
         sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T)),
       )
     })
+    # Single execution only when VTL Studio starts
     envlistdone$destroy()
   })
   
@@ -257,14 +256,6 @@ shinyServer(function(input, output, session) {
     lengthMenu = list(c(50, 1000, -1), c('50', '1000', 'All')),
     pageLength = 10
   ))
-  
-  #####
-  ##### End Dynamic Input controls
-  #####
-  
-  #####
-  ##### Output widgets
-  #####
 
   # Disable buttons to create sessions
   observe({
@@ -383,56 +374,40 @@ shinyServer(function(input, output, session) {
   }) |> bindEvent(input$dupSession)
   
   # compile VTL code
-  observeEvent(input$compile, {
-    req(input$compile)
+  observe({
     shinyjs::disable("compile")
-    output$vtl_output <- renderPrint({
-      try({
-        vtlSession <- currentSession()
-        statements <- input$vtlStatements
-        withProgress(message = 'Compiling current session', value = 0, {
-          tryCatch({ 
-            vtlSession$addStatements(statements, restart = T) 
-            setProgress(value = 0.5)
-            tryCatch({ 
-              vtlSession$compile()
-              setProgress(value = 1)
-              isCompiled(T)
-            }, error = function(e) {
-              msg = conditionMessage(e)
-              if (is.list(e) && !is.null(e[['jobj']]))
-              {
-                e$jobj$printStackTrace()
-                msg = e$jobj$getLocalizedMessage()
-              }
-              setProgress(value = 1)
-              message("Compilation error: ", msg)
-            })
-          }, error = function(e) {
-            msg = conditionMessage(e)
-            if (is.list(e) && !is.null(e[['jobj']]))
-            {
-              e$jobj$printStackTrace()
-              msg = e$jobj$getLocalizedMessage()
-            }
-            setProgress(value = 1)
-            message("Compilation error: ", msg)
-          })
-        })
-        
-        # Update force network
-        output$topology <- networkD3::renderForceNetwork({
-          vtlSession$getTopology(distance = input$distance)
-        })
-        #update list of datasets to be explored
-        updateSelectInput(session = session, inputId = 'selectDatasets',
-                          label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
-      })
-      
-      return(invisible())
-    })
-    shinyjs::enable("compile")
-  })
+    vtlSession <- currentSession()
+    statements <- input$vtlStatements
+    withProgress(message = 'Compiling current session', value = 0, tryCatch({ 
+      vtlSession$addStatements(statements, restart = T) 
+      setProgress(value = 0.5)
+      vtlSession$compile()
+      isCompiled(T)
+      shinyjs::html("vtl_output", cat("Compilation successful.\n"))
+      # Update force network
+      output$topology <- networkD3::renderForceNetwork(vtlSession$getTopology(distance = input$distance))
+      #update list of datasets to be explored
+      updateSelectInput(session = session, inputId = 'selectDatasets',
+                        label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
+    }, error = function(e) {
+      msg <- conditionMessage(e)
+      trace <- NULL
+      if (is.list(e) && !is.null(e[['jobj']]))
+      {
+        writer <- .jnew("java.io.StringWriter")
+        e$jobj$printStackTrace(.jnew("java.io.PrintWriter", .jcast(writer, "java/io/Writer")))
+        trace <- writer$toString()
+        msg <- e$jobj$getLocalizedMessage()
+      }
+      browser()
+      shinyjs::html("vtl_output", paste0('<span style="color: red">Error during compilation: ', 
+        msg, '\n', if (is.null(trace)) '' else trace, '\n</span>')
+      )
+    }, finally = {
+      setProgress(value = 1)
+      shinyjs::enable("compile")
+    }))
+  }) |> bindEvent(input$compile)
 
   # configure proxy
   observeEvent(input$setProxy, {
@@ -465,9 +440,4 @@ shinyServer(function(input, output, session) {
       tags$p(tags$span("Rule:"), ifelse(test = is.null(formula), no = formula, yes = 'Source data'))
     ))
   })
-
-######
-######  End output widgets
-######
-  
 })

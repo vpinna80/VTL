@@ -19,8 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getEncoderForComponent;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.scalarFromColumnValue;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 
 import java.io.Serializable;
@@ -60,12 +58,12 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 			if (zero instanceof double[])
 			{
 				accEncoder = (Encoder<A>) session.implicits().newDoubleArrayEncoder();
-				resultEncoder = getEncoderForComponent(oldComp);
+				resultEncoder = SparkUtils.getEncoderFor(oldComp);
 			}
 			else if (zero instanceof OptionalBox)
 			{
 				accEncoder = (Encoder<A>) Encoders.kryo(OptionalBox.class);
-				resultEncoder = getEncoderForComponent(oldComp);
+				resultEncoder = SparkUtils.getEncoderFor(oldComp);
 			}
 			else if (zero instanceof ArrayList)
 			{
@@ -96,7 +94,7 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 	@Override
 	public A reduce(A acc, Serializable value)
 	{
-		coll.accumulator().accept(acc, scalarFromColumnValue(value, oldComp));
+		coll.accumulator().accept(acc, SparkUtils.getScalarFor(value, oldComp));
 		return acc;
 	}
 

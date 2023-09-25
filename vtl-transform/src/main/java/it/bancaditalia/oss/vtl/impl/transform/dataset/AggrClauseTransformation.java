@@ -181,7 +181,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 
 		if (having != null)
-			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(dp, metadata)) == BooleanValue.of(true), dp -> LineageNode.of(having, dp.getLineage()));
+			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(dp, metadata)) == BooleanValue.of(true), lineage -> LineageNode.of(having, lineage));
 
 		return result;
 	}

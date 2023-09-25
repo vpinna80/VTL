@@ -147,7 +147,11 @@ public class FMRRepository extends InMemoryMetadataRepository
 		if (maybeDomain.isPresent())
 			return maybeDomain.get();
 		
-		StructureReferenceBean refBean = vtlName2SdmxRef(alias, CODE_LIST);
+		StructureReferenceBean refBean;
+		if (alias.endsWith(":string"))
+			alias = alias.substring(0, alias.length() - 7);
+		refBean = vtlName2SdmxRef(alias, CODE_LIST);
+		
 		if (refBean != null)
 			LOGGER.info("Found codelist {} in Fusion Metadata Registry", alias);
 		return refBean != null ? defineDomain(alias, new LazyCodeList(STRINGDS, refBean, this)) : super.getDomain(alias);

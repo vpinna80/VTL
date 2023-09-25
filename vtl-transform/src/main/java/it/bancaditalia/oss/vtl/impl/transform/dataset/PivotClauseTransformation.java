@@ -55,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class PivotClauseTransformation extends DatasetClauseTransformation
@@ -119,21 +120,21 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
 		
-		var collector = mapping((DataPoint dp) ->
+		SerCollector<DataPoint, ?, DataPoint> collector = mapping((DataPoint dp) ->
 			new SimpleEntry<>(DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
 					new SimpleEntry<>(dp.getLineage(), dp.get(measure))), 
 			collectingAndThen(entriesToMap(), map -> {
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> measures = Utils.getStream(map)
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dp = Utils.getStream(map)
 					.map(Utils.keepingKey(Entry::getValue))
 					.collect(entriesToMap());
 				Map<Lineage, Long> lineages = Utils.getStream(map.values())
 					.collect(groupingByConcurrent(Entry::getKey, counting()));
-				return new SimpleEntry<>(LineageGroup.of(lineages), measures);
+				return new DataPointBuilder(dp).build(LineageGroup.of(lineages), new DataStructureBuilder(dp.keySet()).build());
 			})); 
 		
-		return dataset.aggr(structure, ids, collector, (measures, keys) -> new DataPointBuilder(keys)
-				.addAll(measures.getValue())
-				.build(LineageNode.of(this, measures.getKey()), structure));
+		return dataset.aggr(structure, ids, collector, (dp, keys) -> new DataPointBuilder(keys)
+				.addAll(dp)
+				.build(LineageNode.of(this, dp.getLineage()), structure));
 	}
 
 	@Override

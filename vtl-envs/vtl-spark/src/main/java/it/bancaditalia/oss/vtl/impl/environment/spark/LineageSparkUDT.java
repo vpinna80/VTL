@@ -19,10 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
+import static org.apache.spark.sql.types.DataTypes.BinaryType;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-import org.apache.spark.sql.types.BinaryType$;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.UserDefinedType;
 
@@ -30,17 +31,36 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 
 public class LineageSparkUDT extends UserDefinedType<Lineage>
 {
 	private static final long serialVersionUID = 1L;
 
-	protected LineageSparkUDT()
-	{
+    public static final ThreadLocal<Kryo> KRYO = new ThreadLocal<Kryo>() {
 
-	}
-	
+    	@Override
+    	protected Kryo initialValue() {
+    		Kryo kryo = new Kryo();
+    		LineageSerializer lineageSerializer = new LineageSerializer();
+    		kryo.register(LineageExternal.class, lineageSerializer);
+    		kryo.register(LineageGroup.class, lineageSerializer);
+    		kryo.register(LineageCall.class, lineageSerializer);
+    		kryo.register(LineageNode.class, lineageSerializer);
+    		kryo.register(LineageImpl.class, lineageSerializer);
+    		kryo.register(LineageSet.class, lineageSerializer);
+    		kryo.register(Lineage.class, lineageSerializer);
+    		
+    		return kryo;
+    	}
+    };
+
 	@Override
 	public Lineage deserialize(Object datum)
 	{
@@ -60,7 +80,7 @@ public class LineageSparkUDT extends UserDefinedType<Lineage>
 	@Override
 	public DataType sqlType()
 	{
-		return BinaryType$.MODULE$;
+		return BinaryType;
 	}
 
 	@Override
@@ -71,6 +91,6 @@ public class LineageSparkUDT extends UserDefinedType<Lineage>
 	
 	protected Kryo getKryoInstance()
 	{
-		throw new UnsupportedOperationException();
+		return KRYO.get();
 	}
 }

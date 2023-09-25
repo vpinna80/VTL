@@ -160,6 +160,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			
 			DataSetMetadata timeStructure = new DataStructureBuilder(structure.getComponents(Identifier.class)).build();
 			// Remove all measures and attributes then left-join the time-filled dataset with the old one
+			
 			return ds.mapKeepingKeys(timeStructure, DataPoint::getLineage, dp -> emptyMap())
 					.analytic(dp -> LineageNode.of(this, dp.getLineage()), timeID, windowClause, toList(), timeFinisher)
 					.mappedJoin(structure, ds, (a, b) -> Utils.coalesce(b, fill(a, structure)), true);

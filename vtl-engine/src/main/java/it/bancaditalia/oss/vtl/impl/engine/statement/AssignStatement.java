@@ -118,4 +118,10 @@ class AssignStatement extends AbstractStatement implements Transformation
 	{
 		return false;
 	}
+	
+	@Override
+	public boolean isCacheable()
+	{
+		return !persistent;
+	}
 }

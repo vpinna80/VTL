@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.setOf;
 import static java.util.stream.Collectors.toList;
@@ -153,7 +154,7 @@ public class AbstractDataSetTest
 	@Test
 	void testFilter()
 	{
-		DataSet result = INSTANCE.filter(dp -> true, DataPoint::getLineage);
+		DataSet result = INSTANCE.filter(dp -> true, identity());
 		assertEquals(STRUCTURE, result.getMetadata());
 		assertEquals(new HashSet<>(Arrays.asList(DATAPOINTS)), result.stream().collect(toSet()));
 	}

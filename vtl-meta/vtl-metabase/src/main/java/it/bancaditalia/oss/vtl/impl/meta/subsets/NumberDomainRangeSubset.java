@@ -95,4 +95,16 @@ public class NumberDomainRangeSubset implements DescribedDomainSubset<NumberDoma
 	{
 		return NullValue.instance(this);
 	}
+
+	@Override
+	public String getName()
+	{
+		return name + "{" + minInclusive + "," + maxInclusive + "}";
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name + ":" + parent.getName();
+	}
 }

@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -40,11 +39,6 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 	private EntireTimeDomainSubset()
 	{
 		super(null, "time_var");
-	}
-
-	protected EntireTimeDomainSubset(TimeDomain timeds, String name)
-	{
-		super(timeds, name);
 	}
 
 	@Override
@@ -73,6 +67,6 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 	@Override
 	public boolean isComparableWith(ValueDomain other)
 	{
-		return other instanceof DateDomain;
+		return other instanceof TimeDomain;
 	}
 }

@@ -29,8 +29,6 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -60,12 +58,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
 				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().asRole(Identifier.class), Entry::getValue));
 		
-		final DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
-		return new StreamWrapperDataSet(metadata, () -> operand.stream()
-				.filter(dp -> subspaceKeyValues.equals(dp.getValues(subspaceKeyValues.keySet(), Identifier.class)))
-				.map(dp -> new DataPointBuilder(dp)
-						.delete(subspaceKeyValues.keySet())
-						.build(LineageNode.of(this, dp.getLineage()), metadata)));
+		return operand.subspace(subspaceKeyValues);
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

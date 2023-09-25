@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -103,6 +104,25 @@ public abstract class AbstractDataSet implements DataSet
 				dp -> singletonMap(membershipMeasure, dp.get(sourceComponent));
 		
 		return mapKeepingKeys(membershipStructure, dp -> lineage, operator);
+	}
+	
+	@Override
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues)
+	{
+		DataSetMetadata newMetadata = new DataStructureBuilder(dataStructure).removeComponents(keyValues.keySet()).build();
+		
+		return new AbstractDataSet(newMetadata)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return AbstractDataSet.this.stream()
+						.filter(dp -> dp.matches(keyValues))
+						.map(dp -> new DataPointBuilder(dp).delete(keyValues.keySet()).build(LineageNode.of("SUB" + keyValues, dp.getLineage()), newMetadata));
+			}
+		};
 	}
 
 	@Override
@@ -227,13 +247,13 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <TT extends Serializable> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			SerCollector<DataPoint, ?, TT> groupCollector,
-			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
+	public DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+			SerCollector<DataPoint, ?, DataPoint> groupCollector,
+			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{
 		return new AbstractDataSet(structure) {
 			private static final long serialVersionUID = 1L;
-			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT>> cache = null;
+			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> cache = null;
 			
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
@@ -245,7 +265,7 @@ public abstract class AbstractDataSet implements DataSet
 			}
 
 			private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-					SerCollector<DataPoint, ?, TT> groupCollector)
+					SerCollector<DataPoint, ?, DataPoint> groupCollector)
 			{
 				if (cache == null)
 					try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
@@ -322,10 +342,13 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet filter(SerPredicate<DataPoint> predicate,
-			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
+	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOperator)
 	{
-		return new StreamWrapperDataSet(dataStructure, () -> stream().filter(predicate).map(dp -> new DataPointBuilder(dp).build(lineageOperator.apply(dp), dataStructure)));
+		return new StreamWrapperDataSet(dataStructure, () -> 
+			stream()
+			.filter(predicate)
+			.map(dp -> new DataPointBuilder(dp)
+					.build(lineageOperator.apply(dp.getLineage()), dataStructure)));
 	}
 	
 	@Override
@@ -380,7 +403,7 @@ public abstract class AbstractDataSet implements DataSet
 			return peekIfTrace(dp -> {
 					final Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keys = dp.getValues(Identifier.class);
 					LOGGER.trace("Setdiff: {} datapoint with keys {}.", index.contains(keys) ? "removed" : "passed", keys);
-				}).filter(dp -> !index.contains(dp.getValues(Identifier.class)), DataPoint::getLineage).stream();
+				}).filter(dp -> !index.contains(dp.getValues(Identifier.class)), SerUnaryOperator.identity()).stream();
 		}, right);
 	}
 	

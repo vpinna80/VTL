@@ -97,6 +97,16 @@ public interface VTLProperty
 	}
 
 	/**
+	 * Change the values for this property. If the property is not multiple, behaviour is undefined
+	 * 
+	 * @param newValues The new values for this property
+	 */
+	public default void setValues(Class<?>... newValues)
+	{
+		setValue(Arrays.stream(newValues).map(Class::getName).collect(joining(",")));
+	}
+
+	/**
 	 * @return {@code true} if a value was set for this property or it has a default value 
 	 */
 	public boolean hasValue();

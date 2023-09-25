@@ -114,9 +114,15 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	}
 
 	@Override
+	public final String getName()
+	{
+		return toString();
+	}
+	
+	@Override
 	public int hashCode()
 	{
-		return getClass().hashCode();
+		return getName().hashCode();
 	}
 	
 	@Override

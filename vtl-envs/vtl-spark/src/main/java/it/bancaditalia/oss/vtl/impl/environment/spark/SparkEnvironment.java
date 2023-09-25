@@ -19,10 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.createComponentsFromStruct;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.createMetadataForComponent;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getColumnsFromComponents;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.getDataTypeForComponent;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.registerSupportedProperties;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
@@ -69,12 +66,10 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -102,11 +97,17 @@ public class SparkEnvironment implements Environment
 	public static final VTLProperty VTL_SPARK_PAGE_SIZE = 
 			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", EnumSet.of(REQUIRED), "1000");
 
-	static final LineageSparkUDT LineageSparkUDT = LineageSparkUDT$.MODULE$;
+	/* package */ static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE);
+		registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE);
+		if (!UDTRegistration.exists(Lineage.class.getName()))
+		{
+			List<Class<? extends Lineage>> lClasses = List.of(LineageExternal.class, LineageGroup.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
+			for (Class<?> lineageClass: lClasses)
+				UDTRegistration.register(lineageClass.getName(), LineageSparkUDT.class.getName());
+		}
 	}
 	
 	public static class VTLKryoRegistrator implements KryoRegistrator
@@ -152,11 +153,6 @@ public class SparkEnvironment implements Environment
 			  .getOrCreate();
 		
 		reader = session.read();
-		
-		if (!UDTRegistration.exists(Lineage.class.getName()))
-			UDTRegistration.register(Lineage.class.getName(), LineageSparkUDT.class.getName());
-		if (!UDTRegistration.exists(DayHolder.class.getName()))
-			UDTRegistration.register(DayHolder.class.getName(), DayHolderSparkUDT.class.getName());
 	}
 	
 	public SparkEnvironment(SparkContext sc)
@@ -167,11 +163,6 @@ public class SparkEnvironment implements Environment
 			  .getOrCreate();
 		
 		reader = session.read();
-		
-		if (!UDTRegistration.exists(Lineage.class.getName()))
-			UDTRegistration.register(Lineage.class.getName(), LineageSparkUDT.class.getName());
-		if (!UDTRegistration.exists(DayHolder.class.getName()))
-			UDTRegistration.register(DayHolder.class.getName(), DayHolderSparkUDT.class.getName());
 	}
 	
 	@Override
@@ -239,7 +230,7 @@ public class SparkEnvironment implements Environment
 			{
 				final Optional<DataStructureComponent<?, ?, ?>> component = metadata.getComponent(name);
 				if (component.isPresent())
-					dataFrame = dataFrame.withColumn(name, dataFrame.col(name).as(name, createMetadataForComponent(component.get())));
+					dataFrame = dataFrame.withColumn(name, dataFrame.col(name).as(name, SparkUtils.getMetadataFor(component.get())));
 			}
 			
 			dataFrame.drop("$lineage$")
@@ -266,8 +257,8 @@ public class SparkEnvironment implements Environment
 		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
 		{
 			// infer structure from the schema metadata
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(createComponentsFromStruct(schema)).build();
-			Column[] names = DataPointEncoder.getColumnsFromComponents(sourceDataFrame, structure).toArray(new Column[structure.size()]);
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(SparkUtils.getComponentsFromStruct(schema)).build();
+			Column[] names = SparkUtils.getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			return new SparkDataSet(session, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
 		}
@@ -283,8 +274,8 @@ public class SparkEnvironment implements Environment
 				else if (field.dataType() instanceof IntegerType)
 					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), col(field.name()).cast(LongType));
 			
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(createComponentsFromStruct(sourceDataFrame2.schema())).build();
-			Column[] names = DataPointEncoder.getColumnsFromComponents(sourceDataFrame2, structure).toArray(new Column[structure.size()]);
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(SparkUtils.getComponentsFromStruct(sourceDataFrame2.schema())).build();
+			Column[] names = SparkUtils.getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
 			return new SparkDataSet(session, new DataPointEncoder(structure), enriched);
@@ -310,14 +301,14 @@ public class SparkEnvironment implements Environment
 			
 			// Array of parsers for CSV fields (strings) into scalars
 			Map<DataStructureComponent<?, ?, ?>, DataType> types = structure.stream()
-				.collect(toMapWithValues(c -> getDataTypeForComponent(c)));
+				.collect(toMapWithValues(c -> SparkUtils.getDataTypeFor(c)));
 			Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
 					.map(structure::getComponent)
 					.map(Optional::get)
-					.sorted(DataPointEncoder::sorter)
+					.sorted(SparkUtils::sorter)
 					.map(c -> udf(valueMapper(c, masks.get(c), types.get(c)), types.get(c))
 							.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
-							.as(c.getName(), createMetadataForComponent(c)))
+							.as(c.getName(), SparkUtils.getMetadataFor(c)))
 					.collect(toList())
 					.toArray(new Column[normalizedNames.length + 1]);
 			
@@ -326,7 +317,7 @@ public class SparkEnvironment implements Environment
 			converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
 	
 			Dataset<Row> converted = sourceDataFrame.select(converters);
-			Column[] ids = getColumnsFromComponents(converted, structure.getComponents(Identifier.class)).toArray(new Column[0]);
+			Column[] ids = SparkUtils.getColumnsFromComponents(structure.getComponents(Identifier.class)).toArray(new Column[0]);
 			return new SparkDataSet(session, structure, converted.repartition(ids));
 		}
 	}
@@ -340,10 +331,7 @@ public class SparkEnvironment implements Environment
 			public Serializable call(String repr) throws Exception
 			{
 				LOGGER.trace("{}", type);
-				Serializable value = (Serializable) mapValue(component, repr, mask).get();
-				if (value instanceof DayHolder)
-					value = ((DayHolder) value).getLocalDate();
-				return value;
+				return (Serializable) mapValue(component, repr, mask).get();
 			}
 		};
 	}

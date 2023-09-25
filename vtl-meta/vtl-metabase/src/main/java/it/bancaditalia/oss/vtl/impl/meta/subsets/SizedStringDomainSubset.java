@@ -105,8 +105,15 @@ public class SizedStringDomainSubset<T extends StringValue<T, SizedStringDomainS
 	}
 	
 	@Override
-	public String toString()
+	public String getName()
 	{
 		return "string{" + maxLen + "}";
 	}
+	
+	@Override
+	public String toString()
+	{
+		return name + ":" + parent.getName();
+	}
+
 }

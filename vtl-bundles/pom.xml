@@ -78,5 +78,6 @@
 
 	<modules>
 		<module>vtl-bundle-deps</module>
+		<module>vtl-integration-tests</module>
 	</modules>
 </project>

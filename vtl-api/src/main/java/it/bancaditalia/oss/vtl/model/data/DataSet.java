@@ -24,7 +24,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +48,7 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 /**
  * The base interface describing a dataset
@@ -106,7 +106,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public default DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
-		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)), DataPoint::getLineage);	
+		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)), SerUnaryOperator.identity());	
 	}
 
 	/**
@@ -115,8 +115,15 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param predicate The {@link Predicate} to be applied.
 	 * @return A new filtered DataSet. 
 	 */
-	public DataSet filter(SerPredicate<DataPoint> predicate, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator);
+	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOperator);
 
+	/**
+	 * Creates a new DataSet that represents the subspace of this DataSet with given identifiers having specific values
+	 * @param keyValues A Map that gives the value for each identifier to subspace.
+	 * @return A new DataSet that is a subspace of this DataSet.  
+	 */
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues);
+	
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
 	 * 
@@ -260,7 +267,6 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers 
 	 * 
-	 * @param <TT> The type of the result of the aggregation 
 	 * @param structure the metadata of the structure produced
 	 * @param keys the identifiers on whose values datapoints should be grouped 
 	 * @param groupCollector the aggregator that performs the reduction
@@ -268,9 +274,9 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return a new dataset where each datapoint is the result of the aggregation of a group.
 	 */
-	public <TT extends Serializable> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			SerCollector<DataPoint, ?, TT> groupCollector,
-			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
+	public DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys, 
+			SerCollector<DataPoint, ?, DataPoint> groupCollector,
+			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
 	
 	/**
 	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet.

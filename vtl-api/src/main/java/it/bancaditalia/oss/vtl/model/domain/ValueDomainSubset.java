@@ -36,6 +36,11 @@ public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends 
 	public D getParentDomain();
 	
 	/**
+	 * @return the name of this subset
+	 */
+	public String getName();
+	
+	/**
 	 * Casts the given ScalarValue to this ValueDomainSubset 
 	 * 
 	 * @param value the {@link ScalarValue} to cast

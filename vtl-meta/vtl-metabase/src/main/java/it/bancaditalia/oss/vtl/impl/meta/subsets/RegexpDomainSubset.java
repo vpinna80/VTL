@@ -87,7 +87,6 @@ public class RegexpDomainSubset implements StringDomainSubset<RegexpDomainSubset
 	@Override
 	public Transformation getCriterion()
 	{
-		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException();
 	}
 	
@@ -95,5 +94,17 @@ public class RegexpDomainSubset implements StringDomainSubset<RegexpDomainSubset
 	public ScalarValue<?, ?, RegexpDomainSubset, StringDomain> getDefaultValue()
 	{
 		return NullValue.instance(this);
+	}
+
+	@Override
+	public String getName()
+	{
+		return name + "{" + regexp + "}";
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name + ":" + parent.getName();
 	}
 }

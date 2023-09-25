@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.afterMapping;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,8 +35,10 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
-public class GroupingClause
+public class GroupingClause implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	public enum GroupingMode
 	{
 		GROUP_BY("group by"), GROUP_EXCEPT("group except");

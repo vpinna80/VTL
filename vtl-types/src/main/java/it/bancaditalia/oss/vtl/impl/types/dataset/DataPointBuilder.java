@@ -63,8 +63,9 @@ import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class DataPointBuilder
+public class DataPointBuilder implements Serializable
 {
+	private static final long serialVersionUID = 1L;
 	private final static Logger LOGGER = LoggerFactory.getLogger(DataPointBuilder.class);
 
 	private final ConcurrentHashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
@@ -336,8 +337,9 @@ public class DataPointBuilder
 		@Override
 		public String toString()
 		{
-			return entrySet().stream().peek(e -> Objects.nonNull(e.getKey())).peek(e -> Objects.nonNull(e.getValue())).map(Entry::toString)
-					.collect(joining(", ", "{ ", " }"));
+			return entrySet().stream()
+				.map(Entry::toString)
+				.collect(joining(", ", "{ ", " }"));
 		}
 
 		@Override

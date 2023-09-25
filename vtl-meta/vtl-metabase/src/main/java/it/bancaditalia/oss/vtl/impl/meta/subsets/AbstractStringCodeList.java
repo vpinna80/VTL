@@ -23,8 +23,8 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toSet;
 
+import java.io.Serializable;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
@@ -37,9 +37,10 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public abstract class AbstractStringCodeList implements StringEnumeratedDomainSubset<AbstractStringCodeList, StringCodeItemImpl, String>
+public abstract class AbstractStringCodeList implements StringEnumeratedDomainSubset<AbstractStringCodeList, StringCodeItemImpl, String>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -67,11 +68,11 @@ public abstract class AbstractStringCodeList implements StringEnumeratedDomainSu
 
 	private final StringDomainSubset<?> parent;
 	private final String name; 
-	private final Function<Set<String>, AbstractStringCodeList> andThen;
+	private final SerFunction<Set<String>, AbstractStringCodeList> andThen;
 
 	private int hashCode;
 
-	public AbstractStringCodeList(StringDomainSubset<?> parent, String name, Function<Set<String>, AbstractStringCodeList> andThen)
+	public AbstractStringCodeList(StringDomainSubset<?> parent, String name, SerFunction<Set<String>, AbstractStringCodeList> andThen)
 	{
 		this.name = name;
 		this.parent = parent;

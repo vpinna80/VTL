@@ -27,7 +27,7 @@
            https://raw.githubusercontent.com/apache/logging-log4j2/master/log4j-core/src/main/resources/Log4j-config.xsd">
                
 	<Appenders>
-		<Appender name="RCONSOLE" type="Console" follow="true">
+		<Appender name="RCONSOLE" type="Console" follow="true" target="SYSTEM_ERR">
 			<Layout type="PatternLayout">
 			 	<Pattern>%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n</Pattern>
 			 </Layout>

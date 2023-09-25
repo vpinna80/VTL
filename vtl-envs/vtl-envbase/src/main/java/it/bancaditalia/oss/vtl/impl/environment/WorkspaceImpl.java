@@ -75,19 +75,17 @@ public class WorkspaceImpl implements Workspace
 		return Optional.ofNullable(rules.get(normalize(alias)));
 	}
 
-
 	private static String normalize(String alias)
 	{
 		String normalizedAlias = alias;
 		Matcher m;
 		if ((m = QUOTED_ID.matcher(alias)).matches())
-		{
 			normalizedAlias = m.replaceAll("$1");
-			LOGGER.info("Using unquoted alias {}", normalizedAlias);
-		} else if ((m = UNQUOTED_ID.matcher(alias)).matches()) {
+		else if ((m = UNQUOTED_ID.matcher(alias)).matches()) {
 			normalizedAlias = alias.toLowerCase();
 			LOGGER.info("Using lowercase alias {}", normalizedAlias);
 		}
+		
 		return normalizedAlias;
 	}
 }

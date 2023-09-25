@@ -22,15 +22,11 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -44,8 +40,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -55,7 +49,6 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -111,31 +104,16 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		SerCollector<DataPoint, ?, SimpleEntry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>>> reducer = aggregation.getReducer(((DataSetMetadata) metadata).getComponents(Measure.class));
+		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(((DataSetMetadata) metadata).getComponents(Measure.class));
 
-//		if (groupingClause == null)
-//			try (Stream<DataPoint> stream = dataset.stream())
-//			{
-//				Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>> result = stream.collect(reducer);
-//				if (operand == null && result.getValue().size() == 1)
-//					return result.getValue().values().iterator().next();
-//
-//				return new StreamWrapperDataSet((DataSetMetadata) metadata, () -> Stream.of(new DataPointBuilder()
-//						.addAll(result.getValue())
-//						.build(LineageNode.of(this, result.getKey()), (DataSetMetadata) metadata)));
-//			}
-//		else
-		{
-			Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
-			
-			// dataset-level aggregation
-			return dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (result, keyValues) -> {
-				Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>> source = (Entry<Lineage, Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>>>) result;
-					return new DataPointBuilder(keyValues)
-						.addAll(source.getValue())
-						.build(LineageNode.of(this, source.getKey()), (DataSetMetadata) metadata);
-				});
-		}
+		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
+		
+		// dataset-level aggregation
+		return dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (dp, keyValues) -> {
+				return new DataPointBuilder(keyValues)
+					.addAll(dp)
+					.build(dp.getLineage(), (DataSetMetadata) metadata);
+			});
 	}
 
 	@Override
@@ -155,15 +133,11 @@ public class AggregateTransformation extends UnaryTransformation
 				if (measures.isEmpty())
 					throw new VTLExpectedComponentException(Measure.class, dataset);
 				
-				for (DataStructureComponent<? extends Measure, ?, ?> measure: measures)
-					if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
-						throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, measure.getDomain());
-				
 				if (operand != null)
 					return new DataStructureBuilder(measures).build();
 				
 				if (measures.size() == 1)
-					return NUMBER;
+					return measures.iterator().next().getMetadata();
 				else
 					return new DataStructureBuilder(measures).build();
 			}

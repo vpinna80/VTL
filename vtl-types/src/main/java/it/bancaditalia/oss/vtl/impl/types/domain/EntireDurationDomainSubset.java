@@ -71,9 +71,15 @@ public class EntireDurationDomainSubset implements DurationDomainSubset<EntireDu
 	}
 	
 	@Override
+	public String getName()
+	{
+		return "duration";
+	}
+	
+	@Override
 	public String toString()
 	{
-		return "Duration";
+		return "duration";
 	}
 	
 	@Override

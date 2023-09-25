@@ -39,11 +39,6 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 		super(BOOLEANDS, "boolean_var");
 	}
 	
-	@Override
-	public String toString()
-	{
-		return "boolean";
-	}
 	
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
@@ -62,5 +57,11 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 			return BooleanValue.of(((NumberValue<?, ?, ?, ?>) value).get().doubleValue() <= 1e-300);
 		else
 			throw new VTLCastException(BOOLEANDS, value);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "boolean";
 	}
 }

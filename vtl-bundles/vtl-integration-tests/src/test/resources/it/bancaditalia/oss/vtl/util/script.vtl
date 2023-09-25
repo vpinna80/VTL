@@ -17,12 +17,15 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-dsi:='spark:csv:D:\Dati\enrichedObservation.csv';
 
-filled := fill_time_series(dsi, single);
-
-d1 := lag(filled, 1 over (partition by mkmvid order by edfdate))[filter currency <> ""];
-
-ds_u := union(dsi, d1);
-
-ds_r := setdiff(ds_u, dsi)[calc attribute quality_status := "FILLED"];
+'spark:parquet:d:\dati\EXR.parquet' <- 'ECB:EXR(1.0)/D..EUR.SP00.A';
+/* 
+b := max('spark:parquet:d:\dati\EXR.parquet'[filter not isnull(obs_value)] group by currency);
+d := 'spark:parquet:d:\dati\EXR.parquet'
+     [keep obs_value];
+c := d[calc
+		value_avg := avg(obs_value over(partition by currency order by 'time_period' data points between 1 preceding and 1 following)),
+		value_max := max(obs_value over(partition by currency order by 'time_period' data points between 1 preceding and 1 following)),
+		value_min := min(obs_value over(partition by currency order by 'time_period' data points between 1 preceding and 1 following))
+      ];
+*/

@@ -51,8 +51,8 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public enum AnalyticOperator  
 {
 	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::of)),
-	SUM("sum", collectingAndThen(summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)), 
-	AVG("avg", collectingAndThen(averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue()), DoubleValue::of)),
+	SUM("sum", collectingAndThen(filtering(v -> !(v instanceof NullValue), summingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue())), DoubleValue::of)), 
+	AVG("avg", collectingAndThen(filtering(v -> !(v instanceof NullValue), averagingDouble(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue())), DoubleValue::of)),
 	MEDIAN("median", collectingAndThen(mapping(NumberValue.class::cast, mapping(NumberValue::get, mapping(Number.class::cast, mapping(Number::doubleValue, 
 			toList())))), l -> {
 				List<Double> c = new ArrayList<>(l);
@@ -60,8 +60,8 @@ public enum AnalyticOperator
 				int s = c.size();
 				return DoubleValue.of(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
 			})),
-	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), v -> v.orElse(NullValue.instance(NULLDS)))),
-	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), v -> v.orElse(NullValue.instance(NULLDS)))),
+	MIN("min", collectingAndThen(filtering(v -> !(v instanceof NullValue), minBy(ScalarValue::compareTo)), v -> v.orElse(NullValue.instance(NULLDS)))),
+	MAX("max", collectingAndThen(filtering(v -> !(v instanceof NullValue), maxBy(ScalarValue::compareTo)), v -> v.orElse(NullValue.instance(NULLDS)))),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	VAR_POP("var_pop", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), SerCollector.of(
 	        () -> new double[3],

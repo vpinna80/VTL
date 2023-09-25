@@ -45,7 +45,6 @@ import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toData
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static org.mockito.Mockito.mock;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -56,6 +55,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -73,6 +74,7 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum SampleDataSets implements DataSet
@@ -132,6 +134,25 @@ public enum SampleDataSets implements DataSet
 				}));
 	}
 
+	@Override
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues)
+	{
+		DataSetMetadata newMetadata = new DataStructureBuilder(dataset.getMetadata()).removeComponents(keyValues.keySet()).build();
+		
+		return new AbstractDataSet(newMetadata)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return dataset.stream()
+						.filter(dp -> dp.matches(keyValues))
+						.map(dp -> new DataPointBuilder(dp).delete(keyValues.keySet()).build(LineageNode.of("SUB" + keyValues, dp.getLineage()), newMetadata));
+			}
+		};
+}
+	
 	public static DataSet getCustomSample(String domain, int level)
 	{
 		return createSample(new SampleVariables[] { IDENT_STRING_1, SampleVariables.valueOf("MEASURE_" + domain + "_" + level) });
@@ -169,10 +190,9 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public DataSet filter(SerPredicate<DataPoint> predicate,
-			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
+	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOperator)
 	{
-		return dataset.filter(predicate, DataPoint::getLineage);
+		return dataset.filter(predicate, lineageOperator);
 	}
 	
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
@@ -190,9 +210,9 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public <TT extends Serializable> DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			SerCollector<DataPoint, ?, TT> groupCollector,
-			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
+	public DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+			SerCollector<DataPoint, ?, DataPoint> groupCollector,
+			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{
 		return dataset.aggr(structure, keys, groupCollector, finisher);
 	}

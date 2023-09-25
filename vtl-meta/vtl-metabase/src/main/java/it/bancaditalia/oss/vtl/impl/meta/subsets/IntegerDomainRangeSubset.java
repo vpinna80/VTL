@@ -108,8 +108,14 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 	}
 	
 	@Override
+	public String getName()
+	{
+		return name + "{" + minInclusive + "," + maxInclusive + "}";
+	}
+	
+	@Override
 	public String toString()
 	{
-		return name + "(" + parent + "{" + minInclusive + "," + maxInclusive + "})";
+		return name + ":" + parent.getName();
 	}
 }

@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation.ExistsInMode.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation.ExistsInMode.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -110,7 +111,7 @@ public class ExistsInTransformation extends BinaryTransformation
 					return map;
 				};
 			
-		return left.filter(filter, DataPoint::getLineage).mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), mapper);
+		return left.filter(filter, identity()).mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), mapper);
 	}
 
 	@Override

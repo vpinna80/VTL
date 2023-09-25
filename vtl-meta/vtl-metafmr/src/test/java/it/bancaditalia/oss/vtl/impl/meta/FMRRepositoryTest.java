@@ -46,6 +46,8 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import org.xml.sax.SAXException;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository;
+import it.bancaditalia.oss.vtl.impl.meta.fmr.LazyCodeList;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList.StringCodeItemImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;

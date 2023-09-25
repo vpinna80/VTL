@@ -1,5 +1,4 @@
 /*
- * Copyright © 2020 Banca D'Italia
  *
  * Licensed under the EUPL, Version 1.2 (the "License");
  * You may not use this work except in compliance with the
@@ -20,6 +19,7 @@
 package it.bancaditalia.oss.vtl.impl.session;
 
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -243,8 +243,8 @@ public class VTLSessionImpl implements VTLSession
 
 		Optional<T> maybeResult = environments.stream()
 				.map(env -> new SimpleEntry<>(env, mapper.apply(env, alias)))
-				.filter(Utils.entryByValue(Optional::isPresent))
-				.map(Utils.keepingKey(Optional::get))
+				.filter(entryByValue(Optional::isPresent))
+				.map(keepingKey(Optional::get))
 				.findAny()
 				.map(e -> {
 					LOGGER.info("{} is bound to {}", alias, e.getKey().getClass().getSimpleName());

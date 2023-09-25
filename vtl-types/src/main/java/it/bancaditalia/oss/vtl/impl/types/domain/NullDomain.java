@@ -74,4 +74,10 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	{
 		return NullValue.instance(this);
 	}
+	
+	@Override
+	public String getName()
+	{
+		throw new UnsupportedOperationException();
+	}
 }

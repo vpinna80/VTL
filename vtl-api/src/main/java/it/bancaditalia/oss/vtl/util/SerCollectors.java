@@ -162,21 +162,7 @@ public class SerCollectors
 
     public static <T> SerCollector<T, ?, T[]> toArray(T[] result)
     {
-    	class ArrayHolder
-    	{
-    		volatile int index;
-    		
-    		private void accumulate(T v)
-			{
-    			result[index++] = v;
-			}
-
-    		private ArrayHolder merge(ArrayHolder other)
-			{
-    			throw new UnsupportedOperationException();
-			}
-    	}
-        return new SerCollector<>(ArrayHolder::new, ArrayHolder::accumulate, ArrayHolder::merge, acc -> result, EnumSet.of(CONCURRENT));
+        return new SerCollector<>(() -> new ArrayHolder<T>(result), ArrayHolder::accumulate, ArrayHolder::merge, acc -> result, EnumSet.of(CONCURRENT));
     }
 
 	public static <T, A, R> SerCollector<T, A, R> filtering(SerPredicate<? super T> predicate, SerCollector<? super T, A, R> downstream)
@@ -199,12 +185,12 @@ public class SerCollectors
 		return new SerCollector<>(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
 	}
 
-    public static <T extends Serializable> SerCollector<T, ?, Optional<T>> minBy(Comparator<? super T> comparator)
+    public static <T extends Serializable, C extends Comparator<? super T> & Serializable> SerCollector<T, ?, Optional<T>> minBy(C comparator)
     {
         return reducing(SerBinaryOperator.minBy(comparator));
     }
 
-    public static <T extends Serializable> SerCollector<T, ?, Optional<T>> maxBy(Comparator<? super T> comparator)
+    public static <T extends Serializable, C extends Comparator<? super T> & Serializable> SerCollector<T, ?, Optional<T>> maxBy(C comparator)
     {
         return reducing(SerBinaryOperator.maxBy(comparator));
     }
@@ -282,7 +268,7 @@ public class SerCollectors
         return SerCollector.of(() -> new PairBox<>(downstream1, downstream2, merger), PairBox::accumulate, PairBox::combine, PairBox::finish, characteristics);
     }
 
-    static class PairBox<T, A1, A2, R1, R2, R>
+    private static class PairBox<T, A1, A2, R1, R2, R>
     {
         A1 a1;
         A2 a2;
@@ -299,20 +285,20 @@ public class SerCollectors
             a2 = downstream2.supplier().get();
 		}
 
-        void accumulate(T t)
+        public void accumulate(T t)
         {
         	downstream1.accumulator().accept(a1, t);
         	downstream2.accumulator().accept(a2, t);
         }
 
-        PairBox<T, A1, A2, R1, R2, R> combine(PairBox<T, A1, A2, R1, R2, R> other)
+        public PairBox<T, A1, A2, R1, R2, R> combine(PairBox<T, A1, A2, R1, R2, R> other)
         {
             a1 = downstream1.combiner().apply(a1, other.a1);
             a2 = downstream2.combiner().apply(a2, other.a2);
             return this;
         }
 
-        R finish()
+        public R finish()
         {
             R1 r1 = downstream1.finisher().apply(a1);
             R2 r2 = downstream2.finisher().apply(a2);
@@ -430,5 +416,33 @@ public class SerCollectors
 	public static <U, V> SerCollector<Entry<? extends U, ? extends V>, ?, ConcurrentMap<U, V>> entriesToMap()
 	{
 		return toConcurrentMap(Entry::getKey, Entry::getValue);
+	}
+
+	public static <U, V, M extends Map<U, V> & Serializable> SerCollector<Entry<? extends U, ? extends V>, ?, M> entriesToMap(SerSupplier<M> mapSupplier, EnumSet<Characteristics> characteristics)
+	{
+        return SerCollector.of(mapSupplier::get, throwingPutter(Entry::getKey, Entry::getValue), throwingMerger(), characteristics);
+	}
+
+	private static class ArrayHolder<T> implements Serializable
+	{
+		private static final long serialVersionUID = 1L;
+		
+		private final T[] result;
+		private transient volatile int index;
+		
+		public ArrayHolder(T[] result)
+		{
+			this.result = result;
+		}
+		
+		public void accumulate(T v)
+		{
+			result[index++] = v;
+		}
+
+		public ArrayHolder<T> merge(ArrayHolder<T> other)
+		{
+			throw new UnsupportedOperationException();
+		}
 	}
 }
