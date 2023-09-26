@@ -104,10 +104,12 @@ public class AggregateTransformationTest
 		
 		DataPoint dp = dataset.stream().findAny().get();
 		Number value = ((Number) dp.values().iterator().next().get());
-		if (operator != AVG)
-			assertEquals(result.getClass(), value.getClass(), "Integer preserved");
-		else
+		if (operator == COUNT)
+			assertEquals(Long.class, value.getClass(), "Count is always long");
+		else if (operator == AVG)
 			assertEquals(Double.class, value.getClass(), "Average is always double");
+		else
+			assertEquals(result.getClass(), value.getClass(), "Integer preserved");
 		
 		if (value instanceof Double)
 			assertEquals(result.doubleValue(), value.doubleValue(), 0.00001, "Result of " + operator);

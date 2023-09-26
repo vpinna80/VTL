@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT_MEASURE;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_POP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
@@ -136,13 +137,11 @@ public class AggregateTransformation extends UnaryTransformation
 					throw new VTLExpectedComponentException(Measure.class, dataset);
 
 				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = measures;
-				if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
+				if (aggregation == COUNT)
+					newMeasures = COUNT_MEASURE;
+				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newMeasures = newMeasures.stream()
 						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? DataStructureComponentImpl.of(c.getName(), Measure.class, NUMBERDS) : c)
-						.collect(toSet());
-				else if (aggregation == COUNT)
-					newMeasures = newMeasures.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? c : DataStructureComponentImpl.of(c.getName(), Measure.class, INTEGERDS))
 						.collect(toSet());
 
 				if (operand != null)
@@ -164,13 +163,11 @@ public class AggregateTransformation extends UnaryTransformation
 				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.asRole(Identifier.class)).collect(toSet()));
 				
 				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = dataset.getComponents(Measure.class);
-				if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
+				if (aggregation == COUNT)
+					newMeasures = COUNT_MEASURE;
+				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newMeasures = newMeasures.stream()
 						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? DataStructureComponentImpl.of(c.getName(), Measure.class, NUMBERDS) : c)
-						.collect(toSet());
-				else if (aggregation == COUNT)
-					newMeasures = newMeasures.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? c : DataStructureComponentImpl.of(c.getName(), Measure.class, INTEGERDS))
 						.collect(toSet());
 
 				builder = builder.addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newMeasures);

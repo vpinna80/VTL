@@ -64,7 +64,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -74,7 +73,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.util.SerBiConsumer;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
@@ -136,12 +134,13 @@ public enum AggregateOperator
 	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get()))));
 
+	public static final Set<DataStructureComponent<Measure, ?, ?>> COUNT_MEASURE = singleton(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS));
+	private static final SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> flagMap = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
+
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
 	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
-	public static final Set<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> COUNT_MEASURE = singleton(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS));
 
-	private static SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> flagMap = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
 
 	
 	private static class CombinedAccumulator implements Serializable
@@ -205,7 +204,7 @@ public enum AggregateOperator
 		// Special collector for COUNT that collects all measures into one
 		if (this == COUNT)
 		{
-			DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> measure = COUNT_MEASURE.iterator().next();
+			DataStructureComponent<Measure, ?, ?> measure = COUNT_MEASURE.iterator().next();
 			DataSetMetadata structure = new DataStructureBuilder(COUNT_MEASURE).build();
 			return collectingAndThen(counting(), c -> {
 				return new DataPointBuilder()
