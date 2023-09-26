@@ -21,10 +21,12 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -56,7 +58,10 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
-				.collect(toConcurrentMap(e -> operand.getComponent(e.getKey()).get().asRole(Identifier.class), Entry::getValue));
+				.map(keepingValue(DataStructureComponent::normalizeAlias))
+				.map(keepingValue(operand::getComponent))
+				.map(keepingValue(Optional::get))
+				.collect(toConcurrentMap(e -> e.getKey().asRole(Identifier.class), Entry::getValue));
 		
 		return operand.subspace(subspaceKeyValues);
 	}
@@ -71,13 +76,16 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata dataset = (DataSetMetadata) operand;
 		
 		Set<String> missing = subspace.keySet().stream()
+				.map(DataStructureComponent::normalizeAlias)
 				.filter(name -> !dataset.getComponent(name, Identifier.class).isPresent())
 				.collect(toSet());
 		
 		if (missing.size() > 0)
 			throw new VTLMissingComponentsException(missing, dataset);
 
-		return dataset.subspace(subspace.keySet().stream().map(name -> dataset.getComponent(name, Identifier.class).get()).collect(toSet()));
+		Set<DataStructureComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "partition by");
+		
+		return dataset.subspace(keyValues);
 	}
 	
 	@Override

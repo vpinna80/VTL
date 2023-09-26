@@ -1,4 +1,4 @@
-$Id_1=String,$Year=Number,bool_var=Boolean
+$id_1=String,$year=Number,bool_var=Boolean
 A,1999,TRUE
 B,2000,TRUE
 A,2001,FALSE

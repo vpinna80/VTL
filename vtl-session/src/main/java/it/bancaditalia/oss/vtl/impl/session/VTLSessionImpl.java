@@ -1,4 +1,23 @@
 /*
+ * Copyright © 2020 Banca D'Italia
+ *
+ * Licensed under the EUPL, Version 1.2 (the "License");
+ * You may not use this work except in compliance with the
+ * License.
+ * You may obtain a copy of the License at:
+ *
+ * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the License is
+ * distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied.
+ *
+ * See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+/*
  *
  * Licensed under the EUPL, Version 1.2 (the "License");
  * You may not use this work except in compliance with the
@@ -18,6 +37,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.session;
 
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static java.util.stream.Collectors.joining;
@@ -334,14 +354,6 @@ public class VTLSessionImpl implements VTLSession
 		final String normalizedAlias = normalizeAlias(alias);
 
 		return workspace.getRule(normalizedAlias).orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias));
-	}
-
-	private static String normalizeAlias(String alias)
-	{
-		if (alias.matches("'.*'"))
-			return alias.replaceAll("'(.*)'", "$1");
-		else
-			return alias.toLowerCase();
 	}
 
 	@Override

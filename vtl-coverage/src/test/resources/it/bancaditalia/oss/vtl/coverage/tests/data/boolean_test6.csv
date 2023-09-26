@@ -1,4 +1,4 @@
-$Id_1=String,$Id_2=Number,$Id_3=String,$Id_4=Number,Me_1=Boolean,Me_2=Boolean
+$id_1=String,$id_2=Number,$id_3=String,$id_4=Number,me_1=Boolean,me_2=Boolean
 M,15,B,2013,FALSE,TRUE
 M,64,B,2013,FALSE,FALSE
 M,65,B,2013,FALSE,

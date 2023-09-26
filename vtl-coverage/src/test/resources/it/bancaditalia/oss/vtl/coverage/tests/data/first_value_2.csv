@@ -1,4 +1,4 @@
-$Id_1=String,$Id_2=String,$Id_3=Date[YYYY-MM-DD],Me_1=Number,Me_2=Number,Me_3=Number
+$id_1=String,$id_2=String,$id_3=Date[YYYY-MM-DD],me_1=Number,me_2=Number,me_3=Number
 A,XX,2000-01-01,3,1,3
 A,XX,2001-01-01,4,9,3
 A,XX,2002-01-01,7,5,3

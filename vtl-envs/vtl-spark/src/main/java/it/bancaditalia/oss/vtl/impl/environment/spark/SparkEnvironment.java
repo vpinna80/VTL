@@ -142,6 +142,7 @@ public class SparkEnvironment implements Environment
 			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
 			  .set("spark.sql.datetime.java8API.enabled", "true")
 			  .set("spark.sql.catalyst.dateType", "Instant")
+//			  .set("spark.sql.caseSensitive", "true")
 			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());

@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
+
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
@@ -27,6 +29,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -62,32 +65,32 @@ public class ThisScope extends AbstractScope
 	}
 	
 	@Override
-	public VTLValueMetadata getMetadata(String node)
+	public VTLValueMetadata getMetadata(String alias)
 	{
-		if (THIS.equals(node))
+		if (THIS.equals(alias))
 			return thisMetadata;
 		else
 		{
-			final String stripped = node.matches("'.*'") ? node.replaceAll("'(.*)'", "$1") : node.toLowerCase();
-			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(stripped).isPresent())
-				return ((DataSetMetadata) thisMetadata).membership(stripped);
+			final String normalizedAlias = normalizeAlias(alias);
+			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(normalizedAlias).isPresent())
+				return ((DataSetMetadata) thisMetadata).membership(normalizedAlias);
 			else 
-				throw new VTLMissingComponentsException(stripped, (DataSetMetadata) thisMetadata);
+				throw new VTLMissingComponentsException(alias, (DataSetMetadata) thisMetadata);
 		}
 	}
 
 	@Override
-	public VTLValue resolve(String node)
+	public VTLValue resolve(String alias)
 	{
-		if (THIS.equals(node))
+		if (THIS.equals(alias))
 			return thisValue;
 		else 
 		{
-			final String stripped = node.matches("'.*'") ? node.replaceAll("'(.*)'", "$1") : node.toLowerCase();
-			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(node).isPresent())
-				return ((DataSet) thisValue).membership(stripped, thisLineage);
+			final String normalizedAlias = DataStructureComponent.normalizeAlias(alias);
+			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(normalizedAlias).isPresent())
+				return ((DataSet) thisValue).membership(normalizedAlias, thisLineage);
 			else 
-				throw new VTLMissingComponentsException(stripped, thisMetadata);
+				throw new VTLMissingComponentsException(normalizedAlias, thisMetadata);
 		}
 	}
 

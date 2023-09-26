@@ -60,14 +60,14 @@ public class AggregateTransformationTest
 				Arguments.of(SUM, SAMPLE6,  141L),
 				Arguments.of(SUM, SAMPLE16, NaN),
 				Arguments.of(SUM, SAMPLE17, 70.9),
-				Arguments.of(AVG, SAMPLE5,  13L),
-				Arguments.of(AVG, SAMPLE6,  23L),
+				Arguments.of(AVG, SAMPLE5,  13.8),
+				Arguments.of(AVG, SAMPLE6,  23.5),
 				Arguments.of(AVG, SAMPLE16, NaN),
 				Arguments.of(AVG, SAMPLE17, 14.18),
 				Arguments.of(MEDIAN, SAMPLE5,  14L),
 				Arguments.of(MEDIAN, SAMPLE6,  24L),
-				Arguments.of(MEDIAN, SAMPLE16, 4.4),
-				Arguments.of(MEDIAN, SAMPLE17, 14.95),
+				Arguments.of(MEDIAN, SAMPLE16, 3.3),
+				Arguments.of(MEDIAN, SAMPLE17, 14.4),
 				Arguments.of(MIN, SAMPLE5,  11L),
 				Arguments.of(MIN, SAMPLE6,  21L),
 				Arguments.of(MIN, SAMPLE16, 1.1),
@@ -104,7 +104,11 @@ public class AggregateTransformationTest
 		
 		DataPoint dp = dataset.stream().findAny().get();
 		Number value = ((Number) dp.values().iterator().next().get());
-		assertEquals(result.getClass(), value.getClass(), "Integer preserved");
+		if (operator != AVG)
+			assertEquals(result.getClass(), value.getClass(), "Integer preserved");
+		else
+			assertEquals(Double.class, value.getClass(), "Average is always double");
+		
 		if (value instanceof Double)
 			assertEquals(result.doubleValue(), value.doubleValue(), 0.00001, "Result of " + operator);
 		else

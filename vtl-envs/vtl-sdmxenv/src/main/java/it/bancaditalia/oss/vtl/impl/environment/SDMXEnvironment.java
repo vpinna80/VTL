@@ -296,16 +296,14 @@ public class SDMXEnvironment implements Environment, Serializable
 				if (i >= dims.length || dims[i].isEmpty() || dims[i].indexOf('+') >= 0)
 				{
 					KeyValue k = keys.get(i);
-					String normalizedDimName = '\'' + k.getConcept() + '\'';
-					DataStructureComponent<Identifier, ?, ?> dim = structure.getComponent(normalizedDimName, Identifier.class)
-							.orElseThrow(() -> new NoSuchElementException(normalizedDimName));
+					DataStructureComponent<Identifier, ?, ?> dim = structure.getComponent(k.getConcept(), Identifier.class)
+							.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
 						dmap.put(dim, dim.cast(StringValue.of(k.getCode())));
 				}
 			for (KeyValue k: dre.getCurrentKey().getAttributes())
 			{
-				String normalizedAttrName = '\'' + k.getConcept() + '\'';
-				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(normalizedAttrName, Attribute.class)
-						.orElseThrow(() -> new NoSuchElementException(normalizedAttrName));
+				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(k.getConcept(), Attribute.class)
+						.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
 					dmap.put(attr, attr.cast(StringValue.of(k.getCode())));
 			}
 		}
@@ -327,8 +325,7 @@ public class SDMXEnvironment implements Environment, Serializable
 			
 			for (KeyValue a: obs.getAttributes())
 			{
-				String normalizedAttrName = '\'' + a.getConcept() + '\'';
-				DataStructureComponent<?, ?, ?> c = structure.getComponent(normalizedAttrName).get();
+				DataStructureComponent<?, ?, ?> c = structure.getComponent(a.getConcept()).get();
 				builder.add(c, c.cast(StringValue.of(a.getCode())));
 			}
 			

@@ -19,14 +19,17 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -49,7 +52,10 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	
 	public RenameClauseTransformation(Map<String, String> renames)
 	{
-		this.renames = renames;
+		this.renames = renames.entrySet().stream()
+				.map(keepingKey(DataStructureComponent::normalizeAlias))
+				.map(keepingValue(DataStructureComponent::normalizeAlias))
+				.collect(entriesToMap());
 	}
 
 	@Override
@@ -60,10 +66,10 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata oldStructure = operand.getMetadata();
 		
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
-				.collect(Collectors.toMap(name -> name, name -> oldStructure.getComponent(name).get()));
+				.collect(toMap(name -> name, name -> oldStructure.getComponent(name).get()));
 
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> newComponents = renames.values().stream()
-				.collect(Collectors.toMap(name -> name, name -> metadata.getComponent(name).get()));
+				.collect(toMap(name -> name, name -> metadata.getComponent(name).get()));
 
 		return new FunctionDataSet<>(metadata, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
@@ -89,13 +95,14 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		
 		for (Entry<String, String> rename: renames.entrySet())
 		{
-			DataStructureComponent<?, ?, ?> componentFrom = dataset.getComponent(rename.getKey())
-					.orElseThrow(() -> new VTLMissingComponentsException(rename.getKey(), dataset));
+			String alias = rename.getKey();
+			DataStructureComponent<?, ?, ?> componentFrom = dataset.getComponent(alias)
+					.orElseThrow(() -> new VTLMissingComponentsException(alias, dataset));
 			
 			if (accumulator.contains(rename.getValue()))
 				throw new VTLException("rename from " + componentFrom + " cannot override existing component " + dataset.getComponent(rename.getValue()));
 				
-			accumulator = accumulator.rename(componentFrom, rename.getValue());
+			accumulator = accumulator.rename(componentFrom, normalizeAlias(rename.getValue()));
 		}
 		
 		return accumulator;

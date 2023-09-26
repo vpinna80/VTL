@@ -1,4 +1,4 @@
-$TIME_PERIOD=Number,Num_1=Number,Num_2=Number
+$time_period=Number,num_1=Number,num_2=Number
 1999,3.584962501,-9.965784285
 2000,1.584962501,-0.000144277
 2001,,3.326249701

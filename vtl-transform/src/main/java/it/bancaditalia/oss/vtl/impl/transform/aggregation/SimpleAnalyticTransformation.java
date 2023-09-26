@@ -20,13 +20,16 @@
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
+import static it.bancaditalia.oss.vtl.util.Utils.splitting;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 
@@ -39,7 +42,6 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
@@ -60,7 +62,6 @@ import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SimpleAnalyticTransformation extends UnaryTransformation implements AnalyticTransformation
 {
@@ -98,20 +99,15 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.collect(toList());
 		else
 			ordering = orderByClause.stream()
-				.map(item -> new SortClause(dataset.getComponent(item.getName()).get(), item.getMethod()))
+				.map(toEntry(OrderByItem::getName, OrderByItem::getMethod))
+				.map(keepingValue(DataStructureComponent::normalizeAlias))
+				.map(keepingValue(dataset::getComponent))
+				.map(keepingValue(Optional::get))
+				.map(splitting(SortClause::new))
 				.collect(toList());
 
-		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
-		if (partitionBy != null)
-			partitionIDs = partitionBy.stream()
-				.map(dataset::getComponent)
-				.map(Optional::get)
-				.map(c -> c.asRole(Identifier.class))
-				.collect(toSet());
-		else
-			partitionIDs = Utils.getStream(dataset.getComponents(Identifier.class))
-					.filter(id -> !ordering.stream().anyMatch(oc -> oc.getComponent().equals(id)))
-					.collect(toSet());
+		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
+		partitionIDs.removeAll(ordering.stream().map(SortCriterion::getComponent).collect(toSet()));
 		
 		for (DataStructureComponent<?, ?, ?> orderingComponent: ordering.stream().map(SortCriterion::getComponent).collect(toSet()))
 			if (partitionIDs.contains(orderingComponent))
@@ -128,7 +124,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	@Override
 	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
-		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
+		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session);
 		if (opmeta instanceof ScalarValueMetadata)
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
 		
@@ -137,20 +133,19 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)
 		{
-			Optional<DataStructureComponent<?, ?, ?>> component = dataset.getComponent(orderByComponent.getName());
+			String normalizedAlias = normalizeAlias(orderByComponent.getName());
+			Optional<DataStructureComponent<?, ?, ?>> component = dataset.getComponent(normalizedAlias);
 			if (component.isEmpty())
-				throw new VTLMissingComponentsException(orderByComponent.getName(), dataset);
+			{
+				throw new VTLMissingComponentsException(normalizedAlias, dataset);
+			}
 			ordering.put(component.get(), DESC != orderByComponent.getMethod());
 		}
 
-		if (partitionBy != null)
-			partitionBy.stream()
-				.map(toEntryWithValue(dataset::getComponent))
-				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
-				.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
-				.peek(c -> { if (ordering.containsKey(c)) throw new VTLException("Partitioning component " + c + " cannot be used in order by"); })
-				.map(c -> c.asRole(Identifier.class))
-				.collect(toSet());
+		Set<DataStructureComponent<Identifier,?,?>> partitionComponents = dataset.matchIdComponents(partitionBy, "partition by");
+		partitionComponents.retainAll(ordering.keySet());
+		if (!partitionComponents.isEmpty())
+			throw new VTLException("Partitioning components " + partitionComponents + " cannot be used in order by");
 		
 		return dataset;
 	}

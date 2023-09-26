@@ -399,7 +399,6 @@ shinyServer(function(input, output, session) {
         trace <- writer$toString()
         msg <- e$jobj$getLocalizedMessage()
       }
-      browser()
       shinyjs::html("vtl_output", paste0('<span style="color: red">Error during compilation: ', 
         msg, '\n', if (is.null(trace)) '' else trace, '\n</span>')
       )

@@ -19,14 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-import static java.util.stream.Collectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -142,56 +142,6 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	}
 
 	/**
-	 * Queries this {@link DataSetMetadata} for components with the specified names.
-	 *
-	 * The returned set should not be altered in any way.
-	 * 
-	 * @param names the names to query
-	 * @return a set containing the existing components.
-	 * @throws VTLMissingComponentsException if one of the names isn't found.
-	 */
-	public default Set<DataStructureComponent<?, ?, ?>> getComponents(String... names)
-	{
-		return Arrays.stream(names)
-				.map(this::getComponent)
-				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException(this, names)))
-				.collect(toSet());
-	}
-
-	/**
-	 * Queries this {@link DataSetMetadata} for components with the specified names.
-	 *
-	 * The returned set should not be altered in any way.
-	 * 
-	 * @param names the names to query
-	 * @return a set containing the existing components.
-	 * @throws VTLMissingComponentsException if one of the names isn't found.
-	 */
-	public default Set<DataStructureComponent<?, ?, ?>> getComponents(Collection<String> names)
-	{
-		return getComponents(names.toArray(new String[0]));
-	}
-
-	/**
-	 * Queries this {@link DataSetMetadata} for components having the specified role and matching each of the specified names.
-	 *
-	 * The returned set should not be altered in any way.
-	 * 
-	 * @param <R> the role type
-	 * @param names the names to query
-	 * @param role the role to query
-	 * @return a set containing the existing components.
-	 * @throws VTLMissingComponentsException if one of the names isn't found.
-	 */
-	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Collection<String> names, Class<R> role)
-	{
-		return getComponents(names.toArray(new String[0])).stream()
-				.filter(c -> c.is(role))
-				.map(c -> c.asRole(role))
-				.collect(toSet());
-	}
-
-	/**
 	 * Creates a new structure subspacing this structure over the provided identifiers.
 	 * 
 	 * @param subspace the identifiers that must be subspaced
@@ -252,4 +202,19 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @return the new structure.
 	 */
 	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?>, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
+
+	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends String> names, String operation)
+	{
+		if (names == null || names.isEmpty())
+			return getComponents(Identifier.class);
+		
+		return names.stream()
+			.map(DataStructureComponent::normalizeAlias)
+			.peek(n -> { if (!contains(n)) throw new VTLMissingComponentsException(n, this); })
+			.map(this::getComponent)
+			.map(Optional::get)
+			.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException(operation, c, Identifier.class); })
+			.map(c -> c.asRole(Identifier.class))
+			.collect(toSet());
+	}
 }

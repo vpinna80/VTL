@@ -268,11 +268,13 @@ public class SerCollectors
         return SerCollector.of(() -> new PairBox<>(downstream1, downstream2, merger), PairBox::accumulate, PairBox::combine, PairBox::finish, characteristics);
     }
 
-    private static class PairBox<T, A1, A2, R1, R2, R>
+    private static class PairBox<T, A1, A2, R1, R2, R> implements Serializable
     {
-        A1 a1;
+		private static final long serialVersionUID = 1L;
+		A1 a1;
         A2 a2;
-		private final SerCollector<? super T, A1, R1> downstream1;
+
+        private final SerCollector<? super T, A1, R1> downstream1;
 		private final SerCollector<? super T, A2, R2> downstream2;
 		private final SerBiFunction<? super R1, ? super R2, R> merger;
 

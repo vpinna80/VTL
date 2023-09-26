@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -29,5 +30,10 @@ public class VTLCastException extends VTLException
 	public VTLCastException(ValueDomainSubset<?, ?> domain, ScalarValue<?, ?, ?, ?> value)
 	{
 		super("Cannot cast " + value + "[" + value.getDomain() + "] to type " + domain + ".");
+	}
+
+	public VTLCastException(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
+	{
+		super("Component " + component + " cannot accept a value of " + value);
 	}
 }

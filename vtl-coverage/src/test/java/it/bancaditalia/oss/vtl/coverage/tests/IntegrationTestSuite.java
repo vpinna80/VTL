@@ -91,15 +91,23 @@ public class IntegrationTestSuite
 	@MethodSource
 	public void test(String testName, String testCode)
 	{
-		VTLSessionImpl session = new VTLSessionImpl();
-		session.addStatements(testCode);
-		session.compile();
-		VTLValue result = session.resolve("test_result");
-		if (result instanceof DataSet)
-			try (Stream<DataPoint> stream = ((DataSet) result).stream())
-			{
-				stream.forEach(dp -> System.out.print("."));
-				System.out.println();
-			}
+		try
+		{
+			VTLSessionImpl session = new VTLSessionImpl();
+			System.out.println(testCode);
+			session.addStatements(testCode);
+			session.compile();
+			VTLValue result = session.resolve("test_result");
+			if (result instanceof DataSet)
+				try (Stream<DataPoint> stream = ((DataSet) result).stream())
+				{
+					stream.forEach(dp -> System.out.print("."));
+					System.out.println();
+				}
+		}
+		catch (RuntimeException e)
+		{
+			throw new RuntimeException("Error in testName\n" + testCode + "\n\n", e);
+		}
 	}
 }

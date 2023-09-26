@@ -1,4 +1,4 @@
-$Id_1=String,$Year=Number,Me_1=Number,FREQ=String
+$id_1=String,$year=Number,me_1=Number,freq=String
 A,1999,1.065776448,A
 A,2000,0.923612549,A
 A,2001,0.895629528,A

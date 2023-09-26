@@ -19,8 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import java.util.Objects;
-
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -40,18 +38,10 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	
 	public DataStructureComponentImpl(String name, Class<R> role, S domain)
 	{
-		this.domain = Objects.requireNonNull(domain, "Domain is null");
-		this.role = Objects.requireNonNull(role, "Role is null");
-		this.name = Objects.requireNonNull(normalizeAlias(name), "Name is null");
+		this.domain = domain;
+		this.role = role;
+		this.name = name;
 		this.hashCode = hashCodeInit();
-	}
-	
-	private static String normalizeAlias(String alias)
-	{
-		if (alias.matches("'.*'"))
-			return alias.replaceAll("'(.*)'", "$1");
-		else
-			return alias.toLowerCase();
 	}
 	
 	@SuppressWarnings("unchecked")

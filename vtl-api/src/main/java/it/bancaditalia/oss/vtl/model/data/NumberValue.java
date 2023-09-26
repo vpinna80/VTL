@@ -33,8 +33,5 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
  */
 public interface NumberValue<T extends NumberValue<T, R, S, D>, R extends Number & Comparable<? super R>, S extends NumberDomainSubset<S, D>, D extends NumberDomain> extends ScalarValue<T, R, S, D> 
 {
-	public default double doubleValue()
-	{
-		return get().doubleValue();
-	}
+	
 }

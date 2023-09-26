@@ -1,4 +1,4 @@
-$Id_1=Number,$Id_2=String,$Id_3=String,Text_1=String,Text_2=String,Text_up=String,Text_low=String
+$id_1=Number,$id_2=String,$id_3=String,text_1=String,text_2=String,text_up=String,text_low=String
 2012,B,Total,"""    this is text""","""ABC def gh""","""    THIS IS TEXT""","""abc def gh"""
 2011,B,Total,"""sample ""","""  comment!!""","""SAMPLE ""","""  comment!!"""
 2012,G,Total,"""third example""","""abc ""","""THIRD EXAMPLE""","""abc """

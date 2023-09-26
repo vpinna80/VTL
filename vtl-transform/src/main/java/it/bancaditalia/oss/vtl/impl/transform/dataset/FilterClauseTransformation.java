@@ -85,7 +85,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		if (filterMetadata instanceof ScalarValueMetadata)
 		{
 			if (!BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) filterMetadata).getDomain()))
-				throw new VTLIncompatibleTypesException("FILTER", BOOLEANDS, ((ScalarValueMetadata<?, ?>) filterMetadata).getDomain());
+				throw new VTLIncompatibleTypesException("filter", BOOLEANDS, ((ScalarValueMetadata<?, ?>) filterMetadata).getDomain());
 		}
 		else
 		{
@@ -96,7 +96,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 			
 			DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
 			if (!BOOLEANDS.isAssignableFrom(measure.getDomain()))
-				throw new VTLIncompatibleTypesException("FILTER", BOOLEANDS, measure.getDomain());
+				throw new VTLIncompatibleTypesException("filter", BOOLEANDS, measure.getDomain());
 		}
 			
 		

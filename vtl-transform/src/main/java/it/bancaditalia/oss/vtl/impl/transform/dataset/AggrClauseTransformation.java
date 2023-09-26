@@ -78,7 +78,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 		public AggrClauseItem(Class<? extends ComponentRole> role, String name, AggregateTransformation operand)
 		{
-			this.name = name;
+			this.name = DataStructureComponent.normalizeAlias(name);
 			this.operand = operand;
 			this.role = role;
 		}

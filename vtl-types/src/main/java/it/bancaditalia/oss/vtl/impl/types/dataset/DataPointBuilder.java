@@ -121,7 +121,7 @@ public class DataPointBuilder implements Serializable
 	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
 	{
 		if (!component.getDomain().isAssignableFrom(value.getDomain()))
-			throw new VTLCastException(component.getDomain(), value);
+			throw new VTLCastException(component, value);
 		if (component.is(Identifier.class) && value instanceof NullValue)
 			throw new NullPointerException("Null value for identifier " + component);
 		

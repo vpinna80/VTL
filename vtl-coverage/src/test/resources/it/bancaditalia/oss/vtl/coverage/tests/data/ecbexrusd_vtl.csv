@@ -1,4 +1,4 @@
-$Id_1=String,$Year=Number,Me_1=Number,Me_2=Number,#ID=String,#OBS_STATUS=String,FREQ=String,CURRENCY=String,CURRENCY_DENOM=String,EXR_TYPE=String,EXR_SUFFIX=String,#COLLECTION=String,#UNIT=String,#SOURCE_AGENCY=String,#DECIMALS=String,#TITLE=String,#UNIT_MULT=String,#TIME_FORMAT=String
+$id_1=String,$year=Number,me_1=Number,me_2=Number,#id=String,#obs_status=String,freq=String,currency=String,currency_denom=String,exr_type=String,exr_suffix=String,#collection=String,#unit=String,#source_agency=String,#decimals=String,#title=String,#unit_mult=String,#time_format=String
 A,1999,1.065776448,80,EXR.A.USD.EUR.SP00.A,A,A,USD,EUR,SP00,A,A,USD,4F0,4,US dollar/Euro,0,P1Y
 A,2000,0.923612549,50,EXR.A.USD.EUR.SP00.A,A,A,USD,EUR,SP00,A,A,USD,4F0,4,US dollar/Euro,0,P1Y
 A,2001,0.895629528,68,EXR.A.USD.EUR.SP00.A,A,A,USD,EUR,SP00,A,A,USD,4F0,4,US dollar/Euro,0,P1Y

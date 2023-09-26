@@ -1,4 +1,4 @@
-$Id_1=Number,$Id_2=String,$Id_3=String,$Id_4=String,Me_1=Number,Isnl=Boolean
+$id_1=Number,$id_2=String,$id_3=String,$id_4=String,me_1=Number,isnl=Boolean
 2012,S,Total,F,4.2,FALSE
 2012,F,Total,F,5,FALSE
 2012,I,Total,F,null,TRUE

@@ -23,9 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.SUM;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
@@ -33,15 +31,12 @@ import static java.util.stream.Collectors.joining;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
@@ -88,15 +83,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
-		if (partitionBy != null)
-			partitionIDs = partitionBy.stream()
-				.map(dataset::getComponent)
-				.map(Optional::get)
-				.map(c -> c.asRole(Identifier.class))
-				.collect(toSet());
-		else
-			partitionIDs = dataset.getComponents(Identifier.class);
+		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
 		
 		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		
@@ -125,12 +112,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		
 		DataSetMetadata dataset = (DataSetMetadata) opmeta;
 		
-		partitionBy.stream()
-			.map(toEntryWithValue(dataset::getComponent))
-			.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
-			.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
-			.map(c -> c.asRole(Identifier.class))
-			.collect(toSet());
+		dataset.matchIdComponents(partitionBy, "partition by");
 		
 		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponents(dataset.getComponents(Measure.class))

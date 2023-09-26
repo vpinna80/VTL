@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.USE_BIG_DECIMAL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.averagingBigDecimal;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.averagingDouble;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
@@ -33,23 +33,24 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingBigDecimal;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.summingDouble;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.summingLong;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
@@ -62,13 +63,18 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.util.SerBiConsumer;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
@@ -78,13 +84,16 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum AggregateOperator  
 {
-	COUNT("count", (dp, m) -> null, collectingAndThen(counting(), IntegerValue::of)),
+	COUNT("count", null),
 	SUM("sum", getSummingCollector()), 
 	AVG("avg", getAveragingCollector()),
-	MEDIAN("median", collectingAndThen(toCollection(TreeSet::new), ts -> {
-				List<ScalarValue<?, ?, ?, ?>> sorted = new ArrayList<>(ts);
-				int s = sorted.size();
-				return s % 2 == 0 ? sorted.get(s / 2) : average(sorted.get(s >> 1), sorted.get(s / 2 + 1));
+	MEDIAN("median", collectingAndThen(toSet(), s -> {
+				ScalarValue<?, ?, ?, ?>[] array = s.toArray(new ScalarValue<?, ?, ?, ?>[s.size()]);
+				if (Utils.SEQUENTIAL) 
+					Arrays.sort(array);
+				else
+					Arrays.parallelSort(array);
+				return array[array.length / 2];
 			})),
 	MIN("min", collectingAndThen(minBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MAX("max", collectingAndThen(maxBy(ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
@@ -130,6 +139,7 @@ public enum AggregateOperator
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
 	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
+	public static final Set<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> COUNT_MEASURE = singleton(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS));
 
 	private static SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> flagMap = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
 
@@ -152,36 +162,28 @@ public enum AggregateOperator
 
 	private AggregateOperator(String name, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
-		this(name, (dp, c) -> dp.get(c), reducer);
+		this(name, DataPoint::get, reducer);
 	}
-
+	
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getSummingCollector()
 	{
 		if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
 			return collectingAndThen(summingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
-		else
-			return collectingAndThen(summingDouble(v -> ((Number) v.get()).doubleValue()), v -> DoubleValue.of(v));
+		
+		return teeing(filtering(v -> v instanceof DoubleValue, counting()),
+				filtering(v -> !(v instanceof NullValue), teeing(
+						summingDouble(v -> ((Number) v.get()).doubleValue()), 
+						summingLong(v -> ((Number) v.get()).longValue()), 
+						SimpleEntry::new)
+				), (c, e) -> (ScalarValue<?, ?, ?, ?>) (c > 0 ? DoubleValue.of(e.getKey()) : IntegerValue.of(e.getValue())));
 	}
 
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector()
 	{
 		if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
 			return collectingAndThen(averagingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
-		else
-			return collectingAndThen(averagingDouble(v -> ((Number) v.get()).doubleValue()), v -> DoubleValue.of(v));
-	}
-
-	private static NumberValue<?, ?, ?, ?> average(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
-	{
-		Number leftN = (Number) left.get(), rightN = (Number) right.get();
-		if (Boolean.valueOf(USE_BIG_DECIMAL.getValue()))
-		{
-			leftN = leftN instanceof BigDecimal ? leftN : BigDecimal.valueOf(leftN.doubleValue());
-			rightN = rightN instanceof BigDecimal ? rightN : BigDecimal.valueOf(rightN.doubleValue());
-			return (NumberValue<?, ?, ?, ?>) BigDecimalValue.of(((BigDecimal) leftN).add((BigDecimal) rightN).divide(BigDecimal.valueOf(2)));
-		}
-		else
-			return (NumberValue<?, ?, ?, ?>) DoubleValue.of((leftN.doubleValue() + rightN.doubleValue()) / 2);
+		
+		return collectingAndThen(filtering(v -> !(v instanceof NullValue), averagingDouble(v -> ((Number) v.get()).doubleValue())), DoubleValue::of);
 	}
 
 	private AggregateOperator(String name,
@@ -200,6 +202,18 @@ public enum AggregateOperator
 	
 	public SerCollector<DataPoint, ?, DataPoint> getReducer(Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures)
 	{
+		// Special collector for COUNT that collects all measures into one
+		if (this == COUNT)
+		{
+			DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> measure = COUNT_MEASURE.iterator().next();
+			DataSetMetadata structure = new DataStructureBuilder(COUNT_MEASURE).build();
+			return collectingAndThen(counting(), c -> {
+				return new DataPointBuilder()
+					.add(measure, IntegerValue.of((long) c))
+					.build(LineageExternal.of("count"), structure);
+			});
+		};
+
 		// Create a collector for each measure
 		Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors = measures.stream()
 			.collect(toMapWithValues(measure -> mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer))));
@@ -208,7 +222,17 @@ public enum AggregateOperator
 		EnumSet<Characteristics> characteristics = EnumSet.of(CONCURRENT, UNORDERED);
 		for (SerCollector<?, ?, ?> collector: collectors.values())
 			characteristics.retainAll(collector.characteristics());
-
+		
+		boolean isChanging = EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(this);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> outputMeasures;
+		if (isChanging)
+			outputMeasures = measures.stream()
+				.map(m -> INTEGERDS.isAssignableFrom(m.getDomain()) ? DataStructureComponentImpl.of(m.getName(), Measure.class, NUMBERDS) : m)
+				.collect(toSet());
+		else
+			outputMeasures = measures;
+		
+		
 		// Combine all collectors into one
 		SerCollector<DataPoint, CombinedAccumulator, DataPoint> combined = SerCollector.of(
 				() -> new CombinedAccumulator(collectors), 
@@ -233,15 +257,24 @@ public enum AggregateOperator
 					Utils.getStream(b.allIntegers)
 						.forEach(splittingConsumer((measure, allInt) -> a.allIntegers.merge(measure, allInt, (va, vb) -> { va.compareAndSet(true, vb.get()); return va; })));
 					return a; 
-				}, a -> new DataPointBuilder().addAll(Utils.getStream(collectors).collect(toConcurrentMap(Entry::getKey, splitting((measure, collector) -> {
-					@SuppressWarnings("unchecked")
-					SerFunction<Object, ScalarValue<?, ?, ?, ?>> finisher = (SerFunction<Object, ScalarValue<?, ?, ?, ?>>) collector.finisher(); 
-					ScalarValue<?, ?, ?, ?> result = finisher.apply(a.accs.get(measure));
-					if (a.allIntegers.computeIfAbsent(measure, flagMap).get() && result instanceof DoubleValue)
-						return IntegerValue.of(((DoubleValue<?>) result).get().longValue());
-					else
-						return result;
-				})))).build(LineageGroup.of(a.lineageAcc), new DataStructureBuilder(measures).build()), characteristics);
+				}, a -> new DataPointBuilder().addAll(Utils.getStream(collectors).collect(
+						toConcurrentMap(e -> {
+							DataStructureComponent<? extends Measure, ?, ?> m = e.getKey();
+							if (this == COUNT)
+								m = COUNT_MEASURE.iterator().next();
+							else if (isChanging)
+								m = INTEGERDS.isAssignableFrom(m.getDomain()) ? DataStructureComponentImpl.of(m.getName(), Measure.class, NUMBERDS) : m;
+							return m;
+						}, splitting((measure, collector) -> {
+							@SuppressWarnings("unchecked")
+							SerFunction<Object, ScalarValue<?, ?, ?, ?>> finisher = (SerFunction<Object, ScalarValue<?, ?, ?, ?>>) collector.finisher(); 
+							ScalarValue<?, ?, ?, ?> result = finisher.apply(a.accs.get(measure));
+							if (a.allIntegers.computeIfAbsent(measure, flagMap).get() && result instanceof DoubleValue)
+								return IntegerValue.of(((DoubleValue<?>) result).get().longValue());
+							else
+								return result;
+						}))
+				)).build(LineageGroup.of(a.lineageAcc), new DataStructureBuilder(outputMeasures).build()), characteristics);
 		
 		return combined;
 	}

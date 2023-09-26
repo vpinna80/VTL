@@ -55,11 +55,11 @@ public class StringUnaryTransformation extends UnaryTransformation
 
 	public enum StringOperator implements UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain>>
 	{
-		TRIM("TRIM", String::trim, StringEnumeratedDomainSubset::trim),
-		LTRIM("LTRIM", s -> s.replaceAll("^\\s+",""), StringEnumeratedDomainSubset::ltrim),
-		RTRIM("RTRIM", s -> s.replaceAll("\\s+$",""), StringEnumeratedDomainSubset::rtrim),
-		UCASE("UCASE", String::toUpperCase, StringEnumeratedDomainSubset::ucase),
-		LCASE("LCASE", String::toLowerCase, StringEnumeratedDomainSubset::lcase);
+		TRIM("trim", String::trim, StringEnumeratedDomainSubset::trim),
+		LTRIM("ltrim", s -> s.replaceAll("^\\s+",""), StringEnumeratedDomainSubset::ltrim),
+		RTRIM("rtrim", s -> s.replaceAll("\\s+$",""), StringEnumeratedDomainSubset::rtrim),
+		UCASE("ucase", String::toUpperCase, StringEnumeratedDomainSubset::ucase),
+		LCASE("lcase", String::toLowerCase, StringEnumeratedDomainSubset::lcase);
 
 		private final String name;
 		private final UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?>> codeListMapper;

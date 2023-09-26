@@ -371,6 +371,7 @@ public class JoinTransformation extends TransformationImpl
 		// check for duplicate aliases
 		operands.stream()
 				.map(JoinOperand::getId)
+				.map(DataStructureComponent::normalizeAlias)
 				.collect(groupingBy(identity(), counting()))
 				.entrySet().stream()
 				.filter(e -> e.getValue() > 1)
@@ -495,8 +496,11 @@ public class JoinTransformation extends TransformationImpl
 					.collect(toSet());
 
 			Set<DataStructureComponent<?,?,?>> using = datasetsMeta.values().stream()
-					.flatMap(ds -> ds.getComponents(usingNames).stream())
-					.collect(toSet());
+					.flatMap(ds -> usingNames.stream()
+							.map(DataStructureComponent::normalizeAlias)
+							.map(ds::getComponent)
+							.map(Optional::get)
+					).collect(toSet());
 			
 			if (!commonIDs.containsAll(using))
 			{
@@ -585,8 +589,11 @@ public class JoinTransformation extends TransformationImpl
 		if (caseAorB1.isPresent())
 		{
 			Set<DataStructureComponent<?,?,?>> using = datasetsMeta.values().stream()
-					.flatMap(ds -> ds.getComponents(usingNames).stream())
-					.collect(toSet());
+					.flatMap(ds -> usingNames.stream()
+							.map(DataStructureComponent::normalizeAlias)
+							.map(ds::getComponent)
+							.map(Optional::get)
+					).collect(toSet());
 			
 			// Case A: rename all measures and attributes with the same name 
 			// Case B1: rename all components with the same name except those in the using clause  

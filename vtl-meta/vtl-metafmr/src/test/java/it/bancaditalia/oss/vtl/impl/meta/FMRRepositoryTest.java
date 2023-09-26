@@ -69,9 +69,9 @@ public class FMRRepositoryTest
 					{ "EXR.xml", "/dataflow/ECB/EXR/1.0/" }, 
 					{ "ECB_EXR1.xml", "/datastructure/ECB/ECB_EXR1/1.0/" } 
 				})
-			try (InputStream resource = Objects.requireNonNull(FMRRepositoryTest.class.getResourceAsStream(entry[1])))
+			try (InputStream resource = Objects.requireNonNull(FMRRepositoryTest.class.getResourceAsStream(entry[0])))
 			{
-				client.when(request().withPath(entry[0])).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
+				client.when(request().withPath(entry[1])).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
 			}
 
 		System.setProperty("vtl.fmr.endpoint", "http://localhost:" + client.getPort());
@@ -92,18 +92,18 @@ public class FMRRepositoryTest
 	@Test
 	public void testGetStructure()
 	{
-		DataSetMetadata expected = new DataStructureBuilder().addComponent(of("time_period", Identifier.class, TIMEDS)).addComponent(of("freq", Identifier.class, repo.getDomain("ECB:CL_FREQ(1.0)")))
-				.addComponent(of("currency", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)"))).addComponent(of("currency_denom", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)")))
-				.addComponent(of("exr_type", Identifier.class, repo.getDomain("ECB:CL_EXR_TYPE(1.0)"))).addComponent(of("exr_suffix", Identifier.class, repo.getDomain("ECB:CL_EXR_SUFFIX(1.0)")))
-				.addComponent(of("obs_value", Measure.class, NUMBERDS)).addComponent(of("publ_ecb", Attribute.class, STRINGDS)).addComponent(of("dom_ser_ids", Attribute.class, STRINGDS))
-				.addComponent(of("nat_title", Attribute.class, STRINGDS)).addComponent(of("title_compl", Attribute.class, STRINGDS)).addComponent(of("title", Attribute.class, STRINGDS))
-				.addComponent(of("obs_com", Attribute.class, STRINGDS)).addComponent(of("source_agency", Attribute.class, STRINGDS)).addComponent(of("unit_index_base", Attribute.class, STRINGDS))
-				.addComponent(of("source_pub", Attribute.class, STRINGDS)).addComponent(of("unit_mult", Attribute.class, STRINGDS)).addComponent(of("publ_mu", Attribute.class, STRINGDS))
-				.addComponent(of("coverage", Attribute.class, STRINGDS)).addComponent(of("time_format", Attribute.class, STRINGDS)).addComponent(of("breaks", Attribute.class, STRINGDS))
-				.addComponent(of("publ_public", Attribute.class, STRINGDS)).addComponent(of("diss_org", Attribute.class, STRINGDS)).addComponent(of("obs_conf", Attribute.class, STRINGDS))
-				.addComponent(of("compiling_org", Attribute.class, STRINGDS)).addComponent(of("collection", Attribute.class, STRINGDS)).addComponent(of("unit", Attribute.class, STRINGDS))
-				.addComponent(of("compilation", Attribute.class, STRINGDS)).addComponent(of("obs_pre_break", Attribute.class, STRINGDS)).addComponent(of("decimals", Attribute.class, STRINGDS))
-				.addComponent(of("obs_status", Attribute.class, STRINGDS)).build();
+		DataSetMetadata expected = new DataStructureBuilder().addComponent(of("TIME_PERIOD", Identifier.class, TIMEDS)).addComponent(of("FREQ", Identifier.class, repo.getDomain("ECB:CL_FREQ(1.0)")))
+				.addComponent(of("CURRENCY", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)"))).addComponent(of("CURRENCY_DENOM", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)")))
+				.addComponent(of("EXR_TYPE", Identifier.class, repo.getDomain("ECB:CL_EXR_TYPE(1.0)"))).addComponent(of("EXR_SUFFIX", Identifier.class, repo.getDomain("ECB:CL_EXR_SUFFIX(1.0)")))
+				.addComponent(of("OBS_VALUE", Measure.class, NUMBERDS)).addComponent(of("PUBL_ECB", Attribute.class, STRINGDS)).addComponent(of("DOM_SER_IDS", Attribute.class, STRINGDS))
+				.addComponent(of("NAT_TITLE", Attribute.class, STRINGDS)).addComponent(of("TITLE_COMPL", Attribute.class, STRINGDS)).addComponent(of("TITLE", Attribute.class, STRINGDS))
+				.addComponent(of("OBS_COM", Attribute.class, STRINGDS)).addComponent(of("SOURCE_AGENCY", Attribute.class, STRINGDS)).addComponent(of("UNIT_INDEX_BASE", Attribute.class, STRINGDS))
+				.addComponent(of("SOURCE_PUB", Attribute.class, STRINGDS)).addComponent(of("UNIT_MULT", Attribute.class, STRINGDS)).addComponent(of("PUBL_MU", Attribute.class, STRINGDS))
+				.addComponent(of("COVERAGE", Attribute.class, STRINGDS)).addComponent(of("TIME_FORMAT", Attribute.class, STRINGDS)).addComponent(of("BREAKS", Attribute.class, STRINGDS))
+				.addComponent(of("PUBL_PUBLIC", Attribute.class, STRINGDS)).addComponent(of("DISS_ORG", Attribute.class, STRINGDS)).addComponent(of("OBS_CONF", Attribute.class, STRINGDS))
+				.addComponent(of("COMPILING_ORG", Attribute.class, STRINGDS)).addComponent(of("COLLECTION", Attribute.class, STRINGDS)).addComponent(of("UNIT", Attribute.class, STRINGDS))
+				.addComponent(of("COMPILATION", Attribute.class, STRINGDS)).addComponent(of("OBS_PRE_BREAK", Attribute.class, STRINGDS)).addComponent(of("DECIMALS", Attribute.class, STRINGDS))
+				.addComponent(of("OBS_STATUS", Attribute.class, STRINGDS)).build();
 
 		DataSetMetadata structure = repo.getStructure("ECB:EXR(1.0)");
 		assertEquals(expected, structure);

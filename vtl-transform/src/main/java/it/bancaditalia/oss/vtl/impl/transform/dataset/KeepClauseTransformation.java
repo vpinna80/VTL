@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -75,7 +76,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		
 		DataSetMetadata dsMeta = (DataSetMetadata) operand;
 		List<String> missing = Arrays.stream(names)
-				.filter(n -> !dsMeta.getComponent(n).isPresent())
+				.filter(n -> !dsMeta.getComponent(normalizeAlias(n)).isPresent())
 				.collect(toList());
 		
 		if (!missing.isEmpty())

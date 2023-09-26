@@ -152,14 +152,14 @@ public class DataStructureBuilder
 		@Override
 		public Optional<DataStructureComponent<?, ?, ?>> getComponent(String alias)
 		{
-			return Optional.ofNullable(components.get(getNormalizedAlias(alias)));
+			return Optional.ofNullable(components.get(alias));
 		}
 
 		@Override
 		public DataSetMetadata keep(String... names)
 		{
 			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(names)
-					.map(DataStructureBuilder::getNormalizedAlias)
+					.map(DataStructureComponent::normalizeAlias)
 					.map(components::get)
 					.filter(Objects::nonNull)
 					.collect(partitioningBy(c -> c.is(Identifier.class)));
@@ -176,7 +176,7 @@ public class DataStructureBuilder
 		public DataSetMetadata drop(Collection<String> names)
 		{
 			final Set<? extends DataStructureComponent<?, ?, ?>> filter = Utils.getStream(names)
-					.map(DataStructureBuilder::getNormalizedAlias)
+					.map(DataStructureComponent::normalizeAlias)
 					.map(components::get)
 					.filter(Objects::nonNull)
 					.filter(c -> !c.is(Identifier.class))
@@ -188,7 +188,7 @@ public class DataStructureBuilder
 		@Override
 		public DataSetMetadata membership(String alias)
 		{
-			DataStructureComponent<?, ?, ?> component = components.get(getNormalizedAlias(alias));
+			DataStructureComponent<?, ?, ?> component = components.get(alias);
 
 			if (component == null)
 				throw new VTLMissingComponentsException(alias, components.values());
@@ -215,7 +215,7 @@ public class DataStructureBuilder
 		@Override
 		public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName)
 		{
-			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.rename(getNormalizedAlias(newName))).build();
+			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.rename(newName)).build();
 		}
 
 		@Override
@@ -239,7 +239,7 @@ public class DataStructureBuilder
 		@Override
 		public boolean contains(String alias)
 		{
-			return components.containsKey(getNormalizedAlias(alias));
+			return components.containsKey(alias);
 		}
 
 		@Override
@@ -280,10 +280,5 @@ public class DataStructureBuilder
 		return Collector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
 				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
 				UNORDERED, CONCURRENT);
-	}
-
-	private static String getNormalizedAlias(String alias)
-	{
-		return alias.matches("'.*'") ? alias.replaceAll("^'(.*)'$", "$1") : alias.toLowerCase();
 	}
 }

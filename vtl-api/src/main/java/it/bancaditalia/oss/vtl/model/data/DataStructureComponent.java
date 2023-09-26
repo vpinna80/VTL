@@ -44,6 +44,14 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 		return (c1, c2) -> c1.getName().compareTo(c2.getName());
 	}
 	
+	public static String normalizeAlias(String alias)
+	{
+		if (alias.matches("'.*'"))
+			return alias.replaceAll("'(.*)'", "$1");
+		else
+			return alias.toLowerCase();
+	}
+
 	/**
 	 * @return The dataset variable for this {@link DataStructureComponent}.
 	 */

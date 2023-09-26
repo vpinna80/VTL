@@ -76,7 +76,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	{
 		VTLValue value;
 		if (operand == null)
-			value = session.resolve(componentName);
+			value = session.resolve(DataStructureComponent.normalizeAlias(componentName));
 		else
 			value = operand.eval(session);
 

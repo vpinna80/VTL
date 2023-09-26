@@ -1,4 +1,4 @@
-$Id_1=String,$Id_2=String,num_1=Number,Text_1=String
+$id_1=String,$id_2=String,num_1=Number,text_1=String
 12/14/2001,B,2.3,"""Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus a vulputate urna. In fermentum dui eget nisi placerat, et."""
 12/15/2001,B,,"""Nullam hendrerit molestie congue. Ut lorem lorem, suscipit quis fringilla et, tempus rutrum ex. Etiam scelerisque diam ut sapien."""
 12/14/2001,A,5.443,"""Donec venenatis condimentum justo, non iaculis erat finibus quis. Aliquam euismod, lacus eget lacinia vehicula, nulla dolor dapibus enim."""

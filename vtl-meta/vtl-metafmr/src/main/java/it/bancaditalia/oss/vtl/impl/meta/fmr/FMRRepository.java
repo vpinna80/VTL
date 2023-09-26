@@ -188,16 +188,16 @@ public class FMRRepository extends InMemoryMetadataRepository
 			
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
 				if (!drop || iDim >= dims.length || dims[iDim++].isEmpty())
-					builder.addComponent(DataStructureComponentImpl.of('\'' + dimBean.getId() + '\'', Identifier.class, 
+					builder.addComponent(DataStructureComponentImpl.of(dimBean.getId(), Identifier.class, 
 							(ValueDomainSubset<?, ?>) (dimBean.isTimeDimension() ? TIMEDS : getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation())))));
 
-			builder.addComponent(DataStructureComponentImpl.of('\'' + dsd.getPrimaryMeasure().getId() + '\'', Measure.class, NUMBERDS));
+			builder.addComponent(DataStructureComponentImpl.of(dsd.getPrimaryMeasure().getId(), Measure.class, NUMBERDS));
 			// Support for multiple measures (SDMX 3.0)
 //			for (MeasureDimensionBean measureBean: dsd.getMeasures())
 //				builder.addComponent(DataStructureComponentImpl.of(measureBean.getId(), Measure.class, NUMBERDS));
 			
 			for (AttributeBean attrBean: dsd.getAttributeList().getAttributes())
-				builder.addComponent(DataStructureComponentImpl.of('\'' + attrBean.getId() + '\'', Attribute.class, STRINGDS));
+				builder.addComponent(DataStructureComponentImpl.of(attrBean.getId(), Attribute.class, STRINGDS));
 
 			return builder.build();
 		}

@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -231,7 +232,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getComponents(Measure.class).iterator().next();
 	
 			String newName = coalesce(clause.getName(), measure.getName());
-			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
+			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(normalizeAlias(newName)).get();
 			
 			DataSetMetadata newStructure = new DataStructureBuilder(clauseValue.getMetadata())
 				.removeComponent(measure)

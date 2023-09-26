@@ -40,15 +40,11 @@ public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R e
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
+		if (this instanceof IntegerValue && o instanceof IntegerValue)
+			return Long.valueOf(get().longValue()).compareTo(Long.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).get().longValue()));
 		if (o instanceof NumberValue)
-			return Double.valueOf(doubleValue()).compareTo(Double.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).doubleValue()));
+			return Double.valueOf(get().doubleValue()).compareTo(Double.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).get().doubleValue()));
 		
 		throw new VTLIncompatibleTypesException("comparison", getDomain(), o.getDomain());
-	}
-	
-	@Override
-	public double doubleValue()
-	{
-		return get().doubleValue();
 	}
 }

@@ -21,16 +21,16 @@ package it.bancaditalia.oss.vtl.impl.transform;
 
 import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_EXCEPT;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
-import static it.bancaditalia.oss.vtl.util.Utils.afterMapping;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -79,14 +79,12 @@ public class GroupingClause implements Serializable
 	public Set<DataStructureComponent<Identifier, ?, ?>> getGroupingComponents(DataSetMetadata dataset)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = fields.stream()
-				.map(name -> name.matches("'.*'")
-						? dataset.getComponent(name.replaceAll("'(.*)'", "$1"))
-						: dataset.stream().filter(afterMapping(DataStructureComponent::getName, name::equalsIgnoreCase)).findAny()
-				).map(o -> o.orElseThrow(() -> new VTLMissingComponentsException(dataset, fields.toArray(new String[0]))))
-				.peek(component -> {
-					if (!component.is(Identifier.class))
-						throw new VTLIncompatibleRolesException("aggregation group by", component, Identifier.class);
-				}).map(component -> component.asRole(Identifier.class))
+				.map(DataStructureComponent::normalizeAlias)
+				.peek(n -> { if (dataset.getComponent(n).isEmpty()) throw new VTLMissingComponentsException(n, dataset); })
+				.map(dataset::getComponent)
+				.map(Optional::get)
+				.peek(component -> { if (!component.is(Identifier.class)) throw new VTLIncompatibleRolesException("aggregation group by", component, Identifier.class); })
+				.map(component -> component.asRole(Identifier.class))
 				.collect(toSet());
 		
 		if (mode == GROUP_EXCEPT)

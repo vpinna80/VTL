@@ -1,4 +1,4 @@
-$Id_1=String,$Id_2=String,Text_1=String,is_isin=Boolean
+$id_1=String,$id_2=String,text_1=String,is_isin=Boolean
 12/14/2001,B,XS0884410019,TRUE
 12/15/2001,B,ABUUUUUUUUUU,FALSE
 12/14/2001,A,1ANUIOLKJHGF,FALSE

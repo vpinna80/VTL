@@ -22,24 +22,29 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_POP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_SAMP;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -53,7 +58,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollector;
@@ -61,8 +65,6 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class AggregateTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final Set<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> COUNT_MEASURE = singleton(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS));
-
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
 	private final Transformation having;
@@ -104,7 +106,7 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(((DataSetMetadata) metadata).getComponents(Measure.class));
+		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(dataset.getMetadata().getComponents(Measure.class));
 
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 		
@@ -132,14 +134,24 @@ public class AggregateTransformation extends UnaryTransformation
 			{
 				if (measures.isEmpty())
 					throw new VTLExpectedComponentException(Measure.class, dataset);
-				
+
+				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = measures;
+				if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
+					newMeasures = newMeasures.stream()
+						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? DataStructureComponentImpl.of(c.getName(), Measure.class, NUMBERDS) : c)
+						.collect(toSet());
+				else if (aggregation == COUNT)
+					newMeasures = newMeasures.stream()
+						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? c : DataStructureComponentImpl.of(c.getName(), Measure.class, INTEGERDS))
+						.collect(toSet());
+
 				if (operand != null)
-					return new DataStructureBuilder(measures).build();
-				
+					return new DataStructureBuilder(newMeasures).build();
+
 				if (measures.size() == 1)
 					return measures.iterator().next().getMetadata();
 				else
-					return new DataStructureBuilder(measures).build();
+					return new DataStructureBuilder(newMeasures).build();
 			}
 			else
 			{
@@ -150,7 +162,18 @@ public class AggregateTransformation extends UnaryTransformation
 					throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
 				
 				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.asRole(Identifier.class)).collect(toSet()));
-				builder = builder.addComponents(aggregation == COUNT ? COUNT_MEASURE : dataset.getComponents(Measure.class));
+				
+				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = dataset.getComponents(Measure.class);
+				if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
+					newMeasures = newMeasures.stream()
+						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? DataStructureComponentImpl.of(c.getName(), Measure.class, NUMBERDS) : c)
+						.collect(toSet());
+				else if (aggregation == COUNT)
+					newMeasures = newMeasures.stream()
+						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? c : DataStructureComponentImpl.of(c.getName(), Measure.class, INTEGERDS))
+						.collect(toSet());
+
+				builder = builder.addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newMeasures);
 				
 				return builder.build();
 			}

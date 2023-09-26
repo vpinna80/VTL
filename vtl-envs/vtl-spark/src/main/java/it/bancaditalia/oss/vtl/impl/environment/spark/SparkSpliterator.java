@@ -68,7 +68,13 @@ final class SparkSpliterator implements Spliterator<Row>
 	@Override
 	public Spliterator<Row> trySplit()
 	{
-		return iterator.hasNext() ? new SparkSpliterator(iterator, batchSize) : null;
+		boolean canSplit;
+		synchronized (iterator)
+		{
+			canSplit = iterator.hasNext();
+		}
+		
+		return canSplit ? new SparkSpliterator(iterator, batchSize) : null;
 	}
 
 	@Override
