@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
@@ -104,12 +105,13 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		{
 			ordering = new LinkedHashMap<>();
 			for (OrderByItem orderByComponent: orderByClause)
-				ordering.put(dataset.getComponent(orderByComponent.getName()).get(), DESC != orderByComponent.getMethod());
+				ordering.put(dataset.getComponent(normalizeAlias(orderByComponent.getName())).get(), DESC != orderByComponent.getMethod());
 		}
 
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
 		if (partitionBy != null)
 			partitionIDs = partitionBy.stream()
+				.map(DataStructureComponent::normalizeAlias)
 				.map(dataset::getComponent)
 				.map(Optional::get)
 				.map(c -> c.asRole(Identifier.class))
@@ -187,10 +189,11 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		
 		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)
-			ordering.put(dataset.getComponent(orderByComponent.getName()).get(), DESC != orderByComponent.getMethod());
+			ordering.put(dataset.getComponent(normalizeAlias(orderByComponent.getName())).get(), DESC != orderByComponent.getMethod());
 
 		if (partitionBy != null)
 			partitionBy.stream()
+				.map(DataStructureComponent::normalizeAlias)
 				.map(toEntryWithValue(dataset::getComponent))
 				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
 				.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
