@@ -541,7 +541,7 @@ https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/E
 			<dependency>
 				<groupId>org.apache.avro</groupId>
 				<artifactId>avro</artifactId>
-				<version>1.8.2</version>
+				<version>1.11.3</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
