@@ -20,7 +20,7 @@
 
 #' @import rJava
 #' @import R6
-.onLoad <- function(libname, pkgname) {
+.onAttach <- function(libname, pkgname) {
 
   spark <- Sys.getenv('SPARK_HOME')
   jars = c("log4j2.xml", list.files(system.file("java", package = pkgname), ".*\\.jar"))
@@ -41,13 +41,13 @@
 
   if (!any(grepl("roxygenize", sys.calls())) && !any(grepl("test_load_package", sys.calls())))
   {
-    message(paste0("JRI Rengine initialized: ", J("it.bancaditalia.oss.vtl.impl.environment.RUtils")$RENGINE$hashCode()))
+    packageStartupMessage(paste0("JRI Rengine initialized: ", J("it.bancaditalia.oss.vtl.impl.environment.RUtils")$RENGINE$hashCode()))
     propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
     if (file.exists(propfile)) {
       reader = .jnew("java.io.FileReader", propfile)
       tryCatch({
         J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
-        message("VTL settings loaded from ", propfile, ".")
+        packageStartupMessage("VTL settings loaded from ", propfile, ".")
       }, finally = {
         reader$close()
       })

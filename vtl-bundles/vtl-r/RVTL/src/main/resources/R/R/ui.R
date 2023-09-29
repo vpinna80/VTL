@@ -18,8 +18,6 @@
 # permissions and limitations under the License.
 #
 
-library(RVTL)
-
 labels <- list(
   sessionID = 'Active VTL session:',
   compile = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
@@ -93,7 +91,7 @@ themes <- list('',
                'yonce',
                'zenburn')
 
-defaultProxy <- (function() {
+defaultProxy <- function() {
   config <- J('it.bancaditalia.oss.sdmx.util.Configuration')$getConfiguration()
   proxy = config$getProperty('http.proxy.default')
   if(!is.null(proxy) && nchar(proxy) > 0){
@@ -104,15 +102,17 @@ defaultProxy <- (function() {
   }
 
   return(list(host = '', port = '', user = ''))
-})()
+}
 
-ui <- shinydashboard::dashboardPage(title="VTL Studio!",
+vtlUI <- function() {
+
+shinydashboard::dashboardPage(title="VTL Studio!",
   
   shinydashboard::dashboardHeader(disable = T),
 
   shinydashboard::dashboardSidebar(
     div(style = "text-align: center",
-      img(src="logo.svg", class="vtlLogo"),
+      img(src="static/logo.svg", class="vtlLogo"),
       div(style="display:inline-block; vertical-align: bottom",
         h2(style="margin-bottom: 0", "VTL Studio!"),
         div(style = "text-align: right", "Version 1.1.2-20230831140954")       
@@ -137,13 +137,13 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
   shinydashboard::dashboardBody(
     shinyjs::useShinyjs(),
     tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-icons.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-editor.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "codemirror-all-themes.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "dialog.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "simplescrollbars.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "matchesonscrollbar.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "vtl-editor.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/codemirror-icons.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/codemirror-editor.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/codemirror-all-themes.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/dialog.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/simplescrollbars.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/matchesonscrollbar.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/vtl-editor.css"),
       tags$script(HTML('
         Shiny.addCustomMessageHandler("editor-text", text => vtl.editor.editorImplementation.setValue(text))
         Shiny.addCustomMessageHandler("editor-theme", theme => vtl.editor.setTheme(theme))
@@ -154,15 +154,15 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
       tabPanel("VTL Editor", id = "editor-pane",
         tags$div(id = 'vtlwell'),
         verbatimTextOutput(outputId = "vtl_output", placeholder = T),
-        tags$script(src="bundle.js", type="text/javascript"),
-        tags$script(src="main.js", type="text/javascript"),
-        tags$script(src="closebrackets.js", type="text/javascript"),
-        tags$script(src="dialog.js", type="text/javascript"),
-        tags$script(src="matchesonscrollbar.js", type="text/javascript"),
-        tags$script(src="matchbrackets.js", type="text/javascript"),
-        tags$script(src="search.js", type="text/javascript"),
-        tags$script(src="show-hint.js", type="text/javascript"),
-        tags$script(src="simplescrollbars.js", type="text/javascript"),
+        tags$script(src="static/bundle.js", type="text/javascript"),
+        tags$script(src="static/main.js", type="text/javascript"),
+        tags$script(src="static/closebrackets.js", type="text/javascript"),
+        tags$script(src="static/dialog.js", type="text/javascript"),
+        tags$script(src="static/matchesonscrollbar.js", type="text/javascript"),
+        tags$script(src="static/matchbrackets.js", type="text/javascript"),
+        tags$script(src="static/search.js", type="text/javascript"),
+        tags$script(src="static/show-hint.js", type="text/javascript"),
+        tags$script(src="static/simplescrollbars.js", type="text/javascript"),
         tags$script(HTML('vtl.editor.editorImplementation.setOption("matchBrackets", true)
           vtl.editor.editorImplementation.setOption("autoCloseBrackets", true)
           vtl.editor.editorImplementation.on("blur", function() { 
@@ -239,9 +239,9 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
       ),
       tabPanel("Network Settings",
         shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T, collapsible = T,
-          textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy$host),
-          textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy$port),
-          textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy$user),
+          textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy()$host),
+          textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy()$port),
+          textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy()$user),
           passwordInput(inputId = 'proxyPassword', label = 'Password:'),
           actionButton(inputId = 'setProxy', label = 'Save')
         ),
@@ -251,4 +251,4 @@ ui <- shinydashboard::dashboardPage(title="VTL Studio!",
       )
     )                 
   )
-)
+)}

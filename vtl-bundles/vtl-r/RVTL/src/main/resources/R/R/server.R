@@ -18,10 +18,12 @@
 # permissions and limitations under the License.
 #
 
-library(RVTL)
-
-configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
-vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
+repoImpls <- c(
+  `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
+  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
+  `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.SDMXMetadataRepository',
+  `Fusion (Metadata) Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository'
+)
 
 environments <- list(
   `CSV Path environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
@@ -37,20 +39,13 @@ currentEnvironments <- function() {
 
 activeEnvs <- function(active) {
   items <- names(environments[xor(!active, environments %in% currentEnvironments())])
-  if (length(items) > 0)
-    items
-  else
-    NULL
+  if (length(items) > 0) items else NULL
 }
 
-repoImpls <- c(
-  `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
-  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
-  `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.SDMXMetadataRepository',
-  `Fusion (Metadata) Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository'
-)
+vtlServer <- function(input, output, session) {
 
-shinyServer(function(input, output, session) {
+  configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
+  vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
 
   currentSession <- reactive(VTLSessionManager$find(input$sessionID)) |> bindEvent(input$sessionID)
   evalNode <- reactive(currentSession()$getValues(input$selectDatasets)) |> bindEvent(input$selectDatasets)
@@ -321,7 +316,7 @@ shinyServer(function(input, output, session) {
     datasetName = basename(input$datafile$name)
     data = readLines(con = input$datafile$datapath)
     if(length(data > 1)){
-      header = as.character(read.csv(text = data[1], header = F))
+      header = as.character(utils::read.csv(text = data[1], header = F))
       ids1 = which(startsWith(header, prefix = '$'))
       ids2 = which(!startsWith(header, prefix = '#') & !grepl(x = header, pattern = '=', fixed = T))
       ids = c(ids1, ids2)
@@ -331,8 +326,8 @@ shinyServer(function(input, output, session) {
                           sub(x = header, pattern = '\\#', replacement = '')
                     , pattern = '\\$', replacement = '')
               , pattern = '\\=.*', replacement = '')
-      body = read.csv(text = data[-1], header = F, stringsAsFactors = F)
-      body = setNames(object = body, nm = names)
+      body = utils::read.csv(text = data[-1], header = F, stringsAsFactors = F)
+      body = stats::setNames(object = body, nm = names)
       
       #type handling very raw for now, to be refined
       # force strings (some cols could be cast to numeric by R)
@@ -430,7 +425,7 @@ shinyServer(function(input, output, session) {
   output$datasetsInfo <- renderUI({
     req(input$selectDatasets)
     statements <- currentSession()$getStatements()
-    statements <- sapply(statements$entrySet(), function (x) setNames(list(x$getValue()), x$getKey()))
+    statements <- sapply(statements$entrySet(), function (x) stats::setNames(list(x$getValue()), x$getKey()))
     ddf = evalNode()[[1]]
     formula <- statements[[input$selectDatasets]]
     
@@ -439,4 +434,4 @@ shinyServer(function(input, output, session) {
       tags$p(tags$span("Rule:"), ifelse(test = is.null(formula), no = formula, yes = 'Source data'))
     ))
   })
-})
+}

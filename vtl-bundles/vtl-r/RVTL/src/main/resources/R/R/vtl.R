@@ -25,15 +25,19 @@
 
 #' @title Launch VTL editor
 #' @description This command opens a shiny-based rich editor for writing and testing VTL programs.
-#' @usage vtlStudio(...)
+#' @usage vtlStudio(launch.browser = T, ...)
+#' @param launch.browser if T launch the system browser to navigate VTL Studio
 #' @param ... More options to pass to \code{\link[shiny]{runApp}}.
+#' @import shiny
 #' @export
 #' @examples \dontrun{
 #'     #opens the editor 
 #'     vtlStudio()
 #' }
-vtlStudio <- function(...) {
-  shiny::runApp(appDir = system.file('vtlStudio2', package='RVTL'), ...)  
+vtlStudio <- function(launch.browser = T, ...) {
+  shiny::addResourcePath('static', system.file('www', package = 'RVTL'))
+  shiny::runApp(list(ui = vtlUI(), server = vtlServer), launch.browser = launch.browser, ...)
+  shiny::removeResourcePath('static')  
 }
 
 #' @title Process VTL statements

@@ -152,6 +152,7 @@ VTLSession <- R6Class("VTLSession",
                                      target = matrix$getSecond(), 
                                      value = sapply(matrix$getThird(), function (x) { x$longValue() }),
                                      stringsAsFactors = F)
+                    df <- df[df$source != df$target, ]
                     return(df)
                   },
 
