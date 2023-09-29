@@ -48,7 +48,6 @@ import org.apache.spark.sql.types.StructType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -56,7 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class DataPointEncoder implements Serializable
@@ -240,7 +239,7 @@ public class DataPointEncoder implements Serializable
 		}
 
 		@Override
-		public DataPoint combine(Transformation transformation, DataPoint other)
+		public DataPoint combine(DataPoint other, SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
 		{
 			DataPointImpl dpo = (DataPointImpl) other;
 			
@@ -280,7 +279,7 @@ public class DataPointEncoder implements Serializable
 							j = comps2.length;
 						}
 			
-			return new DataPointImpl(comps2, vals2, LineageNode.of(transformation, lineage, dpo.getLineage()));
+			return new DataPointImpl(comps2, vals2, lineageCombiner.apply(this, dpo));
 		}
 
 		@Override

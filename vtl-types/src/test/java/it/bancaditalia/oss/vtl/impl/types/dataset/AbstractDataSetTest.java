@@ -28,7 +28,6 @@ import static it.bancaditalia.oss.vtl.util.Utils.setOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
@@ -119,10 +118,10 @@ public class AbstractDataSetTest
 				new SimpleEntry<>(BOL_ME, Stream.of(STR_ID, INT_ID, BOL_ME)));
 		
 		expected.map(keepingKey(s -> s.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).build()))
-				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getName(), mock(Lineage.class)).getMetadata()))
+				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getName()).getMetadata()))
 				.forEach(e -> assertEquals(e.getKey(), e.getValue(), "Structural mismatch in membership"));
 		
-		verify(INSTANCE, times(4)).membership(anyString(), any(Lineage.class));
+		verify(INSTANCE, times(4)).membership(anyString());
 	}
 
 	@Test

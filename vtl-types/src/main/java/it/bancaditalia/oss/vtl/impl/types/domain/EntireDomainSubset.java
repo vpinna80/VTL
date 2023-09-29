@@ -25,7 +25,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -67,12 +66,6 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 		
 		@Override
 		public Set<LeafTransformation> getTerminals()
-		{
-			throw new UnsupportedOperationException();
-		}
-		
-		@Override
-		public Lineage getLineage()
 		{
 			throw new UnsupportedOperationException();
 		}

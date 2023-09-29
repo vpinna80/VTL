@@ -23,8 +23,11 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
@@ -32,6 +35,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.onlyIf;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.counting;
@@ -40,11 +44,12 @@ import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -77,7 +82,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -86,6 +90,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -111,7 +116,7 @@ public class JoinTransformation extends TransformationImpl
 		public JoinOperand(Transformation operand, String id)
 		{
 			this.operand = operand;
-			this.id = id;
+			this.id = normalizeAlias(id);
 		}
 
 		public Transformation getOperand()
@@ -153,7 +158,7 @@ public class JoinTransformation extends TransformationImpl
 		this.apply = apply;
 		this.rename = rename;
 		this.operands = unmodifiableList(operands);
-		this.usingNames = using == null ? emptyList() : using;
+		this.usingNames = coalesce(using, emptyList()).stream().map(DataStructureComponent::normalizeAlias).collect(toList());
 		this.keepOrDrop = keepOrDrop;
 	}
 
@@ -240,13 +245,13 @@ public class JoinTransformation extends TransformationImpl
 							if (otherDPs.size() != indexes.size())
 								return operator == INNER_JOIN ? null : new DataPointBuilder(refDP)
 										.addAll(totalStructure.stream().collect(toMapWithValues(NullValue::instanceFrom)))
-										.build(getLineage(), totalStructure);
+										.build(refDP.getLineage(), totalStructure);
 							else
 							{
 								// Join all datapoints
 								DataPoint accDP = refDP;
 								for (DataPoint otherDP : otherDPs)
-									accDP = accDP.combine(this, otherDP);
+									accDP = accDP.combine(otherDP, (dp1, dp2) -> lineageCombiner(dp1, dp2));
 								
 								LOGGER.trace("Joined {}", accDP);
 								return accDP;
@@ -259,22 +264,22 @@ public class JoinTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("inner_join case B1-B2 not implemented");
 		
 		if (filter != null)
-			result = (DataSet) filter.eval(new ThisScope(result, filter.getLineage()));
+			result = (DataSet) filter.eval(new ThisScope(result));
 		
 		/* apply calc and aggr are mutually exclusive */
 		if (apply != null)
 			result = applyClause(metadata, scheme, result);
 		else if (calc != null)
-			result = (DataSet) calc.eval(new ThisScope(result, calc.getLineage()));
+			result = (DataSet) calc.eval(new ThisScope(result));
 		else if (aggr != null)
-			result = (DataSet) aggr.eval(new ThisScope(result, aggr.getLineage()));
+			result = (DataSet) aggr.eval(new ThisScope(result));
 		
 		if (keepOrDrop != null)
-			result = (DataSet) keepOrDrop.eval(new ThisScope(result, keepOrDrop.getLineage()));
+			result = (DataSet) keepOrDrop.eval(new ThisScope(result));
 		
 		if (rename != null)
 		{
-			result = (DataSet) rename.eval(new ThisScope(result, rename.getLineage()));
+			result = (DataSet) rename.eval(new ThisScope(result));
 
 			// unalias all remaining components that have not been already unaliased 
 			Set<DataStructureComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
@@ -285,10 +290,35 @@ public class JoinTransformation extends TransformationImpl
 				.map(dp -> Utils.getStream(dp)
 						.map(keepingValue(onlyIf(comp -> comp.getName().contains("#"), 
 								comp -> comp.rename(comp.getName().split("#", 2)[1])))
-						).collect(toDataPoint(getLineage(), metadata))));
+						).collect(toDataPoint(LineageNode.of(rename, dp.getLineage()), metadata))));
 		}
 		
 		return result;
+	}
+
+	private Lineage lineageCombiner(DataPoint dp1, DataPoint dp2)
+	{
+		Lineage l1 = dp1.getLineage();
+		Lineage l2 = dp2.getLineage();
+
+		String joinString = operands.stream()
+				.map(o -> o.getId() != null ? o.getId() : o.getOperand().toString())
+				.collect(joining(", ", operator.toString().toLowerCase() + "(", ")"));
+
+		Collection<Lineage> s1, s2;
+		if (l1 instanceof LineageNode && joinString == ((LineageNode) l1).getTransformation())
+			s1 = ((LineageNode) l1).getSourceSet().getSources();
+		else
+			s1 = singleton(l1);
+		if (l2 instanceof LineageNode && joinString == ((LineageNode) l2).getTransformation())
+			s2 = ((LineageNode) l2).getSourceSet().getSources();
+		else
+			s2 = singleton(l2);
+		
+		List<Lineage> sources = new ArrayList<>(s1);
+		sources.addAll(s2);
+
+		return LineageNode.of(joinString, sources.toArray(new Lineage[sources.size()]));
 	}
 
 	private Map<JoinOperand, DataSet> renameCaseAB1(Map<JoinOperand, DataSet> datasets)
@@ -325,7 +355,7 @@ public class JoinTransformation extends TransformationImpl
 				return new NamedDataSet(op.getId(), new FunctionDataSet<>(newStructure, dataset -> dataset.stream()
 						.map(dp -> Utils.getStream(dp)
 								.map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c))
-								.collect(toDataPoint(getLineage(), newStructure))
+								.collect(toDataPoint(dp.getLineage(), newStructure))
 						), ds));
 			})).collect(entriesToMap());
 	}
@@ -371,7 +401,6 @@ public class JoinTransformation extends TransformationImpl
 		// check for duplicate aliases
 		operands.stream()
 				.map(JoinOperand::getId)
-				.map(DataStructureComponent::normalizeAlias)
 				.collect(groupingBy(identity(), counting()))
 				.entrySet().stream()
 				.filter(e -> e.getValue() > 1)
@@ -398,7 +427,7 @@ public class JoinTransformation extends TransformationImpl
 		
 		// modify the result structure as needed
 		if (filter != null)
-			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result, filter.getLineage()));
+			result = (DataSetMetadata) filter.getMetadata(new ThisScope(result));
 		if (apply != null)
 		{
 			DataSetMetadata applyResult = result; 
@@ -417,14 +446,14 @@ public class JoinTransformation extends TransformationImpl
 					.build();
 		}
 		else if (calc != null)
-			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result, calc.getLineage()));
+			result = (DataSetMetadata) calc.getMetadata(new ThisScope(result));
 		else if (aggr != null)
-			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result, aggr.getLineage()));
+			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(result));
 		if (keepOrDrop != null)
-			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result, keepOrDrop.getLineage()));
+			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(result));
 		if (rename != null)
 		{
-			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result, rename.getLineage()));
+			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result));
 			// check if rename has made some components unambiguous
 			Map<String, List<String>> sameUnaliasedName = Utils.getStream(result)
 				.map(DataStructureComponent::getName)
@@ -497,7 +526,6 @@ public class JoinTransformation extends TransformationImpl
 
 			Set<DataStructureComponent<?,?,?>> using = datasetsMeta.values().stream()
 					.flatMap(ds -> usingNames.stream()
-							.map(DataStructureComponent::normalizeAlias)
 							.map(ds::getComponent)
 							.map(Optional::get)
 					).collect(toSet());
@@ -590,7 +618,6 @@ public class JoinTransformation extends TransformationImpl
 		{
 			Set<DataStructureComponent<?,?,?>> using = datasetsMeta.values().stream()
 					.flatMap(ds -> usingNames.stream()
-							.map(DataStructureComponent::normalizeAlias)
 							.map(ds::getComponent)
 							.map(Optional::get)
 					).collect(toSet());
@@ -624,7 +651,7 @@ public class JoinTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return "inner_join(" + operands.stream().map(Object::toString).collect(joining(", "))
+		return operator.toString().toLowerCase() + "(" + operands.stream().map(Object::toString).collect(joining(", "))
 				+ (usingNames.isEmpty() ? "" : " using " + usingNames.stream().collect(joining(", ")))
 				+ (filter != null ? " " + filter : "")
 				+ (apply != null ? " apply " + apply : "")
@@ -633,17 +660,5 @@ public class JoinTransformation extends TransformationImpl
 				+ (keepOrDrop != null ? " " + keepOrDrop : "")
 				+ (rename != null ? " " + rename : "")
 				+ ")";
-	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		Lineage[] sources = Stream.concat(operands.stream().map(JoinOperand::getOperand), Stream.of(apply, keepOrDrop, rename, filter, calc, aggr))
-			.filter(Objects::nonNull)
-			.map(Transformation::getLineage)
-			.collect(toList())
-			.toArray(new Lineage[0]);
-		
-		return LineageNode.of(this, sources);
 	}
 }

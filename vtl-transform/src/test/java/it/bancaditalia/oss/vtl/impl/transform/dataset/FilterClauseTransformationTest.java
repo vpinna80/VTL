@@ -28,7 +28,6 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +46,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -84,7 +82,7 @@ public class FilterClauseTransformationTest
 	@MethodSource
 	public void test(String name, DataSet sample, String[] expectedResult)
 	{
-		session = new ThisScope(sample, mock(Lineage.class));
+		session = new ThisScope(sample);
 		FilterClauseTransformation fct = new FilterClauseTransformation(condition);
 		
 		DataSetMetadata metadata = (DataSetMetadata) fct.getMetadata(session);

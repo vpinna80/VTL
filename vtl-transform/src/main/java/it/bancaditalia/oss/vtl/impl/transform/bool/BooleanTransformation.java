@@ -132,7 +132,7 @@ public class BooleanTransformation extends BinaryTransformation
 					.addAll(dps.getValues(Identifier.class))
 					.addAll(dpi.getValues(Identifier.class))
 					.add(resultMeasure, reversedIf.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-					.build(getLineage(), (DataSetMetadata) metadata), false);
+					.build(LineageNode.of(operator.toString().toLowerCase(), dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
 	}
 
 	@Override

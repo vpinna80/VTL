@@ -20,14 +20,11 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
-import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -52,9 +49,9 @@ public class BracketTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		if (clause != null)
-			return clause.eval(new ThisScope(dataset, getLineage()));
+			return clause.eval(new ThisScope(dataset));
 		else
-			return dataset.membership(componentName, getLineage());
+			return dataset.membership(componentName);
 	}
 	
 	@Override
@@ -74,7 +71,7 @@ public class BracketTransformation extends UnaryTransformation
 			throw new UnsupportedOperationException("Dataset expected as left operand of []# but found " + metadata);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope((DataSetMetadata) metadata, getLineage()));
+			return clause.getMetadata(new ThisScope((DataSetMetadata) metadata));
 		else
 			return ((DataSetMetadata) metadata).membership(componentName);
 	}
@@ -83,11 +80,5 @@ public class BracketTransformation extends UnaryTransformation
 	public String toString()
 	{
 		return operand + (clause != null ? "[" + clause.toString() + "]": "") + (componentName != null ? "#" + componentName : "");
-	}
-
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(coalesce(clause, this), operand.getLineage());
 	}
 }

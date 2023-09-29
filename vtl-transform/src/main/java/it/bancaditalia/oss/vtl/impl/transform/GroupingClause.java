@@ -20,9 +20,11 @@
 package it.bancaditalia.oss.vtl.impl.transform;
 
 import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_EXCEPT;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -58,12 +60,12 @@ public class GroupingClause implements Serializable
 	}
 
 	private final GroupingMode mode;
-	private final List<String> fields;
+	private final String[] fields;
 
 	public GroupingClause(GroupingMode mode, List<String> fields)
 	{
 		this.mode = mode;
-		this.fields = fields;
+		this.fields = fields.stream().map(DataStructureComponent::normalizeAlias).collect(toArray(new String[fields.size()]));
 	}
 
 	public GroupingMode getMode()
@@ -71,15 +73,14 @@ public class GroupingClause implements Serializable
 		return mode;
 	}
 
-	public List<String> getFields()
+	public String[] getFields()
 	{
 		return fields;
 	}
 	
 	public Set<DataStructureComponent<Identifier, ?, ?>> getGroupingComponents(DataSetMetadata dataset)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = fields.stream()
-				.map(DataStructureComponent::normalizeAlias)
+		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = Arrays.stream(fields)
 				.peek(n -> { if (dataset.getComponent(n).isEmpty()) throw new VTLMissingComponentsException(n, dataset); })
 				.map(dataset::getComponent)
 				.map(Optional::get)
@@ -100,6 +101,6 @@ public class GroupingClause implements Serializable
 	@Override
 	public String toString()
 	{
-		return fields.stream().collect(Collectors.joining(", ", mode + " ", ""));
+		return Arrays.stream(fields).collect(Collectors.joining(", ", mode + " ", ""));
 	}
 }

@@ -121,8 +121,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 			reverseIf(getOperator() != DIV && bothIntegers.test(name) ? getOperator()::applyAsInt : getOperator()::applyAsNumber, !datasetIsLeftOp)
 				.apply(NUMBERDS.cast(dp.get(dataset.getComponent(name).get())), castedScalar);
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, 
-				LineageCall.of(dp.getLineage(), getLeftOperand().getLineage())), 
+		String lineageDescriptor = datasetIsLeftOp ? "x" + operator.toString() + scalar : scalar + operator.toString() + "x"; 
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(lineageDescriptor, dp.getLineage()), 
 				dp -> Utils.getStream(measureNames)
 						.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata)
 								.getComponent(name)

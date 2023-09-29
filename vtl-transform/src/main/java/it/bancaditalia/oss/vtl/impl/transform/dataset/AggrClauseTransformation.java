@@ -19,6 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -40,11 +43,9 @@ import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -52,7 +53,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -78,7 +78,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 		public AggrClauseItem(Class<? extends ComponentRole> role, String name, AggregateTransformation operand)
 		{
-			this.name = DataStructureComponent.normalizeAlias(name);
+			this.name = normalizeAlias(name);
 			this.operand = operand;
 			this.role = role;
 		}
@@ -128,12 +128,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 
 		@Override
-		public Lineage computeLineage()
-		{
-			return LineageNode.of(this, operand.getLineage());
-		}
-
-		@Override
 		protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 		{
 			return operand.getMetadata(scheme);
@@ -163,7 +157,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet operand = (DataSet) getThisValue(scheme);
 		
-		TransformationScheme thisScope = new ThisScope(operand, getLineage());
+		TransformationScheme thisScope = new ThisScope(operand);
 		
 		List<DataSet> resultList = Utils.getStream(aggrItems)
 			.map(thisScope::eval)
@@ -174,16 +168,17 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata currentStructure = result.getMetadata();
 		for (int i = 1; i < resultList.size(); i++)
 		{
+			AggrClauseItem aggrItem = aggrItems.get(i);
 			DataSet other = resultList.get(i);
-			DataSetMetadata otherStructure = result.getMetadata();
+			DataSetMetadata otherStructure = other.getMetadata();
 			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
-			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> dp1.combine(this, dp2), false);
+			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> dp1.combine(dp2, (d1, d2) -> LineageNode.of(aggrItem, dp1.getLineage(), dp2.getLineage())), false);
 		}
 
 		if (having != null)
 			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(dp, metadata)) == BooleanValue.of(true), lineage -> LineageNode.of(having, lineage));
 
-		return result;
+		return result.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), identity());
 	}
 
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -212,8 +207,8 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					clauseMeta = measure.getMetadata();
 				}
 
-				if (!(clauseMeta instanceof ScalarValueMetadata) || !Domains.NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
-					throw new VTLIncompatibleTypesException("Aggregation", Domains.NUMBERDS, ((ScalarValueMetadata<?, ?>) clauseMeta).getDomain());
+				if (!(clauseMeta instanceof ScalarValueMetadata) || !NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
+					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, ((ScalarValueMetadata<?, ?>) clauseMeta).getDomain());
 
 				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getComponent());
 				Class<? extends ComponentRole> requestedRole = clause.getRole() == null ? Measure.class : clause.getRole();
@@ -225,10 +220,10 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else
-						builder = builder.addComponent(new DataStructureComponentImpl<>(clause.getComponent(), requestedRole, Domains.NUMBERDS));
+						builder = builder.addComponent(new DataStructureComponentImpl<>(clause.getComponent(), requestedRole, NUMBERDS));
 				}
 				else
-					builder = builder.addComponent(new DataStructureComponentImpl<>(clause.getComponent(), requestedRole, Domains.NUMBERDS));
+					builder = builder.addComponent(new DataStructureComponentImpl<>(clause.getComponent(), requestedRole, NUMBERDS));
 			}
 
 			if (having != null)
@@ -247,12 +242,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 		else
 			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
-	}
-
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, LineageCall.of(aggrItems.stream().map(Transformation::getLineage).collect(toList())));
 	}
 
 	@Override

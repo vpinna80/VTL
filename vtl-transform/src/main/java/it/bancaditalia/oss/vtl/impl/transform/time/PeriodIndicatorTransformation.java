@@ -44,7 +44,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -76,7 +75,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	{
 		VTLValue value;
 		if (operand == null)
-			value = session.resolve(DataStructureComponent.normalizeAlias(componentName));
+			value = session.resolve(componentName);
 		else
 			value = operand.eval(session);
 
@@ -162,11 +161,5 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	public Set<LeafTransformation> getTerminals()
 	{
 		return operand != null ? operand.getTerminals() : emptySet();
-	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, operand.getLineage());
 	}
 }

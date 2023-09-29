@@ -24,13 +24,11 @@ import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -100,11 +98,5 @@ public class JoinApplyScope extends AbstractScope
 	public Statement getRule(String node)
 	{
 		return parent.getRule(node);
-	}
-
-	@Override
-	public Optional<Lineage> linkLineage(String alias)
-	{
-		throw new UnsupportedOperationException();
 	}
 }

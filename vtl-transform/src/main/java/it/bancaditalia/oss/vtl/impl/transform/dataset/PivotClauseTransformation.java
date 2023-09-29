@@ -142,10 +142,4 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	{
 		return "pivot " + identifierName + ", " + measureName;
 	}
-	
-	@Override
-	protected Lineage computeLineage()
-	{
-		return LineageNode.of(toString());
-	}
 }

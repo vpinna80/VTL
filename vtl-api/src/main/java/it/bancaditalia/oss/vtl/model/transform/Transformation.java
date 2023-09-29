@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
@@ -64,17 +63,4 @@ public interface Transformation extends Serializable
 	 * @throws VTLException if the metadata is incoherent within the given {@link TransformationScheme}.
 	 */
 	public VTLValueMetadata getMetadata(TransformationScheme scheme);
-
-	/**
-	 * Get the lineage history of this transformation inside a given {@link TransformationScheme}.
-	 * 
-	 * @return the transformation lineage
-	 */
-	public Lineage getLineage();
-	
-	@Override
-	public int hashCode();
-	
-	@Override
-	public boolean equals(Object obj);
 }

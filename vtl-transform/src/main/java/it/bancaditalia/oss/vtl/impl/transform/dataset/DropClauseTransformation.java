@@ -19,9 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +40,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -48,11 +50,11 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	private final List<String> names;
+	private final String[] names;
 	
 	public DropClauseTransformation(List<String> names)
 	{
-		this.names = names;
+		this.names = names.stream().map(DataStructureComponent::normalizeAlias).collect(toArray(new String[names.size()]));
 	}
 
 	@Override
@@ -79,28 +81,19 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
-		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> namedIDs = Utils.getStream(names)
-				.map(((DataSetMetadata)operand)::getComponent)
-				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names.toArray(new String[0]))))
-				.filter(c -> c.is(Identifier.class))
-				.map(c -> c.asRole(Identifier.class))
+		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Utils.getStream(names)
+				.map(((DataSetMetadata) operand)::getComponent)
+				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names)))
+				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("drop", singleton(c.asRole(Identifier.class))); })
+				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
 		
-		if (!namedIDs.isEmpty())
-			throw new VTLInvariantIdentifiersException("drop", namedIDs);
-
-		return ((DataSetMetadata) operand).drop(names);
+		return ((DataSetMetadata) operand).drop(namedComps);
 	}
 
 	@Override
 	public String toString()
 	{
-		return names.stream().collect(joining(", ", "drop ", ""));
-	}
-	
-	@Override
-	protected Lineage computeLineage()
-	{
-		return LineageNode.of(toString());
+		return Arrays.stream(names).collect(joining(", ", "drop ", ""));
 	}
 }

@@ -61,7 +61,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -204,11 +203,5 @@ public class SubstrTransformation extends TransformationImpl
 				(startOperand != null ? ", " + startOperand : "") + 
 				(lenOperand != null ? ", " + lenOperand : "") + 
 				")";
-	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, exprOperand.getLineage());
 	}
 }

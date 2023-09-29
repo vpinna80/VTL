@@ -20,7 +20,9 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.stream.Collectors.toSet;
@@ -45,7 +47,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -61,15 +62,10 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	private final String identifierName;
 	private final String measureName;
 
-	private static String sanitize(String string)
-	{
-		return string.replaceAll("^\"(.*)\"$", "$1");
-	}
-	
 	public UnpivotClauseTransformation(String identifierName, String measureName)
 	{
-		this.identifierName = sanitize(identifierName);
-		this.measureName = sanitize(measureName);
+		this.identifierName = normalizeAlias(identifierName);
+		this.measureName = normalizeAlias(measureName);
 	}
 
 	@Override
@@ -83,15 +79,17 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
 		DataStructureComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
 
+		String lineageString = toString();
 		return new FunctionDataSet<>(metadata, ds -> ds.stream()
-			.map(dp -> Utils.getStream(oldMeasures)
-					.map(toEntryWithValue(m -> dp.get(m)))
-					.filter(entryByValue(v -> !(v instanceof NullValue)))
-					.map(e -> new DataPointBuilder(dp.getValues(oldIdentifiers))
-							.add(newMeasure, e.getValue())
-							.add(newID, StringValue.of(e.getKey().getName()))
-							.build(getLineage(), metadata))
-			).collect(concatenating(Utils.ORDERED)), dataset);
+				.map(dp -> Utils.getStream(oldMeasures)
+				.map(toEntryWithValue(m -> dp.get(m)))
+				.filter(entryByValue(v -> !(v instanceof NullValue)))
+				.map(e -> new DataPointBuilder(dp.getValues(oldIdentifiers))
+						.add(newMeasure, e.getValue())
+						.add(newID, StringValue.of(e.getKey().getName()))
+						.build(LineageNode.of(lineageString, dp.getLineage()), metadata))
+				).collect(concatenating(ORDERED)
+			), dataset);
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -126,11 +124,5 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	public String toString()
 	{
 		return "unpivot " + identifierName + ", " + measureName;
-	}
-	
-	@Override
-	protected Lineage computeLineage()
-	{
-		return LineageNode.of(toString());
 	}
 }

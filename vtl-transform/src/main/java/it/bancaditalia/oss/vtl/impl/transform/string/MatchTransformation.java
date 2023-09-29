@@ -100,7 +100,8 @@ public class MatchTransformation extends BinaryTransformation
 		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
 		String pattern = patternV instanceof NullValue ? null : STRINGDS.cast(patternV).get().toString();
 		
-		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage(), getRightOperand().getLineage()), dp -> singletonMap(BOOL_MEASURE, (pattern == null 
+		String lineageString = "match " + pattern;
+		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> singletonMap(BOOL_MEASURE, (pattern == null 
 						? BOOLEANDS.cast(NullValue.instance(BOOLEANDS))
 						: BooleanValue.of(STRINGDS.cast(dp.get(measure)).get().toString().matches(pattern))))); 
 	}

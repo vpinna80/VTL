@@ -45,11 +45,9 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersExce
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -60,7 +58,6 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 
 public class CheckTransformation extends TransformationImpl
 {
@@ -119,14 +116,13 @@ public class CheckTransformation extends TransformationImpl
 			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(scheme);
 			
 			// TODO: INVALID
-			SerBiPredicate<DataPoint, DataPoint> filter = (a, b) -> true;
-			return dataset.filteredMappedJoin(metadata, imbalanceDataset, filter, (a, b) -> new DataPointBuilder()
-				.addAll(a.getValues(Identifier.class))
-				.add(BOOL_VAR, function.apply(BOOLEANDS.cast(a.get(BOOL_VAR))))
-				.add(IMBALANCE, b.getValues(Measure.class).values().iterator().next())
+			return dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> new DataPointBuilder()
+				.addAll(dp1.getValues(Identifier.class))
+				.add(BOOL_VAR, function.apply(BOOLEANDS.cast(dp1.get(BOOL_VAR))))
+				.add(IMBALANCE, dp2.getValues(Measure.class).values().iterator().next())
 				.add(ERRORCODE, NullValue.instance(STRINGDS))
 				.add(ERRORLEVEL, NullValue.instance(NUMBERDS))
-				.build(getLineage(), metadata), false);
+				.build(LineageNode.of("check " + operand, dp1.getLineage()), metadata), false);
 		}
 	}
 	
@@ -196,11 +192,5 @@ public class CheckTransformation extends TransformationImpl
 	{
 		// TODO: add imbalance, errorcode and errorlevel terminals
 		return operand.getTerminals();
-	}
-
-	@Override
-	public Lineage computeLineage()
-	{
-		throw new UnsupportedOperationException();
 	}
 }

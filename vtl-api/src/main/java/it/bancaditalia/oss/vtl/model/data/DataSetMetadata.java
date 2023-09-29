@@ -30,6 +30,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -152,18 +153,18 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	/**
 	 * Creates a new structure where only the named non-identifier components are kept.
 	 * 
-	 * @param names names of the non-identifier components to keep
+	 * @param comps non-identifier components to keep
 	 * @return The new structure.
 	 */
-	public DataSetMetadata keep(String... names);
+	public DataSetMetadata keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps);
 	
 	/**
 	 * Creates a new structure dropping all the named non-identifier components.
 	 * 
-	 * @param names names of the non-identifier components to drop
+	 * @param comps non-identifier components to drop
 	 * @return The new structure.
 	 */
-	public DataSetMetadata drop(Collection<String> names);
+	public DataSetMetadata drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps);
 
 	/**
 	 * Creates a new structure by performing a VTL membership operation on this structure.
@@ -209,7 +210,6 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 			return getComponents(Identifier.class);
 		
 		return names.stream()
-			.map(DataStructureComponent::normalizeAlias)
 			.peek(n -> { if (!contains(n)) throw new VTLMissingComponentsException(n, this); })
 			.map(this::getComponent)
 			.map(Optional::get)

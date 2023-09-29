@@ -66,7 +66,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -120,14 +119,15 @@ public class InStrTransformation extends TransformationImpl
 					.build();
 			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
 			
-			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage(), rightOperand.getLineage()), dp -> singletonMap(INT_MEASURE, 
+			String lineageString = "instr with " + pattern;
+			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> singletonMap(INT_MEASURE, 
 							instrScalar(dp.get(measure), pattern, startPos, nOcc))); 
 		}
 		else
 			return instrScalar((ScalarValue<?, ?, ?, ?>) left, pattern, startPos, nOcc);
 	}
 
-	private ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> instrScalar(ScalarValue<?, ?, ?, ?> scalar,
+	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> instrScalar(ScalarValue<?, ?, ?, ?> scalar,
 			String pattern, int startPos, int nOcc)
 	{
 		if (pattern == null)
@@ -228,11 +228,5 @@ public class InStrTransformation extends TransformationImpl
 				(startOperand != null ? ", " + startOperand : "") + 
 				(occurrenceOperand != null ? ", " + occurrenceOperand : "") + 
 				")";
-	}
-
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, leftOperand.getLineage(), rightOperand.getLineage());
 	}
 }

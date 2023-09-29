@@ -28,7 +28,6 @@ import java.util.Optional;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -102,11 +101,5 @@ public class ParamScope extends AbstractScope
 	public boolean contains(String alias)
 	{
 		return parametersMeta.containsKey(alias);
-	}
-
-	@Override
-	public Optional<Lineage> linkLineage(String alias)
-	{
-		throw new UnsupportedOperationException();
 	}
 }

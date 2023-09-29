@@ -83,11 +83,9 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
 	 * @param component The component to retain.
-	 * @param lineage the lineage of the membership operator
-	 * 
 	 * @return The projected dataset
 	 */
-	public DataSet membership(String component, Lineage lineage);
+	public DataSet membership(String component);
 
 	/**
 	 * Finds a component with given name
@@ -120,9 +118,10 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new DataSet that represents the subspace of this DataSet with given identifiers having specific values
 	 * @param keyValues A Map that gives the value for each identifier to subspace.
+	 * @param lineageOperator TODO
 	 * @return A new DataSet that is a subspace of this DataSet.  
 	 */
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues);
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator);
 	
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.

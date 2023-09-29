@@ -19,16 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -40,11 +39,11 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class KeepClauseTransformation extends DatasetClauseTransformation
 {
@@ -53,13 +52,14 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	
 	public KeepClauseTransformation(List<String> names)
 	{
-		this.names = names.toArray(new String[names.size()]);
+		this.names = names.stream().map(DataStructureComponent::normalizeAlias).collect(toArray(new String[names.size()]));
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
+		
 		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 					Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 					map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
@@ -74,37 +74,19 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
-		DataSetMetadata dsMeta = (DataSetMetadata) operand;
-		List<String> missing = Arrays.stream(names)
-				.filter(n -> !dsMeta.getComponent(normalizeAlias(n)).isPresent())
-				.collect(toList());
-		
-		if (!missing.isEmpty())
-			throw new VTLMissingComponentsException(missing, (DataSetMetadata) operand);
-			
-		Set<DataStructureComponent<Identifier, ?, ?>> namedIDs = Arrays.stream(names)
-				.map(dsMeta::getComponent)
-				.map(o -> o.orElse(null))
-				.filter(Objects::nonNull)
-				.filter(c -> c.is(Identifier.class))
-				.map(c -> c.asRole(Identifier.class))
+		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Utils.getStream(names)
+				.map(((DataSetMetadata) operand)::getComponent)
+				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names)))
+				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("keep", singleton(c.asRole(Identifier.class))); })
+				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
-		
-		if (!namedIDs.isEmpty())
-			throw new VTLInvariantIdentifiersException("keep", namedIDs);
 
-		return dsMeta.keep(names);
+		return ((DataSetMetadata) operand).keep(namedComps);
 	}
 
 	@Override
 	public String toString()
 	{
 		return Arrays.stream(names).collect(joining(", ", "keep ", ""));
-	}
-
-	@Override
-	protected Lineage computeLineage()
-	{
-		return LineageNode.of(toString());
 	}
 }

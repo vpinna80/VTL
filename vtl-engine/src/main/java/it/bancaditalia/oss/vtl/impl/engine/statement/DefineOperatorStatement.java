@@ -24,7 +24,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -36,15 +35,14 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -137,12 +135,6 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 				}
 
 				@Override
-				public Optional<Lineage> linkLineage(String alias)
-				{
-					throw new UnsupportedOperationException();
-				}
-
-				@Override
 				public <T> Map<Transformation, T> getResultHolder(Class<T> type)
 				{
 					return scheme.getResultHolder(type);
@@ -226,12 +218,5 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 	{
 		return "define operator " + getAlias() + "(" + params.stream().map(Parameter::toString).collect(joining(", ")) + ")"
 				+ (resultType != null ? " returns " + resultType : "") + " is " + expression + " end operator;";
-	}
-
-
-	@Override
-	public Lineage getLineage()
-	{
-		throw new UnsupportedOperationException();
 	}
 }

@@ -24,9 +24,7 @@ import static java.util.Collections.emptySet;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -75,10 +73,4 @@ public abstract class UnaryTransformation extends TransformationImpl
 	protected abstract VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata);
 
 	protected abstract VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata);
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, operand.getLineage());
-	}
 }

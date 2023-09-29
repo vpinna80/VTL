@@ -37,7 +37,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.session;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static java.util.stream.Collectors.joining;
@@ -76,7 +75,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -147,28 +145,25 @@ public class VTLSessionImpl implements VTLSession
 	public VTLValue resolve(String alias)
 	{
 		LOGGER.info("Retrieving value for {}", alias);
-		final String normalizedAlias = normalizeAlias(alias);
 
 		Optional<? extends Statement> rule = workspace.getRule(alias);
 		if (rule.isPresent())
 		{
 			Statement statement = rule.get();
 			if (statement.isCacheable())
-				return cacheHelper(normalizedAlias, cache, n -> acquireResult(statement, n));
+				return cacheHelper(alias, cache, n -> acquireResult(statement, n));
 			else
-				return acquireResult(statement, normalizedAlias);
+				return acquireResult(statement, alias);
 		}
 		else
-			return cacheHelper(normalizedAlias, cache, n -> acquireValue(normalizedAlias, Environment::getValue)
-					.orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias)));
+			return cacheHelper(alias, cache, n -> acquireValue(alias, Environment::getValue)
+					.orElseThrow(() -> new VTLUnboundAliasException(alias)));
 	}
 	
 	@Override
 	public VTLValueMetadata getMetadata(String alias)
 	{
-		final String normalizedAlias = normalizeAlias(alias);
-
-		VTLValueMetadata definedStructure = cacheHelper(normalizedAlias, metacache, n -> repository.getStructure(normalizedAlias));
+		VTLValueMetadata definedStructure = cacheHelper(alias, metacache, n -> repository.getStructure(alias));
 		if (definedStructure != null)
 			return definedStructure;
 		
@@ -177,25 +172,23 @@ public class VTLSessionImpl implements VTLSession
 		{
 			Statement statement = rule.get();
 			if (statement.isCacheable())
-				return cacheHelper(normalizedAlias, metacache, n -> statement.getMetadata(this));
+				return cacheHelper(alias, metacache, n -> statement.getMetadata(this));
 			else
 				return statement.getMetadata(this);
 		}
 		else
-			return cacheHelper(normalizedAlias, metacache, n -> acquireValue(n, Environment::getValueMetadata)
-					.orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias)));
+			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getValueMetadata)
+					.orElseThrow(() -> new VTLUnboundAliasException(alias)));
 	}
 
 	@Override
 	public boolean contains(String alias)
 	{
-		final String normalizedAlias = normalizeAlias(alias);
-
-		Optional<? extends Statement> rule = workspace.getRule(normalizedAlias);
+		Optional<? extends Statement> rule = workspace.getRule(alias);
 		if (rule.isPresent())
 			return true;
 		else
-			return cacheHelper(normalizedAlias, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
+			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
 	}
 	
 	@Override
@@ -351,9 +344,7 @@ public class VTLSessionImpl implements VTLSession
 	@Override
 	public Statement getRule(String alias)
 	{
-		final String normalizedAlias = normalizeAlias(alias);
-
-		return workspace.getRule(normalizedAlias).orElseThrow(() -> new VTLUnboundAliasException(normalizedAlias));
+		return workspace.getRule(alias).orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 
 	@Override
@@ -372,13 +363,6 @@ public class VTLSessionImpl implements VTLSession
 	public Workspace getWorkspace()
 	{
 		return workspace;
-	}
-
-	@Override
-	public Optional<Lineage> linkLineage(String alias)
-	{
-		return workspace.getRule(normalizeAlias(alias))
-				.map(Statement::getLineage);
 	}
 
 	@Override

@@ -61,7 +61,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -100,7 +99,8 @@ public class ReplaceTransformation extends TransformationImpl
 			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getComponents(Measure.class);
 			Pattern compiled = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
 			
-			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage(), patternOperand.getLineage(), replaceOperand.getLineage()), 
+			String lineageString = "replace " + pattern + " with " + replace;
+			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), 
 					dp -> measures.stream()
 						.map(measure -> new SimpleEntry<>(measure, (pattern == null || dp.get(measure) instanceof NullValue) 
 							? STRINGDS.cast(NullValue.instance(STRINGDS))
@@ -184,11 +184,5 @@ public class ReplaceTransformation extends TransformationImpl
 	public String toString()
 	{
 		return "replace(" + exprOperand + ", " + patternOperand + ", " + replaceOperand + ")"; 
-	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, replaceOperand.getLineage());
 	}
 }

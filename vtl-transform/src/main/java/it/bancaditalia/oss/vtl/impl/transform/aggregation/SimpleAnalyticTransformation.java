@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -78,7 +77,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		super(operand);
 		
 		this.aggregation = aggregation;
-		this.partitionBy = coalesce(partitionBy, emptyList());
+		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(DataStructureComponent::normalizeAlias).collect(toList());
 		this.orderByClause = coalesce(orderByClause, emptyList());
 		this.windowCriterion = windowCriterion;
 	}
@@ -100,7 +99,6 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		else
 			ordering = orderByClause.stream()
 				.map(toEntry(OrderByItem::getName, OrderByItem::getMethod))
-				.map(keepingValue(DataStructureComponent::normalizeAlias))
 				.map(keepingValue(dataset::getComponent))
 				.map(keepingValue(Optional::get))
 				.map(splitting(SortClause::new))
@@ -133,13 +131,8 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)
 		{
-			String normalizedAlias = normalizeAlias(orderByComponent.getName());
-			Optional<DataStructureComponent<?, ?, ?>> component = dataset.getComponent(normalizedAlias);
-			if (component.isEmpty())
-			{
-				throw new VTLMissingComponentsException(normalizedAlias, dataset);
-			}
-			ordering.put(component.get(), DESC != orderByComponent.getMethod());
+			DataStructureComponent<?, ?, ?> component = dataset.getComponent(orderByComponent.getName()).orElseThrow(() -> new VTLMissingComponentsException(orderByComponent.getName(), dataset));
+			ordering.put(component, DESC != orderByComponent.getMethod());
 		}
 
 		Set<DataStructureComponent<Identifier,?,?>> partitionComponents = dataset.matchIdComponents(partitionBy, "partition by");

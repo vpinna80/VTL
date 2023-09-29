@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singleton;
@@ -51,12 +50,12 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -71,6 +70,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CalcClauseTransformation extends DatasetClauseTransformation
@@ -88,7 +88,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		public CalcClauseItem(Class<? extends ComponentRole> role, String name, Transformation calcClause)
 		{
-			this.name = name.matches("'.*'") ? name.replaceAll("'(.*)'", "$1") : name.toLowerCase();;
+			this.name = normalizeAlias(name);
 			this.calcClause = calcClause;
 			this.role = role;
 		}
@@ -115,7 +115,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			return calcClause.isTerminal();
 		}
 
-		@Override
 		public Set<LeafTransformation> getTerminals()
 		{
 			return calcClause.getTerminals();
@@ -160,12 +159,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else
 				return false;
 		}
-		
-		@Override
-		public Lineage computeLineage()
-		{
-			throw new UnsupportedOperationException();
-		}
 	}
 
 	private final List<CalcClauseItem> calcClauses;
@@ -196,10 +189,12 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				.removeComponents(analyticClauses.stream().map(CalcClauseItem::getName).collect(toSet()))
 				.build();
 		
+		String lineageString = calcClauses.stream().map(CalcClauseItem::getName).collect(joining(", ", "calc ", ""));
+		
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
-			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> {
 					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata);
 					
 					// place calculated components (eventually overriding existing ones) 
@@ -218,13 +213,13 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		// TODO: more efficient way to compute this instead of reduction by joining
 		return Utils.getStream(analyticClauses)
-			.map(calcAndRename(metadata, scheme))
+			.map(calcAndRename(metadata, scheme, dp -> LineageNode.of(lineageString, dp.getLineage())))
 			.reduce(this::joinByIDs)
 			.map(anResult -> joinByIDs(anResult, nonAnalyticResult))
 			.orElse(nonAnalyticResult);
 	}
 	
-	private Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme)
+	private Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme, SerFunction<DataPoint, Lineage> lineage)
 	{
 		return clause -> {
 			LOGGER.debug("Evaluating calc expression {}", clause.calcClause.toString());
@@ -232,7 +227,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getComponents(Measure.class).iterator().next();
 	
 			String newName = coalesce(clause.getName(), measure.getName());
-			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(normalizeAlias(newName)).get();
+			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
 			
 			DataSetMetadata newStructure = new DataStructureBuilder(clauseValue.getMetadata())
 				.removeComponent(measure)
@@ -240,7 +235,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				.build();
 
 			LOGGER.trace("Creating component {} from expression {}", newComponent, clause.calcClause.toString());
-			return clauseValue.mapKeepingKeys(newStructure, dp -> LineageNode.of(this, dp.getLineage(), clause.calcClause.getLineage()), dp -> {
+			return clauseValue.mapKeepingKeys(newStructure, lineage, dp -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values = new HashMap<>(dp);
 				values.remove(measure);
 				values.put(newComponent, dp.get(measure));
@@ -252,7 +247,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	private DataSet joinByIDs(DataSet left, DataSet right)
 	{
 		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, 
-				(dpl, dpr) -> dpl.combine(this, dpr), false);
+				(dpl, dpr) -> dpl.combine(dpr, (dp1, dp2) -> LineageNode.of(((LineageNode) dp1.getLineage()).getTransformation(), dp2.getLineage())), false);
 	}
 
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -323,11 +318,5 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	public String toString()
 	{
 		return calcClauses.stream().map(Object::toString).collect(joining(", ", "calc ", ""));
-	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of("calc", LineageCall.of(calcClauses.stream().map(CalcClauseItem::getLineage).collect(toList())));
 	}
 }

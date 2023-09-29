@@ -61,6 +61,25 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @return The domain subset of this {@link DataStructureComponent}.
 	 */
 	public S getDomain();
+	
+	/**
+	 * Creates a new component by renaming this {@link DataStructureComponent}.
+	 *  
+	 * @param name The name to assign to the new component
+	 * @return the new component.
+	 */
+	public DataStructureComponent<R, S, D> rename(String name);
+	
+	/**
+	 * @return The role of this {@link DataStructureComponent}.
+	 */
+	public Class<R> getRole(); 
+	
+	/**
+	 * Create a measure component with the same domain as this component and a default name. 
+	 * @return The new component
+	 */
+	public DataStructureComponent<Measure, S, D> createMeasureFrom();
 
 	/**
 	 * @return The scalar value metadata of this {@link DataStructureComponent}.
@@ -71,25 +90,12 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	}
 	
 	/**
-	 * @return The role of this {@link DataStructureComponent}.
-	 */
-	public Class<R> getRole(); 
-	
-	/**
 	 * @return The name of this {@link DataStructureComponent}.
 	 */
 	public default String getName()
 	{
 		return getVariable().getName();
 	}
-
-	/**
-	 * Creates a new component by renaming this {@link DataStructureComponent}.
-	 *  
-	 * @param name The name to assign to the new component
-	 * @return the new component.
-	 */
-	public DataStructureComponent<R, S, D> rename(String name);
 
 	/**
 	 * Creates a new component by renaming this {@link DataStructureComponent}.
@@ -158,16 +164,4 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	{
 		return getDomain().cast(value);
 	}
-
-	/**
-	 * Create a measure component with the same domain as this component and a default name. 
-	 * @return The new component
-	 */
-	public DataStructureComponent<Measure, S, D> createMeasureFrom();
-
-	@Override
-	public boolean equals(Object obj);
-	
-	@Override
-	public int hashCode();
 }

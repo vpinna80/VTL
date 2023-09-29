@@ -26,7 +26,6 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -56,12 +55,6 @@ public abstract class CriterionTransformation implements Transformation, SerPred
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
 		return BOOLEAN;
-	}
-
-	@Override
-	public Lineage getLineage()
-	{
-		throw new UnsupportedOperationException();
 	}
 	
 	@Override

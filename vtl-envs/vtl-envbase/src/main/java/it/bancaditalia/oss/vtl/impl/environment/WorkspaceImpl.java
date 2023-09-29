@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +35,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 public class WorkspaceImpl implements Workspace
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(WorkspaceImpl.class);
-	private static final Pattern QUOTED_ID = Pattern.compile("^'(.*)'$");
-	private static final Pattern UNQUOTED_ID = Pattern.compile("^[A-Za-z0-9./]+$");
 
 	private final Map<String, VTLValue> values = new ConcurrentHashMap<>();
 	private final Map<String, Statement> rules = new ConcurrentHashMap<>();
@@ -46,7 +42,7 @@ public class WorkspaceImpl implements Workspace
 	@Override
 	public synchronized void addRule(Statement statement)
 	{
-		if (rules.putIfAbsent(normalize(statement.getAlias()), statement) != null)
+		if (rules.putIfAbsent(statement.getAlias(), statement) != null)
 			throw new IllegalStateException("Object " + statement.getAlias() + " was already defined");
 		LOGGER.info("Added a VTL rule with alias {}", statement.getAlias());
 	}
@@ -60,32 +56,18 @@ public class WorkspaceImpl implements Workspace
 	@Override
 	public synchronized boolean contains(String alias)
 	{
-		return values.containsKey(normalize(alias)) || rules.containsKey(normalize(alias));
+		return values.containsKey(alias) || rules.containsKey(alias);
 	}
 
 	@Override
 	public Optional<VTLValue> getValue(String alias)
 	{
-		return Optional.ofNullable(values.get(normalize(alias)));
+		return Optional.ofNullable(values.get(alias));
 	}
 	
 	@Override
 	public Optional<Statement> getRule(String alias)
 	{
-		return Optional.ofNullable(rules.get(normalize(alias)));
-	}
-
-	private static String normalize(String alias)
-	{
-		String normalizedAlias = alias;
-		Matcher m;
-		if ((m = QUOTED_ID.matcher(alias)).matches())
-			normalizedAlias = m.replaceAll("$1");
-		else if ((m = UNQUOTED_ID.matcher(alias)).matches()) {
-			normalizedAlias = alias.toLowerCase();
-			LOGGER.info("Using lowercase alias {}", normalizedAlias);
-		}
-		
-		return normalizedAlias;
+		return Optional.ofNullable(rules.get(alias));
 	}
 }

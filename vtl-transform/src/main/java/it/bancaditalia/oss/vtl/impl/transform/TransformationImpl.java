@@ -20,13 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.transform;
 
 import java.io.Serializable;
-import java.lang.ref.SoftReference;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -34,25 +29,6 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public abstract class TransformationImpl implements Transformation, Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private final static Logger LOGGER = LoggerFactory.getLogger(TransformationImpl.class);
-	
-	private transient SoftReference<Lineage> lineageCache = new SoftReference<>(null);
-	
-	@Override
-	public final Lineage getLineage()
-	{
-		Lineage lineage = lineageCache == null ? null : lineageCache.get();
-		if (lineage == null)
-		{
-			LOGGER.trace("Starting computing lineage for {}...", this);
-			lineage = computeLineage(); 
-			lineageCache = new SoftReference<>(lineage);
-			LOGGER.trace("Finished computing lineage for {}.", this);
-		}
-		return lineage;
-	}
-
-	protected abstract Lineage computeLineage();
 	
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)

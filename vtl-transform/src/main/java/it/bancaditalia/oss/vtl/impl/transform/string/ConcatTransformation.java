@@ -82,10 +82,9 @@ public class ConcatTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> function = CONCAT.reverseIf(!datasetIsLeftOp);
 		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
-		Lineage scalarLineage = (datasetIsLeftOp ? getRightOperand() : getLeftOperand()).getLineage();
 		SerFunction<DataPoint, Lineage> lineageFunc = dp -> datasetIsLeftOp
-				? LineageNode.of(this, dp.getLineage(), scalarLineage)
-				: LineageNode.of(this, scalarLineage, dp.getLineage());
+				? LineageNode.of("x || " + scalar, dp.getLineage())
+				: LineageNode.of(scalar + " || x" + scalar, dp.getLineage());
 		
 		return dataset.mapKeepingKeys(structure, lineageFunc, dp -> singletonMap(measure, 
 						function.apply(STRINGDS.cast(dp.get(measure)), STRINGDS.cast(scalar)))); 
@@ -112,7 +111,7 @@ public class ConcatTransformation extends BinaryTransformation
 				.add(resultMeasure, finalOperator.apply(dps.getValue(streamedMeasure), dpi.getValue(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build(getLineage(), (DataSetMetadata) metadata), false);
+				.build(LineageNode.of("concat", dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
 		}
 		else
 		{
@@ -127,7 +126,7 @@ public class ConcatTransformation extends BinaryTransformation
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build(getLineage(), (DataSetMetadata) metadata), false);
+					.build(LineageNode.of("concat", dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
 		}
 	}
 

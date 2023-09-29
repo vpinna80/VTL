@@ -144,7 +144,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		if (partitionIds.equals(getComponents(Identifier.class)))
 			original = source.stream()
 					.map(v -> new DataPoint[] { v })
-					.map(this::applyToWindow);
+					.map(this::applyToPartition);
 		else
 		{
 			Collection<DataPoint[]> partitioned;
@@ -177,7 +177,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 			}
 			
 			original = Utils.getStream(partitioned)
-					.map(this::applyToWindow);
+					.map(this::applyToPartition);
 		}
 		
 		Stream<DataPoint> result = original.collect(concatenating(ORDERED));
@@ -190,17 +190,17 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		return result;
 	}
 
-	private Stream<DataPoint> applyToWindow(DataPoint[] window)
+	private Stream<DataPoint> applyToPartition(DataPoint[] partition)
 	{
-		LOGGER.debug("Analyzing window of {} datapoints with keys {}", window.length, window[0].getValues(partitionIds));
+		LOGGER.debug("Analyzing partition of {} datapoints with keys {}", partition.length, partition[0].getValues(partitionIds));
 		if (LOGGER.isTraceEnabled())
-			Arrays.stream(window).forEach(dp -> LOGGER.trace("\tcontaining {}", dp));
+			Arrays.stream(partition).forEach(dp -> LOGGER.trace("\tcontaining {}", dp));
 		
-		IntStream indexes = IntStream.range(0, window.length);
+		IntStream indexes = IntStream.range(0, partition.length);
 		if (!Utils.SEQUENTIAL)
 			indexes = indexes.parallel();
 		
-		return indexes.mapToObj(index -> applyAtIndex(window, index))
+		return indexes.mapToObj(index -> applyToWindow(partition, index))
 			.map(splitting(AnalyticDataSet::explode))
 			.collect(concatenating(ORDERED))
 			.map(splitting((values, dp) -> new DataPointBuilder(dp)
@@ -268,30 +268,30 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 			.map(toEntryWithValue(map -> original));
 	}
 
-	private Entry<Map<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>, DataPoint> applyAtIndex(DataPoint[] window, int index)
+	private Entry<Map<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>, DataPoint> applyToWindow(DataPoint[] partition, int index)
 	{
 		int safeInf = max(0, safeSum(index, inf));
-		int safeSup = 1 + min(window.length - 1, safeSum(index, sup));
+		int safeSup = 1 + min(partition.length - 1, safeSum(index, sup));
 		
-		Map<DataStructureComponent<?, ?, ?>, Stream<ScalarValue<?, ?, ?, ?>>> ranges = new HashMap<>();
+		Map<DataStructureComponent<?, ?, ?>, Stream<ScalarValue<?, ?, ?, ?>>> windows = new HashMap<>();
 		for (DataStructureComponent<?, ?, ?> component: components.keySet())
 		{
-			Stream<ScalarValue<?, ?, ?, ?>> stream = safeInf < safeSup ? Arrays.stream(window, safeInf, safeSup).map(dp -> dp.get(component)) : Stream.empty();
+			Stream<ScalarValue<?, ?, ?, ?>> stream = safeInf < safeSup ? Arrays.stream(partition, safeInf, safeSup).map(dp -> dp.get(component)) : Stream.empty();
 			if (!Utils.SEQUENTIAL)
 				stream = stream.parallel();
-			ranges.put(component, stream);
+			windows.put(component, stream);
 		}
 		
-		LOGGER.trace("\tAnalysis over {} datapoints for datapoint {}", safeSup - safeInf, window[index]);
+		LOGGER.trace("\tAnalysis over {} datapoints for datapoint {}", safeSup - safeInf, partition[index]);
 		
 		final Map<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> atIndex = Utils.getStream(components)
 			.map(splitting((oldC, newC) -> {  
 				// get the array slice containing all the datapoints in current window
-				Stream<ScalarValue<?, ?, ?, ?>> stream = ranges.get(oldC);
+				Stream<ScalarValue<?, ?, ?, ?>> window = windows.get(oldC);
 				
 				// Collector to compute the invocation over current range for the specified component
 				SerCollector<ScalarValue<?, ?, ?, ?>, ?, Collection<ScalarValue<?, ?, ?, ?>>> collector = collectingAndThen(collectors.get(oldC), 
-					v -> finishers.get(oldC).apply(v, window[index].get(oldC)));
+					v -> finishers.get(oldC).apply(v, partition[index].get(oldC)));
 				
 				if (LOGGER.isTraceEnabled())
 					collector = teeing(toList(), collector, (source, result) -> {
@@ -300,10 +300,10 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 					});
 
 				// Pair the result with the new measure
-				return new SimpleEntry<>(newC, stream.collect(collector));
+				return new SimpleEntry<>(newC, window.collect(collector));
 			})).collect(entriesToMap());
 		
-		return new SimpleEntry<>(atIndex, window[index]);
+		return new SimpleEntry<>(atIndex, partition[index]);
 	}
 
 	protected static int safeInc(int a)

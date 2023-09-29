@@ -48,7 +48,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -57,7 +56,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -250,7 +249,7 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public DataPoint combine(Transformation transformation, DataPoint other)
+		public DataPoint combine(DataPoint other, SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
 		{
 			Objects.requireNonNull(other);
 
@@ -260,7 +259,7 @@ public class DataPointBuilder implements Serializable
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
 			DataSetMetadata newStructure = new DataStructureBuilder(finalMap.keySet()).build();
 
-			return new DataPointImpl(LineageNode.of(transformation, getLineage(), other.getLineage()), newStructure, finalMap);
+			return new DataPointImpl(lineageCombiner.apply(this, other), newStructure, finalMap);
 		}
 
 		@Override

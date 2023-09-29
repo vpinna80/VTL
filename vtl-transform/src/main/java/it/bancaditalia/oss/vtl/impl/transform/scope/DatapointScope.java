@@ -36,7 +36,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -107,12 +106,6 @@ public class DatapointScope extends AbstractScope
 
 	@Override
 	public MetadataRepository getRepository()
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Optional<Lineage> linkLineage(String alias)
 	{
 		throw new UnsupportedOperationException();
 	}

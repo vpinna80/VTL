@@ -142,10 +142,4 @@ public class SetTransformation extends TransformationImpl
 	{
 		return operands.stream().map(Object::toString).collect(joining(", ", setOperator + "(", ")"));
 	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, operands.stream().map(Transformation::getLineage).collect(toList()).toArray(new Lineage[0]));
-	}
 }

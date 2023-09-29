@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
@@ -40,7 +39,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -48,6 +46,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class RenameClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
+	
 	private final Map<String, String> renames;
 	
 	public RenameClauseTransformation(Map<String, String> renames)
@@ -102,7 +101,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 			if (accumulator.contains(rename.getValue()))
 				throw new VTLException("rename from " + componentFrom + " cannot override existing component " + dataset.getComponent(rename.getValue()));
 				
-			accumulator = accumulator.rename(componentFrom, normalizeAlias(rename.getValue()));
+			accumulator = accumulator.rename(componentFrom, rename.getValue());
 		}
 		
 		return accumulator;
@@ -114,11 +113,5 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		return renames.entrySet().stream()
 				.map(e -> e.getKey() + " to " + e.getValue())
 				.collect(joining(", ", "rename ", ""));
-	}
-	
-	@Override
-	protected Lineage computeLineage()
-	{
-		return LineageNode.of(toString());
 	}
 }

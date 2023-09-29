@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.engine;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -65,11 +64,4 @@ public interface Statement
 	 * @return true if it makes sense to cache the result of evaluating this statement.
 	 */
 	public boolean isCacheable();
-	
-	/**
-	 * If available returns the lineage for this statement
-	 * 
-	 * @return the lineage if any
-	 */
-	public Lineage getLineage();
 }

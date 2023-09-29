@@ -137,13 +137,12 @@ public class ComparisonTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = casted.reverseIf(leftHasMoreIdentifiers);
 
 		// Scan the dataset with less identifiers and find the matches
-		return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed,
-				(dps, dpi) -> true,
+		return streamed.mappedJoin((DataSetMetadata) metadata, indexed,
 				(dps, dpi) -> new DataPointBuilder()
 						.addAll(dps.getValues(Identifier.class))
 						.addAll(dpi.getValues(Identifier.class))
 						.add(resultMeasure, function.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-						.build(getLineage(), (DataSetMetadata) metadata), false);
+						.build(LineageNode.of(operator.toString(), dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
 	}
 
 	@Override

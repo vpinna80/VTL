@@ -35,7 +35,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +44,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -156,12 +156,9 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public DataSetMetadata keep(String... names)
+		public DataSetMetadata keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps)
 		{
-			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(names)
-					.map(DataStructureComponent::normalizeAlias)
-					.map(components::get)
-					.filter(Objects::nonNull)
+			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(comps)
 					.collect(partitioningBy(c -> c.is(Identifier.class)));
 			
 			return new DataStructureBuilder(getComponents(Identifier.class))
@@ -173,16 +170,9 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public DataSetMetadata drop(Collection<String> names)
+		public DataSetMetadata drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps)
 		{
-			final Set<? extends DataStructureComponent<?, ?, ?>> filter = Utils.getStream(names)
-					.map(DataStructureComponent::normalizeAlias)
-					.map(components::get)
-					.filter(Objects::nonNull)
-					.filter(c -> !c.is(Identifier.class))
-					.collect(toSet());
-
-			return new DataStructureBuilder(this).removeComponents(filter).build();
+			return new DataStructureBuilder(this).removeComponents(comps).build();
 		}
 
 		@Override

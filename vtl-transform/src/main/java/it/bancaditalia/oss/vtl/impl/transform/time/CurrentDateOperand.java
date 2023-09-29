@@ -24,8 +24,6 @@ import static java.time.LocalDate.now;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -57,11 +55,5 @@ public class CurrentDateOperand extends TransformationImpl implements LeafTransf
 	public String getText()
 	{
 		return toString();
-	}
-
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageExternal.of("current_date()");
 	}
 }

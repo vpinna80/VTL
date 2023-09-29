@@ -49,7 +49,6 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
@@ -99,7 +98,7 @@ public class ConditionalTransformation extends TransformationImpl
 				DataSet dataset = thenV instanceof DataSet ? (DataSet) thenV : (DataSet) elseV;
 				ScalarValue<?, ?, ?, ?> scalar = thenV instanceof ScalarValue ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
 				return condD.mappedJoin((DataSetMetadata) metadata, dataset, (dpCond, dp) -> 
-						evalDatasetAndScalar((DataSetMetadata) metadata, checkCondition(dpCond.get(booleanConditionMeasure)) ^ thenV == dataset, dp, scalar, booleanConditionMeasure), false);
+						evalDatasetAndScalar((DataSetMetadata) metadata, thenV == dataset ^ checkCondition(dpCond.get(booleanConditionMeasure)), dp, scalar, booleanConditionMeasure), false);
 			}
 		}
 	}
@@ -110,6 +109,7 @@ public class ConditionalTransformation extends TransformationImpl
 		if (cond)
 		{
 			// condition is true and 'then' is the scalar or condition is false and 'else' is the scalar
+
 			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIdValues = new ConcurrentHashMap<>(dp.getValues(Measure.class));
 			// replace all measures values in the datapoint with the scalar 
 			nonIdValues.replaceAll((c, v) -> scalar);
@@ -117,9 +117,10 @@ public class ConditionalTransformation extends TransformationImpl
 			return new DataPointBuilder(dp.getValues(Identifier.class))
 					.addAll(dp.getValues(Attribute.class))
 					.addAll(nonIdValues)
-					.build(getLineage(), (DataSetMetadata) metadata);
+					.build(LineageNode.of("if", dp.getLineage()), (DataSetMetadata) metadata);
 		}
 		else
+			// condition is false and 'then' is the scalar or condition is true and 'else' is the scalar
 			return dp;
 	}
 
@@ -235,12 +236,6 @@ public class ConditionalTransformation extends TransformationImpl
 	public String toString()
 	{
 		return "if " + condition + " then " + thenExpr + " else " + elseExpr;
-	}
-	
-	@Override
-	public Lineage computeLineage()
-	{
-		return LineageNode.of(this, condition.getLineage(), thenExpr.getLineage(), elseExpr.getLineage());
 	}
 
 	public Transformation getCondition()

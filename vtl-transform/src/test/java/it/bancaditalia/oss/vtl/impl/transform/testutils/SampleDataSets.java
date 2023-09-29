@@ -135,7 +135,7 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues)
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
 	{
 		DataSetMetadata newMetadata = new DataStructureBuilder(dataset.getMetadata()).removeComponents(keyValues.keySet()).build();
 		
@@ -168,9 +168,9 @@ public enum SampleDataSets implements DataSet
 		return dataset.getMetadata();
 	}
 
-	public DataSet membership(String component, Lineage lineage)
+	public DataSet membership(String component)
 	{
-		return dataset.membership(component, mock(Lineage.class));
+		return dataset.membership(component);
 	}
 
 	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name)

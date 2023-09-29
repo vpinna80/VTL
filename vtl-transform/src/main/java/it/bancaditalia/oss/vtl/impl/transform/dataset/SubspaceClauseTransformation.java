@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -36,7 +37,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -50,20 +50,22 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	
 	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?, ?>> subspace)
 	{
-		this.subspace = subspace;
+		this.subspace = subspace.keySet().stream().collect(toMap(DataStructureComponent::normalizeAlias, subspace::get));
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
+		String lineageString = subspace.keySet().stream()
+				.collect(joining(", ", "sub ", ""));
+		
 		DataSet operand = (DataSet) getThisValue(scheme);
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = Utils.getStream(subspace.entrySet())
-				.map(keepingValue(DataStructureComponent::normalizeAlias))
 				.map(keepingValue(operand::getComponent))
 				.map(keepingValue(Optional::get))
 				.collect(toConcurrentMap(e -> e.getKey().asRole(Identifier.class), Entry::getValue));
 		
-		return operand.subspace(subspaceKeyValues);
+		return operand.subspace(subspaceKeyValues, dp -> LineageNode.of(lineageString, dp.getLineage()));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -76,14 +78,13 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata dataset = (DataSetMetadata) operand;
 		
 		Set<String> missing = subspace.keySet().stream()
-				.map(DataStructureComponent::normalizeAlias)
 				.filter(name -> !dataset.getComponent(name, Identifier.class).isPresent())
 				.collect(toSet());
 		
 		if (missing.size() > 0)
 			throw new VTLMissingComponentsException(missing, dataset);
 
-		Set<DataStructureComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "partition by");
+		Set<DataStructureComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "sub");
 		
 		return dataset.subspace(keyValues);
 	}
@@ -94,11 +95,5 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		return subspace.entrySet().stream()
 				.map(e -> e.getKey() + "=" + e.getValue())
 				.collect(joining(", ", "sub ", ""));
-	}
-	
-	@Override
-	protected Lineage computeLineage()
-	{
-		return LineageNode.of(toString());
 	}
 }

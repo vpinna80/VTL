@@ -19,8 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -34,7 +33,7 @@ public class VarIDOperand implements LeafTransformation
 	
 	public VarIDOperand(String name)
 	{
-		this.alias = name;
+		this.alias = DataStructureComponent.normalizeAlias(name);
 	}
 	
 	@Override
@@ -59,12 +58,5 @@ public class VarIDOperand implements LeafTransformation
 	public String toString()
 	{
 		return alias;
-	}
-
-
-	@Override
-	public Lineage getLineage()
-	{
-		return LineageExternal.of(alias);
 	}
 }

@@ -91,7 +91,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 	
 	@Override
-	public DataSet membership(String alias, Lineage lineage)
+	public DataSet membership(String alias)
 	{
 		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
@@ -103,11 +103,11 @@ public abstract class AbstractDataSet implements DataSet
 		SerFunction<DataPoint, Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = 
 				dp -> singletonMap(membershipMeasure, dp.get(sourceComponent));
 		
-		return mapKeepingKeys(membershipStructure, dp -> lineage, operator);
+		return mapKeepingKeys(membershipStructure, dp -> LineageNode.of("#" + alias, dp.getLineage()), operator);
 	}
 	
 	@Override
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues)
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
 	{
 		DataSetMetadata newMetadata = new DataStructureBuilder(dataStructure).removeComponents(keyValues.keySet()).build();
 		
@@ -120,7 +120,9 @@ public abstract class AbstractDataSet implements DataSet
 			{
 				return AbstractDataSet.this.stream()
 						.filter(dp -> dp.matches(keyValues))
-						.map(dp -> new DataPointBuilder(dp).delete(keyValues.keySet()).build(LineageNode.of("SUB" + keyValues, dp.getLineage()), newMetadata));
+						.map(dp -> new DataPointBuilder(dp)
+								.delete(keyValues.keySet())
+								.build(lineageOperator.apply(dp), newMetadata));
 			}
 		};
 	}

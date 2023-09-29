@@ -19,18 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
-
-import java.util.Optional;
-
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -42,20 +36,17 @@ public class ThisScope extends AbstractScope
 	
 	private final DataSet thisValue;
 	private final DataSetMetadata thisMetadata;
-	private final Lineage thisLineage;
 	
-	public ThisScope(DataSet thisValue, Lineage thisLineage)
+	public ThisScope(DataSet thisValue)
 	{
 		this.thisValue = thisValue;
 		this.thisMetadata = thisValue.getMetadata();
-		this.thisLineage = thisLineage;
 	}
 
-	public ThisScope(DataSetMetadata thisMetadata, Lineage thisLineage)
+	public ThisScope(DataSetMetadata thisMetadata)
 	{
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
-		this.thisLineage = thisLineage;
 	}
 
 	@Override
@@ -71,9 +62,8 @@ public class ThisScope extends AbstractScope
 			return thisMetadata;
 		else
 		{
-			final String normalizedAlias = normalizeAlias(alias);
-			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(normalizedAlias).isPresent())
-				return ((DataSetMetadata) thisMetadata).membership(normalizedAlias);
+			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(alias).isPresent())
+				return ((DataSetMetadata) thisMetadata).membership(alias);
 			else 
 				throw new VTLMissingComponentsException(alias, (DataSetMetadata) thisMetadata);
 		}
@@ -86,11 +76,10 @@ public class ThisScope extends AbstractScope
 			return thisValue;
 		else 
 		{
-			final String normalizedAlias = DataStructureComponent.normalizeAlias(alias);
-			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(normalizedAlias).isPresent())
-				return ((DataSet) thisValue).membership(normalizedAlias, thisLineage);
+			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(alias).isPresent())
+				return ((DataSet) thisValue).membership(alias);
 			else 
-				throw new VTLMissingComponentsException(normalizedAlias, thisMetadata);
+				throw new VTLMissingComponentsException(alias, thisMetadata);
 		}
 	}
 
@@ -104,11 +93,5 @@ public class ThisScope extends AbstractScope
 	public MetadataRepository getRepository()
 	{
 		return ConfigurationManager.getDefault().getMetadataRepository();
-	}
-
-	@Override
-	public Optional<Lineage> linkLineage(String alias)
-	{
-		throw new UnsupportedOperationException();
 	}
 }

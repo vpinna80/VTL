@@ -180,7 +180,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet membership(String alias, Lineage lineage)
+	public DataSet membership(String alias)
 	{
 		final DataSetMetadata membershipStructure = getMetadata().membership(alias);
 		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, getMetadata(), membershipStructure);
@@ -196,7 +196,8 @@ public class SparkDataSet extends AbstractDataSet
 		// order columns alphabetically
 		newDF = newDF.select(columns);
 		
-		byte[] serializedLineage = LineageSparkUDT.serialize(lineage);
+		LOGGER.warn("Membership lineage not implemented");
+		byte[] serializedLineage = LineageSparkUDT.serialize(LineageExternal.of("#alias"));
 		return new SparkDataSet(session, membershipStructure, newDF.withColumn("$lineage$", lit(serializedLineage)));
 	}
 
@@ -226,7 +227,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues)
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
 	{
 		DataSetMetadata newMetadata = new DataStructureBuilder(getMetadata()).removeComponents(keyValues.keySet()).build();
 		DataPointEncoder newEncoder = new DataPointEncoder(newMetadata);
