@@ -115,13 +115,22 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	@Override
 	public int hashCode()
 	{
-		return getName().hashCode();
+		return getClass().hashCode();
 	}
 	
 	@Override
 	public boolean equals(Object obj)
 	{
-		return obj != null && obj.getClass() == getClass();
+		if (this instanceof EntireTimeDomainSubset)
+			if (obj != null)
+				if (obj.getClass() == getClass())
+					return true;
+				else
+					return false;
+			else
+				return false;
+		else
+			return obj != null && obj.getClass() == getClass();
 	}
 	
 	@SuppressWarnings("unchecked")

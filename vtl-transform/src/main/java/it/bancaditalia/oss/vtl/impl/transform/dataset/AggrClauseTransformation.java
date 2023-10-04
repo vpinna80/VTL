@@ -124,7 +124,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 		public AggrClauseItem withGroupBy(GroupingClause groupingClause)
 		{
-			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupingClause, name, role));
+			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupingClause, role, name));
 		}
 
 		@Override
@@ -140,7 +140,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 	public AggrClauseTransformation(List<AggrClauseItem> aggrItems, GroupingClause groupingClause, Transformation having)
 	{
-		this.aggrItems = aggrItems;
+		this.aggrItems = aggrItems.stream()
+				.map(ac -> ac.withGroupBy(groupingClause))
+				.collect(toList());
 		this.groupingClause = groupingClause;
 		this.having = having;
 	}
@@ -156,7 +158,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet operand = (DataSet) getThisValue(scheme);
-		
+
 		TransformationScheme thisScope = new ThisScope(operand);
 		
 		List<DataSet> resultList = Utils.getStream(aggrItems)
@@ -165,6 +167,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			.collect(toList());
 		
 		DataSet result = resultList.get(0);
+		
 		DataSetMetadata currentStructure = result.getMetadata();
 		for (int i = 1; i < resultList.size(); i++)
 		{
@@ -172,7 +175,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			DataSet other = resultList.get(i);
 			DataSetMetadata otherStructure = other.getMetadata();
 			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
-			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> dp1.combine(dp2, (d1, d2) -> LineageNode.of(aggrItem, dp1.getLineage(), dp2.getLineage())), false);
+			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> {
+				return dp1.combine(dp2, (d1, d2) -> LineageNode.of(aggrItem, dp1.getLineage(), dp2.getLineage()));
+			}, false);
 		}
 
 		if (having != null)

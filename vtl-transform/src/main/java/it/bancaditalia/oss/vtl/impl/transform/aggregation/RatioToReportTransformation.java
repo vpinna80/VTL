@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
 import java.util.List;
@@ -71,7 +72,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	{
 		super(operand);
 
-		this.partitionBy = coalesce(partitionBy, emptyList());
+		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(DataStructureComponent::normalizeAlias).collect(toList());
 	}
 
 	@Override

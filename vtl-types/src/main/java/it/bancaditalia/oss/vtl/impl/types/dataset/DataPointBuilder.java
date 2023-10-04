@@ -199,7 +199,7 @@ public class DataPointBuilder implements Serializable
 					.findAny()
 					.ifPresent(nonExistingComp -> {
 						IllegalStateException e = new IllegalStateException("Component " + nonExistingComp + " has a value but is not defined on " + structure);
-						LOGGER.error("Component {} has a value but is not defined on {} in datapoint {}", nonExistingComp, structure, values, e);
+						LOGGER.error("In datapoint from {}, component {} has a value but is not defined on {} in datapoint {}", lineage, nonExistingComp, structure, values, e);
 						throw e;
 					});
 

@@ -135,7 +135,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		else
 			casted = (a, b) -> operator.apply(b.getDomain().cast(a), b);
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = casted.reverseIf(leftHasMoreIdentifiers);
-
+		
 		// Scan the dataset with less identifiers and find the matches
 		return streamed.mappedJoin((DataSetMetadata) metadata, indexed,
 				(dps, dpi) -> new DataPointBuilder()

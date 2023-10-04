@@ -30,7 +30,9 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STD
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_SAMP;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.EnumSet;
@@ -39,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
@@ -46,6 +49,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -69,8 +73,8 @@ public class AggregateTransformation extends UnaryTransformation
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
 	private final Transformation having;
-	private final String name;
-	private final Class<? extends ComponentRole> role;
+	private final Class<? extends ComponentRole> role; 
+	private final String name; 
 	
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, GroupingClause groupingClause, Transformation having)
 	{
@@ -79,8 +83,8 @@ public class AggregateTransformation extends UnaryTransformation
 		this.aggregation = aggregation;
 		this.groupingClause = groupingClause;
 		this.having = having;
-		this.name = null;
 		this.role = null;
+		this.name = null;
 
 		if (this.having != null)
 			throw new UnsupportedOperationException(aggregation + "(... having ...) not implemented");
@@ -93,9 +97,18 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 	
 	// constructor for AGGR clause
-	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, String name, Class<? extends ComponentRole> role)
+	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, Class<? extends ComponentRole> role, String name)
 	{
-		this(other.aggregation, other.operand, groupingClause, null);
+		super(other.operand);
+		
+		this.aggregation = other.aggregation;
+		this.groupingClause = groupingClause;
+		this.having = other.having;
+		this.role = coalesce(role, Measure.class);
+		this.name = name;
+
+		if (this.having != null)
+			throw new UnsupportedOperationException(aggregation + "(... having ...) not implemented");
 	}
 	
 	@Override
@@ -108,15 +121,26 @@ public class AggregateTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(dataset.getMetadata().getComponents(Measure.class));
-
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
+		DataStructureComponent<?, ?, ?> outputComponent;
+		if (name != null)
+			outputComponent = ((DataSetMetadata) metadata).getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset.getMetadata()));
+		else
+			outputComponent = dataset.getMetadata().getComponents(Measure.class).iterator().next();
 		
 		// dataset-level aggregation
-		return dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (dp, keyValues) -> {
-				return new DataPointBuilder(keyValues)
-					.addAll(dp)
-					.build(dp.getLineage(), (DataSetMetadata) metadata);
-			});
+		DataSet aggr = dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (dp, keyValues) -> {
+			DataPointBuilder builder = new DataPointBuilder(keyValues);
+			if (name == null)
+				builder = builder.addAll(dp);
+			else if (dp.size() == 1)
+				builder = builder.add(outputComponent, dp.values().iterator().next());
+			else
+				throw new IllegalStateException();
+			return builder.build(dp.getLineage(), (DataSetMetadata) metadata);
+		});
+		
+		return aggr;
 	}
 
 	@Override
@@ -162,15 +186,21 @@ public class AggregateTransformation extends UnaryTransformation
 				
 				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.asRole(Identifier.class)).collect(toSet()));
 				
-				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = dataset.getComponents(Measure.class);
+				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getComponents(Measure.class);
 				if (aggregation == COUNT)
-					newMeasures = COUNT_MEASURE;
+					newComps = COUNT_MEASURE;
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
-					newMeasures = newMeasures.stream()
+					newComps = newComps.stream()
 						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? DataStructureComponentImpl.of(c.getName(), Measure.class, NUMBERDS) : c)
 						.collect(toSet());
+				
+				if (name != null)
+					if (measures.size() > 1)
+						throw new VTLSingletonComponentRequiredException(Measure.class, newComps);
+					else
+						newComps = singleton(DataStructureComponentImpl.of(name, role, measures.iterator().next().getDomain()));
 
-				builder = builder.addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newMeasures);
+				builder = builder.addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newComps);
 				
 				return builder.build();
 			}

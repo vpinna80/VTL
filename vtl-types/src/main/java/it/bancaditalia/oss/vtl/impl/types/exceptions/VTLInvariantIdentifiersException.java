@@ -40,6 +40,11 @@ public class VTLInvariantIdentifiersException extends VTLException
 		super(operation + " cannot change identifier " + before + " to a " + role.getSimpleName());
 	}
 
+	public VTLInvariantIdentifiersException(String operation, DataStructureComponent<?, ?, ?> before)
+	{
+		super(operation + " cannot change component " + before + " to an identifier.");
+	}
+
 	public VTLInvariantIdentifiersException(String operation, Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> before, Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> after)
 	{
 		super(operation + " cannot change identifiers from " + before + " to " + after);

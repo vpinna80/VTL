@@ -21,12 +21,13 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
-import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
-import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
-import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static it.bancaditalia.oss.vtl.util.Utils.splitting;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -34,25 +35,23 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class UnpivotClauseTransformation extends DatasetClauseTransformation
 {
@@ -74,22 +73,20 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		DataSet dataset = (DataSet) getThisValue(scheme);
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
-		Set<DataStructureComponent<Identifier, ?, ?>> oldIdentifiers = dataset.getComponents(Identifier.class);
-		Set<DataStructureComponent<Measure,?,?>> oldMeasures = dataset.getComponents(Measure.class);
 		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
 		DataStructureComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
 
 		String lineageString = toString();
-		return new FunctionDataSet<>(metadata, ds -> ds.stream()
-				.map(dp -> Utils.getStream(oldMeasures)
-				.map(toEntryWithValue(m -> dp.get(m)))
-				.filter(entryByValue(v -> !(v instanceof NullValue)))
-				.map(e -> new DataPointBuilder(dp.getValues(oldIdentifiers))
-						.add(newMeasure, e.getValue())
-						.add(newID, StringValue.of(e.getKey().getName()))
-						.build(LineageNode.of(lineageString, dp.getLineage()), metadata))
-				).collect(concatenating(ORDERED)
-			), dataset);
+		return dataset.flatmapKeepingKeys(metadata, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> {
+			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> measureVals = dp.getValues(Measure.class);
+			return measureVals.entrySet().stream()
+				.map(splitting((m, v) -> {
+					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> res = new HashMap<>();
+					res.put(newID, StringValue.of(m.getName()));
+					res.put(newMeasure, v);
+					return res;
+				}));
+		});
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -100,6 +97,16 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 			throw new VTLInvalidParameterException(value, DataSetMetadata.class);
 
 		DataSetMetadata dataset = (DataSetMetadata) value;
+
+		Optional<DataStructureComponent<?, ?, ?>> maybeId = dataset.getComponent(identifierName);
+		if (maybeId.isPresent())
+		{
+			DataStructureComponent<?, ?, ?> c = maybeId.get();
+			if (c.is(Identifier.class))
+				throw new VTLInvariantIdentifiersException("unpivot", singleton(c.asRole(Identifier.class)));
+			else
+				throw new VTLInvariantIdentifiersException("unpivot", singleton(c.asRole(Identifier.class)));
+		}
 		
 		Set<? extends ValueDomainSubset<?, ?>> domains = dataset.getComponents(Measure.class).stream()
 			.map(DataStructureComponent::getDomain)

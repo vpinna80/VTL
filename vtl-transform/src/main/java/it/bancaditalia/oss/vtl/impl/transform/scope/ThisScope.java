@@ -62,8 +62,8 @@ public class ThisScope extends AbstractScope
 			return thisMetadata;
 		else
 		{
-			if (thisMetadata instanceof DataSetMetadata && ((DataSetMetadata) thisMetadata).getComponent(alias).isPresent())
-				return ((DataSetMetadata) thisMetadata).membership(alias);
+			if (thisMetadata.getComponent(alias).isPresent())
+				return thisMetadata.membership(alias);
 			else 
 				throw new VTLMissingComponentsException(alias, (DataSetMetadata) thisMetadata);
 		}
@@ -76,8 +76,8 @@ public class ThisScope extends AbstractScope
 			return thisValue;
 		else 
 		{
-			if (thisValue instanceof DataSet && ((DataSet) thisValue).getComponent(alias).isPresent())
-				return ((DataSet) thisValue).membership(alias);
+			if (thisValue.getComponent(alias).isPresent())
+				return thisValue.membership(alias);
 			else 
 				throw new VTLMissingComponentsException(alias, thisMetadata);
 		}

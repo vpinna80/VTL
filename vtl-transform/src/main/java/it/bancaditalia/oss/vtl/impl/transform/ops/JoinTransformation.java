@@ -116,7 +116,7 @@ public class JoinTransformation extends TransformationImpl
 		public JoinOperand(Transformation operand, String id)
 		{
 			this.operand = operand;
-			this.id = normalizeAlias(id);
+			this.id = id == null ? null : normalizeAlias(id);
 		}
 
 		public Transformation getOperand()

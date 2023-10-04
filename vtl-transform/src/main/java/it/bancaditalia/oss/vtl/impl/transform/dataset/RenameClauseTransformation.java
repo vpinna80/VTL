@@ -20,11 +20,11 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
@@ -36,6 +36,8 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -65,12 +67,22 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata oldStructure = operand.getMetadata();
 		
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
-				.collect(toMap(name -> name, name -> oldStructure.getComponent(name).get()));
+				.collect(toMapWithValues(name -> oldStructure.getComponent(name)
+						.orElseThrow(() -> new VTLMissingComponentsException(name, oldStructure))));
 
 		Map<String, ? extends DataStructureComponent<?, ?, ?>> newComponents = renames.values().stream()
-				.collect(toMap(name -> name, name -> metadata.getComponent(name).get()));
+				.collect(toMapWithValues(name -> metadata.getComponent(name)
+						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata))));
 
-		return new FunctionDataSet<>(metadata, ds -> ds.stream()
+		if (oldComponents.values().stream().allMatch(c -> c.is(NonIdentifier.class)))
+			return operand.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+					DataPoint renamed = dp;
+					for (Entry<String, String> rename: renames.entrySet())
+						renamed = renamed.renameComponent(oldComponents.get(rename.getKey()), newComponents.get(rename.getValue()));
+					return renamed;
+				});
+		else
+			return new FunctionDataSet<>(metadata, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
 						.addAll(renames.entrySet().stream()
 								.map(splitting((oldName, newName) -> new SimpleEntry<>(newComponents.get(newName), 

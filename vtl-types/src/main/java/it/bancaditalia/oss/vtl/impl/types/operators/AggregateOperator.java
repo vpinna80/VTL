@@ -65,7 +65,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -140,25 +140,7 @@ public enum AggregateOperator
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
 	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
-
-
 	
-	private static class CombinedAccumulator implements Serializable
-	{
-		private static final long serialVersionUID = 1L;
-		
-		final Map<DataStructureComponent<? extends Measure, ?, ?>, Serializable> accs;
-		final Map<Lineage, Long> lineageAcc;
-		final transient Map<DataStructureComponent<?, ?, ?>, AtomicBoolean> allIntegers;
-
-		public CombinedAccumulator(Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors)
-		{
-			accs = Utils.getStream(collectors).collect(mappingValues(collector -> (Serializable) collector.supplier().get()));
-			lineageAcc = new ConcurrentHashMap<>();
-			allIntegers = new ConcurrentHashMap<>();
-		}
-	}
-
 	private AggregateOperator(String name, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
 		this(name, DataPoint::get, reducer);
@@ -199,6 +181,22 @@ public enum AggregateOperator
 		return reducer;
 	}
 	
+	private static class CombinedAccumulator implements Serializable
+	{
+		private static final long serialVersionUID = 1L;
+		
+		final Map<DataStructureComponent<? extends Measure, ?, ?>, Serializable> accs;
+		final Map<Lineage, Long> lineageAcc;
+		final transient Map<DataStructureComponent<?, ?, ?>, AtomicBoolean> allIntegers;
+
+		public CombinedAccumulator(Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors)
+		{
+			accs = Utils.getStream(collectors).collect(mappingValues(collector -> (Serializable) collector.supplier().get()));
+			lineageAcc = new ConcurrentHashMap<>();
+			allIntegers = new ConcurrentHashMap<>();
+		}
+	}
+
 	public SerCollector<DataPoint, ?, DataPoint> getReducer(Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures)
 	{
 		// Special collector for COUNT that collects all measures into one
@@ -273,7 +271,7 @@ public enum AggregateOperator
 							else
 								return result;
 						}))
-				)).build(LineageGroup.of(a.lineageAcc), new DataStructureBuilder(outputMeasures).build()), characteristics);
+				)).build(LineageNode.of(this.toString(), a.lineageAcc.keySet().toArray(new Lineage[a.lineageAcc.size()])), new DataStructureBuilder(outputMeasures).build()), characteristics);
 		
 		return combined;
 	}

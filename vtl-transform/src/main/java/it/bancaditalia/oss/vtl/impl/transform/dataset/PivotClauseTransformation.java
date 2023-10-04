@@ -19,10 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -40,7 +39,6 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -68,20 +66,10 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	private transient DataStructureComponent<Measure, ?, ?> measure;
 	private transient DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?>, StringDomain> identifier;
 
-	private static String sanitize(String string)
-	{
-		return string.replaceAll("^\"(.*)\"$", "$1");
-	}
-	
-	private static String sanitize(ScalarValue<?, ?, ?, ?> value)
-	{
-		return value.toString().replaceAll("^\"(.*)\"$", "$1");
-	}
-	
 	public PivotClauseTransformation(String identifierName, String measureName)
 	{
-		this.identifierName = sanitize(identifierName);
-		this.measureName = sanitize(measureName);
+		this.identifierName = normalizeAlias(identifierName);
+		this.measureName = normalizeAlias(measureName);
 		
 		LOGGER.debug("Pivoting " + measureName + " over " + identifierName);
 	}
@@ -119,17 +107,17 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSet dataset = (DataSet) getThisValue(session);
 		DataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
+		String lineageString = toString();
 		
-		SerCollector<DataPoint, ?, DataPoint> collector = mapping((DataPoint dp) ->
-			new SimpleEntry<>(DataStructureComponentImpl.of(sanitize(dp.get(identifier)), Measure.class, measure.getDomain()), 
-					new SimpleEntry<>(dp.getLineage(), dp.get(measure))), 
-			collectingAndThen(entriesToMap(), map -> {
+		SerCollector<DataPoint, ?, DataPoint> collector = mapping(dp -> {
+				DataStructureComponent<Measure, ?, ?> name = DataStructureComponentImpl.of(dp.get(identifier).get().toString(), Measure.class, measure.getDomain());
+				return new SimpleEntry<>(name, new SimpleEntry<>(dp.getLineage(), dp.get(measure)));
+			}, collectingAndThen(entriesToMap(), map -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dp = Utils.getStream(map)
 					.map(Utils.keepingKey(Entry::getValue))
 					.collect(entriesToMap());
-				Map<Lineage, Long> lineages = Utils.getStream(map.values())
-					.collect(groupingByConcurrent(Entry::getKey, counting()));
-				return new DataPointBuilder(dp).build(LineageGroup.of(lineages), new DataStructureBuilder(dp.keySet()).build());
+				Lineage[] lineages = map.values().toArray(new Lineage[map.size()]);
+				return new DataPointBuilder(dp).build(LineageNode.of(lineageString, lineages), new DataStructureBuilder(dp.keySet()).build());
 			})); 
 		
 		return dataset.aggr(structure, ids, collector, (dp, keys) -> new DataPointBuilder(keys)
