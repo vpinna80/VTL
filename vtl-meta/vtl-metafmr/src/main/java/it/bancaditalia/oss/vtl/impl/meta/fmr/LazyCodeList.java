@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.meta.fmr;
 
 import static java.util.stream.Collectors.toSet;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,16 +44,23 @@ public class LazyCodeList extends AbstractStringCodeList implements Serializable
 	private static final Logger LOGGER = LoggerFactory.getLogger(LazyCodeList.class);
 	
 	private final StructureReferenceBean clRef;
-	private final FMRRepository fmrRepo;
+	private final SDMXRepository fmrRepo;
 	private final Set<StringCodeItemImpl> cache = new HashSet<>();
 
-	public LazyCodeList(StringDomainSubset<?> parent, StructureReferenceBean clRef, FMRRepository fmrRepo)
+	public LazyCodeList(StringDomainSubset<?> parent, StructureReferenceBean clRef, SDMXRepository fmrRepo)
 	{
 		super(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")", s -> new StringCodeList(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")", s));
 		this.fmrRepo = fmrRepo;
 		this.clRef = clRef;
 	}
 
+	// populate codelist cache before serialization
+	private void writeObject(ObjectOutputStream oos) throws IOException 
+	{
+		getCodeItems();
+		oos.defaultWriteObject();
+	}
+	
 	@Override
 	public Set<StringCodeItemImpl> getCodeItems()
 	{

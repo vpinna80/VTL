@@ -46,7 +46,7 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import org.xml.sax.SAXException;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
-import it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository;
+import it.bancaditalia.oss.vtl.impl.meta.fmr.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.meta.fmr.LazyCodeList;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList.StringCodeItemImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -58,31 +58,31 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 @ExtendWith(MockServerExtension.class)
-public class FMRRepositoryTest
+public class SdmxRepositoryTest
 {
 	private final MetadataRepository repo;
 
-	public FMRRepositoryTest(MockServerClient client) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	public SdmxRepositoryTest(MockServerClient client) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		for (String[] entry: new String[][] { 
 					{ "CL_CURRENCY.xml", "/codelist/ECB/CL_CURRENCY/1.0/" }, 
 					{ "EXR.xml", "/dataflow/ECB/EXR/1.0/" }, 
 					{ "ECB_EXR1.xml", "/datastructure/ECB/ECB_EXR1/1.0/" } 
 				})
-			try (InputStream resource = Objects.requireNonNull(FMRRepositoryTest.class.getResourceAsStream(entry[0])))
+			try (InputStream resource = Objects.requireNonNull(SdmxRepositoryTest.class.getResourceAsStream(entry[0])))
 			{
 				client.when(request().withPath(entry[1])).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
 			}
 
-		System.setProperty("vtl.fmr.endpoint", "http://localhost:" + client.getPort());
-		METADATA_REPOSITORY.setValue(FMRRepository.class.getName());
+		System.setProperty("vtl.sdmx.meta.endpoint", "http://localhost:" + client.getPort());
+		METADATA_REPOSITORY.setValue(SDMXRepository.class.getName());
 		repo = ConfigurationManagerFactory.getInstance().getMetadataRepository();
 	}
 
 	@Test
 	public void testGetCodes()
 	{
-		assertTrue(repo instanceof FMRRepository);
+		assertTrue(repo instanceof SDMXRepository);
 		ValueDomainSubset<?, ?> domain = repo.getDomain("ECB:CL_CURRENCY(1.0)");
 		assertTrue(domain instanceof LazyCodeList);
 		Set<StringCodeItemImpl> codes = ((LazyCodeList) domain).getCodeItems();

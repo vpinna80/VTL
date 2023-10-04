@@ -80,29 +80,29 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class FMRRepository extends InMemoryMetadataRepository
+public class SDMXRepository extends InMemoryMetadataRepository
 {
 	private static final long serialVersionUID = 1L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(FMRRepository.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXRepository.class);
 
-	public static final VTLProperty FM_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.fmr.endpoint", "Fusion Metadata Registry base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
-	public static final VTLProperty FMR_API_VERSION = new VTLPropertyImpl("vtl.fmr.version", "Fusion Metadata Registry Rest API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
-	public static final VTLProperty FMR_USERNAME = new VTLPropertyImpl("vtl.fmr.global.user", "Fusion Metadata Registry user name", "", EnumSet.noneOf(Flags.class));
-	public static final VTLProperty FMR_PASSWORD = new VTLPropertyImpl("vtl.fmr.global.password", "Fusion Metadata Registry password", "", EnumSet.of(PASSWORD));
+	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
+	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
+	public static final VTLProperty SDMX_META_USERNAME = new VTLPropertyImpl("vtl.sdmx.meta.user", "SDMX REST user name", "", EnumSet.noneOf(Flags.class));
+	public static final VTLProperty SDMX_META_PASSWORD = new VTLPropertyImpl("vtl.sdmx.meta.password", "SDMX REST password", "", EnumSet.of(PASSWORD));
 	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", EnumSet.noneOf(Flags.class), "false");
 	public static final Pattern SDMX_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+):([[\\p{Alnum}][_.]]+)(?:\\(([0-9._+*~]+)\\))(?:/.*)?$");
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(FMRRepository.class, FM_REGISTRY_ENDPOINT, FMR_API_VERSION, FMR_USERNAME, FMR_PASSWORD, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
+		ConfigurationManagerFactory.registerSupportedProperties(SDMXRepository.class, SDMX_REGISTRY_ENDPOINT, SDMX_API_VERSION, SDMX_META_USERNAME, SDMX_META_PASSWORD, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
 	}
 
-	private final String url = FM_REGISTRY_ENDPOINT.getValue();
+	private final String url = SDMX_REGISTRY_ENDPOINT.getValue();
 	private final boolean drop = Boolean.parseBoolean(SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS.getValue());
 	
 	private transient SdmxRestToBeanRetrievalManager rbrm;
 
-	public FMRRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		if (url == null || url.isEmpty())
 			throw new IllegalStateException("No endpoint configured for FMR repository.");
@@ -132,8 +132,8 @@ public class FMRRepository extends InMemoryMetadataRepository
 		else
 			RestMessageBroker.setProxies(emptyMap());
 		
-		String userName = FMR_USERNAME.getValue();
-		String password = FMR_PASSWORD.getValue();
+		String userName = SDMX_META_USERNAME.getValue();
+		String password = SDMX_META_PASSWORD.getValue();
 		if (userName != null && !userName.isEmpty() && password != null && !password.isEmpty())
 			RestMessageBroker.storeGlobalAuthorization(userName, password);
 		
@@ -218,7 +218,7 @@ public class FMRRepository extends InMemoryMetadataRepository
 			synchronized (this) 
 			{
 				if (rbrm == null)
-					rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(FMR_API_VERSION.getValue())));
+					rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(SDMX_API_VERSION.getValue())));
 			}
 		
 		return rbrm;
