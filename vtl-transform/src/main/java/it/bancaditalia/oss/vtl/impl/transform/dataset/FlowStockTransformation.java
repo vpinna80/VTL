@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DI
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.SUM;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -54,15 +55,16 @@ import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class DatasetUnaryTransformation extends UnaryTransformation
+public class FlowStockTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final static Logger LOGGER = LoggerFactory.getLogger(DatasetUnaryTransformation.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(FlowStockTransformation.class);
 
 	private final static boolean bothIntegers(ScalarValue<?, ?, ?, ?> l, ScalarValue<?, ?, ?, ?> r)
 	{
@@ -122,7 +124,7 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 	private final DatasetOperator operator;
 	private transient DataStructureComponent<Identifier, ?, ?> main;
 
-	public DatasetUnaryTransformation(DatasetOperator operator, Transformation operand)
+	public FlowStockTransformation(DatasetOperator operator, Transformation operand)
 	{
 		super(operand);
 		this.operator = operator;
@@ -152,7 +154,10 @@ public class DatasetUnaryTransformation extends UnaryTransformation
 			if (main != null)
 				return dsmeta;
 			
-			Set<? extends DataStructureComponent<Identifier, ?, ?>> ids = dsmeta.getComponents(Identifier.class);
+			Set<? extends DataStructureComponent<Identifier, ?, ?>> ids = dsmeta.getComponents(Identifier.class).stream()
+					.filter(c -> c.getDomain() instanceof TimeDomainSubset)
+					.collect(toSet());
+			
 			if (ids.size() == 0)
 				throw new VTLMissingComponentsException("Time identifier", ids);
 			
