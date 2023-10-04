@@ -193,7 +193,7 @@ public abstract class AbstractDataSet implements DataSet
 			SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
-		if (!metadata.getComponents(Identifier.class).equals(identifiers))
+		if (!metadata.getComponents(Identifier.class).containsAll(identifiers))
 			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getComponents(Identifier.class));
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
@@ -205,6 +205,34 @@ public abstract class AbstractDataSet implements DataSet
 		return new MappedDataSet(metadata, this, extendingOperator);
 	}
 
+	@Override
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator,
+			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
+	{
+		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
+		if (!metadata.getComponents(Identifier.class).containsAll(identifiers))
+			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getComponents(Identifier.class));
+		
+		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
+		
+		return new AbstractDataSet(metadata) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return AbstractDataSet.this.stream()
+						.map(dp -> {
+							Lineage lineage = lineageOperator.apply(dp);
+							return operator.apply(dp)
+								.map(map -> new DataPointBuilder(dp.getValues(Identifier.class))
+										.addAll(map)
+										.build(lineage, metadata));
+						}).collect(concatenating(ORDERED));
+			}
+		};
+	}
+	
 	@Override
 	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,

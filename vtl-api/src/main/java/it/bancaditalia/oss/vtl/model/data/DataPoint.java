@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKeyValue;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
@@ -36,6 +37,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
+import it.bancaditalia.oss.vtl.util.SerToIntBiFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -47,14 +49,34 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Serializable
 {
 	/**
-	 * Defines a {@link Comparator} that enforces an ordering using the values of a given component
+	 * Defines a {@link Comparator} that enforces an ordering using the values of given identifiers
 	 * 
-	 * @param component the component whose values are used for the ordering
+	 * @param components the component whose values are used for the ordering
 	 * @return the Comparator instance
 	 */
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Comparator<DataPoint> compareBy(DataStructureComponent<Identifier, S, D> component)
+	@SafeVarargs
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Comparator<DataPoint> compareBy(DataStructureComponent<Identifier, ?, ?>... components)
 	{
-		return (Comparator<DataPoint> & Serializable) (dp1, dp2) -> dp1.getValue(component).compareTo(dp2.getValue(component));
+		SerToIntBiFunction<DataPoint, DataPoint> comparator = null;
+		for (DataStructureComponent<Identifier, ?, ?> component: components)
+		{
+			@SuppressWarnings("unchecked")
+			DataStructureComponent<Identifier, S, D> c = (DataStructureComponent<Identifier, S, D>) component;
+			if (comparator == null)
+				comparator = (dp1, dp2) -> dp1.getValue(c).compareTo(dp2.getValue(c));
+			else
+			{
+				SerToIntBiFunction<DataPoint, DataPoint> prevComparator = comparator;
+				comparator = (dp1, dp2) -> {
+					int r = prevComparator.applyAsInt(dp1, dp2);
+					if (r == 0)
+						return dp1.getValue(c).compareTo(dp2.getValue(c));
+					else
+						return r;
+				};
+			}
+		};
+		return (Comparator<DataPoint> & Serializable) comparator::applyAsInt;
 	}
 
 	/**
@@ -139,7 +161,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	{
 		return Utils.getStream(components)
 				.filter(this::containsKey)
-				.collect(SerCollectors.toMapWithValues(this::get));
+				.collect(toMapWithValues(this::get));
 	}
 
 	/**

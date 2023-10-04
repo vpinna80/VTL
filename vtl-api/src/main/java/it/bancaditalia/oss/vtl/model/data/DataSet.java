@@ -134,6 +134,16 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
+	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
+	 * 
+	 * @param metadata The {@link DataSetMetadata structure} the new dataset must conform to.
+	 * @param lineageOperator TODO
+	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
+	 * @return The new transformed DataSet. 
+	 */
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
+
+	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
