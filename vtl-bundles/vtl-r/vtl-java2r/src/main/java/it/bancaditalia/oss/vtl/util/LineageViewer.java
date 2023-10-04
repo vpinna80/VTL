@@ -19,12 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByKeys;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.summingLong;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingByConcurrent;
+import static java.util.stream.Collectors.toList;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
@@ -35,7 +35,6 @@ import java.util.Queue;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -57,13 +56,13 @@ public class LineageViewer
 		Map<Entry<String, String>, Long> adiacences = new HashMap<>();
 		Queue<Entry<Lineage, Long>> sources = new LinkedList<>();
 		
+		Map<Lineage, Long> result;
 		try (Stream<DataPoint> stream = dataset.stream())
 		{
-			Map<Lineage, Long> result = stream.map(DataPoint::getLineage)
-					.map(l -> l.resolveExternal(scheme))
+			result = stream.map(DataPoint::getLineage)
 					.collect(groupingByConcurrent(identity(), counting()));
-			sources.addAll(result.entrySet());
 		}
+		sources.addAll(result.entrySet().stream().map(keepingValue(l -> l.resolveExternal(scheme))).collect(toList()));
 		
 		while (!sources.isEmpty())
 		{
@@ -75,16 +74,8 @@ public class LineageViewer
 			if (lineage instanceof LineageNode)
 			{
 				LineageSet sourceLineages = ((LineageNode) lineage).getSourceSet();
-				Map<Lineage, Long> innerResult;
-
-				// in case of obs-level transformations, datapoint counts are not changed
-				if (sourceLineages instanceof LineageCall)
-					innerResult = ((LineageCall) sourceLineages).getSources().stream()
+				Map<Lineage, Long> innerResult = ((LineageCall) sourceLineages).getSources().stream()
 							.collect(toMapWithValues(k -> count));
-				// in case of grouping transformations, each operand should already have its own count
-				else
-					innerResult = ((LineageGroup) sourceLineages).getSourcesMap().entrySet().stream()
-							.collect(groupingByKeys(summingLong(Entry::getValue)));
 				
 				sources.addAll(innerResult.entrySet());
 				for (Lineage source: innerResult.keySet())

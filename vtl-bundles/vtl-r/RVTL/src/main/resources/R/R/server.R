@@ -22,7 +22,7 @@ repoImpls <- c(
   `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
   `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
   `SDMX Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.SDMXMetadataRepository',
-  `Fusion (Metadata) Registry repository` = 'it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository'
+  `SDMX REST Metadata repository` = 'it.bancaditalia.oss.vtl.impl.meta.fmr.SDMXRepository'
 )
 
 environments <- list(

@@ -46,8 +46,6 @@ public class LineageNode extends LineageImpl
 	{
 		if (sources.length == 1 && sources[0] instanceof LineageCall)
 			return of(transformation, (LineageCall) sources[0]);
-		else if (sources.length == 1 && sources[0] instanceof LineageGroup)
-			return of(transformation, (LineageGroup) sources[0]);
 		else
 			return of(transformation, LineageCall.of(sources));
 	}
