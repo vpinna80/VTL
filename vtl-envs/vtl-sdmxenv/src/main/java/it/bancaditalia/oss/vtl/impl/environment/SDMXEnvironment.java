@@ -89,7 +89,7 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.impl.meta.fmr.FMRRepository;
+import it.bancaditalia.oss.vtl.impl.meta.fmr.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
@@ -121,7 +121,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SDMXEnvironment implements Environment, Serializable
 {
-	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX 2.1 data REST base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
+	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX REST data base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
 	public static final VTLProperty SDMX_DATA_USERNAME = new VTLPropertyImpl("vtl.sdmx.data.user", "SDMX Data Provider user name", "", EnumSet.noneOf(Flags.class));
 	public static final VTLProperty SDMX_DATA_PASSWORD = new VTLPropertyImpl("vtl.sdmx.data.password", "SDMX Data Provider password", "", EnumSet.of(PASSWORD));
 
@@ -132,7 +132,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final DataReaderManager DR_MANAGER = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
 
-	private final FMRRepository repo;
+	private final SDMXRepository repo;
 	private final String endpoint = SDMX_DATA_ENDPOINT.getValue();
 	private final boolean drop;
 
@@ -157,8 +157,8 @@ public class SDMXEnvironment implements Environment, Serializable
 			throw new IllegalStateException("No endpoint configured for SDMX Environment.");
 		
 		MetadataRepository maybeRepo = ConfigurationManagerFactory.getInstance().getMetadataRepository();
-		if (maybeRepo instanceof FMRRepository)
-			repo = (FMRRepository) maybeRepo;
+		if (maybeRepo instanceof SDMXRepository)
+			repo = (SDMXRepository) maybeRepo;
 		else
 			throw new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository.");
 

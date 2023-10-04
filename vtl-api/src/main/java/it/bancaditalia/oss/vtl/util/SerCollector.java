@@ -60,6 +60,11 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 		this.finisher = finisher;
 		this.characteristics = characteristics.isEmpty() ? EnumSet.noneOf(Characteristics.class) : EnumSet.copyOf(characteristics);
 	}
+	
+	public <R1> SerCollector<T, A, R1> andThen(SerFunction<? super R, ? extends R1> otherFinisher)
+	{
+		return new SerCollector<>(supplier, accumulator, combiner, finisher.andThen(otherFinisher), characteristics);
+	}
 
 	@Override
 	public SerSupplier<A> supplier()

@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
+import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -27,17 +29,17 @@ abstract class AbstractStatement implements Serializable, Statement
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final String id;
+	private final String alias;
 	
-	public AbstractStatement(String id)
+	public AbstractStatement(String alias)
 	{
-		this.id = id;
+		this.alias = normalizeAlias(alias);
 	}
 
 	@Override
 	public final String getAlias()
 	{
-		return id;
+		return alias;
 	}
 	
 	@Override
