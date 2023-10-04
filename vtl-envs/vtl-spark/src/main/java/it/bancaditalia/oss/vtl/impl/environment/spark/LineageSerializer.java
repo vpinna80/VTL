@@ -31,7 +31,6 @@ import com.esotericsoftware.kryo.io.Output;
 
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
@@ -43,7 +42,6 @@ public class LineageSerializer extends Serializer<Lineage>
 	static {
 		SERIALIZER_TAGS.put(LineageExternal.class, 1);
 		SERIALIZER_TAGS.put(LineageCall.class, 2);
-		SERIALIZER_TAGS.put(LineageGroup.class, 3);
 		SERIALIZER_TAGS.put(LineageNode.class, 4);
 	}
 	
@@ -58,15 +56,6 @@ public class LineageSerializer extends Serializer<Lineage>
 			List<Lineage> sources = ((LineageCall) lineage).getSources();
 			output.writeInt(sources.size());
 			sources.forEach(l -> write(kryo, output, l));
-		}
-		else if (lineage instanceof LineageGroup)
-		{
-			Map<Lineage, Long> sources = ((LineageGroup) lineage).getSourcesMap();
-			output.writeInt(sources.size());
-			sources.forEach((l, s) -> {
-				write(kryo, output, l);
-				output.writeLong(s);
-			});
 		}
 		else if (lineage instanceof LineageNode)
 		{
@@ -92,12 +81,6 @@ public class LineageSerializer extends Serializer<Lineage>
 				for (int i = 0; i < n; i++)
 					list.add(read(kryo, input, lineageType));
 				return LineageCall.of(list);
-			case 3:
-				n = input.readInt();
-				Map<Lineage, Long> map = new HashMap<>();
-				for (int i = 0; i < n; i++)
-					map.put(read(kryo, input, lineageType), input.readLong());
-				return LineageGroup.of(map);
 			case 4:
 				String transformation = input.readString();
 				LineageSet source = (LineageSet) read(kryo, input, lineageType);

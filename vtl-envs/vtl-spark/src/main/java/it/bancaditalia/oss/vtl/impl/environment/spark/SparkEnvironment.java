@@ -20,6 +20,10 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.registerSupportedProperties;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getColumnsFromComponents;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getComponentsFromStruct;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
@@ -73,7 +77,6 @@ import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
@@ -104,7 +107,7 @@ public class SparkEnvironment implements Environment
 		registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE);
 		if (!UDTRegistration.exists(Lineage.class.getName()))
 		{
-			List<Class<? extends Lineage>> lClasses = List.of(LineageExternal.class, LineageGroup.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
+			List<Class<? extends Lineage>> lClasses = List.of(LineageExternal.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
 			for (Class<?> lineageClass: lClasses)
 				UDTRegistration.register(lineageClass.getName(), LineageSparkUDT.class.getName());
 		}
@@ -117,7 +120,6 @@ public class SparkEnvironment implements Environment
 		{
 			LineageSerializer lineageSerializer = new LineageSerializer();
 			kryo.register(LineageExternal.class, lineageSerializer);
-			kryo.register(LineageGroup.class, lineageSerializer);
 			kryo.register(LineageCall.class, lineageSerializer);
 			kryo.register(LineageNode.class, lineageSerializer);
 			kryo.register(LineageImpl.class, lineageSerializer);
@@ -134,7 +136,6 @@ public class SparkEnvironment implements Environment
 	{
 		String master = VTL_SPARK_MASTER_CONNECTION.getValue();
 		LOGGER.info("Connecting to Spark master {}", master);
-		
 		SparkConf conf = new SparkConf()
 			  .setMaster(master)
 			  .setAppName("Spark SQL Environment for VTL Engine [" + hashCode() + "]")
@@ -142,7 +143,7 @@ public class SparkEnvironment implements Environment
 			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
 			  .set("spark.sql.datetime.java8API.enabled", "true")
 			  .set("spark.sql.catalyst.dateType", "Instant")
-//			  .set("spark.sql.caseSensitive", "true")
+			  .set("spark.sql.caseSensitive", "true")
 			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
@@ -231,7 +232,7 @@ public class SparkEnvironment implements Environment
 			{
 				final Optional<DataStructureComponent<?, ?, ?>> component = metadata.getComponent(name);
 				if (component.isPresent())
-					dataFrame = dataFrame.withColumn(name, dataFrame.col(name).as(name, SparkUtils.getMetadataFor(component.get())));
+					dataFrame = dataFrame.withColumn(name, col(name).as(name, getMetadataFor(component.get())));
 			}
 			
 			dataFrame.drop("$lineage$")
@@ -258,8 +259,8 @@ public class SparkEnvironment implements Environment
 		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
 		{
 			// infer structure from the schema metadata
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(SparkUtils.getComponentsFromStruct(schema)).build();
-			Column[] names = SparkUtils.getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(schema)).build();
+			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			return new SparkDataSet(session, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
 		}
@@ -275,8 +276,8 @@ public class SparkEnvironment implements Environment
 				else if (field.dataType() instanceof IntegerType)
 					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), col(field.name()).cast(LongType));
 			
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(SparkUtils.getComponentsFromStruct(sourceDataFrame2.schema())).build();
-			Column[] names = SparkUtils.getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(sourceDataFrame2.schema())).build();
+			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
 			return new SparkDataSet(session, new DataPointEncoder(structure), enriched);
@@ -302,14 +303,14 @@ public class SparkEnvironment implements Environment
 			
 			// Array of parsers for CSV fields (strings) into scalars
 			Map<DataStructureComponent<?, ?, ?>, DataType> types = structure.stream()
-				.collect(toMapWithValues(c -> SparkUtils.getDataTypeFor(c)));
+				.collect(toMapWithValues(c -> getDataTypeFor(c)));
 			Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
 					.map(structure::getComponent)
 					.map(Optional::get)
 					.sorted(SparkUtils::sorter)
 					.map(c -> udf(valueMapper(c, masks.get(c), types.get(c)), types.get(c))
 							.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
-							.as(c.getName(), SparkUtils.getMetadataFor(c)))
+							.as(c.getName(), getMetadataFor(c)))
 					.collect(toList())
 					.toArray(new Column[normalizedNames.length + 1]);
 			
@@ -318,7 +319,7 @@ public class SparkEnvironment implements Environment
 			converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
 	
 			Dataset<Row> converted = sourceDataFrame.select(converters);
-			Column[] ids = SparkUtils.getColumnsFromComponents(structure.getComponents(Identifier.class)).toArray(new Column[0]);
+			Column[] ids = getColumnsFromComponents(structure.getComponents(Identifier.class)).toArray(new Column[0]);
 			return new SparkDataSet(session, structure, converted.repartition(ids));
 		}
 	}

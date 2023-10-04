@@ -48,6 +48,7 @@ import static org.apache.spark.sql.functions.struct;
 import static org.apache.spark.sql.functions.udaf;
 import static org.apache.spark.sql.functions.udf;
 import static org.apache.spark.sql.types.DataTypes.createArrayType;
+import static scala.collection.JavaConverters.asJava;
 import static scala.collection.JavaConverters.asScala;
 
 import java.io.Serializable;
@@ -67,6 +68,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.spark.api.java.function.FilterFunction;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.MapGroupsFunction;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
@@ -79,6 +81,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.catalyst.expressions.Literal;
 import org.apache.spark.sql.execution.ExplainMode;
 import org.apache.spark.sql.expressions.Window;
@@ -93,6 +96,7 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
+import it.bancaditalia.oss.vtl.impl.environment.spark.DataPointEncoder.DataPointImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
@@ -120,6 +124,8 @@ import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 import scala.Tuple2;
+import scala.collection.immutable.Seq;
+import scala.collection.immutable.SeqOps;
 
 public class SparkDataSet extends AbstractDataSet
 {
@@ -163,7 +169,7 @@ public class SparkDataSet extends AbstractDataSet
 	protected Stream<DataPoint> streamDataPoints()
 	{
 		int bufferSize = Integer.parseInt(VTL_SPARK_PAGE_SIZE.getValue());
-		LOGGER.info("Streaming datapoints into the driver from Spark dataset {}", getMetadata());
+		LOGGER.warn("Streaming datapoints into the driver from Spark dataset {}", getMetadata());
 
 		return StreamSupport.stream(new SparkSpliterator(dataFrame.toLocalIterator(), bufferSize), !Utils.SEQUENTIAL).map(encoder::decode);
 	}
@@ -174,7 +180,7 @@ public class SparkDataSet extends AbstractDataSet
 		return false;
 	}
 
-	/*package*/ Dataset<Row> getDataFrame()
+	public Dataset<Row> getDataFrame()
 	{
 		return dataFrame;
 	}
@@ -197,7 +203,7 @@ public class SparkDataSet extends AbstractDataSet
 		newDF = newDF.select(columns);
 		
 		LOGGER.warn("Membership lineage not implemented");
-		byte[] serializedLineage = LineageSparkUDT.serialize(LineageExternal.of("#alias"));
+		byte[] serializedLineage = LineageSparkUDT.serialize(LineageExternal.of("#" + alias));
 		return new SparkDataSet(session, membershipStructure, newDF.withColumn("$lineage$", lit(serializedLineage)));
 	}
 
@@ -257,7 +263,7 @@ public class SparkDataSet extends AbstractDataSet
 		// wrap the result of the mapping of the decoded datapoint into a struct
 		UDF1<Row, Row> wrappedOperator = row -> {
 			DataPoint dp = encoder.decode(row);
-			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> map = operator.apply(dp);
+			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> map = new HashMap<>(operator.apply(dp));
 			map.keySet().removeAll(originalIDs);
 			
 			// compute values
@@ -300,7 +306,45 @@ public class SparkDataSet extends AbstractDataSet
 
 		return new SparkDataSet(session, metadata, dataFrame2.select(ordered));
 	}
-
+	
+	@Override
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator,
+			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
+	{
+		DataPointEncoder resultEncoder = new DataPointEncoder(metadata);
+		DataStructureComponent<?, ?, ?>[] comps = resultEncoder.components;
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = getMetadata().getComponents(Identifier.class);
+		StructType schema = resultEncoder.schema;
+		
+		Dataset<Row> flattenedDf = dataFrame.flatMap((FlatMapFunction<Row, Row>) row -> {
+			DataPointImpl dp = encoder.decode(row);
+			Serializable[] vals = new Serializable[comps.length + 1];
+			vals[comps.length] = dp.getLineage();
+			
+			// Template of the result rows with the original id values
+			for (int i = 0, j = 0; j < comps.length; j++)
+				if (dp.getComp(i).equals(comps[j]) && ids.contains(comps[j]))
+					vals[j] = dp.getValue(i++).get();
+			
+			return operator.apply(dp)
+				.map(map -> {
+					Serializable[] finalVals = Arrays.copyOf(vals, vals.length);
+					for (int i = 0; i < comps.length; i++)
+					{
+						// fill a copy of the template 
+						DataStructureComponent<?, ?, ?> c = comps[i];
+						if (!ids.contains(c))
+							finalVals[i] = map.get(c).get();
+						if (finalVals[i] instanceof DayHolder)
+							finalVals[i] = ((DayHolder) finalVals[i]).getLocalDate();
+					}
+					return (Row) new GenericRowWithSchema(finalVals, schema);
+				}).iterator();
+		}, resultEncoder.getRowEncoder());
+		
+		return new SparkDataSet(session, resultEncoder, flattenedDf);
+	}
+	
 	@Override
 	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
@@ -330,7 +374,7 @@ public class SparkDataSet extends AbstractDataSet
 		// TODO: Try to execute filter with a null datapoint?
 		FilterFunction<Tuple2<Row, Row>> sparkFilter = rows -> {
 			final DataPoint left = encoder.decode(rows._1);
-			if (leftJoin && IntStream.range(0, rows._2.length()).allMatch(i -> rows._2.get(i) == null))
+			if (leftJoin && (rows._2 == null || IntStream.range(0, rows._2.length()).allMatch(i -> rows._2.get(i) == null)))
 				return true;
 			else
 				return predicate.test(left, sparkOther.encoder.decode(rows._2));
@@ -350,7 +394,7 @@ public class SparkDataSet extends AbstractDataSet
 					Tuple2<Row, Row> rows = iterator.next();
 					final DataPoint left = encoder.decode(rows._1);
 					DataPoint result;
-					if (leftJoin && IntStream.range(0, rows._2.length()).allMatch(i -> rows._2.get(i) == null))
+					if (leftJoin && (rows._2 == null || IntStream.range(0, rows._2.length()).allMatch(i -> rows._2.get(i) == null)))
 						result = mergeOp.apply(left, null);
 					else
 						result = mergeOp.apply(left, sparkOther.encoder.decode(rows._2));
@@ -385,7 +429,7 @@ public class SparkDataSet extends AbstractDataSet
 				.map(item -> {
 					Column col = col(item.getComponent().getName());
 					return item.getMethod() == ASC ? col.asc() : col.desc();
-				}).collect(toArray(new Column[clause.getPartitioningIds().size()]));
+				}).collect(toArray(new Column[clause.getSortCriteria().size()]));
 
 		if (!clause.getSortCriteria().isEmpty())
 			windowSpec = windowSpec == null ? Window.orderBy(orderBy) : windowSpec.orderBy(orderBy);
@@ -461,15 +505,22 @@ public class SparkDataSet extends AbstractDataSet
 		{
 			// This is the decoder for Encoders.kryo(ArrayList.class) used in VTLSparkAggregator
 			final Kryo kryo = new Kryo();
-			result = Arrays.stream((Serializable[]) kryo.readClassAndObject(new Input((byte[]) newV)))
+			Serializable[] source = (Serializable[]) kryo.readClassAndObject(new Input((byte[]) newV));
+			result = Arrays.stream(source)
 					.map(v -> v instanceof byte[] ? kryo.readClassAndObject(new Input((byte[]) v)) : v) 
 					.map(v -> SparkUtils.getScalarFor(v, comp))
 					.collect(toList());
 		}
+		else if (newV instanceof Seq)
+		{
+			@SuppressWarnings("unchecked")
+			SeqOps<Object, Seq<Object>, Seq<Object>> ravV = (SeqOps<Object, Seq<Object>, Seq<Object>>) newV;
+			result = asJava(ravV.map(serialized -> getScalarFor(serialized, comp)));
+		}
 		else
 			result = SparkUtils.getScalarFor(newV, comp);
 		
-		Collection<ScalarValue<?, ?, ?, ?>> finished = finisher.apply((TT) result, SparkUtils.getScalarFor(oldV, comp));
+		Collection<ScalarValue<?, ?, ?, ?>> finished = finisher.apply((TT) result, getScalarFor(oldV, comp));
 	
 		return finished.stream()
 				.map(ScalarValue::get)

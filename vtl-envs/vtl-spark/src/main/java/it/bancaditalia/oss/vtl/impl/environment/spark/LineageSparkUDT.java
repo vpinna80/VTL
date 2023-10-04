@@ -33,7 +33,6 @@ import com.esotericsoftware.kryo.io.Output;
 
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageGroup;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
@@ -50,7 +49,6 @@ public class LineageSparkUDT extends UserDefinedType<Lineage>
     		Kryo kryo = new Kryo();
     		LineageSerializer lineageSerializer = new LineageSerializer();
     		kryo.register(LineageExternal.class, lineageSerializer);
-    		kryo.register(LineageGroup.class, lineageSerializer);
     		kryo.register(LineageCall.class, lineageSerializer);
     		kryo.register(LineageNode.class, lineageSerializer);
     		kryo.register(LineageImpl.class, lineageSerializer);

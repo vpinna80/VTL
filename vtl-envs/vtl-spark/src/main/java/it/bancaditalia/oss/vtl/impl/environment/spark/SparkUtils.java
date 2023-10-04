@@ -39,6 +39,7 @@ import static org.apache.spark.sql.types.DataTypes.LongType;
 import static org.apache.spark.sql.types.DataTypes.StringType;
 
 import java.io.Serializable;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collection;
@@ -145,7 +146,9 @@ public class SparkUtils
 
 		domain = component.getDomain();
 		DOMAIN_BUILDERS.putIfAbsent(domain, builder);
-		
+
+		if (serialized instanceof Date)
+			serialized = (((Date) serialized).toLocalDate());
 		return domain.cast(builder.apply(serialized));
 	}
 
@@ -160,6 +163,9 @@ public class SparkUtils
 			metadataBuilder.putLong("Role", 3);
 		else if (component.getRole() == ViralAttribute.class)
 			metadataBuilder.putLong("Role", 4);
+		else
+			throw new IllegalStateException("Unqualified role class: " + component.getRole());
+		
 		return metadataBuilder.putString("Domain", component.getDomain().getName()).build();
 	}
 

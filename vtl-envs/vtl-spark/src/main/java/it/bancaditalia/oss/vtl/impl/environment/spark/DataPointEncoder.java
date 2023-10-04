@@ -61,11 +61,11 @@ import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 public class DataPointEncoder implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private final DataStructureComponent<?, ?, ?>[] components;
-	private final DataSetMetadata structure;
-	private final StructType schema;
-	private final Encoder<Row> rowEncoder;
-	private final Encoder<Row> rowEncoderNoLineage;
+	public final DataStructureComponent<?, ?, ?>[] components;
+	public final DataSetMetadata structure;
+	public final StructType schema;
+	public final Encoder<Row> rowEncoder;
+	public final Encoder<Row> rowEncoderNoLineage;
 	
 	public DataPointEncoder(Set<? extends DataStructureComponent<?, ?, ?>> dataStructure)
 	{
@@ -110,7 +110,7 @@ public class DataPointEncoder implements Serializable
 		return new GenericRowWithSchema(vals, schema);
 	}
 
-	public DataPoint decode(Row row)
+	public DataPointImpl decode(Row row)
 	{
 		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length];
 		for (int i = 0; i < components.length; i++)
@@ -188,6 +188,7 @@ public class DataPointEncoder implements Serializable
 		private final int hashCode;
 		private final EntrySetView view = new EntrySetView();
 
+
 		public DataPointImpl(DataStructureComponent<?, ?, ?>[] comps, ScalarValue<?, ?, ?, ?>[] vals, Lineage lineage)
 		{
 			this.comps = comps;
@@ -230,10 +231,7 @@ public class DataPointEncoder implements Serializable
 			DataStructureComponent<?, ?, ?>[] comps2 = Arrays.copyOf(comps, comps.length);
 			for (int i = 0; i < comps2.length; i++)
 				if (comps2[i] != null && oldComponent.equals(comps2[i]))
-				{
 					comps2[i] = newComponent;
-					break;
-				}
 			
 			return new DataPointImpl(comps2, vals, lineage);
 		}
@@ -278,7 +276,7 @@ public class DataPointEncoder implements Serializable
 							comps2[j] = null;
 							j = comps2.length;
 						}
-			
+
 			return new DataPointImpl(comps2, vals2, lineageCombiner.apply(this, dpo));
 		}
 
@@ -342,6 +340,27 @@ public class DataPointEncoder implements Serializable
 				.filter(i -> comps[i] != null)
 				.mapToObj(i -> comps[i] + "=" + vals[i])
 				.collect(joining(", ", "{ ", " }"));
+		}
+		
+		@Override
+		public Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+		{
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
+			for (int i = 0; i < comps.length; i++)
+				if (comps[i] != null && !components.contains(comps[i]))
+					result.put(comps[i], vals[i]);
+			
+			return result;
+		}
+		
+		DataStructureComponent<?, ?, ?> getComp(int i)
+		{
+			return comps[i];
+		}
+		
+		ScalarValue<?, ?, ?, ?> getValue(int i)
+		{
+			return vals[i];
 		}
 	}
 }

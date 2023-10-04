@@ -19,20 +19,32 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
+import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ArrayEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.BoxedDoubleEncoder$;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.BoxedLongEncoder$;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.StringEncoder$;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.expressions.Aggregator;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.util.OptionalBox;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
@@ -44,6 +56,7 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 	private final Encoder<?> resultEncoder;
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, A, A> coll;
 	private final DataStructureComponent<?, ?, ?> oldComp;
+	private final Object[] array;
 
 	@SuppressWarnings("unchecked")
 	public VTLSparkAggregator(DataStructureComponent<?, ?, ?> oldComp, DataStructureComponent<?, ?, ?> newComp,
@@ -59,16 +72,39 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 			{
 				accEncoder = (Encoder<A>) session.implicits().newDoubleArrayEncoder();
 				resultEncoder = SparkUtils.getEncoderFor(oldComp);
+				array = null;
 			}
 			else if (zero instanceof OptionalBox)
 			{
 				accEncoder = (Encoder<A>) Encoders.kryo(OptionalBox.class);
 				resultEncoder = SparkUtils.getEncoderFor(oldComp);
+				array = null;
 			}
 			else if (zero instanceof ArrayList)
 			{
 				accEncoder = (Encoder<A>) Encoders.kryo(ArrayList.class);
-				resultEncoder = accEncoder;
+				if (newComp.getDomain() instanceof TimeDomainSubset)
+				{
+					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(STRICT_LOCAL_DATE_ENCODER(), false));
+					array = new LocalDate[0];
+				}
+				else if (newComp.getDomain() instanceof IntegerDomainSubset)
+				{
+					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(BoxedLongEncoder$.MODULE$, false));
+					array = new Double[0];
+				}
+				else if (newComp.getDomain() instanceof NumberDomainSubset)
+				{
+					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(BoxedDoubleEncoder$.MODULE$, false));
+					array = new Double[0];
+				}
+				else if (newComp.getDomain() instanceof StringDomainSubset)
+				{
+					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(StringEncoder$.MODULE$, false));
+					array = new String[0];
+				}
+				else
+					throw new UnsupportedOperationException("Spark aggregation on domain " + newComp.getDomain());
 			}
 			else
 				throw new UnsupportedOperationException("Spark encoder not found for " + zero.getClass().getName());
@@ -109,12 +145,13 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 	{
 		final A result = coll.finisher().apply(reduction);
 		if (result instanceof ArrayList)
+		{
 			return ((ArrayList<?>) result).stream()
 				.map(ScalarValue.class::cast)
 				.map(ScalarValue::get)
 				.map(v -> v instanceof DayHolder ? ((DayHolder) v).getLocalDate() : v)
-				.collect(toList())
-				.toArray(new Serializable[0]);
+				.collect(toArray(Arrays.copyOf(array, ((ArrayList<?>) result).size())));
+		}
 		else if (result instanceof DateValue)
 			return ((DayHolder) ((DateValue<?>) result).get()).getLocalDate();
 		else if (result instanceof ScalarValue)
