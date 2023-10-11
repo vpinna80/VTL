@@ -561,7 +561,7 @@ https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/E
 			<dependency>
 				<groupId>org.apache.zookeeper</groupId>
 				<artifactId>zookeeper</artifactId>
-				<version>3.4.14</version>
+				<version>3.7.2</version>
 			</dependency>
 			<dependency>
 				<groupId>com.thoughtworks.paranamer</groupId>
