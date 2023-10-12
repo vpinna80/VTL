@@ -33,12 +33,11 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ArrayEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.BoxedDoubleEncoder$;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.BoxedLongEncoder$;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.PrimitiveDoubleEncoder$;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.StringEncoder$;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.expressions.Aggregator;
 
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -47,6 +46,7 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.util.OptionalBox;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 
 public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializable>
 {
@@ -68,19 +68,7 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 			this.oldComp = oldComp;
 			
 			A zero = zero();
-			if (zero instanceof double[])
-			{
-				accEncoder = (Encoder<A>) session.implicits().newDoubleArrayEncoder();
-				resultEncoder = SparkUtils.getEncoderFor(oldComp);
-				array = null;
-			}
-			else if (zero instanceof OptionalBox)
-			{
-				accEncoder = (Encoder<A>) Encoders.kryo(OptionalBox.class);
-				resultEncoder = SparkUtils.getEncoderFor(oldComp);
-				array = null;
-			}
-			else if (zero instanceof ArrayList)
+			if (zero instanceof ArrayList)
 			{
 				accEncoder = (Encoder<A>) Encoders.kryo(ArrayList.class);
 				if (newComp.getDomain() instanceof TimeDomainSubset)
@@ -106,8 +94,28 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 				else
 					throw new UnsupportedOperationException("Spark aggregation on domain " + newComp.getDomain());
 			}
-			else
-				throw new UnsupportedOperationException("Spark encoder not found for " + zero.getClass().getName());
+			else 
+			{
+				array = null;
+
+				if (zero instanceof double[])
+				{
+					accEncoder = (Encoder<A>) session.implicits().newDoubleArrayEncoder();
+					resultEncoder = SparkUtils.getEncoderFor(oldComp);
+				}
+				else if (zero instanceof OptionalBox)
+				{
+					accEncoder = (Encoder<A>) Encoders.kryo(OptionalBox.class);
+					resultEncoder = SparkUtils.getEncoderFor(oldComp);
+				}
+				else if (zero instanceof SerDoubleSumAvgCount)
+				{
+					accEncoder = (Encoder<A>) Encoders.tuple(Encoders.LONG(), ExpressionEncoder.apply(new ArrayEncoder<>(PrimitiveDoubleEncoder$.MODULE$, false)));
+					resultEncoder = Encoders.DOUBLE();
+				}
+				else
+					throw new UnsupportedOperationException("Spark encoder not found for " + zero.getClass().getName());
+			}
 		}
 		catch (RuntimeException e) 
 		{
@@ -145,15 +153,10 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 	{
 		final A result = coll.finisher().apply(reduction);
 		if (result instanceof ArrayList)
-		{
 			return ((ArrayList<?>) result).stream()
 				.map(ScalarValue.class::cast)
 				.map(ScalarValue::get)
-				.map(v -> v instanceof DayHolder ? ((DayHolder) v).getLocalDate() : v)
 				.collect(toArray(Arrays.copyOf(array, ((ArrayList<?>) result).size())));
-		}
-		else if (result instanceof DateValue)
-			return ((DayHolder) ((DateValue<?>) result).get()).getLocalDate();
 		else if (result instanceof ScalarValue)
 			return ((ScalarValue<?, ?, ?, ?>) result).get();
 		else

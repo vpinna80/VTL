@@ -35,7 +35,7 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class MonthPeriodHolder extends PeriodHolder<MonthPeriodHolder>
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(MonthHolder.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(MonthPeriodHolder.class);
 	private static final long serialVersionUID = 1L;
 
 	private final YearMonth yearMonth;

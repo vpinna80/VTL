@@ -33,7 +33,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Comparable<? super R> & TemporalAccessor & Serializable & TimeHolder, S extends TimeDomainSubset<S, D>, D extends TimeDomain> 
+public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Comparable<? super R> & TemporalAccessor & Serializable, S extends TimeDomainSubset<S, D>, D extends TimeDomain> 
 		extends BaseScalarValue<I, R, S, D>
 {
 	private static final long serialVersionUID = 1L;

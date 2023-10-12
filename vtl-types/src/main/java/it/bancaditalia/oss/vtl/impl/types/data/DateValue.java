@@ -20,31 +20,32 @@
 package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
+import static java.time.temporal.ChronoUnit.DAYS;
 
+import java.time.LocalDate;
 import java.time.temporal.TemporalAccessor;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDateDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 
-public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValue<S>, DateHolder<?>, S, DateDomain>
+public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValue<S>, LocalDate, S, DateDomain>
 {
 	private static final long serialVersionUID = 1L;
 	private static final ScalarValue<?, ?, EntireDateDomainSubset, DateDomain> NULLINSTANCE = NullValue.instance(DATEDS);
 
-	public DateValue(DateHolder<?> value, S domain)
+	public DateValue(LocalDate value, S domain)
 	{
 		super(value, domain);
 	}
 	
 	public static ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> of(TemporalAccessor value)
 	{
-		return value == null ? NULLINSTANCE : new DateValue<>(DateHolder.of(value), DATEDS);
+		return value == null ? NULLINSTANCE : new DateValue<>(LocalDate.from(value), DATEDS);
 	}
 	
-	public static ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> of(DateHolder<?> value)
+	public static ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> of(LocalDate value)
 	{
 		return value == null ? NULLINSTANCE : new DateValue<>(value, DATEDS);
 	}
@@ -66,6 +67,6 @@ public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValu
 	@Override
 	public DateValue<S> increment(long amount)
 	{
-		return new DateValue<>(get().increment(amount), getDomain());
+		return new DateValue<>(get().plus(amount, DAYS), getDomain());
 	}
 }

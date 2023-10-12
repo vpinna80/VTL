@@ -24,19 +24,18 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getColum
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getComponentsFromStruct;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
+import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static org.apache.spark.sql.SaveMode.Overwrite;
-import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.to_date;
 import static org.apache.spark.sql.functions.udf;
 import static org.apache.spark.sql.types.DataTypes.LongType;
 
-import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -55,7 +54,6 @@ import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.catalyst.expressions.Literal;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
@@ -72,7 +70,6 @@ import com.esotericsoftware.kryo.Kryo;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
@@ -143,10 +140,17 @@ public class SparkEnvironment implements Environment
 			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
 			  .set("spark.sql.datetime.java8API.enabled", "true")
 			  .set("spark.sql.catalyst.dateType", "Instant")
+			  .set("spark.executor.instances", "4")
+			  .set("spark.executor.cores", "2")
+//			  .set("spark.sql.codegen.wholeStage", "false")
+			  .set("spark.sql.windowExec.buffer.in.memory.threshold", "16384")
 			  .set("spark.sql.caseSensitive", "true")
 			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
+		
+		// Set SEQUENTIAL to avoid creating new threads while inside the executor
+		System.setProperty("vtl.sequential", "true");
 		
 		session = SparkSession
 			  .builder()
@@ -232,7 +236,7 @@ public class SparkEnvironment implements Environment
 			{
 				final Optional<DataStructureComponent<?, ?, ?>> component = metadata.getComponent(name);
 				if (component.isPresent())
-					dataFrame = dataFrame.withColumn(name, col(name).as(name, getMetadataFor(component.get())));
+					dataFrame = dataFrame.withColumn(name, dataFrame.col(name).as(name, getMetadataFor(component.get())));
 			}
 			
 			dataFrame.drop("$lineage$")
@@ -272,9 +276,9 @@ public class SparkEnvironment implements Environment
 			
 			for (StructField field: schema.fields())
 				if (field.dataType() instanceof TimestampType)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), to_date(col(field.name())));
+					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), to_date(sourceDataFrame2.col(field.name())));
 				else if (field.dataType() instanceof IntegerType)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), col(field.name()).cast(LongType));
+					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), sourceDataFrame2.col(field.name()).cast(LongType));
 			
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(sourceDataFrame2.schema())).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
@@ -288,7 +292,7 @@ public class SparkEnvironment implements Environment
 			// infer structure from the column header names
 	
 			String[] fieldNames = schema.fieldNames();
-			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = CSVParseUtils.extractMetadata(fieldNames);
+			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = extractMetadata(fieldNames);
 			DataSetMetadata structure = new DataStructureBuilder(metaInfo.getKey()).build();
 			
 			// masks for decoding CSV rows
@@ -308,7 +312,7 @@ public class SparkEnvironment implements Environment
 					.map(structure::getComponent)
 					.map(Optional::get)
 					.sorted(SparkUtils::sorter)
-					.map(c -> udf(valueMapper(c, masks.get(c), types.get(c)), types.get(c))
+					.map(c -> udf(repr -> mapValue(c, repr.toString(), masks.get(c)).get(), types.get(c))
 							.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
 							.as(c.getName(), getMetadataFor(c)))
 					.collect(toList())
@@ -322,19 +326,5 @@ public class SparkEnvironment implements Environment
 			Column[] ids = getColumnsFromComponents(structure.getComponents(Identifier.class)).toArray(new Column[0]);
 			return new SparkDataSet(session, structure, converted.repartition(ids));
 		}
-	}
-	
-	private static UDF1<String, Serializable> valueMapper(DataStructureComponent<?, ?, ?> component, String mask, DataType type)
-	{
-		return new UDF1<String, Serializable>() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Serializable call(String repr) throws Exception
-			{
-				LOGGER.trace("{}", type);
-				return (Serializable) mapValue(component, repr, mask).get();
-			}
-		};
 	}
 }

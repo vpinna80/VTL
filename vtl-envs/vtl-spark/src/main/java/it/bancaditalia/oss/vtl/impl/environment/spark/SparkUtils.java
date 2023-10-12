@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -94,18 +95,21 @@ public class SparkUtils
 		DOMAIN_ENCODERS.put(INTEGERDS, LONG());
 		DOMAIN_ENCODERS.put(NUMBERDS, DOUBLE());
 		DOMAIN_ENCODERS.put(TIMEDS, LOCALDATE());
+		DOMAIN_ENCODERS.put(DATEDS, LOCALDATE());
 
 		DOMAIN_DATATYPES.put(BOOLEANDS, BooleanType);
 		DOMAIN_DATATYPES.put(STRINGDS, StringType);
 		DOMAIN_DATATYPES.put(INTEGERDS, LongType);
 		DOMAIN_DATATYPES.put(NUMBERDS, DoubleType);
 		DOMAIN_DATATYPES.put(TIMEDS, DateType);
+		DOMAIN_DATATYPES.put(DATEDS, DateType);
 
 		DOMAIN_BUILDERS.put(BOOLEANDS, v -> BooleanValue.of((Boolean) v));
 		DOMAIN_BUILDERS.put(STRINGDS, v -> StringValue.of((String) v));
 		DOMAIN_BUILDERS.put(INTEGERDS, v -> IntegerValue.of((Long) v));
 		DOMAIN_BUILDERS.put(NUMBERDS, v -> DoubleValue.of((Double) v));
 		DOMAIN_BUILDERS.put(TIMEDS, v -> DateValue.of((LocalDate) v));
+		DOMAIN_BUILDERS.put(DATEDS, v -> DateValue.of((LocalDate) v));
 	}
 
 	public static Set<DataStructureComponent<?, ?, ?>> getComponentsFromStruct(StructType schema)
@@ -187,8 +191,10 @@ public class SparkUtils
 		ValueDomainSubset<?, ?> domain = component.getDomain();
 		if (domain instanceof StringDomain)
 			return StringType;
+		else if (DOMAIN_DATATYPES.containsKey(domain))
+			return DOMAIN_DATATYPES.get(domain);
 		else
-			return requireNonNull(DOMAIN_DATATYPES.get(domain));
+			throw new UnsupportedOperationException("Domain " + domain + " is not supported on Spark.");
 	}
 
 	public static List<StructField> createStructFromComponents(DataStructureComponent<?, ?, ?>[] components)

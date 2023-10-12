@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
+import java.util.OptionalDouble;
+
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
@@ -41,8 +43,18 @@ public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends 
 		return value == null ? NULLINSTANCE : new DoubleValue<>(value, NUMBERDS);
 	}
 
+	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(OptionalDouble value)
+	{
+		return value != null && value.isPresent() ? new DoubleValue<>(value.getAsDouble(), NUMBERDS) : NULLINSTANCE;
+	}
+
 	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(Double value, S domain)
 	{
 		return value == null ? NullValue.instance(domain) : new DoubleValue<>(value, domain);
+	}
+
+	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(OptionalDouble value, S domain)
+	{
+		return value != null && value.isPresent() ? new DoubleValue<>(value.getAsDouble(), domain) : NullValue.instance(domain);
 	}
 }

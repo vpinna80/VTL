@@ -46,7 +46,6 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -90,37 +89,33 @@ public class DataPointEncoder implements Serializable
 			int k = 0;
 			for (int i = 0; i < dpi.comps.length; i++)
 				if (dpi.comps[i] != null)
-				{
-					vals[k] = dpi.vals[i].get();
-					if (vals[k] instanceof DayHolder)
-						vals[k] = ((DayHolder) vals[k]).getLocalDate();
-					k++;
-				}
+					vals[k++] = dpi.vals[i].get();
 		}
 		else
 			for (int i = 0; i < components.length; i++)
-			{
 				vals[i] = dp.get(components[i]).get();
-				if (vals[i] instanceof DayHolder)
-					vals[i] = ((DayHolder) vals[i]).getLocalDate();
-			}
 		
 		vals[components.length] = dp.getLineage();
 
 		return new GenericRowWithSchema(vals, schema);
 	}
 
-	public DataPointImpl decode(Row row)
+	public DataPointImpl decode(Row row, int start)
 	{
 		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length];
 		for (int i = 0; i < components.length; i++)
-			vals[i] = getScalarFor(row.get(i), components[i]);
+			vals[i] = getScalarFor(row.get(i + start), components[i]);
 		
-		Object lineage = row.get(components.length);
+		Object lineage = row.get(components.length + start);
 		if (lineage instanceof byte[])
-			lineage = LineageSparkUDT.deserialize(row.get(components.length));
+			lineage = LineageSparkUDT.deserialize(lineage);
 		
 		return new DataPointImpl(components, vals, (Lineage) lineage);
+	}
+
+	public DataPointImpl decode(Row row)
+	{
+		return decode(row, 0);
 	}
 
 	public StructType getSchema()
