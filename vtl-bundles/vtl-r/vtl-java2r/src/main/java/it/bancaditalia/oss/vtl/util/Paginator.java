@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -164,7 +163,7 @@ public class Paginator implements AutoCloseable
 					else if (c.getDomain() instanceof BooleanDomain)
 						array[i] = (Boolean) v ? 1 : 0;
 					else
-						array[i] = (int) DAYS.between(LocalDate.of(1970, 1, 1), ((DayHolder) v).getLocalDate());
+						array[i] = (int) DAYS.between(LocalDate.of(1970, 1, 1), (LocalDate) v);
 				}
 			}
 			else // StringDomain, TimeDomain, TimePeriodDomain

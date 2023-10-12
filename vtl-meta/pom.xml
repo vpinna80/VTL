@@ -74,12 +74,18 @@
 				<artifactId>vtl-metafmr</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-metajson</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<modules>
 		<module>vtl-metabase</module>
 		<module>vtl-metadb</module>
+		<module>vtl-metajson</module>
 	</modules>
 
 	<build>
