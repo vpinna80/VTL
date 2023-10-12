@@ -20,12 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.meta.subsets;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
-import java.util.Set;
-import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList.StringCodeItemImpl;
@@ -37,8 +33,6 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.util.SerFunction;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public abstract class AbstractStringCodeList implements StringEnumeratedDomainSubset<AbstractStringCodeList, StringCodeItemImpl, String>, Serializable
 {
@@ -68,15 +62,13 @@ public abstract class AbstractStringCodeList implements StringEnumeratedDomainSu
 
 	private final StringDomainSubset<?> parent;
 	private final String name; 
-	private final SerFunction<Set<String>, AbstractStringCodeList> andThen;
 
 	private int hashCode;
 
-	public AbstractStringCodeList(StringDomainSubset<?> parent, String name, SerFunction<Set<String>, AbstractStringCodeList> andThen)
+	public AbstractStringCodeList(StringDomainSubset<?> parent, String name)
 	{
 		this.name = name;
 		this.parent = parent;
-		this.andThen = andThen;
 	}
 
 	@Override
@@ -135,45 +127,10 @@ public abstract class AbstractStringCodeList implements StringEnumeratedDomainSu
 	{
 		return NullValue.instance(this);
 	}
-
-	@Override
-	public AbstractStringCodeList trim()
-	{
-		return stringCodeListHelper("TRIM(" + getName() + ")", String::trim);
-	}
-
-	@Override
-	public AbstractStringCodeList ltrim()
-	{
-		return stringCodeListHelper("LTRIM(" + getName() + ")", s -> s.replaceAll("^\\s+",""));
-	}
-
-	@Override
-	public AbstractStringCodeList rtrim()
-	{
-		return stringCodeListHelper("RTRIM(" + getName() + ")", s -> s.replaceAll("\\s+$",""));
-	}
-
-	@Override
-	public AbstractStringCodeList ucase()
-	{
-		return stringCodeListHelper("UCASE(" + getName() + ")", String::toUpperCase);
-	}
-
-	@Override
-	public AbstractStringCodeList lcase()
-	{
-		return stringCodeListHelper("LCASE(" + getName() + ")", String::toLowerCase);
-	}
 	
 	protected void setHashCode(int hashCode)
 	{
 		this.hashCode = hashCode;
-	}
-
-	protected AbstractStringCodeList stringCodeListHelper(String newName, UnaryOperator<String> mapper)
-	{
-		return Utils.getStream(getCodeItems()).map(ScalarValue::get).map(Object::toString).map(mapper).collect(collectingAndThen(toSet(), andThen));
 	}
 	
 	@Override

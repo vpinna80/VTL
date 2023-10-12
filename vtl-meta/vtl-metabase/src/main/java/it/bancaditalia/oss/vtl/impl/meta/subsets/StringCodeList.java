@@ -33,7 +33,7 @@ public class StringCodeList extends AbstractStringCodeList implements Serializab
 	
 	public StringCodeList(StringDomainSubset<?> parent, String name, Set<? extends String> items)
 	{
-		super(parent, name, s -> new StringCodeList(parent, name, s));
+		super(parent, name);
 		for (String item: items)
 			this.items.add(new StringCodeItemImpl(item));
 		setHashCode(31 + name.hashCode() + this.items.hashCode());

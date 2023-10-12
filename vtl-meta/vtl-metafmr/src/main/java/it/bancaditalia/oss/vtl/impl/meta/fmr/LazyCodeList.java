@@ -34,7 +34,6 @@ import io.sdmx.api.sdmx.model.beans.codelist.CodeBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -43,13 +42,13 @@ public class LazyCodeList extends AbstractStringCodeList implements Serializable
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(LazyCodeList.class);
 	
-	private final StructureReferenceBean clRef;
-	private final SDMXRepository fmrRepo;
 	private final Set<StringCodeItemImpl> cache = new HashSet<>();
+	private transient final StructureReferenceBean clRef;
+	private transient final SDMXRepository fmrRepo;
 
 	public LazyCodeList(StringDomainSubset<?> parent, StructureReferenceBean clRef, SDMXRepository fmrRepo)
 	{
-		super(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")", s -> new StringCodeList(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")", s));
+		super(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")");
 		this.fmrRepo = fmrRepo;
 		this.clRef = clRef;
 	}

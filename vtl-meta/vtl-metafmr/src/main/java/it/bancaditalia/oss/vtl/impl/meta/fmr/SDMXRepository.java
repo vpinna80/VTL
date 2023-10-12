@@ -28,6 +28,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -36,10 +37,13 @@ import java.net.Proxy.Type;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -49,6 +53,9 @@ import org.xml.sax.SAXException;
 
 import io.sdmx.api.exception.SdmxNoResultsException;
 import io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE;
+import io.sdmx.api.sdmx.model.beans.base.MaintainableBean;
+import io.sdmx.api.sdmx.model.beans.codelist.CodeBean;
+import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.AttributeBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataStructureBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataflowBean;
@@ -70,6 +77,8 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList.StringCodeItemImpl;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -241,5 +250,22 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private String sdmxRef2VtlName(StructureReferenceBean ref)
 	{
 		return ref.getAgencyId() + ":" + ref.getMaintainableId() + "(" + ref.getVersion() + ")";
+	}
+	
+	@Override
+	public Collection<ValueDomainSubset<?, ?>> getValueDomains()
+	{
+		SdmxRestToBeanRetrievalManager rbrm = getBeanRetrievalManager();
+		for (MaintainableBean mb: rbrm.getMaintainableBeans(new StructureReferenceBeanImpl(CODE_LIST)))
+		{
+			CodelistBean cl = (CodelistBean) mb;
+			Set<String> set = cl.getRootCodes().stream()
+					.map(CodeBean::getId)
+					.collect(toSet());
+			String name = cl.getAgencyId() + ":" + cl.getId() + "(" + cl.getVersion() + ")";
+			defineDomain(name, new StringCodeList(STRINGDS, name, set));
+		}
+		
+		return super.getValueDomains();
 	}
 }
