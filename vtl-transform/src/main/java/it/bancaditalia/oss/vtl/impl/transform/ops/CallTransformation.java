@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CallTransformation extends TransformationImpl
 {
@@ -60,7 +59,7 @@ public class CallTransformation extends TransformationImpl
 	@Override
 	public Set<LeafTransformation> getTerminals()
 	{
-		return Utils.getStream(params).map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
+		return params.stream().map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
 	}
 
 	@Override

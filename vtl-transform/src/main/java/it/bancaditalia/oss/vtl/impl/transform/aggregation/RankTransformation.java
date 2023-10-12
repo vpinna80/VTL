@@ -117,7 +117,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		else
-			partitionIDs = Utils.getStream(dataset.getComponents(Identifier.class))
+			partitionIDs = dataset.getComponents(Identifier.class).stream()
 					.filter(partitionID -> !ordering.containsKey(partitionID))
 					.collect(toSet());
 		

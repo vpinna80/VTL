@@ -39,7 +39,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DatapointScope extends AbstractScope
 {
@@ -90,7 +89,7 @@ public class DatapointScope extends AbstractScope
 				? c -> c.getName().equals(alias.replaceAll("'(.*)'", "$1"))
 				: c -> c.getName().equalsIgnoreCase(alias);
 
-		Optional<T> result = Utils.getStream(components)
+		Optional<T> result = components.stream()
 			.filter(filter)
 			.findAny()
 			.map(mapper);

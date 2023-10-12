@@ -49,7 +49,7 @@ public class ParamScope extends AbstractScope
 		this.parent = parent;
 		this.params = params;
 
-		parametersMeta = Utils.getStream(params)
+		parametersMeta = params.entrySet().stream()
 				.collect(toMap(Entry::getKey, entry -> entry.getValue().getMetadata(parent)));
 	}
 

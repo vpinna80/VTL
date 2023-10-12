@@ -45,7 +45,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -55,20 +54,18 @@ public class StringUnaryTransformation extends UnaryTransformation
 
 	public enum StringOperator implements UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain>>
 	{
-		TRIM("trim", String::trim, StringEnumeratedDomainSubset::trim),
-		LTRIM("ltrim", s -> s.replaceAll("^\\s+",""), StringEnumeratedDomainSubset::ltrim),
-		RTRIM("rtrim", s -> s.replaceAll("\\s+$",""), StringEnumeratedDomainSubset::rtrim),
-		UCASE("ucase", String::toUpperCase, StringEnumeratedDomainSubset::ucase),
-		LCASE("lcase", String::toLowerCase, StringEnumeratedDomainSubset::lcase);
+		TRIM("trim", String::trim),
+		LTRIM("ltrim", s -> s.replaceAll("^\\s+","")),
+		RTRIM("rtrim", s -> s.replaceAll("\\s+$","")),
+		UCASE("ucase", String::toUpperCase),
+		LCASE("lcase", String::toLowerCase);
 
 		private final String name;
-		private final UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?>> codeListMapper;
 		private final UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain>> function;
 
-		private StringOperator(String name, UnaryOperator<String> function, UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?>> codeListMapper)
+		private StringOperator(String name, UnaryOperator<String> function)
 		{
 			this.name = name;
-			this.codeListMapper = codeListMapper;
 			this.function = s -> s instanceof NullValue ? NullValue.instance(STRINGDS) : ((StringValue<?, ?>) s).map(function);
 		}
 		
@@ -78,11 +75,6 @@ public class StringUnaryTransformation extends UnaryTransformation
 			return name;
 		}
 		
-		public UnaryOperator<? extends StringEnumeratedDomainSubset<?, ?, ?>> getCodeListMapper()
-		{
-			return codeListMapper;
-		}
-
 		@Override
 		public ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> apply(ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> t)
 		{

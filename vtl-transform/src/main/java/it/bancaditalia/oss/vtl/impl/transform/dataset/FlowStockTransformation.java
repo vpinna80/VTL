@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DI
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.SUM;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 
 import java.util.HashSet;
@@ -103,8 +104,8 @@ public class FlowStockTransformation extends UnaryTransformation
 				.map(Map::keySet)
 				.map(group -> {
 					Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> acc = new ConcurrentHashMap<>();
-					return group.stream().map(dp -> new DataPointBuilder(Utils.getStream(measures)
-							.collect(toConcurrentMap(m -> m, m -> {
+					return group.stream().map(dp -> new DataPointBuilder(measures.stream()
+							.collect(toMapWithValues(m -> {
 								ScalarValue<?, ?, ?, ?> v = acc.merge(m, dp.get(m), op);
 								if (!cumulating)
 									acc.put(m, dp.get(m));

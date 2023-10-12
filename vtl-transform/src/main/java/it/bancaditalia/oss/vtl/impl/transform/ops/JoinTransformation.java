@@ -94,7 +94,6 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class JoinTransformation extends TransformationImpl
 {
@@ -198,14 +197,14 @@ public class JoinTransformation extends TransformationImpl
 
 			// Case A: join all to reference ds
 			LOGGER.debug("Collecting all identifiers");
-			Map<DataSet, Set<DataStructureComponent<Identifier, ?, ?>>> ids = Utils.getStream(datasets)
+			Map<DataSet, Set<DataStructureComponent<Identifier, ?, ?>>> ids = datasets.entrySet().stream()
 					.filter(entryByKey(op -> op != referenceDataSet))
 					.map(Entry::getValue)
 					.collect(toConcurrentMap(ds -> ds, ds -> ds.getComponents(Identifier.class)));
 
 			// TODO: Memory hungry!!! Find some way to stream instead of building this big index collection 
 			LOGGER.debug("Indexing all datapoints");
-			Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier,?,?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> indexes = Utils.getStream(datasets)
+			Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier,?,?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> indexes = datasets.entrySet().stream()
 					.filter(entryByKey(op -> op != referenceDataSet))
 					.map(Entry::getValue)
 					.collect(toMapWithValues(ds -> {
@@ -220,7 +219,7 @@ public class JoinTransformation extends TransformationImpl
 					}));
 
 			// Structure before applying any clause
-			DataSetMetadata totalStructure = Utils.getStream(datasets.values())
+			DataSetMetadata totalStructure = datasets.values().stream()
 				.map(DataSet::getMetadata)
 				.flatMap(Set::stream)
 				.collect(toDataStructure());
@@ -231,7 +230,7 @@ public class JoinTransformation extends TransformationImpl
 				.peek(refDP -> LOGGER.trace("Joining {}", refDP))
 				.map(refDP -> {
 					// Get all datapoints from other datasets (there is no more than 1 for each dataset)
-					List<DataPoint> otherDPs = Utils.getStream(datasets)
+					List<DataPoint> otherDPs = datasets.entrySet().stream()
 							.filter(entryByKey(op -> op != referenceDataSet))
 							.map(Entry::getValue)
 							.map(ds -> indexes.get(ds).get(refDP.getValues(ids.get(ds), Identifier.class)))
@@ -287,7 +286,7 @@ public class JoinTransformation extends TransformationImpl
 			
 			DataSet finalResult = result;
 			result = new StreamWrapperDataSet(metadata, () -> finalResult.stream()
-				.map(dp -> Utils.getStream(dp)
+				.map(dp -> dp.entrySet().stream()
 						.map(keepingValue(onlyIf(comp -> comp.getName().contains("#"), 
 								comp -> comp.rename(comp.getName().split("#", 2)[1])))
 						).collect(toDataPoint(LineageNode.of(rename, dp.getLineage()), metadata))));
@@ -324,20 +323,20 @@ public class JoinTransformation extends TransformationImpl
 	private Map<JoinOperand, DataSet> renameCaseAB1(Map<JoinOperand, DataSet> datasets)
 	{
 		ConcurrentMap<DataStructureComponent<?, ?, ?>, Boolean> unique = new ConcurrentHashMap<>();
-		Set<DataStructureComponent<?, ?, ?>> toBeRenamed = Utils.getStream(datasets.values())
+		Set<DataStructureComponent<?, ?, ?>> toBeRenamed = datasets.values().stream()
 				.map(DataSet::getMetadata)
 				.flatMap(d -> d.stream())
 				.filter(c -> unique.putIfAbsent(c, TRUE) != null)
 				.filter(c -> usingNames.isEmpty() ? c.is(NonIdentifier.class) : !usingNames.contains(c.getName()))
 				.collect(toSet());
 
-		return Utils.getStream(datasets)
+		return datasets.entrySet().stream()
 			.map(keepingKey((op, ds) -> {
 				String qualifier = op.getId() + "#";
 				DataSetMetadata oldStructure = ds.getMetadata();
 				
 				// find components that must be renamed and add 'alias#' in front of their name
-				DataSetMetadata newStructure = Utils.getStream(oldStructure)
+				DataSetMetadata newStructure = oldStructure.stream()
 						.map(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c)
 						.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 						.build();
@@ -353,7 +352,7 @@ public class JoinTransformation extends TransformationImpl
 				
 				// Create the dataset operand renaming components in all its datapoints
 				return new NamedDataSet(op.getId(), new FunctionDataSet<>(newStructure, dataset -> dataset.stream()
-						.map(dp -> Utils.getStream(dp)
+						.map(dp -> dp.entrySet().stream()
 								.map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c))
 								.collect(toDataPoint(dp.getLineage(), newStructure))
 						), ds));
@@ -455,13 +454,13 @@ public class JoinTransformation extends TransformationImpl
 		{
 			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result));
 			// check if rename has made some components unambiguous
-			Map<String, List<String>> sameUnaliasedName = Utils.getStream(result)
+			Map<String, List<String>> sameUnaliasedName = result.stream()
 				.map(DataStructureComponent::getName)
 				.filter(name -> name.contains("#"))
 				.map(name -> name.split("#", 2))
 				.collect(groupingByConcurrent(name -> name[1], mapping(name -> name[0], toList())));
 			// unalias the unambiguous components and add them to the renaming list
-			result = Utils.getStream(result)
+			result = result.stream()
 				.map(comp -> comp.getName().contains("#") && sameUnaliasedName.get(comp.getName().split("#", 2)[1]).size() <= 1 
 					? comp.rename(comp.getName().split("#", 2)[1])
 					: comp

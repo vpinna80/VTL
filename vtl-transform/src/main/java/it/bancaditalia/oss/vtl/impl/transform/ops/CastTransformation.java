@@ -31,6 +31,8 @@ import static java.util.Collections.singletonMap;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -42,7 +44,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -65,7 +66,6 @@ import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CastTransformation extends UnaryTransformation
 {
@@ -84,7 +84,7 @@ public class CastTransformation extends UnaryTransformation
 
 	public CastTransformation(Transformation operand, String targetDomainName, String mask)
 	{
-		this(operand, Utils.getStream(Domains.values())
+		this(operand, Arrays.stream(Domains.values())
 				.filter(domain -> domain.name().equalsIgnoreCase(targetDomainName))
 				.findAny()
 				.orElseThrow(() -> new UnsupportedOperationException("Cast with non-basic domain name '" + targetDomainName + "' not implemented")),
@@ -172,7 +172,7 @@ public class CastTransformation extends UnaryTransformation
 			else if (scalar instanceof StringValue && TIME_PERIODS.contains(target))
 				return TimePeriodValue.of(scalar.get().toString(), mask);
 			else if (scalar instanceof DateValue && target == STRING)
-				return StringValue.of(parseTemporal((DateHolder<?>) scalar.get(), mask));
+				return StringValue.of(parseTemporal((LocalDate) scalar.get(), mask));
 			else if (scalar instanceof TimePeriodValue && target == STRING)
 				return StringValue.of(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
 			else if (scalar instanceof StringValue && target == INTEGER)

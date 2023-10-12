@@ -120,28 +120,23 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected DataSet evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
-
-		DataSet streamed = leftHasMoreIdentifiers ? right : left;
-		DataSet indexed = leftHasMoreIdentifiers ? left : right;
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getMetadata().getComponents(Measure.class).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> rightMeasure = right.getComponents(Measure.class).iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted;
-		if (!leftHasMoreIdentifiers && streamedMeasure.getDomain().isAssignableFrom(indexedMeasure.getDomain()))
-			casted = (a, b) -> operator.apply(a, a.getDomain().cast(b));
+		if (leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()))
+			casted = (l, r) -> operator.apply(l, l.getDomain().cast(r));
 		else
-			casted = (a, b) -> operator.apply(b.getDomain().cast(a), b);
-		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = casted.reverseIf(leftHasMoreIdentifiers);
+			casted = (l, r) -> operator.apply(r.getDomain().cast(l), r);
 		
 		// Scan the dataset with less identifiers and find the matches
-		return streamed.mappedJoin((DataSetMetadata) metadata, indexed,
+		return left.mappedJoin((DataSetMetadata) metadata, right,
 				(dps, dpi) -> new DataPointBuilder()
 						.addAll(dps.getValues(Identifier.class))
 						.addAll(dpi.getValues(Identifier.class))
-						.add(resultMeasure, function.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
+						.add(resultMeasure, casted.apply(dps.get(leftMeasure), dpi.get(rightMeasure)))
 						.build(LineageNode.of(operator.toString(), dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
 	}
 

@@ -44,7 +44,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DropClauseTransformation extends DatasetClauseTransformation
 {
@@ -61,7 +60,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet dataset = (DataSet) getThisValue(scheme);
-		Set<DataStructureComponent<NonIdentifier, ?, ?>> toDrop = Utils.getStream(names)
+		Set<DataStructureComponent<NonIdentifier, ?, ?>> toDrop = Arrays.stream(names)
 				.map(n -> dataset.getComponent(n))
 				.map(Optional::get)
 				.map(c -> c.asRole(NonIdentifier.class))
@@ -81,7 +80,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
-		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Utils.getStream(names)
+		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
 				.map(((DataSetMetadata) operand)::getComponent)
 				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names)))
 				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("drop", singleton(c.asRole(Identifier.class))); })

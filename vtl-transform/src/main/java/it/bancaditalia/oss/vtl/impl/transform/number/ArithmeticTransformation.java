@@ -27,18 +27,16 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DI
 import static it.bancaditalia.oss.vtl.util.SerBiFunction.reverseIf;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithKeys;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
-import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singleton;
 
-
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Set;
-
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -74,7 +72,6 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ArithmeticTransformation extends BinaryTransformation
 {
@@ -123,7 +120,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		
 		String lineageDescriptor = datasetIsLeftOp ? "x" + operator.toString() + scalar : scalar + operator.toString() + "x"; 
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(lineageDescriptor, dp.getLineage()), 
-				dp -> Utils.getStream(measureNames)
+				dp -> measureNames.stream()
 						.collect(toConcurrentMap(name -> ((DataSetMetadata) metadata)
 								.getComponent(name)
 								.map(c -> c.asRole(Measure.class))
@@ -264,8 +261,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 			resultMeasures = singleton(new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS));
 		else
 		{
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = Utils.getStream(leftMeasures).collect(toConcurrentMap(DataStructureComponent::getName, identity()));
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = Utils.getStream(rightMeasures).collect(toConcurrentMap(DataStructureComponent::getName, identity()));
+			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(DataStructureComponent::getName));
+			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = rightMeasures.stream().collect(toMapWithKeys(DataStructureComponent::getName));
 			
 			resultMeasures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
 				.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))

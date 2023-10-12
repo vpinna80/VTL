@@ -59,7 +59,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class AggrClauseTransformation extends DatasetClauseTransformation
 {
@@ -161,7 +160,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 		TransformationScheme thisScope = new ThisScope(operand);
 		
-		List<DataSet> resultList = Utils.getStream(aggrItems)
+		List<DataSet> resultList = aggrItems.stream()
 			.map(thisScope::eval)
 			.map(DataSet.class::cast)
 			.collect(toList());

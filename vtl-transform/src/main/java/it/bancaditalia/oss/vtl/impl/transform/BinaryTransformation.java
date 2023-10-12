@@ -39,6 +39,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public abstract class BinaryTransformation extends TransformationImpl
 {
@@ -63,7 +64,7 @@ public abstract class BinaryTransformation extends TransformationImpl
 	{
 		// Optimization, avoid parallelization of simple scalar operations
 		BinaryOperator<VTLValue> combiner = evalCombiner(getMetadata(scheme));
-		if (scheme instanceof DatapointScope)
+		if (Utils.SEQUENTIAL || scheme instanceof DatapointScope)
 			return combiner.apply(leftOperand.eval(scheme), rightOperand.eval(scheme));
 		else
 			return ThreadUtils.evalFuture(combiner, t -> leftOperand.eval(scheme), t -> rightOperand.eval(scheme)).apply(this);

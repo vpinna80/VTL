@@ -43,7 +43,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class KeepClauseTransformation extends DatasetClauseTransformation
 {
@@ -74,7 +73,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
-		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Utils.getStream(names)
+		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
 				.map(((DataSetMetadata) operand)::getComponent)
 				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names)))
 				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("keep", singleton(c.asRole(Identifier.class))); })

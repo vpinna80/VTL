@@ -71,7 +71,6 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerFunction;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CalcClauseTransformation extends DatasetClauseTransformation
 {
@@ -180,7 +179,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet operand = (DataSet) getThisValue(scheme);
 
-		final Map<Boolean, List<CalcClauseItem>> partitionedClauses = Utils.getStream(calcClauses)
+		final Map<Boolean, List<CalcClauseItem>> partitionedClauses = calcClauses.stream()
 			.collect(partitioningBy(CalcClauseItem::isAnalytic));
 		final List<CalcClauseItem> nonAnalyticClauses = partitionedClauses.get(false);
 		final List<CalcClauseItem> analyticClauses = partitionedClauses.get(true);
@@ -199,7 +198,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					
 					// place calculated components (eventually overriding existing ones) 
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
-						Utils.getStream(nonAnalyticClauses)
+						nonAnalyticClauses.stream()
 							.collect(toConcurrentMap(
 								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),
 								clause -> clause.eval(dpSession))
@@ -212,7 +211,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				});
 
 		// TODO: more efficient way to compute this instead of reduction by joining
-		return Utils.getStream(analyticClauses)
+		return analyticClauses.stream()
 			.map(calcAndRename(metadata, scheme, dp -> LineageNode.of(lineageString, dp.getLineage())))
 			.reduce(this::joinByIDs)
 			.map(anResult -> joinByIDs(anResult, nonAnalyticResult))

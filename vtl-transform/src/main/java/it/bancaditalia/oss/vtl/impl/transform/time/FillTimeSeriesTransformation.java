@@ -169,7 +169,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 
 	private static DataPoint fill(DataPoint toBeFilled, DataSetMetadata structure)
 	{
-		return Utils.getStream(structure)
+		return structure.stream()
 			.filter(not(toBeFilled::containsKey))
 			.map(Utils.toEntryWithValue(c -> (ScalarValue<?, ?, ?, ?>) NullValue.instanceFrom(c)))
 			.collect(toDataPoint(toBeFilled.getLineage(), structure, toBeFilled));
