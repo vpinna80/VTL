@@ -90,7 +90,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 					.map(Path::toString)
 					.map(path -> "csv:" + path)
 					.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; })
-					.map(string -> mapper.apply(string + "****" + alias))
+					.map(path -> mapper.apply(path + "****" + alias))
 					.orElse(Optional.empty());
 		else
 			return Optional.empty();

@@ -125,7 +125,12 @@ VTLSession <- R6Class("VTLSession",
                       else if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
                         pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
                                        .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"))
-                        df <- convertToDF(tryCatch({ pager$more(-1L) }, finally = { pager$close() }))
+                        df <- convertToDF(tryCatch({ pager$more(-1L) },
+                          error = function(e) {
+                            e$jobj$printStackTrace()
+                            signalCondition(e)
+                          }, finally = { pager$close() })
+                        )
                         role <- J("it.bancaditalia.oss.vtl.model.data.ComponentRole")
                         attr(df, 'measures') <- sapply(jnode$getComponents(attr(role$Measure, 'jobj')), function(x) { x$getName() })
                         attr(df, 'identifiers') <- sapply(jnode$getComponents(attr(role$Identifier, 'jobj')), function(x) { x$getName() })

@@ -141,7 +141,7 @@ public class CSVFileEnvironment implements Environment
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
 			final String[] headers = reader.readLine().split(",");
-			DataSetMetadata structure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(name);
+			DataSetMetadata structure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(originalName);
 			
 			if (structure == null)
 				structure = new DataStructureBuilder(extractMetadata(headers).getKey()).build();

@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.config;
 
+import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.getSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.instanceOfClass;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
@@ -103,7 +104,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 		for (String envName: ENVIRONMENT_IMPLEMENTATION.getValues())
 			try
 			{
-				vtlProps.addAll(ConfigurationManagerFactory.getSupportedProperties(Class.forName(envName, true, Thread.currentThread().getContextClassLoader())));
+				vtlProps.addAll(getSupportedProperties(Class.forName(envName, true, Thread.currentThread().getContextClassLoader())));
 			}
 			catch (ClassNotFoundException e)
 			{
