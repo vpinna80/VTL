@@ -54,7 +54,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 	
 	public CSVPathEnvironment()
 	{
-		paths = Arrays.asList(VTL_CSV_ENVIRONMENT_SEARCH_PATH.getValue().split(","));
+		paths = Arrays.asList(VTL_CSV_ENVIRONMENT_SEARCH_PATH.getValue().split(System.getProperty("path.separator")));
 	}
 	
 	@Override
@@ -90,7 +90,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 					.map(Path::toString)
 					.map(path -> "csv:" + path)
 					.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; })
-					.map(string -> mapper.apply(string))
+					.map(string -> mapper.apply(string + "****" + alias))
 					.orElse(Optional.empty());
 		else
 			return Optional.empty();

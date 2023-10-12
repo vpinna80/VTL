@@ -21,6 +21,10 @@ package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow.CSV_PROGRESS_BAR_THRESHOLD;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
@@ -42,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -56,15 +61,16 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils;
 import it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -76,6 +82,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CSVFileEnvironment implements Environment
@@ -118,21 +125,30 @@ public class CSVFileEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(String name)
+	public Optional<VTLValue> getValue(String originalName)
 	{
+		String name = originalName.contains("****") ? originalName.split("\\*\\*\\*\\*", 2)[0] : originalName;
+		if(originalName.contains("****"))
+			originalName = originalName.split("\\*\\*\\*\\*", 2)[1];
+
 		if (!contains(name))
 			return Optional.empty();
 
 		String fileName = name.substring(4);
-		
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
-			final DataSetMetadata structure = new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build();
+			final String[] headers = reader.readLine().split(",");
+			DataSetMetadata structure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(name);
 			
-			return Optional.of(new FunctionDataSet<>(structure, this::streamFileName, fileName, true));
+			if (structure == null)
+				structure = new DataStructureBuilder(extractMetadata(headers).getKey()).build();
+			else
+				LOGGER.info("CSV structure found in repository.");
+			
+			return Optional.of(new BiFunctionDataSet<>(structure, this::streamFileName, fileName, originalName));
 		}
 		catch (IOException e)
 		{
@@ -155,14 +171,36 @@ public class CSVFileEnvironment implements Environment
 		return new URL(fileName).openStream();
 	}
 	
-	protected Stream<DataPoint> streamFileName(String fileName)
+	protected Stream<DataPoint> streamFileName(String fileName, String alias)
 	{
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
-			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
-			List<DataStructureComponent<?, ?, ?>> metadata = headerInfo.getKey();
-			Map<DataStructureComponent<?, ?, ?>, String> masks = headerInfo.getValue();
-			final DataSetMetadata structure = new DataStructureBuilder(metadata).build();
+			DataSetMetadata maybeStructure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(alias);
+			List<DataStructureComponent<?, ?, ?>> metadata;
+			Map<DataStructureComponent<?, ?, ?>, String> masks;
+			
+			if (maybeStructure == null)
+			{
+				Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
+				metadata = headerInfo.getKey();
+				masks = headerInfo.getValue();
+				maybeStructure = new DataStructureBuilder(metadata).build();
+			}
+			else
+			{
+				metadata = Arrays.stream(reader.readLine().split(","))
+					.map(maybeStructure::getComponent)
+					.map(Optional::get)
+					.collect(toList());
+				masks = metadata.stream()
+						.map(toEntryWithValue(DataStructureComponent::getDomain))
+						.map(keepingKey(ValueDomainSubset::getName))
+						.map(keepingKey(CSVParseUtils::mapVarType))
+						.map(keepingKey(Entry::getValue))
+						.collect(entriesToMap());
+			}
+			
+			DataSetMetadata structure = maybeStructure;
 
 			LOGGER.info("Counting lines on {}...", fileName);
 			long lineCount = countLines(reader);
@@ -247,7 +285,15 @@ public class CSVFileEnvironment implements Environment
 
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
-			return Optional.of(new DataStructureBuilder(extractMetadata(reader.readLine().split(",")).getKey()).build());
+			final String[] headers = reader.readLine().split(",");
+			DataSetMetadata structure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(name);
+			
+			if (structure == null)
+				structure = new DataStructureBuilder(extractMetadata(headers).getKey()).build();
+			else
+				LOGGER.info("CSV structure found in repository.");
+
+			return Optional.of(structure);
 		}
 		catch (IOException e)
 		{

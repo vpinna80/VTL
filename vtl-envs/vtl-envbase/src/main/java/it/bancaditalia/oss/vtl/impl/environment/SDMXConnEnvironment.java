@@ -41,6 +41,7 @@ import static java.util.stream.Collectors.toSet;
 import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
@@ -86,7 +87,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DateHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
@@ -135,10 +135,10 @@ public class SDMXConnEnvironment implements Environment, Serializable
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(SDMXConnEnvironment.class, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
 		
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), DateHolder::of);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), DateHolder::of);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh"), DateHolder::of);
-		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd"), DateHolder::of);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"), LocalDate::from);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm"), LocalDate::from);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd hh"), LocalDate::from);
+		FORMATTERS.put(DateTimeFormatter.ofPattern("yyyy-MM-dd"), LocalDate::from);
 		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodHolder::new);
 		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodHolder::new);
 		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), QuarterPeriodHolder::new);

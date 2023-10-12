@@ -73,7 +73,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -387,7 +386,7 @@ public class REnvironment implements Environment
 				if (dt.matches("^\\d{4}-\\d{2}$"))
 					return new TimePeriodValue<>(new MonthPeriodHolder(YearMonth.parse(dt)), MONTHSDS);
 				else if (dt.matches("^\\d{4}-\\d{2}-\\d{2}$"))
-					return new DateValue<>(new DayHolder(LocalDate.parse(dt)), DATEDS);
+					return new DateValue<>(LocalDate.parse(dt), DATEDS);
 				else
 					throw new UnsupportedOperationException("Date format not supported: " + dt);
 			}

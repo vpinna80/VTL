@@ -175,10 +175,7 @@ public class CSVParseUtils
 			else
 				role = Measure.class;
 
-			String normalizedName = cname.replaceAll("^[$#]", "");
-			normalizedName = normalizedName.matches("'.*'") ? normalizedName.replaceAll("'(.*)'", "$1") : normalizedName.toLowerCase();
-
-			component = DataStructureComponentImpl.of(normalizedName, role, domain);
+			component = DataStructureComponentImpl.of(cname.replaceAll("^[$#]", ""), role, domain);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)
