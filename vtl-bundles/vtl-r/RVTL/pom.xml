@@ -185,7 +185,7 @@
 				<excludes>
 					<exclude>R/DESCRIPTION</exclude>
 					<exclude>scripts/**</exclude>
-					<exclude>R/inst/vtlStudio2/ui.R</exclude>
+					<exclude>R/R/ui.R</exclude>
 				</excludes>
 				<filtering>false</filtering>
 			</resource>
@@ -193,7 +193,7 @@
 				<directory>src/main/resources</directory>
 				<includes>
 					<include>R/DESCRIPTION</include>
-					<include>R/inst/vtlStudio2/ui.R</include>
+					<include>R/R/ui.R</include>
 					<include>scripts/**</include>
 				</includes>
 				<filtering>true</filtering>
