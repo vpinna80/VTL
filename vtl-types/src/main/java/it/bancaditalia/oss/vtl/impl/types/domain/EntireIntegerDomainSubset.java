@@ -62,7 +62,7 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 		{
 			if (value instanceof NullValue)
 				return NullValue.instance(this);
-			if (value instanceof DoubleValue || value instanceof BigDecimalValue)
+			else if (value instanceof DoubleValue || value instanceof BigDecimalValue)
 				return IntegerValue.of(((Number) value.get()).longValue());
 			else if (value instanceof IntegerValue)
 				return IntegerValue.of((Long) value.get());

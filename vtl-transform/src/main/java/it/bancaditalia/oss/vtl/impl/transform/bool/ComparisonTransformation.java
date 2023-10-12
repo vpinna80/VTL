@@ -126,10 +126,12 @@ public class ComparisonTransformation extends BinaryTransformation
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted;
-		if (leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()))
-			casted = (l, r) -> operator.apply(l, l.getDomain().cast(r));
+		ValueDomainSubset<?, ?> leftD = leftMeasure.getDomain();
+		ValueDomainSubset<?, ?> rightD = rightMeasure.getDomain();
+		if (leftD.isAssignableFrom(rightD))
+			casted = (l, r) -> operator.apply(l, leftD.cast(r));
 		else
-			casted = (l, r) -> operator.apply(r.getDomain().cast(l), r);
+			casted = (l, r) -> operator.apply(rightD.cast(l), r);
 		
 		// Scan the dataset with less identifiers and find the matches
 		return left.mappedJoin((DataSetMetadata) metadata, right,

@@ -79,5 +79,6 @@
 	<modules>
 		<module>vtl-bundle-deps</module>
 		<module>vtl-integration-tests</module>
+		<module>vtl-coverage</module>
 	</modules>
 </project>

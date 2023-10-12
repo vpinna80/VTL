@@ -29,7 +29,7 @@
 
 	<parent>
 		<groupId>it.bancaditalia.oss.vtl</groupId>
-		<artifactId>vtl</artifactId>
+		<artifactId>vtl-bundles</artifactId>
 		<version>${revision}</version>
 	</parent>
 
@@ -59,18 +59,29 @@
 		</profile>
 	</profiles>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-bundle-deps</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
 	<dependencies>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-confman</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-bundle-deps</artifactId>
 			<version>${project.version}</version>
 			<type>pom</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-confman</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

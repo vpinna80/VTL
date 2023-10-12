@@ -88,7 +88,6 @@
 				<module>vtl-api</module>
 				<module>vtl-bundles</module>
 				<module>vtl-conf</module>
-				<module>vtl-coverage</module>
 				<module>vtl-engine</module>
 				<module>vtl-envs</module>
 				<module>vtl-meta</module>
@@ -879,6 +878,14 @@
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
 					<version>4.2</version>
+					<executions>
+						<execution>
+							<phase>validate</phase>
+							<goals>
+								<goal>check</goal>
+							</goals>
+						</execution>
+					</executions>
 					<configuration>
 						<licenseSets>
 							<licenseSet>
@@ -978,7 +985,7 @@
 					<rules>
 						<dependencyConvergence />
 						<requireJavaVersion>
-							<version>[1.8.0-242,)</version>
+							<version>[11,)</version>
 						</requireJavaVersion>
 					</rules>
 				</configuration>

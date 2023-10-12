@@ -26,6 +26,11 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.RETURNS_SMART_NULLS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -40,10 +45,9 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
@@ -57,14 +61,16 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class CSVFileEnvironmentTest
 {
-	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = new DataStructureComponentImpl<>("identifier", Identifier.class, DATEDS);
-	private static final DataStructureComponent<?, ?, ?> MEASURE = new DataStructureComponentImpl<>("measure", Measure.class, NUMBERDS);
-	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = new DataStructureComponentImpl<>("attribute", Attribute.class, STRINGDS);
-	private static final DataStructureComponent<?, ?, ?> QUOTED = new DataStructureComponentImpl<>("quoted", Attribute.class, STRINGDS);
+	private static final MockedStatic<ConfigurationManager> CONFMAN_MOCK = mockStatic(ConfigurationManager.class);
+	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = new DataStructureComponentImpl<>("IDENTIFIER", Identifier.class, DATEDS);
+	private static final DataStructureComponent<?, ?, ?> MEASURE = new DataStructureComponentImpl<>("MEASURE", Measure.class, NUMBERDS);
+	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = new DataStructureComponentImpl<>("ATTRIBUTE", Attribute.class, STRINGDS);
+	private static final DataStructureComponent<?, ?, ?> QUOTED = new DataStructureComponentImpl<>("QUOTED", Attribute.class, STRINGDS);
 	private static final String QUOTED_RESULTS[] = {
 			" Hello, \"World\"! ",
 			"Test with",
@@ -78,13 +84,17 @@ public class CSVFileEnvironmentTest
 	
 	private static Path TEMPCSVFILE;
 	private static String CSVALIAS;
-	
-	@Mock
-	ConfigurationManager confman;
 
 	@BeforeAll
-	public static void beforeClass() throws IOException
+	public static void beforeAll() throws IOException
 	{
+		MetadataRepository metarepo = mock(MetadataRepository.class, RETURNS_SMART_NULLS);
+		when(metarepo.getStructure(anyString())).thenReturn(null);
+		ConfigurationManager mockConfman = mock(ConfigurationManager.class, RETURNS_SMART_NULLS);
+		CONFMAN_MOCK.when(ConfigurationManager::getDefault).thenReturn(mockConfman);
+		when(mockConfman.getMetadataRepository()).thenReturn(metarepo);
+		CONFIG_MANAGER.setValue(mockConfman.getClass().getName());
+		
 		TEMPCSVFILE = Files.createTempFile(null, ".csv").toAbsolutePath();
 		InputStream csv = CSVFileEnvironment.class.getResourceAsStream("test.csv");
 		assertNotNull(csv, "CSV test file not found");
@@ -101,6 +111,8 @@ public class CSVFileEnvironmentTest
 	@AfterAll
 	public static void afterClass() throws InterruptedException
 	{
+		CONFMAN_MOCK.close();
+		
 		try
 		{
 			Files.deleteIfExists(TEMPCSVFILE);
@@ -110,12 +122,6 @@ public class CSVFileEnvironmentTest
 			// ignore
 		}
 	}	
-	
-	@BeforeEach
-	public void beforeEach()
-	{
-		CONFIG_MANAGER.setValue(confman.getClass().getName());
-	}
 
 	@Test
 	public void containsTest()
@@ -138,7 +144,7 @@ public class CSVFileEnvironmentTest
 		assertTrue(structure.contains(IDENTIFIER), "Missing IDENTIFIER Column");
 		assertTrue(structure.contains(MEASURE), "Missing MEASURE Column");
 		assertTrue(structure.contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
-		assertTrue(structure.contains(QUOTED), "Missing ATTRIBUTE Column");
+		assertTrue(structure.contains(QUOTED), "Missing QUOTED Column");
 		
 		Set<String> results = new HashSet<>(Arrays.asList(QUOTED_RESULTS));
 		try (Stream<DataPoint> stream = dataset.stream())

@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,6 +84,7 @@ public class SDMXEnvironmentTest
 	private static final String SDMX_ALIAS = PROVIDER + ":" + QUERY;
 	private static final List<PortableTimeSeries<Double>> SAMPLE;
 	private static final DataFlowStructure DSD;
+	private static final MockedStatic<ConfigurationManager> CONFMAN_MOCK = mockStatic(ConfigurationManager.class);
 	
 	static {
 		Kryo kryo = new Kryo();
@@ -158,8 +160,7 @@ public class SDMXEnvironmentTest
 	{
 		// Mock configuration manager
 		ConfigurationManager mockConfman = mock(ConfigurationManager.class);
-		MockedStatic<ConfigurationManager> staticConfmanMock = mockStatic(ConfigurationManager.class);
-		staticConfmanMock.when(ConfigurationManager::getDefault).thenReturn(mockConfman);
+		CONFMAN_MOCK.when(ConfigurationManager::getDefault).thenReturn(mockConfman);
 		CONFIG_MANAGER.setValue(mockConfman.getClass().getName());
 		
 		// Mock repository
@@ -185,6 +186,12 @@ public class SDMXEnvironmentTest
 		handlerMock.when(SdmxClientHandler::getProviders).thenReturn(new TreeMap<>(singletonMap("ECB", false)));
 		handlerMock.when(() -> SdmxClientHandler.getCodes(anyString(), anyString(), anyString()))
 			.thenAnswer(answer((String provider, String dataflow, String id) -> DSD.getDimension(id).getCodeList()));
+	}
+	
+	@AfterAll
+	public static void afterAll()
+	{
+		CONFMAN_MOCK.close();
 	}
 
 	@Test
