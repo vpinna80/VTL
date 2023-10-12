@@ -39,6 +39,11 @@ public interface ValueDomain extends Serializable
 	public boolean isAssignableFrom(ValueDomain other);
 
 	/**
+	 * @return the name of this subset
+	 */
+	public String getName();
+	
+	/**
 	 * Check if a value of a given ValueDomain can be compared to a value of this ValueDomain
 	 *  
 	 * @param other the other {@link ValueDomain}

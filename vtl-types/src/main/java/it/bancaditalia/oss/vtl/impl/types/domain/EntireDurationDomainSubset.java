@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
@@ -32,14 +34,14 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 /**
  * Must be in period-length order 
  */
-public class EntireDurationDomainSubset implements DurationDomainSubset<EntireDurationDomainSubset>, Serializable
+public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDurationDomainSubset, DurationDomain> implements DurationDomainSubset<EntireDurationDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	public static final EntireDurationDomainSubset INSTANCE = new EntireDurationDomainSubset();
 	
 	private EntireDurationDomainSubset()
 	{
-
+		super(DURATIONDS, "duration_var");
 	}
 	
 	@Override
@@ -71,21 +73,9 @@ public class EntireDurationDomainSubset implements DurationDomainSubset<EntireDu
 	}
 	
 	@Override
-	public String getName()
-	{
-		return "duration";
-	}
-	
-	@Override
 	public String toString()
 	{
 		return "duration";
-	}
-	
-	@Override
-	public DurationDomain getParentDomain()
-	{
-		return null;
 	}
 	
 	@Override

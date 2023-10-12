@@ -36,6 +36,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerToIntBiFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -63,7 +64,9 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 			@SuppressWarnings("unchecked")
 			DataStructureComponent<Identifier, S, D> c = (DataStructureComponent<Identifier, S, D>) component;
 			if (comparator == null)
-				comparator = (dp1, dp2) -> dp1.getValue(c).compareTo(dp2.getValue(c));
+				comparator = (dp1, dp2) -> {
+					return dp1.getValue(c).compareTo(dp2.getValue(c));
+				};
 			else
 			{
 				SerToIntBiFunction<DataPoint, DataPoint> prevComparator = comparator;
@@ -77,6 +80,11 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 			}
 		};
 		return (Comparator<DataPoint> & Serializable) comparator::applyAsInt;
+	}
+	
+	public static SerBinaryOperator<DataPoint> combiner(SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
+	{
+		return (dp1, dp2) -> dp1.combine(dp2, lineageCombiner);
 	}
 
 	/**

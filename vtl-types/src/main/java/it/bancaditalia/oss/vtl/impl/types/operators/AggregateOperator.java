@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.operators;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.averagingBigDecimal;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.averagingDouble;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
@@ -161,8 +160,8 @@ public enum AggregateOperator
 
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector()
 	{
-		if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
-			return collectingAndThen(averagingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
+//		if (Boolean.valueOf(USE_BIG_DECIMAL.getValue()))
+//			return collectingAndThen(averagingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
 		
 		return collectingAndThen(filtering(v -> !(v instanceof NullValue), averagingDouble(v -> ((Number) v.get()).doubleValue())), DoubleValue::of);
 	}

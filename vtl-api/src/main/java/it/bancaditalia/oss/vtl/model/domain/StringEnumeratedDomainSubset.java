@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.model.domain;
 
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * Representation of a finite enumerated subset of the VTL "String" domain (essentially, a code list).
@@ -28,46 +29,6 @@ import java.io.Serializable;
  */
 public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C, R>, C extends StringCodeItem<C, R, S>, R extends Comparable<?> & Serializable> extends EnumeratedDomainSubset<S, StringDomain, C, R>, StringDomainSubset<S>
 {
-	/**
-	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading and 
-	 * trailing whitespace from each code item of this {@link StringEnumeratedDomainSubset}.
-	 *  
-	 * @return the new domain.
-	 */
-	public S trim();
-
-	/**
-	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all leading 
-	 * whitespace from each code item of this {@link StringEnumeratedDomainSubset}.
-	 *  
-	 * @return the new domain.
-	 */
-	public S ltrim();
-
-	/**
-	 * Creates a new {@link StringEnumeratedDomainSubset} by trimming all trailing 
-	 * whitespace from each code item of this {@link StringEnumeratedDomainSubset}.
-	 *  
-	 * @return the new domain.
-	 */
-	public S rtrim();
-
-	/**
-	 * Creates a new {@link StringEnumeratedDomainSubset} by converting in upper 
-	 * case each code item of this {@link StringEnumeratedDomainSubset}.
-	 *  
-	 * @return the new domain.
-	 */
-	public S ucase();
-	
-	/**
-	 * Creates a new {@link StringEnumeratedDomainSubset} by converting in lower
-	 * case each code item of this {@link StringEnumeratedDomainSubset}.
-	 *  
-	 * @return the new domain.
-	 */
-	public S lcase();
-	
 	@Override
 	public default boolean isAssignableFrom(ValueDomain other)
 	{
@@ -79,4 +40,7 @@ public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSu
 	{
 		return getName() + "_var";
 	}
+
+	@Override
+	public Set<C> getCodeItems();
 }

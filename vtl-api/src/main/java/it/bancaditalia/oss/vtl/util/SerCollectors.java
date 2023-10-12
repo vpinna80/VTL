@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -121,19 +122,12 @@ public class SerCollectors
         return collectingAndThen(mapping(mapper::apply, reducing(BigDecimal::add)), opt -> (BigDecimal) opt.orElse(BigDecimal.valueOf(0)));
     }
 
-    public static <T> SerCollector<T, double[], Double> summingDouble(SerToDoubleFunction<? super T> mapper)
+    public static <T> SerCollector<T, ?, OptionalDouble> summingDouble(SerToDoubleFunction<? super T> mapper)
     {
-        return new SerCollector<>(
-                () -> new double[3],
-                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t));
-                            a[2] += mapper.applyAsDouble(t);},
-                (a, b) -> { sumWithCompensation(a, b[0]);
-                            a[2] += b[2];
-                            return sumWithCompensation(a, b[1]); },
-                a -> computeFinalSum(a), emptySet());
+    	return collectingAndThen(summarizingDouble(mapper), SerDoubleSumAvgCount::getSum);
     }
 
-    public static <T> SerCollector<T, long[], Long> summingLong(SerToLongFunction<? super T> mapper)
+    public static <T> SerCollector<T, ?, Long> summingLong(SerToLongFunction<? super T> mapper)
     {
         return new SerCollector<>(
                 () -> new long[1],
@@ -142,19 +136,19 @@ public class SerCollectors
                 a -> a[0], EnumSet.of(CONCURRENT, UNORDERED));
     }
 
-    public static <T> SerCollector<T, double[], Double> averagingDouble(SerToDoubleFunction<? super T> mapper) 
+    public static <T> SerCollector<T, ?, OptionalDouble> averagingDouble(SerToDoubleFunction<? super T> mapper) 
     {
-        return new SerCollector<>(() -> new double[4],
-                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); a[2]++; a[3]+= mapper.applyAsDouble(t);},
-                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
-                a -> (a[2] <= 1e-300) ? 0.0d : (computeFinalSum(a) / a[2]), emptySet());
+    	return collectingAndThen(summarizingDouble(mapper), SerDoubleSumAvgCount::getAverage);
     }
-
-    public static <T extends Serializable> SerCollector<T, ?, BigDecimal> averagingBigDecimal(SerFunction<? super T, BigDecimal> mapper)
+    
+    public static <T> SerCollector<T, SerDoubleSumAvgCount, SerDoubleSumAvgCount> summarizingDouble(SerToDoubleFunction<? super T> mapper)
     {
-		return null;//mapping(mapper, teeing(collectingAndThen(reducing(BigDecimal::add), v -> v.orElse(BigDecimal.valueOf(0))), counting(), (sum, n) -> sum.divide(BigDecimal.valueOf(n))));
+        return SerCollector.of(
+                () -> new SerDoubleSumAvgCount(),
+                (r, t) -> r.accept(mapper.applyAsDouble(t)),
+                SerDoubleSumAvgCount::combine, EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
-
+    
     public static <T> SerCollector<T, List<T>, List<T>> toList()
     {
         return new SerCollector<>(ArrayList::new, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), emptySet());

@@ -24,5 +24,6 @@ import java.util.function.ToDoubleFunction;
 
 public interface SerToDoubleFunction<T> extends ToDoubleFunction<T>, Serializable
 {
-
+	@Override
+	double applyAsDouble(T value);
 }

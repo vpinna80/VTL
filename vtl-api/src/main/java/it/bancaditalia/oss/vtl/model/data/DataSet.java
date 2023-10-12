@@ -58,6 +58,8 @@ import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
  */
 public interface DataSet extends VTLValue, Iterable<DataPoint>
 {
+	public static final SerBiPredicate<DataPoint, DataPoint> ALL = (a,  b) -> true;
+
 	/**
 	 * @return The {@link DataSetMetadata structure} of this DataSet.
 	 */
@@ -182,7 +184,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, SerBinaryOperator<DataPoint> merge, boolean leftJoin)
 	{
-		return filteredMappedJoin(metadata, indexed, (a,  b) -> true, merge, leftJoin);
+		return filteredMappedJoin(metadata, indexed, ALL, merge, leftJoin);
 	}
 
 	/**
@@ -196,7 +198,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, SerBinaryOperator<DataPoint> merge)
 	{
-		return filteredMappedJoin(metadata, indexed, (a,  b) -> true, merge);
+		return filteredMappedJoin(metadata, indexed, ALL, merge);
 	}
 
 	/**
