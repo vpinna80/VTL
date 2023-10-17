@@ -45,8 +45,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
 import javax.xml.transform.stream.StreamSource;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -97,6 +95,8 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.TriFunction;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
 
 public class OpsFactory implements Serializable
 {
@@ -652,7 +652,7 @@ public class OpsFactory implements Serializable
 				LOGGER.trace("|{}>> Looking up context {}", tabs, entry.getClass().getSimpleName());
 	
 			if (param.getOrdinal() != null)
-				result = ((List<?>) result).get(param.getOrdinal());
+				result = ((List<?>) result).get(param.getOrdinal().intValue());
 	
 			if (result instanceof ParserRuleContext)
 			{

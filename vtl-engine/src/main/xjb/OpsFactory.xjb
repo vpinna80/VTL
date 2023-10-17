@@ -20,9 +20,8 @@
     permissions and limitations under the License.
 
 -->
-<bindings xmlns="http://java.sun.com/xml/ns/jaxb" extensionBindingPrefixes="xjc" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" version="2.1">
+<bindings xmlns="https://jakarta.ee/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" version="3.0">
 	<globalBindings choiceContentProperty="true">
-		<javaType xmlType="xs:integer" name="java.lang.Integer" />
 		<xjc:serializable uid="1"/>
 	</globalBindings>
 </bindings>

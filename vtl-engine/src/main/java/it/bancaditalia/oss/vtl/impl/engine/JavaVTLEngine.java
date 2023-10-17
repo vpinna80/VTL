@@ -31,8 +31,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.xml.bind.JAXBException;
-
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -52,6 +50,7 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
 import it.bancaditalia.oss.vtl.grammar.VtlBaseVisitor;
 import it.bancaditalia.oss.vtl.grammar.VtlTokens;
 import it.bancaditalia.oss.vtl.impl.engine.statement.StatementFactory;
+import jakarta.xml.bind.JAXBException;
 
 public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements Engine, Serializable
 {

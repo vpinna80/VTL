@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Stack;
 
-import javax.xml.bind.JAXBException;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
@@ -68,6 +66,7 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import jakarta.xml.bind.JAXBException;
 
 public class StatementFactory implements Serializable
 {
