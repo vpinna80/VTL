@@ -302,26 +302,6 @@ public class SerCollectors
         }
     }
 
-    private static double[] sumWithCompensation(double[] intermediateSum, double value)
-    {
-        double tmp = value - intermediateSum[1];
-        double sum = intermediateSum[0];
-        double velvel = sum + tmp; // Little wolf of rounding error
-        intermediateSum[1] = (velvel - sum) - tmp;
-        intermediateSum[0] = velvel;
-        return intermediateSum;
-    }
-
-    private static double computeFinalSum(double[] summands) 
-    {
-        double tmp = summands[0] + summands[1];
-        double simpleSum = summands[summands.length - 1];
-        if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
-            return simpleSum;
-        else
-            return tmp;
-    }
-
     @SuppressWarnings("unchecked")
     private static <T> SerSupplier<T[]> boxSupplier(T identity) {
         return () -> (T[]) new Object[] { identity };
