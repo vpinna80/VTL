@@ -143,8 +143,10 @@ public class CastTransformation extends UnaryTransformation
 			return NULL;
 		else if (domain instanceof NumberDomainSubset && target == INTEGER)
 			return INTEGER;
+		else if (domain instanceof NumberDomainSubset && target == STRING)
+			return STRING;
 		else
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("cast " + domain + " => " + target + " not implemented ");
 	}
 
 	private synchronized DecimalFormat getNumberFormatter()
@@ -181,8 +183,12 @@ public class CastTransformation extends UnaryTransformation
 				return DoubleValue.of(getNumberFormatter().parse((String) scalar.get()).doubleValue());
 			else if (scalar instanceof NumberValue && target == INTEGER)
 				return IntegerValue.of(((Number) scalar.get()).longValue());
+			else if (scalar instanceof IntegerValue && target == STRING)
+				return StringValue.of(getNumberFormatter().format(((Number) scalar.get()).longValue()));
+			else if (scalar instanceof NumberValue && target == STRING)
+				return StringValue.of(getNumberFormatter().format(((Number) scalar.get()).doubleValue()));
 			else
-				throw new UnsupportedOperationException(scalar.getClass() + " " + target.getClass() + " " + scalar);
+				throw new UnsupportedOperationException("cast " + scalar.getDomain() + " => " + target + " not implemented ");
 		}
 		catch (ParseException e)
 		{
