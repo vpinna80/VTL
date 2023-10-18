@@ -28,8 +28,10 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODS;
 import static java.util.Collections.singletonMap;
+import static java.util.Locale.ENGLISH;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -73,13 +75,14 @@ public class CastTransformation extends UnaryTransformation
 	
 	private final Domains target;
 	private final String mask;
-	private transient DecimalFormat numberFormatter;
+	private final ThreadLocal<DecimalFormat> numberFormatter; 
 
 	public CastTransformation(Transformation operand, Domains target, String mask)
 	{
 		super(operand);
 		this.target = target;
 		this.mask = mask != null ? mask.substring(1, mask.length() - 1) : "";
+		numberFormatter = ThreadLocal.withInitial(() -> new DecimalFormat(this.mask, DecimalFormatSymbols.getInstance(ENGLISH)));
 	}
 
 	public CastTransformation(Transformation operand, String targetDomainName, String mask)
@@ -101,6 +104,9 @@ public class CastTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getComponents(Measure.class).iterator().next();
+		if (target.getDomain() == oldMeasure.getDomain())
+			return dataset;
+		
 		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getDomain().getVarName(), Measure.class, target.getDomain()).asRole(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponent(measure)
@@ -129,8 +135,8 @@ public class CastTransformation extends UnaryTransformation
 			domain = measure.getDomain();
 		}
 
-		if (domain instanceof StringDomainSubset && target == DATE)
-			return DATE;
+		if (domain == target.getDomain())
+			return target;
 		else if (domain instanceof StringDomainSubset && TIME_PERIODS.contains(target))
 			return target;
 		else if (domain instanceof StringDomainSubset && target == INTEGER)
@@ -149,24 +155,20 @@ public class CastTransformation extends UnaryTransformation
 			throw new UnsupportedOperationException("cast " + domain + " => " + target + " not implemented ");
 	}
 
-	private synchronized DecimalFormat getNumberFormatter()
+	private DecimalFormat getNumberFormatter()
 	{
-		if (numberFormatter != null)
-			return numberFormatter;
-		
-		synchronized (this)
-		{
-			if (numberFormatter != null)
-				return numberFormatter;
-			
-			return numberFormatter = new DecimalFormat(mask);
-		}
+		return numberFormatter.get();
 	}
 
 	private ScalarValue<?, ?, ?, ?> castScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
 		try
 		{
+			if (scalar.getDomain() == target.getDomain())
+				return scalar;
+			
+			DecimalFormat formatter = getNumberFormatter();
+			
 			if (scalar instanceof NullValue)
 				return target.getDomain().cast(scalar);
 			else if (scalar instanceof StringValue && target == DATE)
@@ -180,19 +182,23 @@ public class CastTransformation extends UnaryTransformation
 			else if (scalar instanceof StringValue && target == INTEGER)
 				return IntegerValue.of(Long.parseLong((String) scalar.get()));
 			else if (scalar instanceof StringValue && target == NUMBER)
-				return DoubleValue.of(getNumberFormatter().parse((String) scalar.get()).doubleValue());
+			{
+				// DecimalFormat ignores the number of decimals specified in the mask
+				double parsed = formatter.parse((String) scalar.get()).doubleValue();
+				return DoubleValue.of(formatter.parse(formatter.format(parsed)).doubleValue());
+			}
 			else if (scalar instanceof NumberValue && target == INTEGER)
 				return IntegerValue.of(((Number) scalar.get()).longValue());
 			else if (scalar instanceof IntegerValue && target == STRING)
-				return StringValue.of(getNumberFormatter().format(((Number) scalar.get()).longValue()));
+				return StringValue.of(formatter.format(((Number) scalar.get()).longValue()));
 			else if (scalar instanceof NumberValue && target == STRING)
-				return StringValue.of(getNumberFormatter().format(((Number) scalar.get()).doubleValue()));
+				return StringValue.of(formatter.format(((Number) scalar.get()).doubleValue()));
 			else
-				throw new UnsupportedOperationException("cast " + scalar.getDomain() + " => " + target + " not implemented ");
+				throw new UnsupportedOperationException("cast " + scalar.getDomain() + " => " + target.getDomain() + " not implemented ");
 		}
 		catch (ParseException e)
 		{
-			throw new VTLNestedException("Number '" + scalar.get() + "' unparseable with mask '" + getNumberFormatter() + "'", e);
+			throw new VTLNestedException("Number '" + scalar.get() + "' unparseable with mask '" + mask + "'", e);
 		}
 	}
 	

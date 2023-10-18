@@ -80,6 +80,8 @@ public class CSVParseUtils
 
 	public static ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String stringRepresentation, String mask)
 	{
+		LOGGER.trace("Parsing string value {} for component {} with mask {}", stringRepresentation, component, mask);
+		
 		if (stringRepresentation == null || stringRepresentation.isEmpty() || "null".equalsIgnoreCase(stringRepresentation))
 			return NullValue.instanceFrom(component);
 		else if (component.getDomain() instanceof StringDomainSubset)
