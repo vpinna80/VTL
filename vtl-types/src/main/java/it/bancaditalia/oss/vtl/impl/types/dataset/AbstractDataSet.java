@@ -327,8 +327,20 @@ public abstract class AbstractDataSet implements DataSet
 	}
 	
 	@Override
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean unionAll)
 	{
+		// Fast track when the functional aspect is preserved
+		if (unionAll)
+			return new AbstractDataSet(dataStructure) {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				protected Stream<DataPoint> streamDataPoints()
+				{
+					return Stream.concat(Stream.of(AbstractDataSet.this), others.stream()).map(DataSet::stream).collect(concatenating(ORDERED));
+				}
+			};
+		
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getComponents(Identifier.class);
 		for (DataSet other: others)
 			if (!dataStructure.equals(other.getMetadata()))

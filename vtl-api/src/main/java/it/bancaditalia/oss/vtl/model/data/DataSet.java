@@ -372,7 +372,19 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param others The datasets to perform the union with
 	 * @return The result of the union. 
 	 */
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others);
+	public default DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
+	{
+		return union(lineageOp, others, true);
+	}
+
+	/**
+	 * Creates a new DataSet as the union of this and other datasets. All the datasets must have the same structure as this DataSet.
+	 * If <code>check</code> is true, the duplicated datapoints are taken only from the leftmost operand.
+	 * 
+	 * @param others The datasets to perform the union with
+	 * @return The result of the union. 
+	 */
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean check);
 
 	/**
 	 * Creates a new dataset as containing all the datapoints of this dataset that don't have the same identifiers as the ones in the other dataset.

@@ -228,7 +228,7 @@ public enum SampleDataSets implements DataSet
 	}
 	
 	@Override
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean check)
 	{
 		return dataset.union(lineageOp, others);
 	}

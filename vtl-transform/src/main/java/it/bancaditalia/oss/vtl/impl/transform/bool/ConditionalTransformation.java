@@ -19,27 +19,29 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.partitioningBy;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
@@ -66,6 +68,8 @@ public class ConditionalTransformation extends TransformationImpl
 
 	protected final Transformation condition;
 	protected final Transformation thenExpr, elseExpr;
+
+	private static final DataStructureComponent<Identifier, EntireBooleanDomainSubset, BooleanDomain> COND_ID = DataStructureComponentImpl.of("$cond$", Identifier.class, BOOLEANDS);
 
 	public ConditionalTransformation(Transformation condition, Transformation trueExpr, Transformation falseExpr)
 	{
@@ -126,28 +130,23 @@ public class ConditionalTransformation extends TransformationImpl
 
 	private VTLValue evalTwoDatasets(DataSetMetadata metadata, DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, ? extends BooleanDomainSubset<?>, BooleanDomain> booleanConditionMeasure)
 	{
-		Map<Boolean, Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> partitions;
-		Set<DataStructureComponent<Identifier, ?, ?>> valueIDs = thenD.getComponents(Identifier.class);
+		DataSetMetadata joinIds = new DataStructureBuilder(condD.getMetadata().getComponents(Identifier.class)).addComponent(COND_ID).build();
+		DataSetMetadata enriched = new DataStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();
 		
-		try (Stream<DataPoint> stream = condD.stream())
-		{
-			partitions = stream.collect(partitioningBy(dpCond -> checkCondition(dpCond.get(booleanConditionMeasure)),
-					mapping(dp -> dp.getValues(valueIDs, Identifier.class), toSet())));
-		}
+		DataSet condResolved = condD.mapKeepingKeys(joinIds, dp -> LineageNode.of(thenExpr, dp.getLineage()), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
+		DataSet thenResolved = thenD.mapKeepingKeys(enriched, DataPoint::getLineage, dp -> {
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
+			result.put(COND_ID, TRUE);
+			return result;	
+		});
+		DataSet elseResolved = elseD.mapKeepingKeys(enriched, DataPoint::getLineage, dp -> {
+			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
+			result.put(COND_ID, FALSE);
+			return result;	
+		});
 		
-		DataSet thenFiltered = thenD.filter(dp -> partitions.get(true).contains(dp.getValues(Identifier.class)), lineage -> LineageNode.of(thenExpr, lineage));
-		DataSet elseFiltered = elseD.filter(dp -> partitions.get(false).contains(dp.getValues(Identifier.class)), lineage -> LineageNode.of(elseExpr, lineage));
-		
-		return new BiFunctionDataSet<>((DataSetMetadata) metadata, 
-				(dsThen, dsElse) -> {
-					final Stream<DataPoint> thenStream = dsThen.stream();
-					final Stream<DataPoint> elseStream = dsElse.stream();
-					return concat(thenStream, elseStream)
-							.onClose(() -> {
-								thenStream.close();
-								elseStream.close();
-							});
-				}, thenFiltered, elseFiltered);
+		return condResolved.mappedJoin(enriched, thenResolved, (a, b) -> b).subspace(singletonMap(COND_ID, TRUE), DataPoint::getLineage)
+			.union(DataPoint::getLineage, singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), DataPoint::getLineage)));
 	}
 
 	private boolean checkCondition(ScalarValue<?, ?, ?, ?> value)
