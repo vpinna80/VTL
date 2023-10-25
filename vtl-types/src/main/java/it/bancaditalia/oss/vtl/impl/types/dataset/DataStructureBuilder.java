@@ -19,43 +19,64 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
-import static java.util.Collections.unmodifiableCollection;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingBy;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+//import static java.util.stream.Collectors.toList;
 
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collector;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataStructureBuilder
 {
-	Set<DataStructureComponent<?, ?, ?>> components;
+	private Set<DataStructureComponent<?, ?, ?>> components;
+
+	public static SerCollector<DataStructureComponent<?, ?, ?>, ?, DataSetMetadata> toDataStructure(DataStructureComponent<?, ?, ?>... additionalComponents)
+	{
+		return SerCollector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
+				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
+				EnumSet.of(UNORDERED, CONCURRENT));
+	}
+
+	public static SerCollector<DataStructureComponent<?, ?, ?>, ?, DataSetMetadata> toDataStructure(Collection<? extends DataStructureComponent<?, ?, ?>> additionalComponents)
+	{
+		return SerCollector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
+				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
+				EnumSet.of(UNORDERED, CONCURRENT));
+	}
 
 	public DataStructureBuilder()
 	{
@@ -131,28 +152,49 @@ public class DataStructureBuilder
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final Map<String, DataStructureComponent<?, ?, ?>> components;
+		private final Map<String, DataStructureComponent<?, ?, ?>> byName;
+		private final Map<Class<? extends ComponentRole>, Set<DataStructureComponent<?, ?, ?>>> byRole;
 
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
-			this.components = Utils.getStream(components)
-				.map(toEntry(DataStructureComponent::getName, c -> c))
-				.collect(entriesToMap());
+			this.byName = components.stream()
+				.sorted(DataStructureComponent::byNameAndRole)
+				.collect(toMap(DataStructureComponent::getName, identity(), LinkedHashMap::new));
+			this.byRole = components.stream()
+					.collect(groupingBy(DataStructureComponent::getRole, DataStructureBuilder::createEmptyStructure, toSet()));
+			this.byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
 		}
 		
 		@Override
 		public <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 		{
-			return Utils.getStream(components.values())
-					.filter(c -> c.is(typeOfComponent))
-					.map(c -> c.asRole(typeOfComponent))
-					.collect(toSet());
+			Set<? extends DataStructureComponent<?, ?, ?>> result;
+			
+			if (ComponentRole.class == typeOfComponent)
+				result = this;
+			else if (Identifier.class == typeOfComponent)
+				result = byRole.get(Identifier.class);
+			else if (Measure.class == typeOfComponent)
+				result = byRole.get(Measure.class);
+			else if (Attribute.class == typeOfComponent)
+				result = byRole.get(Attribute.class);
+			else if (ViralAttribute.class == typeOfComponent)
+				result = byRole.get(ViralAttribute.class);
+			else
+				result = byName.values().stream()
+						.filter(c -> typeOfComponent.isAssignableFrom(c.getRole()))
+						.collect(toSet());
+			
+			@SuppressWarnings("unchecked")
+			Set<DataStructureComponent<R, ?, ?>> unchk = (Set<DataStructureComponent<R, ?, ?>>) result;
+			
+			return unchk;
 		}
 
 		@Override
 		public Optional<DataStructureComponent<?, ?, ?>> getComponent(String alias)
 		{
-			return Optional.ofNullable(components.get(alias));
+			return Optional.ofNullable(byName.get(alias));
 		}
 
 		@Override
@@ -161,7 +203,7 @@ public class DataStructureBuilder
 			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(comps)
 					.collect(partitioningBy(c -> c.is(Identifier.class)));
 			
-			return new DataStructureBuilder(getComponents(Identifier.class))
+			return new DataStructureBuilder(getIDs())
 					.addComponents(toKeep.get(false))
 					.addComponents(toKeep.get(true).stream()
 							.map(DataStructureComponent::createMeasureFrom)
@@ -178,16 +220,16 @@ public class DataStructureBuilder
 		@Override
 		public DataSetMetadata membership(String alias)
 		{
-			DataStructureComponent<?, ?, ?> component = components.get(alias);
+			DataStructureComponent<?, ?, ?> component = byName.get(alias);
 
 			if (component == null)
-				throw new VTLMissingComponentsException(alias, components.values());
+				throw new VTLMissingComponentsException(alias, byName.values());
 
 			if (component.is(Measure.class))
-				return new DataStructureBuilder().addComponents(component).addComponents(getComponents(Identifier.class)).build();
+				return new DataStructureBuilder().addComponents(component).addComponents(getIDs()).build();
 			else
 				return new DataStructureBuilder().addComponents(component.createMeasureFrom())
-						.addComponents(getComponents(Identifier.class)).build();
+						.addComponents(getIDs()).build();
 		}
 
 		@Override
@@ -199,7 +241,7 @@ public class DataStructureBuilder
 		@Override
 		public DataSetMetadata subspace(Collection<? extends DataStructureComponent<Identifier, ?, ?>> subspace)
 		{
-			return new DataStructureBuilder().addComponents(components.values().parallelStream().filter(c -> !subspace.contains(c)).collect(toSet())).build();
+			return new DataStructureBuilder().addComponents(byName.values().parallelStream().filter(c -> !subspace.contains(c)).collect(toSet())).build();
 		}
 
 		@Override
@@ -211,7 +253,7 @@ public class DataStructureBuilder
 		@Override
 		public String toString()
 		{
-			return components.values().toString();
+			return byName.values().toString();
 		}
 
 		@Override
@@ -229,19 +271,19 @@ public class DataStructureBuilder
 		@Override
 		public boolean contains(String alias)
 		{
-			return components.containsKey(alias);
+			return byName.containsKey(alias);
 		}
 
 		@Override
 		public Iterator<DataStructureComponent<?, ?, ?>> iterator()
 		{
-			return unmodifiableCollection(components.values()).iterator();
+			return byName.values().iterator();
 		}
 
 		@Override
 		public int size()
 		{
-			return components.size();
+			return byName.size();
 		}
 
 		@Override
@@ -251,24 +293,20 @@ public class DataStructureBuilder
 			return Utils.getStream(identifier.getDomain().getCodeItems())
 					.map(item -> new DataStructureComponentImpl<>(item.get().toString(), Measure.class, measure.getDomain()))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-					.addComponents(getComponents(Identifier.class))
+					.addComponents(getIDs())
 					.removeComponent(identifier)
 					.removeComponent(measure)
 					.build();
 		}
 	}
 
-	public static Collector<DataStructureComponent<?, ?, ?>, ?, DataSetMetadata> toDataStructure(DataStructureComponent<?, ?, ?>... additionalComponents)
+	private static Map<Class<? extends ComponentRole>, Set<DataStructureComponent<?, ?, ?>>> createEmptyStructure()
 	{
-		return Collector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
-				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
-				UNORDERED, CONCURRENT);
-	}
-
-	public static Collector<DataStructureComponent<?, ?, ?>, ?, DataSetMetadata> toDataStructure(Collection<? extends DataStructureComponent<?, ?, ?>> additionalComponents)
-	{
-		return Collector.of(DataStructureBuilder::new, DataStructureBuilder::addComponent, 
-				DataStructureBuilder::merge, dsb -> dsb.addComponents(additionalComponents).build(), 
-				UNORDERED, CONCURRENT);
+		Map<Class<? extends ComponentRole>, Set<DataStructureComponent<?, ?, ?>>> empty = new HashMap<>();
+		empty.put(Identifier.class, new HashSet<>());
+		empty.put(Measure.class, new HashSet<>());
+		empty.put(Attribute.class, new HashSet<>());
+		empty.put(ViralAttribute.class, new HashSet<>());
+		return empty;
 	}
 }

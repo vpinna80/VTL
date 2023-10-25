@@ -157,7 +157,7 @@ class DefineOperatorStatement extends AbstractStatement implements NamedOperator
 					// when inside a bracket expression, a component is a monomeasure dataset
 					else if (decoratedScheme.getParent().getParent() != null)
 					{
-						Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) actualParamMeta).getComponents(Measure.class);
+						Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) actualParamMeta).getMeasures();
 						// This condition should never happen, but better to have a check
 						if (measures.size() != 1)
 							throw new VTLException(getAlias() + ": a " + param.getMetaString() + " was expected for parameter '" 

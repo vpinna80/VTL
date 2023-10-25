@@ -27,7 +27,7 @@ import java.util.Map;
  * 
  * @author Valentino Pinna
  */
-public interface ComponentRole 
+public interface ComponentRole
 {
 	public enum Roles
 	{
@@ -67,9 +67,9 @@ public interface ComponentRole
 
 	public interface NonIdentifier extends ComponentRole {};
 
-	public interface Attribute extends ComponentRole.NonIdentifier {};
+	public interface Attribute extends NonIdentifier {};
 
-	public interface ViralAttribute extends ComponentRole.Attribute {};
+	public interface ViralAttribute extends Attribute {};
 
-	public interface Measure extends ComponentRole.NonIdentifier {};
+	public interface Measure extends NonIdentifier {};
 }

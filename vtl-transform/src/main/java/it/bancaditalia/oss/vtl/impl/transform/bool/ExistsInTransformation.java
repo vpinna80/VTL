@@ -87,8 +87,8 @@ public class ExistsInTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getComponents(Measure.class).iterator().next(),
-				rightMeasure = right.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getMetadata().getMeasures().iterator().next(),
+				rightMeasure = right.getMetadata().getMeasures().iterator().next();
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> boolMeasure = ((DataSetMetadata) metadata).getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
 		
 		Set<? extends ScalarValue<?, ?, ?, ?>> values = right.stream().map(dp -> dp.get(rightMeasure)).collect(toSet());
@@ -129,8 +129,8 @@ public class ExistsInTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
 	{
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = ((DataSetMetadata) left).getComponents(Measure.class),
-				rightMeasures = ((DataSetMetadata) right).getComponents(Measure.class);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = ((DataSetMetadata) left).getMeasures(),
+				rightMeasures = ((DataSetMetadata) right).getMeasures();
 		
 		if (leftMeasures.size() != 1)
 			throw new VTLSingletonComponentRequiredException(Measure.class, leftMeasures);

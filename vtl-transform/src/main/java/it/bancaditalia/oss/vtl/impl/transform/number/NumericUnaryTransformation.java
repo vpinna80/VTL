@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static java.util.function.DoubleUnaryOperator.identity;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.DoubleUnaryOperator;
@@ -116,7 +117,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
+		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
 		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
@@ -139,13 +140,13 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
 			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> nonnumeric = dataset.getComponents(Measure.class);
-			if (dataset.getComponents(Measure.class).size() == 0)
+			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> nonnumeric = new HashSet<>(dataset.getMeasures());
+			if (dataset.getMeasures().size() == 0)
 				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
 			
 			nonnumeric.removeAll(dataset.getComponents(Measure.class, NUMBERDS));
-			if (nonnumeric.size() > 0)
-				throw new UnsupportedOperationException("Expected only numeric measures but found: " + nonnumeric);
+			if (nonnumeric.size() > 0) 
+				throw new UnsupportedOperationException("Expected only numeric measures but found1: " + nonnumeric);
 			
 			return dataset;
 		}

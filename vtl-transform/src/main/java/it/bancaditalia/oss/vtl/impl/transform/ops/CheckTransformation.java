@@ -143,13 +143,13 @@ public class CheckTransformation extends TransformationImpl
 			if (measures.size() != 1)
 				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
 
-			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> identifiers = dataset.getComponents(Identifier.class);
+			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> identifiers = dataset.getIDs();
 			DataStructureBuilder metadata = new DataStructureBuilder().addComponents(identifiers);
 			
 			if (imbalanceValue != null)
 			{
 				DataSetMetadata imbalanceDataset = (DataSetMetadata) imbalanceValue;
-				Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> imbalanceIdentifiers = imbalanceDataset.getComponents(Identifier.class);
+				Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> imbalanceIdentifiers = imbalanceDataset.getIDs();
 
 				if (!identifiers.equals(imbalanceIdentifiers))
 					throw new VTLInvariantIdentifiersException("check imbalance", identifiers, imbalanceIdentifiers);

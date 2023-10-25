@@ -204,7 +204,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				
 				if (clauseMeta instanceof DataSetMetadata)
 				{
-					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) clauseMeta).getComponents(Measure.class);
+					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) clauseMeta).getMeasures();
 					if (measures.size() != 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, measures);
 					final DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
@@ -239,7 +239,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 //
 //				DataSetMetadata havingDS = (DataSetMetadata) vHaving;
 //				if (havingDS.getComponents(Measure.class, Domains.BOOLEANDS).size() != 1)
-//					throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, havingDS.getComponents(Measure.class));
+//					throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, havingDS.getMeasures());
 			}
 
 			return builder.build();

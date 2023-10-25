@@ -110,10 +110,10 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	protected VTLValue evalOnDataset(DataSet ds, VTLValueMetadata metadata)
 	{
 		final DataSetMetadata structure = ds.getMetadata();
-		final DataStructureComponent<Identifier, ?, ?> timeID = ds.getComponents(Identifier.class, TIMEDS).iterator().next();
-		final Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getComponents(Identifier.class));
+		final DataStructureComponent<Identifier, ?, ?> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
+		final Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getMetadata().getIDs());
 		ids.remove(timeID);
-		final Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFiller = ds.getComponents(NonIdentifier.class).stream()
+		final Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFiller = ds.getMetadata().getComponents(NonIdentifier.class).stream()
 				.collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) NullValue.instanceFrom(c)));
 	
 		if (mode == ALL)
@@ -158,7 +158,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			WindowClauseImpl windowClause = new WindowClauseImpl(ids, singletonList(new SortClause(timeID, ASC)), 
 					new WindowCriterionImpl(DATAPOINTS, CURRENT_DATA_POINT, following(1L)));
 			
-			DataSetMetadata timeStructure = new DataStructureBuilder(structure.getComponents(Identifier.class)).build();
+			DataSetMetadata timeStructure = new DataStructureBuilder(structure.getIDs()).build();
 			// Remove all measures and attributes then left-join the time-filled dataset with the old one
 			
 			return ds.mapKeepingKeys(timeStructure, DataPoint::getLineage, dp -> emptyMap())

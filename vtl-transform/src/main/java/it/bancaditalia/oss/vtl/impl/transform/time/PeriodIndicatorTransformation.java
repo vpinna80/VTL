@@ -85,15 +85,15 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		{
 			DataSet ds = (DataSet) value;
 			
-			DataSetMetadata metadata = new DataStructureBuilder(ds.getComponents(Identifier.class))
+			DataSetMetadata metadata = new DataStructureBuilder(ds.getMetadata().getIDs())
 					.addComponent(DURATION_MEASURE)
 					.build();
 			
 			DataStructureComponent<?, ? extends TimeDomainSubset<?, ?>, TimeDomain> component;
 			if (operand == null)
-				component = ds.getComponents(Identifier.class, TIMEDS).iterator().next();
+				component = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
 			else
-				component = ds.getComponents(Measure.class, TIMEDS).iterator().next();
+				component = ds.getMetadata().getComponents(Measure.class, TIMEDS).iterator().next();
 
 			return ds.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(DURATION_MEASURE,
 							StringValue.of(((TimePeriodValue<?>) dp.get(component)).getPeriodIndicator())));
@@ -123,7 +123,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 
 			if (operand == null)
 			{
-				Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ds.getComponents(Identifier.class).stream()
+				Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ds.getIDs().stream()
 						.map(c -> c.asRole(Identifier.class))
 						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 						.collect(toSet());
@@ -134,7 +134,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			}
 			else
 			{
-				Set<DataStructureComponent<Measure, ?, ?>> components = ds.getComponents(Measure.class);
+				Set<DataStructureComponent<Measure, ?, ?>> components = ds.getMeasures();
 				if (components.size() != 1)
 					throw new VTLSingletonComponentRequiredException(Measure.class, components);
 
@@ -145,7 +145,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 				componentName = anyDomainComponent.asDomain(TIMEDS).getName();
 			}
 
-			return new DataStructureBuilder(ds.getComponents(Identifier.class))
+			return new DataStructureBuilder(ds.getIDs())
 					.addComponent(DURATION_MEASURE)
 					.build();
 		}

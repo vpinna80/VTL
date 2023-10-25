@@ -104,7 +104,7 @@ public class SubstrTransformation extends TransformationImpl
 		{
 			DataSet dataset = (DataSet) expr;
 			DataSetMetadata structure = dataset.getMetadata();
-			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
 			
 			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> measures.stream()
 					.map(toEntryWithValue(measure -> getSubstring(len, start, STRINGDS.cast(dp.get(measure)))))
@@ -169,7 +169,7 @@ public class SubstrTransformation extends TransformationImpl
 		{
 			DataSetMetadata metadata = (DataSetMetadata) source;
 			
-			Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getComponents(Measure.class).stream()
+			Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getMeasures().stream()
 				.filter(c -> !(c.getDomain() instanceof StringDomain))
 				.collect(toSet());
 			

@@ -129,7 +129,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 		{
 			VTLValueMetadata metadata = calcClause.getMetadata(scheme);
-			if (metadata instanceof DataSetMetadata && ((DataSetMetadata) metadata).getComponents(Measure.class).size() != 1)
+			if (metadata instanceof DataSetMetadata && ((DataSetMetadata) metadata).getMeasures().size() != 1)
 				throw new VTLInvalidParameterException(metadata, ScalarValueMetadata.class);
 			else
 				return metadata;
@@ -223,7 +223,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		return clause -> {
 			LOGGER.debug("Evaluating calc expression {}", clause.calcClause.toString());
 			DataSet clauseValue = (DataSet) clause.calcClause.eval(scheme);
-			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getComponents(Measure.class).iterator().next();
+			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getMetadata().getMeasures().iterator().next();
 	
 			String newName = coalesce(clause.getName(), measure.getName());
 			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
@@ -271,10 +271,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// calc item expression is a component, check for mono-measure dataset
 				DataSetMetadata value = (DataSetMetadata) itemMeta;
-				if (value.getComponents(Measure.class).size() != 1)
+				if (value.getMeasures().size() != 1)
 					throw new VTLExpectedComponentException(Measure.class, value);
 
-				domain = value.getComponents(Measure.class).iterator().next().getDomain();
+				domain = value.getMeasures().iterator().next().getDomain();
 			} 
 			else
 				domain = ((ScalarValueMetadata<?, ?>) itemMeta).getDomain();

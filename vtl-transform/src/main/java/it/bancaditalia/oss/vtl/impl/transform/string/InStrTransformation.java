@@ -61,7 +61,6 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -114,10 +113,10 @@ public class InStrTransformation extends TransformationImpl
 		if (left instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) left;
-			DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
+			DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 					.addComponent(INT_MEASURE)
 					.build();
-			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
+			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			String lineageString = "instr with " + pattern;
 			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> singletonMap(INT_MEASURE, 
@@ -183,14 +182,14 @@ public class InStrTransformation extends TransformationImpl
 			if (right instanceof DataSetMetadata)
 			{
 				DataSetMetadata patternMetadata = (DataSetMetadata) right;
-				final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> patternMeasures = patternMetadata.getComponents(Measure.class);
+				final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> patternMeasures = patternMetadata.getMeasures();
 				if (patternMeasures.size() != 1)
 					throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, patternMeasures);
 			}
 			else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
 				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) right).getDomain());
 
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getComponents(Measure.class);
+			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getMeasures();
 			if (measures.size() != 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
 			
@@ -198,7 +197,7 @@ public class InStrTransformation extends TransformationImpl
 			if (!STRING.isAssignableFrom(measure.getDomain()))
 				throw new VTLExpectedComponentException(Measure.class, STRING, measures);
 			
-			return new DataStructureBuilder(metadata.getComponents(Identifier.class))
+			return new DataStructureBuilder(metadata.getIDs())
 					.addComponent(INT_MEASURE)
 					.build();
 		}

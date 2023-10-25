@@ -85,18 +85,18 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata dataset = (DataSetMetadata) value;
 
 		DataStructureComponent<Identifier, ?, ?> tempIdentifier = dataset.getComponent(identifierName, Identifier.class)
-				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getComponents(Identifier.class)));
+				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getIDs()));
 		if (!(tempIdentifier.getDomain() instanceof StringEnumeratedDomainSubset))
 			throw new VTLException("pivot: " + tempIdentifier.getName() + " is of type " + tempIdentifier.getDomain() + " but should be of a StringEnumeratedDomainSubset.");
 		identifier = tempIdentifier.asDomain((StringEnumeratedDomainSubset<?, ?, ?>) tempIdentifier.getDomain());
 		
 		measure = dataset.getComponent(measureName, Measure.class)
-				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getComponents(Measure.class)));
+				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getMeasures()));
 
 		return Utils.getStream(((StringEnumeratedDomainSubset<?, ?, ?>) identifier.getDomain()).getCodeItems())
 				.map(i -> DataStructureComponentImpl.of(i.get().toString(), Measure.class, measure.getDomain()))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-				.addComponents(dataset.getComponents(Identifier.class))
+				.addComponents(dataset.getIDs())
 				.removeComponent(identifier)
 				.removeComponent(measure).build();
 	}
@@ -106,7 +106,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSet dataset = (DataSet) getThisValue(session);
 		DataSetMetadata structure = dataset.getMetadata().pivot(identifier, measure);
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getComponents(Identifier.class));
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getIDs());
 		String lineageString = toString();
 		
 		SerCollector<DataPoint, ?, DataPoint> collector = mapping(dp -> {

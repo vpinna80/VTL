@@ -93,7 +93,7 @@ public class ConditionalTransformation extends TransformationImpl
 			DataSet condD = (DataSet) cond;
 			VTLValue thenV = thenExpr.eval(session);
 			VTLValue elseV = elseExpr.eval(session);
-			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getComponents(Measure.class, BOOLEANDS).iterator().next();
+			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
 				return evalTwoDatasets((DataSetMetadata) metadata, condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
@@ -130,7 +130,7 @@ public class ConditionalTransformation extends TransformationImpl
 
 	private VTLValue evalTwoDatasets(DataSetMetadata metadata, DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, ? extends BooleanDomainSubset<?>, BooleanDomain> booleanConditionMeasure)
 	{
-		DataSetMetadata joinIds = new DataStructureBuilder(condD.getMetadata().getComponents(Identifier.class)).addComponent(COND_ID).build();
+		DataSetMetadata joinIds = new DataStructureBuilder(condD.getMetadata().getIDs()).addComponent(COND_ID).build();
 		DataSetMetadata enriched = new DataStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();
 		
 		DataSet condResolved = condD.mapKeepingKeys(joinIds, dp -> LineageNode.of(thenExpr, dp.getLineage()), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
@@ -195,8 +195,8 @@ public class ConditionalTransformation extends TransformationImpl
 			if (condMeasures.size() != 1)
 				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, condMeasures);
 
-			if (!dataset.getComponents(Identifier.class).equals(((DataSetMetadata) cond).getComponents(Identifier.class)))
-				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getComponents(Identifier.class) + " -- " + ((DataSetMetadata) cond).getComponents(Identifier.class));
+			if (!dataset.getIDs().equals(((DataSetMetadata) cond).getIDs()))
+				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getIDs() + " -- " + ((DataSetMetadata) cond).getIDs());
 
 			if (other instanceof DataSetMetadata)
 			{
@@ -224,8 +224,8 @@ public class ConditionalTransformation extends TransformationImpl
 			}
 			else 
 				// the other is a scalar, all measures in dataset must be assignable from the scalar
-				if (!dataset.getComponents(Measure.class).stream().allMatch(c -> c.getDomain().isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain())))
-					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?, ?>) other).getDomain() + ": " + dataset.getComponents(Measure.class));
+				if (!dataset.getMeasures().stream().allMatch(c -> c.getDomain().isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain())))
+					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?, ?>) other).getDomain() + ": " + dataset.getMeasures());
 
 			return dataset;
 		}

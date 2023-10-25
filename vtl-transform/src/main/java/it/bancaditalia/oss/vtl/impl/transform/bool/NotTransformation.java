@@ -61,7 +61,7 @@ public class NotTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
+		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
 		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
@@ -87,7 +87,7 @@ public class NotTransformation extends UnaryTransformation
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
 			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 			if (measures.size() == 0)
 				throw new VTLMissingComponentsException("measure", dataset);
 			

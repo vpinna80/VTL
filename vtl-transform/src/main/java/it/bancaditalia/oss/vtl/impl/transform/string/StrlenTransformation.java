@@ -32,7 +32,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -66,9 +65,9 @@ public class StrlenTransformation extends UnaryTransformation
 	protected DataSet evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> resultMeasure = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
-		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> originalMeasure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
+		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS))
 				.build();
 		
@@ -84,12 +83,12 @@ public class StrlenTransformation extends UnaryTransformation
 		else 
 		{
 			DataSetMetadata ds = (DataSetMetadata) op;
-			if (ds.getComponents(Measure.class).size() != 1)
-				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, ds.getComponents(Measure.class));
+			if (ds.getMeasures().size() != 1)
+				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, ds.getMeasures());
 			if (ds.getComponents(Measure.class, STRINGDS).size() != 1)
-				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, ds.getComponents(Measure.class));
+				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, ds.getMeasures());
 			
-			return new DataStructureBuilder(ds.getComponents(Identifier.class))
+			return new DataStructureBuilder(ds.getIDs())
 				.addComponent(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS))
 				.build();
 		}

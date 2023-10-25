@@ -56,6 +56,28 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	public <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> role);
 
 	/**
+	 * Queries for identifiers of this {@link DataSetMetadata}.
+	 * 
+	 * The returned set should not be altered in any way.
+	 * @return A set of the queried identifiers.
+	 */
+	public default Set<DataStructureComponent<Identifier, ?, ?>> getIDs()
+	{
+		return getComponents(Identifier.class);
+	}
+
+	/**
+	 * Queries for measures of this {@link DataSetMetadata}.
+	 * 
+	 * The returned set should not be altered in any way.
+	 * @return A set of the queried measures.
+	 */
+	public default Set<DataStructureComponent<Measure, ?, ?>> getMeasures()
+	{
+		return getComponents(Measure.class);
+	}
+
+	/**
 	 * Queries for components of this {@link DataSetMetadata} having a specified role and domain.
 	 * 
 	 * The returned set should not be altered in any way.
@@ -207,7 +229,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends String> names, String operation)
 	{
 		if (names == null || names.isEmpty())
-			return getComponents(Identifier.class);
+			return getIDs();
 		
 		return names.stream()
 			.peek(n -> { if (!contains(n)) throw new VTLMissingComponentsException(n, this); })

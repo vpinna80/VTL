@@ -108,7 +108,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 				throw new VTLInvariantIdentifiersException("unpivot", singleton(c.asRole(Identifier.class)));
 		}
 		
-		Set<? extends ValueDomainSubset<?, ?>> domains = dataset.getComponents(Measure.class).stream()
+		Set<? extends ValueDomainSubset<?, ?>> domains = dataset.getMeasures().stream()
 			.map(DataStructureComponent::getDomain)
 			.distinct()
 			.collect(toSet());
@@ -121,7 +121,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = new DataStructureComponentImpl<>(identifierName, Identifier.class, STRINGDS);
 		DataStructureComponent<?, ?, ?> newMeasure = DataStructureComponentImpl.of(measureName, Measure.class, domain);
 
-		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataStructureBuilder(dataset.getIDs())
 				.addComponent(newIdentifier)
 				.addComponent(newMeasure)
 				.build();

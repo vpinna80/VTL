@@ -88,7 +88,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		else
 		{
 			DataSetMetadata filterDataset = (DataSetMetadata) filterMetadata;
-			Set<DataStructureComponent<Measure, ?, ?>> measures = filterDataset.getComponents(Measure.class);
+			Set<DataStructureComponent<Measure, ?, ?>> measures = filterDataset.getMeasures();
 			if (measures.size() != 1)
 				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
 			

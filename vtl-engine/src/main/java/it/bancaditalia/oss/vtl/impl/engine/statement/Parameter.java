@@ -23,6 +23,9 @@ import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
+/**
+ * Represent a parameter definition for a VTL custom operator
+ */
 public abstract class Parameter implements Serializable
 {
 	private static final long serialVersionUID = 1L;

@@ -114,10 +114,10 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		DataSetMetadata dataset = (DataSetMetadata) operand.getMetadata(session);
 		Hierarchy hierarchy = (Hierarchy) hierValue;
 
-		if (dataset.getComponents(Measure.class).size() != 1)
-			throw new VTLExpectedComponentException(Measure.class, dataset.getComponents(Measure.class));
+		if (dataset.getMeasures().size() != 1)
+			throw new VTLExpectedComponentException(Measure.class, dataset.getMeasures());
 		
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getMeasures().iterator().next();
 		DataStructureComponent<?, ?, ?> ruleKey = hierarchy.selectComponent(dataset);
 		
 		LOGGER.trace("Measure is {} and rule key is {}", measure, ruleKey);
@@ -125,7 +125,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
 			throw new VTLIncompatibleTypesException("check_hierarchy", NUMBERDS, measure.getDomain());
 
-		DataStructureBuilder builder = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		DataStructureBuilder builder = new DataStructureBuilder(dataset.getIDs())
 				.addComponent(DataStructureComponentImpl.of("ruleid",     Identifier.class, Domains.STRINGDS))
 				.addComponent(DataStructureComponentImpl.of("imbalance",  Measure.class,    measure.getDomain()))
 				.addComponent(DataStructureComponentImpl.of("errorcode",  Measure.class,    Domains.STRINGDS))
@@ -146,7 +146,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	{
 		/*DataSet dataset = (DataSet) operand.eval(session.uniqueName(), session);
 		Hierarchy hierarchy = (Hierarchy) hierarchyId.eval(session.uniqueName(), session);
-		Set<DataStructureComponent<Identifier, ?, ?>> identifiers = new HashSet<>(metadata.get().getComponents(Identifier.class));
+		Set<DataStructureComponent<Identifier, ?, ?>> identifiers = new HashSet<>(metadata.get().getIDs());
 		identifiers.remove(ruleKey);
 		DataSetIndex byIds = dataset.getIndex(identifiers);
 		DataStructureComponent<Measure, BooleanDomainSubset, BooleanDomain> bool_var = new DataStructureComponentImpl<>("bool_var", Measure.class, Domains.BOOLEANDS);

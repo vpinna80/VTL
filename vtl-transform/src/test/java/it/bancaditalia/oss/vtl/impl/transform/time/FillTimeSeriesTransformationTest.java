@@ -99,8 +99,8 @@ public class FillTimeSeriesTransformationTest
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
 		assertEquals(expectedSize, computedResult.size(), "Dataset size");
 		
-		DataStructureComponent<Identifier, EntireDateDomainSubset, DateDomain> time_id = computedResult.getComponent("date_1", Identifier.class, DATEDS).get();
-		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> string_id = computedResult.getComponent("string_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, EntireDateDomainSubset, DateDomain> time_id = computedResult.getMetadata().getComponent("date_1", Identifier.class, DATEDS).get();
+		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> string_id = computedResult.getMetadata().getComponent("string_1", Identifier.class, STRINGDS).get();
 		
 		if (mode == SINGLE)
 		{

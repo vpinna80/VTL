@@ -35,7 +35,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -86,7 +85,7 @@ public class BetweenTransformation extends UnaryTransformation
 		{
 			DataSetMetadata ds = (DataSetMetadata) op;
 
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = ds.getComponents(Measure.class);
+			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = ds.getMeasures();
 
 			if (measures.size() != 1)
 				throw new UnsupportedOperationException("Expected single measure but found: " + measures);
@@ -97,7 +96,7 @@ public class BetweenTransformation extends UnaryTransformation
 				throw new VTLIncompatibleTypesException("between", measure, domain);
 
 			return new DataStructureBuilder()
-					.addComponents(ds.getComponents(Identifier.class))
+					.addComponents(ds.getIDs())
 					.addComponent(BOOL_MEASURE)
 					.build();
 		}
@@ -114,7 +113,7 @@ public class BetweenTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_MEASURE, evalOnScalar(dp.get(measure), metadata)));
 	}
 	

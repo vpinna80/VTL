@@ -19,35 +19,37 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.CROSS_JOIN;
+import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.FULL_JOIN;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.INNER_JOIN;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.onlyIf;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableList;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toConcurrentMap;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -65,6 +67,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLAmbiguousComponentException;
@@ -191,80 +195,23 @@ public class JoinTransformation extends TransformationImpl
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		if (usingNames.isEmpty())
-		{
-			// Find out which component must be renamed
-			Map<JoinOperand, DataSet> datasets = renameCaseAB1(values); 
-
-			// Case A: join all to reference ds
-			LOGGER.debug("Collecting all identifiers");
-			Map<DataSet, Set<DataStructureComponent<Identifier, ?, ?>>> ids = datasets.entrySet().stream()
-					.filter(entryByKey(op -> op != referenceDataSet))
-					.map(Entry::getValue)
-					.collect(toConcurrentMap(ds -> ds, ds -> ds.getComponents(Identifier.class)));
-
-			// TODO: Memory hungry!!! Find some way to stream instead of building this big index collection 
-			LOGGER.debug("Indexing all datapoints");
-			Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier,?,?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> indexes = datasets.entrySet().stream()
-					.filter(entryByKey(op -> op != referenceDataSet))
-					.map(Entry::getValue)
-					.collect(toMapWithValues(ds -> {
-						// needed to close the stream after usage
-						try (Stream<DataPoint> stream = ds.stream())
-						{
-							return stream
-									.peek(dp -> LOGGER.trace("Indexing {}", dp))
-									// toMap instead of groupingBy because there's never more than one datapoint in each group
-									.collect(toConcurrentMap(dp -> dp.getValues(Identifier.class), dp -> dp));
-						}
-					}));
-
-			// Structure before applying any clause
-			DataSetMetadata totalStructure = datasets.values().stream()
-				.map(DataSet::getMetadata)
-				.flatMap(Set::stream)
-				.collect(toDataStructure());
-			
-			LOGGER.debug("Joining all datapoints");
-			
-			result = new FunctionDataSet<>(totalStructure, dataset -> dataset.stream()
-				.peek(refDP -> LOGGER.trace("Joining {}", refDP))
-				.map(refDP -> {
-					// Get all datapoints from other datasets (there is no more than 1 for each dataset)
-					List<DataPoint> otherDPs = datasets.entrySet().stream()
-							.filter(entryByKey(op -> op != referenceDataSet))
-							.map(Entry::getValue)
-							.map(ds -> indexes.get(ds).get(refDP.getValues(ids.get(ds), Identifier.class)))
-							.filter(Objects::nonNull)
-							.collect(toList());
-						
-					switch (operator)
-					{
-						case INNER_JOIN:
-						case LEFT_JOIN:
-							if (otherDPs.size() != indexes.size())
-								return operator == INNER_JOIN ? null : new DataPointBuilder(refDP)
-										.addAll(totalStructure.stream().collect(toMapWithValues(NullValue::instanceFrom)))
-										.build(refDP.getLineage(), totalStructure);
-							else
-							{
-								// Join all datapoints
-								DataPoint accDP = refDP;
-								for (DataPoint otherDP : otherDPs)
-									accDP = accDP.combine(otherDP, (dp1, dp2) -> lineageCombiner(dp1, dp2));
-								
-								LOGGER.trace("Joined {}", accDP);
-								return accDP;
-							}
-						default: throw new UnsupportedOperationException(operator + " not implemented"); 
-					}
-				}).filter(Objects::nonNull), datasets.get(referenceDataSet));
-		}
+			result = joinCaseA(values);
 		else
-			throw new UnsupportedOperationException("inner_join case B1-B2 not implemented");
+		{
+			Set<DataStructureComponent<Identifier, ?, ?>> commonIDs = getCommonIDs(values.size(), values.values().stream().map(DataSet::getMetadata));
+			Set<DataStructureComponent<Identifier, ?, ?>> usingIDs = getUsingIDs(values.values().stream().map(DataSet::getMetadata));
+			
+			if (commonIDs.equals(usingIDs))
+				result = joinCaseA(values);
+			else if (commonIDs.containsAll(usingIDs))
+				// case B1
+				result = joinCaseB1(values, usingIDs);
+			else
+				throw new UnsupportedOperationException("inner_join case B1-B2 not implemented");
+		}
 		
 		if (filter != null)
 			result = (DataSet) filter.eval(new ThisScope(result));
-		
 		/* apply calc and aggr are mutually exclusive */
 		if (apply != null)
 			result = applyClause(metadata, scheme, result);
@@ -272,10 +219,8 @@ public class JoinTransformation extends TransformationImpl
 			result = (DataSet) calc.eval(new ThisScope(result));
 		else if (aggr != null)
 			result = (DataSet) aggr.eval(new ThisScope(result));
-		
 		if (keepOrDrop != null)
 			result = (DataSet) keepOrDrop.eval(new ThisScope(result));
-		
 		if (rename != null)
 		{
 			result = (DataSet) rename.eval(new ThisScope(result));
@@ -293,6 +238,98 @@ public class JoinTransformation extends TransformationImpl
 		}
 		
 		return result;
+	}
+
+	private DataSet joinCaseA(Map<JoinOperand, DataSet> values)
+	{
+		DataSet result;
+		// Find out which component must be renamed inside each dataset
+		Map<JoinOperand, DataSet> datasets = renameCaseAB1(values); 
+
+		// Case A: join all to reference ds
+		LOGGER.debug("Collecting all identifiers");
+		Map<DataSet, Set<DataStructureComponent<Identifier, ?, ?>>> ids = datasets.entrySet().stream()
+				.filter(entryByKey(op -> op != referenceDataSet))
+				.map(Entry::getValue)
+				.map(toEntryWithValue(DataSet::getMetadata))
+				.map(keepingKey(DataSetMetadata::getIDs))
+				.collect(entriesToMap());
+
+		// TODO: Memory hungry!!! Find some way to stream instead of building this big index collection 
+		LOGGER.debug("Indexing all datapoints");
+		Map<DataSet, ? extends Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> indexes = datasets.entrySet().stream()
+				.filter(entryByKey(op -> op != referenceDataSet))
+				.map(Entry::getValue)
+				.collect(toMapWithValues(ds -> {
+					// needed to close the stream after usage
+					try (Stream<DataPoint> stream = ds.stream())
+					{
+						Stream<DataPoint> stream2 = LOGGER.isTraceEnabled() ? stream.peek(dp -> LOGGER.trace("Indexing {}", dp)) : stream;
+						// toMap instead of groupingBy because there's never more than one datapoint in each group
+						return stream2.collect(toConcurrentMap(dp -> dp.getValues(Identifier.class), identity()));
+					}
+				}));
+
+		// Structure before applying any clause
+		DataSetMetadata structureBefore = datasets.values().stream()
+			.map(DataSet::getMetadata)
+			.flatMap(Set::stream)
+			.collect(toDataStructure());
+		
+		LOGGER.debug("Joining all datapoints");
+		
+		result = new FunctionDataSet<>(structureBefore, dataset -> dataset.stream()
+			.peek(refDP -> LOGGER.trace("Joining {}", refDP))
+			.map(refDP -> {
+				// Get all datapoints from other datasets (there is no more than 1 for each dataset)
+				List<DataPoint> otherDPs = datasets.entrySet().stream()
+						.filter(entryByKey(op -> op != referenceDataSet))
+						.map(Entry::getValue)
+						.map(ds -> indexes.get(ds).get(refDP.getValues(ids.get(ds), Identifier.class)))
+						.filter(Objects::nonNull)
+						.collect(toList());
+					
+				switch (operator)
+				{
+					case INNER_JOIN:
+					case LEFT_JOIN:
+						if (otherDPs.size() != indexes.size())
+							return operator == INNER_JOIN ? null : new DataPointBuilder(refDP)
+									.addAll(structureBefore.stream().collect(toMapWithValues(NullValue::instanceFrom)))
+									.build(refDP.getLineage(), structureBefore);
+						else
+						{
+							// Join all datapoints
+							DataPoint accDP = refDP;
+							for (DataPoint otherDP : otherDPs)
+								accDP = accDP.combine(otherDP, (dp1, dp2) -> lineageCombiner(dp1, dp2));
+							
+							LOGGER.trace("Joined {}", accDP);
+							return accDP;
+						}
+					default: throw new UnsupportedOperationException(operator + " not implemented"); 
+				}
+			}).filter(Objects::nonNull), datasets.get(referenceDataSet));
+		return result;
+	}
+
+	private DataSet joinCaseB1(Map<JoinOperand, DataSet> values, Set<DataStructureComponent<Identifier, ?, ?>> usingIDs)
+	{
+		// Find out which component must be renamed
+		Map<JoinOperand, DataSet> datasets = renameCaseAB1(values);
+		
+		DataSetMetadata virtualStructure = virtualStructureDS(datasets, true);
+		if (!virtualStructure.containsAll(usingIDs))
+		{
+			Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(virtualStructure);
+			missing.removeAll(usingIDs);
+			throw new VTLMissingComponentsException(missing, virtualStructure);
+		}
+			
+		// Case B1: join all to reference ds
+		LOGGER.debug("Joining using {}", usingIDs);
+		
+		throw new UnsupportedOperationException();
 	}
 
 	private Lineage lineageCombiner(DataPoint dp1, DataPoint dp2)
@@ -364,7 +401,7 @@ public class JoinTransformation extends TransformationImpl
 		if (apply == null)
 			return dataset;
 		
-		Set<DataStructureComponent<Measure, ?, ?>> applyComponents = dataset.getComponents(Measure.class).stream()
+		Set<DataStructureComponent<Measure, ?, ?>> applyComponents = dataset.getMetadata().getMeasures().stream()
 				.map(c -> c.getName( ).replaceAll("^.*#", ""))
 				.distinct()
 				.map(name -> {
@@ -385,9 +422,6 @@ public class JoinTransformation extends TransformationImpl
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
-		if (operator != INNER_JOIN && operator != LEFT_JOIN)
-			throw new UnsupportedOperationException("Not implemented: " + operator.toString());
-		
 		// check if expressions have aliases
 		operands.stream()
 				.filter(o -> o.getId() == null)
@@ -400,7 +434,7 @@ public class JoinTransformation extends TransformationImpl
 		// check for duplicate aliases
 		operands.stream()
 				.map(JoinOperand::getId)
-				.collect(groupingBy(identity(), counting()))
+				.collect(groupingByConcurrent(identity(), counting()))
 				.entrySet().stream()
 				.filter(e -> e.getValue() > 1)
 				.map(Entry::getKey)
@@ -413,16 +447,13 @@ public class JoinTransformation extends TransformationImpl
 		for (JoinOperand op: operands)
 			datasetsMeta.put(op, (DataSetMetadata) op.getOperand().getMetadata(scheme));
 		
-		Optional<JoinOperand> caseAorB1 = isCaseAorB1(datasetsMeta);
-		Optional<JoinOperand> caseB2 = isCaseB2(caseAorB1, datasetsMeta);
-		
-		referenceDataSet = caseAorB1.orElseGet(caseB2::get);
+		Entry<JoinOperand, Boolean> caseAorB1 = isCaseAorB1(datasetsMeta);
+		referenceDataSet = caseAorB1.getKey();
+		DataSetMetadata result = virtualStructure(datasetsMeta, caseAorB1.getValue());
 		
 		LOGGER.info("Joining {} to ({}: {})", 
-				operands.stream().filter(op -> op != referenceDataSet).collect(toMap(JoinOperand::getId, datasetsMeta::get)), 
+				operands.stream().filter(op -> op != referenceDataSet).collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)), 
 				referenceDataSet.getId(), datasetsMeta.get(referenceDataSet));
-			
-		DataSetMetadata result = joinStructures(datasetsMeta, caseAorB1, caseB2);
 		
 		// modify the result structure as needed
 		if (filter != null)
@@ -430,7 +461,7 @@ public class JoinTransformation extends TransformationImpl
 		if (apply != null)
 		{
 			DataSetMetadata applyResult = result; 
-			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = applyResult.getComponents(Measure.class).stream()
+			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = applyResult.getMeasures().stream()
 					.map(c -> c.getName( ).replaceAll("^.*#", ""))
 					.distinct()
 					.map(name -> {
@@ -484,155 +515,104 @@ public class JoinTransformation extends TransformationImpl
 		return result;
 	}
 	
-	private Optional<JoinOperand> isCaseAorB1(Map<JoinOperand, DataSetMetadata> datasetsMeta)
+	private Entry<JoinOperand, Boolean> isCaseAorB1(Map<JoinOperand, DataSetMetadata> datasetsMeta)
 	{
-		// Case A: One dataset must contain the identifiers of all the others
+		// Determine the superset of all identifiers
 		Set<DataStructureComponent<Identifier, ?, ?>> allIDs = datasetsMeta.values().stream()
-				.flatMap(ds -> ds.getComponents(Identifier.class).stream())
+				.flatMap(ds -> ds.getIDs().stream())
 				.collect(toSet());
-		
-		Optional<JoinOperand> max = datasetsMeta.entrySet().stream()
+
+		// Get the common ids
+		Set<DataStructureComponent<Identifier, ?, ?>> commonIDs = getCommonIDs(datasetsMeta.size(), datasetsMeta.values().stream());
+
+		// Find the reference dataset if there is one. It must contain the superset of ids
+		Optional<JoinOperand> refDataSet = datasetsMeta.entrySet().stream()
 				.filter(entryByValue(ds -> ds.containsAll(allIDs)))
 				.map(Entry::getKey)
 				.findFirst();
 		
-		if (!max.isPresent())
+		// All datasets have the same ids?
+		boolean sameIDs = refDataSet.isPresent();
+		DataSetMetadata last = null;
+		for (DataSetMetadata ds: datasetsMeta.values())
 		{
-			if (usingNames.isEmpty())
-			{
-				// In Case A but conditions not fulfilled
-				UnsupportedOperationException e = new UnsupportedOperationException("In inner join without using clause, one dataset identifier set must contain identifiers of all other datasets.");
-				LOGGER.error("Error in " + this, e);
-				for (Entry<JoinOperand, DataSetMetadata> operand: datasetsMeta.entrySet())
-					LOGGER.debug("Operand {} is {}", operand.getKey().getId(), operand.getValue().getComponents(Identifier.class).toString());
-				throw e;
-			}
-			else
-				// Not in case A or B1
-				return Optional.empty();
+			if (last != null)
+				sameIDs &= ds.getIDs().equals(last.getIDs());
+			last = ds;
 		}
-		else if (usingNames.isEmpty())
-		{
-			// In case B1 
-			Long howMany = (long) datasetsMeta.size();
-			Set<DataStructureComponent<Identifier, ?, ?>> commonIDs = datasetsMeta.values().stream()
-					.flatMap(ds -> ds.getComponents(Identifier.class).stream())
-					.collect(groupingByConcurrent(c -> c, counting()))
-					.entrySet().stream()
-					.filter(entryByValue(howMany::equals))
-					.map(Entry::getKey)
-					.collect(toSet());
-
-			Set<DataStructureComponent<?,?,?>> using = datasetsMeta.values().stream()
-					.flatMap(ds -> usingNames.stream()
-							.map(ds::getComponent)
-							.map(Optional::get)
-					).collect(toSet());
-			
-			if (!commonIDs.containsAll(using))
-			{
-				// Case B1 conditions not fulfilled
-				UnsupportedOperationException e = new UnsupportedOperationException("In inner join with using clause, named ids must be common to all datasets.");
-				LOGGER.error("Error in " + this, e);
-				LOGGER.debug("Using " + using);
-				for (DataSetMetadata dataset: datasetsMeta.values())
-					LOGGER.debug(dataset.getComponents(Identifier.class).toString());
-				throw e;
-			}
+		
+		if (usingNames.isEmpty()) // Case A
+			if (operator == INNER_JOIN && refDataSet.isEmpty())
+				throw new VTLException(operator.toString().toLowerCase() + " requires one dataset to contain all the identifiers from all other datasets.");
+			else if ((operator == LEFT_JOIN || operator == FULL_JOIN) && !sameIDs)
+				throw new VTLException(operator.toString().toLowerCase() + " requires all datasets to have the same identifiers.");
+			else if (operator == CROSS_JOIN)
+				throw new UnsupportedOperationException(operator.toString().toLowerCase() + " not implemented");
 			else
-				// B1 fulfilled
-				return max;
+				return new SimpleEntry<>(refDataSet.get(), TRUE);
+		else if (operator == INNER_JOIN || operator == LEFT_JOIN) // case B1-B2
+		{
+			Set<DataStructureComponent<Identifier, ?, ?>> usingIDs = getUsingIDs(datasetsMeta.values().stream());
+
+			if (commonIDs.containsAll(usingIDs)) // case B1
+				if (operator == INNER_JOIN && refDataSet.isEmpty())
+					throw new VTLException(operator.toString().toLowerCase() + " requires one dataset to contain all the identifiers from all other datasets.");
+				else if (operator == LEFT_JOIN && !sameIDs)
+					throw new VTLException(operator.toString().toLowerCase() + " requires all datasets to have the same identifiers.");
+				else
+					return new SimpleEntry<>(refDataSet.get(), TRUE);
+			else // case B2
+				throw new UnsupportedOperationException(operator.toString().toLowerCase() + " with VTL case B2 not implemented");
 		}
 		else
-			// case A fulfilled
-			return max;
+			throw new VTLException(operator.toString().toLowerCase() + " cannot have a using clause.");
 	}
 
-	private Optional<JoinOperand> isCaseB2(Optional<JoinOperand> caseAorB1, Map<JoinOperand, DataSetMetadata> datasetsMeta)
+	private Set<DataStructureComponent<Identifier, ?, ?>> getUsingIDs(Stream<DataSetMetadata> datasetsMeta)
 	{
-		if (caseAorB1.isPresent())
-			return caseAorB1;
-		
-		throw new UnsupportedOperationException("Case B2 not implemented");
-//		
-//		if (datasetsMeta.size() < 2)
-//			throw new VTLException("Expected at least 2 datasets in join.");
-//		
-//		Iterator<VTLDataSetMetadata> iterator = datasetsMeta.values().iterator();
-//		Set<DataStructureComponent<Identifier, ?, ?>> first = iterator.next().getComponents(Identifier.class);
-//		Set<DataStructureComponent<Identifier, ?, ?>> second = iterator.next().getComponents(Identifier.class);
-//		VTLDataSetMetadata max = null;
-//		for (VTLDataSetMetadata dataset: datasetsMeta.values())
-//		{
-//			Set<DataStructureComponent<Identifier, ?, ?>> ids = dataset.getComponents(Identifier.class);
-//
-//			if (!ids.equals(first) && !ids.equals(second))
-//			{
-//				// Case B2 conditions not fulfilled
-//				UnsupportedOperationException e = new UnsupportedOperationException("In inner join with using clause, all datasets but one must have the same identifiers.");
-//				LOGGER.error("Error in " + this, e);
-//				for (VTLDataSetMetadata dataset2: datasetsMeta.values())
-//					LOGGER.debug(dataset2.getComponents(Identifier.class).toString());
-//				throw e;
-//			}
-//			else
-//				max = max != null ? max : ids.equals(first) ? second : first;
-//		}
-//		
-//		// Verify that reference dataset contains all the using components
-//		if (max.getComponents(usingNames).size() != usingNames.size())
-//		{
-//			// Case B2 conditions not fulfilled
-//			UnsupportedOperationException e = new UnsupportedOperationException("In inner join with using clause, the reference dataset must contain all used components.");
-//			LOGGER.error("Error in {}" + this, e);
-//			LOGGER.debug("Using {}", usingNames);
-//			LOGGER.debug("But reference dataset structure is {}", max);
-//			throw e;
-//		}
-//		
-//		for (Entry<JoinOperand, VTLDataSetMetadata> dataset: datasetsMeta.entrySet())
-//			if (max != dataset.getValue() && dataset.getValue().getComponents(usingNames, Identifier.class).size() != usingNames.size())
-//			{
-//				// Case B2 conditions not fulfilled
-//				UnsupportedOperationException e = new UnsupportedOperationException("In inner join with using clause, dataset " + dataset.getKey().getId() + " must contain all used components as identifiers.");
-//				LOGGER.error("Error in {}" + this, e);
-//				LOGGER.debug("Using {}", usingNames);
-//				LOGGER.debug("But dataset {} is {}", dataset.getKey().getId(), dataset.getValue());
-//				throw e;
-//			}
-//		
-//		return datasetsMeta.entrySet().stream()
-//				.filter(byValue(max::equals))
-//				.map(Entry::getKey)
-//				.findFirst();
+		return datasetsMeta
+				.map(ds -> ds.getIDs())
+				.flatMap(Collection::stream)
+				.filter(c -> usingNames.contains(c.getName()))
+				.filter(c -> c.is(Identifier.class))
+				.collect(toSet());
+	}
+
+	private Set<DataStructureComponent<Identifier, ?, ?>> getCommonIDs(int howMany, final Stream<DataSetMetadata> stream)
+	{
+		Set<DataStructureComponent<Identifier, ?, ?>> commonIDs = stream
+				.flatMap(ds -> ds.getIDs().stream())
+				.collect(groupingByConcurrent(c -> c, counting()))
+				.entrySet().stream()
+				.filter(entryByValue(c -> c.intValue() == howMany))
+				.map(Entry::getKey)
+				.collect(toSet());
+		return commonIDs;
+	}
+
+	private DataSetMetadata virtualStructureDS(Map<JoinOperand, DataSet> datasets, boolean isCaseAorB1)
+	{
+		return virtualStructure(datasets.entrySet().stream().map(keepingKey(DataSet::getMetadata)).collect(entriesToMap()), isCaseAorB1);
 	}
 	
-	private DataSetMetadata joinStructures(Map<JoinOperand,DataSetMetadata> datasetsMeta, Optional<?> caseAorB1, Optional<?> caseB2)
+	private DataSetMetadata virtualStructure(Map<JoinOperand, DataSetMetadata> datasetsMeta, boolean isCaseAorB1)
 	{
-//		List<Entry<String, VTLDataSetMetadata>> dataSets = operands.stream()
-//				.map(op -> new SimpleEntry<>(op.getId(), datasetsMeta.get(op)))
-//				.collect(toList());
-	
-		if (caseAorB1.isPresent())
+		if (isCaseAorB1)
 		{
-			Set<DataStructureComponent<?,?,?>> using = datasetsMeta.values().stream()
-					.flatMap(ds -> usingNames.stream()
-							.map(ds::getComponent)
-							.map(Optional::get)
-					).collect(toSet());
+			Set<DataStructureComponent<Identifier, ?, ?>> usingIDs = getUsingIDs(datasetsMeta.values().stream());
 			
 			// Case A: rename all measures and attributes with the same name 
 			// Case B1: rename all components with the same name except those in the using clause  
 			ConcurrentMap<DataStructureComponent<?, ?, ?>, Boolean> unique = new ConcurrentHashMap<>();
-			Set<DataStructureComponent<?, ?, ?>> toBeRenamed = datasetsMeta.entrySet().stream()
-					.map(Entry::getValue)
+			Set<DataStructureComponent<?, ?, ?>> toBeRenamed = datasetsMeta.values().stream()
 					.flatMap(d -> d.stream())
 					.filter(c -> unique.putIfAbsent(c, TRUE) != null)
-					.filter(c -> using.isEmpty() && c.is(NonIdentifier.class) || !using.isEmpty() && !using.contains(c))
+					.filter(c -> /* A */ usingIDs.isEmpty() && c.is(NonIdentifier.class) || /* B1 */ !usingIDs.isEmpty() && !usingIDs.contains(c))
 					.collect(toSet());
 			
 			LOGGER.debug("Inner join renames: {}", toBeRenamed);
 			
+			// Do the renaming
 			DataStructureBuilder builder = new DataStructureBuilder();
 			for (Entry<JoinOperand, DataSetMetadata> e: datasetsMeta.entrySet())
 				for (DataStructureComponent<?, ?, ?> c: e.getValue())
@@ -644,7 +624,7 @@ public class JoinTransformation extends TransformationImpl
 			return builder.build();
 		}
 		else
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("join case B2 not implemented.");
 	}
 	
 	@Override

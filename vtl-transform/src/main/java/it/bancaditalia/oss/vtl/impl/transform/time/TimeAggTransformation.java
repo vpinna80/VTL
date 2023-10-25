@@ -33,7 +33,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -72,7 +71,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Measure, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeMeasure = dataset.getComponents(Measure.class, TIMEDS).iterator().next();
+		DataStructureComponent<Measure, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeMeasure = dataset.getMetadata().getComponents(Measure.class, TIMEDS).iterator().next();
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata())
 				.addComponent(periodComponent)
 				.build();
@@ -110,7 +109,7 @@ public class TimeAggTransformation extends UnaryTransformation
 //			}
 //			else
 //			{
-				Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getComponents(Measure.class).stream()
+				Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getMeasures().stream()
 						.map(c -> c.asRole(Measure.class))
 						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 						.collect(toSet());
@@ -119,7 +118,7 @@ public class TimeAggTransformation extends UnaryTransformation
 					throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, ds);
 //			}
 			
-			return new DataStructureBuilder(ds.getComponents(Identifier.class))
+			return new DataStructureBuilder(ds.getIDs())
 					.addComponent(periodComponent)
 					.build();
 		}

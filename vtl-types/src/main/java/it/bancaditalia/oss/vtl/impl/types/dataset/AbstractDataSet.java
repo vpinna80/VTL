@@ -59,7 +59,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -98,7 +97,7 @@ public abstract class AbstractDataSet implements DataSet
 		
 		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
 				.orElseThrow((Supplier<? extends RuntimeException> & Serializable) () -> new VTLMissingComponentsException(alias, dataStructure));
-		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getMeasures().iterator().next();
 
 		SerFunction<DataPoint, Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = 
 				dp -> singletonMap(membershipMeasure, dp.get(sourceComponent));
@@ -142,8 +141,8 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = getComponents(Identifier.class);
-		Set<DataStructureComponent<Identifier, ?, ?>> otherIds = other.getComponents(Identifier.class);
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = getMetadata().getIDs();
+		Set<DataStructureComponent<Identifier, ?, ?>> otherIds = other.getMetadata().getIDs();
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = new HashSet<>(ids);
 		commonIds.retainAll(otherIds);
 		
@@ -192,9 +191,9 @@ public abstract class AbstractDataSet implements DataSet
 	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, 
 			SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
-		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
-		if (!metadata.getComponents(Identifier.class).containsAll(identifiers))
-			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getComponents(Identifier.class));
+		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
+		if (!metadata.getIDs().containsAll(identifiers))
+			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getIDs());
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
@@ -209,9 +208,9 @@ public abstract class AbstractDataSet implements DataSet
 	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator,
 			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
 	{
-		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getComponents(Identifier.class);
-		if (!metadata.getComponents(Identifier.class).containsAll(identifiers))
-			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getComponents(Identifier.class));
+		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
+		if (!metadata.getIDs().containsAll(identifiers))
+			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getIDs());
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
@@ -341,7 +340,7 @@ public abstract class AbstractDataSet implements DataSet
 				}
 			};
 		
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getComponents(Identifier.class);
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getIDs();
 		for (DataSet other: others)
 			if (!dataStructure.equals(other.getMetadata()))
 				throw new InvalidParameterException("Union between two datasets with different structures: " + dataStructure + " and " + other.getMetadata()); 

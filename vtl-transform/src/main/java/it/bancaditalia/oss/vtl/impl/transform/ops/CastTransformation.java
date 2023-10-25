@@ -52,7 +52,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.NullDomain;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -103,12 +102,12 @@ public class CastTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getMetadata().getMeasures().iterator().next();
 		if (target.getDomain() == oldMeasure.getDomain())
 			return dataset;
 		
 		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getDomain().getVarName(), Measure.class, target.getDomain()).asRole(Measure.class);
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(measure)
 				.build();
 		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
@@ -126,7 +125,7 @@ public class CastTransformation extends UnaryTransformation
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
 			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 			if (measures.size() != 1)
 				throw new VTLExpectedComponentException(Measure.class, measures);
 			

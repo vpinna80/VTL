@@ -93,7 +93,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	{
 		List<SortCriterion> ordering;
 		if (orderByClause.isEmpty())
-			ordering = dataset.getComponents(Identifier.class).stream()
+			ordering = dataset.getMetadata().getIDs().stream()
 				.map(c -> new SortClause(c, ASC))
 				.collect(toList());
 		else
@@ -112,7 +112,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				throw new VTLException("Cannot order by " + orderingComponent.getName() + " because the component is used in partition by " + partitionBy);
 
 		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, windowCriterion);
-		Set<DataStructureComponent<NonIdentifier, ?, ?>> nonIDs = dataset.getComponents(NonIdentifier.class);
+		Set<DataStructureComponent<NonIdentifier, ?, ?>> nonIDs = dataset.getMetadata().getComponents(NonIdentifier.class);
 		Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = nonIDs.stream()
 			.collect(toMapWithValues(k -> aggregation.getReducer()));
 		

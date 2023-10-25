@@ -69,6 +69,12 @@ public class SerCollectors
         return SerCollector.of(mapSupplier, acc, mapMerger(mergeFun), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
+    public static <T, K, U, M extends Map<K, U> & Serializable> SerCollector<T, ?, M> toMap(SerFunction<? super T, ? extends K> kMapper,
+    		SerFunction<? super T, ? extends U> vMapper, SerSupplier<M> mapSupplier)
+    {
+        return SerCollector.of(mapSupplier, throwingPutter(kMapper, vMapper), throwingMerger(),  identity(), EnumSet.of(UNORDERED, IDENTITY_FINISH));
+    }
+
     public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, ? extends R> downstream, SerFunction<? super R, RR> finisher)
 	{
 		Set<Characteristics> characteristics = downstream.characteristics();
@@ -241,6 +247,42 @@ public class SerCollectors
             };
             
             return SerCollector.of(mangledFactory, accumulator, merger, finisher, EnumSet.of(CONCURRENT, UNORDERED));
+        }
+    }
+    
+    public static <T, K, A, D, M extends Map<K, D>> SerCollector<T, ?, M> groupingBy(SerFunction<? super T, ? extends K> classifier,
+    		SerSupplier<? extends M> mapFactory, SerCollector<? super T, A, D> downstream)
+    {
+        SerSupplier<A> downstreamSupplier = downstream.supplier();
+        SerBiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
+        SerBinaryOperator<Map<K, A>> merger = mapMerger(downstream.combiner());
+        @SuppressWarnings("unchecked")
+        SerSupplier<Map<K, A>> mangledFactory = (SerSupplier<Map<K, A>>) mapFactory;
+        SerBiConsumer<Map<K, A>, T> accumulator;
+        accumulator = (m, t) -> {
+            K key = Objects.requireNonNull(classifier.apply(t), "element cannot be mapped to a null key");
+            A resultContainer = m.computeIfAbsent(key, k -> downstreamSupplier.get());
+            downstreamAccumulator.accept(resultContainer, t);
+        };
+
+        if (downstream.characteristics().contains(IDENTITY_FINISH))
+        {
+            @SuppressWarnings("unchecked")
+            SerFunction<Map<K, A>, M> downstreamFinisher = (SerFunction<Map<K, A>, M>) downstream.finisher();
+            return SerCollector.of(mangledFactory, accumulator, merger, downstreamFinisher, EnumSet.of(UNORDERED, IDENTITY_FINISH));
+        }
+        else
+        {
+            @SuppressWarnings("unchecked")
+            SerFunction<A, A> downstreamFinisher = (SerFunction<A, A>) downstream.finisher();
+            SerFunction<Map<K, A>, M> finisher = intermediate -> {
+                intermediate.replaceAll((k, v) -> downstreamFinisher.apply(v));
+                @SuppressWarnings("unchecked")
+                M castResult = (M) intermediate;
+                return castResult;
+            };
+            
+            return SerCollector.of(mangledFactory, accumulator, merger, finisher, EnumSet.of(UNORDERED));
         }
     }
     

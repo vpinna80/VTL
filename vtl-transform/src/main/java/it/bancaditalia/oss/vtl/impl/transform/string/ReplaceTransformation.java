@@ -96,7 +96,7 @@ public class ReplaceTransformation extends TransformationImpl
 		{
 			DataSet dataset = (DataSet) left;
 			DataSetMetadata structure = dataset.getMetadata();
-			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getComponents(Measure.class);
+			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getMetadata().getMeasures();
 			Pattern compiled = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
 			
 			String lineageString = "replace " + pattern + " with " + replace;
@@ -148,7 +148,7 @@ public class ReplaceTransformation extends TransformationImpl
 			{
 				DataSetMetadata metadata = (DataSetMetadata) source;
 				
-				Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getComponents(Measure.class).stream()
+				Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getMeasures().stream()
 					.filter(c -> !(c.getDomain() instanceof StringDomain))
 					.collect(toSet());
 				

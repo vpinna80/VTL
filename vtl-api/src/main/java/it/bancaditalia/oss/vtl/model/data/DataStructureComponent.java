@@ -20,10 +20,13 @@
 package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
-import java.util.Comparator;
 import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -39,11 +42,31 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
  */
 public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends Serializable
 {
-	public static Comparator<DataStructureComponent<?, ?, ?>> byName()
+	public static int byName(DataStructureComponent<?, ?, ?> c1, DataStructureComponent<?, ?, ?> c2)
 	{
-		return (c1, c2) -> c1.getName().compareTo(c2.getName());
+		return c1.getName().compareTo(c2.getName());
 	}
+
+	public static int byNameAndRole(DataStructureComponent<?, ?, ?> c1, DataStructureComponent<?, ?, ?> c2)
+	{
+		if (c1.is(Attribute.class) && !c2.is(Attribute.class))
+			return 1;
+		else if (c1.is(Identifier.class) && !c2.is(Identifier.class))
+			return -1;
+		else if (c1.is(Measure.class) && c2.is(Identifier.class))
+			return 1;
+		else if (c1.is(Measure.class) && c2.is(Attribute.class))
+			return -1;
 	
+		String n1 = c1.getName(), n2 = c2.getName();
+		Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
+		Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
+		if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
+			return Integer.compare(Integer.parseInt(m1.group(2)), Integer.parseInt(m2.group(2)));
+		else
+			return n1.compareTo(n2);
+	}
+
 	public static String normalizeAlias(String alias)
 	{
 		if (alias.matches("'.*'"))

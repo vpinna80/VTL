@@ -101,7 +101,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
 		
 		if (orderByClause.isEmpty())
-			ordering = dataset.getComponents(Identifier.class).stream().collect(toMapWithValues(c -> TRUE));
+			ordering = dataset.getMetadata().getIDs().stream().collect(toMapWithValues(c -> TRUE));
 		else
 		{
 			ordering = new LinkedHashMap<>();
@@ -117,7 +117,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		else
-			partitionIDs = dataset.getComponents(Identifier.class).stream()
+			partitionIDs = dataset.getMetadata().getIDs().stream()
 					.filter(partitionID -> !ordering.containsKey(partitionID))
 					.collect(toSet());
 		
@@ -200,7 +200,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		
-		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataStructureBuilder(dataset.getIDs())
 				.addComponent(RANK_MEASURE)
 				.build();
 	}

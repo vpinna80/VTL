@@ -88,9 +88,9 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		
 		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		
-		Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = dataset.getComponents(Measure.class).stream()
+		Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = dataset.getMetadata().getMeasures().stream()
 			.collect(toMapWithValues(measure -> SUM.getReducer()));
-		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = dataset.getComponents(Measure.class).stream()
+		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = dataset.getMetadata().getMeasures().stream()
 			.collect(toMapWithValues(measure -> (newV, oldV) -> {
 				if (newV instanceof NullValue || oldV instanceof NullValue)
 					return singleton(newV);
@@ -100,7 +100,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 					throw new UnsupportedOperationException();
 			}));
 		
-		return dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), dataset.getComponents(Measure.class), clause, collectors, finishers);	
+		return dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), dataset.getMetadata().getMeasures(), clause, collectors, finishers);	
 	}
 
 	@Override
@@ -115,8 +115,8 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		
 		dataset.matchIdComponents(partitionBy, "partition by");
 		
-		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
-				.addComponents(dataset.getComponents(Measure.class))
+		return new DataStructureBuilder(dataset.getIDs())
+				.addComponents(dataset.getMeasures())
 				.build();
 	}
 	

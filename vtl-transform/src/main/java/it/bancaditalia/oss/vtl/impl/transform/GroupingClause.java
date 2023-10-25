@@ -90,7 +90,7 @@ public class GroupingClause implements Serializable
 		
 		if (mode == GROUP_EXCEPT)
 		{
-			Set<DataStructureComponent<Identifier, ?, ?>> exceptComps = new HashSet<>(dataset.getComponents(Identifier.class));
+			Set<DataStructureComponent<Identifier, ?, ?>> exceptComps = new HashSet<>(dataset.getIDs());
 			exceptComps.removeAll(groupComps);
 			return exceptComps;
 		}

@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
 import java.util.Map;
 
@@ -41,7 +43,7 @@ public abstract class TransformationImpl implements Transformation, Serializable
 			holder.put(this, metadata);
 		}
 		
-		return metadata;
+		return requireNonNull(metadata);
 	}
 
 	protected abstract VTLValueMetadata computeMetadata(TransformationScheme scheme);

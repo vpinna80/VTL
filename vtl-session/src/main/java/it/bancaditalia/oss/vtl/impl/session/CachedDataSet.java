@@ -216,7 +216,7 @@ public class CachedDataSet extends NamedDataSet
 				waitersMap = new ConcurrentHashMap<>();
 				SESSION_CACHES.put(session, waitersMap);
 			}
-			waiter = waitersMap.computeIfAbsent(alias, a -> new CacheWaiter(alias, getMetadata().getComponents(Identifier.class)));
+			waiter = waitersMap.computeIfAbsent(alias, a -> new CacheWaiter(alias, getMetadata().getIDs()));
 		}
 	}
 
@@ -285,8 +285,8 @@ public class CachedDataSet extends NamedDataSet
 		if (!lock())
 			return new StreamWrapperDataSet(metadata, Stream::empty);
 	
-		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = getMetadata().getComponents(Identifier.class);
-		commonIds.retainAll(other.getComponents(Identifier.class));
+		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = new HashSet<>(getMetadata().getIDs());
+		commonIds.retainAll(other.getMetadata().getIDs());
 		
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> value = waiter.getCache(commonIds);
 		if (value == null)
@@ -372,7 +372,7 @@ public class CachedDataSet extends NamedDataSet
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;
 		try (Stream<DataPoint> stream = getUnindexedCache(false))
 		{
-			if (getComponents(Identifier.class).equals(keys))
+			if (getMetadata().getIDs().equals(keys))
 				result = stream.collect(toConcurrentMap(dp -> dp.getValues(keys, Identifier.class), Collections::singleton));
 			else
 				result = stream.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), toSet()));

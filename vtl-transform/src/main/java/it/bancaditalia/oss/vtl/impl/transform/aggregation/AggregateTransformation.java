@@ -120,13 +120,13 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(dataset.getMetadata().getComponents(Measure.class));
+		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(dataset.getMetadata().getMeasures());
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 		DataStructureComponent<?, ?, ?> outputComponent;
 		if (name != null)
 			outputComponent = ((DataSetMetadata) metadata).getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset.getMetadata()));
 		else
-			outputComponent = dataset.getMetadata().getComponents(Measure.class).iterator().next();
+			outputComponent = dataset.getMetadata().getMeasures().iterator().next();
 		
 		// dataset-level aggregation
 		DataSet aggr = dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (dp, keyValues) -> {
@@ -153,7 +153,7 @@ public class AggregateTransformation extends UnaryTransformation
 		else if (opmeta instanceof DataSetMetadata)
 		{
 			DataSetMetadata dataset = (DataSetMetadata) opmeta;
-			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMeasures();
 
 			if (groupingClause == null)
 			{
@@ -186,7 +186,7 @@ public class AggregateTransformation extends UnaryTransformation
 				
 				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.asRole(Identifier.class)).collect(toSet()));
 				
-				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getComponents(Measure.class);
+				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getMeasures();
 				if (aggregation == COUNT)
 					newComps = COUNT_MEASURE;
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))

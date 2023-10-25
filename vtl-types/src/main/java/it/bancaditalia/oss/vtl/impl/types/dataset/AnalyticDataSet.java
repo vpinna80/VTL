@@ -141,7 +141,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		Stream<Stream<DataPoint>> original;
 		
 		// when partition by all, each window has a single data point in it (though the result can have any number) 
-		if (partitionIds.equals(getComponents(Identifier.class)))
+		if (partitionIds.equals(getMetadata().getIDs()))
 			original = source.stream()
 					.map(v -> new DataPoint[] { v })
 					.map(this::applyToPartition);

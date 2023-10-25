@@ -36,7 +36,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -109,7 +108,7 @@ public class InclusionTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getMetadata().getMeasures().iterator().next();
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(resultMeasure, BooleanValue.of(operator.test(set, dp.get(datasetMeasure)))));
 	}
@@ -123,13 +122,13 @@ public class InclusionTransformation extends UnaryTransformation
 		{
 			DataSetMetadata ds = (DataSetMetadata) value;
 
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = ds.getComponents(Measure.class);
+			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = ds.getMeasures();
 
 			if (measures.size() != 1)
 				throw new UnsupportedOperationException("Expected single measure but found: " + measures);
 
 			return new DataStructureBuilder()
-					.addComponents(ds.getComponents(Identifier.class))
+					.addComponents(ds.getIDs())
 					.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))
 					.build();
 		}

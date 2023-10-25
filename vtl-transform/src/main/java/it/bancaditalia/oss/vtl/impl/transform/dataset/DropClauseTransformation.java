@@ -20,9 +20,10 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -80,9 +81,11 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
+		DataSetMetadata dataset = (DataSetMetadata) operand;
+		
 		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
-				.map(((DataSetMetadata) operand)::getComponent)
-				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names)))
+				.map(toEntryWithValue(dataset::getComponent))
+				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
 				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("drop", singleton(c.asRole(Identifier.class))); })
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());

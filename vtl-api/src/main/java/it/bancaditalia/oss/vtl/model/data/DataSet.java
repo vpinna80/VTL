@@ -39,8 +39,6 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -395,50 +393,6 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public DataSet setDiff(DataSet other);
 
 	/**
-	 * Obtains a component with given name, and checks that it belongs to the specified domain.
-	 * 
-	 * @param name The requested component's name.
-	 * @param domain A non-null instance of a domain.
-	 * @return An {@link Optional} containing the requested component if it exists.
-	 * 
-	 * @throws NullPointerException if domain is null.
-	 */
-	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<?, S, D>> getComponent(String name, S domain)
-	{
-		return getMetadata().getComponent(name, domain);
-	}
-
-	/**
-	 * Obtains a component with given name, and checks that it belongs to the specified domain.
-	 * 
-	 * @param name The requested component's name.
-	 * @param role The role of component desired (Measure, Identifier, Attribute).
-	 * @return The requested component, or null if no one was found.
-	 * 
-	 * @throws NullPointerException if domain is null.
-	 */
-	public default <R extends ComponentRole> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
-	{
-		return getMetadata().getComponent(name, role);
-	}
-	
-	/**
-	 * Obtains a component with given name if it has the specified role, and checks that it belongs to the specified domain.
-	 * 
-	 * @param name The requested component's name.
-	 * @param role The role of component desired (Measure, Identifier, Attribute).
-	 * @param domain A non-null instance of a domain.
-	 * @return The requested component, or null if no one was found.
-	 * 
-	 * @throws NullPointerException if domain is null.
-	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name,
-			Class<R> role, S domain)
-	{
-		return getMetadata().getComponent(name, role, domain);
-	}
-	
-	/**
 	 * <b>NOTE</b>: The default implementation traverses this DataSet entirely.
 	 * 
 	 * @return The size of this DataSet.
@@ -449,23 +403,6 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 		{
 			return stream.count();
 		}
-	}
-
-	/**
-	 * @see DataSetMetadata#getComponents(Class) 
-	 */
-	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
-	{
-		return getMetadata().getComponents(typeOfComponent);
-	}
-
-	/**
-	 * @see DataSetMetadata#getComponents(Class, ValueDomainSubset) 
-	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role,
-			S domain)
-	{
-		return getMetadata().getComponents(role, domain);
 	}
 
 	/**

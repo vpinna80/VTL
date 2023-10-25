@@ -186,7 +186,7 @@ public class DataPointBuilder implements Serializable
 			this.dpValues = new HashMap<>(structure.size(), 1.0f);
 			dpValues.putAll(values);
 
-			if (values.size() != structure.size())
+			if (!structure.equals(values.keySet()))
 				for (DataStructureComponent<?, ?, ?> component: structure)
 					if (!component.is(Identifier.class) && !values.containsKey(component))
 						dpValues.put(component, NullValue.instanceFrom(component));
@@ -318,7 +318,10 @@ public class DataPointBuilder implements Serializable
 		@Override
 		public ScalarValue<?, ?, ?, ?> get(Object key)
 		{
-			return dpValues.get(key);
+			if (dpValues.containsKey(key))
+				return dpValues.get(key);
+			else
+				throw new VTLMissingComponentsException(Objects.toString(key), dpValues.keySet());
 		}
 
 		@Override

@@ -33,7 +33,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -65,11 +64,11 @@ public class IsNullTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(BOOL_MEASURE)
 				.build();
 
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 
 		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_MEASURE, BooleanValue.of(dp.get(measure) instanceof NullValue)));
 	}
@@ -85,11 +84,11 @@ public class IsNullTransformation extends UnaryTransformation
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
 
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
-			if (dataset.getComponents(Measure.class).size() != 1)
+			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
+			if (dataset.getMeasures().size() != 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, measures);
 
-			return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+			return new DataStructureBuilder(dataset.getIDs())
 					.addComponent(BOOL_MEASURE)
 					.build();
 		}

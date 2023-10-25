@@ -104,7 +104,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		Set<String> measureNames = dataset.getComponents(Measure.class, NUMBERDS).stream().map(DataStructureComponent::getName).collect(toSet());
+		Set<String> measureNames = dataset.getMetadata().getComponents(Measure.class, NUMBERDS).stream().map(DataStructureComponent::getName).collect(toSet());
 		ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> castedScalar = NUMBERDS.cast(scalar);
 		
 		SerPredicate<String> bothIntegers = name -> ((DataSetMetadata) metadata).getComponent(name)
@@ -132,21 +132,21 @@ public class ArithmeticTransformation extends BinaryTransformation
 	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
 		// index (as right operand) the one with less keys and stream the other (as left operand)
-		boolean swap = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
+		boolean swap = left.getMetadata().getIDs().containsAll(right.getMetadata().getIDs());
 		DataSet streamed = swap ? right : left;
 		DataSet indexed = swap ? left : right;
 
 		if (metadata == null)
 		{
-			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> leftMeasure = streamed.getComponents(Measure.class, NUMBERDS).iterator().next();
-			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> rightMeasure = indexed.getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> leftMeasure = streamed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
 			DataStructureComponentImpl<Measure, ? extends NumberDomainSubset<?, ?>, ?> resultComp;
 			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getDomain()))
 				resultComp = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
 			else
 				resultComp = new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS);
 			
-			DataSetMetadata newStructure = new DataStructureBuilder(streamed.getComponents(Identifier.class))
+			DataSetMetadata newStructure = new DataStructureBuilder(streamed.getMetadata().getIDs())
 					.addComponent(resultComp)
 					.build();
 			
@@ -160,13 +160,13 @@ public class ArithmeticTransformation extends BinaryTransformation
 		}
 		else
 		{
-			Set<DataStructureComponent<Measure, ?, ?>> resultMeasures = ((DataSetMetadata) metadata).getComponents(Measure.class);
+			Set<DataStructureComponent<Measure, ?, ?>> resultMeasures = ((DataSetMetadata) metadata).getMeasures();
 			
 			if (resultMeasures.size() == 1)
 			{
 				DataStructureComponent<Measure, ?, ?> resultMeasure = resultMeasures.iterator().next(); 
-				DataStructureComponent<Measure, ?, ?> streamedMeasure = streamed.getComponents(Measure.class).iterator().next(); 
-				DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getComponents(Measure.class).iterator().next(); 
+				DataStructureComponent<Measure, ?, ?> streamedMeasure = streamed.getMetadata().getMeasures().iterator().next(); 
+				DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getMeasures().iterator().next(); 
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
 				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dpl, dpr) -> {
@@ -223,10 +223,10 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
 	{
-		if (dataset.getComponents(Measure.class).size() == 0)
+		if (dataset.getMeasures().size() == 0)
 			throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
-		if (dataset.getComponents(Measure.class).stream().anyMatch(c -> !NUMBERDS.isAssignableFrom(c.getDomain())))
-			throw new UnsupportedOperationException("Expected only numeric measures but found: " + dataset.getComponents(Measure.class));
+		if (dataset.getMeasures().stream().anyMatch(c -> !NUMBERDS.isAssignableFrom(c.getDomain())))
+			throw new UnsupportedOperationException("Expected only numeric measures but found: " + dataset.getMeasures());
 		if (INTEGERDS.isAssignableFrom(scalar.getDomain()))
 			return dataset;
 		
@@ -241,8 +241,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
 	{
-		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getComponents(Measure.class);
-		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getComponents(Measure.class);
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getMeasures();
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
 		
 		if (leftMeasures.size() == 0)
 			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, leftMeasures);
@@ -251,8 +251,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 
 
 
-		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class))
-				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
+		if (!left.getIDs().containsAll(right.getIDs())
+				&& !right.getIDs().containsAll(left.getIDs()))
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
 
 		// check if measures are the same, unless we are at component level
@@ -284,8 +284,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 				.collect(toSet());
 		}
 		
-		return new DataStructureBuilder().addComponents(left.getComponents(Identifier.class))
-				.addComponents(right.getComponents(Identifier.class))
+		return new DataStructureBuilder().addComponents(left.getIDs())
+				.addComponents(right.getIDs())
 				.addComponents(resultMeasures)
 				.build();
 	}

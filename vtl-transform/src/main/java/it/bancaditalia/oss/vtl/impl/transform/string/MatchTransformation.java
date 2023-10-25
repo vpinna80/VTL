@@ -58,7 +58,6 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -93,11 +92,11 @@ public class MatchTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> patternV)
 	{
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getComponents(Identifier.class))
+		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(BOOL_MEASURE)
 				.build();
 
-		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getComponents(Measure.class, STRINGDS).iterator().next();
+		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		String pattern = patternV instanceof NullValue ? null : STRINGDS.cast(patternV).get().toString();
 		
 		String lineageString = "match " + pattern;
@@ -134,7 +133,7 @@ public class MatchTransformation extends BinaryTransformation
 		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
 			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
 
-		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 		if (measures.size() != 1)
 			throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
 		
@@ -142,7 +141,7 @@ public class MatchTransformation extends BinaryTransformation
 		if (!STRING.isAssignableFrom(measure.getDomain()))
 			throw new VTLExpectedComponentException(Measure.class, STRING, measures);
 		
-		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataStructureBuilder(dataset.getIDs())
 				.addComponent(BOOL_MEASURE)
 				.build();
 	}

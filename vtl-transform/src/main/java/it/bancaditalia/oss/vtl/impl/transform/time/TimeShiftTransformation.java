@@ -53,7 +53,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Identifier, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeID = dataset.getComponents(Identifier.class, TIMEDS).iterator().next();
+		DataStructureComponent<Identifier, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeID = dataset.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
 		DataSetMetadata structure = dataset.getMetadata();
 		
 		String lineageString = "timeshift " + amount;

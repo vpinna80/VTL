@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentCo
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -58,7 +59,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 	@Override
 	protected Optional<Set<? extends DataStructureComponent<?, ?, ?>>> matchStructure(DataSetMetadata structure, MetadataRepository repo)
 	{
-		Set<? extends DataStructureComponent<?, ?, ?>> matchedComponents = structure.getComponents(role);
+		Set<? extends DataStructureComponent<?, ?, ?>> matchedComponents = new HashSet<>(structure.getComponents(role));
 		if (domainName != null)
 		{
 			ValueDomainSubset<?, ?> domain = repo.getDomain(domainName);

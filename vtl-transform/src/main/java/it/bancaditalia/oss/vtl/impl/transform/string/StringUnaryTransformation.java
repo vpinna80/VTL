@@ -100,7 +100,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getComponents(Measure.class);
+		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
@@ -123,15 +123,15 @@ public class StringUnaryTransformation extends UnaryTransformation
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
 			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> nonstring = dataset.getComponents(Measure.class);
-			if (dataset.getComponents(Measure.class).size() == 0)
+			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> nonstring = new HashSet<>(dataset.getMeasures());
+			if (dataset.getMeasures().size() == 0)
 				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
 			
 			nonstring.removeAll(dataset.getComponents(Measure.class, STRINGDS));
 			if (nonstring.size() > 0)
 				throw new UnsupportedOperationException("Expected only string measures but found: " + nonstring);
 			
-			Set<DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class).stream()
+			Set<DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures().stream()
 //					.map(m -> m.getDomain() instanceof StringEnumeratedDomainSubset
 //							? new DataStructureComponentImpl<>(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringEnumeratedDomainSubset<?, ?>) m.getDomain()))
 //							: m
@@ -139,7 +139,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 					.collect(toSet());
 			
 			Set<DataStructureComponent<?, ?, ?>> components = new HashSet<>(dataset);
-			components.removeAll(dataset.getComponents(Measure.class));
+			components.removeAll(dataset.getMeasures());
 			components.addAll(measures);
 			
 			return new DataStructureBuilder(components).build();

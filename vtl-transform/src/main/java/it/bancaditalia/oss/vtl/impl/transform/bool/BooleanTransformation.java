@@ -103,7 +103,7 @@ public class BooleanTransformation extends BinaryTransformation
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(!datasetIsLeftOp);
@@ -115,13 +115,13 @@ public class BooleanTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
+		boolean leftHasMoreIdentifiers = left.getMetadata().getIDs().containsAll(right.getMetadata().getIDs());
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(leftHasMoreIdentifiers);
@@ -160,12 +160,12 @@ public class BooleanTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
 	{
-		if (!left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class))
-				&& !right.getComponents(Identifier.class).containsAll(left.getComponents(Identifier.class)))
+		if (!left.getIDs().containsAll(right.getIDs())
+				&& !right.getIDs().containsAll(left.getIDs()))
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
 
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getComponents(Measure.class);
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getComponents(Measure.class);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getMeasures();
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
 
 		if (leftMeasures.size() != 1)
 			throw new UnsupportedOperationException("Expected single boolean measure but found: " + leftMeasures);
@@ -183,8 +183,8 @@ public class BooleanTransformation extends BinaryTransformation
 		String measureName = leftMeasure.getName().equals(rightMeasure.getName()) ? leftMeasure.getName() : "bool_var";
 		
 		return new DataStructureBuilder()
-				.addComponents(left.getComponents(Identifier.class))
-				.addComponents(right.getComponents(Identifier.class))
+				.addComponents(left.getIDs())
+				.addComponents(right.getIDs())
 				.addComponent(new DataStructureComponentImpl<>(measureName, Measure.class, BOOLEANDS))
 				.build();
 	}

@@ -21,13 +21,13 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -39,7 +39,6 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -60,10 +59,10 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
-					Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
-					map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
-					return map;
-				});
+				var map = new HashMap<>(dp.getValues(NonIdentifier.class));
+				map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
+				return map;
+			});
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -73,9 +72,11 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		if (!(operand instanceof DataSetMetadata))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
+		DataSetMetadata dataset = (DataSetMetadata) operand;
+		
 		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
-				.map(((DataSetMetadata) operand)::getComponent)
-				.map(o -> o.orElseThrow(() -> new VTLMissingComponentsException((DataSetMetadata) operand, names)))
+				.map(toEntryWithValue(dataset::getComponent))
+				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
 				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("keep", singleton(c.asRole(Identifier.class))); })
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());

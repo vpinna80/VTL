@@ -93,7 +93,7 @@ public class ConcatTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		boolean leftHasMoreIdentifiers = left.getComponents(Identifier.class).containsAll(right.getComponents(Identifier.class));
+		boolean leftHasMoreIdentifiers = left.getMetadata().getIDs().containsAll(right.getMetadata().getIDs());
 
 		DataSet streamed = leftHasMoreIdentifiers ? right: left;
 		DataSet indexed = leftHasMoreIdentifiers ? left: right;
@@ -102,8 +102,8 @@ public class ConcatTransformation extends BinaryTransformation
 		if (resultMeasures.size() == 1 && (!left.getMetadata().containsAll(resultMeasures) || !right.getMetadata().containsAll(resultMeasures)))
 		{
 			DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> resultMeasure = resultMeasures.iterator().next();
-			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> streamedMeasure = streamed.getComponents(Measure.class, STRINGDS).iterator().next();
-			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> indexedMeasure = indexed.getComponents(Measure.class, STRINGDS).iterator().next();
+			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			BinaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, ? extends StringDomain>> finalOperator = CONCAT.reverseIf(!leftHasMoreIdentifiers);
 			
@@ -147,7 +147,7 @@ public class ConcatTransformation extends BinaryTransformation
 		if (!STRINGDS.isAssignableFrom(scalar.getDomain()))
 			throw new VTLIncompatibleTypesException("concat", STRINGDS, scalar.getDomain());
 		
-		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class);
+		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 		Optional<? extends ValueDomainSubset<?, ?>> errorDomain = measures.stream() 
 			.map(DataStructureComponent::getDomain)
 			.filter(d -> !STRINGDS.isAssignableFrom(d))
@@ -162,14 +162,14 @@ public class ConcatTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
 	{
-		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> leftIds = left.getComponents(Identifier.class);
-		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> rightIds = right.getComponents(Identifier.class);
+		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> leftIds = left.getIDs();
+		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> rightIds = right.getIDs();
 
 		if (!leftIds.containsAll(rightIds) && !rightIds.containsAll(leftIds))
 			throw new VTLException("One dataset must have at least all the identifiers of the other.");
 		
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getComponents(Measure.class);
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getComponents(Measure.class);
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getMeasures();
+		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
 		
 		Stream.concat(leftMeasures.stream(), rightMeasures.stream()) 
 			.map(DataStructureComponent::getDomain)

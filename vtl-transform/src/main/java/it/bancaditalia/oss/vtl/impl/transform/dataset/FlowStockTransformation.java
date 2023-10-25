@@ -96,8 +96,8 @@ public class FlowStockTransformation extends UnaryTransformation
 		public Stream<DataPoint> apply(DataSet ds, DataStructureComponent<Identifier, ?, ?> timeid)
 		{
 			final DataSetMetadata metadata = ds.getMetadata();
-			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getComponents(Measure.class));
-			Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getComponents(Identifier.class));
+			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getMetadata().getMeasures());
+			Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getMetadata().getIDs());
 			ids.remove(timeid);
 
 			return ds.streamByKeys(ids, toConcurrentMap(i -> i, i -> true, (a, b) -> a, () -> new ConcurrentSkipListMap<>(DataPoint.compareBy(timeid))))
@@ -155,7 +155,7 @@ public class FlowStockTransformation extends UnaryTransformation
 			if (main != null)
 				return dsmeta;
 			
-			Set<? extends DataStructureComponent<Identifier, ?, ?>> ids = dsmeta.getComponents(Identifier.class).stream()
+			Set<? extends DataStructureComponent<Identifier, ?, ?>> ids = dsmeta.getIDs().stream()
 					.filter(c -> c.getDomain() instanceof TimeDomainSubset)
 					.collect(toSet());
 			
@@ -170,7 +170,7 @@ public class FlowStockTransformation extends UnaryTransformation
 				LOGGER.warn(main + " will be chosen as date/time identifier.");
 			}
 			
-			Set<? extends DataStructureComponent<Measure, ?, ?>> measures = dsmeta.getComponents(Measure.class);
+			Set<? extends DataStructureComponent<Measure, ?, ?>> measures = dsmeta.getMeasures();
 			if (measures.size() == 0)
 				throw new VTLMissingComponentsException("At least one numeric measure", dsmeta);
 			
