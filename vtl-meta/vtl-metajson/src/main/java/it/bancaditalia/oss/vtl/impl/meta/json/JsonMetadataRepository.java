@@ -21,13 +21,14 @@ package it.bancaditalia.oss.vtl.impl.meta.json;
 
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,22 +50,31 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
 {
-	private static final long serialVersionUID = 1L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(JsonMetadataRepository.class);
-
 	public static final VTLProperty METADATA_JSON_URL = new VTLPropertyImpl("vtl.metadata.json.url", "Json url providing structures and domains", "file://", EnumSet.of(REQUIRED));
 
+	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(JsonMetadataRepository.class);
+	private static final Map<String, Class<? extends ComponentRole>> ROLE_ELEMENTS = new HashMap<>(); 
+	
 	static
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(JsonMetadataRepository.class, METADATA_JSON_URL);
+		
+		ROLE_ELEMENTS.put("identifiers", Identifier.class);
+		ROLE_ELEMENTS.put("measures", Measure.class);
+		ROLE_ELEMENTS.put("attributes", Attribute.class);
+		ROLE_ELEMENTS.put("viralAttributes", ViralAttribute.class);
 	}
 
+	private final Map<String, ValueDomainSubset<?, ?>> variables = new HashMap<>(); 
 	private final Map<String, DataSetMetadata> structures = new HashMap<>(); 
+	private final Map<String, String> datasets = new HashMap<>(); 
 	
 	public JsonMetadataRepository() throws IOException
 	{
@@ -77,51 +87,94 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			@SuppressWarnings("unchecked")
 			Map<String, ? extends List<? extends Map<String, ? extends Object>>> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
 			
-			if (json.containsKey("domains"))
-				for (Map<String, ? extends Object> domain: json.get("domains"))
-				{
-					String name = (String) domain.get("name");
-					LOGGER.info("Found domain {}", name);
-					if (domain.containsKey("codes") && "string".equals(domain.get("parent")))
-					{
-						@SuppressWarnings("unchecked")
-						Set<String> codes = new HashSet<>((List<String>) domain.get("codes"));
-						LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
-						defineDomain(name, new StringCodeList(STRINGDS, name, codes));
-					}
-					else
-						throw new UnsupportedOperationException(domain.toString());
-				}
-			if (json.containsKey("datasets"))
-				for (Map<String, ?> dataset: json.get("datasets"))
-				{
-					String name = (String) dataset.get("name");
-					DataStructureBuilder builder = new DataStructureBuilder();
-					@SuppressWarnings("unchecked")
-					List<Map<String, String>> strdesc = (List<Map<String, String>>) dataset.get("structure");
-					for (Map<String, String> compdesc: strdesc)
-					{
-						ValueDomainSubset<?, ?> domain = getDomain(compdesc.get("domain"));
-						Class<? extends ComponentRole> role;
-						switch (compdesc.get("role"))
-						{
-							case "identifier": role = Identifier.class; break;
-							case "measure": role = Measure.class; break;
-							case "attribute": role = Attribute.class; break;
-							default: throw new UnsupportedOperationException(compdesc.toString());
-						}
-						builder.addComponent(DataStructureComponentImpl.of(compdesc.get("name"), role, domain));
-					}
-					final DataSetMetadata structure = builder.build();
-					structures.put(name, structure);
-					LOGGER.info("Found structure {}: {}", name, structure);
-				}
+			readDomains(json.get("domains"));
+			readVariables(json.get("variables"));
+			readStructures(json.get("structures"));
+			readDatasets(json.get("datasets"));
 		}
 	}
 	
 	@Override
 	public DataSetMetadata getStructure(String name)
 	{
-		return structures.get(name);
+		String structureFor = datasets.get(name);
+		return structureFor != null ? structures.get(structureFor) : null;
+	}
+	
+	private void readDomains(List<? extends Map<String, ? extends Object>> domainsSource)
+	{
+		for (Map<String, ? extends Object> domain: domainsSource)
+		{
+			Object name = domain.get("name");
+			Object parent = domain.get("parent");
+			if (name == null || !(name instanceof String))
+				throw new IllegalStateException("Found domain missing name.");
+			if (parent == null || !(parent instanceof String))
+				throw new UnsupportedOperationException("Parent domain invalid or not specified for " + name + ".");
+			LOGGER.debug("Found domain {}", name);
+			if (domain.containsKey("codes") && "string".equals(parent))
+			{
+				// Fail-fast casting
+				Set<String> codes = ((List<?>) domain.get("codes")).stream().map(String.class::cast).collect(toSet());
+				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
+				defineDomain((String) name, new StringCodeList(STRINGDS, (String) name, codes));
+			}
+			else if (domain.containsKey("codes"))
+				LOGGER.warn("Ignoring non-string codelist {} of {}.", name, parent);
+			else
+				LOGGER.warn("Ignoring unsupported domain type for {}.", name);
+		}
+	}
+	
+	private void readVariables(List<? extends Map<String, ? extends Object>> variablesSource)
+	{
+		for (Map<String, ? extends Object> variable: variablesSource)
+		{
+			Object name = variable.get("name");
+			Object domain = variable.get("domain");
+			if (name == null || !(name instanceof String))
+				throw new IllegalStateException("Found variable without or with invalid name.");
+			if (domain == null || !(domain instanceof String))
+				throw new UnsupportedOperationException("Found variable without or with invalid domain for " + name + ".");
+			LOGGER.debug("Found variable {} with domain {}", name, domain);
+			variables.put((String) name, getDomain((String) domain));
+		}
+	}
+	
+	private void readStructures(List<? extends Map<String, ? extends Object>> structuresSource)
+	{
+		for (Map<String, ?> structureSource: structuresSource)
+		{
+			Object name = structureSource.get("name");
+			if (name == null || !(name instanceof String))
+				throw new IllegalStateException("Found structure without or with invalid name.");
+			DataStructureBuilder builder = new DataStructureBuilder();
+			for (String role: ROLE_ELEMENTS.keySet())
+				if (structureSource.containsKey(role))
+					builder.addComponents(((List<?>) structureSource.get(role)).stream()
+							.map(String.class::cast)
+							.map(n -> DataStructureComponentImpl.of(n, ROLE_ELEMENTS.get(role), 
+									requireNonNull(variables.get(n), "Variable " + n + " is not defined in metadata.")))
+							.collect(toSet()));
+			DataSetMetadata structure = builder.build();
+			LOGGER.info("Found structure {}: {}", name, structure);
+			structures.put((String) name, structure);
+		}
+	}
+
+	private void readDatasets(List<? extends Map<String, ? extends Object>> datasetsSource)
+	{
+		for (Map<String, ?> dataset: datasetsSource)
+		{
+			Object name = dataset.get("name");
+			Object structure = dataset.get("structure");
+			if (name == null || !(name instanceof String))
+				throw new IllegalStateException("Found dataset without or with invalid name.");
+			if (structure == null || !(structure instanceof String))
+				throw new UnsupportedOperationException("Found dataset without or with invalid structure for " + name + ".");
+			LOGGER.debug("Found dataset {} with structure {}", name, structure);
+			requireNonNull(structures.get(structure), "Structure " + structure + " is not defined in metadata.");
+			datasets.put((String) name, (String) structure);
+		}
 	}
 }
