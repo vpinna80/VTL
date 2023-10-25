@@ -77,7 +77,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -311,7 +310,7 @@ public class SparkEnvironment implements Environment
 			Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
 					.map(structure::getComponent)
 					.map(Optional::get)
-					.sorted(SparkUtils::sorter)
+					.sorted(DataStructureComponent::byNameAndRole)
 					.map(c -> udf(repr -> mapValue(c, repr.toString(), masks.get(c)).get(), types.get(c))
 							.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
 							.as(c.getName(), getMetadataFor(c)))
@@ -323,7 +322,7 @@ public class SparkEnvironment implements Environment
 			converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
 	
 			Dataset<Row> converted = sourceDataFrame.select(converters);
-			Column[] ids = getColumnsFromComponents(structure.getComponents(Identifier.class)).toArray(new Column[0]);
+			Column[] ids = getColumnsFromComponents(structure.getIDs()).toArray(new Column[0]);
 			return new SparkDataSet(session, structure, converted.repartition(ids));
 		}
 	}

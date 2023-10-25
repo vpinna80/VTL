@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils;
 import it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow;
@@ -188,10 +189,13 @@ public class CSVFileEnvironment implements Environment
 			}
 			else
 			{
+				DataSetMetadata structure = maybeStructure;
+				
 				metadata = Arrays.stream(reader.readLine().split(","))
-					.map(maybeStructure::getComponent)
-					.map(Optional::get)
+					.map(toEntryWithValue(maybeStructure::getComponent))
+					.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), structure)))
 					.collect(toList());
+				
 				masks = metadata.stream()
 						.map(toEntryWithValue(DataStructureComponent::getDomain))
 						.map(keepingKey(ValueDomainSubset::getName))

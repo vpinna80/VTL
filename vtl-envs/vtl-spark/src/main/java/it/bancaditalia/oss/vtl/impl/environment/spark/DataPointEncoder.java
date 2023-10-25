@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.environment.spark;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createStructFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getScalarFor;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.sorter;
 import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
@@ -70,7 +69,7 @@ public class DataPointEncoder implements Serializable
 	{
 		structure = dataStructure instanceof DataSetMetadata ? (DataSetMetadata) dataStructure : new DataStructureBuilder(dataStructure).build();
 		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
-		Arrays.sort(components, SparkUtils::sorter);
+		Arrays.sort(components, DataStructureComponent::byNameAndRole);
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(components));
 		StructType schemaNoLineage = new StructType(fields.toArray(new StructField[components.length]));
 		rowEncoderNoLineage = Encoders.row(schemaNoLineage);
@@ -249,7 +248,7 @@ public class DataPointEncoder implements Serializable
 				while (j < dpo.comps.length && dpo.comps[j] == null)
 					j++;
 				
-				int compare = i < comps.length ? j < dpo.comps.length ? sorter(comps[i], dpo.comps[j]) : -1 : 1;
+				int compare = i < comps.length ? j < dpo.comps.length ? DataStructureComponent.byNameAndRole(comps[i], dpo.comps[j]) : -1 : 1;
 				if (compare < 0)
 				{
 					comps2[k] = comps[i];  

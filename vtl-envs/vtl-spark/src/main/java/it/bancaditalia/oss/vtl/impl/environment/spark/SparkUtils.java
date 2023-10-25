@@ -49,8 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.spark.sql.Column;
@@ -220,29 +218,9 @@ public class SparkUtils
 	public static <F> List<F> structHelper(Stream<? extends DataStructureComponent<?, ?, ?>> stream, SerFunction<? super DataStructureComponent<?, ?, ?>, F> mapper)
 	{
 		return stream
-			.sorted(SparkUtils::sorter)
+			.sorted(DataStructureComponent::byNameAndRole)
 			.map(mapper)
 			.collect(toList());
-	}
-
-	public static int sorter(DataStructureComponent<?, ?, ?> c1, DataStructureComponent<?, ?, ?> c2)
-	{
-		if (c1.is(Attribute.class) && !c2.is(Attribute.class))
-			return 1;
-		else if (c1.is(Identifier.class) && !c2.is(Identifier.class))
-			return -1;
-		else if (c1.is(Measure.class) && c2.is(Identifier.class))
-			return 1;
-		else if (c1.is(Measure.class) && c2.is(Attribute.class))
-			return -1;
-	
-		String n1 = c1.getName(), n2 = c2.getName();
-		Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
-		Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
-		if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
-			return Integer.compare(Integer.parseInt(m1.group(2)), Integer.parseInt(m2.group(2)));
-		else
-			return n1.compareTo(n2);
 	}
 
 	private SparkUtils()

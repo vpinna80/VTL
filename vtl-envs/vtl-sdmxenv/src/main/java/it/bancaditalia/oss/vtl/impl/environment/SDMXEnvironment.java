@@ -329,7 +329,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				builder.add(c, c.cast(StringValue.of(a.getCode())));
 			}
 			
-			DataStructureComponent<Measure, ?, ?> measure = structure.getComponents(Measure.class).iterator().next();
+			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
 			builder.add(measure, DoubleValue.of(parseDouble(obs.getMeasureValue(measure.getName()))));
 			TemporalAccessor holder = parser.getValue().queryFrom(parser.getKey().parse(obs.getDimensionValue()));
 			ScalarValue<?, ?, ?, ?> value;

@@ -28,9 +28,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getEncod
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getNamesFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getScalarFor;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.sorter;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.byName;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
@@ -107,7 +105,6 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersExce
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -192,7 +189,7 @@ public class SparkDataSet extends AbstractDataSet
 		final DataSetMetadata membershipStructure = getMetadata().membership(alias);
 		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, getMetadata(), membershipStructure);
 		
-		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getComponents(Measure.class).iterator().next();
+		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getMeasures().iterator().next();
 		
 		Dataset<Row> newDF = dataFrame;
 		if (!getMetadata().contains(membershipMeasure))
@@ -256,9 +253,9 @@ public class SparkDataSet extends AbstractDataSet
 	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator,
 			SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
-		final Set<DataStructureComponent<Identifier, ?, ?>> originalIDs = getMetadata().getComponents(Identifier.class);
-		if (!metadata.getComponents(Identifier.class).containsAll(originalIDs))
-			throw new VTLInvariantIdentifiersException("map", originalIDs, metadata.getComponents(Identifier.class));
+		final Set<DataStructureComponent<Identifier, ?, ?>> originalIDs = getMetadata().getIDs();
+		if (!metadata.getIDs().containsAll(originalIDs))
+			throw new VTLInvariantIdentifiersException("map", originalIDs, metadata.getIDs());
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", getMetadata(), metadata);
 		
@@ -270,7 +267,7 @@ public class SparkDataSet extends AbstractDataSet
 			
 			// compute values
 			Object[] resultArray = map.entrySet().stream()
-					.sorted((a, b) -> sorter(a.getKey(), b.getKey()))
+					.sorted((a, b) -> DataStructureComponent.byNameAndRole(a.getKey(), b.getKey()))
 					.map(Entry::getValue)
 					.map(ScalarValue::get)
 					.collect(toArray(new Object[map.size() + 1]));
@@ -315,7 +312,7 @@ public class SparkDataSet extends AbstractDataSet
 	{
 		DataPointEncoder resultEncoder = new DataPointEncoder(metadata);
 		DataStructureComponent<?, ?, ?>[] comps = resultEncoder.components;
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = getMetadata().getComponents(Identifier.class);
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = getMetadata().getIDs();
 		StructType schema = resultEncoder.schema;
 		
 		Dataset<Row> flattenedDf = dataFrame.flatMap((FlatMapFunction<Row, Row>) row -> {
@@ -350,7 +347,7 @@ public class SparkDataSet extends AbstractDataSet
 	{
 		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other);
 
-		List<String> commonIDs = getComponents(Identifier.class).stream()
+		List<String> commonIDs = getMetadata().getIDs().stream()
 				.filter(other.getMetadata()::contains)
 				.map(DataStructureComponent::getName)
 				.collect(toList());
@@ -440,7 +437,7 @@ public class SparkDataSet extends AbstractDataSet
 		// Sort by dest component
 		@SuppressWarnings("unchecked")
 		Entry<DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>>[] compArray = (Entry<DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>>[]) components.entrySet().toArray(new Entry<?, ?>[components.size()]);
-		Arrays.sort(compArray, (e1, e2) -> sorter(e1.getValue(), e2.getValue()));
+		Arrays.sort(compArray, (e1, e2) -> DataStructureComponent.byNameAndRole(e1.getValue(), e2.getValue()));
 		
 		// Create the udafs to generate each dest component
 		Map<String, Column> destComponents = new HashMap<>();
@@ -569,11 +566,11 @@ public class SparkDataSet extends AbstractDataSet
 	{
 		@SuppressWarnings("unchecked")
 		DataStructureComponent<Identifier, ?, ?>[] sortedKeys = (DataStructureComponent<Identifier, ?, ?>[]) keys.stream()
-				.sorted(byName())
+				.sorted(DataStructureComponent::byName)
 				.collect(toArray(new DataStructureComponent<?, ?, ?>[keys.size()]));
 				
 		Column[] groupingCols = keys.stream()
-				.sorted(byName())
+				.sorted(DataStructureComponent::byName)
 				.map(DataStructureComponent::getName)
 				.map(functions::col)
 				.collect(toArray(new Column[keys.size()]));
@@ -593,7 +590,7 @@ public class SparkDataSet extends AbstractDataSet
 			
 			// case: supports decoding into a List<DataPoint> for fill_time_series
 			List<DataStructureComponent<?, ?, ?>> resultComponents = getMetadata().stream()
-					.sorted(SparkUtils::sorter)
+					.sorted(DataStructureComponent::byNameAndRole)
 					.collect(toList());
 			
 			// Use kryo encoder hoping that the class has been registered beforehand
@@ -641,7 +638,7 @@ public class SparkDataSet extends AbstractDataSet
 			.get();
 		
 		// remove duplicates and add lineage
-		Column[] ids = getColumnsFromComponents(getMetadata().getComponents(Identifier.class)).toArray(new Column[0]);
+		Column[] ids = getColumnsFromComponents(getMetadata().getIDs()).toArray(new Column[0]);
 		Column[] cols = getColumnsFromComponents(getMetadata()).toArray(new Column[getMetadata().size()]);
 		Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("Union")), LineageSparkUDT));
 		result = result.withColumn("__index", first("__index").over(partitionBy(ids).orderBy(result.col("__index"))))
@@ -656,7 +653,7 @@ public class SparkDataSet extends AbstractDataSet
 	public DataSet setDiff(DataSet other)
 	{
 		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other);
-		List<String> ids = getMetadata().getComponents(Identifier.class).stream().map(DataStructureComponent::getName).collect(toList());
+		List<String> ids = getMetadata().getIDs().stream().map(DataStructureComponent::getName).collect(toList());
 		Dataset<Row> result = dataFrame.join(sparkOther.dataFrame, asScala((Iterable<String>) ids).toSeq(), "leftanti");
 
 		Column[] cols = getColumnsFromComponents(getMetadata()).toArray(new Column[getMetadata().size() + 1]);
