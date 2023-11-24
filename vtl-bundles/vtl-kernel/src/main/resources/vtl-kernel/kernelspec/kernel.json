@@ -1,5 +1,0 @@
-{
-	"argv": ["python", "-m", "${project.name}.kernel", "-f", "{connection_file}"],
-	"display_name": "VTL engine",
-	"language": "VTL"
-}

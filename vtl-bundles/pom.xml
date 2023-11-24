@@ -57,9 +57,9 @@
 			</modules>
 		</profile>
 		<profile>
-			<id>with-python</id>
+			<id>with-jupyter</id>
 			<modules>
-				<module>vtl-kernel</module>
+				<module>vtl-jupyter</module>
 			</modules>
 		</profile>
 		<profile>
