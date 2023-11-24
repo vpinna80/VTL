@@ -32,12 +32,12 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.sdmx.util.Utils.Function;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public class CSVPathEnvironment extends CSVFileEnvironment
 {
@@ -83,7 +83,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 		return mapper(alias, super::getValue);
 	}
 
-	private <T> Optional<T> mapper(String alias, Function<String, Optional<T>> mapper)
+	private <T> Optional<T> mapper(String alias, SerFunction<String, Optional<T>> mapper)
 	{
 		if (alias.startsWith("csv:"))
 			return searchPaths(alias.substring(4))
