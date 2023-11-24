@@ -16,13 +16,13 @@
 	"license": "EUPL-1.2",
 	"dependencies": {
 		"codemirror": "^5.49.0",
-                "lodash": "4.17.21",
+		"lodash": "4.17.21",
 		"lodash.merge": "^4.6.2"
 	},
-        "devDependencies": {
-                "antlr4-editor": "1.0.77",
-                "antlr4": "4.8.0",
-                "browserify": "^16.5.0",
-                "js-beautify": "^1.10.2"
-        }
+	"devDependencies": {
+		"antlr4-editor": "1.0.77",
+		"antlr4": "4.8.0",
+		"browserify": "^16.5.0",
+		"js-beautify": "^1.10.2"
+	}
 }

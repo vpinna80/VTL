@@ -132,8 +132,8 @@ VTLSession <- R6Class("VTLSession",
                           }, finally = { pager$close() })
                         )
                         role <- J("it.bancaditalia.oss.vtl.model.data.ComponentRole")
-                        attr(df, 'measures') <- sapply(jnode$getComponents(attr(role$Measure, 'jobj')), function(x) { x$getName() })
-                        attr(df, 'identifiers') <- sapply(jnode$getComponents(attr(role$Identifier, 'jobj')), function(x) { x$getName() })
+                        attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getName() })
+                        attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getName() })
                       }
                       else
                         stop(paste0("Unsupported result class: ", jnode$getClass()$getName()))
