@@ -25,7 +25,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>vtl-metafmr</artifactId>
+	<artifactId>vtl-metasdmx</artifactId>
 	<packaging>bundle</packaging>
 
 	<parent>
@@ -34,8 +34,8 @@
 		<version>${revision}</version>
 	</parent>
 
-	<name>vtl-metafmr</name>
-	<description>Fusion metadata registry as metadata repository</description>
+	<name>vtl-metasdmx</name>
+	<description>SDMX Structure REST web service metadata repository</description>
 
 	<dependencies>
 		<dependency>

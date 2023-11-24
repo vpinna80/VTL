@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.meta.fmr;
+package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.CODE_LIST;
 import static io.sdmx.api.sdmx.constants.SDMX_STRUCTURE_TYPE.DATAFLOW;
@@ -112,9 +112,9 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		if (url == null || url.isEmpty())
-			throw new IllegalStateException("No endpoint configured for FMR repository.");
+			throw new IllegalStateException("No endpoint configured for SDMX REST service.");
 
-		// FMR client configuration
+		// SDMX client configuration
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
 		SingletonStore.registerInstance(new StructureQueryBuilderRest());
 		SingletonStore.registerInstance(new StructureReaderManagerImpl());

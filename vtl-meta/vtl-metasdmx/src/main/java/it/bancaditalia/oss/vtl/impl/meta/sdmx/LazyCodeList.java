@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.meta.fmr;
+package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static java.util.stream.Collectors.toSet;
 
