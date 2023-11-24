@@ -25,11 +25,13 @@ import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
+import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -52,7 +54,7 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NullDomain || other instanceof IntegerDomainSubset;
+		return other instanceof NullDomain || other instanceof IntegerDomainSubset || other instanceof BooleanDomainSubset;
 	}
 
 	@Override
@@ -62,6 +64,8 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 		{
 			if (value instanceof NullValue)
 				return NullValue.instance(this);
+			else if (value instanceof BooleanValue)
+				return IntegerValue.of(((BooleanValue<?>) value) == BooleanValue.TRUE ? 1L : 0);
 			else if (value instanceof DoubleValue || value instanceof BigDecimalValue)
 				return IntegerValue.of(((Number) value.get()).longValue());
 			else if (value instanceof IntegerValue)

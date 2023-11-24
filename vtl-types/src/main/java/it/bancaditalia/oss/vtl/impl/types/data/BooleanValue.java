@@ -46,6 +46,11 @@ public class BooleanValue<S extends BooleanDomainSubset<S>> extends BaseScalarVa
 		return value == null ? NULLINSTANCE : value ? TRUE : FALSE;
 	}
 	
+	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> of(boolean value)
+	{
+		return value ? TRUE : FALSE;
+	}
+	
 	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> not(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> value)
 	{
 		return value instanceof NullValue ? NULLINSTANCE : ((Boolean) value.get() ? FALSE : TRUE);

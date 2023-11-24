@@ -61,7 +61,7 @@ public class VTLIncompatibleTypesException extends VTLException
 	
 	public VTLIncompatibleTypesException(String operation, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		this(operation, left.getDomain(), right.getDomain());
+		super("Found incompatible types in " + operation + ": " + left + ": " + left.getDomain() + ", " + right + ": " + right.getDomain(), null);
 	}
 	
 	public VTLIncompatibleTypesException(String operation, Set<? extends DataStructureComponent<?, ?, ?>> invalid, ValueDomain domain)

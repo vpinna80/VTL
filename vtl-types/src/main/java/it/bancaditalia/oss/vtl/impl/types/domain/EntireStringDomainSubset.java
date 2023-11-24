@@ -25,6 +25,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -47,16 +49,18 @@ public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDom
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NullDomain || other instanceof StringDomainSubset;
+		return other instanceof NullDomain || other instanceof StringDomainSubset || other instanceof IntegerDomainSubset || other instanceof BooleanDomainSubset;
 	}
 
 	@Override
 	public ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (isAssignableFrom(value.getDomain()) && value instanceof NullValue)
+		if (value instanceof NullValue)
 			return NullValue.instance(this);
-		if (isAssignableFrom(value.getDomain()))
+		else if (value instanceof StringValue)
 			return StringValue.of(value.get().toString());
+		else if (isAssignableFrom(value.getDomain()))
+			return StringValue.of(value.toString().toUpperCase());
 		else 
 			throw new VTLCastException(this, value);
 	}
