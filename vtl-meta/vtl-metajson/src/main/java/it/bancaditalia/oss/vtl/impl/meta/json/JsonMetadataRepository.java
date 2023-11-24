@@ -31,6 +31,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -56,7 +57,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
 {
-	public static final VTLProperty METADATA_JSON_URL = new VTLPropertyImpl("vtl.metadata.json.url", "Json url providing structures and domains", "file://", EnumSet.of(REQUIRED));
+	public static final VTLProperty JSON_METADATA_URL = new VTLPropertyImpl("vtl.json.metadata.url", "Json url providing structures and domains", "file://", EnumSet.of(REQUIRED));
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(JsonMetadataRepository.class);
@@ -64,7 +65,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(JsonMetadataRepository.class, METADATA_JSON_URL);
+		ConfigurationManagerFactory.registerSupportedProperties(JsonMetadataRepository.class, JSON_METADATA_URL);
 		
 		ROLE_ELEMENTS.put("identifiers", Identifier.class);
 		ROLE_ELEMENTS.put("measures", Measure.class);
@@ -78,14 +79,14 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	public JsonMetadataRepository() throws IOException
 	{
-		String url = METADATA_JSON_URL.getValue();
+		String url = JSON_METADATA_URL.getValue();
 		if (url == null || url.isEmpty())
 			throw new IllegalStateException("No url configured for json metadata repository.");
 
 		try (InputStream source = new URL(url).openStream())
 		{
 			@SuppressWarnings("unchecked")
-			Map<String, ? extends List<? extends Map<String, ? extends Object>>> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
+			Map<?, Map<?, ?>> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
 			
 			readDomains(json.get("domains"));
 			readVariables(json.get("variables"));
@@ -101,37 +102,42 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return structureFor != null ? structures.get(structureFor) : null;
 	}
 	
-	private void readDomains(List<? extends Map<String, ? extends Object>> domainsSource)
+	private void readDomains(Map<?, ?> domainsSource)
 	{
-		for (Map<String, ? extends Object> domain: domainsSource)
+		for (Entry<?, ?> domainEntry: domainsSource.entrySet())
 		{
-			Object name = domain.get("name");
-			Object parent = domain.get("parent");
+			Object name = domainEntry.getKey();
+			Object domainDef = domainEntry.getValue();
 			if (name == null || !(name instanceof String))
 				throw new IllegalStateException("Found domain missing name.");
+			if (domainDef == null || !(domainDef instanceof Map))
+				throw new IllegalStateException("Found domain with missing or invalid definition.");
+
+			Object parent = ((Map<?, ?>) domainDef).get("parent");
 			if (parent == null || !(parent instanceof String))
 				throw new UnsupportedOperationException("Parent domain invalid or not specified for " + name + ".");
+
 			LOGGER.debug("Found domain {}", name);
-			if (domain.containsKey("codes") && "string".equals(parent))
+			if (((Map<?, ?>) domainDef).containsKey("codes") && "string".equals(parent))
 			{
 				// Fail-fast casting
-				Set<String> codes = ((List<?>) domain.get("codes")).stream().map(String.class::cast).collect(toSet());
+				Set<String> codes = ((List<?>) ((Map<?, ?>) domainDef).get("codes")).stream().map(String.class::cast).collect(toSet());
 				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
 				defineDomain((String) name, new StringCodeList(STRINGDS, (String) name, codes));
 			}
-			else if (domain.containsKey("codes"))
-				LOGGER.warn("Ignoring non-string codelist {} of {}.", name, parent);
+			else if (((Map<?, ?>) domainDef).containsKey("codes"))
+				LOGGER.warn("Ignoring non-string codelist {}[{}].", name, parent);
 			else
-				LOGGER.warn("Ignoring unsupported domain type for {}.", name);
+				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
 		}
 	}
 	
-	private void readVariables(List<? extends Map<String, ? extends Object>> variablesSource)
+	private void readVariables(Map<?, ?> variablesSource)
 	{
-		for (Map<String, ? extends Object> variable: variablesSource)
+		for (Entry<?, ?> variable: variablesSource.entrySet())
 		{
-			Object name = variable.get("name");
-			Object domain = variable.get("domain");
+			Object name = variable.getKey();
+			Object domain = variable.getValue();
 			if (name == null || !(name instanceof String))
 				throw new IllegalStateException("Found variable without or with invalid name.");
 			if (domain == null || !(domain instanceof String))
@@ -141,17 +147,21 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		}
 	}
 	
-	private void readStructures(List<? extends Map<String, ? extends Object>> structuresSource)
+	private void readStructures(Map<?, ?> structuresSource)
 	{
-		for (Map<String, ?> structureSource: structuresSource)
+		for (Entry<?, ?> structureEntry: structuresSource.entrySet())
 		{
-			Object name = structureSource.get("name");
+			Object name = structureEntry.getKey();
+			Object strDef = structureEntry.getValue();
 			if (name == null || !(name instanceof String))
 				throw new IllegalStateException("Found structure without or with invalid name.");
+			if (strDef == null || !(strDef instanceof Map))
+				throw new IllegalStateException("Found structure with missing or invalid definition.");
 			DataStructureBuilder builder = new DataStructureBuilder();
+			
 			for (String role: ROLE_ELEMENTS.keySet())
-				if (structureSource.containsKey(role))
-					builder.addComponents(((List<?>) structureSource.get(role)).stream()
+				if (((Map<?, ?>) strDef).containsKey(role))
+					builder.addComponents(((List<?>) ((Map<?, ?>) strDef).get(role)).stream()
 							.map(String.class::cast)
 							.map(n -> DataStructureComponentImpl.of(n, ROLE_ELEMENTS.get(role), 
 									requireNonNull(variables.get(n), "Variable " + n + " is not defined in metadata.")))
@@ -162,12 +172,12 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		}
 	}
 
-	private void readDatasets(List<? extends Map<String, ? extends Object>> datasetsSource)
+	private void readDatasets(Map<?, ?> datasetsSource)
 	{
-		for (Map<String, ?> dataset: datasetsSource)
+		for (Entry<?, ?> dataset: datasetsSource.entrySet())
 		{
-			Object name = dataset.get("name");
-			Object structure = dataset.get("structure");
+			Object name = dataset.getKey();
+			Object structure = dataset.getValue();
 			if (name == null || !(name instanceof String))
 				throw new IllegalStateException("Found dataset without or with invalid name.");
 			if (structure == null || !(structure instanceof String))

@@ -104,11 +104,11 @@
 			</dependencies>
 		</profile>
 		<profile>
-			<id>with-fmr</id>
+			<id>with-sdmx</id>
 			<dependencies>
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-metafmr</artifactId>
+					<artifactId>vtl-metasdmx</artifactId>
 				</dependency>
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>

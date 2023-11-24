@@ -45,9 +45,9 @@
       		</modules>
 	    </profile>
 		<profile>
-      		<id>with-fmr</id>
+      		<id>with-sdmx</id>
       		<modules>
-				<module>vtl-metafmr</module>
+				<module>vtl-metasdmx</module>
       		</modules>
 	    </profile>
 	</profiles>
@@ -71,7 +71,7 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-metafmr</artifactId>
+				<artifactId>vtl-metasdmx</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

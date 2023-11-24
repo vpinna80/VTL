@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
 
     Copyright © 2020 Banca D'Italia
@@ -7,8 +7,7 @@
     You may not use this work except in compliance with the
     License.
     You may obtain a copy of the License at:
-
-    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
 
     Unless required by applicable law or agreed to in
     writing, software distributed under the License is
@@ -101,7 +100,7 @@
 			<id>with-r</id>
 		</profile>
 		<profile>
-			<id>with-fmr</id>
+			<id>with-sdmx</id>
 		</profile>
 		<profile>
 			<id>with-spark</id>
@@ -110,7 +109,7 @@
 			<id>with-cli</id>
 		</profile>
 		<profile>
-			<id>with-python</id>
+			<id>with-jupyter</id>
 		</profile>
 		<profile>
 			<id>with-rest</id>
@@ -183,19 +182,41 @@
 										</pluginExecution>
 										<pluginExecution>
 											<pluginExecutionFilter>
+												<groupId>org.apache.maven.plugins</groupId>
+												<artifactId>maven-dependency-plugin</artifactId>
+												<versionRange>[3.1.2,)</versionRange>
+												<goals>
+													<goal>unpack</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore />
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
 												<groupId>com.mycila</groupId>
-												<artifactId>
-													license-maven-plugin
-												</artifactId>
-												<versionRange>
-													[3.0,)
-												</versionRange>
+												<artifactId>license-maven-plugin</artifactId>
+												<versionRange>[3.0,)</versionRange>
 												<goals>
 													<goal>check</goal>
 												</goals>
 											</pluginExecutionFilter>
 											<action>
-												<ignore></ignore>
+												<ignore />
+											</action>
+										</pluginExecution>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>com.github.eirslett</groupId>
+												<artifactId>frontend-maven-plugin</artifactId>
+												<versionRange>[1.14.1,)</versionRange>
+												<goals>
+													<goal>npm</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore />
 											</action>
 										</pluginExecution>
 									</pluginExecutions>
@@ -225,6 +246,7 @@
 		<spark.version>3.5.0</spark.version>
 		<tycho.version>4.0.0</tycho.version>
 		<slf4j.version>2.0.7</slf4j.version>
+		<picocli.version>4.7.5</picocli.version>
 		<log4j.version>2.20.0</log4j.version>
 		<jetty.version>11.0.15</jetty.version>
 		<jackson.version>2.15.2</jackson.version>
@@ -234,6 +256,7 @@
 		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
 		<mockito.version>5.2.0</mockito.version>
 		<mockito-inline.version>${mockito.version}</mockito-inline.version>
+		<thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
 		<build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
 		<spring.boot.version>2.7.13</spring.boot.version>
 		<node.version>v10.20.1</node.version>
@@ -242,7 +265,8 @@
 		<guava.version>30.1.1-jre</guava.version>
 		<scm-url>https://github.com/vpinna80/VTL</scm-url>
 		<site-url>https://vpinna80.github.io/VTL</site-url>
-		<license-url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
+		<license-url>
+			https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
 	</properties>
 
 	<reporting>
@@ -313,7 +337,7 @@
 				<artifactId>jakarta.activation-api</artifactId>
 				<version>2.0.1</version>
 			</dependency>
-  			<dependency>
+			<dependency>
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr4-runtime</artifactId>
 				<version>${antlr4.version}</version>
@@ -607,7 +631,22 @@
 			<dependency>
 				<groupId>info.picocli</groupId>
 				<artifactId>picocli</artifactId>
-				<version>4.3.2</version>
+				<version>${picocli.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.zeromq</groupId>
+				<artifactId>jeromq</artifactId>
+				<version>0.5.4</version>
+			</dependency>
+			<dependency>
+				<groupId>org.thymeleaf</groupId>
+				<artifactId>thymeleaf</artifactId>
+				<version>${thymeleaf.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.thymeleaf</groupId>
+				<artifactId>thymeleaf-spring6</artifactId>
+				<version>${thymeleaf.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.esotericsoftware</groupId>
@@ -747,7 +786,12 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
-					<version>3.5.0</version>
+					<version>3.5.1</version>
+				</plugin>
+				<plugin>
+					<groupId>com.github.eirslett</groupId>
+					<artifactId>frontend-maven-plugin</artifactId>
+					<version>1.14.2</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -762,7 +806,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-resources-plugin</artifactId>
-					<version>3.1.0</version>
+					<version>3.3.1</version>
 				</plugin>
 				<plugin>
 					<groupId>org.jacoco</groupId>
@@ -784,7 +828,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-gpg-plugin</artifactId>
-					<version>1.6</version>
+					<version>3.1.0</version>
 					<executions>
 						<execution>
 							<phase>verify</phase>
@@ -797,7 +841,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-source-plugin</artifactId>
-					<version>3.2.0</version>
+					<version>3.3.0</version>
 					<executions>
 						<execution>
 							<id>sources</id>
@@ -816,7 +860,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.2.0</version>
+					<version>3.6.2</version>
 					<executions>
 						<execution>
 							<goals>
@@ -828,23 +872,23 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
-					<version>1.6.0</version>
+					<version>3.1.1</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-antrun-plugin</artifactId>
-					<version>3.0.0</version>
+					<version>3.1.0</version>
 					<dependencies>
 						<dependency>
 							<groupId>org.apache.ant</groupId>
 							<artifactId>ant-launcher</artifactId>
-							<version>1.10.7</version>
+							<version>1.10.14</version>
 						</dependency>
 					</dependencies>
 				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>flatten-maven-plugin</artifactId>
-					<version>1.2.5</version>
+					<version>1.5.0</version>
 					<executions>
 						<execution>
 							<id>flattening</id>
@@ -1009,7 +1053,8 @@
 					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
 					<asciidoc>
 						<attributes>
-							<rest-snippets>${project.basedir}/vtl-bundles/vtl-rest/target/generated-snippets</rest-snippets>
+							<rest-snippets>
+								${project.basedir}/vtl-bundles/vtl-rest/target/generated-snippets</rest-snippets>
 						</attributes>
 					</asciidoc>
 				</configuration>
@@ -1058,7 +1103,8 @@
 						</goals>
 						<configuration>
 							<name>wheel-version</name>
-							<value>${version.majorVersion}.${version.minorVersion}.${version.qualifier}${version.incrementalVersion}</value>
+							<value>
+								${version.majorVersion}.${version.minorVersion}.${version.qualifier}${version.incrementalVersion}</value>
 							<regex>SNAPSHOT</regex>
 							<replacement>dev</replacement>
 							<failIfNoMatch>false</failIfNoMatch>
