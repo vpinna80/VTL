@@ -6,8 +6,7 @@
     You may not use this work except in compliance with the
     License.
     You may obtain a copy of the License at:
-
-    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
 
     Unless required by applicable law or agreed to in
     writing, software distributed under the License is
@@ -64,16 +63,30 @@
 				<version>${antlr4.version}</version>
 				<executions>
 					<execution>
+						<id>java</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>antlr4</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>js</id>
 						<phase>generate-sources</phase>
 						<goals>
 							<goal>antlr4</goal>
 						</goals>
 						<configuration>
-							<visitor>true</visitor>
-							<listener>false</listener>
+							<arguments>
+								<argument>-Dlanguage=JavaScript</argument>
+							</arguments>
+							<outputDirectory>${project.build.directory}/generated-sources/js</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>
+				<configuration>
+					<visitor>true</visitor>
+					<listener>false</listener>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -89,6 +102,7 @@
 				<configuration>
 					<descriptors>
 						<descriptor>src/assembly/grammar.xml</descriptor>
+						<descriptor>src/assembly/parser-js.xml</descriptor>
 					</descriptors>
 					<attach>true</attach>
 				</configuration>
@@ -108,7 +122,7 @@
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
 				<extensions>true</extensions>
-			</plugin>			
+			</plugin>
 		</plugins>
 	</build>
 </project>

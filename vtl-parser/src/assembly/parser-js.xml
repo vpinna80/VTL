@@ -22,7 +22,7 @@
 -->
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0">
 
-	<id>grammar</id>
+	<id>parser-js</id>
 
 	<formats>
 		<format>zip</format>
@@ -32,10 +32,10 @@
 
 	<fileSets>
 		<fileSet>
-			<directory>src/main/antlr4</directory>
+			<directory>${project.build.directory}/generated-sources/js/it/bancaditalia/oss/vtl/grammar</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
-				<include>**/*.g4</include>
+				<include>**/*.js</include>
 			</includes>
 		</fileSet>
 	</fileSets>
