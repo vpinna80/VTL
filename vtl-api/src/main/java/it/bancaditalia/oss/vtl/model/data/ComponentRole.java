@@ -29,14 +29,16 @@ import java.util.Map;
  */
 public interface ComponentRole
 {
-	public enum Roles
+	public enum Role
 	{
+		COMPONENT(ComponentRole.class),
 		IDENTIFIER(Identifier.class),
+		NONIDENTIFIER(NonIdentifier.class),
 		MEASURE(Measure.class),
 		ATTRIBUTE(Attribute.class),
 		VIRAL_ATTRIBUTE(ViralAttribute.class);
 		
-		private static final Map<Class<? extends ComponentRole>, Roles> ENUM_TAGS = new HashMap<>();
+		private static final Map<Class<? extends ComponentRole>, Role> ENUM_TAGS = new HashMap<>();
 		
 		static {
 			ENUM_TAGS.put(Identifier.class, IDENTIFIER);
@@ -47,17 +49,17 @@ public interface ComponentRole
 		
 		private final Class<? extends ComponentRole> clazz;
 
-		Roles(Class<? extends ComponentRole> clazz)
+		Role(Class<? extends ComponentRole> clazz)
 		{
 			this.clazz = clazz;
 		}
 
-		public Class<? extends ComponentRole> getClazz()
+		public Class<? extends ComponentRole> roleClass()
 		{
 			return clazz;
 		}
 		
-		public static Roles from(Class<? extends ComponentRole> clazz)
+		public static Role from(Class<? extends ComponentRole> clazz)
 		{
 			return ENUM_TAGS.get(clazz);
 		}
