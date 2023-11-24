@@ -30,11 +30,13 @@ import static java.util.stream.Stream.concat;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
@@ -65,11 +67,11 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class ConditionalTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
+	private static final DataStructureComponent<Identifier, EntireBooleanDomainSubset, BooleanDomain> COND_ID = DataStructureComponentImpl.of("$cond$", Identifier.class, BOOLEANDS);
 
+	// protected: used by NVL Transformation
 	protected final Transformation condition;
 	protected final Transformation thenExpr, elseExpr;
-
-	private static final DataStructureComponent<Identifier, EntireBooleanDomainSubset, BooleanDomain> COND_ID = DataStructureComponentImpl.of("$cond$", Identifier.class, BOOLEANDS);
 
 	public ConditionalTransformation(Transformation condition, Transformation trueExpr, Transformation falseExpr)
 	{
@@ -170,9 +172,21 @@ public class ConditionalTransformation extends TransformationImpl
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata cond = condition.getMetadata(scheme);
-		VTLValueMetadata left = thenExpr.getMetadata(scheme);
-		VTLValueMetadata right = elseExpr.getMetadata(scheme);
+		VTLValueMetadata[] metas = new VTLValueMetadata[3];
+		int i = 0;
+		for (Transformation expr: List.of(condition, thenExpr, elseExpr))
+			try
+			{
+				metas[i++] = expr.getMetadata(scheme);
+			}
+			catch (Exception e)
+			{
+				throw new VTLNestedException("Error evaluating expression " + expr, e);
+			}
+		
+		VTLValueMetadata cond = metas[0]; 
+		VTLValueMetadata left = metas[1]; 
+		VTLValueMetadata right = metas[2]; 
 
 		if (cond instanceof UnknownValueMetadata || left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
 			return INSTANCE;

@@ -37,10 +37,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.session;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
@@ -86,7 +87,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class VTLSessionImpl implements VTLSession
 {
 	private static final long serialVersionUID = 1L;
-	private final static Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 
 	private final ConfigurationManager config = ConfigurationManager.getDefault();
 	private final Engine engine;
@@ -105,7 +106,7 @@ public class VTLSessionImpl implements VTLSession
 		this.environments = config.getEnvironments();
 
 		Workspace selectedWorkspace = null;
-		for (Environment env: environments)
+		for (Environment env: getEnvironments())
 			if (env instanceof Workspace)
 				selectedWorkspace = (Workspace) env;
 		
@@ -113,32 +114,33 @@ public class VTLSessionImpl implements VTLSession
 		LOGGER.info("Created new VTL session.");
 	}
 
-	@Override
-	public VTLSessionImpl addStatements(String statements)
+	private List<Statement> addStatementHelper(Stream<Statement> source)
 	{
-		engine.parseRules(statements).forEach(workspace::addRule);
-		return this;
+		return source.peek(workspace::addRule).collect(toList());
+	}
+	
+	@Override
+	public List<Statement> addStatements(String statements)
+	{
+		return addStatementHelper(engine.parseRules(statements));
 	}
 
 	@Override
-	public VTLSessionImpl addStatements(Reader reader) throws IOException
+	public List<Statement> addStatements(Reader reader) throws IOException
 	{
-		engine.parseRules(reader).forEach(workspace::addRule);
-		return this;
+		return addStatementHelper(engine.parseRules(reader));
 	}
 
 	@Override
-	public VTLSessionImpl addStatements(InputStream inputStream, Charset charset) throws IOException
+	public List<Statement> addStatements(InputStream inputStream, Charset charset) throws IOException
 	{
-		engine.parseRules(inputStream, charset).forEach(workspace::addRule);
-		return this;
+		return addStatementHelper(engine.parseRules(inputStream, charset));
 	}
 
 	@Override
-	public VTLSessionImpl addStatements(Path path, Charset charset) throws IOException
+	public List<Statement> addStatements(Path path, Charset charset) throws IOException
 	{
-		engine.parseRules(path, charset).forEach(workspace::addRule);
-		return this;
+		return addStatementHelper(engine.parseRules(path, charset));
 	}
 
 	@Override
@@ -196,7 +198,7 @@ public class VTLSessionImpl implements VTLSession
 	{
 		try
 		{
-			boolean saved = environments.stream()
+			boolean saved = getEnvironments().stream()
 				.map(e -> e.store(value, alias))
 				.filter(s -> s)
 				.findAny()
@@ -254,7 +256,7 @@ public class VTLSessionImpl implements VTLSession
 	{
 		LOGGER.info("Resolving value of {}", alias);
 
-		Optional<T> maybeResult = environments.stream()
+		Optional<T> maybeResult = getEnvironments().stream()
 				.map(env -> new SimpleEntry<>(env, mapper.apply(env, alias)))
 				.filter(entryByValue(Optional::isPresent))
 				.map(keepingKey(Optional::get))
@@ -296,11 +298,10 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public List<VTLValueMetadata> compile()
+	public Map<Statement, VTLValueMetadata> compile()
 	{
-		List<VTLValueMetadata> statements = workspace.getRules().stream()
-				.map(s -> s.getMetadata(this))
-				.collect(toList());
+		Map<Statement, VTLValueMetadata> statements = workspace.getRules().stream()
+				.collect(toMapWithValues(s -> s.getMetadata(this)));
 		LOGGER.info("Compiled {} statements.", statements.size());
 		return statements;
 	}
@@ -375,5 +376,10 @@ public class VTLSessionImpl implements VTLSession
 		@SuppressWarnings("unchecked")
 		Map<Transformation, T> result = (Map<Transformation, T>) holder;
 		return result;
+	}
+
+	public List<? extends Environment> getEnvironments()
+	{
+		return environments;
 	}
 }

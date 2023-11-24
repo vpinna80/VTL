@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.util.SerBiPredicate.not;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.joining;
 
@@ -35,6 +36,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -44,14 +46,17 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class InclusionTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
+	private static final DataStructureComponentImpl<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS);
 
 	public static enum InOperator implements SerBiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
 	{
@@ -81,7 +86,7 @@ public class InclusionTransformation extends UnaryTransformation
 	}
 
 	private final InOperator operator;
-	private final Set<? extends ScalarValue<?, ?, ?, ?>> set;
+	private final Set<ScalarValue<?, ?, ?, ?>> set;
 
 	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?, ?>> list)
 	{
@@ -94,8 +99,8 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		super(operand);
 		this.operator = operator;
-		StringEnumeratedDomainSubset<?, ?, ?> domain = (StringEnumeratedDomainSubset<?, ?, ?>) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
-		this.set = domain.getCodeItems();
+		EnumeratedDomainSubset<?, ?, ?, ?> domain = (EnumeratedDomainSubset<?, ?, ?, ?>) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
+		this.set = new HashSet<>(domain.getCodeItems());
 	}
 
 	@Override
@@ -107,10 +112,10 @@ public class InclusionTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getMetadata().getMeasures().iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(resultMeasure, BooleanValue.of(operator.test(set, dp.get(datasetMeasure)))));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
+				dp -> singletonMap(BOOL_VAR, BooleanValue.of(operator.test(set, measure.getDomain().cast(dp.get(measure))))));
 	}
 
 	@Override
@@ -118,6 +123,17 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata value = operand.getMetadata(session);
 
+		ScalarValue<?, ?, ?, ?> item1 = null;
+		for (ScalarValue<?, ?, ?, ?> item: set)
+			if (item1 == null)
+				item1 = item;
+			else
+				if (!item1.getDomain().equals(item.getDomain()))
+					throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), item1, item);
+		
+		if (item1 == null)
+			throw new IllegalStateException("At least one item is expected for " + operator.toString().toLowerCase());
+		
 		if (value instanceof DataSetMetadata)
 		{
 			DataSetMetadata ds = (DataSetMetadata) value;
@@ -126,10 +142,21 @@ public class InclusionTransformation extends UnaryTransformation
 
 			if (measures.size() != 1)
 				throw new UnsupportedOperationException("Expected single measure but found: " + measures);
-
+			
+			final DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
+			if (!item1.getDomain().isAssignableFrom(measure.getDomain()))
+				throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), measure, item1.getDomain());
+			
+			// (try to) cast all items to the measure domain
+			Set<? extends ScalarValue<?, ?, ?, ?>> set2 = Utils.getStream(set)
+				.map(((ValueDomainSubset<?, ?>) measure.getDomain())::cast)
+				.collect(toSet());
+			set.clear();
+			set.addAll(set2);			
+			
 			return new DataStructureBuilder()
 					.addComponents(ds.getIDs())
-					.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))
+					.addComponent(BOOL_VAR)
 					.build();
 		}
 		else
