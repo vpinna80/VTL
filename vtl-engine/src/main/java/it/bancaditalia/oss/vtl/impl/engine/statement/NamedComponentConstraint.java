@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Role;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -32,10 +32,10 @@ public class NamedComponentConstraint extends DataSetComponentConstraint
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Class<? extends ComponentRole> role;
+	private final Role role;
 	private final String domainName;
 	
-	public NamedComponentConstraint(String name, Class<? extends ComponentRole> role, String domainName)
+	public NamedComponentConstraint(String name, Role role, String domainName)
 	{
 		super(name);
 
@@ -46,7 +46,7 @@ public class NamedComponentConstraint extends DataSetComponentConstraint
 	@Override
 	protected Optional<Set<? extends DataStructureComponent<?, ?, ?>>> matchStructure(DataSetMetadata structure, MetadataRepository repo)
 	{
-		Optional<? extends DataStructureComponent<?, ?, ?>> component = structure.getComponent(getName(), role);
+		Optional<? extends DataStructureComponent<?, ?, ?>> component = structure.getComponent(getName(), role.roleClass());
 		if (domainName != null)
 			component = component.filter(c -> repo.getDomain(domainName).isAssignableFrom(c.getDomain()));
 
@@ -56,7 +56,7 @@ public class NamedComponentConstraint extends DataSetComponentConstraint
 	@Override
 	public String toString()
 	{
-		return getName() + " " + role.getSimpleName().toLowerCase() 
+		return getName() + " " + role.toString().toLowerCase() 
 				+ (domainName != null ? "<" + domainName + ">" : "");
 	}
 }

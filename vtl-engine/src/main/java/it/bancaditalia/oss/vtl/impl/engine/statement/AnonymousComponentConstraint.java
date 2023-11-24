@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Role;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -38,7 +38,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Class<? extends ComponentRole> role;
+	private final Role role;
 	private final String domainName;
 	private final QuantifierConstraints quantifier;
 	
@@ -47,7 +47,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 		MAX_ONE, AT_LEAST_ONE, ANY
 	}
 
-	public AnonymousComponentConstraint(Class<? extends ComponentRole> role, String domainName, QuantifierConstraints quantifier)
+	public AnonymousComponentConstraint(Role role, String domainName, QuantifierConstraints quantifier)
 	{
 		super(null);
 
@@ -59,7 +59,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 	@Override
 	protected Optional<Set<? extends DataStructureComponent<?, ?, ?>>> matchStructure(DataSetMetadata structure, MetadataRepository repo)
 	{
-		Set<? extends DataStructureComponent<?, ?, ?>> matchedComponents = new HashSet<>(structure.getComponents(role));
+		Set<? extends DataStructureComponent<?, ?, ?>> matchedComponents = new HashSet<>(structure.getComponents(role.roleClass()));
 		if (domainName != null)
 		{
 			ValueDomainSubset<?, ?> domain = repo.getDomain(domainName);
@@ -84,7 +84,7 @@ public class AnonymousComponentConstraint extends DataSetComponentConstraint
 	@Override
 	public String toString()
 	{
-		return role.getSimpleName().toLowerCase() 
+		return role.toString().toLowerCase() 
 				+ (domainName != null ? "<" + domainName + ">" : "")
 				+ " _ " + (quantifier == ANY ? "*" : quantifier == AT_LEAST_ONE ? "+" : "");
 	}

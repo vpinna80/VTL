@@ -22,6 +22,11 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.ANY;
 import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.AT_LEAST_ONE;
 import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.MAX_ONE;
+import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.ATTRIBUTE;
+import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.COMPONENT;
+import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.IDENTIFIER;
+import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.MEASURE;
+import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.VIRAL_ATTRIBUTE;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -60,11 +65,7 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.TemporaryAssignmentContext;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Role;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import jakarta.xml.bind.JAXBException;
 
@@ -174,7 +175,7 @@ public class StatementFactory implements Serializable
 
 	private static DataSetComponentConstraint generateComponentConstraint(CompConstraintContext constraint)
 	{
-		final Entry<Class<? extends ComponentRole>, String> metadata = generateComponentMetadata(constraint.componentType());
+		final Entry<Role, String> metadata = generateComponentMetadata(constraint.componentType());
 		
 		if (constraint.componentID() != null)
 			return new NamedComponentConstraint(constraint.componentID().getText(), metadata.getKey(), metadata.getValue());
@@ -192,7 +193,7 @@ public class StatementFactory implements Serializable
 			return MAX_ONE;
 	}
 
-	private static Entry<Class<? extends ComponentRole>, String> generateComponentMetadata(ComponentTypeContext compType)
+	private static Entry<Role, String> generateComponentMetadata(ComponentTypeContext compType)
 	{
 		ScalarTypeContext scalarType;
 		String domain = null;
@@ -216,19 +217,19 @@ public class StatementFactory implements Serializable
 				throw new IllegalStateException("Unexpected ParseTree of " + current.getClass());
 		}
 
-		Class<? extends ComponentRole> role;
+		Role role;
 		if (resultList.size() == 0)
 			role = null;
 		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.COMPONENT)
-			role = ComponentRole.class;
+			role = COMPONENT;
 		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.MEASURE)
-			role = Measure.class;
+			role = MEASURE;
 		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.DIMENSION)
-			role = Identifier.class;
+			role = IDENTIFIER;
 		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.ATTRIBUTE)
-			role = Attribute.class;
+			role = ATTRIBUTE;
 		else if (resultList.size() == 2 && resultList.get(0).getType() == Vtl.VIRAL && resultList.get(1).getType() == Vtl.ATTRIBUTE)
-			role = ViralAttribute.class;
+			role = VIRAL_ATTRIBUTE;
 		else
 		{
 			Token token = resultList.get(0);
@@ -254,7 +255,7 @@ public class StatementFactory implements Serializable
 			return new ScalarParameter(name, generateDomainName(scalarType));
 		else if (compType != null)
 		{
-			Entry<Class<? extends ComponentRole>, String> metadata = generateComponentMetadata(compType);
+			Entry<Role, String> metadata = generateComponentMetadata(compType);
 			return new ComponentParameter<>(name, metadata.getValue(), metadata.getKey());
 		}
 		else if (datasetType != null)

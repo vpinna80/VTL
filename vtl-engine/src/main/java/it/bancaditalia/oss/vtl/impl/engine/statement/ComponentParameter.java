@@ -20,20 +20,21 @@
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Role;
 
 class ComponentParameter<T extends ComponentRole> extends ScalarParameter
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Class<T> role;
+	private final Role role;
 
-	public ComponentParameter(String name, String domainName, Class<T> role)
+	public ComponentParameter(String name, String domainName, Role role)
 	{
 		super(name, domainName);
 		this.role = role;
 	}
 
-	public Class<T> getRole()
+	public Role getRole()
 	{
 		return role;
 	}
@@ -46,6 +47,6 @@ class ComponentParameter<T extends ComponentRole> extends ScalarParameter
 	
 	public String getMetaString()
 	{
-		return role.getSimpleName().toLowerCase() + (domainName != null ? "<" + domainName + ">" : "");
+		return role.toString().toLowerCase() + (domainName != null ? "<" + domainName + ">" : "");
 	}
 }
