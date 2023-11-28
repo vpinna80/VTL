@@ -102,7 +102,7 @@ public class CSVFileEnvironment implements Environment
 		if (!name.startsWith("csv:"))
 			return false;
 			
-		String loc = name.substring(4);
+		String loc = name.substring(4).split("\\*{4}",2)[0];
 		
 		try
 		{

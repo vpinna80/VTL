@@ -277,4 +277,20 @@ public final class Utils
 			result.add(elem);
 		return Collections.unmodifiableSet(result);
 	}
+	
+	public static <T> void tryWith(SerSupplier<? extends Stream<T>> supplier, SerConsumer<? super Stream<T>> consumer)
+	{
+		try (Stream<T> stream = supplier.get())
+		{
+			consumer.accept(stream);
+		}
+	}
+
+	public static <T, R> R tryWith(SerSupplier<? extends Stream<T>> supplier, SerFunction<? super Stream<T>, R> consumer)
+	{
+		try (Stream<T> stream = supplier.get())
+		{
+			return consumer.apply(stream);
+		}
+	}
 }

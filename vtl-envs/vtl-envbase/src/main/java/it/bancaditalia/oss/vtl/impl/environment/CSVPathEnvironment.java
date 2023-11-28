@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,8 +62,8 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 	public boolean contains(String name)
 	{
 		if (name.startsWith("csv:"))
-			if (name.contains("\\") || name.contains("/"))
-				return super.contains(name);
+			if (name.contains(File.separator))
+				return super.contains(name.split("\\*{4}", 2)[0]);
 			else
 				return searchPaths(name.substring(4)).isPresent();
 		else
@@ -86,12 +87,19 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 	private <T> Optional<T> mapper(String alias, SerFunction<String, Optional<T>> mapper)
 	{
 		if (alias.startsWith("csv:"))
-			return searchPaths(alias.substring(4))
+		{
+			final Optional<Path> optional2 = searchPaths(alias.substring(4));
+			
+			final Optional<String> optional3 = optional2
 					.map(Path::toString)
 					.map(path -> "csv:" + path)
-					.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; })
-					.map(path -> mapper.apply(path + "****" + alias))
-					.orElse(Optional.empty());
+					.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; });
+			
+			final Optional<Optional<T>> optional = optional3
+					.map(path -> mapper.apply(path));
+			
+			return optional.orElse(Optional.empty());
+		}
 		else
 			return Optional.empty();
 	}
