@@ -170,8 +170,8 @@ vtlServer <- function(input, output, session) {
   # render the structure of a dataset
   output$dsStr<- DT::renderDataTable({
     req(input$sessionID)
-    req(input$selectDatasetsStr)
-    jstr = currentSession()$getMetadata(req(input$selectDatasetsStr))
+    req(input$structureSelection)
+    jstr = currentSession()$getMetadata(req(input$structureSelection))
     if (jstr %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata") {
       df <- data.table::transpose(data.frame(c(jstr$getDomain()$toString()), check.names = FALSE))
       colnames(df) <- c("Domain")
@@ -183,12 +183,6 @@ vtlServer <- function(input, output, session) {
     } else {
       data.frame(c("ERROR", check.names = FALSE))
     }
-  })
-  
-  # Select dataset to browse
-  output$dsNamesStr<- renderUI({
-    selectInput(inputId = 'selectDatasetsStr', label = 'Select Node', multiple = F, 
-                choices = c('', currentSession()$getNodes()), selected ='')
   })
   
   # output dataset lineage 
@@ -384,6 +378,8 @@ vtlServer <- function(input, output, session) {
       #update list of datasets to be explored
       updateSelectInput(session = session, inputId = 'selectDatasets',
                         label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
+      #update list of dataset structures
+      updateSelectInput(inputId = 'structureSelection', label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
     }, error = function(e) {
       msg <- conditionMessage(e)
       trace <- NULL
