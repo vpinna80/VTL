@@ -532,56 +532,56 @@ public class JoinTransformation extends TransformationImpl
 				sameIDs &= ds.getIDs().equals(last.getIDs());
 			last = ds;
 		}
-
+		
 		if (usingNames.isEmpty()) // Case A
 			if (operator == INNER_JOIN && refDataSet.isEmpty())
 				throw new VTLException(operator.toString().toLowerCase() + " requires one dataset to contain all the identifiers from all other datasets.");
 			else if ((operator == LEFT_JOIN || operator == FULL_JOIN) && !sameIDs)
-				throw new VTLException(operator.toString().toLowerCase() + " requires all datasets to have the same identifiers.");
+				throw new VTLIncompatibleStructuresException(operator.toString().toLowerCase() + " requires all the input datasets, except the leftmost one, to have the same identifiers",
+						datasetsMeta.values().stream().map(DataSetMetadata::getIDs).collect(toList()));
 			else if (operator == CROSS_JOIN)
 				throw new UnsupportedOperationException(operator.toString().toLowerCase() + " not implemented");
 			else
 				return new SimpleEntry<>(refDataSet.get(), TRUE);
-		else if (operator == INNER_JOIN || operator == LEFT_JOIN) // case B1-B2
-			if (commonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).containsAll(usingNames)) // case B1
-				if (operator == INNER_JOIN && refDataSet.isEmpty())
-					throw new VTLException(operator.toString().toLowerCase() + " requires one dataset to contain all the identifiers from all other datasets.");
-				else if (operator == LEFT_JOIN && !sameIDs)
-					throw new VTLException(operator.toString().toLowerCase() + " requires all datasets to have the same identifiers.");
-				else
-					return new SimpleEntry<>(refDataSet.get(), TRUE);
-			else
-				// case B2
-				if (operator == INNER_JOIN)
-					throw new UnsupportedOperationException("inner_join with using clause not implemented");
-				else // if (operator == LEFT_JOIN)
-				{
-					DataSetMetadata leftmost = datasetsMeta.get(operands.get(0));
-					List<DataSetMetadata> nonRefStructures = datasetsMeta.values().stream()
-							.filter(not(leftmost::equals))
-							.collect(toList());
-					
-					Set<DataStructureComponent<?, ?, ?>> usingComponents = getUsingComponents(leftmost, datasetsMeta.values());
-					
-					boolean sameIDsWithoutRefDataset = true;
-					last = null;
-					for (DataSetMetadata ds: nonRefStructures) {
-						if (last != null)
-							sameIDsWithoutRefDataset &= ds.getIDs().equals(last.getIDs());
-						last = ds;
-					}
-
-					// All the input Data Sets, except the reference Data Set, have the same Identifiers [Id1, … , Idn];
-					if (!sameIDsWithoutRefDataset)
-						throw new VTLException(operator.toString().toLowerCase() + " requires all the input datasets, except the reference Data Set, to have the same identifiers");
-
-					// The using clause specifies all and only the common Identifiers of the non-reference Data Sets [Id1, … , Idn].
-					Set<DataStructureComponent<Identifier, ?, ?>> nonRefCommonIDs = getCommonIDs(nonRefStructures.size(), nonRefStructures);
-					if (!nonRefCommonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).equals(new HashSet<>(usingNames)))
-						throw new VTLIncompatibleStructuresException("Error in the using clause", nonRefCommonIDs, usingComponents);
-			
-					return new SimpleEntry<>(operands.get(0), FALSE);
+		else if (operator == INNER_JOIN) // case B1-B2
+			if (refDataSet.isEmpty())
+				throw new VTLException(operator.toString().toLowerCase() + " requires one dataset to contain all the identifiers from all other datasets.");
+			else if (commonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).containsAll(usingNames)) // case B1
+				return new SimpleEntry<>(refDataSet.get(), TRUE);
+			else // case B2
+				throw new UnsupportedOperationException("inner_join case B2 not implemented");
+		else if (operator == LEFT_JOIN) // case B1-B2
+			if (sameIDs && commonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).containsAll(usingNames)) // Case B1
+				return new SimpleEntry<>(refDataSet.get(), TRUE);
+			else // case B2
+			{
+				DataSetMetadata leftmost = datasetsMeta.get(operands.get(0));
+				List<DataSetMetadata> nonRefStructures = datasetsMeta.values().stream()
+						.filter(not(leftmost::equals))
+						.collect(toList());
+				
+				Set<DataStructureComponent<?, ?, ?>> usingComponents = getUsingComponents(leftmost, datasetsMeta.values());
+				
+				boolean sameIDsWithoutRefDataset = true;
+				last = null;
+				for (DataSetMetadata ds: nonRefStructures) {
+					if (last != null)
+						sameIDsWithoutRefDataset &= ds.getIDs().equals(last.getIDs());
+					last = ds;
 				}
+
+				// All the input Data Sets, except the reference Data Set, have the same Identifiers [Id1, … , Idn];
+				if (!sameIDsWithoutRefDataset)
+					throw new VTLIncompatibleStructuresException("left_join requires all the input datasets, except the leftmost one, to have the same identifiers",
+							nonRefStructures.stream().map(DataSetMetadata::getIDs).collect(toList()));
+
+				// The using clause specifies all and only the common Identifiers of the non-reference Data Sets [Id1, … , Idn].
+				Set<DataStructureComponent<Identifier, ?, ?>> nonRefCommonIDs = getCommonIDs(nonRefStructures.size(), nonRefStructures);
+				if (!nonRefCommonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).equals(new HashSet<>(usingNames)))
+					throw new VTLIncompatibleStructuresException("Error in the using clause", nonRefCommonIDs, usingComponents);
+		
+				return new SimpleEntry<>(operands.get(0), FALSE);
+			}
 		else
 			throw new VTLException(operator.toString().toLowerCase() + " cannot have a using clause.");
 	}
