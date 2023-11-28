@@ -29,17 +29,16 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
+import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
+import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -207,7 +206,7 @@ public class ConditionalTransformation extends TransformationImpl
 			VTLValueMetadata other = left instanceof DataSetMetadata ? right : left;
 
 			if (condMeasures.size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, condMeasures);
+				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, ((DataSetMetadata) cond).getMeasures());
 
 			if (!dataset.getIDs().equals(((DataSetMetadata) cond).getIDs()))
 				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getIDs() + " -- " + ((DataSetMetadata) cond).getIDs());
@@ -216,25 +215,23 @@ public class ConditionalTransformation extends TransformationImpl
 			{
 				// the other is a dataset too, check structures are equal
 				if (!dataset.equals(other))
-				{
-					// check that they have same structure
-					Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(dataset);
-				    missing.addAll((DataSetMetadata) other);
-				    Set<DataStructureComponent<?, ?, ?>> tmp = new HashSet<>(dataset);
-				    tmp.retainAll((DataSetMetadata) other);
-				    missing.removeAll(tmp);
-				    
-				    if (!dataset.containsAll(missing))
-				    {
-				    	missing.removeAll(dataset);
-				    	throw new VTLSyntaxException("Then and Else expressions must have the same structure.", new VTLMissingComponentsException(missing, dataset)); 
-				    }
-				    else
-				    {
-				    	missing.removeAll((DataSetMetadata) other);
-				    	throw new VTLSyntaxException("Then and Else expressions must have the same structure.", new VTLMissingComponentsException(missing, (DataSetMetadata) other));
-				    }
-				}
+					if (dataset.getMeasures().size() == 1 && ((DataSetMetadata) other).getMeasures().size() == 1)
+					{
+						// Momomeasure datasets, ignore names as long as the domains are compatible
+						DataStructureComponent<Measure, ?, ?> leftMeasure = dataset.getMeasures().iterator().next();
+						DataStructureComponent<Measure, ?, ?> rightMeasure = ((DataSetMetadata) other).getMeasures().iterator().next();
+						if (!leftMeasure.getDomain().equals(rightMeasure.getDomain()))
+							if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain())
+									&& rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
+								dataset = new DataStructureBuilder(dataset)
+									.removeComponent(leftMeasure)
+									.addComponent(rightMeasure)
+									.build();
+							else
+								throw new VTLIncompatibleMeasuresException("if-then-else", leftMeasure, rightMeasure);
+					}
+					else
+						throw new VTLIncompatibleStructuresException("then and else must have the same structure", dataset, (DataSetMetadata) other);
 			}
 			else 
 				// the other is a scalar, all measures in dataset must be assignable from the scalar

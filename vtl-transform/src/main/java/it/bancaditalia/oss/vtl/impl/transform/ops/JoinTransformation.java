@@ -537,7 +537,7 @@ public class JoinTransformation extends TransformationImpl
 			if (operator == INNER_JOIN && refDataSet.isEmpty())
 				throw new VTLException(operator.toString().toLowerCase() + " requires one dataset to contain all the identifiers from all other datasets.");
 			else if ((operator == LEFT_JOIN || operator == FULL_JOIN) && !sameIDs)
-				throw new VTLIncompatibleStructuresException(operator.toString().toLowerCase() + " requires all the input datasets, except the leftmost one, to have the same identifiers",
+				throw new VTLIncompatibleStructuresException(operator.toString().toLowerCase() + " requires all the input datasets to have the same identifiers",
 						datasetsMeta.values().stream().map(DataSetMetadata::getIDs).collect(toList()));
 			else if (operator == CROSS_JOIN)
 				throw new UnsupportedOperationException(operator.toString().toLowerCase() + " not implemented");

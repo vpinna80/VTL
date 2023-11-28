@@ -38,6 +38,8 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
@@ -261,7 +263,16 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		for (CalcClauseItem item : calcClauses)
 		{
-			VTLValueMetadata itemMeta = item.getMetadata(scheme);
+			VTLValueMetadata itemMeta;
+			try
+			{
+				itemMeta = item.getMetadata(scheme);
+			}
+			catch (VTLException e)
+			{
+				throw new VTLNestedException("In calc clause " + item.toString(), e);
+			}
+			
 			ValueDomainSubset<?, ?> domain;
 
 			// get the domain of the calculated component

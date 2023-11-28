@@ -20,6 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.COUNT;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -44,9 +46,13 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -139,8 +145,16 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		partitionComponents.retainAll(ordering.keySet());
 		if (!partitionComponents.isEmpty())
 			throw new VTLException("Partitioning components " + partitionComponents + " cannot be used in order by");
-		
-		return dataset;
+
+		DataStructureBuilder builder = new DataStructureBuilder(dataset);
+		if (aggregation == COUNT)
+			if (dataset.getMeasures().size() > 1)
+				throw new VTLSingletonComponentRequiredException(Measure.class, dataset.getMeasures());
+			else
+				builder = builder.removeComponent(dataset.getMeasures().iterator().next())
+						.addComponent(DataStructureComponentImpl.of(INTEGERDS.getName(), Measure.class, INTEGERDS));
+			
+		return builder.build();
 	}
 	
 	@Override
