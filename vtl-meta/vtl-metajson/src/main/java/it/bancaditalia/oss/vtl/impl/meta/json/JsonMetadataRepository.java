@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.meta.json;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
-import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -89,9 +88,9 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			Map<?, Map<?, ?>> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
 			
 			readDomains(json.get("domains"));
-			readVariables(json.get("variables"));
-			readStructures(json.get("structures"));
-			readDatasets(json.get("datasets"));
+			readVariables((List<Map<String, ?>>) json.get("variables"));
+			readStructures((List<Map<String, ?>>) json.get("structures"));
+			readDatasets((List<Map<String, ?>>) json.get("datasets"));
 		}
 	}
 	
@@ -132,12 +131,12 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		}
 	}
 	
-	private void readVariables(Map<?, ?> variablesSource)
+	private void readVariables(List<Map<String, ?>> variablesSource)
 	{
-		for (Entry<?, ?> variable: variablesSource.entrySet())
+		for (Map<String, ?> variable: variablesSource)
 		{
-			Object name = variable.getKey();
-			Object domain = variable.getValue();
+			String name = (String) variable.get("name");
+			String domain = (String) variable.get("domain");
 			if (name == null || !(name instanceof String))
 				throw new IllegalStateException("Found variable without or with invalid name.");
 			if (domain == null || !(domain instanceof String))
@@ -147,43 +146,42 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		}
 	}
 	
-	private void readStructures(Map<?, ?> structuresSource)
+	private void readStructures(List<Map<String, ?>> list)
 	{
-		for (Entry<?, ?> structureEntry: structuresSource.entrySet())
+		for (Map<String, ?> structureDescriptor: list)
 		{
-			Object name = structureEntry.getKey();
-			Object strDef = structureEntry.getValue();
+			Object name = structureDescriptor.get("name");
 			if (name == null || !(name instanceof String))
 				throw new IllegalStateException("Found structure without or with invalid name.");
-			if (strDef == null || !(strDef instanceof Map))
-				throw new IllegalStateException("Found structure with missing or invalid definition.");
+
 			DataStructureBuilder builder = new DataStructureBuilder();
 			
-			for (String role: ROLE_ELEMENTS.keySet())
-				if (((Map<?, ?>) strDef).containsKey(role))
-					builder.addComponents(((List<?>) ((Map<?, ?>) strDef).get(role)).stream()
-							.map(String.class::cast)
-							.map(n -> DataStructureComponentImpl.of(n, ROLE_ELEMENTS.get(role), 
-									requireNonNull(variables.get(n), "Variable " + n + " is not defined in metadata.")))
-							.collect(toSet()));
+			for (String role: List.of("identifiers", "measures", "attributes"))
+				for (Object varName: (List<?>) structureDescriptor.get(role))
+					if (!(varName instanceof String))
+						throw new IllegalStateException("Found dataset without or with invalid name.");
+					else
+						builder.addComponent(DataStructureComponentImpl.of((String) varName, ROLE_ELEMENTS.get(role), variables.get(varName)));
+
 			DataSetMetadata structure = builder.build();
 			LOGGER.info("Found structure {}: {}", name, structure);
 			structures.put((String) name, structure);
 		}
 	}
 
-	private void readDatasets(Map<?, ?> datasetsSource)
+	private void readDatasets(List<Map<String, ?>> list)
 	{
-		for (Entry<?, ?> dataset: datasetsSource.entrySet())
+		for (Map<String, ?> dataset: list)
 		{
-			Object name = dataset.getKey();
-			Object structure = dataset.getValue();
+			Object name = (String) dataset.get("name");
+			Object structure = (String) dataset.get("structure");
+			
 			if (name == null || !(name instanceof String))
 				throw new IllegalStateException("Found dataset without or with invalid name.");
-			if (structure == null || !(structure instanceof String))
+			if (structure == null || !(structure instanceof String) || !structures.containsKey(structure))
 				throw new UnsupportedOperationException("Found dataset without or with invalid structure for " + name + ".");
+			
 			LOGGER.debug("Found dataset {} with structure {}", name, structure);
-			requireNonNull(structures.get(structure), "Structure " + structure + " is not defined in metadata.");
 			datasets.put((String) name, (String) structure);
 		}
 	}

@@ -34,7 +34,7 @@
 		<version>${revision}</version>
 	</parent>
 
-	<name>vtl-transform</name>
+	<name>vtl-engine</name>
 	<description>The main VTL translation engine</description>
 
 	<dependencies>
