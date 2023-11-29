@@ -77,17 +77,8 @@ public class SerCollectors
 
     public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, ? extends R> downstream, SerFunction<? super R, RR> finisher)
 	{
-		Set<Characteristics> characteristics = downstream.characteristics();
-		if (characteristics.contains(IDENTITY_FINISH))
-		{
-			if (characteristics.size() == 1)
-				characteristics = emptySet();
-			else
-			{
-				characteristics = EnumSet.copyOf(characteristics);
-				characteristics.remove(IDENTITY_FINISH);
-			}
-		}
+		Set<Characteristics> characteristics = EnumSet.copyOf(downstream.characteristics());
+		characteristics.remove(IDENTITY_FINISH);
 		return new SerCollector<>(downstream.supplier(), downstream.accumulator(), downstream.combiner(),
 				downstream.finisher().andThen(finisher), characteristics);
 	}

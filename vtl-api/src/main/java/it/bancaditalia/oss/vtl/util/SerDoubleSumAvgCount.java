@@ -21,13 +21,15 @@ package it.bancaditalia.oss.vtl.util;
 
 import java.util.Arrays;
 import java.util.OptionalDouble;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SerDoubleSumAvgCount implements SerDoubleConsumer
 {
 	private static final long serialVersionUID = 1L;
 
-	private long count;
+	private volatile long count;
 	private final double[] sums;
+	private final ReentrantLock lock = new ReentrantLock();
 
     public SerDoubleSumAvgCount()
     { 
@@ -43,19 +45,35 @@ public class SerDoubleSumAvgCount implements SerDoubleConsumer
 	@Override
     public void accept(double value)
     {
-        ++count;
-        sums[2] += value;
-        sumWithCompensation(value);
+		try
+		{
+			lock.lock();
+			++count;
+	        sums[2] += value;
+	        sumWithCompensation(value);
+		}
+		finally 
+		{
+			lock.unlock();
+		}
     }
 
     public SerDoubleSumAvgCount combine(SerDoubleSumAvgCount other)
     {
-    	SerDoubleSumAvgCount comb = new SerDoubleSumAvgCount(count + other.count, sums);
-        
-        comb.sums[2] += other.sums[2];
-        comb.sumWithCompensation(other.sums[0]);
-        comb.sumWithCompensation(-other.sums[1]);
-        return comb;
+		try
+		{
+			lock.lock();
+			count += other.count;
+			sums[2] += other.sums[2];
+			sumWithCompensation(other.sums[0]);
+			sumWithCompensation(-other.sums[1]);
+			
+			return this;
+		}
+		finally
+		{
+			lock.unlock();
+		}
     }
 
     private void sumWithCompensation(double value)

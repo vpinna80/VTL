@@ -66,6 +66,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -230,12 +231,20 @@ public class ArithmeticTransformation extends BinaryTransformation
 		if (INTEGERDS.isAssignableFrom(scalar.getDomain()))
 			return dataset;
 		
-		// Sum to float, convert integer measures to floating point
-		return dataset.stream()
-				.map(c -> c.is(Measure.class) && INTEGERDS.isAssignableFrom(c.getDomain()) 
-						? new DataStructureComponentImpl<>(c.getName(), Measure.class, NUMBERDS) : c)
-				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-				.build();
+		DataStructureBuilder builder = new DataStructureBuilder(dataset.getIDs());
+		for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMeasures())
+			if (INTEGERDS.isAssignableFrom(measure.getDomain()) && INTEGERDS.isAssignableFrom(scalar.getDomain()))
+				if (measure.getDomain() instanceof IntegerDomainSubset)
+					builder.addComponent(measure);
+				else
+					builder.addComponent(DataStructureComponentImpl.of(INTEGERDS.getName(), Measure.class, INTEGERDS));
+			else
+				if (measure.getDomain() instanceof NumberDomainSubset)
+					builder.addComponent(measure);
+				else
+					builder.addComponent(DataStructureComponentImpl.of(NUMBERDS.getName(), Measure.class, NUMBERDS));
+		
+		return builder.build();
 	}
 	
 	@Override

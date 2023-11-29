@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
 import java.util.stream.Collector.Characteristics;
 
 import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
@@ -73,7 +72,6 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerBiConsumer;
-import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
@@ -134,15 +132,15 @@ public enum AggregateOperator
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get()))));
 
 	public static final Set<DataStructureComponent<Measure, ?, ?>> COUNT_MEASURE = singleton(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS));
-	private static final SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> flagMap = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
+	private static final SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> FLAGMAP = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
 
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;
-	private final SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor;
 	private final String name;
 	
 	private AggregateOperator(String name, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
 	{
-		this(name, DataPoint::get, reducer);
+		this.name = name;
+		this.reducer = reducer;
 	}
 	
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getSummingCollector()
@@ -160,19 +158,7 @@ public enum AggregateOperator
 
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector()
 	{
-//		if (Boolean.valueOf(USE_BIG_DECIMAL.getValue()))
-//			return collectingAndThen(averagingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
-		
-		return collectingAndThen(filtering(v -> !(v instanceof NullValue), averagingDouble(v -> ((Number) v.get()).doubleValue())), DoubleValue::of);
-	}
-
-	private AggregateOperator(String name,
-			SerBiFunction<? super DataPoint, ? super DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> extractor,
-			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer)
-	{
-		this.name = name;
-		this.extractor = extractor;
-		this.reducer = reducer;
+		return collectingAndThen(filtering(v -> v instanceof NumberValue, mapping(ScalarValue::get, averagingDouble(v -> ((Number) v).doubleValue()))), DoubleValue::of);
 	}
 
 	public SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer()
@@ -212,7 +198,7 @@ public enum AggregateOperator
 
 		// Create a collector for each measure
 		Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors = measures.stream()
-			.collect(toMapWithValues(measure -> mapping(dp -> extractor.apply(dp, measure), filtering(v -> !(v instanceof NullValue), reducer))));
+			.collect(toMapWithValues(measure -> mapping(dp -> dp.get(measure), filtering(v -> !(v instanceof NullValue), reducer))));
 		
 		// and-reduce the characteristics
 		EnumSet<Characteristics> characteristics = EnumSet.of(CONCURRENT, UNORDERED);
@@ -238,7 +224,7 @@ public enum AggregateOperator
 							SerBiConsumer<Object, DataPoint> accumulator = (SerBiConsumer<Object, DataPoint>) collector.accumulator();
 							accumulator.accept(a.accs.get(measure), dp);
 							if (this != COUNT)
-								a.allIntegers.computeIfAbsent(measure, flagMap).compareAndSet(true, INTEGERDS.isAssignableFrom(dp.get(measure).getDomain()));
+								a.allIntegers.computeIfAbsent(measure, FLAGMAP).compareAndSet(true, INTEGERDS.isAssignableFrom(dp.get(measure).getDomain()));
 						});
 					a.lineageAcc.merge(dp.getLineage(), 1L, Long::sum);
 				}, (a, b) -> { 
@@ -265,7 +251,7 @@ public enum AggregateOperator
 							@SuppressWarnings("unchecked")
 							SerFunction<Object, ScalarValue<?, ?, ?, ?>> finisher = (SerFunction<Object, ScalarValue<?, ?, ?, ?>>) collector.finisher(); 
 							ScalarValue<?, ?, ?, ?> result = finisher.apply(a.accs.get(measure));
-							if (a.allIntegers.computeIfAbsent(measure, flagMap).get() && result instanceof DoubleValue)
+							if (a.allIntegers.computeIfAbsent(measure, FLAGMAP).get() && result instanceof DoubleValue)
 								return IntegerValue.of(((DoubleValue<?>) result).get().longValue());
 							else
 								return result;
@@ -279,10 +265,5 @@ public enum AggregateOperator
 	public String toString()
 	{
 		return name;
-	}
-	
-	public BiFunction<? super DataPoint, ? super DataStructureComponent<Measure, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> getExtractor()
-	{
-		return extractor;
 	}
 }
