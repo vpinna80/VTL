@@ -326,10 +326,10 @@ public abstract class AbstractDataSet implements DataSet
 	}
 	
 	@Override
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean unionAll)
+	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean check)
 	{
 		// Fast track when the functional aspect is preserved
-		if (unionAll)
+		if (!check)
 			return new AbstractDataSet(dataStructure) {
 				private static final long serialVersionUID = 1L;
 
