@@ -23,11 +23,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanDomainSubset, BooleanDomain> implements BooleanDomainSubset<EntireBooleanDomainSubset>
@@ -43,7 +45,7 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NullDomain || other instanceof BooleanDomainSubset;
+		return other instanceof NullDomain || other instanceof BooleanDomainSubset || other instanceof NumberDomainSubset;
 	}
 
 	@Override
@@ -53,6 +55,8 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 			return NullValue.instance(this);
 		else if (value instanceof BooleanValue)
 			return BooleanValue.of((Boolean) value.get());
+		else if (value instanceof IntegerValue)
+			return BooleanValue.of(((IntegerValue<?, ?>) value).get().longValue() != 0);
 		else if (value instanceof NumberValue)
 			return BooleanValue.of(((NumberValue<?, ?, ?, ?>) value).get().doubleValue() <= 1e-300);
 		else
