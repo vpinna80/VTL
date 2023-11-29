@@ -41,7 +41,7 @@ To build this project, you will need:
 
 To build the project, launch the command:
 
-    mvn [-P with-r,with-fmr,with-spark,with-jupyter,with-cli,with-rest] clean package
+    mvn [-P with-r,with-sdmx,with-spark,with-jupyter,with-cli,with-rest] clean package
 
 Each artifact will be generated inside the `target` folder of each module.
 The optional maven profiles allow you to build any of the provided VTL bundles for
@@ -52,15 +52,22 @@ If you want to build with support for the Spark evironment, activate the
 Spark environment.
 
 If you want to build with support for SDMX web services, activate the
-`with-fmr` maven profile. Each bundle created with this build will contain the support
+`with-sdmx` maven profile. Each bundle created with this build will contain the support
 for interacting with a SDMX registry. Note that this requires that the 
 [sdmx-core](https://github.com/bis-med-it/sdmx-core) maven artifacts are already installed 
 in the local repository, because the artifacts are distributed only in source form 
 by the Bank of International Settlements.
 
 If you want to build the editor and the R package along with the engine, activate the 
-`with-r` maven profile; you may need to configure your internet connection in 
-Maven settings. The R package, ready for installation in R (with install.packages), 
+`with-r` maven profile. You may need to configure your internet connection in 
+Maven settings; you also need to install the REngine.jar artifact into your local repository.
+It can be done with the following command:
+
+```
+mvn install:install-file -DgroupId=org.rosuda.JRI -DartifactId=Rengine -Dversion=$R_VERSION file=$R_LIBRARY/java/jri/REngine.jar
+```
+
+The R package, ready for installation in R (with install.packages), 
 will be located there. Moreover, each artifact you build will have support for the R 
 environment.
 
@@ -87,9 +94,89 @@ operating in the ESCB. Thus,
 > some VTL operators and statements offer only limited functionality,
 and some have to be implemented yet.
 
-The following map shows the current implementation status:
-![statusmap](https://vpinna80.github.io/VTL/images/VTL.png)
+The following table shows the current implementation status:
 
+| operator | scalar | dataset-level | component-level |
+| -------- | ------ | ------------- | --------------- |
+| define datapoint ruleset    | &#10008;  | &#10008;  | &#10008;  |
+| define hierarchical ruleset | &#10008;  | &#10008;  | &#10008;  |
+| define operator             | &#10004;  | &#10004;  | &#10004;  |
+| call defined operator       | &#10004;  | &#10004;  | &#10004;  |
+| persistent assignment       | &#10004;  | &#10004;  | &#10004;  |
+| membership (#)              |           | &#10004;  |           |
+| eval                        | &#10008;  | &#10008;  | &#10008;  |
+| cast                        | &#10004;  |           | &#10004;  |
+| inner_join                  |           | &#10004;  |           |
+| left_join                   |           | &#10004;  |           |
+| full_join                   |           | &#10008;  |           |
+| cross_join                  |           | &#10008;  |           |
+| concat (&#124;&#124;)       | &#10004;  | &#10004;  | &#10004;  |
+| l-r-trim                    | &#10004;  | &#10004;  | &#10004;  |
+| upper,lower                 | &#10004;  | &#10004;  | &#10004;  |
+| substr                      | &#10004;  | &#10004;  | &#10004;  |
+| replace                     | &#10004;  | &#10004;  | &#10004;  |
+| instr                       | &#10004;  | &#10004;  | &#10004;  |
+| length                      | &#10004;  | &#10004;  | &#10004;  |
+| arithmetic                  | &#10004;  | &#10004;  | &#10004;  |
+| mod                         | &#10004;  | &#10004;  | &#10004;  |
+| round                       | &#10004;  | &#10004;  | &#10004;  |
+| trunc                       | &#10004;  | &#10004;  | &#10004;  |
+| ceil                        | &#10004;  | &#10004;  | &#10004;  |
+| floor                       | &#10004;  | &#10004;  | &#10004;  |
+| abs                         | &#10004;  | &#10004;  | &#10004;  |
+| exp                         | &#10004;  | &#10004;  | &#10004;  |
+| ln                          | &#10004;  | &#10004;  | &#10004;  |
+| power                       | &#10004;  | &#10004;  | &#10004;  |
+| log                         | &#10004;  | &#10004;  | &#10004;  |
+| sqrt                        | &#10004;  | &#10004;  | &#10004;  |
+| comparisons (=, >, <, <>)   | &#10004;  | &#10004;  | &#10004;  |
+| between                     | &#10004;  | &#10004;  | &#10004;  |
+| in/not_in                   | &#10008;  |           | &#10004;  |
+| match_characters            | &#10004;  | &#10008;  | &#10004;  |
+| isnull                      | &#10004;  | &#10004;  | &#10004;  |
+| exists_in                   |           | &#10004;  |           |
+| boolean operators           | &#10004;  | &#10004;  | &#10004;  |
+| period_indicator            | &#10008;  | &#10008;  | &#10008;  |
+| fill_time_series            |           | &#10004;  |           |
+| flow_to_stock               |           | &#10004;  |           |
+| stock_to_flow               |           | &#10004;  |           |
+| timeshift                   |           | &#10004;  |           |
+| timeagg                     | &#10008;  | &#10008;  | &#10008;  |
+| current_date                | &#10004;  |           | &#10004;  |
+| union                       |           | &#10004;  |           |
+| intersect                   |           | &#10004;  |           |
+| setdiff                     |           | &#10004;  |           |
+| symdiff                     |           | &#10004;  |           |
+| hierarchy                   |           | &#10004;  |           |
+| count                       |           | &#10004;  | &#10004;  |
+| min                         |           | &#10004;  | &#10004;  |
+| max                         |           | &#10004;  | &#10004;  |
+| median                      |           | &#10004;  | &#10004;  |
+| sum                         |           | &#10004;  | &#10004;  |
+| avg                         |           | &#10004;  | &#10004;  |
+| stddev_pop                  |           | &#10004;  | &#10004;  |
+| stddev_samp                 |           | &#10004;  | &#10004;  |
+| var_pop                     |           | &#10004;  | &#10004;  |
+| var_samp                    |           | &#10004;  | &#10004;  |
+| first_value                 |           | &#10004;  | &#10004;  |
+| last_value                  |           | &#10004;  | &#10004;  |
+| lag                         |           | &#10004;  | &#10004;  |
+| lead                        |           | &#10004;  | &#10004;  |
+| rank                        |           | &#10004;  | &#10004;  |
+| ratio_to_report             |           | &#10004;  | &#10004;  |
+| check_datapoint             |           | &#10008;  |           |
+| check_hierarchy             |           | &#10008;  |           |
+| check                       |           | &#10004;  |           |
+| if-then-else                | &#10008;  | &#10004;  | &#10004;  |
+| nvl                         | &#10008;  |           | &#10004;  |
+| filter                      |           |           | &#10004;  |
+| calc                        |           |           | &#10004;  |
+| aggr                        |           |           | &#10004;  |
+| keep/drop                   |           |           | &#10004;  |
+| rename                      |           |           | &#10004;  |
+| pivot                       |           |           | &#10004;  |
+| unpivot                     |           |           | &#10004;  |
+| sub                         |           |           | &#10004;  |
 ## Copyright notice
 
 This software is a copyright of Bank of Italy, inc. 2019.<br/>
