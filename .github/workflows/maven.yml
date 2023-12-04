@@ -21,6 +21,7 @@
 name: VTL Engine builds
 
 on:
+  workflow_dispatch:
   push:
     branches: [ master ]
   pull_request:
@@ -37,37 +38,36 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - os: windows-latest
-          - os: macOS-latest
-          - { os: ubuntu-18.04, rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest" }
-        r: [ 4.0.1, release ]
-        java: [ 8, 11 ]
+          - { os: windows-latest, DFILE: "-Dfile=%R_LIBS_USER%/rJava/jri/JRI.jar" }
+          - { os: ubuntu-22.04, rspm: "https://packagemanager.rstudio.com/cran/__linux__/jammy/latest", DFILE: "-Dfile=$R_LIBS_USER/rJava/jri/JRI.jar" }
+        r: [ 4.3.2 ]
+        java: [ 11, 17 ]
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       RSPM: ${{ matrix.config.rspm }}
-    
+
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Setup Java ${{ matrix.java }}
       uses: actions/setup-java@v2
       with:
         java-version: ${{ matrix.java }}
         distribution: "temurin"
-    
+
     - name: Setup R
       uses: r-lib/actions/setup-r@v2
       with:
         r-version: ${{ matrix.r }}
-    
+
     - name: Cache build artifacts
       uses: actions/cache@v2
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-    
+
     - name: Generate RVTL DESCRIPTION file
       run: mvn -pl ".,:RVTL" -P with-r clean "build-helper:regex-properties@gen-version" "resources:resources"
 
@@ -76,9 +76,12 @@ jobs:
       with:
         extra-packages: roxygen2
         working-directory: './vtl-bundles/vtl-r/RVTL/target/classes/R'
-    
+
+    - name: Maven install file
+      run: 'mvn "install:install-file" "-DgroupId=org.rosuda.JRI" "-DartifactId=Rengine" "-Dversion=${{ matrix.r }}" "-Dpackaging=jar" "${{ matrix.config.DFILE }}"'
+
     - name: Build with Maven
-      run: mvn -P with-r --file pom.xml "-Dgpg.skip=true" verify
+      run: 'mvn "-Dr.runtime.version=${{ matrix.r }}"  -P with-r --file pom.xml "-Dgpg.skip=true" verify'
 
     - name: Run codacy-coverage-reporter
       uses: codacy/codacy-coverage-reporter-action@master
