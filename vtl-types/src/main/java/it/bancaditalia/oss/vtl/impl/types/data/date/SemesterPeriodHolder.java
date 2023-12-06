@@ -22,13 +22,21 @@ package it.bancaditalia.oss.vtl.impl.types.data.date;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoUnit.SEMESTERS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
+import java.time.LocalDate;
 import java.time.Year;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.DateDomain;
+import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
@@ -132,5 +140,17 @@ public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 	public TimePeriodDomainSubset<?> getDomain()
 	{
 		return SEMESTERSDS;
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
+	{
+		return DateValue.of(LocalDate.from(year.with(MONTH_OF_YEAR, 1 + semester * 6).with(firstDayOfMonth())));
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	{
+		return DateValue.of(LocalDate.from(year.with(MONTH_OF_YEAR, 6 + semester * 6).with(lastDayOfMonth())));
 	}
 }

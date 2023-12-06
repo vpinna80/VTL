@@ -57,6 +57,11 @@
 		<tokenmapping name="DURATION" value="DURATION" />
 	</tokenset>
 
+	<tokenset name="PeriodDelimiter" class="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation$PeriodDelimiter">
+		<tokenmapping name="FIRST" value="FIRST" />
+		<tokenmapping name="LAST" value="LAST" />
+	</tokenset>
+	
 	<tokenset name="StringOperator" class="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation$StringOperator">
 		<tokenmapping name="TRIM" value="TRIM" />
 		<tokenmapping name="LTRIM" value="LTRIM" />
@@ -608,6 +613,8 @@
 				<exprparam name="expr" />
 			</nestedparam>
 			<stringparam name="periodIndTo" />
+			<stringparam name="periodIndFrom" />
+			<tokensetparam name="delim" tokenset="PeriodDelimiter" />
 		</params>
 	</mapping>
 

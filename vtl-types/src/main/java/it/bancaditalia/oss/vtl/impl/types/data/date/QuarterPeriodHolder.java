@@ -23,13 +23,20 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoUnit.SEMESTE
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 import static java.time.temporal.IsoFields.QUARTER_YEARS;
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
+import java.time.LocalDate;
 import java.time.Year;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.DateDomain;
+import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
@@ -134,5 +141,17 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 	public TimePeriodDomainSubset<?> getDomain()
 	{
 		return QUARTERSDS;
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
+	{
+		return DateValue.of(LocalDate.from(year.atMonth(1 + (quarter - 1) * 3).atDay(1).with(firstDayOfMonth())));
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	{
+		return DateValue.of(LocalDate.from(year.atMonth(3 + (quarter - 1) * 3).atDay(1).with(lastDayOfMonth())));
 	}
 }

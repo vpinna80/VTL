@@ -21,12 +21,11 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import java.util.EnumSet;
 
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.DaysDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.MonthsDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.QuartersDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.SemestersDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.WeeksDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubsets.YearsDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.MonthsDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.QuartersDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.SemestersDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.WeeksDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.YearsDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -41,7 +40,7 @@ public enum Domains implements ScalarValueMetadata
 	NUMBER(new EntireNumberDomainSubset()),
 	TIME(EntireTimeDomainSubset.getInstance()),
 	DATE(EntireDateDomainSubset.getInstance()),
-	TIME_PERIOD_DAYS(new DaysDomainSubset()),
+	TIME_PERIOD(EntireTimePeriodDomainSubset.getInstance()),
 	TIME_PERIOD_WEEKS(new WeeksDomainSubset()),
 	TIME_PERIOD_MONTHS(new MonthsDomainSubset()),
 	TIME_PERIOD_QUARTERS(new QuartersDomainSubset()),
@@ -49,7 +48,7 @@ public enum Domains implements ScalarValueMetadata
 	TIME_PERIOD_YEARS(new YearsDomainSubset()),
 	NULL(new NullDomain());
 	
-	public static final EnumSet<Domains> TIME_PERIODS = EnumSet.of(TIME_PERIOD_DAYS, TIME_PERIOD_WEEKS, TIME_PERIOD_MONTHS, TIME_PERIOD_QUARTERS, TIME_PERIOD_SEMESTERS, TIME_PERIOD_YEARS);
+	public static final EnumSet<Domains> TIME_PERIODS = EnumSet.of(TIME_PERIOD_WEEKS, TIME_PERIOD_MONTHS, TIME_PERIOD_QUARTERS, TIME_PERIOD_SEMESTERS, TIME_PERIOD_YEARS);
 
 	public static final EntireDurationDomainSubset DURATIONDS = (EntireDurationDomainSubset) DURATION.getDomain();
 	public static final EntireNumberDomainSubset NUMBERDS = (EntireNumberDomainSubset) NUMBER.getDomain();
@@ -58,7 +57,6 @@ public enum Domains implements ScalarValueMetadata
 	public static final EntireStringDomainSubset STRINGDS = (EntireStringDomainSubset) STRING.getDomain();
 	public static final EntireDateDomainSubset DATEDS = (EntireDateDomainSubset) DATE.getDomain();
 	public static final EntireTimeDomainSubset TIMEDS = (EntireTimeDomainSubset) TIME.getDomain();
-	public static final DaysDomainSubset DAYSDS = (DaysDomainSubset) TIME_PERIOD_DAYS.getDomain();
 	public static final WeeksDomainSubset WEEKSDS = (WeeksDomainSubset) TIME_PERIOD_WEEKS.getDomain();
 	public static final MonthsDomainSubset MONTHSDS = (MonthsDomainSubset) TIME_PERIOD_MONTHS.getDomain();
 	public static final QuartersDomainSubset QUARTERSDS = (QuartersDomainSubset) TIME_PERIOD_QUARTERS.getDomain();

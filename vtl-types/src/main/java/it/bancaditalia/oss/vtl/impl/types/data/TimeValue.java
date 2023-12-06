@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.time.temporal.TemporalAccessor;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Durations;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
@@ -55,7 +54,6 @@ public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Compa
 			case Q: holder = new QuarterPeriodHolder(get()); break;
 			case M: holder = new MonthPeriodHolder(get()); break;
 			case W: holder = new WeekPeriodHolder(get()); break;
-			case D: holder = new DayPeriodHolder(get()); break;
 			default: throw new IllegalStateException(); // Should never occur
 		}
 		

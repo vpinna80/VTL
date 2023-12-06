@@ -37,6 +37,9 @@ import java.time.temporal.TemporalUnit;
 import java.util.function.Supplier;
 
 import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.DateDomain;
+import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Temporal, Comparable<PeriodHolder<?>>, Serializable, TimeHolder
@@ -108,6 +111,10 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 		}
 	}
 	
+	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate();
+
+	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate();
+
 	protected abstract TemporalUnit smallestUnit();
 
 	@Override

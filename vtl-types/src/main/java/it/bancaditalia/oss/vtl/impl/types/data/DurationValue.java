@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
@@ -40,7 +39,7 @@ public class DurationValue<S extends DurationDomainSubset<S>> extends BaseScalar
 	private static final long serialVersionUID = 1L;
 	public static enum Durations
 	{
-		A(YEARSDS), H(SEMESTERSDS), Q(QUARTERSDS), M(MONTHSDS), W(WEEKSDS), D(DAYSDS);
+		A(YEARSDS), H(SEMESTERSDS), Q(QUARTERSDS), M(MONTHSDS), W(WEEKSDS), D(null);
 
 		private final TimePeriodDomainSubset<?> related;
 

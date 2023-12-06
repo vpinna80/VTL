@@ -33,6 +33,9 @@ import java.time.temporal.TemporalUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.DateDomain;
+import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
@@ -125,5 +128,19 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 	public TimePeriodDomainSubset<?> getDomain()
 	{
 		return WEEKSDS;
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
 	}
 }

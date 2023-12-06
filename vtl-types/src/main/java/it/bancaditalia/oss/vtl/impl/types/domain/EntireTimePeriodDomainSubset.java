@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
@@ -34,16 +33,23 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDomainSubsets<S>> extends EntireDomainSubset<S, TimePeriodDomain> implements TimePeriodDomainSubset<S>
+public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset<S>> extends EntireDomainSubset<S, TimePeriodDomain> implements TimePeriodDomainSubset<S>
 {
 	private static final long serialVersionUID = 1L;
+	@SuppressWarnings("rawtypes")
+	public static final EntireTimePeriodDomainSubset<?> INSTANCE = new EntireTimePeriodDomainSubset();
 	
-	public EntireTimePeriodDomainSubsets()
+	protected EntireTimePeriodDomainSubset()
 	{
 		super(null, "time_period_var");
 	}
 
-	public static class AnyPeriodDomainSubset extends EntireTimePeriodDomainSubsets<AnyPeriodDomainSubset>
+	public static EntireTimePeriodDomainSubset<?> getInstance()
+	{
+		return INSTANCE;
+	}
+	
+	public static class AnyPeriodDomainSubset extends EntireTimePeriodDomainSubset<AnyPeriodDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -56,11 +62,11 @@ public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDo
 		@Override
 		public boolean isAssignableFrom(ValueDomain other)
 		{
-			return other instanceof EntireTimePeriodDomainSubsets;
+			return other instanceof EntireTimePeriodDomainSubset;
 		}
 	}
 	
-	public static class YearsDomainSubset extends EntireTimePeriodDomainSubsets<YearsDomainSubset>
+	public static class YearsDomainSubset extends EntireTimePeriodDomainSubset<YearsDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -73,11 +79,11 @@ public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDo
 		@Override
 		public boolean isAssignableFrom(ValueDomain other)
 		{
-			return other instanceof DaysDomainSubset || other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset || other instanceof SemestersDomainSubset || other instanceof YearsDomainSubset;
+			return other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset || other instanceof SemestersDomainSubset || other instanceof YearsDomainSubset;
 		}
 	};
 	
-	public static class SemestersDomainSubset extends EntireTimePeriodDomainSubsets<SemestersDomainSubset>
+	public static class SemestersDomainSubset extends EntireTimePeriodDomainSubset<SemestersDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -90,11 +96,11 @@ public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDo
 		@Override
 		public boolean isAssignableFrom(ValueDomain other)
 		{
-			return other instanceof DaysDomainSubset || other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset || other instanceof SemestersDomainSubset;
+			return other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset || other instanceof SemestersDomainSubset;
 		}
 	};
 	
-	public static class QuartersDomainSubset extends EntireTimePeriodDomainSubsets<QuartersDomainSubset>
+	public static class QuartersDomainSubset extends EntireTimePeriodDomainSubset<QuartersDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -107,11 +113,11 @@ public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDo
 		@Override
 		public boolean isAssignableFrom(ValueDomain other)
 		{
-			return other instanceof DaysDomainSubset || other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset;
+			return other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset;
 		}
 	};
 	
-	public static class MonthsDomainSubset extends EntireTimePeriodDomainSubsets<MonthsDomainSubset>
+	public static class MonthsDomainSubset extends EntireTimePeriodDomainSubset<MonthsDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -124,11 +130,11 @@ public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDo
 		@Override
 		public boolean isAssignableFrom(ValueDomain other)
 		{
-			return other instanceof DaysDomainSubset || other instanceof MonthsDomainSubset;
+			return other instanceof MonthsDomainSubset;
 		}
 	};
 
-	public static class WeeksDomainSubset extends EntireTimePeriodDomainSubsets<WeeksDomainSubset>
+	public static class WeeksDomainSubset extends EntireTimePeriodDomainSubset<WeeksDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -141,28 +147,11 @@ public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDo
 		@Override
 		public boolean isAssignableFrom(ValueDomain other)
 		{
-			return other instanceof DaysDomainSubset || other instanceof WeeksDomainSubset;
-		}
-	};
-
-	public static class DaysDomainSubset extends EntireTimePeriodDomainSubsets<DaysDomainSubset>
-	{
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		protected DayPeriodHolder getHolder(PeriodHolder<?> holder)
-		{
-			return new DayPeriodHolder(holder);
-		}
-
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return other instanceof DaysDomainSubset;
+			return other instanceof WeeksDomainSubset;
 		}
 	};
 	
-	public EntireTimePeriodDomainSubsets(TimePeriodDomain parentDomain, String defaultVarName)
+	public EntireTimePeriodDomainSubset(TimePeriodDomain parentDomain, String defaultVarName)
 	{
 		super(parentDomain, defaultVarName);
 	}
@@ -186,7 +175,16 @@ public abstract class EntireTimePeriodDomainSubsets<S extends EntireTimePeriodDo
 			throw new VTLCastException(this, value);
 	}
 
-	protected abstract PeriodHolder<?> getHolder(PeriodHolder<?> value);
+	protected PeriodHolder<?> getHolder(PeriodHolder<?> value)
+	{
+		throw new UnsupportedOperationException("Undetermined time period frequency.");
+	}
+
+	@Override
+	public boolean isAssignableFrom(ValueDomain other)
+	{
+		return other instanceof NullDomain || other instanceof TimePeriodDomainSubset; 
+	}
 	
 	@Override
 	public String toString()

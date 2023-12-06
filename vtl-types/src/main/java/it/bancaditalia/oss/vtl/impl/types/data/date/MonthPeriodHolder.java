@@ -21,7 +21,10 @@ package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
 import static java.time.temporal.ChronoUnit.MONTHS;
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
@@ -31,6 +34,10 @@ import java.time.temporal.TemporalUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.DateDomain;
+import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class MonthPeriodHolder extends PeriodHolder<MonthPeriodHolder>
@@ -122,5 +129,17 @@ public class MonthPeriodHolder extends PeriodHolder<MonthPeriodHolder>
 	public TimePeriodDomainSubset<?> getDomain()
 	{
 		return MONTHSDS;
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
+	{
+		return DateValue.of(LocalDate.from(yearMonth.with(firstDayOfMonth())));
+	}
+
+	@Override
+	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	{
+		return DateValue.of(LocalDate.from(yearMonth.with(lastDayOfMonth())));
 	}
 }

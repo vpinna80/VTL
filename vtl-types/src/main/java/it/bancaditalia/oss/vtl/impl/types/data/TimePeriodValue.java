@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
@@ -34,7 +33,6 @@ import java.time.temporal.ValueRange;
 import java.util.HashMap;
 import java.util.Map;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.DayPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
@@ -55,7 +53,6 @@ public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeVa
 	
 	static 
 	{
-		DOMAINS_MAP.put(DayPeriodHolder.class, DAYSDS);
 		DOMAINS_MAP.put(WeekPeriodHolder.class, WEEKSDS);
 		DOMAINS_MAP.put(MonthPeriodHolder.class, MONTHSDS);
 		DOMAINS_MAP.put(QuarterPeriodHolder.class, QUARTERSDS);
@@ -74,7 +71,7 @@ public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeVa
 	public static TimePeriodValue<?> of(String string, String mask)
 	{
 		DateTimeFormatter formatter = VTLTimePatterns.getFormatter(mask);
-		PeriodHolder<?> holder = (PeriodHolder<?>) formatter.parseBest(string, DayPeriodHolder::new, WeekPeriodHolder::new, 
+		PeriodHolder<?> holder = (PeriodHolder<?>) formatter.parseBest(string, WeekPeriodHolder::new, 
 				MonthPeriodHolder::new, QuarterPeriodHolder::new, SemesterPeriodHolder::new, YearPeriodHolder::new);
 		return of(holder);
 	}
@@ -101,8 +98,6 @@ public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeVa
 	
 	public static String getQualifier(Class<? extends PeriodHolder<?>> holder)
 	{
-		if (DayPeriodHolder.class.isAssignableFrom(holder))
-			return "P1D";
 		if (WeekPeriodHolder.class.isAssignableFrom(holder))
 			return "P1W";
 		if (MonthPeriodHolder.class.isAssignableFrom(holder))

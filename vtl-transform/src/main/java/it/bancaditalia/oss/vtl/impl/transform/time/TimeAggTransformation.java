@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
+import static it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation.PeriodDelimiter.FIRST;
+import static it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation.PeriodDelimiter.LAST;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static java.util.stream.Collectors.toSet;
 
@@ -26,7 +28,10 @@ import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Durations;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -47,25 +52,44 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class TimeAggTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
+	
+	public enum PeriodDelimiter
+	{
+		FIRST, LAST
+	}
+
 	private final DataStructureComponent<Measure, ?, ?> periodComponent;
 	private final Durations frequency;
+	private final PeriodDelimiter delimiter;
 
-	public TimeAggTransformation(Transformation operand, String periodTo)
+	public TimeAggTransformation(Transformation operand, String periodTo, String periodFrom, PeriodDelimiter delimiter)
 	{
 		super(operand);
 		frequency = Durations.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
 		TimePeriodDomainSubset<?> periodDomain = frequency.getRelatedTimePeriodDomain();
 		periodComponent = DataStructureComponentImpl.of(periodDomain.getVarName(), Measure.class, periodDomain).asRole(Measure.class);
+		this.delimiter = Utils.coalesce(delimiter, LAST);
 	}
 
 	@Override
 	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		return ((TimeValue<?, ?, ?, ?>) scalar).wrap(frequency);
+		if (scalar instanceof NullValue)
+			return NullValue.instance(scalar.getDomain());
+		if (scalar instanceof DateValue)
+		{
+			TimePeriodValue<?> period = ((DateValue<?>) scalar).wrap(frequency);
+			return delimiter == FIRST ? period.get().startDate() : period.get().endDate();
+		}
+		else if (scalar instanceof TimePeriodValue)
+			return ((TimeValue<?, ?, ?, ?>) scalar).wrap(frequency);
+		else
+			throw new UnsupportedOperationException("time_agg on time values not implemented");
 	}
 
 	@Override
@@ -101,22 +125,13 @@ public class TimeAggTransformation extends UnaryTransformation
 		{
 			DataSetMetadata ds = (DataSetMetadata) value;
 
-//			if (operand == null)
-//			{
-//				Set<DataStructureComponent<Identifier, TimeDomainSubset<TimeDomain>, TimeDomain>> timeIDs = ds.getComponents(Identifier.class, TIMEDS);
-//				if (timeIDs.size() != 1)
-//					throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
-//			}
-//			else
-//			{
-				Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getMeasures().stream()
-						.map(c -> c.asRole(Measure.class))
-						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
-						.collect(toSet());
+			Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getMeasures().stream()
+					.map(c -> c.asRole(Measure.class))
+					.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
+					.collect(toSet());
 				
-				if (timeMeasures.size() != 1)
-					throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, ds);
-//			}
+			if (timeMeasures.size() != 1)
+				throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, ds);
 			
 			return new DataStructureBuilder(ds.getIDs())
 					.addComponent(periodComponent)

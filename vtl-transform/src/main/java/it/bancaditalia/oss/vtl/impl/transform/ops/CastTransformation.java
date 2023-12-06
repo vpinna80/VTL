@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIOD;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODS;
 import static java.util.Collections.singletonMap;
 import static java.util.Locale.ENGLISH;
@@ -142,6 +143,10 @@ public class CastTransformation extends UnaryTransformation
 			return INTEGER;
 		else if (domain instanceof StringDomainSubset && target == NUMBER)
 			return NUMBER;
+		else if (domain instanceof StringDomainSubset && target == TIME_PERIOD)
+			return TIME_PERIOD;
+		else if (domain instanceof StringDomainSubset && target == DATE)
+			return DATE;
 		else if (domain instanceof TimeDomainSubset && target == STRING)
 			return STRING;
 		else if (domain instanceof NullDomain)
@@ -150,8 +155,10 @@ public class CastTransformation extends UnaryTransformation
 			return INTEGER;
 		else if (domain instanceof NumberDomainSubset && target == STRING)
 			return STRING;
+		else if (domain instanceof NumberDomainSubset && target == STRING)
+			return STRING;
 		else
-			throw new UnsupportedOperationException("cast " + domain + " => " + target + " not implemented ");
+			throw new UnsupportedOperationException("cast " + domain + " => " + target.getDomain() + " not implemented ");
 	}
 
 	private DecimalFormat getNumberFormatter()
@@ -172,7 +179,7 @@ public class CastTransformation extends UnaryTransformation
 				return target.getDomain().cast(scalar);
 			else if (scalar instanceof StringValue && target == DATE)
 				return DateValue.of(parseString(scalar.get().toString(), mask));
-			else if (scalar instanceof StringValue && TIME_PERIODS.contains(target))
+			else if (scalar instanceof StringValue && target == TIME_PERIOD)
 				return TimePeriodValue.of(scalar.get().toString(), mask);
 			else if (scalar instanceof DateValue && target == STRING)
 				return StringValue.of(parseTemporal((LocalDate) scalar.get(), mask));
