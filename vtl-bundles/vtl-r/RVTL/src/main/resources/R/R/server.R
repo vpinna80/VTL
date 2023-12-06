@@ -164,7 +164,7 @@ vtlServer <- function(input, output, session) {
   # Select dataset to browse
   output$dsNames<- renderUI({
     selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, 
-                choices = c('', currentSession()$getNodes()), selected ='')
+                choices = c('', sort(unlist(currentSession()$getNodes()))), selected ='')
   })
 
   # render the structure of a dataset
@@ -379,7 +379,7 @@ vtlServer <- function(input, output, session) {
       updateSelectInput(session = session, inputId = 'selectDatasets',
                         label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
       #update list of dataset structures
-      updateSelectInput(inputId = 'structureSelection', label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
+      updateSelectInput(inputId = 'structureSelection', label = 'Select Node', choices = c('', sort(unlist(vtlSession$getNodes()))), selected ='')
     }, error = function(e) {
       msg <- conditionMessage(e)
       trace <- NULL
