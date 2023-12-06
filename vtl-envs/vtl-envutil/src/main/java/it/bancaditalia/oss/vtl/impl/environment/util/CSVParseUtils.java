@@ -23,7 +23,6 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.USE_BIG_DECIMA
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DAYSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -139,8 +138,6 @@ public class CSVParseUtils
 			return new SimpleEntry<>(BOOLEANDS, "");
 		else if (typeName.matches(DATE_DOMAIN_PATTERN))
 			return new SimpleEntry<>(DATEDS, typeName.replaceAll(DATE_DOMAIN_PATTERN, "$1"));
-		else if (typeName.matches(PERIOD_DOMAIN_PATTERN))
-			return new SimpleEntry<>(DAYSDS, typeName.replaceAll(PERIOD_DOMAIN_PATTERN, "$1"));
 		else if (repository.isDomainDefined(typeName))
 			return new SimpleEntry<>(repository.getDomain(typeName), typeName);
 	

@@ -81,7 +81,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 				.collect(toSet());
 		
 		if (missing.size() > 0)
-			throw new VTLMissingComponentsException(missing, dataset);
+			throw new VTLMissingComponentsException(missing, dataset.getIDs());
 
 		Set<DataStructureComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "sub");
 		
