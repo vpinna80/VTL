@@ -121,10 +121,12 @@ public class DataPointBuilder implements Serializable
 	{
 		if (!component.getDomain().isAssignableFrom(value.getDomain()))
 			throw new VTLCastException(component, value);
-		if (component.is(Identifier.class) && value instanceof NullValue)
-			throw new NullPointerException("Null value for identifier " + component);
 		
 		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
+
+		if (value instanceof NullValue && oldValue != null && component.is(Identifier.class)) {
+			throw new NullPointerException("Null value for identifier " + component);
+		}
 		
 		if (oldValue != null && !oldValue.equals(value))
 			throw new IllegalStateException("Different values for " + component + ": " + value.toString() + ", " + oldValue.toString());
