@@ -109,11 +109,11 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet ds, VTLValueMetadata metadata)
 	{
-		final DataSetMetadata structure = ds.getMetadata();
-		final DataStructureComponent<Identifier, ?, ?> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
-		final Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getMetadata().getIDs());
+		DataSetMetadata structure = ds.getMetadata();
+		DataStructureComponent<Identifier, ?, ?> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getMetadata().getIDs());
 		ids.remove(timeID);
-		final Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFiller = ds.getMetadata().getComponents(NonIdentifier.class).stream()
+		Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFiller = ds.getMetadata().getComponents(NonIdentifier.class).stream()
 				.collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) NullValue.instanceFrom(c)));
 	
 		if (mode == ALL)

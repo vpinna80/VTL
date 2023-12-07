@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,29 +29,29 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class NullValue<T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
-		extends BaseScalarValue<T, R, S, D>
+public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
+		extends BaseScalarValue<NullValue<S, D>, String, S, D>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<ValueDomainSubset<? extends ValueDomainSubset<?, ?>, ? extends ValueDomain>, NullValue<?, ?, ?, ?>> INSTANCES = new ConcurrentHashMap<>();
+	private static final Map<ValueDomainSubset<? extends ValueDomainSubset<?, ?>, ? extends ValueDomain>, NullValue<?, ?>> INSTANCES = new ConcurrentHashMap<>();
 	
 	private NullValue(S domain)
 	{
 		super(null, domain);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <T extends NullValue<T, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain, SS extends S> T instance(SS domain)
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instance(S domain)
 	{
-		NullValue<?, ?, ?, ?> nullValue = (T) INSTANCES.get(domain);
+		@SuppressWarnings("unchecked")
+		NullValue<S, D> nullValue = (NullValue<S, D>) INSTANCES.get(domain);
 		if (nullValue != null)
-			return (T) nullValue;
+			return nullValue;
 		nullValue = new NullValue<>(domain);
 		INSTANCES.put(domain, nullValue);
-		return (T) nullValue;
+		return nullValue;
 	}
 
-	public static <T extends NullValue<T, R, S, D>, K extends ComponentRole, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> T instanceFrom(DataStructureComponent<K, S, D> component)
+	public static <K extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instanceFrom(DataStructureComponent<K, S, D> component)
 	{
 		return instance(component.getDomain());
 	}

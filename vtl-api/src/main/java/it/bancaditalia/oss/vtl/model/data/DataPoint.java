@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKeyValue;
@@ -31,6 +30,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
@@ -189,15 +189,21 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.map(Entry::getKey)
 				.filter(c -> c.is(role))
 				.map(c -> c.asRole(role))
-				.collect(SerCollectors.toMapWithValues(this::get));
+				.collect(toMapWithValues(this::get));
 	}
 
-	public default Map<String, ScalarValue<?,?,?,?>> getValuesByNames(Collection<String> names) {
+	/**
+	 * Returns the values for the chosen components having the specified names.
+	 * 
+	 * @param names The names of the component
+	 * @return map with the values for the chosen components
+	 */
+	public default Map<String, ScalarValue<?,?,?,?>> getValuesByNames(Collection<String> names)
+	{
 		return Utils.getStream(keySet())
-				.map(c -> new SimpleEntry<>(c, c.getName()))
-				.filter(entryByValue(names::contains))
-				.map(e -> new SimpleEntry<String, ScalarValue<?,?,?,?>>(e.getValue(), this.getValue(e.getKey())))
-				.collect(entriesToMap());
+				.map(c -> new SimpleEntry<>(c.getName(), c))
+				.filter(entryByKey(names::contains))
+				.collect(Collectors.toMap(Entry::getKey, e -> get(e.getValue())));
 
 	}
 	/**
@@ -206,7 +212,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param <R> the component role type
 	 * @param role role of the components
 	 * @param components collection of components to query
-	 * @return a map with the values for chosen the components having the specified role.
+	 * @return a map with the values for the chosen components having the specified role.
 	 */
 	public default <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<R, ?, ?>> components, Class<R> role)
 	{

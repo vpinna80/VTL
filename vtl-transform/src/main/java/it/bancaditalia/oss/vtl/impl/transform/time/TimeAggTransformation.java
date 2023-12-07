@@ -80,8 +80,8 @@ public class TimeAggTransformation extends UnaryTransformation
 	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		if (scalar instanceof NullValue)
-			return NullValue.instance(scalar.getDomain());
-		if (scalar instanceof DateValue)
+			return scalar;
+		else if (scalar instanceof DateValue)
 		{
 			TimePeriodValue<?> period = ((DateValue<?>) scalar).wrap(frequency);
 			return delimiter == FIRST ? period.get().startDate() : period.get().endDate();
