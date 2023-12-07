@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKeyValue;
@@ -191,6 +192,14 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.collect(SerCollectors.toMapWithValues(this::get));
 	}
 
+	public default Map<String, ScalarValue<?,?,?,?>> getValuesByNames(Collection<String> names) {
+		return Utils.getStream(keySet())
+				.map(c -> new SimpleEntry<>(c, c.getName()))
+				.filter(entryByValue(names::contains))
+				.map(e -> new SimpleEntry<String, ScalarValue<?,?,?,?>>(e.getValue(), this.getValue(e.getKey())))
+				.collect(entriesToMap());
+
+	}
 	/**
 	 * Returns the values for the chosen components having a specified role.
 	 * 

@@ -24,3 +24,5 @@ vtl-launcher/src/main/java/it/bancaditalia/oss/sdmx/util/SdmxConfiguration.java
 .Rproj.user
 vtl-launcher/src/test/java/it/bancaditalia/oss/vtl/it/custom/
 vtl-launcher/src/test/resources/snippet.vtl
+**/.idea
+**/*.iml
