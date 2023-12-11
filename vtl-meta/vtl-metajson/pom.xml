@@ -33,6 +33,9 @@
 		<version>${revision}</version>
 	</parent>
 
+        <name>vtl-metajson</name>
+        <description>Metadata repository based on a JSON file mapping the VTL IM</description>
+
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
