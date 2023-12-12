@@ -92,15 +92,6 @@ themes <- list('',
                'zenburn')
 
 defaultProxy <- function() {
-  config <- J('it.bancaditalia.oss.sdmx.util.Configuration')$getConfiguration()
-  proxy = config$getProperty('http.proxy.default')
-  if(!is.null(proxy) && nchar(proxy) > 0){
-    parts = unlist(strsplit(proxy, split = ':'))
-    if(length(parts) == 2 ){
-      return(list(host = parts[1], port = parts[2], user = config$getProperty('http.auth.user')))
-    }
-  }
-
   return(list(host = '', port = '', user = ''))
 }
 

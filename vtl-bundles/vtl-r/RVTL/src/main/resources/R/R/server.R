@@ -405,7 +405,6 @@ vtlServer <- function(input, output, session) {
     req(input$proxyPort)
     output$conf_output <- renderPrint({
       print(paste('Setting proxy', input$proxyHost, ':', input$proxyPort))
-      J('it.bancaditalia.oss.sdmx.util.Configuration')$setDefaultProxy(input$proxyHost, input$proxyPort, input$proxyUser, input$proxyPassword)
       J("java.lang.System")$setProperty("http.proxyHost", input$proxyHost)
       J("java.lang.System")$setProperty("https.proxyHost", input$proxyHost)
       J("java.lang.System")$setProperty("http.proxyPort", input$proxyPort)

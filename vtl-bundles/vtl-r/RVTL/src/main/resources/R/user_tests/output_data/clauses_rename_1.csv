@@ -1,5 +1,0 @@
-$id2=String,m2=Number,#att1=String
-a,1,att_a
-b,2,att_b
-c,3.4,att_c
-d,,att_d

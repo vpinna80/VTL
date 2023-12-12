@@ -1,9 +1,0 @@
-$Id_1=String,$Id_2=String,Text_1=String,len=Number
-12/14/2001,B,"""Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus a vulputate urna. In fermentum dui eget nisi placerat, et.""",125
-12/15/2001,B,"""Nullam hendrerit molestie congue. Ut lorem lorem, suscipit quis fringilla et, tempus rutrum ex. Etiam scelerisque diam ut sapien.""",129
-12/14/2001,A,"""Donec venenatis condimentum justo, non iaculis erat finibus quis. Aliquam euismod, lacus eget lacinia vehicula, nulla dolor dapibus enim.""",137
-12/15/2001,A,"""Nunc mollis vitae nisi varius tincidunt. Vivamus ut velit lacus. Mauris est urna, volutpat a tincidunt sed, congue ut.""",118
-12/14/2001,D,"""Nunc mollis vitae nisi varius tincidunt. Vivamus ut velit lacus. Mauris est urna, volutpat a tincidunt sed, congue ut.""",118
-12/15/2001,D,"""Vivamus dui arcu, bibendum non mauris nec, venenatis egestas libero. Proin ultrices lectus molestie purus gravida, et bibendum arcu.""",132
-12/14/2001,G,"""Aliquam cursus, tellus ut porta interdum, mi lacus luctus lorem, eget congue neque leo et ante. In commodo pretium.""",115
-12/15/2001,G,"""Praesent vel ante a sem eleifend egestas. """,42

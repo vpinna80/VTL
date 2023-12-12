@@ -1,7 +1,0 @@
-$TIME_PERIOD=Number,Num_1=Number,Num_2=Number,mod_1=Number
-1999,12,3,0
-2000,3,4,3
-2001,-9,5,1
-2002,,10,
-2003,6,4,2
-2004,7,5,2

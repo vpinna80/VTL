@@ -1,9 +1,0 @@
-$Id_1=Number,$Id_2=String,$Id_3=String,Text_1=String,Text_2=String,Text_3=String
-2012,B,Total,"    this is text","ABC def gh","    this is text, world!"
-2011,B,Total,"sample ","  comment!!","sample , world!",
-2012,G,Total,"third example","abc ","third example, world!"
-2011,G,Total," left space",," left space, world!"
-2012,S,Total,"right space ",,"right space , world!"
-2011,S,Total,"                       ","NULLS included above for testing ","                       , world!"
-2012,F,Total," 12-12-2001     ","two spaces  in between"," 12-12-2001     , world!"
-2011,F,Total,"F ","123:) Aa ","F , world!"
