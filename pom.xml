@@ -238,6 +238,10 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
+                <site.version>3.12.1</site.version>
+		<reflow.version>2.3.4</reflow.version>
+		<asciidoctor.version>2.2.4</asciidoctor.version>
+		<restdocs.version>2.0.8.RELEASE</restdocs.version>
 		<bundle.plugin.version>5.1.9</bundle.plugin.version>
 		<aws.version>1.12.261</aws.version>
 		<sf-fs.version>3.0.0-M3</sf-fs.version>
@@ -249,7 +253,7 @@
 		<slf4j.version>2.0.7</slf4j.version>
 		<picocli.version>4.7.5</picocli.version>
 		<log4j.version>2.20.0</log4j.version>
-		<jetty.version>11.0.15</jetty.version>
+		<jetty.version>11.0.18</jetty.version>
 		<jackson.version>2.15.2</jackson.version>
 		<jaxb.version>4.0.1</jaxb.version>
 		<jaxb.runtime.version>4.0.3</jaxb.runtime.version>
@@ -720,27 +724,22 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-site-plugin</artifactId>
-					<version>3.9.0</version>
+					<version>${site.version}</version>
 					<dependencies>
 						<dependency>
 							<groupId>io.github.devacfr.maven.skins</groupId>
 							<artifactId>reflow-velocity-tools</artifactId>
-							<version>2.3.0</version>
+							<version>${reflow.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.asciidoctor</groupId>
 							<artifactId>asciidoctor-maven-plugin</artifactId>
-							<version>1.5.6</version>
+							<version>${asciidoctor.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.springframework.restdocs</groupId>
 							<artifactId>spring-restdocs-asciidoctor</artifactId>
-							<version>2.0.4.RELEASE</version>
-						</dependency>
-						<dependency>
-							<groupId>org.apache.maven.doxia</groupId>
-							<artifactId>doxia-module-markdown</artifactId>
-							<version>1.9.1</version>
+							<version>${restdocs.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.eclipse.jetty</groupId>

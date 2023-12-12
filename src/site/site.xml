@@ -43,7 +43,7 @@
 	<skin>
 		<groupId>io.github.devacfr.maven.skins</groupId>
 		<artifactId>reflow-maven-skin</artifactId>
-		<version>2.3.0</version>
+		<version>${this.reflow.version}</version>
 	</skin>
 
 	<custom>
