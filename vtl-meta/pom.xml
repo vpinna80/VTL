@@ -39,17 +39,11 @@
 	
 	<profiles>
 		<profile>
-      		<id>with-aws</id>
-      		<modules>
-				<module>vtl-metaaws</module>
-      		</modules>
-	    </profile>
-		<profile>
-      		<id>with-sdmx</id>
-      		<modules>
-				<module>vtl-metasdmx</module>
-      		</modules>
-	    </profile>
+			<id>with-sdmx</id>
+			<modules>
+			<module>vtl-metasdmx</module>
+			</modules>
+		</profile>
 	</profiles>
 	
 	<dependencyManagement>
@@ -57,11 +51,6 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-metabase</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-metaaws</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

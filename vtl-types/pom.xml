@@ -24,7 +24,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>vtl-types</artifactId>
-	<packaging>bundle</packaging>
+	<packaging>jar</packaging>
 
 	<parent>
 		<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -96,11 +96,6 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<extensions>true</extensions>
 			</plugin>
 		</plugins>
 	</build>

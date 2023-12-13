@@ -32,14 +32,14 @@
 
 	<name>VTL Engine &amp; Editor</name>
 	<description>VTL engine end editor for VTL 2.x specification</description>
-	<url>${site-url}</url>
+	<url>${siteUrl}</url>
 
 	<inceptionYear>2020</inceptionYear>
 
 	<licenses>
 		<license>
 			<name>European Union Public Licence v1.2 (EUPL)</name>
-			<url>${license-url}</url>
+			<url>${licenseUrl}</url>
 		</license>
 	</licenses>
 
@@ -66,14 +66,14 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:${scm-url}.git</connection>
-		<developerConnection>scm:git:${scm-url}.git</developerConnection>
-		<url>${scm-url}</url>
+		<connection>scm:git:${scmUrl}.git</connection>
+		<developerConnection>scm:git:${scmUrl}.git</developerConnection>
+		<url>${scmUrl}</url>
 	</scm>
 
 	<issueManagement>
 		<system>GitHub</system>
-		<url>${scm-url}/issues</url>
+		<url>${scmUrl}/issues</url>
 	</issueManagement>
 
 	<profiles>
@@ -242,8 +242,7 @@
 		<reflow.version>2.3.4</reflow.version>
 		<asciidoctor.version>2.2.4</asciidoctor.version>
 		<restdocs.version>2.0.8.RELEASE</restdocs.version>
-		<bundle.plugin.version>5.1.9</bundle.plugin.version>
-		<aws.version>1.12.261</aws.version>
+		<doxia.markdown.version>1.12.0</doxia.markdown.version>
 		<sf-fs.version>3.0.0-M3</sf-fs.version>
 		<scala.version>2.13.11</scala.version>
 		<scala.compat.version>2.13</scala.compat.version>
@@ -253,7 +252,7 @@
 		<slf4j.version>2.0.7</slf4j.version>
 		<picocli.version>4.7.5</picocli.version>
 		<log4j.version>2.20.0</log4j.version>
-		<jetty.version>11.0.18</jetty.version>
+		<jetty.version>10.0.18</jetty.version>
 		<jackson.version>2.15.2</jackson.version>
 		<jaxb.version>4.0.1</jaxb.version>
 		<jaxb.runtime.version>4.0.3</jaxb.runtime.version>
@@ -268,9 +267,9 @@
 		<antlr4.version>4.8</antlr4.version>
 		<io.sdmx.version>1.0.48</io.sdmx.version>
 		<guava.version>30.1.1-jre</guava.version>
-		<scm-url>https://github.com/vpinna80/VTL</scm-url>
-		<site-url>https://vpinna80.github.io/VTL</site-url>
-		<license-url>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</license-url>
+		<scmUrl>https://github.com/vpinna80/VTL</scmUrl>
+		<siteUrl>https://vpinna80.github.io/VTL</siteUrl>
+		<licenseUrl>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</licenseUrl>
 	</properties>
 
 	<reporting>
@@ -326,7 +325,7 @@
 	<distributionManagement>
 		<site>
 			<id>site</id>
-			<url>${site-url}</url>
+			<url>${siteUrl}</url>
 		</site>
 		<repository>
 			<id>ossrh</id>
@@ -553,11 +552,6 @@
 				<version>3.4.1</version>
 			</dependency>
 			<dependency>
-				<groupId>com.amazonaws</groupId>
-				<artifactId>aws-java-sdk-s3</artifactId>
-				<version>${aws.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.scala-lang</groupId>
 				<artifactId>scala-library</artifactId>
 				<version>${scala.version}</version>
@@ -740,6 +734,11 @@
 							<groupId>org.springframework.restdocs</groupId>
 							<artifactId>spring-restdocs-asciidoctor</artifactId>
 							<version>${restdocs.version}</version>
+						</dependency>
+						<dependency>
+							<groupId>org.apache.maven.doxia</groupId>
+							<artifactId>doxia-module-markdown</artifactId>
+							<version>${doxia.markdown.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.eclipse.jetty</groupId>
@@ -974,11 +973,6 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.apache.felix</groupId>
-					<artifactId>maven-bundle-plugin</artifactId>
-					<version>${bundle.plugin.version}</version>
-				</plugin>
-				<plugin>
 					<groupId>org.eclipse.tycho</groupId>
 					<artifactId>tycho-maven-plugin</artifactId>
 					<version>${tycho.version}</version>
@@ -1052,8 +1046,7 @@
 					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
 					<asciidoc>
 						<attributes>
-							<rest-snippets>
-								${project.basedir}/vtl-bundles/vtl-rest/target/generated-snippets</rest-snippets>
+							<snippets>${project.basedir}/vtl-bundles/vtl-rest/target/generated-snippets</snippets>
 						</attributes>
 					</asciidoc>
 				</configuration>

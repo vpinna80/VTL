@@ -26,7 +26,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>vtl-metabase</artifactId>
-	<packaging>bundle</packaging>
+	<packaging>jar</packaging>
 
 	<parent>
 		<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -89,11 +89,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<extensions>true</extensions>
 			</plugin>
 		</plugins>
 	</build>

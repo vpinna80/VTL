@@ -38,12 +38,6 @@
 
 	<profiles>
 		<profile>
-			<id>with-aws</id>
-			<modules>
-				<module>vtl-confaws</module>
-			</modules>
-		</profile>
-		<profile>
 			<id>default</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
@@ -59,11 +53,6 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-confman</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-confaws</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>

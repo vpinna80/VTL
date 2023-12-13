@@ -68,12 +68,6 @@
 				<module>vtl-eclipse</module>
 			</modules>
 		</profile>
-		<profile>
-			<id>with-aws</id>
-			<modules>
-				<module>vtl-sparkaws</module>
-			</modules>
-		</profile>
 	</profiles>
 
 	<modules>

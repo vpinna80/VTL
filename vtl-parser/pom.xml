@@ -25,7 +25,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>vtl-parser</artifactId>
-	<packaging>bundle</packaging>
+	<packaging>jar</packaging>
 
 	<parent>
 		<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -118,11 +118,6 @@
 				<configuration>
 					<excludePackageNames>it.bancaditalia.oss.vtl.grammar</excludePackageNames>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<extensions>true</extensions>
 			</plugin>
 		</plugins>
 	</build>

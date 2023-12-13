@@ -91,19 +91,6 @@
 			</dependencies>
 		</profile>
 		<profile>
-			<id>with-aws</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-metaaws</artifactId>
-				</dependency>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confaws</artifactId>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
 			<id>with-sdmx</id>
 			<dependencies>
 				<dependency>
