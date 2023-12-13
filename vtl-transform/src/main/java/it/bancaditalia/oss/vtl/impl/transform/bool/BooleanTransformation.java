@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
@@ -29,6 +31,7 @@ import java.util.function.BinaryOperator;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -46,6 +49,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
@@ -53,21 +57,21 @@ public class BooleanTransformation extends BinaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public static enum BooleanBiOperator implements BinaryOperator<ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>>
+	public static enum BooleanBiOperator implements BinaryOperator<ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain>>
 	{
-		AND(BooleanValue::and), 
-		OR(BooleanValue::or), 
-		XOR(BooleanValue::xor);
+		AND(BooleanBiOperator::and), 
+		OR(BooleanBiOperator::or), 
+		XOR(BooleanBiOperator::xor);
 
-		private final BinaryOperator<ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> function;
+		private final BinaryOperator<ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain>> function;
 
-		private BooleanBiOperator(BinaryOperator<ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>> function)
+		private BooleanBiOperator(BinaryOperator<ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain>> function)
 		{
 			this.function = function;
 		}
 
 		@Override
-		public ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> left, ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> right)
+		public ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> apply(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
 		{
 			return function.apply(left, right);
 		}
@@ -76,6 +80,38 @@ public class BooleanTransformation extends BinaryTransformation
 		public String toString()
 		{
 			return name().toLowerCase();
+		}
+		
+		public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> and(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
+		{
+			if (left == FALSE || right == FALSE)
+				return FALSE;
+			else if (left instanceof NullValue || right instanceof NullValue)
+				return BooleanValue.NULL;
+			else 
+				return TRUE; 
+		}
+		
+		public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> or(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
+		{
+			if (left == TRUE || right == TRUE)
+				return TRUE;
+			else if (left instanceof NullValue || right instanceof NullValue)
+				return BooleanValue.of(null);
+			else 
+				return FALSE; 
+		}
+		
+		public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> xor(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
+		{
+			if (left == TRUE && right == TRUE)
+				return FALSE;
+			else if (left == TRUE || right == TRUE)
+				return TRUE;
+			else if (left instanceof NullValue || right instanceof NullValue)
+				return BooleanValue.of(null);
+			else 
+				return FALSE; 
 		}
 	}
 

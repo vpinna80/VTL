@@ -56,9 +56,9 @@ public class BooleanTransformationTest
 //		BOOLEAN_DATAPOINTS_3(new Boolean[] { true, false, false, false, true, null });
 
 		return Stream.of(
-				Arguments.of(AND, new Boolean[] { true, false, null, false, false, null }),
-				Arguments.of(OR, new Boolean[] { true, true, null, false, true, null }), 
-				Arguments.of(XOR, new Boolean[] { false, true, null, false, true, null }) 
+				Arguments.of(AND, new Boolean[] { true, false, false, false, false, null }),
+				Arguments.of(OR, new Boolean[] { true, true, null, false, true, true }), 
+				Arguments.of(XOR, new Boolean[] { false, true, null, false, true, true }) 
 			);
 	}
 	

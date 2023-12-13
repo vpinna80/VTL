@@ -39,6 +39,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
+import it.bancaditalia.oss.vtl.util.SerComparator;
 import it.bancaditalia.oss.vtl.util.SerToIntBiFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -57,7 +58,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @return the Comparator instance
 	 */
 	@SafeVarargs
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Comparator<DataPoint> compareBy(DataStructureComponent<Identifier, ?, ?>... components)
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> SerComparator<DataPoint> compareBy(DataStructureComponent<Identifier, ?, ?>... components)
 	{
 		SerToIntBiFunction<DataPoint, DataPoint> comparator = null;
 		for (DataStructureComponent<Identifier, ?, ?> component: components)
@@ -80,7 +81,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				};
 			}
 		};
-		return (Comparator<DataPoint> & Serializable) comparator::applyAsInt;
+		return comparator::applyAsInt;
 	}
 	
 	public static SerBinaryOperator<DataPoint> combiner(SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)

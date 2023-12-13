@@ -19,8 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
-import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -46,7 +47,7 @@ public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R e
 	public BaseScalarValue(R value, S domain)
 	{
 		this.value = value;
-		this.domain = Objects.requireNonNull(domain, "Domain cannot be null");
+		this.domain = requireNonNull(domain, "Domain cannot be null");
 		this.hashCode = 31 + (value == null ? 0 : value.hashCode());
 	}
 
@@ -98,9 +99,7 @@ public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R e
 	@Override
 	public final boolean equals(Object obj)
 	{
-		if (obj == null)
-			return false;
-		if (!(obj instanceof BaseScalarValue))
+		if (obj == null || !(obj instanceof BaseScalarValue))
 			return false;
 		
 		BaseScalarValue<?, ?, ?, ?> other = (BaseScalarValue<?, ?, ?, ?>) obj;

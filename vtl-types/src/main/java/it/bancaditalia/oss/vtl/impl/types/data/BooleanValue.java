@@ -32,8 +32,7 @@ public class BooleanValue<S extends BooleanDomainSubset<S>> extends BaseScalarVa
 	private static final long serialVersionUID = 1L;
 	public static final BooleanValue<EntireBooleanDomainSubset> FALSE = new BooleanValue<EntireBooleanDomainSubset>(Boolean.FALSE, BOOLEANDS);
 	public static final BooleanValue<EntireBooleanDomainSubset> TRUE = new BooleanValue<EntireBooleanDomainSubset>(Boolean.TRUE, BOOLEANDS);
-	
-	private static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> NULLINSTANCE = NullValue.instance(BOOLEANDS);
+	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> NULL = NullValue.instance(BOOLEANDS);
 	
 
 	private BooleanValue(Boolean value, S domain)
@@ -43,7 +42,7 @@ public class BooleanValue<S extends BooleanDomainSubset<S>> extends BaseScalarVa
 
 	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> of(Boolean value)
 	{
-		return value == null ? NULLINSTANCE : value ? TRUE : FALSE;
+		return value == null ? NULL : value ? TRUE : FALSE;
 	}
 	
 	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> of(boolean value)
@@ -53,35 +52,7 @@ public class BooleanValue<S extends BooleanDomainSubset<S>> extends BaseScalarVa
 	
 	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> not(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> value)
 	{
-		return value instanceof NullValue ? NULLINSTANCE : ((Boolean) value.get() ? FALSE : TRUE);
-	}
-	
-	public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> and(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
-	{
-		if (left instanceof NullValue || right instanceof NullValue)
-			return NULLINSTANCE;
-		else if (left == FALSE || right == FALSE)
-			return FALSE;
-		else 
-			return TRUE; 
-	}
-	
-	public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> or(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
-	{
-		if (left instanceof NullValue || right instanceof NullValue)
-			return of(null);
-		else if (left == TRUE || right == TRUE)
-			return TRUE;
-		else 
-			return FALSE; 
-	}
-	
-	public static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> xor(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> left, ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> right)
-	{
-		if (left instanceof NullValue || right instanceof NullValue)
-			return of(null);
-		else 
-			return left != right ? TRUE : FALSE;
+		return value instanceof NullValue ? NULL : ((Boolean) value.get() ? FALSE : TRUE);
 	}
 	
 	@Override
