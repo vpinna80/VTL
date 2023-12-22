@@ -238,12 +238,13 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
-                <site.version>3.12.1</site.version>
+		<site.version>3.12.1</site.version>
 		<reflow.version>2.3.4</reflow.version>
 		<asciidoctor.version>2.2.4</asciidoctor.version>
 		<restdocs.version>2.0.8.RELEASE</restdocs.version>
 		<doxia.markdown.version>1.12.0</doxia.markdown.version>
 		<sf-fs.version>3.0.0-M3</sf-fs.version>
+		<jacoco.version>0.8.11</jacoco.version>
 		<scala.version>2.13.11</scala.version>
 		<scala.compat.version>2.13</scala.compat.version>
 		<scala-compiler.version>4.8.1</scala-compiler.version>
@@ -270,6 +271,8 @@
 		<scmUrl>https://github.com/vpinna80/VTL</scmUrl>
 		<siteUrl>https://vpinna80.github.io/VTL</siteUrl>
 		<licenseUrl>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</licenseUrl>
+		<jacoco.ut.file>${project.build.directory}/jacoco-ut.exec</jacoco.ut.file>
+		<jacoco.it.file>${project.build.directory}/jacoco-it.exec</jacoco.it.file>
 	</properties>
 
 	<reporting>
@@ -809,19 +812,31 @@
 				<plugin>
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.5</version>
+					<version>${jacoco.version}</version>
 					<executions>
 						<execution>
-							<phase>test-compile</phase>
+							<id>test</id>
 							<goals>
 								<goal>prepare-agent</goal>
 							</goals>
 							<configuration>
-								<inclNoLocationClasses>false</inclNoLocationClasses>
-								<includes>it.bancaditalia.oss.vtl.*</includes>
+								<destFile>${jacoco.ut.file}</destFile>
+							</configuration>
+						</execution>
+						<execution>
+							<id>it-test</id>
+							<phase>pre-integration-test</phase>
+							<goals>
+								<goal>prepare-agent-integration</goal>
+							</goals>
+							<configuration>
+								<destFile>${jacoco.it.file}</destFile>
 							</configuration>
 						</execution>
 					</executions>
+					<configuration>
+						<inclNoLocationClasses>false</inclNoLocationClasses>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -1085,21 +1100,6 @@
 						</goals>
 						<configuration>
 							<propertyPrefix>version</propertyPrefix>
-						</configuration>
-					</execution>
-					<execution>
-						<id>gen-wheel-version</id>
-						<phase>pre-site</phase>
-						<goals>
-							<goal>regex-property</goal>
-						</goals>
-						<configuration>
-							<name>wheel-version</name>
-							<value>
-								${version.majorVersion}.${version.minorVersion}.${version.qualifier}${version.incrementalVersion}</value>
-							<regex>SNAPSHOT</regex>
-							<replacement>dev</replacement>
-							<failIfNoMatch>false</failIfNoMatch>
 						</configuration>
 					</execution>
 				</executions>
