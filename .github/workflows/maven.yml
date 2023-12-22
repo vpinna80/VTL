@@ -84,6 +84,7 @@ jobs:
       run: 'mvn "-Dr.runtime.version=${{ matrix.r }}"  -P with-r --file pom.xml "-Dgpg.skip=true" verify'
 
     - name: Run codacy-coverage-reporter
-      uses: codacy/codacy-coverage-reporter-action@master
+      uses: codacy/codacy-coverage-reporter-action@v1
       with:
         project-token: f795441a8a9a4071ae00ab0485c413f0
+        coverage-reports: vtl-bundles/vtl-coverage/target/site/jacoco-aggregate/jacoco.xml
