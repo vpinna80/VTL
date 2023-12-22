@@ -47,10 +47,6 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-envutil</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-metasdmx</artifactId>
 			<version>${project.version}</version>
 		</dependency>

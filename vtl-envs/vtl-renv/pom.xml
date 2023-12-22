@@ -47,11 +47,11 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-types</artifactId>
+			<artifactId>vtl-envbase</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-envutil</artifactId>
+			<artifactId>vtl-types</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.rosuda.JRI</groupId>

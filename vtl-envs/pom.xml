@@ -59,11 +59,6 @@
 		<dependencies>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-envutil</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-envbase</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -86,7 +81,6 @@
 	</dependencyManagement>
 
 	<modules>
-		<module>vtl-envutil</module>
 		<module>vtl-envbase</module>
 	</modules>
 </project>

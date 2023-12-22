@@ -47,7 +47,7 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-envutil</artifactId>
+			<artifactId>vtl-envbase</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.spark</groupId>
