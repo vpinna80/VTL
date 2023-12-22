@@ -1,9 +1,9 @@
 [![License](https://img.shields.io/badge/license-EUPL-green)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
-![VTL Engine builds](https://github.com/vpinna80/VTL/workflows/VTL%20Engine%20builds/badge.svg)
+![VTL E&E builds](https://github.com/vpinna80/VTL/actions/workflows/maven.yml/badge.svg)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/c20a3a19b6744db191d9dd1b1b3a8cbf)](https://www.codacy.com/manual/valentino.pinna/VTL?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=vpinna80/VTL&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/c20a3a19b6744db191d9dd1b1b3a8cbf)](https://app.codacy.com/gh/vpinna80/VTL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/vpinna80/VTL?label=github-release)
 ![Maven metadata URL](https://img.shields.io/maven-metadata/v?label=maven-release&metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fit%2Fbancaditalia%2Foss%2Fvtl%2Fvtl%2Fmaven-metadata.xml)
-![CRAN/METACRAN](https://img.shields.io/cran/v/RVTL?label=cran-release)
 
 # VTL E&E
 
@@ -47,9 +47,14 @@ Each artifact will be generated inside the `target` folder of each module.
 The optional maven profiles allow you to build any of the provided VTL bundles for
 the different front-ends capable of communicating with the VTL engine.
 
+### Spark support
+
 If you want to build with support for the Spark evironment, activate the 
-`with-spark` maven profile. Each bundle created with this build will contain the 
-Spark environment.
+`with-spark` maven profile. Each bundle listed below created while this profile is
+active will contain the Spark environment (Note that the Spark libraries are not
+included in the bundle and must be made available at runtime in your CLASSPATH).
+
+### SDMX REST support
 
 If you want to build with support for SDMX web services, activate the
 `with-sdmx` maven profile. Each bundle created with this build will contain the support
@@ -58,31 +63,47 @@ for interacting with a SDMX registry. Note that this requires that the
 in the local repository, because the artifacts are distributed only in source form 
 by the Bank of International Settlements.
 
+### Jupyter notebook kernel
+
+If you want to build the Jupyter notebook kernel along with the engine, also activate the 
+`with-jupyter` maven profile. The java-native jupyter kernel will be packaged as an
+executable jar that can be installed into your jupyter with the command
+`java -jar vtl-jupyter-x.x.x-complete.jar`. Please make sure that your Python environment
+is able to launch java, and that java version requirement is satisfied.
+
+### RVTL and VTL Studio
+
 If you want to build the editor and the R package along with the engine, activate the 
-`with-r` maven profile. You may need to configure your internet connection in 
-Maven settings; you also need to install the REngine.jar artifact into your local repository.
-It can be done with the following command:
+`with-r` maven profile. Before you do that, make sure to install `rJava` package in your 
+R installation. Then you may need to configure your internet connection in Maven settings
+in order to download Node.js and npm packages. You will also need to install `REngine.jar`
+into your local maven repository. It can be done with the following command:
 
 ```
+Un*x:
 mvn install:install-file -DgroupId=org.rosuda.JRI -DartifactId=Rengine -Dversion=$R_VERSION file=$R_LIBRARY/java/jri/REngine.jar
+
+Windows
+mvn install:install-file -DgroupId=org.rosuda.JRI -DartifactId=Rengine -Dversion=%R_VERSION% file=%R_LIBRARY%/java/jri/REngine.jar
 ```
 
+Please set the environment variables `R_VERSION` and `R_LIBRARY` accordingly
+to your environment settings, or directly replace them in the command above.
 The R package, ready for installation in R (with install.packages), 
-will be located there. Moreover, each artifact you build will have support for the R 
-environment.
+will be located there. Moreover, each bundle created while this profile is
+active will contain support for the R environment.
+
+### Web API for VTL Engine
 
 If you want to build the RESTful web services for VTL along with the engine, activate the
 `with-rest` maven profile. A WAR file ready to be deployed in your application server
 will be packaged during the `package` maven lifecycle phase in your build.
 
+### Command-line interface for VTL Engine
+
 If you want to build the command line interface to VTL along with the engine, activate the
 `with-cli` maven profile. An executable JAR file ready to be deployed in your platform 
 will be packaged during the `package` maven lifecycle phase in your build.
-
-If you want to build the Jupyter notebook kernel along with the engine, also activate the 
-`with-jupyter` maven profile. The java-native jupyter kernel will be packaged as an
-executable jar that can be installed into your jupyter with the command
-`java -jar vtl-jupyter-x.x.x-complete.jar`.
 
 ## Project Status
 
@@ -144,41 +165,3 @@ The following table shows the current implementation status:
 | timeagg                     | &#10008;  | &#10008;  | &#10008;  |
 | current_date                | &#10004;  |           | &#10004;  |
 | union                       |           | &#10004;  |           |
-| intersect                   |           | &#10004;  |           |
-| setdiff                     |           | &#10004;  |           |
-| symdiff                     |           | &#10004;  |           |
-| hierarchy                   |           | &#10004;  |           |
-| count                       |           | &#10004;  | &#10004;  |
-| min                         |           | &#10004;  | &#10004;  |
-| max                         |           | &#10004;  | &#10004;  |
-| median                      |           | &#10004;  | &#10004;  |
-| sum                         |           | &#10004;  | &#10004;  |
-| avg                         |           | &#10004;  | &#10004;  |
-| stddev_pop                  |           | &#10004;  | &#10004;  |
-| stddev_samp                 |           | &#10004;  | &#10004;  |
-| var_pop                     |           | &#10004;  | &#10004;  |
-| var_samp                    |           | &#10004;  | &#10004;  |
-| first_value                 |           | &#10004;  | &#10004;  |
-| last_value                  |           | &#10004;  | &#10004;  |
-| lag                         |           | &#10004;  | &#10004;  |
-| lead                        |           | &#10004;  | &#10004;  |
-| rank                        |           | &#10004;  | &#10004;  |
-| ratio_to_report             |           | &#10004;  | &#10004;  |
-| check_datapoint             |           | &#10008;  |           |
-| check_hierarchy             |           | &#10008;  |           |
-| check                       |           | &#10004;  |           |
-| if-then-else                | &#10008;  | &#10004;  | &#10004;  |
-| nvl                         | &#10008;  |           | &#10004;  |
-| filter                      |           |           | &#10004;  |
-| calc                        |           |           | &#10004;  |
-| aggr                        |           |           | &#10004;  |
-| keep/drop                   |           |           | &#10004;  |
-| rename                      |           |           | &#10004;  |
-| pivot                       |           |           | &#10004;  |
-| unpivot                     |           |           | &#10004;  |
-| sub                         |           |           | &#10004;  |
-## Copyright notice
-
-This software is a copyright of Bank of Italy, inc. 2019.<br/>
-The software is distributed under the European Public Licence v1.2.<br/>
-This software is optimized using [JProfiler](https://www.ej-technologies.com/products/jprofiler/overview.html).
