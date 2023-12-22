@@ -495,19 +495,19 @@ public class SparkDataSet extends AbstractDataSet
 				Serializable[] source = (Serializable[]) kryo.readClassAndObject(new Input((byte[]) newV));
 				result = Arrays.stream(source)
 						.map(v -> v instanceof byte[] ? kryo.readClassAndObject(new Input((byte[]) v)) : v) 
-						.map(v -> getScalarFor(v, comp))
+						.map(v -> getScalarFor(comp, v))
 						.collect(toList());
 			}
 			else if (newV instanceof Seq)
 			{
 				@SuppressWarnings("unchecked")
 				SeqOps<Object, Seq<Object>, Seq<Object>> ravV = (SeqOps<Object, Seq<Object>, Seq<Object>>) newV;
-				result = asJava(ravV.map(serialized -> getScalarFor(serialized, comp)));
+				result = asJava(ravV.map(serialized -> getScalarFor(comp, serialized)));
 			}
 			else
-				result = getScalarFor(newV, comp);
+				result = getScalarFor(comp, newV);
 			
-			Collection<ScalarValue<?, ?, ?, ?>> finished = finisher.apply((TT) result, getScalarFor(oldV, comp));
+			Collection<ScalarValue<?, ?, ?, ?>> finished = finisher.apply((TT) result, getScalarFor(comp, oldV));
 		
 			return finished.stream()
 					.map(ScalarValue::get)
@@ -544,7 +544,7 @@ public class SparkDataSet extends AbstractDataSet
 			
 			MapGroupsFunction<Row, Row, Row> aggregator = (keyRow, s) -> {
 					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = keys.stream()
-						.collect(toMapWithValues(c -> getScalarFor(keyRow.getAs(c.getName()), c)));
+						.collect(toMapWithValues(c -> getScalarFor(c, keyRow.getAs(c.getName()))));
 					return StreamSupport.stream(new SparkSpliterator(s, bufferSize), !Utils.SEQUENTIAL)
 							.map(encoder::decode)
 							.collect(collectingAndThen(groupCollector, r -> resultEncoder.encode(finisher.apply(r, keyValues))));
@@ -603,7 +603,7 @@ public class SparkDataSet extends AbstractDataSet
 					// decode Row[] from the UDF into List<DataPoint>
 					.map(group -> Arrays.stream(group)
 						.map(array -> IntStream.range(0, array.length - 1)
-							.mapToObj(i -> new SimpleEntry<>(resultComponents.get(i), getScalarFor(array[i], resultComponents.get(i))))
+							.mapToObj(i -> new SimpleEntry<>(resultComponents.get(i), getScalarFor(resultComponents.get(i), array[i])))
 							.collect(toDataPoint((Lineage) array[array.length - 1], getMetadata())))
 						.collect(toList()))
 					.map(out -> (T) out);
@@ -673,7 +673,7 @@ public class SparkDataSet extends AbstractDataSet
 
 			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyMap = new HashMap<>();
 			for (int i = 0; i < keyRow.size(); i++)
-				keyMap.put(sortedKeys[i], getScalarFor(keyRow.get(i), sortedKeys[i]));
+				keyMap.put(sortedKeys[i], getScalarFor(sortedKeys[i], keyRow.get(i)));
 			
 			// Each group is mapped to an array of rows where each row is an array of values
 			Serializable[][] array = ((Collection<?>) finisher.apply(before, keyMap)).stream()

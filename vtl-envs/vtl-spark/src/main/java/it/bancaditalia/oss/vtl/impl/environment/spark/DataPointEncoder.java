@@ -103,7 +103,7 @@ public class DataPointEncoder implements Serializable
 	{
 		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length];
 		for (int i = 0; i < components.length; i++)
-			vals[i] = getScalarFor(row.get(i + start), components[i]);
+			vals[i] = getScalarFor(components[i], row.get(i + start));
 		
 		Object lineage = row.get(components.length + start);
 		if (lineage instanceof byte[])

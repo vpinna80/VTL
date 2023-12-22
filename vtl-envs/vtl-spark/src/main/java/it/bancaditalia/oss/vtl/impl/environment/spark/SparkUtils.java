@@ -136,7 +136,7 @@ public class SparkUtils
 		return DataStructureComponentImpl.of(field.name(), role, domain);
 	}
 
-	public static ScalarValue<?, ?, ?, ?> getScalarFor(Object serialized, DataStructureComponent<?, ?, ?> component)
+	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Object serialized)
 	{
 		SerFunction<Object, ScalarValue<?, ?, ?, ?>> builder = null;
 		ValueDomainSubset<?, ?> domain;

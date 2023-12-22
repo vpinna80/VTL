@@ -138,7 +138,7 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 	@Override
 	public A reduce(A acc, Serializable value)
 	{
-		coll.accumulator().accept(acc, SparkUtils.getScalarFor(value, oldComp));
+		coll.accumulator().accept(acc, SparkUtils.getScalarFor(oldComp, value));
 		return acc;
 	}
 
