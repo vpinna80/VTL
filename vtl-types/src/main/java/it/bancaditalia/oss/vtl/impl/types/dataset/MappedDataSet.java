@@ -25,33 +25,44 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public final class MappedDataSet extends AbstractDataSet
 {
-	private final DataSet source;
-	private final SerUnaryOperator<DataPoint> operator;
 	private static final long serialVersionUID = 1L;
+	
+	private final DataSet source;
+	private final SerFunction<? super DataPoint,? extends Map<? extends DataStructureComponent<?,?,?>,? extends ScalarValue<?,?,?,?>>> operator;
+	private final SerFunction<? super DataPoint, ? extends Lineage> lineageOperator;
 
-	public MappedDataSet(DataSetMetadata dataStructure, DataSet source, SerUnaryOperator<DataPoint> operator)
+	public MappedDataSet(DataSetMetadata metadata, DataSet source, SerFunction<? super DataPoint,? extends Lineage> lineageOperator, SerFunction<? super DataPoint,? extends Map<? extends DataStructureComponent<?,?,?>,? extends ScalarValue<?,?,?,?>>> operator)
 	{
-		super(dataStructure);
+		super(metadata);
 		this.source = source;
+		this.lineageOperator = lineageOperator;
 		this.operator = operator;
 	}
 
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		return source.stream().map(operator);
+		return source.stream().map(this::mapper);
+	}
+
+	private DataPoint mapper(DataPoint dp)
+	{
+		return new DataPointBuilder(dp.getValues(Identifier.class))
+					.addAll(operator.apply(dp))
+					.build(lineageOperator.apply(dp), dataStructure);
 	}
 
 	@Override
@@ -60,6 +71,6 @@ public final class MappedDataSet extends AbstractDataSet
 			SerCollector<DataPoint, A, TT> groupCollector,
 			SerBiFunction<TT, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
 	{
-		return source.streamByKeys(keys, filter, mapping(operator, groupCollector), finisher);
+		return source.streamByKeys(keys, filter, mapping(this::mapper, groupCollector), finisher);
 	}
 }

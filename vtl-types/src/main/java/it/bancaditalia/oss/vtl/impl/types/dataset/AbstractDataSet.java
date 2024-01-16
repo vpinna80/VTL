@@ -82,7 +82,7 @@ public abstract class AbstractDataSet implements DataSet
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
-	private final DataSetMetadata dataStructure;
+	protected final DataSetMetadata dataStructure;
 
 	protected AbstractDataSet(DataSetMetadata dataStructure)
 	{
@@ -197,11 +197,7 @@ public abstract class AbstractDataSet implements DataSet
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
-		SerUnaryOperator<DataPoint> extendingOperator = dp -> new DataPointBuilder(dp.getValues(Identifier.class))
-				.addAll(operator.apply(dp))
-				.build(lineageOperator.apply(dp), metadata);
-		
-		return new MappedDataSet(metadata, this, extendingOperator);
+		return new MappedDataSet(metadata, this, lineageOperator, operator);
 	}
 
 	@Override
