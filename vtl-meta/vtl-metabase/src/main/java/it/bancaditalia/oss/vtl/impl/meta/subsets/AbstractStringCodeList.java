@@ -22,6 +22,10 @@ package it.bancaditalia.oss.vtl.impl.meta.subsets;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
 import java.io.Serializable;
+import java.util.TreeSet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList.StringCodeItemImpl;
@@ -37,6 +41,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 public abstract class AbstractStringCodeList implements StringEnumeratedDomainSubset<AbstractStringCodeList, StringCodeItemImpl, String>, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractStringCodeList.class);
 
 	public class StringCodeItemImpl extends StringValue<StringCodeItemImpl, AbstractStringCodeList> implements StringCodeItem<StringCodeItemImpl, String, AbstractStringCodeList>
 	{
@@ -117,6 +122,8 @@ public abstract class AbstractStringCodeList implements StringEnumeratedDomainSu
 			StringCodeItemImpl item = new StringCodeItemImpl((String) value.get());
 			if (getCodeItems().contains(item))
 				return item;
+
+			LOGGER.warn("Code {} was not found on codelist {}:{}", value.get(), name, new TreeSet<>(getCodeItems()));
 		}
 
 		throw new VTLCastException(this, value);

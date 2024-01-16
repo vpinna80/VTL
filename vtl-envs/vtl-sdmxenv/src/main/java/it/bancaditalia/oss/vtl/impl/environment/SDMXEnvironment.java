@@ -95,6 +95,7 @@ import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
@@ -330,7 +331,9 @@ public class SDMXEnvironment implements Environment, Serializable
 			}
 			
 			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
-			builder.add(measure, DoubleValue.of(parseDouble(obs.getMeasureValue(measure.getName()))));
+			builder.add(measure, obs.getMeasureValue(measure.getName()) != null 
+					? DoubleValue.of(parseDouble(obs.getMeasureValue(measure.getName())))
+					: NullValue.instanceFrom(measure));
 			TemporalAccessor holder = parser.getValue().queryFrom(parser.getKey().parse(obs.getDimensionValue()));
 			ScalarValue<?, ?, ?, ?> value;
 			if (holder instanceof PeriodHolder)
