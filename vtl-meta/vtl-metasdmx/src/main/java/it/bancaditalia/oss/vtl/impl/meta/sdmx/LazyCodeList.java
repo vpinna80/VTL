@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -35,7 +36,6 @@ import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class LazyCodeList extends AbstractStringCodeList implements Serializable
 {
@@ -70,13 +70,20 @@ public class LazyCodeList extends AbstractStringCodeList implements Serializable
 				{
 					LOGGER.info("Fetching maintainable codelist {}", clRef.getMaintainableId());
 					CodelistBean cl = fmrRepo.getBeanRetrievalManager().getIdentifiableBean(clRef, CodelistBean.class);
-					cache.addAll(Utils.getStream(cl.getRootCodes())
-							.map(CodeBean::getId)
-							.map(StringCodeItemImpl::new)
-							.collect(toSet()));
+					final List<CodeBean> rootCodes = cl.getRootCodes();
+					addAllChildren(cl, rootCodes);
 				}
 			}
 		
 		return cache;
+	}
+
+	private void addAllChildren(CodelistBean cl, final List<CodeBean> rootCodes)
+	{
+		cache.addAll(rootCodes.stream()
+				.map(CodeBean::getId)
+				.map(StringCodeItemImpl::new)
+				.collect(toSet()));
+		rootCodes.forEach(code -> addAllChildren(cl, cl.getChildren(code.getId())));
 	}
 }
