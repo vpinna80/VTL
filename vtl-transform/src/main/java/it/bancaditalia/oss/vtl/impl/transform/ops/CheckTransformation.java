@@ -21,9 +21,11 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator.CHECK;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation.CheckOutput.ALL;
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.HashMap;
@@ -88,9 +90,6 @@ public class CheckTransformation extends TransformationImpl
 			throw new UnsupportedOperationException("Errorcode not implemented.");
 		if (errorlevel != null)
 			throw new UnsupportedOperationException("Errorvalue not implemented.");
-		if (this.output != ALL)
-			throw new UnsupportedOperationException("Invalid not implemented.");
-		
 		this.errorcodeExpr = errorcode;
 		this.errorlevelExpr = errorlevel;
 		this.imbalanceExpr = imbalance;
@@ -103,11 +102,10 @@ public class CheckTransformation extends TransformationImpl
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		if (imbalanceExpr == null)
-			// TODO: INVALID
-			return dataset.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+			dataset = dataset.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
 				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
-				result.put(ERRORCODE, NullValue.instance(NUMBERDS));
+				result.put(ERRORCODE, NullValue.instance(STRINGDS));
 				result.put(ERRORLEVEL, NullValue.instance(NUMBERDS));
 				return result;
 			});
@@ -115,8 +113,7 @@ public class CheckTransformation extends TransformationImpl
 		{
 			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(scheme);
 			
-			// TODO: INVALID
-			return dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> new DataPointBuilder()
+			dataset = dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> new DataPointBuilder()
 				.addAll(dp1.getValues(Identifier.class))
 				.add(BOOL_VAR, function.apply(BOOLEANDS.cast(dp1.get(BOOL_VAR))))
 				.add(IMBALANCE, dp2.getValues(Measure.class).values().iterator().next())
@@ -124,6 +121,8 @@ public class CheckTransformation extends TransformationImpl
 				.add(ERRORLEVEL, NullValue.instance(NUMBERDS))
 				.build(LineageNode.of("check " + operand, dp1.getLineage()), metadata), false);
 		}
+		
+		return output == ALL ? dataset : dataset.filter(dp -> dp.getValue(BOOL_VAR) != TRUE, identity());
 	}
 	
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -161,10 +160,8 @@ public class CheckTransformation extends TransformationImpl
 				metadata.addComponent(IMBALANCE);
 			}
 
-			if (output == ALL)
-				metadata.addComponent(BOOL_VAR);
-
 			return metadata
+					.addComponent(BOOL_VAR)
 					.addComponent(ERRORCODE)
 					.addComponent(ERRORLEVEL)
 					.build();
