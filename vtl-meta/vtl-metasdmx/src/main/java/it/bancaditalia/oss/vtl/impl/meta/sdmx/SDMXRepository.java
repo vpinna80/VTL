@@ -160,7 +160,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		refBean = vtlName2SdmxRef(alias, CODE_LIST);
 		
 		if (refBean != null)
-			LOGGER.info("Found codelist {} in Fusion Metadata Registry", alias);
+			LOGGER.info("Found codelist {}", alias);
 		return refBean != null ? defineDomain(alias, new LazyCodeList(STRINGDS, refBean, this)) : super.getDomain(alias);
 	}
 	
