@@ -82,6 +82,13 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			this.role = role;
 		}
 
+		public AggrClauseItem(AggrClauseItem other, GroupingClause groupingClause)
+		{
+			this.name = other.name;
+			this.role = other.role;
+			this.operand = new AggregateTransformation(other.operand, groupingClause, role, name);
+		}
+
 		public String getComponent()
 		{
 			return name;
@@ -121,11 +128,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			return operand.eval(session);
 		}
 
-		public AggrClauseItem withGroupBy(GroupingClause groupingClause)
-		{
-			return new AggrClauseItem(role, name, new AggregateTransformation(operand, groupingClause, role, name));
-		}
-
 		@Override
 		protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 		{
@@ -140,7 +142,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	public AggrClauseTransformation(List<AggrClauseItem> aggrItems, GroupingClause groupingClause, Transformation having)
 	{
 		this.aggrItems = aggrItems.stream()
-				.map(ac -> ac.withGroupBy(groupingClause))
+				.map(item -> new AggrClauseItem(item, groupingClause))
 				.collect(toList());
 		this.groupingClause = groupingClause;
 		this.having = having;
