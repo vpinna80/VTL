@@ -76,11 +76,12 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
+import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -162,6 +163,17 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		if (refBean != null)
 			LOGGER.info("Found codelist {}", alias);
 		return refBean != null ? defineDomain(alias, new LazyCodeList(STRINGDS, refBean, this)) : super.getDomain(alias);
+	}
+	
+	@Override
+	public StringHierarchicalRuleSet getHierarchyRuleset(String alias)
+	{
+		Optional<StringHierarchicalRuleSet> codelist = maybeGetDomain(alias)
+				.filter(LazyCodeList.class::isInstance)
+				.map(LazyCodeList.class::cast)
+				.map(LazyCodeList::getDefaultRuleSet);
+		
+		return codelist.orElseThrow(() -> new VTLException("Hierarchical ruleset " + alias + " not found."));
 	}
 	
 	@Override

@@ -32,6 +32,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class InMemoryMetadataRepository implements MetadataRepository, Serializable 
@@ -83,5 +84,11 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	public DataSetMetadata getStructure(String name)
 	{
 		return null;
+	}
+	
+	@Override
+	public HierarchicalRuleSet<?, ?, ?, ?, ?> getHierarchyRuleset(String alias)
+	{
+		throw new VTLException("Hierarchical ruleset " + alias + " not found.");
 	}
 }

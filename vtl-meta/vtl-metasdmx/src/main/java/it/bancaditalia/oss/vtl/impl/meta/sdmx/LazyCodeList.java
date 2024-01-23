@@ -19,14 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
-import static java.util.stream.Collectors.toSet;
+import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
+import static java.lang.Boolean.TRUE;
+import static java.util.stream.Collectors.toMap;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,56 +35,59 @@ import org.slf4j.LoggerFactory;
 import io.sdmx.api.sdmx.model.beans.codelist.CodeBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
+import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringRule;
+import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 
-public class LazyCodeList extends AbstractStringCodeList implements Serializable
+public class LazyCodeList extends StringCodeList implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(LazyCodeList.class);
 	
-	private final Set<StringCodeItemImpl> cache = new HashSet<>();
-	private transient final StructureReferenceBean clRef;
-	private transient final SDMXRepository fmrRepo;
-
+	private final StringHierarchicalRuleSet defaultRuleSet;
+	
 	public LazyCodeList(StringDomainSubset<?> parent, StructureReferenceBean clRef, SDMXRepository fmrRepo)
 	{
 		super(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")");
-		this.fmrRepo = fmrRepo;
-		this.clRef = clRef;
-	}
-
-	// populate codelist cache before serialization
-	private void writeObject(ObjectOutputStream oos) throws IOException 
-	{
-		getCodeItems();
-		oos.defaultWriteObject();
-	}
-	
-	@Override
-	public Set<StringCodeItemImpl> getCodeItems()
-	{
-		if (cache.isEmpty())
-			synchronized (this)
-			{
-				if (cache.isEmpty())
-				{
-					LOGGER.info("Fetching maintainable codelist {}", clRef.getMaintainableId());
-					CodelistBean cl = fmrRepo.getBeanRetrievalManager().getIdentifiableBean(clRef, CodelistBean.class);
-					final List<CodeBean> rootCodes = cl.getRootCodes();
-					addAllChildren(cl, rootCodes);
-				}
-			}
 		
-		return cache;
+		// retrieve codelist 
+		String name = clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")";
+		LOGGER.info("Fetching maintainable codelist {}", name);
+		CodelistBean cl = fmrRepo.getBeanRetrievalManager().getIdentifiableBean(clRef, CodelistBean.class);
+
+		// build hierarchy if present
+		Map<StringCodeItem, List<StringCodeItem>> hierarchy = new HashMap<>();
+		for (CodeBean codeBean: cl.getRootCodes())
+			addChildren(cl, hierarchy, new StringCodeItem(codeBean.getId(), this));
+
+		List<StringRule> rules = new ArrayList<>(); 
+		for (StringCodeItem ruleComp: hierarchy.keySet())
+			rules.add(new StringRule(ruleComp.get(), ruleComp, EQ, hierarchy.get(ruleComp).stream().collect(toMap(SerFunction.identity(), k -> TRUE)), null, null));
+		
+		defaultRuleSet = rules.isEmpty() ? null : new StringHierarchicalRuleSet(name, this, true, rules);
+
+		hashCode = 31 + name.hashCode() + this.items.hashCode();
 	}
 
-	private void addAllChildren(CodelistBean cl, final List<CodeBean> rootCodes)
+	private void addChildren(CodelistBean cl, Map<StringCodeItem, List<StringCodeItem>> hierarchy, StringCodeItem parent)
 	{
-		cache.addAll(rootCodes.stream()
-				.map(CodeBean::getId)
-				.map(StringCodeItemImpl::new)
-				.collect(toSet()));
-		rootCodes.forEach(code -> addAllChildren(cl, cl.getChildren(code.getId())));
+		items.add(parent);
+		List<StringCodeItem> children = new ArrayList<>();
+		for (CodeBean codeBean: cl.getChildren(parent.get()))
+		{
+			StringCodeItem child = new StringCodeItem(codeBean.getId(), this);
+			children.add(child);
+			addChildren(cl, hierarchy, child);
+		}
+		
+		if (!children.isEmpty())
+			hierarchy.put(parent, children);
+	}
+
+	public StringHierarchicalRuleSet getDefaultRuleSet()
+	{
+		return defaultRuleSet;
 	}
 }

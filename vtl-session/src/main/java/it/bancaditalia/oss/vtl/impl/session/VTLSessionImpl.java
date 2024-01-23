@@ -68,7 +68,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.engine.RulesetStatement;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.environment.Workspace;
@@ -78,6 +80,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -149,9 +153,9 @@ public class VTLSessionImpl implements VTLSession
 		LOGGER.info("Retrieving value for {}", alias);
 
 		Optional<? extends Statement> rule = workspace.getRule(alias);
-		if (rule.isPresent())
+		if (rule.filter(DMLStatement.class::isInstance).isPresent())
 		{
-			Statement statement = rule.get();
+			DMLStatement statement = (DMLStatement) rule.get();
 			if (statement.isCacheable())
 				return cacheHelper(alias, cache, n -> acquireResult(statement, n));
 			else
@@ -170,9 +174,9 @@ public class VTLSessionImpl implements VTLSession
 			return definedStructure;
 		
 		Optional<? extends Statement> rule = workspace.getRule(alias);
-		if (rule.isPresent())
+		if (rule.filter(DMLStatement.class::isInstance).isPresent())
 		{
-			Statement statement = rule.get();
+			DMLStatement statement = (DMLStatement) rule.get();
 			if (statement.isCacheable())
 				return cacheHelper(alias, metacache, n -> statement.getMetadata(this));
 			else
@@ -191,6 +195,29 @@ public class VTLSessionImpl implements VTLSession
 			return true;
 		else
 			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
+	}
+	
+	private <T> T findRuleset(String alias, Class<T> c)
+	{
+		return workspace.getRule(alias)
+				.filter(RulesetStatement.class::isInstance)
+				.map(RulesetStatement.class::cast)
+				.map(r -> r.getRuleSet(this))
+				.filter(c::isInstance)
+				.map(c::cast)
+				.orElseThrow(() -> new VTLUnboundAliasException(alias));
+	}
+	
+	@Override
+	public DataPointRuleSet findDatapointRuleset(String alias)
+	{
+		return findRuleset(alias, DataPointRuleSet.class);
+	}
+	
+	@Override
+	public HierarchicalRuleSet<?, ?, ?, ?, ?> findHierarchicalRuleset(String alias)
+	{
+		return findRuleset(alias, HierarchicalRuleSet.class);
 	}
 	
 	@Override
@@ -279,7 +306,7 @@ public class VTLSessionImpl implements VTLSession
 		return maybeResult;
 	}
 
-	private VTLValue acquireResult(Statement statement, String alias)
+	private VTLValue acquireResult(DMLStatement statement, String alias)
 	{
 		LOGGER.info("Applying {}", statement);
 
@@ -298,9 +325,11 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public Map<Statement, VTLValueMetadata> compile()
+	public Map<DMLStatement, VTLValueMetadata> compile()
 	{
-		Map<Statement, VTLValueMetadata> statements = workspace.getRules().stream()
+		Map<DMLStatement, VTLValueMetadata> statements = workspace.getRules().stream()
+				.filter(DMLStatement.class::isInstance)
+				.map(DMLStatement.class::cast)
 				.collect(toMapWithValues(s -> s.getMetadata(this)));
 		LOGGER.info("Compiled {} statements.", statements.size());
 		return statements;
@@ -319,6 +348,8 @@ public class VTLSessionImpl implements VTLSession
 	public List<String> getNodes()
 	{
 		return workspace.getRules().stream()
+				.filter(DMLStatement.class::isInstance)
+				.map(DMLStatement.class::cast)
 				.flatMap(statement -> Stream.concat(Stream.of(statement.getAlias()), statement.getTerminals().stream().map(LeafTransformation::getText)))
 				.distinct()
 				.collect(toList());
@@ -328,7 +359,10 @@ public class VTLSessionImpl implements VTLSession
 	{
 		List<List<String>> result = Arrays.asList(new ArrayList<>(), new ArrayList<>());
 
-		workspace.getRules().stream().flatMap(rule -> rule.getTerminals().parallelStream()
+		workspace.getRules().stream()
+				.filter(DMLStatement.class::isInstance)
+				.map(DMLStatement.class::cast)
+				.flatMap(rule -> rule.getTerminals().parallelStream()
 				.map(t -> t.getText())
 				.map(t -> new SimpleEntry<>(rule.getAlias(), t)))
 				.forEach(entry -> {

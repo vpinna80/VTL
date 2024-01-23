@@ -48,8 +48,8 @@ import org.xml.sax.SAXException;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.LazyCodeList;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.AbstractStringCodeList.StringCodeItemImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -85,7 +85,7 @@ public class SdmxRepositoryTest
 		assertTrue(repo instanceof SDMXRepository);
 		ValueDomainSubset<?, ?> domain = repo.getDomain("ECB:CL_CURRENCY(1.0)");
 		assertTrue(domain instanceof LazyCodeList);
-		Set<StringCodeItemImpl> codes = ((LazyCodeList) domain).getCodeItems();
+		Set<StringCodeItem> codes = ((LazyCodeList) domain).getCodeItems();
 		assertEquals(367, codes.size());
 	}
 

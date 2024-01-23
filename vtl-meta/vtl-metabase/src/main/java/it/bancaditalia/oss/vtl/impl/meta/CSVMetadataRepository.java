@@ -34,8 +34,8 @@ import java.util.EnumSet;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 
 public class CSVMetadataRepository extends InMemoryMetadataRepository
 {
