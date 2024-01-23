@@ -83,9 +83,7 @@ vtlServer <- function(input, output, session) {
     output$eng_conf_output <- renderPrint({
       lapply(configManager$getSupportedProperties(J(req(input$repoClass))@jobj), function (prop) {
         val <- input[[prop$getName()]]
-        if (val == '')
-          val <- NULL
-        prop$setValue(val)
+        prop$setValue(if (val == '') .jnull(class = "java/lang/String") else val)
         
         if (prop$isPassword()) {
           cat("Set property", prop$getDescription(), "to <masked value>\n")
@@ -136,9 +134,7 @@ vtlServer <- function(input, output, session) {
     output$eng_conf_output <- renderPrint({
       lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
         val <- input[[prop$getName()]]
-        if (val == '')
-          val <- .jnull(class = "java/lang/String")
-        prop$setValue(val)
+        prop$setValue(if (val == '') .jnull(class = "java/lang/String") else val)
         
         if (prop$isPassword()) {
           cat("Set property", prop$getDescription(), "to <masked value>\n")

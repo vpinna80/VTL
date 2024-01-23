@@ -50,6 +50,6 @@ convertToDF <- function(jnode) {
   bools <- which(sapply(nodesvals, function(array) is.integer(array) && all(array %in% as.integer(c(1L, 0L, NA)))))
   dates <- which(sapply(nodesvals, function(array) is.integer(array) && !all(array %in% as.integer(c(1L, 0L, NA)))))
   nodesvals[dates] <- lapply(nodesvals[dates], as.Date, as.Date("1970-01-01"))
-  nodesvals[bools] <- lapply(nodesvals[dates], as.logical)
+  nodesvals[bools] <- lapply(nodesvals[bools], as.logical)
   return(as.data.frame(nodesvals))
 }
