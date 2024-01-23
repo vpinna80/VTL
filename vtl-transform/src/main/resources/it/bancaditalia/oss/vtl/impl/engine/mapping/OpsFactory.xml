@@ -21,6 +21,37 @@
 
 -->
 <parserconfig xmlns="http://oss.bancaditalia.it/vtl">
+	<tokenset name="HierarchyMode" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyMode">
+		<tokenmapping name="NON_NULL" value="NON_NULL" />
+		<tokenmapping name="NON_ZERO" value="NON_ZERO" />
+		<tokenmapping name="PARTIAL_NULL" value="PARTIAL_NULL" />
+		<tokenmapping name="PARTIAL_ZERO" value="PARTIAL_ZERO" />
+		<tokenmapping name="ALWAYS_NULL" value="ALWAYS_NULL" />
+		<tokenmapping name="ALWAYS_ZERO" value="ALWAYS_ZERO" />
+	</tokenset>
+
+	<tokenset name="HierarchyInput" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyInput">
+		<tokenmapping name="DATASET" value="DATASET" />
+		<tokenmapping name="RULE" value="RULE" />
+		<tokenmapping name="RULE_PRIORITY" value="RULE_PRIORITY" />
+	</tokenset>
+
+	<tokenset name="HierarchyOutput" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyOutput">
+		<tokenmapping name="COMPUTED" value="COMPUTED" />
+		<tokenmapping name="ALL" value="ALL" />
+	</tokenset>
+
+	<tokenset name="ValidationInput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation$Input">
+		<tokenmapping name="DATASET" value="DATASET" />
+		<tokenmapping name="RULE" value="RULE" />
+		<tokenmapping name="RULE_PRIORITY" value="RULE_PRIORITY" />
+	</tokenset>
+
+	<tokenset name="ValidationOutput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation$Output">
+		<tokenmapping name="COMPUTED" value="COMPUTED" />
+		<tokenmapping name="ALL" value="ALL" />
+	</tokenset>
+
 	<tokenset name="WindowDirection" class="it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion$LimitDirection">
 		<tokenmapping name="PRECEDING" value="PRECEDING" />
 		<tokenmapping name="FOLLOWING" value="FOLLOWING" />
@@ -176,6 +207,12 @@
 		<tokenmapping name="INVALID" value="INVALID" />
 	</tokenset>
 
+	<tokenset name="ValidationOutput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation$Output">
+		<tokenmapping name="INVALID" value="INVALID" />
+		<tokenmapping name="ALL" value="ALL" />
+		<tokenmapping name="ALL_MEASURES" value="ALL_MEASURES" />
+	</tokenset>
+
 	<recursivecontexts>
 		<context name="AggregateFunctionsContext" />
 		<context name="AggregateFunctionsComponentsContext" />
@@ -203,6 +240,7 @@
 		<context name="ParenthesisExprContext" />
 		<context name="SetFunctionsContext" />
 		<context name="StringFunctionsContext" />
+		<context name="HierarchyFunctionsContext" />
 		<context name="StringFunctionsComponentsContext" />
 		<context name="TimeFunctionsContext" />
 		<context name="TimeFunctionsComponentsContext" />
@@ -212,6 +250,38 @@
 
 	<mapping from="CurrentDateAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.CurrentDateOperand">
 		<params />
+	</mapping>
+	
+	<mapping from="ValidateHRrulesetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation">
+		<params>
+			<exprparam name="expr" />
+			<stringparam name="hrName" />
+			<nestedparam name="conditionClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+			<stringparam name="componentID" />
+			<tokensetparam name="validationMode" tokenset="HierarchyMode" />
+			<tokensetparam name="inputMode" tokenset="ValidationInput" />
+			<tokensetparam name="validationOutput" tokenset="ValidationOutput" />
+		</params>
+	</mapping>
+	
+	<mapping from="HierarchyOperatorsContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation">
+		<params>
+			<exprparam name="expr" />
+			<stringparam name="hrName" />
+			<nestedparam name="conditionClause">
+				<listparam name="componentID">
+					<stringparam />
+				</listparam>
+			</nestedparam>
+			<stringparam name="ruleComponent" />
+			<tokensetparam name="validationMode" tokenset="HierarchyMode" />
+			<tokensetparam name="inputModeHierarchy" tokenset="HierarchyInput" />
+			<tokensetparam name="outputModeHierarchy" tokenset="HierarchyOutput" />
+		</params>
 	</mapping>
 	
 	<mapping from="AnSimpleFunctionContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.SimpleAnalyticTransformation">

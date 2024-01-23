@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -98,7 +98,7 @@ public class DatapointScope extends AbstractScope
 	}
 
 	@Override
-	public Statement getRule(String node)
+	public DMLStatement getRule(String node)
 	{
 		return null;
 	}

@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
 
@@ -39,7 +40,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 
 	public UnaryTransformation(Transformation operand)
 	{
-		this.operand = operand;
+		this.operand = requireNonNull(operand);
 	}
 	
 	@Override

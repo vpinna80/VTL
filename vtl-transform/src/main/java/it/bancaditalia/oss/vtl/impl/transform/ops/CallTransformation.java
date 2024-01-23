@@ -72,7 +72,7 @@ public class CallTransformation extends TransformationImpl
 			List<String> parNames = op.getParameterNames();
 			Map<String, Transformation> paramValues = IntStream.range(0, params.size()).boxed()
 				.collect(toMap(i -> parNames.get(i), i -> params.get(i)));
-			return op.eval(new ParamScope(scheme, paramValues));
+			return op.getExpression().eval(new ParamScope(scheme, paramValues));
 		}
 		else
 			throw new UnsupportedOperationException("Operator " + operator + " is not defined.");
@@ -93,7 +93,7 @@ public class CallTransformation extends TransformationImpl
 			Map<String, Transformation> paramValues = IntStream.range(0, params.size()).boxed()
 					.collect(toMap(i -> parNames.get(i), i -> params.get(i)));
 			
-			return op.getMetadata(new ParamScope(scheme, paramValues));
+			return op.getExpression().getMetadata(new ParamScope(scheme, paramValues));
 		}
 		else
 			throw new UnsupportedOperationException("Operator " + operator + " is not defined.");

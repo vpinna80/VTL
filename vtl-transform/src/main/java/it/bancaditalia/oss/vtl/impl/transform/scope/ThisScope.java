@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
-import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -84,7 +84,7 @@ public class ThisScope extends AbstractScope
 	}
 
 	@Override
-	public Statement getRule(String node)
+	public DMLStatement getRule(String node)
 	{
 		throw new VTLUnboundAliasException(node);
 	}
