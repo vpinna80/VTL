@@ -44,7 +44,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.RestDocumentationExtension;
 import org.springframework.restdocs.payload.JsonFieldType;
@@ -62,11 +62,15 @@ import it.bancaditalia.oss.vtl.spring.rest.result.UUIDBean;
 @TestMethodOrder(OrderAnnotation.class)
 public class VTLRESTfulServicesTest
 {
+	private static String jSessionID;
+	private static UUID uuid;
+
 	static {
 		System.setProperty("vtl.r", "disable");
 	}
 
 	private RequestSpecification documentationSpec;
+	@LocalServerPort private int port;
 
 	@BeforeEach
 	public void setUp(RestDocumentationContextProvider restDocumentation) {
@@ -75,11 +79,6 @@ public class VTLRESTfulServicesTest
 				.build();
 	}
 	
-	private static String jSessionID;
-	private static UUID uuid;
-	
-	@LocalServerPort private int port;
-
 	@Order(1)
 	@Test
 	public void testCompile() throws Throwable
