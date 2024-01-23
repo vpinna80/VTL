@@ -17,30 +17,157 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.meta.subsets;
+package it.bancaditalia.oss.vtl.impl.types.domain;
+
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
+import it.bancaditalia.oss.vtl.model.data.CodeItem;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class StringCodeList extends AbstractStringCodeList implements Serializable
+public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeList, StringCodeItem>, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(StringCodeList.class);
 
-	private final Set<StringCodeItemImpl> items = new HashSet<>();
+	public static class StringCodeItem extends StringValue<StringCodeItem, StringCodeList> implements CodeItem<StringCodeItem, String, StringCodeList, StringDomain>
+	{
+		private static final long serialVersionUID = 1L;
+
+		public StringCodeItem(String value, StringCodeList cl)
+		{
+			super(value, cl);
+		}
+
+		@Override
+		public int compareTo(ScalarValue<?, ?, ?, ?> o)
+		{
+			return get().compareTo((String) STRINGDS.cast(o).get());
+		}
+
+		@Override
+		public String toString()
+		{
+			return '"' + get() + '"';
+		}
+	}
+
+	protected final StringDomainSubset<?> parent;
+	protected final String name; 
+	protected final Set<StringCodeItem> items = new HashSet<>();
 	
+	protected int hashCode;
+
 	public StringCodeList(StringDomainSubset<?> parent, String name, Set<? extends String> items)
 	{
-		super(parent, name);
+		this.name = name;
+		this.parent = parent;
 		for (String item: items)
-			this.items.add(new StringCodeItemImpl(item));
-		setHashCode(31 + name.hashCode() + this.items.hashCode());
+			this.items.add(new StringCodeItem(item, this));
+
+		hashCode = 31 + name.hashCode() + this.items.hashCode();
+	}
+	
+
+	public StringCodeList(StringDomainSubset<?> parent, String name)
+	{
+		this.name = name;
+		this.parent = parent;
+	}
+
+
+	@Override
+	public final String getName()
+	{
+		return name;
+	}
+
+	@Override
+	public final StringDomainSubset<?> getParentDomain()
+	{
+		return parent;
+	}
+
+	@Override
+	public final boolean isComparableWith(ValueDomain other)
+	{
+		return STRINGDS.isComparableWith(other);
+	}
+
+	public final int hashCode()
+	{
+		return hashCode;
+	}
+
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof StringEnumeratedDomainSubset))
+			return false;
+		StringEnumeratedDomainSubset<?, ?> other = (StringEnumeratedDomainSubset<?, ?>) obj;
+		if (!name.equals(other.getName()))
+			return false;
+
+		return getCodeItems().equals(other.getCodeItems());
+	}
+	
+	public StringCodeItem getCodeItem(String literal)
+	{
+		final ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> value = StringValue.of(literal);
+		if (getCodeItems().contains(value))
+			return new StringCodeItem(literal, this);
+		else
+			throw new VTLCastException(this, value);
+	}
+
+	@Override
+	public ScalarValue<?, ?, StringCodeList, StringDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	{
+		if (value instanceof NullValue)
+			return NullValue.instance(this);
+		else if (value instanceof StringValue)
+		{
+			if (getCodeItems().contains(value))
+				return new StringCodeItem((String) value.get(), this);
+
+			LOGGER.warn("Code {} was not found on codelist {}:{}", value.get(), name, new TreeSet<>(getCodeItems()));
+		}
+
+		throw new VTLCastException(this, value);
+	}
+
+	@Override
+	public ScalarValue<?, ?, StringCodeList, StringDomain> getDefaultValue()
+	{
+		return NullValue.instance(this);
 	}
 	
 	@Override
-	public Set<StringCodeItemImpl> getCodeItems()
+	public String toString()
+	{
+		return name + ":" + parent;
+	}
+
+	@Override
+	public Set<StringCodeItem> getCodeItems()
 	{
 		return items;
 	}

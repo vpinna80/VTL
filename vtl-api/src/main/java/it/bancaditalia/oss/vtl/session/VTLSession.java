@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
@@ -95,5 +96,5 @@ public interface VTLSession extends TransformationScheme, Serializable
 	 *  
 	 * @return a {@link List} of {@link VTLValueMetadata} instances, describing a VTL object each.
 	 */
-	public Map<Statement, VTLValueMetadata> compile();
+	public Map<DMLStatement, VTLValueMetadata> compile();
 }

@@ -21,13 +21,17 @@ package it.bancaditalia.oss.vtl.engine;
 
 import java.util.List;
 
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
+
 /**
  * TODO: Specification unclear
  * 
  * @author Valentino Pinna
  *
  */
-public interface NamedOperator extends Statement
+public interface NamedOperator extends DDLStatement
 {
 	public List<String> getParameterNames();
+
+	public Transformation getExpression();
 }

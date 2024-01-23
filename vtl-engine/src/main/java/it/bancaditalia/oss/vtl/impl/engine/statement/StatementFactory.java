@@ -30,6 +30,7 @@ import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.VIRAL_ATTRIB
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -37,6 +38,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
 
@@ -48,9 +50,11 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.grammar.Vtl;
+import it.bancaditalia.oss.vtl.grammar.Vtl.CodeItemRelationContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.CompConstraintContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DatasetTypeContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.DefHierarchicalContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorsContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefineExpressionContext;
@@ -59,6 +63,7 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.MultModifierContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.OutputParameterTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ParameterItemContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.PersistAssignmentContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.RuleItemHierarchicalContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ScalarTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.TemporaryAssignmentContext;
@@ -66,6 +71,7 @@ import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextExceptio
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Role;
+import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import jakarta.xml.bind.JAXBException;
 
@@ -92,27 +98,6 @@ public class StatementFactory implements Serializable
 			PersistAssignmentContext asc = (PersistAssignmentContext) ctx;
 			return new AssignStatement(asc.varID().getText(), buildExpr(asc.expr()), true);
 		}
-//		else if (node instanceof DefineExpressionContext)
-//		{
-//			DefHierarchicalContext dhc = ((DefineHierarchicalStatementContext) node).defHierarchical();
-//			String name = dhc.rulesetID().getText();
-//			boolean isValueDomain = dhc.hierRuleSignature().VALUE_DOMAIN() != null; 
-//			String item = dhc.hierRuleSignature().ruleName.getText(); 
-//			Map<String, String> conditions = dhc.hierRuleSignature().conditioningItem() == null ? Collections.emptyMap() 
-//					: dhc.hierRuleSignature().conditioningItem().stream()
-//						.collect(toMap(i -> i.cond.getText(), i -> i.alias != null ? i.alias.getText() : i.cond.getText()));
-//			
-//			List<RuleItemImpl> rules = dhc.ruleClauseHierarchical().ruleItemHierarchical().stream()
-//				.map(rihc -> new RuleItemImpl(rihc.codeItemRelation().IDENTIFIER().getText(),
-//						mapCO(rihc.codeItemRelation().opComp),
-//						rihc.codeItemRelation().codeItemRelationClause().stream()
-//							.map(circ -> new SourceItemImpl(circ.IDENTIFIER().getText(), circ.DASH() == null, buildExpr(circ.expr())))
-//							.collect(toList()),
-//						buildExpr(rihc.codeItemRelation().expr()), buildExpr(rihc.erCode().constant()), buildExpr(rihc.erLevel())))
-//				.collect(toList());
-//			
-//			return new DefineHierarchyStatement(name, item, isValueDomain, conditions, rules);
-//		}
 		else
 		{
 			DefOperatorsContext defineContext = ((DefineExpressionContext) ctx).defOperators();
@@ -125,6 +110,44 @@ public class StatementFactory implements Serializable
 				Parameter outputType = buildResultType(defineOp.outputParameterType());
 				
 				return new DefineOperatorStatement(defineOp.operatorID().getText(), params, outputType, buildExpr(defineOp.expr()));
+			}
+			else if (defineContext instanceof DefHierarchicalContext)
+			{
+				DefHierarchicalContext defineHier = (DefHierarchicalContext) defineContext;
+				String alias = defineHier.rulesetID().getText();
+				boolean isValueDomain = defineHier.hierRuleSignature().VALUE_DOMAIN() != null;
+				String ruleID = defineHier.hierRuleSignature().IDENTIFIER() != null ? defineHier.hierRuleSignature().IDENTIFIER().getText() : null;
+				
+				List<String> names = new ArrayList<>();
+				List<String> leftOps = new ArrayList<>();
+				List<RuleType> compOps = new ArrayList<>();
+				List<Map<String, Boolean>> rightOps = new ArrayList<>();
+				List<String> ercodes = new ArrayList<>();
+				List<Long> erlevels = new ArrayList<>();
+				
+				for (int i = 0; defineHier.ruleClauseHierarchical().ruleItemHierarchical(i) != null; i++)
+				{
+					RuleItemHierarchicalContext rule = defineHier.ruleClauseHierarchical().ruleItemHierarchical(i);
+					names.add(rule.ruleName != null ? rule.ruleName.getText() : null);
+					ercodes.add(rule.erCode() != null ? rule.erCode().constant().getText() : null);
+					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
+
+					CodeItemRelationContext relation = rule.codeItemRelation();
+					leftOps.add(relation.codeItemRef.getText());
+					switch (relation.comparisonOperand().getStart().getType())
+					{
+						case Vtl.EQ: compOps.add(RuleType.EQ); break;
+						case Vtl.LT: compOps.add(RuleType.LT); break;
+						case Vtl.LE: compOps.add(RuleType.LE); break;
+						case Vtl.MT: compOps.add(RuleType.GT); break;
+						case Vtl.ME: compOps.add(RuleType.GE); break;
+						default: throw new UnsupportedOperationException("Invalid operand in ruleset rule " + rule.ruleName.getText() + ": " + relation.comparisonOperand().getText());
+					}
+					rightOps.add(relation.codeItemRelationClause().stream()
+						.collect(toMap(r -> r.rightCodeItem.getText(), r -> r.opAdd == null || r.opAdd.getType() == Vtl.PLUS)));
+				}
+				
+				return new DefineHierarchyStatement(alias, isValueDomain, ruleID, names, leftOps, compOps, rightOps, ercodes, erlevels);
 			}
 			else
 				throw new VTLUnmappedContextException(ctx);

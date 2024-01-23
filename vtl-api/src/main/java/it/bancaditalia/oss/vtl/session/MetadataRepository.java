@@ -24,6 +24,7 @@ import java.util.Collection;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 
 /**
  * A repository to contain and query all the defined domains.
@@ -60,6 +61,14 @@ public interface MetadataRepository
 	 * @return the structure or null if none exists.
 	 */
 	public DataSetMetadata getStructure(String name);
+
+	/**
+	 * Returns a hierarchical ruleset with the specified name if it exists.
+	 * 
+	 * @param name the name of the ruleset
+	 * @return the structure or null if none exists.
+	 */
+	public HierarchicalRuleSet<?, ?, ?, ?, ?> getHierarchyRuleset(String name);
 
 	/**
 	 * Registers a new domain instance inside this repository (optional operation).

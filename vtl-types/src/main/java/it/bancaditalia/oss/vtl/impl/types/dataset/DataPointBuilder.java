@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static java.util.Objects.requireNonNull;
@@ -65,9 +66,14 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class DataPointBuilder implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private final static Logger LOGGER = LoggerFactory.getLogger(DataPointBuilder.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DataPointBuilder.class);
 
-	private final ConcurrentHashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
+	public enum Option
+	{
+		DONT_SYNC;
+	}
+	
+	private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
 
 	private volatile boolean built = false;
 
@@ -76,9 +82,13 @@ public class DataPointBuilder implements Serializable
 		delegate = new ConcurrentHashMap<>();
 	}
 
-	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keys)
+	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keys, Option... options)
 	{
-		delegate = new ConcurrentHashMap<>(keys);
+		EnumSet<Option> optSet = EnumSet.noneOf(Option.class);
+		for (Option option: options)
+			optSet.add(option);
+		
+		delegate = optSet.contains(DONT_SYNC) ? new HashMap<>(keys) : new ConcurrentHashMap<>(keys);
 	}
 
 	private synchronized DataPointBuilder checkState()

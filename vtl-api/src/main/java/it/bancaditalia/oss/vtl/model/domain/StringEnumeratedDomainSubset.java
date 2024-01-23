@@ -19,15 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
-import java.io.Serializable;
 import java.util.Set;
+
+import it.bancaditalia.oss.vtl.model.data.CodeItem;
 
 /**
  * Representation of a finite enumerated subset of the VTL "String" domain (essentially, a code list).
  * 
  * @author Valentino Pinna
  */
-public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C, R>, C extends StringCodeItem<C, R, S>, R extends Comparable<?> & Serializable> extends EnumeratedDomainSubset<S, StringDomain, C, R>, StringDomainSubset<S>
+public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C>, C extends CodeItem<C, String, S, StringDomain>> extends EnumeratedDomainSubset<S, StringDomain, C, String>, StringDomainSubset<S>
 {
 	@Override
 	public default boolean isAssignableFrom(ValueDomain other)

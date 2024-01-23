@@ -17,64 +17,57 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.model.data;
+package it.bancaditalia.oss.vtl.model.rules;
 
+import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.data.CodeItem;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 
 /**
- * Representation of a hierarchy rule.
+ * Representation of a hierarchy ruleset.
  * TODO
  * 
  * @author Valentino Pinna
  *
  */
-public interface Hierarchy extends VTLValue, VTLValueMetadata
+public interface HierarchicalRuleSet<C extends CodeItem<C, R, S, D>, I extends Rule<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain> extends Map<C, List<I>>, RuleSet
 {
-	enum CheckMode
+	public interface Rule<C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain>
 	{
-		NON_NULL, NON_ZERO, PARTIAL_NULL, PARTIAL_ZERO, ALWAYS_NULL, ALWAYS_ZERO;
+		public String getName();
+		
+		public C getLeftCodeItem();
+
+		public Collection<C> getRightCodeItems();
+		
+		public boolean isPlusSign(CodeItem<?, ?, ?, ?> item);
+		
+		public RuleType getRuleType();
+		
+		public ScalarValue<?, ?, ?, ?> getErrorCode();
+		
+		public ScalarValue<?, ?, ?, ?> getErrorLevel();
 	}
-
-	public interface RuleItem
-	{
-		public String getCodeItem();
-
-		public Transformation getCondition();
-
-		public ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> getErrorLevel();
-
-		public ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> getErrorCode();
-
-		public List<? extends SourceItem> getComponents();
-
-		public boolean contains(ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> item);
-
-		public int getSign(ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> item);
-
-		public Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> validate(DataStructureComponent<Measure, ?, ?> measure, CheckMode mode,
-				Map<? extends ScalarValue<?, ?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> values);
-	}
-
-	public interface SourceItem
-	{
-		public String getId();
-
-		public boolean isWithRelation();
-
-		public Transformation getCondition();
-	}
-
+	
+	public boolean isValueDomainHierarchy();
+	
+	public List<I> getRulesFor(CodeItem<?, ?, ?, ?> code);
+	
 	public String getName();
 
-	public List<RuleItem> getRuleItems();
+	public Map<C, List<I>> getRules();
+	
+	public S getDomain();
 
-	public DataStructureComponent<?, ?, ?> selectComponent(DataSetMetadata structure);
+	public Set<I> getDependingRules(CodeItem<?, ?, ?, ?> code);
+
+	public Set<C> getLeaves();
 }

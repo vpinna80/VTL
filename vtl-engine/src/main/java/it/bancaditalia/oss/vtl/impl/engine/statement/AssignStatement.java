@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -32,7 +33,7 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-class AssignStatement extends AbstractStatement implements Transformation
+class AssignStatement extends AbstractStatement implements DMLStatement, Transformation
 {
 	//private final static Logger LOGGER = LoggerFactory.getLogger(AssignStatement.class);
 	private static final long serialVersionUID = 1L;
@@ -41,9 +42,9 @@ class AssignStatement extends AbstractStatement implements Transformation
 	private final Transformation expression;
 	private final boolean persistent;
 
-	public AssignStatement(String name, Transformation expression, boolean persistent)
+	public AssignStatement(String alias, Transformation expression, boolean persistent)
 	{
-		super(name);
+		super(alias);
 		this.expression = expression;
 		this.persistent = persistent;
 	}

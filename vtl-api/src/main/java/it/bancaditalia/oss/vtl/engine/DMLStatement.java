@@ -32,13 +32,8 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
  * @author Valentino Pinna
  *
  */
-public interface Statement
+public interface DMLStatement extends Statement
 {
-	/**
-	 * @return The id of the statement, like the rule name at the left side of an assignment statement. 
-	 */
-	public String getAlias();
-
 	/**
 	 * Computes the metadata of the rule in the context of a Transformation Scheme. 
 	 * 
@@ -59,9 +54,4 @@ public interface Statement
 	 * @return a list of primitive nodes, such as aliases or constants, on which this statement depends on
 	 */
 	public Set<LeafTransformation> getTerminals();
-
-	/**
-	 * @return true if it makes sense to cache the result of evaluating this statement.
-	 */
-	public boolean isCacheable();
 }

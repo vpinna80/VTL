@@ -21,11 +21,14 @@ package it.bancaditalia.oss.vtl.model.transform;
 
 import java.util.Map;
 
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 /**
@@ -125,4 +128,22 @@ public interface TransformationScheme
 	{
 		throw new UnsupportedOperationException();
 	}
+	
+	/**
+	 * Returns a {@link HierarchicalRuleSet} referred by an alias defined in this TransformationScheme.
+	 * 
+	 * @param alias the alias of the rule whose structure is to be retrieved.
+	 * @return a {@link HierarchicalRuleSet} instance describing the rule if found.
+	 * @throws VTLUnboundAliasException if the alias is not defined.
+	 */
+	public HierarchicalRuleSet<?, ?, ?, ?, ?> findHierarchicalRuleset(String alias);
+
+	/**
+	 * Returns a {@link DataPointRuleSet} referred by an alias defined in this TransformationScheme.
+	 * 
+	 * @param alias the alias of the ruleset
+	 * @return a {@link DataPointRuleSet} instance describing the rule if found.
+	 * @throws VTLUnboundAliasException if the alias is not defined.
+	 */
+	public DataPointRuleSet findDatapointRuleset(String alias);
 }

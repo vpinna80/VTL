@@ -33,6 +33,9 @@ public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends 
 	private static final long serialVersionUID = 1L;
 	private static final ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> NULLINSTANCE = NullValue.instance(NUMBERDS);
 
+	@SuppressWarnings("unchecked")
+	public static final DoubleValue<EntireNumberDomainSubset> ZERO = (DoubleValue<EntireNumberDomainSubset>) DoubleValue.of(0.0);
+
 	private DoubleValue(Double value, S domain)
 	{
 		super(value, domain);

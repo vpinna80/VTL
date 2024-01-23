@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Statement;
 
 /**
@@ -37,7 +38,7 @@ import it.bancaditalia.oss.vtl.engine.Statement;
 public interface Workspace extends Environment
 {
 	/**
-	 * Returns an {@link Optional} reference to a {@link Statement} with the specified name in this environment.
+	 * Returns an {@link Optional} reference to a {@link DMLStatement} with the specified name in this environment.
 	 * 
 	 * @param name The name of requested rule.
 	 * @return An Optional with a reference to the requested object or {@link Optional#empty()} if the object is not found in this environment.

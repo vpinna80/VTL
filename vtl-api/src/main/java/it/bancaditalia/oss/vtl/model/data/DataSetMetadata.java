@@ -224,7 +224,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param measure the measure
 	 * @return the new structure.
 	 */
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?, ?>, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?>, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
 
 	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends String> names, String operation)
 	{
