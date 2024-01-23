@@ -515,7 +515,7 @@ ruleItemHierarchical:
  ;
 
 codeItemRelation:
-    ( WHEN exprComponent THEN )? codetemRef=valueDomainValue comparisonOperand? codeItemRelationClause (codeItemRelationClause)*
+    ( WHEN exprComponent THEN )? codeItemRef=valueDomainValue comparisonOperand? codeItemRelationClause (codeItemRelationClause)*
 ;
 
 codeItemRelationClause:
