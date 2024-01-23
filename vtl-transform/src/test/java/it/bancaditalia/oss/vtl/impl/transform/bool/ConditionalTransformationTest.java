@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE5;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE6;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE5;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE6;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

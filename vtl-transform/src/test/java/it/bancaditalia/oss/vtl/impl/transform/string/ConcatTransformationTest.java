@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE13;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE14;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE15;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE13;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE14;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE15;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

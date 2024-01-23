@@ -283,13 +283,6 @@
 									<value>${project.version}</value>
 									<failIfNoMatch>false</failIfNoMatch>
 								</regexPropertySetting>
-								<regexPropertySetting>
-									<name>RJSDMX.version</name>
-									<regex>\.([0-9]+)(-SNAPSHOT)?$</regex>
-									<replacement>-$1</replacement>
-									<value>${sdmx.version}</value>
-									<failIfNoMatch>true</failIfNoMatch>
-								</regexPropertySetting>
 							</regexPropertySettings>
 						</configuration>
 					</execution>

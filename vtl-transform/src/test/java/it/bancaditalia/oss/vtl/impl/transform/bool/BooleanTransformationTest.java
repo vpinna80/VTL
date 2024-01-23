@@ -19,11 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE4;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.AND;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.OR;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.XOR;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE4;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

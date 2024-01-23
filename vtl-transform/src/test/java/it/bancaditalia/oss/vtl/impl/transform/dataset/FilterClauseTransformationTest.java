@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE11;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE12;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE4;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE11;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE12;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE4;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;

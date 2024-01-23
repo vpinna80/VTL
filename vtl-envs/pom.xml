@@ -82,5 +82,6 @@
 
 	<modules>
 		<module>vtl-envbase</module>
+		<module>vtl-envsamples</module>
 	</modules>
 </project>

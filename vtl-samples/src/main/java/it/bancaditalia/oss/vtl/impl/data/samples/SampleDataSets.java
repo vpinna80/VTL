@@ -17,33 +17,32 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.transform.testutils;
+package it.bancaditalia.oss.vtl.impl.data.samples;
 
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleValues.VAR_SAMPLE_LEN;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_BOOLEAN_1;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_DATE_1;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_DATE_2;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_DATE_3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_1;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_5;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_6;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.IDENT_STRING_7;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_1;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_2;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_BOOLEAN_4;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_1;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_2;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_INTEGER_3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_1;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_NUMBER_2;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_3;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_4;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleVariables.MEASURE_STRING_8;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleValues.VAR_SAMPLE_LEN;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_BOOLEAN_1;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_DATE_1;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_DATE_2;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_DATE_3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_STRING_1;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_STRING_3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_STRING_5;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_STRING_6;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.IDENT_STRING_7;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_BOOLEAN_1;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_BOOLEAN_2;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_BOOLEAN_3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_BOOLEAN_4;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_INTEGER_1;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_INTEGER_2;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_INTEGER_3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_NUMBER_1;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_NUMBER_2;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_STRING_3;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_STRING_4;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleVariables.MEASURE_STRING_8;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
-import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -130,7 +129,7 @@ public enum SampleDataSets implements DataSet
 						.map(toEntry(
 							var -> var.getComponent(counts.get(var.getType()).getAndIncrement()),
 							var -> SampleValues.getValues(var.getType(), var.getIndex()).get(dpIdx) 
-						)).collect(toDataPoint(mock(LineageNode.class), structure));
+						)).collect(toDataPoint(LineageNode.of("sample"), structure));
 				}));
 	}
 
@@ -198,7 +197,7 @@ public enum SampleDataSets implements DataSet
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
 			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
-		return dataset.mapKeepingKeys(metadata, x -> mock(Lineage.class), operator);
+		return dataset.mapKeepingKeys(metadata, lineageOperator, operator);
 	}
 
 	@Override

@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE7;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE8;
-import static it.bancaditalia.oss.vtl.impl.transform.testutils.SampleDataSets.SAMPLE9;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE7;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE8;
+import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE9;
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode.SINGLE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;

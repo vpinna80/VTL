@@ -140,6 +140,10 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-envsamples</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-metadb</artifactId>
 		</dependency>
 		<dependency>
