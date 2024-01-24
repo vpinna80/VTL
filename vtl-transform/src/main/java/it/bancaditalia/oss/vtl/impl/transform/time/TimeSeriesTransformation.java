@@ -25,7 +25,6 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimeDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -34,7 +33,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -62,7 +60,7 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
 		
 		DataSetMetadata ds = (DataSetMetadata) metadata;
-		Set<DataStructureComponent<Identifier, EntireTimeDomainSubset, TimeDomain>> timeIDs = ds.getComponents(Identifier.class, TIMEDS);
+		Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ds.getComponents(Identifier.class, TIMEDS);
 		if (timeIDs.size() != 1)
 			throw new VTLSingletonComponentRequiredException(Identifier.class, TIMEDS, ds);
 		

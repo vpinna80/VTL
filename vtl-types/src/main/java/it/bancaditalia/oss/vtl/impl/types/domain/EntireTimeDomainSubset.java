@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -38,7 +40,7 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 
 	private EntireTimeDomainSubset()
 	{
-		super(null, "time_var");
+		super(TIMEDS);
 	}
 
 	@Override

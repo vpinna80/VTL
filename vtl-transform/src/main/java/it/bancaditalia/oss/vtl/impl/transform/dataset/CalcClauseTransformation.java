@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
@@ -67,6 +66,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -89,7 +89,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		public CalcClauseItem(Class<? extends ComponentRole> role, String name, Transformation calcClause)
 		{
-			this.name = normalizeAlias(name);
+			this.name = Variable.normalizeAlias(name);
 			this.calcClause = calcClause;
 			this.role = role;
 		}

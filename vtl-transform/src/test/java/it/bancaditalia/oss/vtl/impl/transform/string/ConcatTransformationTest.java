@@ -37,13 +37,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ConcatTransformationTest
@@ -74,14 +72,14 @@ public class ConcatTransformationTest
 		assertTrue(metadata.contains("string_2"));
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
-		Optional<DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
-		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> oMeasure = metadata.getComponent("string_2", Measure.class, STRINGDS);
+		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
+		Optional<DataStructureComponent<Measure, ?, ?>> oMeasure = metadata.getComponent("string_2", Measure.class, STRINGDS);
 		
 		assertTrue(oId.isPresent(), "String id present");
 		assertTrue(oMeasure.isPresent(), "String measure present");
 		
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> id = oId.get();
-		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> res = oMeasure.get();
+		DataStructureComponent<Identifier, ?, ?> id = oId.get();
+		DataStructureComponent<Measure, ?, ?> res = oMeasure.get();
 		
 		DataSet leftD = (DataSet) left.eval(session), 
 				rightD = (DataSet) right.eval(session);

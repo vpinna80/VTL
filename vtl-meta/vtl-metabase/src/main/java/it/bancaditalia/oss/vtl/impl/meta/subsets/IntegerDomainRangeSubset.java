@@ -90,12 +90,6 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 	}
 
 	@Override
-	public String getVarName()
-	{
-		return name + "_var";
-	}
-
-	@Override
 	public Transformation getCriterion()
 	{
 		return range;

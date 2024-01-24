@@ -79,12 +79,6 @@ public class NumberDomainRangeSubset implements DescribedDomainSubset<NumberDoma
 	}
 
 	@Override
-	public String getVarName()
-	{
-		return name + "_var";
-	}
-
-	@Override
 	public Transformation getCriterion()
 	{
 		throw new UnsupportedOperationException();

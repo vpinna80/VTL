@@ -19,6 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
+
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
@@ -36,39 +42,15 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset<S>> extends EntireDomainSubset<S, TimePeriodDomain> implements TimePeriodDomainSubset<S>
 {
 	private static final long serialVersionUID = 1L;
-	@SuppressWarnings("rawtypes")
-	public static final EntireTimePeriodDomainSubset<?> INSTANCE = new EntireTimePeriodDomainSubset();
-	
-	protected EntireTimePeriodDomainSubset()
-	{
-		super(null, "time_period_var");
-	}
-
-	public static EntireTimePeriodDomainSubset<?> getInstance()
-	{
-		return INSTANCE;
-	}
-	
-	public static class AnyPeriodDomainSubset extends EntireTimePeriodDomainSubset<AnyPeriodDomainSubset>
-	{
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		protected PeriodHolder<?> getHolder(PeriodHolder<?> holder)
-		{
-			return holder;
-		}
-
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return other instanceof EntireTimePeriodDomainSubset;
-		}
-	}
 	
 	public static class YearsDomainSubset extends EntireTimePeriodDomainSubset<YearsDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
+		
+		public YearsDomainSubset()
+		{
+			super(YEARSDS);
+		}
 
 		@Override
 		protected YearPeriodHolder getHolder(PeriodHolder<?> holder)
@@ -86,6 +68,11 @@ public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset
 	public static class SemestersDomainSubset extends EntireTimePeriodDomainSubset<SemestersDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
+		
+		public SemestersDomainSubset()
+		{
+			super(SEMESTERSDS);
+		}
 
 		@Override
 		protected SemesterPeriodHolder getHolder(PeriodHolder<?> holder)
@@ -104,6 +91,11 @@ public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset
 	{
 		private static final long serialVersionUID = 1L;
 
+		public QuartersDomainSubset()
+		{
+			super(QUARTERSDS);
+		}
+		
 		@Override
 		protected QuarterPeriodHolder getHolder(PeriodHolder<?> holder)
 		{
@@ -121,6 +113,11 @@ public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset
 	{
 		private static final long serialVersionUID = 1L;
 
+		public MonthsDomainSubset()
+		{
+			super(MONTHSDS);
+		}
+		
 		@Override
 		protected MonthPeriodHolder getHolder(PeriodHolder<?> holder)
 		{
@@ -137,6 +134,11 @@ public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset
 	public static class WeeksDomainSubset extends EntireTimePeriodDomainSubset<WeeksDomainSubset>
 	{
 		private static final long serialVersionUID = 1L;
+		
+		public WeeksDomainSubset()
+		{
+			super(WEEKSDS);
+		}
 
 		@Override
 		protected WeekPeriodHolder getHolder(PeriodHolder<?> holder)
@@ -151,9 +153,9 @@ public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset
 		}
 	};
 	
-	public EntireTimePeriodDomainSubset(TimePeriodDomain parentDomain, String defaultVarName)
+	public EntireTimePeriodDomainSubset(TimePeriodDomain parentDomain)
 	{
-		super(parentDomain, defaultVarName);
+		super(parentDomain);
 	}
 
 	@Override

@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
@@ -56,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -77,7 +77,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 		public AggrClauseItem(Class<? extends ComponentRole> role, String name, AggregateTransformation operand)
 		{
-			this.name = normalizeAlias(name);
+			this.name = Variable.normalizeAlias(name);
 			this.operand = operand;
 			this.role = role;
 		}
@@ -210,7 +210,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					if (measures.size() != 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, measures);
 					final DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
-					clauseMeta = measure.getMetadata();
+					clauseMeta = measure.getVariable();
 				}
 
 				if (!(clauseMeta instanceof ScalarValueMetadata) || !NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
@@ -226,10 +226,10 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else
-						builder = builder.addComponent(new DataStructureComponentImpl<>(clause.getComponent(), requestedRole, NUMBERDS));
+						builder = builder.addComponent(DataStructureComponentImpl.of(clause.getComponent(), requestedRole, NUMBERDS));
 				}
 				else
-					builder = builder.addComponent(new DataStructureComponentImpl<>(clause.getComponent(), requestedRole, NUMBERDS));
+					builder = builder.addComponent(DataStructureComponentImpl.of(clause.getComponent(), requestedRole, NUMBERDS));
 			}
 
 			if (having != null)

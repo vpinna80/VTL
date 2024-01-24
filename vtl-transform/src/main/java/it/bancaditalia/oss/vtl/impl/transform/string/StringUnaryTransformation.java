@@ -133,7 +133,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 			
 			Set<DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures().stream()
 //					.map(m -> m.getDomain() instanceof StringEnumeratedDomainSubset
-//							? new DataStructureComponentImpl<>(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringEnumeratedDomainSubset<?, ?>) m.getDomain()))
+//							? DataStructureComponentImpl.of(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringEnumeratedDomainSubset<?, ?>) m.getDomain()))
 //							: m
 //					)
 					.collect(toSet());

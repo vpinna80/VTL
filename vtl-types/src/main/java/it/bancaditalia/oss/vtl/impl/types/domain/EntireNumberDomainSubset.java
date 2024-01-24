@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -39,7 +41,7 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 
 	EntireNumberDomainSubset()
 	{
-		super(Domains.NUMBERDS, "number_var");
+		super(NUMBERDS);
 	}
 
 	@Override

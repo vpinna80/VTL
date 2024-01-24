@@ -31,17 +31,5 @@ import it.bancaditalia.oss.vtl.model.data.CodeItem;
 public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C>, C extends CodeItem<C, String, S, StringDomain>> extends EnumeratedDomainSubset<S, StringDomain, C, String>, StringDomainSubset<S>
 {
 	@Override
-	public default boolean isAssignableFrom(ValueDomain other)
-	{
-		return other instanceof StringEnumeratedDomainSubset && getVarName().equals(other.getVarName());
-	}
-
-	@Override
-	public default String getVarName()
-	{
-		return getName() + "_var";
-	}
-
-	@Override
 	public Set<C> getCodeItems();
 }

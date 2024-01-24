@@ -78,7 +78,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class InStrTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponentImpl<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_MEASURE = new DataStructureComponentImpl<>(INTEGER.getDomain().getVarName(), Measure.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, ?, ?> INT_MEASURE = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
 	
 	private final Transformation leftOperand;
 	private final Transformation rightOperand;
@@ -116,7 +116,7 @@ public class InStrTransformation extends TransformationImpl
 			DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 					.addComponent(INT_MEASURE)
 					.build();
-			DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+			DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			String lineageString = "instr with " + pattern;
 			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> singletonMap(INT_MEASURE, 

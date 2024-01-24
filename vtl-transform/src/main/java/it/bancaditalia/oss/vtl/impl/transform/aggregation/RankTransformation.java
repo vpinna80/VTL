@@ -71,6 +71,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -79,7 +80,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class RankTransformation extends TransformationImpl implements AnalyticTransformation, LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
 	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
 
 	private final List<String> partitionBy;
@@ -88,7 +89,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 
 	public RankTransformation(List<String> partitionBy, List<OrderByItem> orderByClause)
 	{
-		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(DataStructureComponent::normalizeAlias).collect(toList());
+		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(Variable::normalizeAlias).collect(toList());
 		this.orderByClause = coalesce(orderByClause, emptyList());
 		this.lineageDescriptor = "rank by " + orderByClause.stream().map(OrderByItem::getName).collect(joining(" "));
 	}

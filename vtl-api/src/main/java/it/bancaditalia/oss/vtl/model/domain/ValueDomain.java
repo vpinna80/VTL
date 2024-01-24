@@ -21,8 +21,6 @@ package it.bancaditalia.oss.vtl.model.domain;
 
 import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-
 /**
  * A standard unrestricted VTL valuedomain as defined in VTL specification. 
  * 
@@ -50,9 +48,4 @@ public interface ValueDomain extends Serializable
 	 * @return true if the comparison is possible
 	 */
 	public boolean isComparableWith(ValueDomain other);
-
-	/**
-	 * @return the default variable name for {@link DataStructureComponent}s of this ValueDomain
-	 */
-	public String getVarName();
 }

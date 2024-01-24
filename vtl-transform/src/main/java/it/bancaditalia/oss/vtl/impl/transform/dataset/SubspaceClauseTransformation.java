@@ -40,6 +40,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class SubspaceClauseTransformation extends DatasetClauseTransformation
@@ -49,7 +50,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	
 	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?, ?>> subspace)
 	{
-		this.subspace = subspace.keySet().stream().collect(toMap(DataStructureComponent::normalizeAlias, subspace::get));
+		this.subspace = subspace.keySet().stream().collect(toMap(Variable::normalizeAlias, subspace::get));
 	}
 
 	@Override

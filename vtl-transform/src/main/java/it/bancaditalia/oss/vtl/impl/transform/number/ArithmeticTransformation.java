@@ -139,13 +139,13 @@ public class ArithmeticTransformation extends BinaryTransformation
 
 		if (metadata == null)
 		{
-			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> leftMeasure = streamed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
-			DataStructureComponent<Measure, ? extends NumberDomainSubset<?, ?>, NumberDomain> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
-			DataStructureComponentImpl<Measure, ? extends NumberDomainSubset<?, ?>, ?> resultComp;
+			DataStructureComponent<Measure, ?, ?> leftMeasure = streamed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataStructureComponent<Measure, ?, ?> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataStructureComponent<Measure, ?, ?> resultComp;
 			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getDomain()))
-				resultComp = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
+				resultComp = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
 			else
-				resultComp = new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS);
+				resultComp = DataStructureComponentImpl.of(Measure.class, NUMBERDS);
 			
 			DataSetMetadata newStructure = new DataStructureBuilder(streamed.getMetadata().getIDs())
 					.addComponent(resultComp)
@@ -267,7 +267,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		// check if measures are the same, unless we are at component level
 		Set<DataStructureComponent<? extends Measure, ?, ?>> resultMeasures;
 		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
-			resultMeasures = singleton(new DataStructureComponentImpl<>(NUMBERDS.getVarName(), Measure.class, NUMBERDS));
+			resultMeasures = singleton(DataStructureComponentImpl.of(Measure.class, NUMBERDS));
 		else
 		{
 			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(DataStructureComponent::getName));

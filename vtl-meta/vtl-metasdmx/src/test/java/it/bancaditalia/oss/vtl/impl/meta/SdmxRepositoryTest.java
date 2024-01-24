@@ -24,26 +24,24 @@ import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentI
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockserver.matchers.Times.exactly;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.XmlBody.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.Objects;
 import java.util.Set;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import org.xml.sax.SAXException;
+import org.mockserver.junit.jupiter.MockServerSettings;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.LazyCodeList;
@@ -58,30 +56,30 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 @ExtendWith(MockServerExtension.class)
+@MockServerSettings(ports = { 38765 })
 public class SdmxRepositoryTest
 {
 	private final MetadataRepository repo;
 
-	public SdmxRepositoryTest(MockServerClient client) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	public SdmxRepositoryTest(MockServerClient client)
 	{
-		for (String[] entry: new String[][] { 
-					{ "CL_CURRENCY.xml", "/codelist/ECB/CL_CURRENCY/1.0/" }, 
-					{ "EXR.xml", "/dataflow/ECB/EXR/1.0/" }, 
-					{ "ECB_EXR1.xml", "/datastructure/ECB/ECB_EXR1/1.0/" } 
-				})
-			try (InputStream resource = Objects.requireNonNull(SdmxRepositoryTest.class.getResourceAsStream(entry[0])))
-			{
-				client.when(request().withPath(entry[1])).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
-			}
-
 		System.setProperty("vtl.sdmx.meta.endpoint", "http://localhost:" + client.getPort());
 		METADATA_REPOSITORY.setValue(SDMXRepository.class.getName());
 		repo = ConfigurationManagerFactory.getInstance().getMetadataRepository();
 	}
 
 	@Test
-	public void testGetCodes()
+	public void testGetCodes(MockServerClient client) throws IOException
 	{
+		// setup
+		for (String[] entry: new String[][] { 
+				{ "CL_CURRENCY.xml", "/codelist/ECB/CL_CURRENCY/1.0/" } 
+			}) try (InputStream resource = requireNonNull(SdmxRepositoryTest.class.getResourceAsStream(entry[0])))
+			{
+				client.when(request().withPath(entry[1]), exactly(1)).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
+			}
+		
+		// test
 		assertTrue(repo instanceof SDMXRepository);
 		ValueDomainSubset<?, ?> domain = repo.getDomain("ECB:CL_CURRENCY(1.0)");
 		assertTrue(domain instanceof LazyCodeList);
@@ -90,8 +88,23 @@ public class SdmxRepositoryTest
 	}
 
 	@Test
-	public void testGetStructure()
+	public void testGetStructure(MockServerClient client) throws IOException
 	{
+		// setup
+		for (String[] entry: new String[][] { 
+				{ "EXR.xml", "/dataflow/ECB/EXR/1.0/" },
+				{ "ECB_EXR1.xml", "/datastructure/ECB/ECB_EXR1/1.0/" }, 
+				{ "CL_FREQ.xml", "/codelist/ECB/CL_FREQ/1.0/" }, 
+				{ "CL_CURRENCY.xml", "/codelist/ECB/CL_CURRENCY/1.0/" },
+				{ "CL_EXR_TYPE.xml", "/codelist/ECB/CL_EXR_TYPE/1.0/" }, 
+				{ "CL_EXR_SUFFIX.xml", "/codelist/ECB/CL_EXR_SUFFIX/1.0/" }
+			}) try (InputStream resource = requireNonNull(SdmxRepositoryTest.class.getResourceAsStream(entry[0])))
+			{
+				client.when(request().withPath(entry[1]), exactly(1)).respond(response().withBody(xml(IOUtils.toString(resource, "UTF-8"))));
+			}
+		
+		// test
+		DataSetMetadata actual = repo.getStructure("ECB:EXR(1.0)");
 		DataSetMetadata expected = new DataStructureBuilder().addComponent(of("TIME_PERIOD", Identifier.class, TIMEDS)).addComponent(of("FREQ", Identifier.class, repo.getDomain("ECB:CL_FREQ(1.0)")))
 				.addComponent(of("CURRENCY", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)"))).addComponent(of("CURRENCY_DENOM", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)")))
 				.addComponent(of("EXR_TYPE", Identifier.class, repo.getDomain("ECB:CL_EXR_TYPE(1.0)"))).addComponent(of("EXR_SUFFIX", Identifier.class, repo.getDomain("ECB:CL_EXR_SUFFIX(1.0)")))
@@ -105,7 +118,7 @@ public class SdmxRepositoryTest
 				.addComponent(of("COMPILATION", Attribute.class, STRINGDS)).addComponent(of("OBS_PRE_BREAK", Attribute.class, STRINGDS)).addComponent(of("DECIMALS", Attribute.class, STRINGDS))
 				.addComponent(of("OBS_STATUS", Attribute.class, STRINGDS)).build();
 
-		DataSetMetadata structure = repo.getStructure("ECB:EXR(1.0)");
-		assertEquals(expected, structure);
+		
+		assertEquals(expected, actual);
 	}
 }

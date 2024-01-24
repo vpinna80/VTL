@@ -50,4 +50,12 @@ public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends 
 	 * @return the default value for this domain if defined. 
 	 */
 	public ScalarValue<?, ?, S, D> getDefaultValue();
+
+	/**
+	 * @return the variable with the default name defined for this domain. 
+	 */
+	public default String getDefaultVariableName()
+	{
+		return getName() + "_var";
+	}
 }

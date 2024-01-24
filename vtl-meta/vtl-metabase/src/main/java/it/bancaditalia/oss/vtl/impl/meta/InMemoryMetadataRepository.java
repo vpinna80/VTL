@@ -67,17 +67,13 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	@Override
 	public ValueDomainSubset<?, ?> getDomain(String alias) 
 	{
-		if (domains.containsKey(requireNonNull(alias)))
-			return domains.get(alias);
-		
-		throw new VTLException("Domain '" + alias + "' is undefined in the metadata.");
+		return Optional.ofNullable(domains.get(alias)).orElseThrow(() -> new VTLException("Domain '" + alias + "' is undefined in the metadata."));
 	}
 	
 	@Override
 	public ValueDomainSubset<?, ?> defineDomain(String alias, ValueDomainSubset<?, ?> domain)
 	{
-		domains.putIfAbsent(requireNonNull(alias, "alias"), requireNonNull(domain, "domain"));
-		return domains.get(alias);
+		return domains.computeIfAbsent(requireNonNull(alias, "alias"), k -> requireNonNull(domain, "domain"));
 	}
 	
 	@Override

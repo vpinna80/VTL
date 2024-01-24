@@ -30,9 +30,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -83,17 +80,15 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * The returned set should not be altered in any way.
 	 * 
 	 * @param <R> the role type
-	 * @param <S> the domain subset type
-	 * @param <D> the domain type
 	 * @param role the role to query
 	 * @param domain the domain to query
 	 * @return A set of the queried components.
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role, S domain)
+	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponents(role).stream()
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
-				.map(c -> c.asRole(role).asDomain(domain))
+				.map(c -> c.asRole(role))
 				.collect(toSet());
 	}
 
@@ -116,17 +111,14 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	/**
 	 * Queries this {@link DataSetMetadata} for a component with the specified name and value domain.
 	 * 
-	 * @param <S> the domain subset type
-	 * @param <D> the domain type
 	 * @param name the name of the desired component
 	 * @param domain the domain to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<?, S, D>> getComponent(String name, S domain)
+	public default Optional<DataStructureComponent<?, ?, ?>> getComponent(String name, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponent(name)
-				.filter(c -> domain.isAssignableFrom(c.getDomain()))
-				.map(c -> c.asDomain(domain));
+				.filter(c -> domain.isAssignableFrom(c.getDomain()));
 	}
 
 	/**
@@ -148,19 +140,16 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * Queries this {@link DataSetMetadata} for a component with the specified name, role and value domain.
 	 * 
 	 * @param <R> the role type
-	 * @param <S> the domain subset type
-	 * @param <D> the domain type
 	 * @param name the name of the desired component
 	 * @param role the role to query
 	 * @param domain the domain to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Optional<DataStructureComponent<R, S, D>> getComponent(String name, Class<R> role, S domain)
+	public default <R extends ComponentRole> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getDomain()))
 				.filter(c -> c.is(role))
-				.map(c -> c.asDomain(domain))
 				.map(c -> c.asRole(role));
 	}
 
@@ -171,22 +160,6 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @return The new structure.
 	 */
 	public DataSetMetadata subspace(Collection<? extends DataStructureComponent<Identifier, ?, ?>> subspace);
-	
-	/**
-	 * Creates a new structure where only the named non-identifier components are kept.
-	 * 
-	 * @param comps non-identifier components to keep
-	 * @return The new structure.
-	 */
-	public DataSetMetadata keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps);
-	
-	/**
-	 * Creates a new structure dropping all the named non-identifier components.
-	 * 
-	 * @param comps non-identifier components to drop
-	 * @return The new structure.
-	 */
-	public DataSetMetadata drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps);
 
 	/**
 	 * Creates a new structure by performing a VTL membership operation on this structure.
@@ -224,7 +197,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param measure the measure
 	 * @return the new structure.
 	 */
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?>, StringDomain> identifier, DataStructureComponent<Measure, S, D> measure);
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ?, ?> identifier, DataStructureComponent<Measure, S, D> measure);
 
 	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends String> names, String operation)
 	{

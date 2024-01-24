@@ -33,8 +33,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -53,7 +51,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Identifier, ? extends TimeDomainSubset<?, ?>, TimeDomain> timeID = dataset.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
+		DataStructureComponent<Identifier, ?, ?> timeID = dataset.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
 		DataSetMetadata structure = dataset.getMetadata();
 		
 		String lineageString = "timeshift " + amount;

@@ -147,7 +147,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	public default boolean matches(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> identifierValues)
 	{
 		return !Utils.getStream(identifierValues)
-				.filter(entryByKeyValue((k, v) -> !get(k).equals(k.cast(v))))
+				.filter(entryByKeyValue((k, v) -> !get(k).equals(k.getDomain().cast(v))))
 				.findAny()
 				.isPresent();
 	}

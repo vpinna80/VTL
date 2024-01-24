@@ -32,6 +32,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
@@ -41,6 +42,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class KeepClauseTransformation extends DatasetClauseTransformation
@@ -50,7 +52,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	
 	public KeepClauseTransformation(List<String> names)
 	{
-		this.names = names.stream().map(DataStructureComponent::normalizeAlias).collect(toArray(new String[names.size()]));
+		this.names = names.stream().map(Variable::normalizeAlias).collect(toArray(new String[names.size()]));
 	}
 
 	@Override
@@ -65,7 +67,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 			});
 	}
 	
-	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	public DataSetMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata operand = getThisMetadata(scheme);
 		
@@ -81,7 +83,9 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
 
-		return ((DataSetMetadata) operand).keep(namedComps);
+		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+				.addComponents(namedComps)
+				.build();
 	}
 
 	@Override

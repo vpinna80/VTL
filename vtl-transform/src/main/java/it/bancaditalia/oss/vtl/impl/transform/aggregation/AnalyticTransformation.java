@@ -19,10 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
-
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod;
 
 public interface AnalyticTransformation
@@ -35,7 +34,7 @@ public interface AnalyticTransformation
 
 		public OrderByItem(String name, SortingMethod method)
 		{
-			this.name = normalizeAlias(name);
+			this.name = Variable.normalizeAlias(name);
 			this.method = method;
 		}
 

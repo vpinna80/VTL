@@ -41,12 +41,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class FilterClauseTransformationTest
@@ -93,7 +91,7 @@ public class FilterClauseTransformationTest
 		assertEquals(expectedResult.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> id = metadata.getComponent("string_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, ?, ?> id = metadata.getComponent("string_1", Identifier.class, STRINGDS).get();
 		
 		String[] arrayResult = computedResult.stream()
 			.map(dp -> dp.get(id).get())

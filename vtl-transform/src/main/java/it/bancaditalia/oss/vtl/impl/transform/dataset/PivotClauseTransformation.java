@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
@@ -50,7 +49,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollector;
@@ -64,12 +63,12 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	private final String measureName;
 
 	private transient DataStructureComponent<Measure, ?, ?> measure;
-	private transient DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?>, StringDomain> identifier;
+	private transient DataStructureComponent<Identifier, ?, ?> identifier;
 
 	public PivotClauseTransformation(String identifierName, String measureName)
 	{
-		this.identifierName = normalizeAlias(identifierName);
-		this.measureName = normalizeAlias(measureName);
+		this.identifierName = Variable.normalizeAlias(identifierName);
+		this.measureName = Variable.normalizeAlias(measureName);
 		
 		LOGGER.debug("Pivoting " + measureName + " over " + identifierName);
 	}
@@ -84,11 +83,10 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 
 		DataSetMetadata dataset = (DataSetMetadata) value;
 
-		DataStructureComponent<Identifier, ?, ?> tempIdentifier = dataset.getComponent(identifierName, Identifier.class)
+		identifier = dataset.getComponent(identifierName, Identifier.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getIDs()));
-		if (!(tempIdentifier.getDomain() instanceof StringEnumeratedDomainSubset))
-			throw new VTLException("pivot: " + tempIdentifier.getName() + " is of type " + tempIdentifier.getDomain() + " but should be of a StringEnumeratedDomainSubset.");
-		identifier = tempIdentifier.asDomain((StringEnumeratedDomainSubset<?, ?>) tempIdentifier.getDomain());
+		if (!(identifier.getDomain() instanceof StringEnumeratedDomainSubset))
+			throw new VTLException("pivot: " + identifier.getName() + " is of type " + identifier.getDomain() + " but should be of a StringEnumeratedDomainSubset.");
 		
 		measure = dataset.getComponent(measureName, Measure.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getMeasures()));

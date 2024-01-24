@@ -43,6 +43,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class RenameClauseTransformation extends DatasetClauseTransformation
@@ -54,8 +55,8 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	public RenameClauseTransformation(Map<String, String> renames)
 	{
 		this.renames = renames.entrySet().stream()
-				.map(keepingKey(DataStructureComponent::normalizeAlias))
-				.map(keepingValue(DataStructureComponent::normalizeAlias))
+				.map(keepingKey(Variable::normalizeAlias))
+				.map(keepingValue(Variable::normalizeAlias))
 				.collect(entriesToMap());
 	}
 

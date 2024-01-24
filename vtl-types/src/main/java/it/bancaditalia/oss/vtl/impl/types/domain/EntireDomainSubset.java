@@ -40,7 +40,6 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	private static final long serialVersionUID = 1L;
 
 	private final D parentDomain;
-	private final String varName;
 	
 	public static final Transformation ENTIRE = new Transformation() {
 		
@@ -71,10 +70,9 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 		}
 	};
 	
-	public EntireDomainSubset(D parentDomain, String defaultVarName)
+	public EntireDomainSubset(D parentDomain)
 	{
 		this.parentDomain = parentDomain;
-		this.varName = defaultVarName;
 
 		// check no cycles in subsetting
 		ValueDomain parent = parentDomain;
@@ -98,12 +96,6 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	public D getParentDomain()
 	{
 		return parentDomain;
-	}
-	
-	@Override
-	public String getVarName()
-	{
-		return varName;
 	}
 
 	@Override

@@ -48,7 +48,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class IsNullTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>(BOOLEANDS.getVarName(), Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = DataStructureComponentImpl.of(Measure.class, BOOLEANDS);
 
 	public IsNullTransformation(Transformation operand)
 	{

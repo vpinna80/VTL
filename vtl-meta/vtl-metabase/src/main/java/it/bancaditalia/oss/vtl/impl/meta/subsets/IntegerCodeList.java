@@ -103,19 +103,13 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof IntegerEnumeratedDomainSubset && getVarName().equals(other.getVarName());
+		return other instanceof IntegerCodeList && name.equals(((IntegerCodeList<?>) other).name);
 	}
 
 	@Override
 	public boolean isComparableWith(ValueDomain other)
 	{
 		return INTEGERDS.isComparableWith(other);
-	}
-
-	@Override
-	public String getVarName()
-	{
-		return name + "_var";
 	}
 
 	@Override

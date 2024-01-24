@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.stream.Collectors.toMap;
@@ -37,8 +36,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringR
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet;
@@ -63,9 +62,9 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 		super(alias);
 		
 		this.isValueDomain = isValueDomain;
-		this.ruleID = ruleID != null ? normalizeAlias(ruleID) : null;
+		this.ruleID = ruleID != null ? Variable.normalizeAlias(ruleID) : null;
 		this.names = names.toArray(String[]::new);
-		this.leftOps = leftOps.stream().map(n -> n != null ? normalizeAlias(n) : null).collect(toArray(new String[this.names.length]));
+		this.leftOps = leftOps.stream().map(n -> n != null ? Variable.normalizeAlias(n) : null).collect(toArray(new String[this.names.length]));
 		this.compOps = compOps.toArray(RuleType[]::new);
 		this.rightOps = rightOps;
 		this.ercodes = ercodes.stream().map(StringValue::of).toArray(ScalarValue<?, ?, ?, ?>[]::new);
@@ -88,7 +87,7 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 							StringCodeItem leftOp = (StringCodeItem) codelist.cast(StringValue.of(leftOps[i]));
 							Map<String, Boolean> right = rightOps.get(i);
 							Map<StringCodeItem, Boolean> codes = right.keySet().stream()
-								.map(DataStructureComponent::normalizeAlias)
+								.map(Variable::normalizeAlias)
 								.collect(toMap(codelist::getCodeItem, c -> coalesce(right.get(c), true)));
 							return new StringRule(names[i], leftOp, compOps[i], codes, ercodes[i], erlevels[i]);
 						}).collect(Collectors.toList());

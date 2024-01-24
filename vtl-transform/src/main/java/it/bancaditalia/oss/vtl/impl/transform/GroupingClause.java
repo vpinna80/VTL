@@ -36,6 +36,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 
 public class GroupingClause implements Serializable
 {
@@ -65,7 +66,7 @@ public class GroupingClause implements Serializable
 	public GroupingClause(GroupingMode mode, List<String> fields)
 	{
 		this.mode = mode;
-		this.fields = fields.stream().map(DataStructureComponent::normalizeAlias).collect(toArray(new String[fields.size()]));
+		this.fields = fields.stream().map(Variable::normalizeAlias).collect(toArray(new String[fields.size()]));
 	}
 
 	public GroupingMode getMode()

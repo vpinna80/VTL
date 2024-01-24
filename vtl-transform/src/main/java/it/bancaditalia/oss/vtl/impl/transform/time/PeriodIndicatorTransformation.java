@@ -39,6 +39,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -49,8 +50,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -59,8 +58,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class PeriodIndicatorTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> DURATION_MEASURE = new DataStructureComponentImpl<>(
-			STRINGDS.getVarName(), Measure.class, STRINGDS);
+	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> DURATION_MEASURE = DataStructureComponentImpl.of(Measure.class, STRINGDS);
 
 	private final Transformation operand;
 	private transient String componentName = null;
@@ -89,11 +87,8 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 					.addComponent(DURATION_MEASURE)
 					.build();
 			
-			DataStructureComponent<?, ? extends TimeDomainSubset<?, ?>, TimeDomain> component;
-			if (operand == null)
-				component = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
-			else
-				component = ds.getMetadata().getComponents(Measure.class, TIMEDS).iterator().next();
+			Class<? extends ComponentRole> role = operand == null ? Identifier.class : Measure.class; 
+			DataStructureComponent<?, ?, ?> component = ds.getMetadata().getComponents(role).stream().filter(c -> TIMEDS.isAssignableFrom(c.getDomain())).findAny().get();
 
 			return ds.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(DURATION_MEASURE,
 							StringValue.of(((TimePeriodValue<?>) dp.get(component)).getPeriodIndicator())));
@@ -142,7 +137,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 				if (!TIME.isAssignableFrom(anyDomainComponent.getDomain()))
 					throw new VTLIncompatibleTypesException("period_indicator", TIMEDS, anyDomainComponent);
 				
-				componentName = anyDomainComponent.asDomain(TIMEDS).getName();
+				componentName = anyDomainComponent.getName();
 			}
 
 			return new DataStructureBuilder(ds.getIDs())

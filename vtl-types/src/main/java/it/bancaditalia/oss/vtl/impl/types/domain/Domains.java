@@ -40,7 +40,6 @@ public enum Domains implements ScalarValueMetadata
 	NUMBER(new EntireNumberDomainSubset()),
 	TIME(EntireTimeDomainSubset.getInstance()),
 	DATE(EntireDateDomainSubset.getInstance()),
-	TIME_PERIOD(EntireTimePeriodDomainSubset.getInstance()),
 	TIME_PERIOD_WEEKS(new WeeksDomainSubset()),
 	TIME_PERIOD_MONTHS(new MonthsDomainSubset()),
 	TIME_PERIOD_QUARTERS(new QuartersDomainSubset()),
@@ -63,6 +62,8 @@ public enum Domains implements ScalarValueMetadata
 	public static final SemestersDomainSubset SEMESTERSDS = (SemestersDomainSubset) TIME_PERIOD_SEMESTERS.getDomain();
 	public static final YearsDomainSubset YEARSDS = (YearsDomainSubset) TIME_PERIOD_YEARS.getDomain();
 	public static final NullDomain NULLDS = (NullDomain) NULL.getDomain();
+
+//	public static final Set<ValueDomainSubset<?, ?>> TIME_PERIODS_DS = Set.of(YEARSDS, SEMESTERSDS, QUARTERSDS, MONTHSDS, WEEKSDS);
 
 	private final ValueDomainSubset<?, ? extends ValueDomain> valueDomain;
 	

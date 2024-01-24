@@ -58,10 +58,10 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 
 public class ColumnarDataSetTest
 {
-	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> STR_ID = new DataStructureComponentImpl<>("STR_ID", Identifier.class, Domains.STRINGDS);
-	private static final DataStructureComponent<Identifier, EntireIntegerDomainSubset, IntegerDomain> INT_ID = new DataStructureComponentImpl<>("INT_ID", Identifier.class, INTEGERDS);
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_ME = new DataStructureComponentImpl<>("INT_ME", Measure.class, INTEGERDS);
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOL_ME = new DataStructureComponentImpl<>("BOL_ME", Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> STR_ID = DataStructureComponentImpl.of("STR_ID", Identifier.class, Domains.STRINGDS);
+	private static final DataStructureComponent<Identifier, EntireIntegerDomainSubset, IntegerDomain> INT_ID = DataStructureComponentImpl.of("INT_ID", Identifier.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_ME = DataStructureComponentImpl.of("INT_ME", Measure.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOL_ME = DataStructureComponentImpl.of("BOL_ME", Measure.class, BOOLEANDS);
 	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(STR_ID, INT_ID, INT_ME, BOL_ME).build();
 	private static final String STR_ID_VAL[] = { "A", "A", "B", "B", "C" }; 
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 

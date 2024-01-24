@@ -22,12 +22,6 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,16 +54,14 @@ public class DatapointScope extends AbstractScope
 		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
 			return true;
 		
-		return maybeMeta(structure, alias, DataStructureComponent::getMetadata)
-			.isPresent();
+		return structure.getComponent(alias).isPresent();
 	}
 
 	@Override
 	public VTLValue resolve(String alias) 
 	{
 		LOGGER.trace("Querying {} for {}:{}", alias, dp.hashCode(), dp);
-		return maybeMeta(structure, alias, dp::get)
-			.orElseThrow(() -> new VTLUnboundAliasException(alias));
+		return structure.getComponent(alias).map(dp::get).orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 	
 	@Override
@@ -79,22 +71,7 @@ public class DatapointScope extends AbstractScope
 			return structure;
 		
 		LOGGER.trace("Querying {} for {}:{}", alias, structure.hashCode(), structure);
-		return maybeMeta(structure, alias, scalar -> scalar.getMetadata())
-			.orElseThrow(() -> new VTLUnboundAliasException(alias));
-	}
-
-	private <T> Optional<T> maybeMeta(Set<DataStructureComponent<?, ?, ?>> components, String alias, Function<? super DataStructureComponent<?, ?, ?>, T> mapper)
-	{
-		Predicate<? super DataStructureComponent<?, ?, ?>> filter = Objects.requireNonNull(alias, "The name to resolve cannot be null.").matches("'.*'")
-				? c -> c.getName().equals(alias.replaceAll("'(.*)'", "$1"))
-				: c -> c.getName().equalsIgnoreCase(alias);
-
-		Optional<T> result = components.stream()
-			.filter(filter)
-			.findAny()
-			.map(mapper);
-		LOGGER.trace("Computed {} for {}:{}", alias, components.hashCode(), components);
-		return result;
+		return structure.getComponent(alias).map(DataStructureComponent::getVariable).orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 
 	@Override

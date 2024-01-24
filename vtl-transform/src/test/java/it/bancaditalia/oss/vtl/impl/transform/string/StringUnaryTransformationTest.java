@@ -44,15 +44,12 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 
@@ -83,8 +80,8 @@ public class StringUnaryTransformationTest
 		StringUnaryTransformation sut = new StringUnaryTransformation(operator, left);
 		DataSetMetadata structure = (DataSetMetadata) sut.getMetadata(session);
 		
-		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> measure = structure.getComponent("string_2", Measure.class, STRINGDS);
+		DataStructureComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
+		Optional<DataStructureComponent<Measure, ?, ?>> measure = structure.getComponent("string_2", Measure.class, STRINGDS);
 		assertTrue(measure.isPresent(), "measure present in " + structure);
 		
 		try (Stream<DataPoint> stream = ((DataSet) sut.eval(session)).stream())

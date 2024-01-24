@@ -172,7 +172,7 @@ public class AggregateTransformation extends UnaryTransformation
 					return new DataStructureBuilder(newMeasures).build();
 
 				if (measures.size() == 1)
-					return measures.iterator().next().getMetadata();
+					return measures.iterator().next().getVariable();
 				else
 					return new DataStructureBuilder(newMeasures).build();
 			}

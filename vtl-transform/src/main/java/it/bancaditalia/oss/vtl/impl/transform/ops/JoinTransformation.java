@@ -25,7 +25,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
@@ -99,6 +98,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -124,7 +124,7 @@ public class JoinTransformation extends TransformationImpl
 		public JoinOperand(Transformation operand, String id)
 		{
 			this.operand = operand;
-			this.id = id == null ? null : normalizeAlias(id);
+			this.id = id == null ? null : Variable.normalizeAlias(id);
 		}
 
 		public Transformation getOperand()
@@ -167,7 +167,7 @@ public class JoinTransformation extends TransformationImpl
 		this.apply = apply;
 		this.rename = rename;
 		this.operands = unmodifiableList(operands);
-		this.usingNames = coalesce(using, emptyList()).stream().map(DataStructureComponent::normalizeAlias).collect(toList());
+		this.usingNames = coalesce(using, emptyList()).stream().map(Variable::normalizeAlias).collect(toList());
 		this.keepOrDrop = keepOrDrop;
 	}
 
@@ -413,10 +413,14 @@ public class JoinTransformation extends TransformationImpl
 		if (apply == null)
 			return dataset;
 
-		Set<DataStructureComponent<Measure, ?, ?>> applyComponents = dataset.getMetadata().getMeasures().stream().map(c -> c.getName().replaceAll("^.*#", "")).distinct().map(name -> {
-			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(session, name, dataset.getMetadata()))).getDomain();
-			return DataStructureComponentImpl.of(name, Measure.class, domain).asRole(Measure.class);
-		}).collect(toSet());
+		Set<DataStructureComponent<Measure, ?, ?>> applyComponents = dataset.getMetadata().getMeasures().stream()
+				.map(c -> c.getName().replaceAll("^.*#", ""))
+				.distinct()
+				.map(name -> {
+					ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(session, name, dataset.getMetadata()))).getDomain();
+					DataStructureComponent<Measure, ?, ?> component = DataStructureComponentImpl.of(name, Measure.class, domain);
+					return component;
+				}).collect(toSet());
 
 		DataSetMetadata applyMetadata = dataset.getMetadata().stream().filter(c -> !c.is(Measure.class) || !c.getName().contains("#")).collect(toDataStructure(applyComponents));
 
@@ -432,7 +436,10 @@ public class JoinTransformation extends TransformationImpl
 		});
 
 		// check for duplicate aliases
-		operands.stream().map(JoinOperand::getId).collect(groupingByConcurrent(identity(), counting())).entrySet().stream().filter(e -> e.getValue() > 1).map(Entry::getKey).findAny()
+		operands.stream().map(JoinOperand::getId).collect(groupingByConcurrent(identity(), counting())).entrySet().stream()
+				.filter(e -> e.getValue() > 1)
+				.map(Entry::getKey)
+				.findAny()
 				.ifPresent(alias -> {
 					throw new VTLSyntaxException("Join aliases must be unique: " + alias);
 				});
@@ -454,10 +461,13 @@ public class JoinTransformation extends TransformationImpl
 		if (apply != null)
 		{
 			DataSetMetadata applyResult = result;
-			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = applyResult.getMeasures().stream().map(c -> c.getName().replaceAll("^.*#", "")).distinct().map(name -> {
-				ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(scheme, name, applyResult))).getDomain();
-				return DataStructureComponentImpl.of(name, Measure.class, domain).asRole(Measure.class);
-			}).collect(toSet());
+			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = applyResult.getMeasures().stream()
+					.map(c -> c.getName().replaceAll("^.*#", ""))
+					.distinct()
+					.map(name -> {
+						ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(scheme, name, applyResult))).getDomain();
+						return DataStructureComponentImpl.of(name, Measure.class, domain).asRole(Measure.class);
+					}).collect(toSet());
 
 			result = applyResult.stream().filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).addComponents(applyComponents).build();

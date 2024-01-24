@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -33,7 +33,7 @@ public class VarIDOperand implements LeafTransformation
 	
 	public VarIDOperand(String name)
 	{
-		this.alias = DataStructureComponent.normalizeAlias(name);
+		this.alias = Variable.normalizeAlias(name);
 	}
 	
 	@Override

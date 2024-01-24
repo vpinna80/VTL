@@ -40,15 +40,11 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 
@@ -71,8 +67,8 @@ public class StrlenTransformationTest
 		StrlenTransformation st = new StrlenTransformation(left);
 		DataSetMetadata structure = (DataSetMetadata) st.getMetadata(session);
 		
-		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain>> measure = structure.getComponent("integer_var", Measure.class, INTEGERDS);
+		DataStructureComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
+		Optional<DataStructureComponent<Measure, ?, ?>> measure = structure.getComponent("integer_var", Measure.class, INTEGERDS);
 		assertTrue(measure.isPresent(), "integer_var result");
 		
 		DataSet ds = (DataSet) st.eval(session);

@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
@@ -49,6 +48,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -63,8 +63,8 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 
 	public UnpivotClauseTransformation(String identifierName, String measureName)
 	{
-		this.identifierName = normalizeAlias(identifierName);
-		this.measureName = normalizeAlias(measureName);
+		this.identifierName = Variable.normalizeAlias(identifierName);
+		this.measureName = Variable.normalizeAlias(measureName);
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		DataSet dataset = (DataSet) getThisValue(scheme);
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, ?, ?> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
 		DataStructureComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
 
 		String lineageString = toString();
@@ -118,7 +118,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		
 		ValueDomainSubset<?, ?> domain = domains.iterator().next();
 
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = new DataStructureComponentImpl<>(identifierName, Identifier.class, STRINGDS);
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = DataStructureComponentImpl.of(identifierName, Identifier.class, STRINGDS);
 		DataStructureComponent<?, ?, ?> newMeasure = DataStructureComponentImpl.of(measureName, Measure.class, domain);
 
 		return new DataStructureBuilder(dataset.getIDs())

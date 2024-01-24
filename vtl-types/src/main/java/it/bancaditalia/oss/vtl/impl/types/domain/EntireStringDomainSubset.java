@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
@@ -37,7 +39,7 @@ public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDom
 
 	EntireStringDomainSubset()
 	{
-		super(Domains.STRINGDS, "string_var");
+		super(STRINGDS);
 	}
 
 	@Override

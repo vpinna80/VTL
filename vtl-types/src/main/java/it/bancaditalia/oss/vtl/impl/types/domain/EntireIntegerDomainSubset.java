@@ -42,7 +42,7 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 
 	EntireIntegerDomainSubset()
 	{
-		super(INTEGERDS, "integer_var");
+		super(INTEGERDS);
 	}
 
 	@Override

@@ -26,7 +26,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIOD;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODS;
 import static java.util.Collections.singletonMap;
 import static java.util.Locale.ENGLISH;
@@ -107,7 +106,7 @@ public class CastTransformation extends UnaryTransformation
 		if (target.getDomain() == oldMeasure.getDomain())
 			return dataset;
 		
-		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(target.getDomain().getVarName(), Measure.class, target.getDomain()).asRole(Measure.class);
+		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(Measure.class, target.getDomain()).asRole(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(measure)
 				.build();
@@ -143,8 +142,8 @@ public class CastTransformation extends UnaryTransformation
 			return INTEGER;
 		else if (domain instanceof StringDomainSubset && target == NUMBER)
 			return NUMBER;
-		else if (domain instanceof StringDomainSubset && target == TIME_PERIOD)
-			return TIME_PERIOD;
+		else if (domain instanceof StringDomainSubset && TIME_PERIODS.contains(target))
+			return target;
 		else if (domain instanceof StringDomainSubset && target == DATE)
 			return DATE;
 		else if (domain instanceof TimeDomainSubset && target == STRING)
@@ -179,7 +178,7 @@ public class CastTransformation extends UnaryTransformation
 				return target.getDomain().cast(scalar);
 			else if (scalar instanceof StringValue && target == DATE)
 				return DateValue.of(parseString(scalar.get().toString(), mask));
-			else if (scalar instanceof StringValue && target == TIME_PERIOD)
+			else if (scalar instanceof StringValue && TIME_PERIODS.contains(target))
 				return TimePeriodValue.of(scalar.get().toString(), mask);
 			else if (scalar instanceof DateValue && target == STRING)
 				return StringValue.of(parseTemporal((LocalDate) scalar.get(), mask));

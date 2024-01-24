@@ -30,7 +30,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -74,6 +73,7 @@ import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
@@ -88,11 +88,11 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class CheckHierarchyTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> RULEID = new DataStructureComponentImpl<>("ruleid", Identifier.class, STRINGDS); 
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS); 
-	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> IMBALANCE = new DataStructureComponentImpl<>("imbalance", Measure.class, NUMBERDS); 
-	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> ERRORCODE = new DataStructureComponentImpl<>("errorcode", Measure.class, STRINGDS); 
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> ERRORLEVEL = new DataStructureComponentImpl<>("errorlevel", Measure.class, INTEGERDS); 
+	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> RULEID = DataStructureComponentImpl.of("ruleid", Identifier.class, STRINGDS); 
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS); 
+	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> IMBALANCE = DataStructureComponentImpl.of("imbalance", Measure.class, NUMBERDS); 
+	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> ERRORCODE = DataStructureComponentImpl.of("errorcode", Measure.class, STRINGDS); 
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> ERRORLEVEL = DataStructureComponentImpl.of("errorlevel", Measure.class, INTEGERDS); 
 
 	public enum Input
 	{
@@ -115,10 +115,10 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	public CheckHierarchyTransformation(Transformation operand, String rulesetID, List<String> conditions, String id, HierarchyMode mode, Input input, Output output)
 	{
 		this.operand = operand;
-		this.rulesetID = normalizeAlias(requireNonNull(rulesetID));
-		this.conditions = coalesce(conditions, new ArrayList<>()).stream().map(DataStructureComponent::normalizeAlias).collect(toList());
+		this.rulesetID = Variable.normalizeAlias(requireNonNull(rulesetID));
+		this.conditions = coalesce(conditions, new ArrayList<>()).stream().map(Variable::normalizeAlias).collect(toList());
 		
-		this.id = id != null ? normalizeAlias(id) : null;
+		this.id = id != null ? Variable.normalizeAlias(id) : null;
 		this.mode = coalesce(mode, NON_NULL);
 		this.input = coalesce(input, DATASET);
 		this.output = coalesce(output, INVALID);

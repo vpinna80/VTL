@@ -38,7 +38,7 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 
 	EntireBooleanDomainSubset()
 	{ 
-		super(BOOLEANDS, "boolean_var");
+		super(BOOLEANDS);
 	}
 	
 	

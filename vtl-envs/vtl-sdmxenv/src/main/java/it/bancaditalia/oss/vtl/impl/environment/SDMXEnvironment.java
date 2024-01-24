@@ -299,13 +299,13 @@ public class SDMXEnvironment implements Environment, Serializable
 					KeyValue k = keys.get(i);
 					DataStructureComponent<Identifier, ?, ?> dim = structure.getComponent(k.getConcept(), Identifier.class)
 							.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
-						dmap.put(dim, dim.cast(StringValue.of(k.getCode())));
+						dmap.put(dim, dim.getDomain().cast(StringValue.of(k.getCode())));
 				}
 			for (KeyValue k: dre.getCurrentKey().getAttributes())
 			{
 				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(k.getConcept(), Attribute.class)
 						.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
-					dmap.put(attr, attr.cast(StringValue.of(k.getCode())));
+					dmap.put(attr, attr.getDomain().cast(StringValue.of(k.getCode())));
 			}
 		}
 
@@ -327,7 +327,7 @@ public class SDMXEnvironment implements Environment, Serializable
 			for (KeyValue a: obs.getAttributes())
 			{
 				DataStructureComponent<?, ?, ?> c = structure.getComponent(a.getConcept()).get();
-				builder.add(c, c.cast(StringValue.of(a.getCode())));
+				builder.add(c, c.getDomain().cast(StringValue.of(a.getCode())));
 			}
 			
 			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();

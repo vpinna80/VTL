@@ -33,12 +33,10 @@ import org.junit.jupiter.api.Test;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class IsNullTransformationTest
@@ -54,7 +52,7 @@ public class IsNullTransformationTest
 		IsNullTransformation isnt = new IsNullTransformation(left);
 		DataSetMetadata structure = (DataSetMetadata) isnt.getMetadata(session);
 		
-		Optional<DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain>> component = structure.getComponent("boolean_var", Measure.class, BOOLEANDS);
+		Optional<DataStructureComponent<Measure, ?, ?>> component = structure.getComponent("boolean_var", Measure.class, BOOLEANDS);
 		assertTrue(component.isPresent(), "bool_var result");
 		
 		long nullCount = ((DataSet) isnt.eval(session)).stream()

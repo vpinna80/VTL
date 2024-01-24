@@ -39,16 +39,12 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class InStrTransformationTest
@@ -82,14 +78,14 @@ public class InStrTransformationTest
 		assertTrue(metadata.contains("integer_var"));
 		
 		DataSet computedResult = (DataSet) instrTransformation.eval(session);
-		Optional<DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
-		Optional<DataStructureComponent<Measure,EntireIntegerDomainSubset,IntegerDomain>> oMeasure = metadata.getComponent("integer_var", Measure.class, INTEGERDS);
+		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
+		Optional<DataStructureComponent<Measure, ?, ?>> oMeasure = metadata.getComponent("integer_var", Measure.class, INTEGERDS);
 		
 		assertTrue(oId.isPresent(), "String id present");
 		assertTrue(oMeasure.isPresent(), "Integer measure is present");
 		
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> id = oId.get();
-		DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> resultMeasure = oMeasure.get();
+		DataStructureComponent<Identifier, ?, ?> id = oId.get();
+		DataStructureComponent<Measure, ?, ?> resultMeasure = oMeasure.get();
 		
 		computedResult.stream()
 			.forEach(dp -> assertEquals(expected[dp.get(id).get().toString().charAt(0) - 'A'], dp.get(resultMeasure).get(), 

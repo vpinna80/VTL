@@ -36,7 +36,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -50,7 +49,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
@@ -86,7 +84,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected DataSet evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
 		boolean castToLeft;
@@ -97,7 +95,7 @@ public class ComparisonTransformation extends BinaryTransformation
 
 		ScalarValue<?, ?, ?, ?> castedScalar;
 		if (castToLeft && datasetIsLeftOp)
-			castedScalar = measure.cast(scalar);
+			castedScalar = measure.getDomain().cast(scalar);
 		else
 			castedScalar = scalar;
 
@@ -121,7 +119,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected DataSet evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> lMeasure = left.getMetadata().getMeasures().iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> rMeasure = right.getMetadata().getMeasures().iterator().next();
 		
@@ -171,7 +169,7 @@ public class ComparisonTransformation extends BinaryTransformation
 			throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
 		
 		return new DataStructureBuilder().addComponents(dataset.getIDs())
-				.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS)).build();
+				.addComponents(DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS)).build();
 	}
 	
 	@Override
@@ -198,7 +196,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		return new DataStructureBuilder()
 				.addComponents(left.getIDs())
 				.addComponents(right.getIDs())
-				.addComponents(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS))
+				.addComponents(DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS))
 				.build();
 	}
 	

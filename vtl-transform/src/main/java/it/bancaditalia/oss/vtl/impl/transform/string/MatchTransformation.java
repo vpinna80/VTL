@@ -54,7 +54,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -67,13 +66,12 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class MatchTransformation extends BinaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>(BOOLEAN.getDomain().getVarName(), Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = DataStructureComponentImpl.of(Measure.class, BOOLEANDS);
 
 	public MatchTransformation(Transformation operand, Transformation pattern)
 	{
@@ -96,7 +94,7 @@ public class MatchTransformation extends BinaryTransformation
 				.addComponent(BOOL_MEASURE)
 				.build();
 
-		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		String pattern = patternV instanceof NullValue ? null : STRINGDS.cast(patternV).get().toString();
 		
 		String lineageString = "match " + pattern;

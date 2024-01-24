@@ -313,7 +313,7 @@ public class REnvironment implements Environment
 				if (comp.getDomain() instanceof TimeDomainSubset)
 					values = values.map(REnvironment.toTime(comp));
 				else
-					values = values.map(comp::cast);
+					values = values.map(v -> comp.getDomain().cast(v));
 			}
 			else
 			{

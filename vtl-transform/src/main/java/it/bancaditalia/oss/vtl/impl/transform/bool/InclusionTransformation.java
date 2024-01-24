@@ -57,7 +57,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class InclusionTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS);
 
 	public static enum InOperator implements SerBiPredicate<Set<? extends ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>>
 	{

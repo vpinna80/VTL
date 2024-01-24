@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.model.transform;
 
 import java.util.Map;
 
-import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;

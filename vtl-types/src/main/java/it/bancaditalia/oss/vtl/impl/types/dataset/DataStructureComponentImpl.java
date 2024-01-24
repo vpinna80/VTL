@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -31,52 +30,49 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 public class DataStructureComponentImpl<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
 {
 	private static final long serialVersionUID = 1L;
-	private final S domain;
-	private final String name;
+	private final Variable<S, D> variable;
 	private final Class<R> role;
 	private transient int hashCode;
 	
-	public DataStructureComponentImpl(String name, Class<R> role, S domain)
+	public DataStructureComponentImpl(Class<R> role, Variable<S, D> variable)
 	{
-		this.domain = domain;
 		this.role = role;
-		this.name = name;
+		this.variable = variable;
 		this.hashCode = hashCodeInit();
+	}
+	
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain, R extends ComponentRole> DataStructureComponent<R, S, D> of(Class<R> role, Variable<S, D> variable)
+	{
+		return new DataStructureComponentImpl<>(role, variable);
 	}
 	
 	@SuppressWarnings("unchecked")
 	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain, R extends ComponentRole> DataStructureComponent<R, S, D> of(String name, Class<R> role, ValueDomainSubset<S, D> domain)
 	{
-		return new DataStructureComponentImpl<>(name, role, (S) domain);
+		return new DataStructureComponentImpl<>(role, new VariableImpl<>(name, (S) domain));
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain, R extends ComponentRole> DataStructureComponent<R, S, D> of(Class<R> role, ValueDomainSubset<S, D> domain)
+	{
+		return new DataStructureComponentImpl<>(role, new VariableImpl<>((S) domain));
 	}
 
 	public DataStructureComponentImpl(Class<R> role, S domain)
 	{
-		this(domain.getVarName(), role, domain);
+		this(role, new VariableImpl<>(domain));
 	}
 
 	@Override
-	public Variable getVariable()
+	public Variable<S, D> getVariable()
 	{
-		return new VariableImpl(name);
-	}
-
-	@Override
-	public S getDomain()
-	{
-		return domain;
+		return variable;
 	}
 
 	@Override
 	public Class<R> getRole()
 	{
 		return role;
-	}
-
-	@Override
-	public DataStructureComponent<R, S, D> rename(String newName)
-	{
-		return new DataStructureComponentImpl<>(newName, role, domain);
 	}
 
 	@Override
@@ -89,8 +85,7 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * variable.hashCode();
 		result = prime * result + ((role == null) ? 0 : role.hashCode());
 		return result;
 	}
@@ -106,11 +101,9 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 			return false;
 		DataStructureComponentImpl<?, ?, ?> other = (DataStructureComponentImpl<?, ?, ?>) obj;
 		
-		if (!name.equals(other.name))
-			return false;
 		if (!role.equals(other.role))
 			return false;
-		if (!domain.equals(other.domain))
+		if (!variable.equals(other.variable))
 			return false;
 		
 		return true;
@@ -123,8 +116,8 @@ public class DataStructureComponentImpl<R extends ComponentRole, S extends Value
 	}
 
 	@Override
-	public DataStructureComponent<Measure, S, D> createMeasureFrom()
+	public DataStructureComponent<?, ?, ?> rename(String newName)
 	{
-		return new DataStructureComponentImpl<>(Measure.class, domain);
+		return DataStructureComponentImpl.of(newName, role, getDomain());
 	}
 }

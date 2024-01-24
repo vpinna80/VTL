@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.lang.Boolean.TRUE;
 import static java.util.stream.Collectors.toMap;
 
@@ -39,7 +40,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringRule;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
-import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public class LazyCodeList extends StringCodeList implements Serializable
 {
@@ -64,7 +64,7 @@ public class LazyCodeList extends StringCodeList implements Serializable
 
 		List<StringRule> rules = new ArrayList<>(); 
 		for (StringCodeItem ruleComp: hierarchy.keySet())
-			rules.add(new StringRule(ruleComp.get(), ruleComp, EQ, hierarchy.get(ruleComp).stream().collect(toMap(SerFunction.identity(), k -> TRUE)), null, null));
+			rules.add(new StringRule(ruleComp.get(), ruleComp, EQ, hierarchy.get(ruleComp).stream().collect(toMap(identity(), k -> TRUE)), null, null));
 		
 		defaultRuleSet = rules.isEmpty() ? null : new StringHierarchicalRuleSet(name, this, true, rules);
 

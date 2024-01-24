@@ -74,7 +74,7 @@ public class ParamScope extends AbstractScope
 				.map(dataset -> dataset.getComponent(alias))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.map(DataStructureComponent::getMetadata)
+				.map(DataStructureComponent::getVariable)
 				.map(VTLValueMetadata.class::cast)
 				.findAny()
 				.orElseGet(() -> getParent().getMetadata(alias));

@@ -19,16 +19,28 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import java.io.Serializable;
 
-public class VariableImpl implements Variable
+import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+
+public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private final String name;
+	private final S domain;
 	
-	public VariableImpl(String name)
+	public VariableImpl(String name, S domain)
 	{
 		this.name = name;
+		this.domain = domain;
+	}
+	
+	public VariableImpl(S domain)
+	{
+		this.name = domain.getDefaultVariableName();
+		this.domain = domain;
 	}
 
 	@Override
@@ -36,12 +48,19 @@ public class VariableImpl implements Variable
 	{
 		return name;
 	}
+	
+	@Override
+	public S getDomain()
+	{
+		return domain;
+	}
 
 	@Override
 	public int hashCode()
 	{
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((domain == null) ? 0 : domain.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		return result;
 	}
@@ -55,7 +74,15 @@ public class VariableImpl implements Variable
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		VariableImpl other = (VariableImpl) obj;
+		
+		VariableImpl<?, ?> other = (VariableImpl<?, ?>) obj;
+		if (domain == null)
+		{
+			if (other.domain != null)
+				return false;
+		}
+		else if (!domain.equals(other.domain))
+			return false;
 		if (name == null)
 		{
 			if (other.name != null)

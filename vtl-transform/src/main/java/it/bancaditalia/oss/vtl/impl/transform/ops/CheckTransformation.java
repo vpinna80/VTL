@@ -65,10 +65,10 @@ public class CheckTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 	private static final BooleanUnaryOperator function = CHECK;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS); 
-	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> IMBALANCE = new DataStructureComponentImpl<>("imbalance", Measure.class, NUMBERDS); 
-	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> ERRORCODE = new DataStructureComponentImpl<>("errorcode", Measure.class, STRINGDS); 
-	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> ERRORLEVEL = new DataStructureComponentImpl<>("errorlevel", Measure.class, NUMBERDS); 
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS); 
+	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> IMBALANCE = DataStructureComponentImpl.of("imbalance", Measure.class, NUMBERDS); 
+	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> ERRORCODE = DataStructureComponentImpl.of("errorcode", Measure.class, STRINGDS); 
+	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> ERRORLEVEL = DataStructureComponentImpl.of("errorlevel", Measure.class, NUMBERDS); 
 
 	public enum CheckOutput
 	{

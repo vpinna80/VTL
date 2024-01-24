@@ -37,14 +37,12 @@ import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class SubstrTransformationTest
@@ -77,14 +75,14 @@ public class SubstrTransformationTest
 		assertTrue(metadata.contains("string_2"));
 		
 		DataSet computedResult = (DataSet) substrTransformation.eval(session);
-		Optional<DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
-		Optional<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> oMeasure = metadata.getComponent("string_2", Measure.class, STRINGDS);
+		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
+		Optional<DataStructureComponent<Measure, ?, ?>> oMeasure = metadata.getComponent("string_2", Measure.class, STRINGDS);
 		
 		assertTrue(oId.isPresent(), "String id present");
 		assertTrue(oMeasure.isPresent(), "String measure is present");
 		
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> id = oId.get();
-		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> resultMeasure = oMeasure.get();
+		DataStructureComponent<Identifier, ?, ?> id = oId.get();
+		DataStructureComponent<Measure, ?, ?> resultMeasure = oMeasure.get();
 		
 		computedResult.stream()
 			.forEach(dp -> assertEquals(expected[dp.get(id).get().toString().charAt(0) - 'A'], dp.get(resultMeasure).get(), 

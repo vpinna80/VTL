@@ -50,7 +50,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class BetweenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS);
 	
 	private final ScalarValue<?, ?, ?, ?> from;
 	private final ScalarValue<?, ?, ?, ?> to;

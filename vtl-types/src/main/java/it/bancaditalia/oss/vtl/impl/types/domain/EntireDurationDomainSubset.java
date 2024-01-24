@@ -41,7 +41,7 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	
 	private EntireDurationDomainSubset()
 	{
-		super(DURATIONDS, "duration_var");
+		super(DURATIONDS);
 	}
 	
 	@Override
@@ -54,12 +54,6 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	public boolean isComparableWith(ValueDomain other)
 	{
 		return other instanceof DurationDomain;
-	}
-
-	@Override
-	public String getVarName()
-	{
-		return "duration_var";
 	}
 
 	@Override

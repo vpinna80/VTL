@@ -37,7 +37,7 @@ public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainS
 
 	private EntireDateDomainSubset()
 	{
-		super(null, "date_var");
+		super(DATEDS);
 	}
 
 	@Override

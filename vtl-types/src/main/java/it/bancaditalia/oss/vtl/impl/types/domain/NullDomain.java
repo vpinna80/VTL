@@ -50,12 +50,6 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	{
 		throw new UnsupportedOperationException("Cast to unknown domain not supported.");
 	}
-
-	@Override
-	public String getVarName()
-	{
-		throw new UnsupportedOperationException("No variable name for unknown domain.");
-	}
 	
 	@Override
 	public int hashCode()

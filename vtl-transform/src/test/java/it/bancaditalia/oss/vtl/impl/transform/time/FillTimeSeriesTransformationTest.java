@@ -52,15 +52,11 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireDateDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.DateDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -99,8 +95,8 @@ public class FillTimeSeriesTransformationTest
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
 		assertEquals(expectedSize, computedResult.size(), "Dataset size");
 		
-		DataStructureComponent<Identifier, EntireDateDomainSubset, DateDomain> time_id = computedResult.getMetadata().getComponent("date_1", Identifier.class, DATEDS).get();
-		DataStructureComponent<Identifier, ? extends StringDomainSubset<?>, StringDomain> string_id = computedResult.getMetadata().getComponent("string_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, ?, ?> time_id = computedResult.getMetadata().getComponent("date_1", Identifier.class, DATEDS).get();
+		DataStructureComponent<Identifier, ?, ?> string_id = computedResult.getMetadata().getComponent("string_1", Identifier.class, STRINGDS).get();
 		
 		if (mode == SINGLE)
 		{

@@ -100,9 +100,10 @@ public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSu
 
 	public <S1 extends ValueDomainSubset<S1, D1>, D1 extends ValueDomain> MetadataAssertions<R, S1, D1> withDomain(S1 domain)
 	{
+		@SuppressWarnings("unchecked")
 		Set<DataStructureComponent<R, S1, D1>> components = this.components.stream()
 			.filter(c -> domain.isAssignableFrom(c.getDomain()))
-			.map(c -> c.asDomain(domain))
+			.map(c -> (DataStructureComponent<R, S1, D1>) c)
 			.collect(toSet());
 		
 		return new MetadataAssertions<>(name, components, role, domain);

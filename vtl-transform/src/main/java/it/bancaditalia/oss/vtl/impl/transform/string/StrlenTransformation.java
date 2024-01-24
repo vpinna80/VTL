@@ -41,7 +41,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -49,6 +48,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class StrlenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
+	private static final DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> LEN_MEASURE = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
 	
 	public StrlenTransformation(Transformation operand)
 	{
@@ -64,14 +64,13 @@ public class StrlenTransformation extends UnaryTransformation
 	@Override
 	protected DataSet evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> resultMeasure = new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS);
-		DataStructureComponent<Measure, ? extends StringDomainSubset<?>, StringDomain> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+		DataStructureComponent<Measure, ?, ?> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
-				.addComponent(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS))
+				.addComponent(LEN_MEASURE)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(resultMeasure, evalOnScalar(dp.get(originalMeasure), metadata)));
+		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(LEN_MEASURE, evalOnScalar(dp.get(originalMeasure), metadata)));
 	}
 
 	@Override
@@ -89,7 +88,7 @@ public class StrlenTransformation extends UnaryTransformation
 				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, ds.getMeasures());
 			
 			return new DataStructureBuilder(ds.getIDs())
-				.addComponent(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS))
+				.addComponent(LEN_MEASURE)
 				.build();
 		}
 	}

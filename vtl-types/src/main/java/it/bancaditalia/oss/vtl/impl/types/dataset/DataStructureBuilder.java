@@ -20,14 +20,11 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingBy;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
-import static java.util.stream.Collectors.partitioningBy;
-//import static java.util.stream.Collectors.toList;
 
 import java.io.Serializable;
 import java.util.AbstractSet;
@@ -38,7 +35,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -49,12 +45,10 @@ import it.bancaditalia.oss.vtl.model.data.ComponentRole;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerCollector;
@@ -198,26 +192,6 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public DataSetMetadata keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps)
-		{
-			Map<Boolean, List<DataStructureComponent<?, ?, ?>>> toKeep = Utils.getStream(comps)
-					.collect(partitioningBy(c -> c.is(Identifier.class)));
-			
-			return new DataStructureBuilder(getIDs())
-					.addComponents(toKeep.get(false))
-					.addComponents(toKeep.get(true).stream()
-							.map(DataStructureComponent::createMeasureFrom)
-							.collect(toList()))
-					.build();
-		}
-
-		@Override
-		public DataSetMetadata drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> comps)
-		{
-			return new DataStructureBuilder(this).removeComponents(comps).build();
-		}
-
-		@Override
 		public DataSetMetadata membership(String alias)
 		{
 			DataStructureComponent<?, ?, ?> component = byName.get(alias);
@@ -228,7 +202,7 @@ public class DataStructureBuilder
 			if (component.is(Measure.class))
 				return new DataStructureBuilder().addComponents(component).addComponents(getIDs()).build();
 			else
-				return new DataStructureBuilder().addComponents(component.createMeasureFrom())
+				return new DataStructureBuilder().addComponent(DataStructureComponentImpl.of(Measure.class, component.getDomain()))
 						.addComponents(getIDs()).build();
 		}
 
@@ -287,11 +261,11 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ? extends StringEnumeratedDomainSubset<?, ?>, StringDomain> identifier,
+		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ?, ?> identifier,
 				DataStructureComponent<Measure, S, D> measure)
 		{
-			return Utils.getStream(identifier.getDomain().getCodeItems())
-					.map(item -> new DataStructureComponentImpl<>(item.get().toString(), Measure.class, measure.getDomain()))
+			return Utils.getStream(((EnumeratedDomainSubset<?, ?, ?, ?>) identifier.getDomain()).getCodeItems())
+					.map(item -> DataStructureComponentImpl.of(item.get().toString(), Measure.class, measure.getDomain()))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponents(getIDs())
 					.removeComponent(identifier)

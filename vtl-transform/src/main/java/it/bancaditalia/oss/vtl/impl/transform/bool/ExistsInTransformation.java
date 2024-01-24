@@ -36,7 +36,6 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
@@ -49,7 +48,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
@@ -89,7 +87,7 @@ public class ExistsInTransformation extends BinaryTransformation
 	{
 		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getMetadata().getMeasures().iterator().next(),
 				rightMeasure = right.getMetadata().getMeasures().iterator().next();
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> boolMeasure = ((DataSetMetadata) metadata).getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
+		DataStructureComponent<Measure, ?, ?> boolMeasure = ((DataSetMetadata) metadata).getComponent("bool_var", Measure.class, BOOLEANDS).get(); 
 		
 		Set<? extends ScalarValue<?, ?, ?, ?>> values = right.stream().map(dp -> dp.get(rightMeasure)).collect(toSet());
 		SerPredicate<DataPoint> filter;
@@ -144,7 +142,7 @@ public class ExistsInTransformation extends BinaryTransformation
 			throw new VTLIncompatibleMeasuresException("EXISTS_IN", leftMeasure, rightMeasure);
 		
 		DataStructureBuilder builder = new DataStructureBuilder((DataSetMetadata) left)
-				.addComponent(new DataStructureComponentImpl<>("bool_var", Measure.class, BOOLEANDS));
+				.addComponent(DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS));
 		
 		if (mode != ALL)
 			builder.removeComponent(leftMeasure);

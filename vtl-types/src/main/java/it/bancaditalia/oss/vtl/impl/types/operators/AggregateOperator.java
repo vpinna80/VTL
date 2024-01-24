@@ -131,7 +131,7 @@ public enum AggregateOperator
 	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get()))));
 
-	public static final Set<DataStructureComponent<Measure, ?, ?>> COUNT_MEASURE = singleton(new DataStructureComponentImpl<>(INTEGERDS.getVarName(), Measure.class, INTEGERDS));
+	public static final Set<DataStructureComponent<Measure, ?, ?>> COUNT_MEASURE = singleton(DataStructureComponentImpl.of(Measure.class, INTEGERDS));
 	private static final SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> FLAGMAP = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
 
 	private final SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer;

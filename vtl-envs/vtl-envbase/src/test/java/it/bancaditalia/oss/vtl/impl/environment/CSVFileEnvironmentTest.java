@@ -67,10 +67,10 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class CSVFileEnvironmentTest
 {
 	private static final MockedStatic<ConfigurationManager> CONFMAN_MOCK = mockStatic(ConfigurationManager.class);
-	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = new DataStructureComponentImpl<>("IDENTIFIER", Identifier.class, DATEDS);
-	private static final DataStructureComponent<?, ?, ?> MEASURE = new DataStructureComponentImpl<>("MEASURE", Measure.class, NUMBERDS);
-	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = new DataStructureComponentImpl<>("ATTRIBUTE", Attribute.class, STRINGDS);
-	private static final DataStructureComponent<?, ?, ?> QUOTED = new DataStructureComponentImpl<>("QUOTED", Attribute.class, STRINGDS);
+	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = DataStructureComponentImpl.of("IDENTIFIER", Identifier.class, DATEDS);
+	private static final DataStructureComponent<?, ?, ?> MEASURE = DataStructureComponentImpl.of("MEASURE", Measure.class, NUMBERDS);
+	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = DataStructureComponentImpl.of("ATTRIBUTE", Attribute.class, STRINGDS);
+	private static final DataStructureComponent<?, ?, ?> QUOTED = DataStructureComponentImpl.of("QUOTED", Attribute.class, STRINGDS);
 	private static final String QUOTED_RESULTS[] = {
 			" Hello, \"World\"! ",
 			"Test with",

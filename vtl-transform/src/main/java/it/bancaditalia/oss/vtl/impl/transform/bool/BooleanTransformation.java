@@ -138,8 +138,8 @@ public class BooleanTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> datasetMeasure = dataset.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(!datasetIsLeftOp);
@@ -155,9 +155,9 @@ public class BooleanTransformation extends BinaryTransformation
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, EntireBooleanDomainSubset, BooleanDomain> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(leftHasMoreIdentifiers);
@@ -221,7 +221,7 @@ public class BooleanTransformation extends BinaryTransformation
 		return new DataStructureBuilder()
 				.addComponents(left.getIDs())
 				.addComponents(right.getIDs())
-				.addComponent(new DataStructureComponentImpl<>(measureName, Measure.class, BOOLEANDS))
+				.addComponent(DataStructureComponentImpl.of(measureName, Measure.class, BOOLEANDS))
 				.build();
 	}
 

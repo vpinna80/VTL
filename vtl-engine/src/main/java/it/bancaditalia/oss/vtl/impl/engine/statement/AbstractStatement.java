@@ -19,11 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import static it.bancaditalia.oss.vtl.model.data.DataStructureComponent.normalizeAlias;
-
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 
 abstract class AbstractStatement implements Serializable, Statement
 {
@@ -33,7 +32,7 @@ abstract class AbstractStatement implements Serializable, Statement
 	
 	public AbstractStatement(String alias)
 	{
-		this.alias = normalizeAlias(alias);
+		this.alias = Variable.normalizeAlias(alias);
 	}
 
 	@Override

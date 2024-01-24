@@ -35,12 +35,13 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeList, StringCodeItem>, Serializable
+public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, StringDomain, StringCodeItem, String>, StringDomainSubset<StringCodeList>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(StringCodeList.class);
@@ -170,5 +171,11 @@ public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeLi
 	public Set<StringCodeItem> getCodeItems()
 	{
 		return items;
+	}
+
+	@Override
+	public boolean isAssignableFrom(ValueDomain other)
+	{
+		return other instanceof StringCodeList && name.equals(((StringCodeList) other).name);
 	}
 }

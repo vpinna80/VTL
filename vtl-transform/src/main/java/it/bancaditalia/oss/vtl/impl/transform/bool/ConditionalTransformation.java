@@ -58,7 +58,6 @@ import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -94,7 +93,7 @@ public class ConditionalTransformation extends TransformationImpl
 			DataSet condD = (DataSet) cond;
 			VTLValue thenV = thenExpr.eval(session);
 			VTLValue elseV = elseExpr.eval(session);
-			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> booleanConditionMeasure = condD.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+			DataStructureComponent<Measure, ?, ?> booleanConditionMeasure = condD.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
 				return evalTwoDatasets((DataSetMetadata) metadata, condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
@@ -108,14 +107,13 @@ public class ConditionalTransformation extends TransformationImpl
 		}
 	}
 
-	private DataPoint evalDatasetAndScalar(DataSetMetadata metadata, boolean cond, DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, 
-			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> booleanConditionMeasure)
+	private DataPoint evalDatasetAndScalar(DataSetMetadata metadata, boolean cond, DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, DataStructureComponent<Measure, ?, ?> booleanConditionMeasure)
 	{
 		if (cond)
 		{
 			// condition is true and 'then' is the scalar or condition is false and 'else' is the scalar
-
 			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIdValues = new ConcurrentHashMap<>(dp.getValues(Measure.class));
+			
 			// replace all measures values in the datapoint with the scalar 
 			nonIdValues.replaceAll((c, v) -> scalar);
 			
@@ -129,7 +127,7 @@ public class ConditionalTransformation extends TransformationImpl
 			return dp;
 	}
 
-	private VTLValue evalTwoDatasets(DataSetMetadata metadata, DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, ? extends BooleanDomainSubset<?>, BooleanDomain> booleanConditionMeasure)
+	private VTLValue evalTwoDatasets(DataSetMetadata metadata, DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, ?, ?> booleanConditionMeasure)
 	{
 		DataSetMetadata joinIds = new DataStructureBuilder(condD.getMetadata().getIDs()).addComponent(COND_ID).build();
 		DataSetMetadata enriched = new DataStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();

@@ -59,7 +59,7 @@ public class JoinApplyScope extends AbstractScope
 		this.joinValues = null;
 		this.joinMeta = joinedComponents.stream()
 				.filter(c -> measureName.equals(c.getName().replaceAll("^.*#", "")))
-				.collect(toConcurrentMap(c -> c.getName().replaceAll("#.*", ""), DataStructureComponent::getMetadata));
+				.collect(toConcurrentMap(c -> c.getName().replaceAll("#.*", ""), DataStructureComponent::getVariable));
 	}
 
 	@Override

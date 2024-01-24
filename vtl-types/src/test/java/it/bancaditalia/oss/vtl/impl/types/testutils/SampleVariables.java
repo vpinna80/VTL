@@ -61,10 +61,10 @@ public enum SampleVariables
 		
 		switch (elem[1])
 		{
-			case "NUMBER": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, NUMBERDS); break;
-			case "INTEGER": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, INTEGERDS); break;
-			case "STRING": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, STRINGDS); break;
-			case "BOOLEAN": component = new DataStructureComponentImpl<>(name().split("_", 2)[1], role, BOOLEANDS); break;
+			case "NUMBER": component = DataStructureComponentImpl.of(name().split("_", 2)[1], role, NUMBERDS); break;
+			case "INTEGER": component = DataStructureComponentImpl.of(name().split("_", 2)[1], role, INTEGERDS); break;
+			case "STRING": component = DataStructureComponentImpl.of(name().split("_", 2)[1], role, STRINGDS); break;
+			case "BOOLEAN": component = DataStructureComponentImpl.of(name().split("_", 2)[1], role, BOOLEANDS); break;
 			default: throw new UnsupportedOperationException("Unsupported domain in unit test");
 		}
 	}

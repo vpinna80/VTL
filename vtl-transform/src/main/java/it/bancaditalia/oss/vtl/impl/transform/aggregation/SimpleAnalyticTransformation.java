@@ -61,6 +61,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
@@ -83,7 +84,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		super(operand);
 		
 		this.aggregation = aggregation;
-		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(DataStructureComponent::normalizeAlias).collect(toList());
+		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(Variable::normalizeAlias).collect(toList());
 		this.orderByClause = coalesce(orderByClause, emptyList());
 		this.windowCriterion = windowCriterion;
 	}
