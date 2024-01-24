@@ -29,6 +29,7 @@ import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -50,7 +51,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 	{
 		LOGGER.info("Retrieving value for {}", alias);
 
-		Optional<? extends Statement> rule = getWorkspace().getRule(alias);
+		Optional<DMLStatement> rule = getWorkspace().getRule(alias).map(DMLStatement.class::cast);
 		if (rule.isPresent())
 			return acquireResult(rule.get(), alias);
 		else
@@ -61,7 +62,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 	@Override
 	public VTLValueMetadata getMetadata(String alias)
 	{
-		Optional<? extends Statement> rule = getWorkspace().getRule(alias);
+		Optional<DMLStatement> rule = getWorkspace().getRule(alias).map(DMLStatement.class::cast);
 		if (rule.isPresent())
 			return rule.get().getMetadata(this);
 		else
@@ -106,7 +107,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 		return maybeResult;
 	}
 	
-	private VTLValue acquireResult(Statement statement, String alias)
+	private VTLValue acquireResult(DMLStatement statement, String alias)
 	{
 		LOGGER.info("Applying {}", statement);
 

@@ -43,7 +43,7 @@ public interface Workspace extends Environment
 	 * @param name The name of requested rule.
 	 * @return An Optional with a reference to the requested object or {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<? extends Statement> getRule(String name);
+	public Optional<Statement> getRule(String name);
 
 	/**
 	 * Add a new rule to this workspace.
