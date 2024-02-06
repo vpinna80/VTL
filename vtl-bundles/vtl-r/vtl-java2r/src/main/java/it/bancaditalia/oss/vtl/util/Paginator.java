@@ -143,24 +143,24 @@ public class Paginator implements AutoCloseable
 		Map<String, Object> result = new HashMap<>();
 
 		for (DataStructureComponent<?, ?, ?> c: dataStructure)
-			if (c.getDomain() instanceof NumberDomain)
+			if (c.getVariable().getDomain() instanceof NumberDomain)
 			{
-				double[] array = (double[]) result.computeIfAbsent(c.getName(), n -> new double[datapoints.size()]);
+				double[] array = (double[]) result.computeIfAbsent(c.getVariable().getName(), n -> new double[datapoints.size()]);
 				for (int i = 0; i < datapoints.size(); i++)
 				{
 					Serializable v = datapoints.get(i).get(c).get();
 					array[i] = v == null ? R_DOUBLE_NA : ((Number) v).doubleValue();
 				}
 			}
-			else if (c.getDomain() instanceof BooleanDomain || c.getDomain() instanceof DateDomain)
+			else if (c.getVariable().getDomain() instanceof BooleanDomain || c.getVariable().getDomain() instanceof DateDomain)
 			{
-				int[] array = (int[]) result.computeIfAbsent(c.getName(), n -> new int[datapoints.size()]);
+				int[] array = (int[]) result.computeIfAbsent(c.getVariable().getName(), n -> new int[datapoints.size()]);
 				for (int i = 0; i < datapoints.size(); i++)
 				{
 					Serializable v = datapoints.get(i).get(c).get();
 					if (v == null)
 						array[i] = R_INT_NA;
-					else if (c.getDomain() instanceof BooleanDomain)
+					else if (c.getVariable().getDomain() instanceof BooleanDomain)
 						array[i] = (Boolean) v ? 1 : 0;
 					else
 						array[i] = (int) DAYS.between(LocalDate.of(1970, 1, 1), (LocalDate) v);
@@ -168,7 +168,7 @@ public class Paginator implements AutoCloseable
 			}
 			else // StringDomain, TimeDomain, TimePeriodDomain
 			{
-				String[] array = (String[]) result.computeIfAbsent(c.getName(), n -> new String[datapoints.size()]);
+				String[] array = (String[]) result.computeIfAbsent(c.getVariable().getName(), n -> new String[datapoints.size()]);
 				for (int i = 0; i < datapoints.size(); i++)
 				{
 					Serializable v = datapoints.get(i).get(c).get();

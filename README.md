@@ -117,10 +117,10 @@ and some have to be implemented yet.
 
 The following table shows the current implementation status:
 
-| operator | scalar | dataset-level | component-level |
-| -------- | ------ | ------------- | --------------- |
-| define datapoint ruleset    | &#10008;  | &#10008;  | &#10008;  |
-| define hierarchical ruleset | &#10008;  | &#10008;  | &#10008;  |
+| operator | scalar  | dataset-level | component-level |
+| -------- | ------- | ------------- | --------------- |
+| define datapoint ruleset    |           |           | &#10008;  |
+| define hierarchical ruleset | &#10004;  |           |           |
 | define operator             | &#10004;  | &#10004;  | &#10004;  |
 | call defined operator       | &#10004;  | &#10004;  | &#10004;  |
 | persistent assignment       | &#10004;  | &#10004;  | &#10004;  |

@@ -31,7 +31,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentExc
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -93,8 +93,8 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
 			
 			DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
-			if (!BOOLEANDS.isAssignableFrom(measure.getDomain()))
-				throw new VTLIncompatibleTypesException("filter", BOOLEANDS, measure.getDomain());
+			if (!BOOLEANDS.isAssignableFrom(measure.getVariable().getDomain()))
+				throw new VTLIncompatibleTypesException("filter", BOOLEANDS, measure.getVariable().getDomain());
 		}
 			
 		

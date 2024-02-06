@@ -41,11 +41,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
@@ -126,7 +126,7 @@ public class DataStructureBuilder
 	public DataStructureBuilder removeComponents(Set<String> componentNames)
 	{
 		this.components.stream()
-			.filter(c -> componentNames.contains(c.getName()))
+			.filter(c -> componentNames.contains(c.getVariable().getName()))
 			.forEach(this.components::remove);
 		return this;
 	}
@@ -147,24 +147,24 @@ public class DataStructureBuilder
 		private static final long serialVersionUID = 1L;
 
 		private final Map<String, DataStructureComponent<?, ?, ?>> byName;
-		private final Map<Class<? extends ComponentRole>, Set<DataStructureComponent<?, ?, ?>>> byRole;
+		private final Map<Class<? extends Component>, Set<DataStructureComponent<?, ?, ?>>> byRole;
 
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
 			this.byName = components.stream()
 				.sorted(DataStructureComponent::byNameAndRole)
-				.collect(toMap(DataStructureComponent::getName, identity(), LinkedHashMap::new));
+				.collect(toMap(c -> c.getVariable().getName(), identity(), LinkedHashMap::new));
 			this.byRole = components.stream()
 					.collect(groupingBy(DataStructureComponent::getRole, DataStructureBuilder::createEmptyStructure, toSet()));
 			this.byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
 		}
 		
 		@Override
-		public <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
+		public <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> typeOfComponent)
 		{
 			Set<? extends DataStructureComponent<?, ?, ?>> result;
 			
-			if (ComponentRole.class == typeOfComponent)
+			if (Component.class == typeOfComponent)
 				result = this;
 			else if (Identifier.class == typeOfComponent)
 				result = byRole.get(Identifier.class);
@@ -202,7 +202,7 @@ public class DataStructureBuilder
 			if (component.is(Measure.class))
 				return new DataStructureBuilder().addComponents(component).addComponents(getIDs()).build();
 			else
-				return new DataStructureBuilder().addComponent(DataStructureComponentImpl.of(Measure.class, component.getDomain()))
+				return new DataStructureBuilder().addComponent(DataStructureComponentImpl.of(Measure.class, component.getVariable().getDomain()))
 						.addComponents(getIDs()).build();
 		}
 
@@ -264,8 +264,8 @@ public class DataStructureBuilder
 		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ?, ?> identifier,
 				DataStructureComponent<Measure, S, D> measure)
 		{
-			return Utils.getStream(((EnumeratedDomainSubset<?, ?, ?, ?>) identifier.getDomain()).getCodeItems())
-					.map(item -> DataStructureComponentImpl.of(item.get().toString(), Measure.class, measure.getDomain()))
+			return Utils.getStream(((EnumeratedDomainSubset<?, ?, ?, ?>) identifier.getVariable().getDomain()).getCodeItems())
+					.map(item -> DataStructureComponentImpl.of(item.get().toString(), Measure.class, measure.getVariable().getDomain()))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponents(getIDs())
 					.removeComponent(identifier)
@@ -274,9 +274,9 @@ public class DataStructureBuilder
 		}
 	}
 
-	private static Map<Class<? extends ComponentRole>, Set<DataStructureComponent<?, ?, ?>>> createEmptyStructure()
+	private static Map<Class<? extends Component>, Set<DataStructureComponent<?, ?, ?>>> createEmptyStructure()
 	{
-		Map<Class<? extends ComponentRole>, Set<DataStructureComponent<?, ?, ?>>> empty = new HashMap<>();
+		Map<Class<? extends Component>, Set<DataStructureComponent<?, ?, ?>>> empty = new HashMap<>();
 		empty.put(Identifier.class, new HashSet<>());
 		empty.put(Measure.class, new HashSet<>());
 		empty.put(Attribute.class, new HashSet<>());

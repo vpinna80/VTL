@@ -46,8 +46,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -156,7 +156,7 @@ public class FlowStockTransformation extends UnaryTransformation
 				return dsmeta;
 			
 			Set<? extends DataStructureComponent<Identifier, ?, ?>> ids = dsmeta.getIDs().stream()
-					.filter(c -> c.getDomain() instanceof TimeDomainSubset)
+					.filter(c -> c.getVariable().getDomain() instanceof TimeDomainSubset)
 					.collect(toSet());
 			
 			if (ids.size() == 0)
@@ -175,8 +175,8 @@ public class FlowStockTransformation extends UnaryTransformation
 				throw new VTLMissingComponentsException("At least one numeric measure", dsmeta);
 			
 			for (DataStructureComponent<Measure, ?, ?> measure: measures)
-				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
-					throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, measure.getDomain());
+				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
+					throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, measure.getVariable().getDomain());
 
 			return dsmeta;
 		}

@@ -35,7 +35,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -92,7 +92,7 @@ public class BetweenTransformation extends UnaryTransformation
 
 			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
 
-			if (!measure.getDomain().isAssignableFrom(domain))
+			if (!measure.getVariable().getDomain().isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("between", measure, domain);
 
 			return new DataStructureBuilder()

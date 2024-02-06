@@ -51,10 +51,10 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -73,7 +73,7 @@ public class AggregateTransformation extends UnaryTransformation
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
 	private final Transformation having;
-	private final Class<? extends ComponentRole> role; 
+	private final Class<? extends Component> role; 
 	private final String name; 
 	
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, GroupingClause groupingClause, Transformation having)
@@ -97,7 +97,7 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 	
 	// constructor for AGGR clause
-	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, Class<? extends ComponentRole> role, String name)
+	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, Class<? extends Component> role, String name)
 	{
 		super(other.operand);
 		
@@ -165,7 +165,7 @@ public class AggregateTransformation extends UnaryTransformation
 					newMeasures = COUNT_MEASURE;
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newMeasures = newMeasures.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? DataStructureComponentImpl.of(c.getName(), Measure.class, NUMBERDS) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? DataStructureComponentImpl.of(c.getVariable().getName(), Measure.class, NUMBERDS) : c)
 						.collect(toSet());
 
 				if (operand != null)
@@ -191,14 +191,14 @@ public class AggregateTransformation extends UnaryTransformation
 					newComps = COUNT_MEASURE;
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newComps = newComps.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? DataStructureComponentImpl.of(c.getName(), Measure.class, NUMBERDS) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? DataStructureComponentImpl.of(c.getVariable().getName(), Measure.class, NUMBERDS) : c)
 						.collect(toSet());
 				
 				if (name != null)
 					if (measures.size() > 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, newComps);
 					else
-						newComps = singleton(DataStructureComponentImpl.of(name, role, measures.iterator().next().getDomain()));
+						newComps = singleton(DataStructureComponentImpl.of(name, role, measures.iterator().next().getVariable().getDomain()));
 
 				builder = builder.addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newComps);
 				

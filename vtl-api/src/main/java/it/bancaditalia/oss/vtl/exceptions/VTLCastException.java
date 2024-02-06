@@ -36,4 +36,9 @@ public class VTLCastException extends VTLException
 	{
 		super("Component " + component + " cannot accept a value of " + value);
 	}
+
+	public VTLCastException(ValueDomainSubset<?, ?> accepting, ValueDomainSubset<?, ?> providing)
+	{
+		super("Domain " + providing + " is different from " + accepting);
+	}
 }

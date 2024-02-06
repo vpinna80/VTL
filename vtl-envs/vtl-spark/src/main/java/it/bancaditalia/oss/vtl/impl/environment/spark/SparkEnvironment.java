@@ -299,7 +299,7 @@ public class SparkEnvironment implements Environment
 			
 			// normalized column names in alphabetical order
 			Map<String, String> newToOldNames = IntStream.range(0, fieldNames.length)
-					.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getName(), fieldNames[i]))
+					.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getVariable().getName(), fieldNames[i]))
 					.collect(entriesToMap());
 			String[] normalizedNames = newToOldNames.keySet().toArray(new String[newToOldNames.size()]);
 			Arrays.sort(normalizedNames, 0, normalizedNames.length);
@@ -312,8 +312,8 @@ public class SparkEnvironment implements Environment
 					.map(Optional::get)
 					.sorted(DataStructureComponent::byNameAndRole)
 					.map(c -> udf(repr -> mapValue(c, repr.toString(), masks.get(c)).get(), types.get(c))
-							.apply(sourceDataFrame.col(newToOldNames.get(c.getName())))
-							.as(c.getName(), getMetadataFor(c)))
+							.apply(sourceDataFrame.col(newToOldNames.get(c.getVariable().getName())))
+							.as(c.getVariable().getName(), getMetadataFor(c)))
 					.collect(toList())
 					.toArray(new Column[normalizedNames.length + 1]);
 			

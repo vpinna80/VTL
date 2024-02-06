@@ -38,8 +38,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -138,7 +138,7 @@ public class ExistsInTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = leftMeasures.iterator().next(),
 				rightMeasure = rightMeasures.iterator().next();
 		
-		if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()) && !rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
+		if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain()) && !rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
 			throw new VTLIncompatibleMeasuresException("EXISTS_IN", leftMeasure, rightMeasure);
 		
 		DataStructureBuilder builder = new DataStructureBuilder((DataSetMetadata) left)

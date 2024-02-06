@@ -61,8 +61,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -124,7 +124,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		
 		for (DataStructureComponent<?, ?, ?> orderingComponent: ordering.keySet())
 			if (partitionIDs.contains(orderingComponent))
-				throw new VTLException("Cannot order by " + orderingComponent.getName() + " because the component is used in partition by " + partitionBy);
+				throw new VTLException("Cannot order by " + orderingComponent.getVariable().getName() + " because the component is used in partition by " + partitionBy);
 
 		// The ordering of the dataset
 		final Comparator<DataPoint> comparator = comparator(ordering);

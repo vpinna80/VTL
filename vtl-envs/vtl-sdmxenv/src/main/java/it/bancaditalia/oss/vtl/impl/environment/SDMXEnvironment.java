@@ -108,9 +108,9 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimeDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -299,13 +299,13 @@ public class SDMXEnvironment implements Environment, Serializable
 					KeyValue k = keys.get(i);
 					DataStructureComponent<Identifier, ?, ?> dim = structure.getComponent(k.getConcept(), Identifier.class)
 							.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
-						dmap.put(dim, dim.getDomain().cast(StringValue.of(k.getCode())));
+						dmap.put(dim, dim.getVariable().getDomain().cast(StringValue.of(k.getCode())));
 				}
 			for (KeyValue k: dre.getCurrentKey().getAttributes())
 			{
 				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(k.getConcept(), Attribute.class)
 						.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
-					dmap.put(attr, attr.getDomain().cast(StringValue.of(k.getCode())));
+					dmap.put(attr, attr.getVariable().getDomain().cast(StringValue.of(k.getCode())));
 			}
 		}
 
@@ -327,12 +327,12 @@ public class SDMXEnvironment implements Environment, Serializable
 			for (KeyValue a: obs.getAttributes())
 			{
 				DataStructureComponent<?, ?, ?> c = structure.getComponent(a.getConcept()).get();
-				builder.add(c, c.getDomain().cast(StringValue.of(a.getCode())));
+				builder.add(c, c.getVariable().getDomain().cast(StringValue.of(a.getCode())));
 			}
 			
 			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
-			builder.add(measure, obs.getMeasureValue(measure.getName()) != null 
-					? DoubleValue.of(parseDouble(obs.getMeasureValue(measure.getName())))
+			builder.add(measure, obs.getMeasureValue(measure.getVariable().getName()) != null 
+					? DoubleValue.of(parseDouble(obs.getMeasureValue(measure.getVariable().getName())))
 					: NullValue.instanceFrom(measure));
 			TemporalAccessor holder = parser.getValue().queryFrom(parser.getKey().parse(obs.getDimensionValue()));
 			ScalarValue<?, ?, ?, ?> value;

@@ -66,12 +66,12 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.ViralAttribute;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -119,9 +119,9 @@ public class SparkUtils
 		return result;
 	}
 
-	private static DataStructureComponent<? extends ComponentRole, ?, ?> getComponentFor(StructField field)
+	private static DataStructureComponent<? extends Component, ?, ?> getComponentFor(StructField field)
 	{
-		Class<? extends ComponentRole> role;
+		Class<? extends Component> role;
 		switch ((int) field.metadata().getLong("Role"))
 		{
 			case 1: role = Identifier.class; break;
@@ -140,13 +140,13 @@ public class SparkUtils
 	{
 		SerFunction<Object, ScalarValue<?, ?, ?, ?>> builder = null;
 		ValueDomainSubset<?, ?> domain;
-		for (domain = component.getDomain(); domain != null && builder == null; domain = (ValueDomainSubset<?, ?>) domain.getParentDomain()) 
+		for (domain = component.getVariable().getDomain(); domain != null && builder == null; domain = (ValueDomainSubset<?, ?>) domain.getParentDomain()) 
 			builder = DOMAIN_BUILDERS.get(domain);
 		
 		if (builder == null)
-			throw new UnsupportedOperationException("Unsupported decoding of domain " + component.getDomain());
+			throw new UnsupportedOperationException("Unsupported decoding of domain " + component.getVariable().getDomain());
 
-		domain = component.getDomain();
+		domain = component.getVariable().getDomain();
 		DOMAIN_BUILDERS.putIfAbsent(domain, builder);
 
 		if (serialized instanceof Date)
@@ -168,7 +168,7 @@ public class SparkUtils
 		else
 			throw new IllegalStateException("Unqualified role class: " + component.getRole());
 		
-		return metadataBuilder.putString("Domain", component.getDomain().getName()).build();
+		return metadataBuilder.putString("Domain", component.getVariable().getDomain().getName()).build();
 	}
 
 	public static StructField getFieldFor(DataStructureComponent<?, ?, ?> component)
@@ -176,17 +176,17 @@ public class SparkUtils
 		DataType type = getDataTypeFor(component);
 		Metadata metadata = getMetadataFor(component);
 		
-		return new StructField(component.getName(), type, component.is(NonIdentifier.class), metadata);
+		return new StructField(component.getVariable().getName(), type, component.is(NonIdentifier.class), metadata);
 	}
 
 	public static Encoder<? extends Serializable> getEncoderFor(DataStructureComponent<?, ?, ?> component)
 	{
-		return requireNonNull(DOMAIN_ENCODERS.get(component.getDomain()), "Unsupported serialization for domain " + component.getDomain());
+		return requireNonNull(DOMAIN_ENCODERS.get(component.getVariable().getDomain()), "Unsupported serialization for domain " + component.getVariable().getDomain());
 	}
 
 	public static DataType getDataTypeFor(DataStructureComponent<?, ?, ?> component)
 	{
-		ValueDomainSubset<?, ?> domain = component.getDomain();
+		ValueDomainSubset<?, ?> domain = component.getVariable().getDomain();
 		if (domain instanceof StringDomain)
 			return StringType;
 		else if (DOMAIN_DATATYPES.containsKey(domain))
@@ -207,12 +207,12 @@ public class SparkUtils
 
 	public static List<String> getNamesFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		return structHelper(components.stream(), DataStructureComponent::getName);
+		return structHelper(components.stream(), c -> c.getVariable().getName());
 	}
 
 	public static List<Column> getColumnsFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		return structHelper(components.stream(), c -> col(c.getName()));
+		return structHelper(components.stream(), c -> col(c.getVariable().getName()));
 	}
 
 	public static <F> List<F> structHelper(Stream<? extends DataStructureComponent<?, ?, ?>> stream, SerFunction<? super DataStructureComponent<?, ?, ?>, F> mapper)

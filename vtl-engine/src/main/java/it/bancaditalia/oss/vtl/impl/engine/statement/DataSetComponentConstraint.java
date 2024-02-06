@@ -19,23 +19,51 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
+import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.MAX_ONE;
+import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.ONE;
+import static it.bancaditalia.oss.vtl.model.data.Component.Role.COMPONENT;
+import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+
 import java.io.Serializable;
-import java.util.Optional;
-import java.util.Set;
+import java.util.List;
 
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.Component.Role;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public abstract class DataSetComponentConstraint implements Serializable
+public class DataSetComponentConstraint implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-
+	
 	private final String name;
-
-	public DataSetComponentConstraint(String name)
+	private final Role role;
+	private final String domainName;
+	private final QuantifierConstraints quantifier;
+	
+	public enum QuantifierConstraints 
 	{
-		this.name = name;
+		ONE(""), MAX_ONE("_?"), AT_LEAST_ONE("_+"), ANY("_*");
+
+		private final String repr;
+
+		QuantifierConstraints(String repr)
+		{
+			this.repr = repr;
+		}
+
+		String getRepr()
+		{
+			return repr;
+		}
+	}
+	
+	public DataSetComponentConstraint(String name, Role role, String domainName, QuantifierConstraints quantifier)
+	{
+		this.name = name != null ? normalizeAlias(name) : null;
+		this.role = coalesce(role, COMPONENT);
+		this.domainName = domainName != null ? normalizeAlias(domainName) : null;;
+		this.quantifier = coalesce(quantifier, ONE);
 	}
 
 	public String getName()
@@ -43,5 +71,39 @@ public abstract class DataSetComponentConstraint implements Serializable
 		return name;
 	}
 
-	protected abstract Optional<Set<? extends DataStructureComponent<?, ?, ?>>> matchStructure(DataSetMetadata structure, MetadataRepository repo);
+	public boolean matches(DataStructureComponent<?, ?, ?> component, List<DataSetComponentConstraint> partialMatch, TransformationScheme scheme)
+	{
+		if (!role.roleClass().isAssignableFrom(component.getRole()))
+			return false;
+		else if ((quantifier == null || quantifier == MAX_ONE) && partialMatch.contains(this))
+			return false;
+		else if (name != null && !name.equals(component.getVariable().getName()))
+			return false;
+		else if (domainName != null && !scheme.getRepository().getDomain(domainName).isAssignableFrom(component.getVariable().getDomain()))
+			return false;
+		else
+			return true;
+	}
+
+	public boolean isSatisfiedBy(List<DataSetComponentConstraint> match)
+	{
+		long count = match.stream().filter(c -> this == c).count();
+
+		switch (quantifier)
+		{
+			case ANY: return true;
+			case AT_LEAST_ONE: return count >= 1;
+			case MAX_ONE: return count <= 1;
+			case ONE: return count == 1;
+			default: throw new IllegalStateException();
+		}
+	}
+	
+	@Override
+	public String toString()
+	{
+		return (role != null ? role.roleClass().getSimpleName().toLowerCase() + (domainName != null ? "<" + domainName + ">" : "") + " " : "")
+				+ (name != null ? name : "")
+				+ (quantifier != ONE ? quantifier.getRepr() : "");
+	}
 }

@@ -74,7 +74,7 @@ public class DataSetResultBean extends ResultBean
 	    		
 		    	for (Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> entry: dp.entrySet())
 		    	{
-		    		gen.writeFieldName(entry.getKey().getName());
+		    		gen.writeFieldName(entry.getKey().getVariable().getName());
 		    		gen.writeRawValue(entry.getValue().toString());
 		    	}
 	    		

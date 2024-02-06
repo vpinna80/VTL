@@ -57,7 +57,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -149,7 +149,7 @@ public class ReplaceTransformation extends TransformationImpl
 				DataSetMetadata metadata = (DataSetMetadata) source;
 				
 				Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getMeasures().stream()
-					.filter(c -> !(c.getDomain() instanceof StringDomain))
+					.filter(c -> !(c.getVariable().getDomain() instanceof StringDomain))
 					.collect(toSet());
 				
 				if (!invalid.isEmpty())

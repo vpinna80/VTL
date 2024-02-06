@@ -28,9 +28,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -67,13 +69,15 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	@Override
 	public ValueDomainSubset<?, ?> getDomain(String alias) 
 	{
-		return Optional.ofNullable(domains.get(alias)).orElseThrow(() -> new VTLException("Domain '" + alias + "' is undefined in the metadata."));
+		return maybeGetDomain(alias).orElseThrow(() -> new VTLException("Domain " + alias + " is undefined in the metadata."));
 	}
 	
 	@Override
-	public ValueDomainSubset<?, ?> defineDomain(String alias, ValueDomainSubset<?, ?> domain)
+	public void defineDomain(String alias, ValueDomainSubset<?, ?> domain)
 	{
-		return domains.computeIfAbsent(requireNonNull(alias, "alias"), k -> requireNonNull(domain, "domain"));
+		ValueDomainSubset<?, ?> prev = domains.putIfAbsent(requireNonNull(alias, "alias"), requireNonNull(domain, "domain"));
+		if (prev != null && !prev.equals(domain))
+			throw new VTLCastException(domain, prev);
 	}
 	
 	@Override
@@ -86,5 +90,11 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	public HierarchicalRuleSet<?, ?, ?, ?, ?> getHierarchyRuleset(String alias)
 	{
 		throw new VTLException("Hierarchical ruleset " + alias + " not found.");
+	}
+
+	@Override
+	public Variable<?, ?> getVariable(String alias)
+	{
+		throw new UnsupportedOperationException("getVariable " + alias);
 	}
 }

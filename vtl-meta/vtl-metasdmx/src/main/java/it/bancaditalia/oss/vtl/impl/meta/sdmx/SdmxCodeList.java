@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.lang.Boolean.TRUE;
@@ -30,45 +32,37 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.sdmx.api.sdmx.model.beans.codelist.CodeBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
-import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringRule;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 
-public class LazyCodeList extends StringCodeList implements Serializable
+public class SdmxCodeList extends StringCodeList implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(LazyCodeList.class);
 	
 	private final StringHierarchicalRuleSet defaultRuleSet;
 	
-	public LazyCodeList(StringDomainSubset<?> parent, StructureReferenceBean clRef, SDMXRepository fmrRepo)
+	public SdmxCodeList(CodelistBean codelist)
 	{
-		super(parent, clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")");
+		super(STRINGDS, codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")");
 		
 		// retrieve codelist 
-		String name = clRef.getAgencyId() + ":" + clRef.getMaintainableId() + "(" + clRef.getVersion() + ")";
-		LOGGER.info("Fetching maintainable codelist {}", name);
-		CodelistBean cl = fmrRepo.getBeanRetrievalManager().getIdentifiableBean(clRef, CodelistBean.class);
+		String clAlias = codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")";
 
 		// build hierarchy if present
 		Map<StringCodeItem, List<StringCodeItem>> hierarchy = new HashMap<>();
-		for (CodeBean codeBean: cl.getRootCodes())
-			addChildren(cl, hierarchy, new StringCodeItem(codeBean.getId(), this));
+		for (CodeBean codeBean: codelist.getRootCodes())
+			addChildren(codelist, hierarchy, new StringCodeItem(codeBean.getId(), this));
 
 		List<StringRule> rules = new ArrayList<>(); 
 		for (StringCodeItem ruleComp: hierarchy.keySet())
 			rules.add(new StringRule(ruleComp.get(), ruleComp, EQ, hierarchy.get(ruleComp).stream().collect(toMap(identity(), k -> TRUE)), null, null));
 		
-		defaultRuleSet = rules.isEmpty() ? null : new StringHierarchicalRuleSet(name, this, true, rules);
+		defaultRuleSet = rules.isEmpty() ? null : new StringHierarchicalRuleSet(clAlias, clAlias, this, VALUE_DOMAIN, rules);
 
-		hashCode = 31 + name.hashCode() + this.items.hashCode();
+		hashCode = 31 + clAlias.hashCode() + this.items.hashCode();
 	}
 
 	private void addChildren(CodelistBean cl, Map<StringCodeItem, List<StringCodeItem>> hierarchy, StringCodeItem parent)

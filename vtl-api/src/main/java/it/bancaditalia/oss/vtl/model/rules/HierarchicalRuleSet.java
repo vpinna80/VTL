@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.model.rules;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
@@ -33,13 +32,16 @@ import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 
 /**
  * Representation of a hierarchy ruleset.
- * TODO
  * 
  * @author Valentino Pinna
- *
  */
-public interface HierarchicalRuleSet<C extends CodeItem<C, R, S, D>, I extends Rule<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain> extends Map<C, List<I>>, RuleSet
+public interface HierarchicalRuleSet<C extends CodeItem<C, R, S, D>, I extends Rule<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain> extends RuleSet
 {
+	public enum RuleSetType
+	{
+		VARIABLE, VALUE_DOMAIN;
+	}
+	
 	public interface Rule<C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain>
 	{
 		public String getName();
@@ -57,13 +59,15 @@ public interface HierarchicalRuleSet<C extends CodeItem<C, R, S, D>, I extends R
 		public ScalarValue<?, ?, ?, ?> getErrorLevel();
 	}
 	
-	public boolean isValueDomainHierarchy();
+	public RuleSetType getType();
 	
 	public List<I> getRulesFor(CodeItem<?, ?, ?, ?> code);
 	
 	public String getName();
 
-	public Map<C, List<I>> getRules();
+	public String getRuleId();
+
+	public List<I> getRules();
 	
 	public S getDomain();
 

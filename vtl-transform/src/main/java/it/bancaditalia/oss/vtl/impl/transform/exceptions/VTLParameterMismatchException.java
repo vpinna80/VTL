@@ -17,32 +17,18 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.engine.statement;
+package it.bancaditalia.oss.vtl.impl.transform.exceptions;
 
-import java.io.Serializable;
-
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.transform.Parameter;
 
-/**
- * Represent a parameter definition for a VTL custom operator
- */
-public abstract class Parameter implements Serializable
+public class VTLParameterMismatchException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
-	
-	private final String name;
 
-	public Parameter(String name)
+	public VTLParameterMismatchException(Parameter param, VTLValueMetadata metadata)
 	{
-		this.name = name;
+		super("The argument " + metadata + " does not match parameter " + param.getAlias() + ": " + param.getDefinitionString());
 	}
-	
-	public String getName()
-	{
-		return name;
-	}
-	
-	public abstract boolean matches(VTLValueMetadata metadata);
-
-	public abstract String getMetaString();
 }

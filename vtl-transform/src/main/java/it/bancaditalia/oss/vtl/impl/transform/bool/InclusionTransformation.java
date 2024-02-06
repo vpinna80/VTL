@@ -39,7 +39,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -145,12 +145,12 @@ public class InclusionTransformation extends UnaryTransformation
 				throw new VTLSingletonComponentRequiredException(Measure.class, measures);
 			
 			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-			if (!item1.getDomain().isAssignableFrom(measure.getDomain()))
-				if (measure.getDomain().isAssignableFrom(item1.getDomain()))
+			if (!item1.getDomain().isAssignableFrom(measure.getVariable().getDomain()))
+				if (measure.getVariable().getDomain().isAssignableFrom(item1.getDomain()))
 				{
 					// (try to) cast all items to the measure domain
 					Set<? extends ScalarValue<?, ?, ?, ?>> set2 = Utils.getStream(set)
-						.map(((ValueDomainSubset<?, ?>) measure.getDomain())::cast)
+						.map(((ValueDomainSubset<?, ?>) measure.getVariable().getDomain())::cast)
 						.collect(toSet());
 					set.clear();
 					set.addAll(set2);			

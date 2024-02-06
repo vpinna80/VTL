@@ -17,21 +17,30 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.engine;
+package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import java.util.List;
+import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.Parameter;
 
 /**
- * TODO: Specification unclear
+ * Represent a parameter definition for a VTL custom operator
  * 
  * @author Valentino Pinna
- *
  */
-public interface NamedOperator extends DDLStatement
+public abstract class BaseParameter implements Parameter, Serializable
 {
-	public List<String> getParameterNames();
+	private static final long serialVersionUID = 1L;
+	
+	private final String name;
 
-	public Transformation getExpression();
+	public BaseParameter(String name)
+	{
+		this.name = name;
+	}
+	
+	public String getAlias()
+	{
+		return name;
+	}
 }

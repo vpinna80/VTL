@@ -23,18 +23,21 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import it.bancaditalia.oss.vtl.engine.NamedOperator;
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.engine.UserOperatorStatement;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLParameterMismatchException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ParamScope;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
+import it.bancaditalia.oss.vtl.model.transform.Parameter;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -42,12 +45,12 @@ public class CallTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 	private final String operator;
-	private final List<Transformation> params;
+	private final List<Transformation> args;
 
-	public CallTransformation(String operator, List<Transformation> params)
+	public CallTransformation(String operator, List<Transformation> args)
 	{
 		this.operator = operator;
-		this.params = params;
+		this.args = args;
 	}
 
 	@Override
@@ -59,19 +62,19 @@ public class CallTransformation extends TransformationImpl
 	@Override
 	public Set<LeafTransformation> getTerminals()
 	{
-		return params.stream().map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
+		return args.stream().map(Transformation::getTerminals).flatMap(Set::stream).collect(toSet());
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		Statement statement = scheme.getRule(operator);
-		if (statement instanceof NamedOperator)
+		if (statement instanceof UserOperatorStatement)
 		{
-			NamedOperator op = (NamedOperator) statement;
-			List<String> parNames = op.getParameterNames();
-			Map<String, Transformation> paramValues = IntStream.range(0, params.size()).boxed()
-				.collect(toMap(i -> parNames.get(i), i -> params.get(i)));
+			UserOperatorStatement op = (UserOperatorStatement) statement;
+			List<Parameter> parNames = op.getParameters();
+			Map<String, Transformation> paramValues = IntStream.range(0, args.size()).boxed()
+				.collect(toMap(i -> parNames.get(i).getAlias(), i -> args.get(i)));
 			return op.getExpression().eval(new ParamScope(scheme, paramValues));
 		}
 		else
@@ -82,18 +85,25 @@ public class CallTransformation extends TransformationImpl
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		Statement statement = scheme.getRule(operator);
-		if (statement instanceof NamedOperator)
+		if (statement instanceof UserOperatorStatement)
 		{
-			NamedOperator op = (NamedOperator) statement;
-			List<String> parNames = op.getParameterNames();
+			UserOperatorStatement op = (UserOperatorStatement) statement;
+			List<Parameter> params = op.getParameters();
 			
-			if (params.size() != parNames.size())
-				throw new UnsupportedOperationException(operator + " requires " + parNames.size() + " parameters but " + params.size() + " were provided.");
+			if (args.size() != params.size())
+				throw new UnsupportedOperationException(operator + " requires " + params.size() + " parameters but " + args.size() + " were provided.");
 			
-			Map<String, Transformation> paramValues = IntStream.range(0, params.size()).boxed()
-					.collect(toMap(i -> parNames.get(i), i -> params.get(i)));
+			Map<String, Transformation> argValues = new HashMap<>();
+			for (int i = 0; i < args.size(); i++)
+			{
+				Parameter param = params.get(i);
+				Transformation argValue = args.get(i);
+				if (!param.matches(scheme, argValue))
+					throw new VTLParameterMismatchException(param, argValue.getMetadata(scheme));
+				argValues.put(param.getAlias(), argValue);
+			}
 			
-			return op.getExpression().getMetadata(new ParamScope(scheme, paramValues));
+			return op.getExpression().getMetadata(new ParamScope(scheme, argValues));
 		}
 		else
 			throw new UnsupportedOperationException("Operator " + operator + " is not defined.");
@@ -102,6 +112,6 @@ public class CallTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return operator + params.stream().map(Transformation::toString).collect(joining(", ", "(", ")"));
+		return operator + args.stream().map(Transformation::toString).collect(joining(", ", "(", ")"));
 	}
 }

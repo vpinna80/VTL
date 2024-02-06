@@ -21,8 +21,10 @@ package it.bancaditalia.oss.vtl.session;
 
 import java.util.Collection;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 
@@ -71,30 +73,23 @@ public interface MetadataRepository
 	public HierarchicalRuleSet<?, ?, ?, ?, ?> getHierarchyRuleset(String name);
 
 	/**
-	 * Registers a new domain instance inside this repository (optional operation).
-	 * 
-	 * @param <S> the type of the domain
-	 * @param name the name of the new domain
-	 * @param domain the domain instance
-	 * @return the same domain instance.
-	 */
-	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> S registerDomain(String name, S domain)
-	{
-		throw new UnsupportedOperationException("registerDomain");
-	}
-	
-	/**
-	 * Registers a new domain instance inside this repository if it is not and return the registered domain.
+	 * Registers a new domain instance inside this repository if it is not.
 	 * 
 	 * @param name the name of the new domain
 	 * @param domain the domain to define 
 	 * 
-	 * @return the created domain instance.
+	 * @throws VTLCastException if the domain already exists and it's not the same.
 	 */
-	public default ValueDomainSubset<?, ?> defineDomain(String name, ValueDomainSubset<?, ?> domain)
-	{
-		throw new UnsupportedOperationException("defineDomain");
-	}
+	public void defineDomain(String name, ValueDomainSubset<?, ?> domain);
+	
+	/**
+	 * Returns a {@link Variable} referred by an alias defined in this TransformationScheme.
+	 * 
+	 * @param alias the alias of the variable
+	 * @return a {@link Variable} instance.
+	 * @throws VTLUnboundAliasException if the alias is not defined.
+	 */
+	public Variable<?, ?> getVariable(String alias);
 	
 	/**
 	 * Initialize this {@link MetadataRepository}.

@@ -19,12 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
+import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,7 +45,7 @@ import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class StringHierarchicalRuleSet extends AbstractMap<StringCodeItem, List<StringRule>> implements HierarchicalRuleSet<StringCodeItem, StringRule, String, StringCodeList, StringDomain>, Serializable
+public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringCodeItem, StringRule, String, StringCodeList, StringDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -114,18 +115,20 @@ public class StringHierarchicalRuleSet extends AbstractMap<StringCodeItem, List<
 		}
 	}
 	
+	private final String name;
+	private final String ruleComp;
 	private final Map<StringCodeItem, List<StringRule>> rules;
 	private final Map<StringCodeItem, Set<StringRule>> depends;
-	private final boolean valueDomainHierarchy;
-	private final String name;
+	private final RuleSetType valueDomainHierarchy;
 	private final StringCodeList domain;
 	private final Set<StringCodeItem> leaves;
 
-	public StringHierarchicalRuleSet(String name, StringCodeList domain, boolean valueDomainHierarchy, List<StringRule> rules)
+	public StringHierarchicalRuleSet(String name, String ruleComp, StringCodeList domain, RuleSetType valueDomainHierarchy, List<StringRule> rules)
 	{
-		this.name = requireNonNull(name);
+		this.name = name; 
+		this.ruleComp = requireNonNull(ruleComp);
 		this.domain = requireNonNull(domain);
-		this.valueDomainHierarchy = requireNonNull(valueDomainHierarchy);
+		this.valueDomainHierarchy = valueDomainHierarchy;
 
 		this.rules = new HashMap<>();
 		rules.forEach(rule -> this.rules.computeIfAbsent(rule.getLeftCodeItem(), c -> new ArrayList<>()).add(rule));
@@ -140,7 +143,7 @@ public class StringHierarchicalRuleSet extends AbstractMap<StringCodeItem, List<
 	}
 	
 	@Override
-	public boolean isValueDomainHierarchy()
+	public RuleSetType getType()
 	{
 		return valueDomainHierarchy;
 	}
@@ -168,6 +171,12 @@ public class StringHierarchicalRuleSet extends AbstractMap<StringCodeItem, List<
 	{
 		return name;
 	}
+	
+	@Override
+	public String getRuleId()
+	{
+		return ruleComp;
+	}
 
 	@Override
 	public StringCodeList getDomain()
@@ -176,29 +185,8 @@ public class StringHierarchicalRuleSet extends AbstractMap<StringCodeItem, List<
 	}
 
 	@Override
-	public Map<StringCodeItem, List<StringRule>> getRules()
+	public List<StringRule> getRules()
 	{
-		return rules;
-	}
-
-	@Override
-	public Set<Map.Entry<StringCodeItem, List<StringRule>>> entrySet()
-	{
-		return rules.entrySet();
-	}
-
-	public boolean containsKey(Object key)
-	{
-		return rules.containsKey(key);
-	}
-
-	public List<StringRule> get(Object key)
-	{
-		return rules.get(key);
-	}
-
-	public Set<StringCodeItem> keySet()
-	{
-		return rules.keySet();
+		return Utils.getStream(rules.values()).map(List::stream).collect(concatenating(false)).collect(toList());
 	}
 }

@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.model.transform.analytic;
 import java.util.List;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public interface WindowClause

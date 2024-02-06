@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -30,17 +32,29 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	private static final long serialVersionUID = 1L;
 	private final String name;
 	private final S domain;
+	private final int hashCode;
 	
 	public VariableImpl(String name, S domain)
 	{
-		this.name = name;
-		this.domain = domain;
+		this.name = requireNonNull(name);
+		this.domain = requireNonNull(domain);
+
+		int prime = 31;
+		int result = 1;
+		result = prime * result + domain.hashCode();
+		result = prime * result + name.hashCode();
+		hashCode = result;
 	}
 	
 	public VariableImpl(S domain)
 	{
-		this.name = domain.getDefaultVariableName();
-		this.domain = domain;
+		this(domain.getDefaultVariableName(), domain);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> of(String name, ValueDomainSubset<? super S, ? super D> domain)
+	{
+		return new VariableImpl<>(name, (S) domain);
 	}
 
 	@Override
@@ -58,11 +72,7 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	@Override
 	public int hashCode()
 	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		return result;
+		return hashCode;
 	}
 
 	@Override
@@ -70,26 +80,19 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	{
 		if (this == obj)
 			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof Variable))
 			return false;
 		
-		VariableImpl<?, ?> other = (VariableImpl<?, ?>) obj;
-		if (domain == null)
-		{
-			if (other.domain != null)
-				return false;
-		}
-		else if (!domain.equals(other.domain))
+		Variable<?, ?> other = (Variable<?, ?>) obj;
+		if (!name.equals(other.getName()) || !domain.equals(other.getDomain()))
 			return false;
-		if (name == null)
-		{
-			if (other.name != null)
-				return false;
-		}
-		else if (!name.equals(other.name))
-			return false;
+		
 		return true;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name + "[" + domain + "]";
 	}
 }

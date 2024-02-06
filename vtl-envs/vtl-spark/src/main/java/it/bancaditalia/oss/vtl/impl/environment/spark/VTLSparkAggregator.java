@@ -71,28 +71,28 @@ public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializa
 			if (zero instanceof ArrayList)
 			{
 				accEncoder = (Encoder<A>) Encoders.kryo(ArrayList.class);
-				if (newComp.getDomain() instanceof TimeDomainSubset)
+				if (newComp.getVariable().getDomain() instanceof TimeDomainSubset)
 				{
 					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(STRICT_LOCAL_DATE_ENCODER(), false));
 					array = new LocalDate[0];
 				}
-				else if (newComp.getDomain() instanceof IntegerDomainSubset)
+				else if (newComp.getVariable().getDomain() instanceof IntegerDomainSubset)
 				{
 					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(BoxedLongEncoder$.MODULE$, false));
 					array = new Double[0];
 				}
-				else if (newComp.getDomain() instanceof NumberDomainSubset)
+				else if (newComp.getVariable().getDomain() instanceof NumberDomainSubset)
 				{
 					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(BoxedDoubleEncoder$.MODULE$, false));
 					array = new Double[0];
 				}
-				else if (newComp.getDomain() instanceof StringDomainSubset)
+				else if (newComp.getVariable().getDomain() instanceof StringDomainSubset)
 				{
 					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(StringEncoder$.MODULE$, false));
 					array = new String[0];
 				}
 				else
-					throw new UnsupportedOperationException("Spark aggregation on domain " + newComp.getDomain());
+					throw new UnsupportedOperationException("Spark aggregation on domain " + newComp.getVariable().getDomain());
 			}
 			else 
 			{

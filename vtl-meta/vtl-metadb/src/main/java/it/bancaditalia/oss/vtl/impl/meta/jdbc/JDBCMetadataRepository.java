@@ -56,10 +56,10 @@ import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -123,7 +123,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				
 				// get variable attribute
 				String varName = rs.getString(1);
-				Class<? extends ComponentRole> role = parseRole(rs.getString(2));
+				Class<? extends Component> role = parseRole(rs.getString(2));
 				
 				ValueDomainSubset<?, ?> domain;
 				String domainName = rs.getString(3);
@@ -139,15 +139,19 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 						domain = getDomain(domainName);
 					else
 					{
-						domain = defineDomain(domainName, parseDomain(domainName));
+						domain = parseDomain(domainName);
+						defineDomain(domainName, domain);
 						LOGGER.trace("Domain {} already defined as {}", domainName, domain);
 					}
 					
 					if (setId != null && !setId.isEmpty())
-						domain = defineDomain(setId, parseSubset(conn, domain, setId));
+					{
+						domain = parseSubset(conn, domain, setId);
+						defineDomain(setId, domain);
+					}
 				}
 				
-				DataStructureComponent<? extends ComponentRole, ?, ?> comp = DataStructureComponentImpl.of(varName, role, domain);
+				DataStructureComponent<? extends Component, ?, ?> comp = DataStructureComponentImpl.of(varName, role, domain);
 				LOGGER.trace("Read component {} for {}", comp, name);
 				builder.addComponent(comp);
 			}
@@ -163,9 +167,9 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 		}
 	}
 
-	private Class<? extends ComponentRole> parseRole(String roleName)
+	private Class<? extends Component> parseRole(String roleName)
 	{
-		Class<? extends ComponentRole> role; 
+		Class<? extends Component> role; 
 		switch (roleName.toLowerCase())
 		{
 			case "classification": role = Identifier.class; break;

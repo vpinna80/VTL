@@ -49,14 +49,15 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
@@ -129,7 +130,7 @@ public class DataPointBuilder implements Serializable
 
 	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
 	{
-		if (!component.getDomain().isAssignableFrom(value.getDomain()))
+		if (!component.getVariable().getDomain().isAssignableFrom(value.getDomain()))
 			throw new VTLCastException(component, value);
 		
 		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
@@ -152,7 +153,7 @@ public class DataPointBuilder implements Serializable
 	public DataPointBuilder delete(String... names)
 	{
 		Set<String> nameSet = Utils.getStream(names).collect(toSet());
-		Set<DataStructureComponent<?, ?, ?>> toDelete = Utils.getStream(delegate.keySet()).filter(c -> nameSet.contains(c.getName())).collect(toSet());
+		Set<DataStructureComponent<?, ?, ?>> toDelete = Utils.getStream(delegate.keySet()).filter(c -> nameSet.contains(c.getVariable().getName())).collect(toSet());
 		delegate.keySet().removeAll(toDelete);
 		return checkState();
 	}
@@ -234,7 +235,7 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public <R extends ComponentRole> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
+		public <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
 		{
 			if (role == Identifier.class)
 			{
@@ -265,9 +266,9 @@ public class DataPointBuilder implements Serializable
 		{
 			Objects.requireNonNull(other);
 
-			Set<String> thisComponentNames = keySet().stream().map(DataStructureComponent::getName).collect(toSet());
+			Set<String> thisComponentNames = keySet().stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet());
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream()
-					.filter(c -> !thisComponentNames.contains(c.getName()))
+					.filter(c -> !thisComponentNames.contains(c.getVariable().getName()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
 			DataSetMetadata newStructure = new DataStructureBuilder(finalMap.keySet()).build();
 

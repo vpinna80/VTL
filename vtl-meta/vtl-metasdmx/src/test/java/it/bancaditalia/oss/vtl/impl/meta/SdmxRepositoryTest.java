@@ -44,13 +44,13 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
-import it.bancaditalia.oss.vtl.impl.meta.sdmx.LazyCodeList;
+import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -82,8 +82,8 @@ public class SdmxRepositoryTest
 		// test
 		assertTrue(repo instanceof SDMXRepository);
 		ValueDomainSubset<?, ?> domain = repo.getDomain("ECB:CL_CURRENCY(1.0)");
-		assertTrue(domain instanceof LazyCodeList);
-		Set<StringCodeItem> codes = ((LazyCodeList) domain).getCodeItems();
+		assertTrue(domain instanceof SdmxCodeList);
+		Set<StringCodeItem> codes = ((SdmxCodeList) domain).getCodeItems();
 		assertEquals(367, codes.size());
 	}
 

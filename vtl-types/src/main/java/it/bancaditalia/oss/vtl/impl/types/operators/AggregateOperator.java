@@ -64,7 +64,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -209,7 +209,7 @@ public enum AggregateOperator
 		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> outputMeasures;
 		if (isChanging)
 			outputMeasures = measures.stream()
-				.map(m -> INTEGERDS.isAssignableFrom(m.getDomain()) ? DataStructureComponentImpl.of(m.getName(), Measure.class, NUMBERDS) : m)
+				.map(m -> INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? DataStructureComponentImpl.of(m.getVariable().getName(), Measure.class, NUMBERDS) : m)
 				.collect(toSet());
 		else
 			outputMeasures = measures;
@@ -245,7 +245,7 @@ public enum AggregateOperator
 							if (this == COUNT)
 								m = COUNT_MEASURE.iterator().next();
 							else if (isChanging)
-								m = INTEGERDS.isAssignableFrom(m.getDomain()) ? DataStructureComponentImpl.of(m.getName(), Measure.class, NUMBERDS) : m;
+								m = INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? DataStructureComponentImpl.of(m.getVariable().getName(), Measure.class, NUMBERDS) : m;
 							return m;
 						}, splitting((measure, collector) -> {
 							@SuppressWarnings("unchecked")

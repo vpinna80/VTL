@@ -27,47 +27,48 @@ import java.util.Map;
  * 
  * @author Valentino Pinna
  */
-public interface ComponentRole
+public interface Component
 {
 	public enum Role
 	{
-		COMPONENT(ComponentRole.class),
+		COMPONENT(Component.class),
 		IDENTIFIER(Identifier.class),
 		NONIDENTIFIER(NonIdentifier.class),
 		MEASURE(Measure.class),
 		ATTRIBUTE(Attribute.class),
 		VIRAL_ATTRIBUTE(ViralAttribute.class);
 		
-		private static final Map<Class<? extends ComponentRole>, Role> ENUM_TAGS = new HashMap<>();
+		private static final Map<Class<? extends Component>, Role> ENUM_TAGS = new HashMap<>();
 		
-		static {
+		static
+		{
 			ENUM_TAGS.put(Identifier.class, IDENTIFIER);
 			ENUM_TAGS.put(Measure.class, MEASURE);
 			ENUM_TAGS.put(Attribute.class, ATTRIBUTE);
 			ENUM_TAGS.put(ViralAttribute.class, VIRAL_ATTRIBUTE);
 		}
 		
-		private final Class<? extends ComponentRole> clazz;
+		private final Class<? extends Component> clazz;
 
-		Role(Class<? extends ComponentRole> clazz)
+		Role(Class<? extends Component> clazz)
 		{
 			this.clazz = clazz;
 		}
 
-		public Class<? extends ComponentRole> roleClass()
+		public Class<? extends Component> roleClass()
 		{
 			return clazz;
 		}
 		
-		public static Role from(Class<? extends ComponentRole> clazz)
+		public static Role from(Class<? extends Component> clazz)
 		{
 			return ENUM_TAGS.get(clazz);
 		}
 	}
 
-	public interface Identifier extends ComponentRole {};
+	public interface Identifier extends Component {};
 
-	public interface NonIdentifier extends ComponentRole {};
+	public interface NonIdentifier extends Component {};
 
 	public interface Attribute extends NonIdentifier {};
 

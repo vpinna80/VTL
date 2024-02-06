@@ -39,8 +39,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -50,6 +50,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
@@ -118,8 +119,8 @@ public class ConcatTransformation extends BinaryTransformation
 			// Scan the dataset with less identifiers and find the matches
 			return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
 						.map(rm -> new SimpleEntry<>(rm, finalOperator
-								.apply(STRINGDS.cast(dpi.get(indexed.getComponent(rm.getName()).get())), 
-										STRINGDS.cast(dps.get(streamed.getComponent(rm.getName()).get())))))
+								.apply(STRINGDS.cast(dpi.get(indexed.getComponent(rm.getVariable().getName()).get())), 
+										STRINGDS.cast(dps.get(streamed.getComponent(rm.getVariable().getName()).get())))))
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
@@ -146,7 +147,7 @@ public class ConcatTransformation extends BinaryTransformation
 		
 		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 		Optional<? extends ValueDomainSubset<?, ?>> errorDomain = measures.stream() 
-			.map(DataStructureComponent::getDomain)
+			.map(DataStructureComponent::getVariable).map(Variable::getDomain)
 			.filter(d -> !STRINGDS.isAssignableFrom(d))
 			.findAny();
 
@@ -169,7 +170,7 @@ public class ConcatTransformation extends BinaryTransformation
 		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
 		
 		Stream.concat(leftMeasures.stream(), rightMeasures.stream()) 
-			.map(DataStructureComponent::getDomain)
+			.map(DataStructureComponent::getVariable).map(Variable::getDomain)
 			.filter(d -> !STRINGDS.isAssignableFrom(d))
 			.forEach(d -> { throw new VTLIncompatibleTypesException("concat", STRINGDS, d); });
 

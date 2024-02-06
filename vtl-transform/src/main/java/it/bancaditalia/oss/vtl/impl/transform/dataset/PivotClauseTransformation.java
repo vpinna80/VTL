@@ -39,8 +39,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -85,14 +85,14 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 
 		identifier = dataset.getComponent(identifierName, Identifier.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getIDs()));
-		if (!(identifier.getDomain() instanceof StringEnumeratedDomainSubset))
-			throw new VTLException("pivot: " + identifier.getName() + " is of type " + identifier.getDomain() + " but should be of a StringEnumeratedDomainSubset.");
+		if (!(identifier.getVariable().getDomain() instanceof StringEnumeratedDomainSubset))
+			throw new VTLException("pivot: " + identifier.getVariable().getName() + " is of type " + identifier.getVariable().getDomain() + " but should be of a StringEnumeratedDomainSubset.");
 		
 		measure = dataset.getComponent(measureName, Measure.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getMeasures()));
 
-		return Utils.getStream(((StringEnumeratedDomainSubset<?, ?>) identifier.getDomain()).getCodeItems())
-				.map(i -> DataStructureComponentImpl.of(i.get().toString(), Measure.class, measure.getDomain()))
+		return Utils.getStream(((StringEnumeratedDomainSubset<?, ?>) identifier.getVariable().getDomain()).getCodeItems())
+				.map(i -> DataStructureComponentImpl.of(i.get().toString(), Measure.class, measure.getVariable().getDomain()))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(dataset.getIDs())
 				.removeComponent(identifier)
@@ -108,7 +108,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		String lineageString = toString();
 		
 		SerCollector<DataPoint, ?, DataPoint> collector = mapping(dp -> {
-				DataStructureComponent<Measure, ?, ?> name = DataStructureComponentImpl.of(dp.get(identifier).get().toString(), Measure.class, measure.getDomain());
+				DataStructureComponent<Measure, ?, ?> name = DataStructureComponentImpl.of(dp.get(identifier).get().toString(), Measure.class, measure.getVariable().getDomain());
 				return new SimpleEntry<>(name, new SimpleEntry<>(dp.getLineage(), dp.get(measure)));
 			}, collectingAndThen(entriesToMap(), map -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dp = Utils.getStream(map)

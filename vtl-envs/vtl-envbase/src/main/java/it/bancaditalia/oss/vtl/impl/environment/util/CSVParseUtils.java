@@ -48,10 +48,10 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
@@ -83,9 +83,9 @@ public class CSVParseUtils
 		
 		if (stringRepresentation == null || stringRepresentation.isEmpty() || "null".equalsIgnoreCase(stringRepresentation))
 			return NullValue.instanceFrom(component);
-		else if (component.getDomain() instanceof StringDomainSubset)
-			return component.getDomain().cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
-		else if (component.getDomain() instanceof IntegerDomainSubset)
+		else if (component.getVariable().getDomain() instanceof StringDomainSubset)
+			return component.getVariable().getDomain().cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
+		else if (component.getVariable().getDomain() instanceof IntegerDomainSubset)
 			try
 			{
 				if (stringRepresentation.trim().isEmpty())
@@ -98,7 +98,7 @@ public class CSVParseUtils
 				LOGGER.error("An Integer was expected but found: " + stringRepresentation);
 				return NullValue.instance(INTEGERDS);
 			}
-		else if (component.getDomain() instanceof NumberDomainSubset)
+		else if (component.getVariable().getDomain() instanceof NumberDomainSubset)
 			try
 			{
 				if (stringRepresentation.trim().isEmpty())
@@ -113,15 +113,15 @@ public class CSVParseUtils
 				LOGGER.error("A Number was expected but found: " + stringRepresentation);
 				return NullValue.instance(NUMBERDS);
 			}
-		else if (component.getDomain() instanceof BooleanDomainSubset)
+		else if (component.getVariable().getDomain() instanceof BooleanDomainSubset)
 			if (stringRepresentation == null || stringRepresentation.trim().isEmpty())
 				return NullValue.instanceFrom(component);
 			else
 				return BooleanValue.of(Boolean.parseBoolean(stringRepresentation));
-		else if (component.getDomain() instanceof DateDomainSubset)
+		else if (component.getVariable().getDomain() instanceof DateDomainSubset)
 			return DateValue.of(parseString(stringRepresentation, mask));
 	
-		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getDomain());
+		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getVariable().getDomain());
 	}
 
 	public static Entry<ValueDomainSubset<?, ?>, String> mapVarType(String typeName)
@@ -166,7 +166,7 @@ public class CSVParseUtils
 			Entry<ValueDomainSubset<?, ?>, String> mappedType = CSVParseUtils.mapVarType(typeName);
 			ValueDomainSubset<?, ?> domain = mappedType.getKey();
 			DataStructureComponent<?, ?, ?> component;
-			Class<? extends ComponentRole> role;
+			Class<? extends Component> role;
 			if (cname.startsWith("$"))
 				role = Identifier.class;
 			else if (cname.startsWith("#"))

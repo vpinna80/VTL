@@ -57,7 +57,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -136,7 +136,7 @@ public class MatchTransformation extends BinaryTransformation
 			throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
 		
 		DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-		if (!STRING.isAssignableFrom(measure.getDomain()))
+		if (!STRING.isAssignableFrom(measure.getVariable().getDomain()))
 			throw new VTLExpectedComponentException(Measure.class, STRING, measures);
 		
 		return new DataStructureBuilder(dataset.getIDs())

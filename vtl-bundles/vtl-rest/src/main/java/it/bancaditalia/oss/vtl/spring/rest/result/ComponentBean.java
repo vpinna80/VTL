@@ -31,9 +31,9 @@ public class ComponentBean extends DomainBean implements Serializable
 	
 	public ComponentBean(DataStructureComponent<?, ?, ?> component)
 	{
-		super(component.getDomain());
+		super(component.getVariable().getDomain());
 		
-		name = component.getName();
+		name = component.getVariable().getName();
 		role = component.getRole().getSimpleName();
 	}
 

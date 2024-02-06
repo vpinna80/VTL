@@ -47,8 +47,8 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.impl.jupyter.VTLJupyterKernel.MessageChannel;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Role;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Role;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -61,7 +61,7 @@ public class MessageReplies
 {
 	private static final Map<String, VTLSession> SESSIONS = new ConcurrentHashMap<>();
 	private static final TemplateEngine THYMELEAF = new TemplateEngine();
-	private static final Map<Class<? extends ComponentRole>, String> ROLES = new HashMap<>(); 
+	private static final Map<Class<? extends Component>, String> ROLES = new HashMap<>(); 
 //	private static final JsonFactory FACTORY = JsonFactory.builder().build().setCodec(new JsonMapper());
 	
 	static

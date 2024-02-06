@@ -26,10 +26,10 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
@@ -56,7 +56,7 @@ public enum SampleVariables
 	private SampleVariables()
 	{
 		String elem[] = name().split("_");
-		Class<? extends ComponentRole> role = null;
+		Class<? extends Component> role = null;
 		switch (elem[0])
 		{
 			case "MEASURE": role = Measure.class; break;
@@ -79,7 +79,7 @@ public enum SampleVariables
 	
 	public DataStructureComponent<?, ?, ?> getComponent(int level)
 	{
-		String name = component.getName();
+		String name = component.getVariable().getName();
 		return component.rename(name.split("_")[0].toLowerCase() + "_" + level);
 	}
 	

@@ -149,7 +149,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 			if (getCodeItems().contains(value))
 				return new StringCodeItem((String) value.get(), this);
 
-			LOGGER.warn("Code {} was not found on codelist {}:{}", value.get(), name, new TreeSet<>(getCodeItems()));
+			LOGGER.warn("Code {} was not found on codelist {} = {}", value.get(), name, new TreeSet<>(getCodeItems()));
 		}
 
 		throw new VTLCastException(this, value);

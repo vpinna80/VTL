@@ -39,8 +39,8 @@ import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -211,12 +211,12 @@ public class BooleanTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = leftMeasures.iterator().next();
 		DataStructureComponent<? extends Measure, ?, ?> rightMeasure = rightMeasures.iterator().next();
 
-		if (!BOOLEANDS.isAssignableFrom(leftMeasure.getDomain()))
+		if (!BOOLEANDS.isAssignableFrom(leftMeasure.getVariable().getDomain()))
 			throw new UnsupportedOperationException("Expected boolean measure but found: " + leftMeasure);
-		if (!BOOLEANDS.isAssignableFrom(rightMeasure.getDomain()))
+		if (!BOOLEANDS.isAssignableFrom(rightMeasure.getVariable().getDomain()))
 			throw new UnsupportedOperationException("Expected boolean measure but found: " + rightMeasure);
 
-		String measureName = leftMeasure.getName().equals(rightMeasure.getName()) ? leftMeasure.getName() : "bool_var";
+		String measureName = leftMeasure.getVariable().getName().equals(rightMeasure.getVariable().getName()) ? leftMeasure.getVariable().getName() : "bool_var";
 		
 		return new DataStructureBuilder()
 				.addComponents(left.getIDs())

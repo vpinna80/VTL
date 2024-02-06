@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransf
 import static it.bancaditalia.oss.vtl.impl.types.data.DoubleValue.ZERO;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
@@ -35,7 +36,6 @@ import static java.lang.Double.NaN;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,8 +57,8 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesExcepti
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -126,56 +126,53 @@ public class HierarchyTransformation extends TransformationImpl
 		DataSet dataset = (DataSet) operand.eval(scheme);
 		
 		HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
-		if (ruleset.isValueDomainHierarchy())
+		
+		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(dataset.getMetadata().getIDs());
+		DataStructureComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? dataset.getComponent(id) : dataset.getComponent(ruleset.getRuleId()))
+				.orElseThrow(() -> new VTLMissingComponentsException(id, ids));
+		ids.remove(idComp);
+		
+		// Code items that are left-hand in any rule
+		List<? extends Rule<?, ?, ?, ?>> rules = ruleset.getRules();
+		Set<CodeItem<?, ?, ?, ?>> computed = rules.stream().filter(rule -> rule.getRuleType() == EQ).map(Rule::getLeftCodeItem).collect(toSet());
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		DataSetMetadata newStructure = new DataStructureBuilder(ids).addComponent(measure).addComponent(idComp).build();
+		
+		// key: map with all id vals except idcomp; val: map with key: left-hand code; val: map with vals of each right hand vals for each measure in dataset
+		Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Map<CodeItem<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> index = new ConcurrentHashMap<>();
+		Set<DataPoint> results = ConcurrentHashMap.newKeySet();
+		
+		try (Stream<DataPoint> stream = dataset.stream())
 		{
-			Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(dataset.getMetadata().getIDs());
-			DataStructureComponent<?, ?, ?> idComp = dataset.getComponent(id).orElseThrow(() -> new VTLMissingComponentsException(id, ids));
-			ids.remove(idComp);
-			
-			// Code items that are left-hand in any rule
-			Collection<? extends List<? extends Rule<?, ?, ?, ?>>> rules = ruleset.values();
-			Set<CodeItem<?, ?, ?, ?>> computed = rules.stream().flatMap(List::stream).filter(rule -> rule.getRuleType() == EQ).map(Rule::getLeftCodeItem).collect(toSet());
-			DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-			DataSetMetadata newStructure = new DataStructureBuilder(ids).addComponent(measure).addComponent(idComp).build();
-			
-			// key: map with all id vals except idcomp; val: map with key: left-hand code; val: map with vals of each right hand vals for each measure in dataset
-			Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Map<CodeItem<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> index = new ConcurrentHashMap<>();
-			Set<DataPoint> results = ConcurrentHashMap.newKeySet();
-			
-			try (Stream<DataPoint> stream = dataset.stream())
-			{
-				stream.forEach(dp -> {
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> key = dp.getValues(ids);
-					CodeItem<?, ?, ?, ?> code = (CodeItem<?, ?, ?, ?>) dp.getValue(idComp);
-					
-					if (input == RULE)
+			stream.forEach(dp -> {
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> key = dp.getValues(ids);
+				CodeItem<?, ?, ?, ?> code = (CodeItem<?, ?, ?, ?>) dp.getValue(idComp);
+				
+				if (input == RULE)
+				{
+					if (!computed.contains(code))
 					{
-						if (!computed.contains(code))
-						{
-							if (output == ALL)
-								results.add(new DataPointBuilder(dp.getValues(newStructure)).build(dp.getLineage(), newStructure));
-							
-							for (Rule<?, ?, ?, ?> rule: ruleset.getDependingRules(code))
-								processRule(ruleset, rule, idComp, measure, newStructure, index, key, code, results, dp.get(measure));
-						}
+						if (output == ALL)
+							results.add(new DataPointBuilder(dp.getValues(newStructure)).build(dp.getLineage(), newStructure));
+						
+						for (Rule<?, ?, ?, ?> rule: ruleset.getDependingRules(code))
+							processRule(ruleset, rule, idComp, measure, newStructure, index, key, code, results, dp.get(measure));
 					}
-					else
-						throw new UnsupportedOperationException("not implemented.");
-				});
-			}
-			
-			if (mode == NON_ZERO)
-				// add fictious datapoints with value 0.0 corresponding to each missing leaf datapoint in the ruleset.
-				for (Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> key: index.keySet())
-					for (CodeItem<?, ?, ?, ?> code: ruleset.getLeaves())
-						if (!index.get(key).containsKey(code))
-							for (Rule<?, ?, ?, ?> rule: ruleset.getDependingRules(code))
-								processRule(ruleset, rule, idComp, measure, newStructure, index, key, code, results, ZERO);
-			
-			return new StreamWrapperDataSet(newStructure, results::stream); 
+				}
+				else
+					throw new UnsupportedOperationException("not implemented.");
+			});
 		}
-		else
-			throw new UnsupportedOperationException();
+		
+		if (mode == NON_ZERO)
+			// add fictious datapoints with value 0.0 corresponding to each missing leaf datapoint in the ruleset.
+			for (Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> key: index.keySet())
+				for (CodeItem<?, ?, ?, ?> code: ruleset.getLeaves())
+					if (!index.get(key).containsKey(code))
+						for (Rule<?, ?, ?, ?> rule: ruleset.getDependingRules(code))
+							processRule(ruleset, rule, idComp, measure, newStructure, index, key, code, results, ZERO);
+		
+		return new StreamWrapperDataSet(newStructure, results::stream); 
 	}
 
 	private void processRule(HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset, Rule<?, ?, ?, ?> rule, DataStructureComponent<?, ?, ?> idComp, 
@@ -238,22 +235,24 @@ public class HierarchyTransformation extends TransformationImpl
 			DataSetMetadata opMeta = (DataSetMetadata) metadata;
 			
 			HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
-			if (ruleset != null && ruleset.isValueDomainHierarchy())
+			if (ruleset != null)
 			{
-				DataStructureComponent<?, ?, ?> idComp = opMeta.getComponent(id).orElseThrow(() -> new VTLMissingComponentsException(id, opMeta.getIDs()));
+				if (ruleset.getType() == VALUE_DOMAIN && id == null)
+					throw new VTLException("A rule variable is required when using a ruleset defined on a valuedomain.");
 				
-				if (!ruleset.getDomain().isAssignableFrom(idComp.getDomain()))
+				DataStructureComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? opMeta.getComponent(id) : opMeta.getComponent(ruleset.getRuleId()))
+						.orElseThrow(() -> new VTLMissingComponentsException(id, opMeta.getIDs()));
+				
+				if (!ruleset.getDomain().isAssignableFrom(idComp.getVariable().getDomain()))
 					throw new VTLIncompatibleTypesException("hierarchy", idComp, ruleset.getDomain());
 				
 				if (opMeta.getMeasures().size() != 1)
 					throw new VTLSingletonComponentRequiredException(Measure.class, NUMBERDS, opMeta);
 				
 				DataStructureComponent<Measure, ?, ?> measure = opMeta.getMeasures().iterator().next();
-				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
+				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
 					throw new VTLIncompatibleTypesException("hierarchy", measure, NUMBERDS);
 			}
-			else if (ruleset != null) 
-				throw new UnsupportedOperationException("hierarchy on variable ruleset not implemented");
 			else
 				throw new VTLException("Hierarchical ruleset " + rulesetID + " not found.");
 			

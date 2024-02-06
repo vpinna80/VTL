@@ -87,9 +87,9 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.NamedDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -232,7 +232,7 @@ public class JoinTransformation extends TransformationImpl
 
 			DataSet finalResult = result;
 			result = new StreamWrapperDataSet(metadata,
-					() -> finalResult.stream().map(dp -> dp.entrySet().stream().map(keepingValue(onlyIf(comp -> comp.getName().contains("#"), comp -> comp.rename(comp.getName().split("#", 2)[1]))))
+					() -> finalResult.stream().map(dp -> dp.entrySet().stream().map(keepingValue(onlyIf(comp -> comp.getVariable().getName().contains("#"), comp -> comp.rename(comp.getVariable().getName().split("#", 2)[1]))))
 							.collect(toDataPoint(LineageNode.of(rename, dp.getLineage()), metadata))));
 		}
 
@@ -242,14 +242,14 @@ public class JoinTransformation extends TransformationImpl
 	private DataSet joinForB2(DataSet lDs, DataSet rDs, DataSetMetadata resultMetadata)
 	{
 		Map<Map<String, ScalarValue<?, ?, ?, ?>>, DataPoint> index = rDs.stream().collect(toMapWithKeys(dp -> dp.getValuesByNames(usingNames)));
-		Set<String> lDsComponentNames = lDs.getMetadata().stream().map(DataStructureComponent::getName).collect(toSet());
-		DataSetMetadata stepMetadata = rDs.getMetadata().stream().filter(component -> !lDsComponentNames.contains(component.getName())).collect(toDataStructure());
+		Set<String> lDsComponentNames = lDs.getMetadata().stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet());
+		DataSetMetadata stepMetadata = rDs.getMetadata().stream().filter(component -> !lDsComponentNames.contains(component.getVariable().getName())).collect(toDataStructure());
 		DataSet stepResult = lDs.mapKeepingKeys(stepMetadata, DataPoint::getLineage, dp -> {
 			var key = dp.getValuesByNames(usingNames);
 			if (index.containsKey(key))
 				return dp.combine(index.get(key), this::lineageCombiner);
 			else
-				return new DataPointBuilder(dp).addAll(resultMetadata.stream().filter(c -> !lDsComponentNames.contains(c.getName())).collect(toMapWithValues(NullValue::instanceFrom)))
+				return new DataPointBuilder(dp).addAll(resultMetadata.stream().filter(c -> !lDsComponentNames.contains(c.getVariable().getName())).collect(toMapWithValues(NullValue::instanceFrom)))
 						.build(dp.getLineage(), resultMetadata);
 		});
 		return operator == LEFT_JOIN ? stepResult : stepResult.filter(dp -> index.containsKey(dp.getValuesByNames(usingNames)), identity());
@@ -381,14 +381,14 @@ public class JoinTransformation extends TransformationImpl
 	{
 		ConcurrentMap<DataStructureComponent<?, ?, ?>, Boolean> unique = new ConcurrentHashMap<>();
 		Set<DataStructureComponent<?, ?, ?>> toBeRenamed = datasets.values().stream().map(DataSet::getMetadata).flatMap(d -> d.stream()).filter(c -> unique.putIfAbsent(c, TRUE) != null)
-				.filter(c -> usingNames.isEmpty() ? c.is(NonIdentifier.class) : !usingNames.contains(c.getName())).collect(toSet());
+				.filter(c -> usingNames.isEmpty() ? c.is(NonIdentifier.class) : !usingNames.contains(c.getVariable().getName())).collect(toSet());
 
 		return datasets.entrySet().stream().map(keepingKey((op, ds) -> {
 			String qualifier = op.getId() + "#";
 			DataSetMetadata oldStructure = ds.getMetadata();
 
 			// find components that must be renamed and add 'alias#' in front of their name
-			DataSetMetadata newStructure = oldStructure.stream().map(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c)
+			DataSetMetadata newStructure = oldStructure.stream().map(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getVariable().getName()) : c)
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).build();
 
 			if (newStructure.equals(oldStructure))
@@ -403,7 +403,7 @@ public class JoinTransformation extends TransformationImpl
 			// Create the dataset operand renaming components in all its datapoints
 			return new NamedDataSet(op.getId(),
 					new FunctionDataSet<>(newStructure, dataset -> dataset.stream().map(
-							dp -> dp.entrySet().stream().map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getName()) : c)).collect(toDataPoint(dp.getLineage(), newStructure))),
+							dp -> dp.entrySet().stream().map(keepingValue(c -> toBeRenamed.contains(c) ? c.rename(qualifier + c.getVariable().getName()) : c)).collect(toDataPoint(dp.getLineage(), newStructure))),
 							ds));
 		})).collect(entriesToMap());
 	}
@@ -414,7 +414,7 @@ public class JoinTransformation extends TransformationImpl
 			return dataset;
 
 		Set<DataStructureComponent<Measure, ?, ?>> applyComponents = dataset.getMetadata().getMeasures().stream()
-				.map(c -> c.getName().replaceAll("^.*#", ""))
+				.map(c -> c.getVariable().getName().replaceAll("^.*#", ""))
 				.distinct()
 				.map(name -> {
 					ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(session, name, dataset.getMetadata()))).getDomain();
@@ -422,10 +422,10 @@ public class JoinTransformation extends TransformationImpl
 					return component;
 				}).collect(toSet());
 
-		DataSetMetadata applyMetadata = dataset.getMetadata().stream().filter(c -> !c.is(Measure.class) || !c.getName().contains("#")).collect(toDataStructure(applyComponents));
+		DataSetMetadata applyMetadata = dataset.getMetadata().stream().filter(c -> !c.is(Measure.class) || !c.getVariable().getName().contains("#")).collect(toDataStructure(applyComponents));
 
 		return dataset.mapKeepingKeys(applyMetadata, dp -> LineageNode.of(this, dp.getLineage()),
-				dp -> applyComponents.stream().collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getName(), dp)))));
+				dp -> applyComponents.stream().collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(session, c.getVariable().getName(), dp)))));
 	}
 
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
@@ -462,14 +462,14 @@ public class JoinTransformation extends TransformationImpl
 		{
 			DataSetMetadata applyResult = result;
 			Set<DataStructureComponent<Measure, ?, ?>> applyComponents = applyResult.getMeasures().stream()
-					.map(c -> c.getName().replaceAll("^.*#", ""))
+					.map(c -> c.getVariable().getName().replaceAll("^.*#", ""))
 					.distinct()
 					.map(name -> {
 						ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(new JoinApplyScope(scheme, name, applyResult))).getDomain();
 						return DataStructureComponentImpl.of(name, Measure.class, domain).asRole(Measure.class);
 					}).collect(toSet());
 
-			result = applyResult.stream().filter(c -> !c.is(Measure.class) || !c.getName().contains("#"))
+			result = applyResult.stream().filter(c -> !c.is(Measure.class) || !c.getVariable().getName().contains("#"))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).addComponents(applyComponents).build();
 		}
 		else if (calc != null)
@@ -482,18 +482,18 @@ public class JoinTransformation extends TransformationImpl
 		{
 			result = (DataSetMetadata) rename.getMetadata(new ThisScope(result));
 			// check if rename has made some components unambiguous
-			Map<String, List<String>> sameUnaliasedName = result.stream().map(DataStructureComponent::getName).filter(name -> name.contains("#")).map(name -> name.split("#", 2))
+			Map<String, List<String>> sameUnaliasedName = result.stream().map(DataStructureComponent::getVariable).map(Variable::getName).filter(name -> name.contains("#")).map(name -> name.split("#", 2))
 					.collect(groupingByConcurrent(name -> name[1], mapping(name -> name[0], toList())));
 			// unalias the unambiguous components and add them to the renaming list
 			result = result.stream()
-					.map(comp -> comp.getName().contains("#") && sameUnaliasedName.get(comp.getName().split("#", 2)[1]).size() <= 1 ? comp.rename(comp.getName().split("#", 2)[1]) : comp)
+					.map(comp -> comp.getVariable().getName().contains("#") && sameUnaliasedName.get(comp.getVariable().getName().split("#", 2)[1]).size() <= 1 ? comp.rename(comp.getVariable().getName().split("#", 2)[1]) : comp)
 					.collect(toDataStructure());
 		}
 
 		// find components with the same name from different aliases
 		DataSetMetadata finalResult = result;
-		result.stream().map(DataStructureComponent::getName).filter(name -> name.contains("#")).findAny().map(name -> name.replaceAll("^.*#", "")).ifPresent(ambiguousComponent -> {
-			final Set<DataStructureComponent<?, ?, ?>> sameUnaliasedName = finalResult.stream().filter(c -> c.getName().endsWith("#" + ambiguousComponent)).collect(toSet());
+		result.stream().map(DataStructureComponent::getVariable).map(Variable::getName).filter(name -> name.contains("#")).findAny().map(name -> name.replaceAll("^.*#", "")).ifPresent(ambiguousComponent -> {
+			final Set<DataStructureComponent<?, ?, ?>> sameUnaliasedName = finalResult.stream().filter(c -> c.getVariable().getName().endsWith("#" + ambiguousComponent)).collect(toSet());
 			throw new VTLAmbiguousComponentException(ambiguousComponent, sameUnaliasedName);
 		});
 
@@ -535,12 +535,12 @@ public class JoinTransformation extends TransformationImpl
 		else if (operator == INNER_JOIN) // case B1-B2
 			if (refDataSet.isEmpty())
 				throw new VTLException(operator.toString().toLowerCase() + " requires one dataset to contain all the identifiers from all other datasets.");
-			else if (commonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).containsAll(usingNames)) // case B1
+			else if (commonIDs.stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet()).containsAll(usingNames)) // case B1
 				return new SimpleEntry<>(refDataSet.get(), TRUE);
 			else // case B2
 				throw new UnsupportedOperationException("inner_join case B2 not implemented");
 		else if (operator == LEFT_JOIN) // case B1-B2
-			if (sameIDs && commonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).containsAll(usingNames)) // Case B1
+			if (sameIDs && commonIDs.stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet()).containsAll(usingNames)) // Case B1
 				return new SimpleEntry<>(refDataSet.get(), TRUE);
 			else // case B2
 			{
@@ -567,7 +567,7 @@ public class JoinTransformation extends TransformationImpl
 				// The using clause specifies all and only the common Identifiers of the
 				// non-reference Data Sets [Id1, … , Idn].
 				Set<DataStructureComponent<Identifier, ?, ?>> nonRefCommonIDs = getCommonIDs(nonRefStructures.size(), nonRefStructures);
-				if (!nonRefCommonIDs.stream().map(DataStructureComponent::getName).collect(toSet()).equals(new HashSet<>(usingNames)))
+				if (!nonRefCommonIDs.stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet()).equals(new HashSet<>(usingNames)))
 					throw new VTLIncompatibleStructuresException("Error in the using clause", nonRefCommonIDs, usingComponents);
 
 				return new SimpleEntry<>(operands.get(0), FALSE);
@@ -579,17 +579,17 @@ public class JoinTransformation extends TransformationImpl
 	private Set<DataStructureComponent<?, ?, ?>> getUsingComponents(DataSetMetadata refDataSet, Collection<DataSetMetadata> datasets)
 	{
 		ConcurrentMap<String, Boolean> unique = new ConcurrentHashMap<>();
-		final Set<DataStructureComponent<?, ?, ?>> usingComps = datasets.stream().flatMap(Collection::stream).filter(c -> usingNames.contains(c.getName()))
-				.filter(c -> unique.putIfAbsent(c.getName(), TRUE) == null).map(c -> refDataSet.getComponent(c.getName()).orElse(c)).collect(toSet());
+		final Set<DataStructureComponent<?, ?, ?>> usingComps = datasets.stream().flatMap(Collection::stream).filter(c -> usingNames.contains(c.getVariable().getName()))
+				.filter(c -> unique.putIfAbsent(c.getVariable().getName(), TRUE) == null).map(c -> refDataSet.getComponent(c.getVariable().getName()).orElse(c)).collect(toSet());
 
 		Set<String> missing = new HashSet<>(usingNames);
 		for (DataStructureComponent<?, ?, ?> c : usingComps)
-			missing.remove(c.getName());
+			missing.remove(c.getVariable().getName());
 
 		if (missing.size() > 0)
 		{
 			unique.clear();
-			Set<DataStructureComponent<?, ?, ?>> available = datasets.stream().flatMap(Collection::stream).filter(c -> unique.putIfAbsent(c.getName(), TRUE) == null).collect(toSet());
+			Set<DataStructureComponent<?, ?, ?>> available = datasets.stream().flatMap(Collection::stream).filter(c -> unique.putIfAbsent(c.getVariable().getName(), TRUE) == null).collect(toSet());
 			throw new VTLMissingComponentsException(missing, available);
 		}
 
@@ -624,7 +624,7 @@ public class JoinTransformation extends TransformationImpl
 			for (Entry<JoinOperand, DataSetMetadata> e : datasetsMeta.entrySet())
 				for (DataStructureComponent<?, ?, ?> c : e.getValue())
 					if (toBeRenamed.contains(c))
-						builder.addComponent(c.rename(e.getKey().getId() + "#" + c.getName()));
+						builder.addComponent(c.rename(e.getKey().getId() + "#" + c.getVariable().getName()));
 					else
 						builder.addComponent(c);
 
@@ -644,18 +644,18 @@ public class JoinTransformation extends TransformationImpl
 
 				// Find unique components from all datasets
 				ConcurrentMap<String, Boolean> unique = new ConcurrentHashMap<>();
-				Set<String> toBeRenamed = datasetsMeta.values().stream().flatMap(Collection::stream).filter(c -> unique.putIfAbsent(c.getName(), TRUE) != null)
-						.filter(c -> !usingNames.contains(c.getName()) && !(c.is(Identifier.class) && refDataSet.contains(c))).map(DataStructureComponent::getName).collect(toSet());
+				Set<String> toBeRenamed = datasetsMeta.values().stream().flatMap(Collection::stream).filter(c -> unique.putIfAbsent(c.getVariable().getName(), TRUE) != null)
+						.filter(c -> !usingNames.contains(c.getVariable().getName()) && !(c.is(Identifier.class) && refDataSet.contains(c))).map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet());
 
 				// add remaining components
 				for (Entry<JoinOperand, DataSetMetadata> e : datasetsMeta.entrySet())
 					for (DataStructureComponent<?, ?, ?> c : e.getValue())
 						// rename non-unique components
-						if (toBeRenamed.contains(c.getName()))
-							builder.addComponent(c.rename(e.getKey().getId() + "#" + c.getName()));
+						if (toBeRenamed.contains(c.getVariable().getName()))
+							builder.addComponent(c.rename(e.getKey().getId() + "#" + c.getVariable().getName()));
 						// add component from reference dataset if it has one, otherwise add it
-						else if (!usingNames.contains(c.getName()))
-							builder.addComponent(refDataSet.getComponent(c.getName()).orElse(c));
+						else if (!usingNames.contains(c.getVariable().getName()))
+							builder.addComponent(refDataSet.getComponent(c.getVariable().getName()).orElse(c));
 
 				return builder.build();
 			}

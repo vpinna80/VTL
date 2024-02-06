@@ -52,7 +52,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.NullDomain;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -103,7 +103,7 @@ public class CastTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getMetadata().getMeasures().iterator().next();
-		if (target.getDomain() == oldMeasure.getDomain())
+		if (target.getDomain() == oldMeasure.getVariable().getDomain())
 			return dataset;
 		
 		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(Measure.class, target.getDomain()).asRole(Measure.class);
@@ -131,7 +131,7 @@ public class CastTransformation extends UnaryTransformation
 			
 			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
 			
-			domain = measure.getDomain();
+			domain = measure.getVariable().getDomain();
 		}
 
 		if (domain == target.getDomain())

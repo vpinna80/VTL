@@ -73,9 +73,9 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -197,7 +197,7 @@ public class CSVFileEnvironment implements Environment
 					.collect(toList());
 				
 				masks = metadata.stream()
-						.map(toEntryWithValue(DataStructureComponent::getDomain))
+						.map(toEntryWithValue(c -> c.getVariable().getDomain()))
 						.map(keepingKey(ValueDomainSubset::getName))
 						.map(keepingKey(CSVParseUtils::mapVarType))
 						.map(keepingKey(Entry::getValue))
@@ -333,7 +333,7 @@ public class CSVFileEnvironment implements Environment
 						else if (c1.is(Measure.class) && c2.is(Attribute.class))
 							return -1;
 	
-						String n1 = c1.getName(), n2 = c2.getName();
+						String n1 = c1.getVariable().getName(), n2 = c2.getVariable().getName();
 						Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
 						Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
 						if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
@@ -341,8 +341,8 @@ public class CSVFileEnvironment implements Environment
 						else
 							return n1.compareTo(n2);
 					})
-					.map(c -> simpleHeader ? c.getName() 
-							: (c.is(Identifier.class) ? "$" : c.is(Attribute.class) ? "#" : "") + c.getName() + "=" + c.getDomain()
+					.map(c -> simpleHeader ? c.getVariable().getName() 
+							: (c.is(Identifier.class) ? "$" : c.is(Attribute.class) ? "#" : "") + c.getVariable().getName() + "=" + c.getVariable().getDomain()
 					).collect(joining(","));
 				writer.println(headerLine);
 

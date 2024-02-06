@@ -40,8 +40,8 @@ import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesExcepti
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -89,13 +89,13 @@ public class ComparisonTransformation extends BinaryTransformation
 		
 		boolean castToLeft;
 		if (datasetIsLeftOp)
-			castToLeft = measure.getDomain().isAssignableFrom(scalar.getDomain());
+			castToLeft = measure.getVariable().getDomain().isAssignableFrom(scalar.getDomain());
 		else
-			castToLeft = scalar.getDomain().isAssignableFrom(measure.getDomain());
+			castToLeft = scalar.getDomain().isAssignableFrom(measure.getVariable().getDomain());
 
 		ScalarValue<?, ?, ?, ?> castedScalar;
 		if (castToLeft && datasetIsLeftOp)
-			castedScalar = measure.getDomain().cast(scalar);
+			castedScalar = measure.getVariable().getDomain().cast(scalar);
 		else
 			castedScalar = scalar;
 
@@ -124,8 +124,8 @@ public class ComparisonTransformation extends BinaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> rMeasure = right.getMetadata().getMeasures().iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
-		ValueDomainSubset<?, ?> lDomain = lMeasure.getDomain();
-		ValueDomainSubset<?, ?> rDomain = rMeasure.getDomain();
+		ValueDomainSubset<?, ?> lDomain = lMeasure.getVariable().getDomain();
+		ValueDomainSubset<?, ?> rDomain = rMeasure.getVariable().getDomain();
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted;
 		if (lDomain.isAssignableFrom(rDomain))
 			casted = (l, r) -> operator.apply(l, lDomain.cast(r));
@@ -160,12 +160,12 @@ public class ComparisonTransformation extends BinaryTransformation
 		
 		boolean castToLeft;
 		if (datasetIsLeftOp)
-			castToLeft = measure.getDomain().isAssignableFrom(scalarDomain);
+			castToLeft = measure.getVariable().getDomain().isAssignableFrom(scalarDomain);
 		else
-			castToLeft = scalarDomain.isAssignableFrom(measure.getDomain());
+			castToLeft = scalarDomain.isAssignableFrom(measure.getVariable().getDomain());
 
-		if (!castToLeft && (datasetIsLeftOp && !scalarDomain.isAssignableFrom(measure.getDomain())
-				|| !datasetIsLeftOp && !measure.getDomain().isAssignableFrom(scalarDomain)))
+		if (!castToLeft && (datasetIsLeftOp && !scalarDomain.isAssignableFrom(measure.getVariable().getDomain())
+				|| !datasetIsLeftOp && !measure.getVariable().getDomain().isAssignableFrom(scalarDomain)))
 			throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
 		
 		return new DataStructureBuilder().addComponents(dataset.getIDs())
@@ -189,8 +189,8 @@ public class ComparisonTransformation extends BinaryTransformation
 		final DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getMeasures().iterator().next(),
 				rightMeasure = left.getMeasures().iterator().next();
 		
-		if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()) && 
-				!rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
+		if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain()) && 
+				!rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
 			throw new VTLIncompatibleMeasuresException("comparison", leftMeasure, rightMeasure);
 
 		return new DataStructureBuilder()

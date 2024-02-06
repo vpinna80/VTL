@@ -40,8 +40,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -82,7 +82,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 			return measureVals.entrySet().stream()
 				.map(splitting((m, v) -> {
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> res = new HashMap<>();
-					res.put(newID, StringValue.of(m.getName()));
+					res.put(newID, StringValue.of(m.getVariable().getName()));
 					res.put(newMeasure, v);
 					return res;
 				}));
@@ -109,7 +109,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		}
 		
 		Set<? extends ValueDomainSubset<?, ?>> domains = dataset.getMeasures().stream()
-			.map(DataStructureComponent::getDomain)
+			.map(DataStructureComponent::getVariable).map(Variable::getDomain)
 			.distinct()
 			.collect(toSet());
 

@@ -28,8 +28,8 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -50,7 +50,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param role the role to query
 	 * @return A set of the queried components.
 	 */
-	public <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> role);
+	public <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> role);
 
 	/**
 	 * Queries for identifiers of this {@link DataSetMetadata}.
@@ -84,10 +84,10 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return A set of the queried components.
 	 */
-	public default <R extends ComponentRole> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> role, ValueDomainSubset<?, ?> domain)
+	public default <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponents(role).stream()
-				.filter(c -> domain.isAssignableFrom(c.getDomain()))
+				.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()))
 				.map(c -> c.asRole(role))
 				.collect(toSet());
 	}
@@ -118,7 +118,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	public default Optional<DataStructureComponent<?, ?, ?>> getComponent(String name, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponent(name)
-				.filter(c -> domain.isAssignableFrom(c.getDomain()));
+				.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()));
 	}
 
 	/**
@@ -129,7 +129,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param role the role to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <R extends ComponentRole> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
+	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
 	{
 		return getComponent(name)
 				.filter(c -> c.is(role))
@@ -145,10 +145,10 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <R extends ComponentRole> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role, ValueDomainSubset<?, ?> domain)
+	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponent(name)
-				.filter(c -> domain.isAssignableFrom(c.getDomain()))
+				.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()))
 				.filter(c -> c.is(role))
 				.map(c -> c.asRole(role));
 	}

@@ -77,10 +77,10 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -142,7 +142,7 @@ public class REnvironment implements Environment
 				{
 					REXP columnData = dataFrame.at(key);
 
-					Class<? extends ComponentRole> type;
+					Class<? extends Component> type;
 					if (measures.contains(key))
 						type = Measure.class;
 					else if (identifiers.contains(key))
@@ -310,10 +310,10 @@ public class REnvironment implements Environment
 				comp = metadata.getComponent('\'' + key + '\'').orElseThrow(() -> {
 					return new VTLMissingComponentsException(metadata, key);
 				});
-				if (comp.getDomain() instanceof TimeDomainSubset)
+				if (comp.getVariable().getDomain() instanceof TimeDomainSubset)
 					values = values.map(REnvironment.toTime(comp));
 				else
-					values = values.map(v -> comp.getDomain().cast(v));
+					values = values.map(v -> comp.getVariable().getDomain().cast(v));
 			}
 			else
 			{
@@ -327,7 +327,7 @@ public class REnvironment implements Environment
 				if (idAttr != null && (idAttr.getType() == XT_ARRAY_STR || idAttr.getType() == XT_STR))
 					identifiers = Arrays.asList(idAttr.asStringArray());
 
-				Class<? extends ComponentRole> type;
+				Class<? extends Component> type;
 				if (measures.contains(key))
 					type = Measure.class;
 				else if (identifiers.contains(key))
@@ -391,7 +391,7 @@ public class REnvironment implements Environment
 					throw new UnsupportedOperationException("Date format not supported: " + dt);
 			}
 			else
-				throw new VTLCastException(comp.getDomain(), value);
+				throw new VTLCastException(comp.getVariable().getDomain(), value);
 		};
 	}
 }

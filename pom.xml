@@ -151,23 +151,6 @@
 										</pluginExecution>
 										<pluginExecution>
 											<pluginExecutionFilter>
-												<groupId>net.alchim31.maven</groupId>
-												<artifactId>scala-maven-plugin</artifactId>
-												<versionRange>[4.4.0,)</versionRange>
-												<goals>
-													<goal>compile</goal>
-													<goal>testCompile</goal>
-												</goals>
-											</pluginExecutionFilter>
-											<action>
-												<execute>
-													<runOnIncremental>true</runOnIncremental>
-													<runOnConfiguration>false</runOnConfiguration>
-												</execute>
-											</action>
-										</pluginExecution>
-										<pluginExecution>
-											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-dependency-plugin</artifactId>
 												<versionRange>[3.1.2,)</versionRange>
@@ -238,40 +221,59 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
+		
+		<flatten.version>1.6.0</flatten.version>
+		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
+		<compiler.version>3.12.1</compiler.version>
+		<resources.version>3.3.1</resources.version>
+		<dependency.version>3.6.1</dependency.version>
+		<exec.version>3.1.1</exec.version>
+		<javadoc.version>3.6.3</javadoc.version>
+		<sources.version>3.3.0</sources.version>
+		<sf-fs.version>3.2.5</sf-fs.version>
+		<assembly.version>3.6.0</assembly.version>
+		<frontend.version>1.15.0</frontend.version>
+		<jar.version>3.3.0</jar.version>
+		<war.version>3.4.0</war.version>
+		<shade.version>3.5.1</shade.version>
+		<gpg.version>3.1.0</gpg.version>
+
 		<site.version>3.12.1</site.version>
 		<reflow.version>2.3.4</reflow.version>
 		<asciidoctor.version>2.2.4</asciidoctor.version>
 		<restdocs.version>2.0.8.RELEASE</restdocs.version>
 		<doxia.markdown.version>1.12.0</doxia.markdown.version>
-		<sf-fs.version>3.0.0-M3</sf-fs.version>
-		<jacoco.version>0.8.11</jacoco.version>
+
+		<slf4j.version>2.0.11</slf4j.version>
+		<log4j.version>2.22.1</log4j.version>
+
 		<scala.version>2.13.11</scala.version>
 		<scala.compat.version>2.13</scala.compat.version>
-		<scala-compiler.version>4.8.1</scala-compiler.version>
 		<spark.version>3.5.0</spark.version>
-		<slf4j.version>2.0.11</slf4j.version>
+
 		<picocli.version>4.7.5</picocli.version>
-		<log4j.version>2.22.1</log4j.version>
-		<jetty.version>10.0.18</jetty.version>
 		<jackson.version>2.15.2</jackson.version>
 		<jaxb.version>4.0.1</jaxb.version>
 		<jaxb.runtime.version>4.0.3</jaxb.runtime.version>
-		<junit.version>5.10.0</junit.version>
-		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
-		<mockito.version>5.9.0</mockito.version>
-		<mockito-inline.version>5.2.0</mockito-inline.version>
 		<thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
-		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
 		<spring.boot.version>2.7.13</spring.boot.version>
 		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.8</antlr4.version>
 		<io.sdmx.version>1.0.54</io.sdmx.version>
 		<guava.version>30.1.1-jre</guava.version>
+		
+		<junit.version>5.10.0</junit.version>
+		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
+		<mockito.version>5.9.0</mockito.version>
+		<mockito-inline.version>5.2.0</mockito-inline.version>
+		<jacoco.version>0.8.11</jacoco.version>
+		<jacoco.ut.file>${project.build.directory}/jacoco-ut.exec</jacoco.ut.file>
+		<jacoco.it.file>${project.build.directory}/jacoco-it.exec</jacoco.it.file>
+		<jetty.version>10.0.18</jetty.version>
+
 		<scmUrl>https://github.com/vpinna80/VTL</scmUrl>
 		<siteUrl>https://vpinna80.github.io/VTL</siteUrl>
 		<licenseUrl>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</licenseUrl>
-		<jacoco.ut.file>${project.build.directory}/jacoco-ut.exec</jacoco.ut.file>
-		<jacoco.it.file>${project.build.directory}/jacoco-it.exec</jacoco.it.file>
 	</properties>
 
 	<reporting>
@@ -688,38 +690,9 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
-					<groupId>net.alchim31.maven</groupId>
-					<artifactId>scala-maven-plugin</artifactId>
-					<version>${scala-compiler.version}</version>
-					<executions>
-						<execution>
-							<id>scala-compile</id>
-							<phase>compile</phase>
-							<goals>
-								<goal>compile</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>scala-test-compile</id>
-							<phase>test-compile</phase>
-							<goals>
-								<goal>testCompile</goal>
-							</goals>
-						</execution>
-					</executions>
-					<configuration>
-						<compileOrder>Mixed</compileOrder>
-						<recompileMode>incremental</recompileMode>
-						<args>
-							<arg>-deprecation</arg>
-							<arg>-feature</arg>
-						</args>
-					</configuration>
-				</plugin>
-				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.8.1</version>
+					<version>${compiler.version}</version>
 					<configuration>
 						<compilerArgs>
 							<compilerArg>-Xlint:deprecation</compilerArg>
@@ -730,7 +703,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-assembly-plugin</artifactId>
-					<version>3.6.0</version>
+					<version>${assembly.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -792,21 +765,22 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
-					<version>3.1.1</version>
+					<version>${jar.version}</version>
 				</plugin>
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-war-plugin</artifactId>
-					<version>3.3.1</version>
+					<version>${war.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
-					<version>3.5.1</version>
+					<version>${shade.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>com.github.eirslett</groupId>
 					<artifactId>frontend-maven-plugin</artifactId>
-					<version>1.14.2</version>
+					<version>${frontend.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -816,12 +790,12 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-dependency-plugin</artifactId>
-					<version>3.1.2</version>
+					<version>${dependency.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-resources-plugin</artifactId>
-					<version>3.3.1</version>
+					<version>${resources.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.jacoco</groupId>
@@ -855,7 +829,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-gpg-plugin</artifactId>
-					<version>3.1.0</version>
+					<version>${gpg.version}</version>
 					<executions>
 						<execution>
 							<phase>verify</phase>
@@ -868,7 +842,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-source-plugin</artifactId>
-					<version>3.3.0</version>
+					<version>${sources.version}</version>
 					<executions>
 						<execution>
 							<id>sources</id>
@@ -887,7 +861,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.6.2</version>
+					<version>${javadoc.version}</version>
 					<executions>
 						<execution>
 							<goals>
@@ -899,7 +873,7 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
-					<version>3.1.1</version>
+					<version>${exec.version}</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-antrun-plugin</artifactId>
@@ -915,7 +889,7 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>flatten-maven-plugin</artifactId>
-					<version>1.5.0</version>
+					<version>${flatten.version}</version>
 					<executions>
 						<execution>
 							<id>flattening</id>

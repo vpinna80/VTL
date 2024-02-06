@@ -38,7 +38,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -125,7 +125,7 @@ public class TimeAggTransformation extends UnaryTransformation
 
 			Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getMeasures().stream()
 					.map(c -> c.asRole(Measure.class))
-					.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
+					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
 					.collect(toSet());
 				
 			if (timeMeasures.size() != 1)

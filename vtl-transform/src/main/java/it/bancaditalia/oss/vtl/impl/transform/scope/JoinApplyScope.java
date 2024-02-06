@@ -48,8 +48,8 @@ public class JoinApplyScope extends AbstractScope
 	{
 		this.parent = parent;
 		this.joinValues = joinedDataPoint.entrySet().stream()
-				.filter(entryByKey(c -> measureName.equals(c.getName().replaceAll("^.*#", ""))))
-				.collect(toConcurrentMap(e -> e.getKey().getName().replaceAll("#.*", ""), Entry::getValue));
+				.filter(entryByKey(c -> measureName.equals(c.getVariable().getName().replaceAll("^.*#", ""))))
+				.collect(toConcurrentMap(e -> e.getKey().getVariable().getName().replaceAll("#.*", ""), Entry::getValue));
 		this.joinMeta = null;
 	}
 
@@ -58,8 +58,8 @@ public class JoinApplyScope extends AbstractScope
 		this.parent = parent;
 		this.joinValues = null;
 		this.joinMeta = joinedComponents.stream()
-				.filter(c -> measureName.equals(c.getName().replaceAll("^.*#", "")))
-				.collect(toConcurrentMap(c -> c.getName().replaceAll("#.*", ""), DataStructureComponent::getVariable));
+				.filter(c -> measureName.equals(c.getVariable().getName().replaceAll("^.*#", "")))
+				.collect(toConcurrentMap(c -> c.getVariable().getName().replaceAll("#.*", ""), DataStructureComponent::getVariable));
 	}
 
 	@Override

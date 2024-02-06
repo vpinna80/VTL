@@ -99,16 +99,6 @@ public interface TransformationScheme
 	}
 	
 	/**
-	 * Checks if this transformation scheme is nested inside another one and return it.
-	 * 
-	 * @return The TransformationScheme encompassing this one, if any.
-	 */
-	public default TransformationScheme getParent()
-	{
-		return null;
-	}
-	
-	/**
 	 * Returns a holder map for computed values of type T
 	 *  
 	 * @param <T> The type of the holder
@@ -116,17 +106,6 @@ public interface TransformationScheme
 	 * @return The holder for computed values of type T
 	 */
 	public <T> Map<Transformation, T> getResultHolder(Class<T> type);
-
-	/**
-	 * Tries to persist a value in one of the environments managed by this scheme
-	 * 
-	 * @param value The value to persist
-	 * @param alias The alias under which the value must be persisted
-	 */
-	public default void persist(VTLValue value, String alias) throws VTLException
-	{
-		throw new UnsupportedOperationException();
-	}
 	
 	/**
 	 * Returns a {@link HierarchicalRuleSet} referred by an alias defined in this TransformationScheme.
@@ -145,4 +124,15 @@ public interface TransformationScheme
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
 	public DataPointRuleSet findDatapointRuleset(String alias);
+
+	/**
+	 * Tries to persist a value in one of the environments managed by this scheme
+	 * 
+	 * @param value The value to persist
+	 * @param alias The alias under which the value must be persisted
+	 */
+	public default void persist(VTLValue value, String alias) throws VTLException
+	{
+		throw new UnsupportedOperationException();
+	}
 }

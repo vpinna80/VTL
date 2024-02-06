@@ -33,20 +33,20 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentExc
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
+import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Supplier<Set<? extends DataStructureComponent<R, S, D>>>
+public class MetadataAssertions<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Supplier<Set<? extends DataStructureComponent<R, S, D>>>
 {
 	private final Set<DataStructureComponent<R, S, D>> components;
 	private final Class<R> role;
 	private final S domain;
 	private final String name;
 
-	public static <R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> MetadataAssertions<R, S, D> asserts(String name, Set<DataStructureComponent<R, S, D>> components)
+	public static <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> MetadataAssertions<R, S, D> asserts(String name, Set<DataStructureComponent<R, S, D>> components)
 	{
 		return new MetadataAssertions<>(name, components, null, null);
 	}
@@ -102,7 +102,7 @@ public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSu
 	{
 		@SuppressWarnings("unchecked")
 		Set<DataStructureComponent<R, S1, D1>> components = this.components.stream()
-			.filter(c -> domain.isAssignableFrom(c.getDomain()))
+			.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()))
 			.map(c -> (DataStructureComponent<R, S1, D1>) c)
 			.collect(toSet());
 		
@@ -126,7 +126,7 @@ public class MetadataAssertions<R extends ComponentRole, S extends ValueDomainSu
 	{
 		return new MetadataAssertions<>(name, names.stream()
 				.flatMap(name -> components.stream()
-						.filter(c -> name.equals(c.getName()))
+						.filter(c -> name.equals(c.getVariable().getName()))
 						.findAny()
 						.map(Stream::of)
 						.orElse(Stream.empty()))

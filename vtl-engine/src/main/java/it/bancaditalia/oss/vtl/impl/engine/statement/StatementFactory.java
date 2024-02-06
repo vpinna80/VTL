@@ -19,14 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.ANY;
-import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.AT_LEAST_ONE;
-import static it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints.MAX_ONE;
-import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.ATTRIBUTE;
-import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.COMPONENT;
-import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.IDENTIFIER;
-import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.MEASURE;
-import static it.bancaditalia.oss.vtl.model.data.ComponentRole.Role.VIRAL_ATTRIBUTE;
+import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.ANY;
+import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.AT_LEAST_ONE;
+import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.MAX_ONE;
+import static it.bancaditalia.oss.vtl.model.data.Component.Role.ATTRIBUTE;
+import static it.bancaditalia.oss.vtl.model.data.Component.Role.COMPONENT;
+import static it.bancaditalia.oss.vtl.model.data.Component.Role.IDENTIFIER;
+import static it.bancaditalia.oss.vtl.model.data.Component.Role.MEASURE;
+import static it.bancaditalia.oss.vtl.model.data.Component.Role.VIRAL_ATTRIBUTE;
+import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
+import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VARIABLE;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -52,6 +54,7 @@ import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.grammar.Vtl;
 import it.bancaditalia.oss.vtl.grammar.Vtl.CodeItemRelationContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.CompConstraintContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentIDContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DatasetTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefHierarchicalContext;
@@ -69,9 +72,11 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.TemporaryAssignmentContext;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
-import it.bancaditalia.oss.vtl.impl.engine.statement.AnonymousComponentConstraint.QuantifierConstraints;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Role;
+import it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints;
+import it.bancaditalia.oss.vtl.model.data.Component.Role;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType;
+import it.bancaditalia.oss.vtl.model.transform.Parameter;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import jakarta.xml.bind.JAXBException;
 
@@ -107,7 +112,7 @@ public class StatementFactory implements Serializable
 				List<Parameter> params = coalesce(defineOp.parameterItem(), emptyList()).stream()
 						.map(this::buildParam)
 						.collect(toList());
-				Parameter outputType = buildResultType(defineOp.outputParameterType());
+				BaseParameter outputType = buildResultType(defineOp.outputParameterType());
 				
 				return new DefineOperatorStatement(defineOp.operatorID().getText(), params, outputType, buildExpr(defineOp.expr()));
 			}
@@ -115,7 +120,7 @@ public class StatementFactory implements Serializable
 			{
 				DefHierarchicalContext defineHier = (DefHierarchicalContext) defineContext;
 				String alias = defineHier.rulesetID().getText();
-				boolean isValueDomain = defineHier.hierRuleSignature().VALUE_DOMAIN() != null;
+				RuleSetType rulesetType = defineHier.hierRuleSignature().VALUE_DOMAIN() != null ? VALUE_DOMAIN : VARIABLE;
 				String ruleID = defineHier.hierRuleSignature().IDENTIFIER() != null ? defineHier.hierRuleSignature().IDENTIFIER().getText() : null;
 				
 				List<String> names = new ArrayList<>();
@@ -147,7 +152,7 @@ public class StatementFactory implements Serializable
 						.collect(toMap(r -> r.rightCodeItem.getText(), r -> r.opAdd == null || r.opAdd.getType() == Vtl.PLUS)));
 				}
 				
-				return new DefineHierarchyStatement(alias, isValueDomain, ruleID, names, leftOps, compOps, rightOps, ercodes, erlevels);
+				return new DefineHierarchyStatement(alias, rulesetType, ruleID, names, leftOps, compOps, rightOps, ercodes, erlevels);
 			}
 			else
 				throw new VTLUnmappedContextException(ctx);
@@ -159,12 +164,12 @@ public class StatementFactory implements Serializable
 		return opsFactory.buildExpr(ctx);
 	}
 
-	public Parameter buildParam(ParameterItemContext param)
+	public BaseParameter buildParam(ParameterItemContext param)
 	{
 		return buildParamType(param.varID().getText(), param.inputParameterType());
 	}
 
-	private static Parameter buildParamType(String name, ParserRuleContext type)
+	private static BaseParameter buildParamType(String name, ParserRuleContext type)
 	{
 		ScalarTypeContext scalarType = null;
 		ComponentTypeContext compType = null;
@@ -200,20 +205,22 @@ public class StatementFactory implements Serializable
 	{
 		final Entry<Role, String> metadata = generateComponentMetadata(constraint.componentType());
 		
-		if (constraint.componentID() != null)
-			return new NamedComponentConstraint(constraint.componentID().getText(), metadata.getKey(), metadata.getValue());
-		else
-			return new AnonymousComponentConstraint(metadata.getKey(), metadata.getValue(), generateMultConstraint(constraint.multModifier()));			
+		ComponentIDContext id = constraint.componentID();
+		return new DataSetComponentConstraint(id != null ? id.getText() : null, metadata.getKey(), metadata.getValue(), generateMultConstraint(constraint.multModifier()));
 	}
 
 	private static QuantifierConstraints generateMultConstraint(MultModifierContext multModifier)
 	{
-		if (multModifier.PLUS() != null)
+		if (multModifier == null)
+			return null;
+		else if (multModifier.PLUS() != null)
 			return AT_LEAST_ONE;
 		else if (multModifier.MUL() != null)
 			return ANY;
-		else
+		else if (multModifier.OPTIONAL() != null)
 			return MAX_ONE;
+		else
+			return null;
 	}
 
 	private static Entry<Role, String> generateComponentMetadata(ComponentTypeContext compType)
@@ -262,7 +269,7 @@ public class StatementFactory implements Serializable
 		return new SimpleEntry<>(role, domain);
 	}
 
-	private Parameter buildResultType(OutputParameterTypeContext type)
+	private BaseParameter buildResultType(OutputParameterTypeContext type)
 	{
 		if (type == null)
 			return null;
@@ -271,7 +278,7 @@ public class StatementFactory implements Serializable
 			return buildType(type, null, type.scalarType(), type.componentType(), type.datasetType());
 	}
 
-	private static Parameter buildType(ParserRuleContext type, String name, ScalarTypeContext scalarType, ComponentTypeContext compType, DatasetTypeContext datasetType)
+	private static BaseParameter buildType(ParserRuleContext type, String name, ScalarTypeContext scalarType, ComponentTypeContext compType, DatasetTypeContext datasetType)
 	{
 		// check kind of each parameter used in the operator definition and generate constraints
 		if (scalarType != null)

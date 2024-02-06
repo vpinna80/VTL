@@ -22,8 +22,8 @@ package it.bancaditalia.oss.vtl.impl.types.exceptions;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public class VTLInvariantIdentifiersException extends VTLException
@@ -35,7 +35,7 @@ public class VTLInvariantIdentifiersException extends VTLException
 		super(operation + " cannot change identifiers " + before);
 	}
 
-	public VTLInvariantIdentifiersException(String operation, DataStructureComponent<? extends Identifier, ?, ?> before, Class<? extends ComponentRole> role)
+	public VTLInvariantIdentifiersException(String operation, DataStructureComponent<? extends Identifier, ?, ?> before, Class<? extends Component> role)
 	{
 		super(operation + " cannot change identifier " + before + " to a " + role.getSimpleName());
 	}

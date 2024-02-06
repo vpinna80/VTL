@@ -17,32 +17,22 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.model.transform;
+package it.bancaditalia.oss.vtl.engine;
+
+import java.util.List;
+
+import it.bancaditalia.oss.vtl.model.transform.Parameter;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 /**
- * Definition of Parameter for a custom VTL operator.
+ * TODO: Specification unclear
  * 
  * @author Valentino Pinna
  *
  */
-public interface Parameter
+public interface UserOperatorStatement extends DDLStatement
 {
-	/**
-	 * @return the alias used for this parameter
-	 */
-	public String getAlias();
-	
-	/**
-	 * Checks if the provided metadata argument matches this Parameter definition
-	 * @param scheme The trasformation scheme in which the match should be tested
-	 * @param argument The argument expression to match to this parameter
-	 * 
-	 * @return tue if the check is positive
-	 */
-	public boolean matches(TransformationScheme scheme, Transformation argument);
+	public List<Parameter> getParameters();
 
-	/**
-	 * @return The serialized definition of this parameter.
-	 */
-	public String getDefinitionString();
+	public Transformation getExpression();
 }

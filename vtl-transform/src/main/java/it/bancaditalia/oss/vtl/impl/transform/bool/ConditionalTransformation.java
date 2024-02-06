@@ -45,9 +45,9 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -218,9 +218,9 @@ public class ConditionalTransformation extends TransformationImpl
 						// Momomeasure datasets, ignore names as long as the domains are compatible
 						DataStructureComponent<Measure, ?, ?> leftMeasure = dataset.getMeasures().iterator().next();
 						DataStructureComponent<Measure, ?, ?> rightMeasure = ((DataSetMetadata) other).getMeasures().iterator().next();
-						if (!leftMeasure.getDomain().equals(rightMeasure.getDomain()))
-							if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain())
-									&& rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
+						if (!leftMeasure.getVariable().getDomain().equals(rightMeasure.getVariable().getDomain()))
+							if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain())
+									&& rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
 								dataset = new DataStructureBuilder(dataset)
 									.removeComponent(leftMeasure)
 									.addComponent(rightMeasure)
@@ -233,7 +233,7 @@ public class ConditionalTransformation extends TransformationImpl
 			}
 			else 
 				// the other is a scalar, all measures in dataset must be assignable from the scalar
-				if (!dataset.getMeasures().stream().allMatch(c -> c.getDomain().isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain())))
+				if (!dataset.getMeasures().stream().allMatch(c -> c.getVariable().getDomain().isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain())))
 					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?, ?>) other).getDomain() + ": " + dataset.getMeasures());
 
 			return dataset;

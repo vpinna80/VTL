@@ -21,9 +21,9 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Attribute;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -32,11 +32,11 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
  * 
  * @author Valentino Pinna
  *
- * @param <R> the {@link ComponentRole}
+ * @param <R> the {@link Component}
  * @param <S> the {@link ValueDomainSubset}
  * @param <D> the {@link ValueDomain}
  */
-public interface DataStructureComponent<R extends ComponentRole, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends Serializable
+public interface DataStructureComponent<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends Serializable
 {
 	public static int byNameAndRole(DataStructureComponent<?, ?, ?> c1, DataStructureComponent<?, ?, ?> c2)
 	{
@@ -73,7 +73,7 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @param role the role
 	 * @return true if this {@link DataStructureComponent} has the specified role.
 	 */
-	public default boolean is(Class<? extends ComponentRole> role)
+	public default boolean is(Class<? extends Component> role)
 	{
 		return role.isAssignableFrom(getRole());
 	}
@@ -86,7 +86,7 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	 * @throws ClassCastException if the role cannot be narrowed.
 	 */
 	@SuppressWarnings("unchecked")
-	public default <R2 extends ComponentRole> DataStructureComponent<R2, S, D> asRole(Class<R2> role)
+	public default <R2 extends Component> DataStructureComponent<R2, S, D> asRole(Class<R2> role)
 	{
 		if (is(role))
 			// safe
@@ -96,14 +96,4 @@ public interface DataStructureComponent<R extends ComponentRole, S extends Value
 	}
 
 	public DataStructureComponent<?, ?, ?> rename(String newName);
-	
-	public default S getDomain()
-	{
-		return getVariable().getDomain();
-	}
-	
-	public default String getName()
-	{
-		return getVariable().getName();
-	}
 }

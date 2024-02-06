@@ -52,10 +52,10 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Identifier;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.Measure;
-import it.bancaditalia.oss.vtl.model.data.ComponentRole.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -84,10 +84,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		private static final long serialVersionUID = 1L;
 
 		private final String name;
-		private final Class<? extends ComponentRole> role;
+		private final Class<? extends Component> role;
 		private final Transformation calcClause;
 
-		public CalcClauseItem(Class<? extends ComponentRole> role, String name, Transformation calcClause)
+		public CalcClauseItem(Class<? extends Component> role, String name, Transformation calcClause)
 		{
 			this.name = Variable.normalizeAlias(name);
 			this.calcClause = calcClause;
@@ -99,7 +99,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			return name;
 		}
 
-		public Class<? extends ComponentRole> getRole()
+		public Class<? extends Component> getRole()
 		{
 			return role;
 		}
@@ -227,7 +227,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			DataSet clauseValue = (DataSet) clause.calcClause.eval(scheme);
 			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getMetadata().getMeasures().iterator().next();
 	
-			String newName = coalesce(clause.getName(), measure.getName());
+			String newName = coalesce(clause.getName(), measure.getVariable().getName());
 			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
 			
 			DataSetMetadata newStructure = new DataStructureBuilder(clauseValue.getMetadata())
@@ -285,7 +285,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				if (value.getMeasures().size() != 1)
 					throw new VTLExpectedComponentException(Measure.class, value);
 
-				domain = value.getMeasures().iterator().next().getDomain();
+				domain = value.getMeasures().iterator().next().getVariable().getDomain();
 			} 
 			else
 				domain = ((ScalarValueMetadata<?, ?>) itemMeta).getDomain();
@@ -302,8 +302,8 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					throw new VTLInvariantIdentifiersException("calc", singleton(definedComponent.asRole(Identifier.class)));
 				else
 				{
-					if (!definedComponent.getDomain().isAssignableFrom(domain))
-						throw new VTLIncompatibleTypesException("calc", definedComponent.getDomain(), domain);
+					if (!definedComponent.getVariable().getDomain().isAssignableFrom(domain))
+						throw new VTLIncompatibleTypesException("calc", definedComponent.getVariable().getDomain(), domain);
 					else if (item.getRole() != null && !definedComponent.is(item.getRole()))
 					{
 						// switch role (from a non-id to any)
@@ -316,7 +316,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else
 			{
 				// new component
-				Class<? extends ComponentRole> newComponent = item.getRole() == null ? Measure.class : item.getRole();
+				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
 				builder = builder.addComponent(DataStructureComponentImpl.of(item.getName(), newComponent, domain));
 			}
 		}
