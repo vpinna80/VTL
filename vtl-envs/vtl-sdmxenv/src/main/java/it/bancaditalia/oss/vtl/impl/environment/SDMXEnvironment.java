@@ -47,6 +47,7 @@ import java.net.URLConnection;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
@@ -56,6 +57,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Spliterators;
@@ -135,7 +137,6 @@ public class SDMXEnvironment implements Environment, Serializable
 
 	private final SDMXRepository repo;
 	private final String endpoint = SDMX_DATA_ENDPOINT.getValue();
-	private final boolean drop;
 
 	static
 	{
@@ -164,8 +165,6 @@ public class SDMXEnvironment implements Environment, Serializable
 			throw new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository.");
 
 		LOGGER.info("Loading SDMX data from {}", endpoint);
-
-		drop = repo.isDrop();
 		
 		// FMR client configuration
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
@@ -212,10 +211,9 @@ public class SDMXEnvironment implements Environment, Serializable
 			return Optional.empty();
 		
 		String[] query = alias.split("/", 2);
-		String dataflow = query[0].replace(':', ',').replace('(', ',').replace(')', '/');
-		String resource = query[1];
-		
-		String[] dims = drop && alias.indexOf('/') > 0 ? resource.split("\\.") : new String[] {};
+		String dataflow = query[0].replace(':', ',').replace('(', ',').replaceAll("\\)(?=/|$)", "");
+		String resource = query.length > 1 ? "/" + query[1] : "";
+		String[] dims = alias.indexOf('/') > 0 ? resource.split("\\.") : new String[] {};
 
 		String path = endpoint + "/data/" + dataflow + resource;
 		ReadableDataLocation rdl;
@@ -275,7 +273,7 @@ public class SDMXEnvironment implements Environment, Serializable
 
 		private boolean no;
 		private Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dmap = new HashMap<>();
-		private SimpleEntry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> parser;
+		private Entry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> parser;
 
 		public ObsIterator(String alias, DataReaderEngine dre, DataSetMetadata structure, String[] dims)
 		{
@@ -334,7 +332,25 @@ public class SDMXEnvironment implements Environment, Serializable
 			builder.add(measure, obs.getMeasureValue(measure.getVariable().getName()) != null 
 					? DoubleValue.of(parseDouble(obs.getMeasureValue(measure.getVariable().getName())))
 					: NullValue.instanceFrom(measure));
-			TemporalAccessor holder = parser.getValue().queryFrom(parser.getKey().parse(obs.getDimensionValue()));
+
+			TemporalAccessor parsed; 
+			for (;;)
+			{
+				if (parser == null)
+					parser = getDateParser(obs.getDimensionValue());
+				
+				try
+				{
+					parsed = parser.getKey().parse(obs.getDimensionValue());
+					break;
+				}
+				catch (DateTimeParseException e)
+				{
+					parser = null;
+				}
+			}
+			
+			TemporalAccessor holder = parser.getValue().queryFrom(parsed);
 			ScalarValue<?, ?, ?, ?> value;
 			if (holder instanceof PeriodHolder)
 				value = TimePeriodValue.of((PeriodHolder<?>) holder);

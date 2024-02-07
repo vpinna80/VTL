@@ -35,6 +35,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class InMemoryMetadataRepository implements MetadataRepository, Serializable 
@@ -96,5 +97,11 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	public Variable<?, ?> getVariable(String alias)
 	{
 		throw new UnsupportedOperationException("getVariable " + alias);
+	}
+
+	@Override
+	public TransformationScheme getTransformationScheme(String alias)
+	{
+		throw new UnsupportedOperationException("getTransformationScheme " + alias);
 	}
 }

@@ -19,11 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
+import static io.sdmx.api.sdmx.constants.TEXT_TYPE.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.PASSWORD;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static java.lang.System.lineSeparator;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.joining;
@@ -54,12 +57,15 @@ import org.xml.sax.SAXException;
 import io.sdmx.api.sdmx.constants.TEXT_TYPE;
 import io.sdmx.api.sdmx.manager.structure.SdmxBeanRetrievalManager;
 import io.sdmx.api.sdmx.model.beans.base.ComponentBean;
+import io.sdmx.api.sdmx.model.beans.base.RepresentationBean;
+import io.sdmx.api.sdmx.model.beans.base.TextFormatBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.AttributeBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataStructureBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataflowBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DimensionBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
+import io.sdmx.api.sdmx.model.beans.transformation.ITransformationSchemeBean;
 import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
 import io.sdmx.core.sdmx.manager.structure.StructureReaderManagerImpl;
 import io.sdmx.format.ml.factory.structure.SdmxMLStructureReaderFactory;
@@ -71,6 +77,7 @@ import io.sdmx.utils.core.application.SingletonStore;
 import io.sdmx.utils.http.api.model.IHttpProxy;
 import io.sdmx.utils.http.broker.RestMessageBroker;
 import io.sdmx.utils.sdmx.xs.MaintainableRefBeanImpl;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -88,6 +95,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class SDMXRepository extends InMemoryMetadataRepository
 {
@@ -118,6 +126,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private final Map<String, DataSetMetadata> dataflows = new HashMap<>();
 	private final Map<String, Variable<?, ?>> variables = new HashMap<>();
 	private final Map<String, Set<String>> multiReprs = new HashMap<>();
+	private final Map<String, String> schemes = new HashMap<>();
 	private final SdmxRestToBeanRetrievalManager rbrm;
 
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
@@ -185,11 +194,17 @@ public class SDMXRepository extends InMemoryMetadataRepository
 					domain = getDomain(sdmxRef2VtlName(attrBean.getEnumeratedRepresentation()));
 				else
 				{
-					TEXT_TYPE type = attrBean.getRepresentation().getTextFormat().getTextType();
+					TEXT_TYPE type = Optional.of(attrBean)
+							.map(AttributeBean::getRepresentation)
+							.map(RepresentationBean::getTextFormat)
+							.map(TextFormatBean::getTextType)
+							.orElse(STRING);
+					
 					switch (type)
 					{
 						case STRING: domain = STRINGDS; break;
 						case FLOAT: domain = NUMBERDS; break;
+						case BIG_INTEGER: domain = INTEGERDS; break;
 						default: throw new UnsupportedOperationException("Cannot map representation " + type + " to a VTL scalar type.");
 					}
 				}
@@ -200,12 +215,22 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			structures.put(dsdName, builder.build());
 		}
 		
+		// Load dataflows
 		for (DataflowBean dataflow: rbrm.getIdentifiables(DataflowBean.class))
 		{
-			final String dataflowName = sdmxRef2VtlName(dataflow.asReference());
-			final String dsdName = sdmxRef2VtlName(dataflow.getDataStructureRef());
+			String dataflowName = sdmxRef2VtlName(dataflow.asReference());
+			String dsdName = sdmxRef2VtlName(dataflow.getDataStructureRef());
 			LOGGER.info("Loading dataflow {} with structure {}", dataflowName, dsdName);
 			dataflows.put(dataflowName, structures.get(dsdName));
+		}
+		
+		// Load transformation schemes
+		for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
+		{
+			String code = scheme.getItems().stream()
+				.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
+				.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
+			schemes.put(sdmxRef2VtlName(scheme.asReference()), code);
 		}
 		
 		variables.keySet().removeAll(multiReprs.keySet());
@@ -237,12 +262,11 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	@Override
 	public StringHierarchicalRuleSet getHierarchyRuleset(String alias)
 	{
-		Optional<StringHierarchicalRuleSet> codelist = maybeGetDomain(alias)
+		return maybeGetDomain(alias)
 				.filter(SdmxCodeList.class::isInstance)
 				.map(SdmxCodeList.class::cast)
-				.map(SdmxCodeList::getDefaultRuleSet);
-		
-		return codelist.orElseThrow(() -> new VTLException("Hierarchical ruleset " + alias + " not found."));
+				.map(SdmxCodeList::getDefaultRuleSet)
+				.orElseThrow(() -> new VTLException("Hierarchical ruleset " + alias + " not found."));
 	}
 	
 	@Override
@@ -282,5 +306,18 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	public SdmxBeanRetrievalManager getBeanRetrievalManager()
 	{
 		return rbrm;
+	}
+	
+	@Override
+	public TransformationScheme getTransformationScheme(String alias)
+	{
+		return Optional.ofNullable(schemes.get(alias))
+			.map(ConfigurationManager.getDefault()::createSession)
+			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
+	}
+	
+	public Set<String> getAvailableSchemes()
+	{
+		return schemes.keySet();
 	}
 }
