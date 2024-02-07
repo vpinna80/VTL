@@ -43,19 +43,19 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final int quarter;
 	private final Year year;
+	private final long quarter;
 
 	public QuarterPeriodHolder(TemporalAccessor other)
 	{
 		this.year = Year.from(other);
-		this.quarter = other.get(QUARTER_OF_YEAR);
+		this.quarter = other.getLong(QUARTER_OF_YEAR);
 	}
 
 	public QuarterPeriodHolder(Year year, long quarter)
 	{
 		this.year = year;
-		this.quarter = (int) (quarter % 4);
+		this.quarter = quarter;
 	}
 
 	@Override
@@ -88,7 +88,7 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + quarter;
+		result = prime * result + (int) quarter;
 		result = prime * result + ((year == null) ? 0 : year.hashCode());
 		return result;
 	}
@@ -146,12 +146,12 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
 	{
-		return DateValue.of(LocalDate.from(year.atMonth(1 + (quarter - 1) * 3).atDay(1).with(firstDayOfMonth())));
+		return DateValue.of(LocalDate.from(year.atMonth(1 + ((int) quarter - 1) * 3).atDay(1).with(firstDayOfMonth())));
 	}
 
 	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
 	{
-		return DateValue.of(LocalDate.from(year.atMonth(3 + (quarter - 1) * 3).atDay(1).with(lastDayOfMonth())));
+		return DateValue.of(LocalDate.from(year.atMonth(3 + ((int) quarter - 1) * 3).atDay(1).with(lastDayOfMonth())));
 	}
 }
