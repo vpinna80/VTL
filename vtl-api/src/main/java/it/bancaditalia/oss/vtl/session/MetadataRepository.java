@@ -27,6 +27,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 /**
  * A repository to contain and query all the defined domains.
@@ -90,6 +91,8 @@ public interface MetadataRepository
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
 	public Variable<?, ?> getVariable(String alias);
+	
+	public TransformationScheme getTransformationScheme(String alias);
 	
 	/**
 	 * Initialize this {@link MetadataRepository}.

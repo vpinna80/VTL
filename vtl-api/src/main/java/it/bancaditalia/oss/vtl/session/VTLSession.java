@@ -19,18 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.session;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Engine;
-import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -55,46 +49,12 @@ public interface VTLSession extends TransformationScheme, Serializable
 	public Workspace getWorkspace();
 
 	/**
-	 * Adds some VTL statements to this session. Code is parsed but not compiled.
-	 *  
-	 * @param statements A string containing the statements to add
-	 * @return {@code this} instance.
-	 */
-	public List<Statement> addStatements(String statements);
-
-	/**
-	 * Adds some VTL statements to this session. Code is parsed but not compiled.
-	 * The {@link Reader} will be consumed entirely and closed.
-	 * 
-	 * @param reader a {@link Reader} which provides the VTL statements to add.
-	 * @return {@code this} instance.
-	 */
-	public List<Statement> addStatements(Reader reader) throws IOException;
-
-	/**
-	 * Adds some VTL statements to this session. Code is parsed but not compiled.
-	 * The {@link InputStream} will be consumed entirely and closed.
-	 *  
-	 * @param inputStream an {@link InputStream} which provides the VTL statements to add
-	 * @param charset a {@link Charset} instance which will be used to interpret the stream contents.
-	 * @return {@code this} instance.
-	 */
-	public List<Statement> addStatements(InputStream inputStream, Charset charset) throws IOException;
-
-	/**
-	 * Adds some VTL statements to this session. Code is parsed but not compiled.
-	 *  
-	 * @param path a {@link Path} describing the position of a local file which provides the VTL statements to add
-	 * @param charset a {@link Charset} instance which will be used to interpret the file contents.
-	 * @return {@code this} instance.
-	 */
-	public List<Statement> addStatements(Path path, Charset charset) throws IOException;
-
-	/**
 	 * Compile all the VTL code submitted to this session, and returns the metadata of
 	 * all the objects contained in this session.
 	 *  
 	 * @return a {@link List} of {@link VTLValueMetadata} instances, describing a VTL object each.
 	 */
 	public Map<DMLStatement, VTLValueMetadata> compile();
+	
+	public String getOriginalCode();
 }

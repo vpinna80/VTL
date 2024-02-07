@@ -20,19 +20,11 @@
 package it.bancaditalia.oss.vtl.impl.engine;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 import java.io.Serializable;
-import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
@@ -101,74 +93,13 @@ public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements 
 		else
 			return null;
 	}
-	
-	private <T> Stream<Statement> addStatementsHelper(T statements, Function<? super T, ? extends CharStream> mapper) 
-	{
-		return parse(mapper.apply(statements));
-	}
-
-	private <T, U> Stream<Statement> addStatementsHelper(T statements, U param,
-			BiFunction<? super T, ? super U, ? extends CharStream> mapper)
-	{
-		return parse(mapper.apply(statements, param));
-	}
-
-	private Stream<Statement> parse(CharStream charStream)
-	{
-		Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(charStream)));
-		parser.removeErrorListeners();
-		parser.addErrorListener(ThrowingErrorListener.INSTANCE);
-		return parser.start().accept(this);
-	}
 
 	@Override
 	public Stream<Statement> parseRules(String statements)
 	{
-		return addStatementsHelper(statements, CharStreams::fromString);
-	}
-
-	@Override
-	public Stream<Statement> parseRules(Reader reader) throws IOException
-	{
-		return addStatementsHelper(reader, arg0 -> {
-			try
-			{
-				return CharStreams.fromReader(arg0);
-			}
-			catch (IOException e)
-			{
-				throw new UncheckedIOException(e);
-			}
-		});
-	}
-
-	@Override
-	public Stream<Statement> parseRules(InputStream inputStream, Charset charset) throws IOException
-	{
-		return addStatementsHelper(inputStream, charset, (arg0, arg1) -> {
-			try
-			{
-				return CharStreams.fromStream(arg0, arg1);
-			}
-			catch (IOException e)
-			{
-				throw new UncheckedIOException(e);
-			}
-		});
-	}
-
-	@Override
-	public Stream<Statement> parseRules(Path path, Charset charset) throws IOException
-	{
-		return addStatementsHelper(path, charset, (t, u) -> {
-			try
-			{
-				return CharStreams.fromPath(t, u);
-			}
-			catch (IOException e)
-			{
-				throw new UncheckedIOException(e);
-			}
-		});
+		Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(CharStreams.fromString(statements))));
+		parser.removeErrorListeners();
+		parser.addErrorListener(ThrowingErrorListener.INSTANCE);
+		return parser.start().accept(this);
 	}
 }

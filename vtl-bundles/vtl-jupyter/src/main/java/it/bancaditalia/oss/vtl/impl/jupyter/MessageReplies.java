@@ -139,7 +139,7 @@ public class MessageReplies
 	{
 		if (request.getContent().get("silent") != TRUE)
 		{
-			VTLSession vtlSession = SESSIONS.computeIfAbsent(reply.getParentHeader().get("session").toString(), s -> ConfigurationManagerFactory.getInstance().createSession());
+			VTLSession vtlSession = SESSIONS.get(reply.getParentHeader().get("session").toString());
 	
 			String[] tokens = code.split("\\s+");
 			AtomicInteger start = new AtomicInteger(1);
@@ -184,10 +184,13 @@ public class MessageReplies
 
 	private static void compile(MessageChannel iopub, JupyterMessage request, JupyterMessage reply, String code, int count)
 	{
-		VTLSession vtlSession = SESSIONS.computeIfAbsent(reply.getParentHeader().get("session").toString(), s -> ConfigurationManagerFactory.getInstance().createSession());
-		List<Statement> statements = vtlSession.addStatements(code);
+		String sessionName = reply.getParentHeader().get("session").toString();
+		VTLSession oldSession = SESSIONS.get(sessionName);
+		VTLSession vtlSession = SESSIONS.computeIfAbsent(sessionName, s -> ConfigurationManagerFactory.getInstance().createSession(code));
+		
 		Map<Statement, VTLValueMetadata> compiled = new HashMap<>(vtlSession.compile());
-		compiled.keySet().retainAll(statements);
+		compiled.keySet().removeAll(oldSession.getWorkspace().getRules());
+		
 		Map<Boolean, List<Entry<Statement, VTLValueMetadata>>> partitioned = compiled.entrySet().stream().collect(partitioningBy(entryByValue(ScalarValueMetadata.class::isInstance)));
 		
 		if (request.getContent().get("silent") != TRUE)

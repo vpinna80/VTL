@@ -44,12 +44,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 import java.lang.ref.SoftReference;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,8 +97,9 @@ public class VTLSessionImpl implements VTLSession
 	private final Map<String, ReentrantLock> cacheLocks = new ConcurrentHashMap<>();
 	private final MetadataRepository repository;
 	private final Map<Class<?>, Map<Transformation, ?>> holders = new ConcurrentHashMap<>();
+	private final String code;
 
-	public VTLSessionImpl()
+	public VTLSessionImpl(String code)
 	{
 		this.repository = config.getMetadataRepository();
 		this.engine = config.getEngine();
@@ -115,36 +111,10 @@ public class VTLSessionImpl implements VTLSession
 				selectedWorkspace = (Workspace) env;
 		
 		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
+		this.code = code;
+		engine.parseRules(code).peek(workspace::addRule).collect(toList());
+		
 		LOGGER.info("Created new VTL session.");
-	}
-
-	private List<Statement> addStatementHelper(Stream<Statement> source)
-	{
-		return source.peek(workspace::addRule).collect(toList());
-	}
-	
-	@Override
-	public List<Statement> addStatements(String statements)
-	{
-		return addStatementHelper(engine.parseRules(statements));
-	}
-
-	@Override
-	public List<Statement> addStatements(Reader reader) throws IOException
-	{
-		return addStatementHelper(engine.parseRules(reader));
-	}
-
-	@Override
-	public List<Statement> addStatements(InputStream inputStream, Charset charset) throws IOException
-	{
-		return addStatementHelper(engine.parseRules(inputStream, charset));
-	}
-
-	@Override
-	public List<Statement> addStatements(Path path, Charset charset) throws IOException
-	{
-		return addStatementHelper(engine.parseRules(path, charset));
 	}
 
 	@Override
@@ -195,6 +165,11 @@ public class VTLSessionImpl implements VTLSession
 			return true;
 		else
 			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
+	}
+	
+	public String getOriginalCode()
+	{
+		return code;
 	}
 	
 	private <T> T findRuleset(String alias, Class<T> c)
@@ -331,18 +306,17 @@ public class VTLSessionImpl implements VTLSession
 				.filter(DMLStatement.class::isInstance)
 				.map(DMLStatement.class::cast)
 				.collect(toMapWithValues(s -> s.getMetadata(this)));
+
 		LOGGER.info("Compiled {} statements.", statements.size());
 		return statements;
 	}
 
 	public Map<String, String> getStatements()
 	{
-		LinkedHashMap<String, String> statements = workspace.getRules().stream()
+		return workspace.getRules().stream()
 				.collect(toMap(Statement::getAlias, Statement::toString, (a, b) -> {
 					throw new UnsupportedOperationException();
 				}, LinkedHashMap::new));
-		LOGGER.info("Compiled {} statements.", statements.size());
-		return statements;
 	}
 
 	public List<String> getNodes()

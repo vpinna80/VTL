@@ -19,11 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.engine;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.stream.Stream;
 
 /**
@@ -41,32 +36,4 @@ public interface Engine
 	 * @return A stream of statements.
 	 */
 	public Stream<Statement> parseRules(String statements);
-
-	/**
-	 * Parse VTL Statements that will be read from the given reader.
-	 * The {@link Reader} will be consumed entirely and closed.
-	 * 
-	 * @param reader A {@link Reader} containing valid VTL syntax. 
-	 * @return A stream of statements.
-	 */
-	public Stream<Statement> parseRules(Reader reader) throws IOException;
-
-	/**
-	 * Parse VTL Statements that will be read from the given input stream.
-	 * The {@link InputStream} will be consumed entirely and closed.  
-	 * 
-	 * @param inputStream An {@link InputStream} containing valid VTL syntax. 
-	 * @param charset The {@link Charset} to be used to translate characters from the stream.
-	 * @return A stream of statements.
-	 */
-	public Stream<Statement> parseRules(InputStream inputStream, Charset charset) throws IOException;
-
-	/**
-	 * Parse VTL Statements that will be read from a file pointed by given {@link Path}.  
-	 * 
-	 * @param path A {@link Path} describing a local file containing valid VTL syntax.
-	 * @param charset The {@link Charset} to be used to translate characters from the file contents.
-	 * @return A stream of statements.
-	 */
-	public Stream<Statement> parseRules(Path path, Charset charset) throws IOException;
 }

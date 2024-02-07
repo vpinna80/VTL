@@ -28,6 +28,7 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEM
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -69,9 +70,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	}
 
 	@Override
-	public VTLSession createSession()
+	public VTLSession createSession(String code)
 	{
-		return instanceOfClass(SESSION_IMPLEMENTATION.getValue(), VTLSession.class, "Error initializing session");
+		try
+		{
+			return Class.forName(SESSION_IMPLEMENTATION.getValue(), true, Thread.currentThread().getContextClassLoader()).asSubclass(VTLSession.class).getDeclaredConstructor(String.class).newInstance(code);
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
+		{
+			throw new VTLNestedException("Error initializing session", e);
+		}
 	}
 
 	@Override
