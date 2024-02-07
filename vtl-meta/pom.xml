@@ -74,7 +74,6 @@
 	<modules>
 		<module>vtl-metabase</module>
 		<module>vtl-metadb</module>
-		<module>vtl-metajson</module>
 	</modules>
 
 	<build>
