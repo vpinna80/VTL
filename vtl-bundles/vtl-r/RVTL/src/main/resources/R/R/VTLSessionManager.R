@@ -45,14 +45,17 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             },
             
             #' @description
-            #' Returns the active session or an error if the search fails or a session doesn't exist.
-            #' @param sessionID
-            #' The name of the session to search
-            find = function (sessionID) { get(sessionID, envir = private$sessions) },
-            
-            #' @description
             #' List all active named VTL sessions.
-            list = function() { ls(private$sessions) },
+            #' If an active SDMX metadata repository is active, also load Transformation schemes from it
+            list = function() { 
+            	ss <- ls(private$sessions)
+            	metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$getInstance()$getMetadataRepository()
+            	if (metaRepo %instanceof% 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository') {
+            		sdmxTs <- sapply(metaRepo$getAvailableSchemes(), .jstrVal)
+            		ss <- unique(c(ss, sdmxTs))
+            	}
+            	ss
+            },
             
             #' @description
             #' All active VTL sessions are killed and a new VTL session named 'test' is created.
@@ -74,15 +77,23 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             },
             
             #' @description
-            #' If the named VTL session exists, return it, otherwise create a new VTL session with the given name.
-            #' @param sessionID
+            #' If the named VTL session exists, return it, otherwise create a new VTL session with the given name and possibly code.
+            #' @param sessionID The session to retrieve or create
             #' The name of the session to create
             getOrCreate = function(sessionID) {
               result <- get0(sessionID, envir = private$sessions)
-              if (is.null(result))
-              result <- assign(sessionID, VTLSession$new(name = sessionID), envir = private$sessions)
               
-              return(result)
+              if (is.null(result)) {
+                result <- assign(sessionID, VTLSession$new(name = sessionID), envir = private$sessions)
+                
+                metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$getInstance()$getMetadataRepository()
+              	if (metaRepo %instanceof% 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' && sessionID %in% sapply(metaRepo$getAvailableSchemes(), .jstrVal)) {
+              	  code <- metaRepo$getTransformationScheme(sessionID)$getOriginalCode()
+            	  result$setText(code)
+            	} 
+              }
+              
+              result
             }), 
           private = list(
             sessions = new.env(parent = emptyenv())

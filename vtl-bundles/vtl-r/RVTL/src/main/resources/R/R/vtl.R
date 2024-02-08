@@ -41,11 +41,10 @@ vtlStudio <- function(launch.browser = T, ...) {
 }
 
 #' @title Process VTL statements
-#' @description Replaces or adds more statements to an existing VTL session.
-#' @usage vtlAddStatements(sessionID, statements, restartSession = F)
+#' @description Creates a session or replaces it with a new one containing the given VTL code.
+#' @usage vtlAddStatements(sessionID, statements)
 #' @param sessionID The symbolic name of an active VTL session
 #' @param statements The code to be added to the session
-#' @param restartSession \code{TRUE} if session must be restarted (default \code{FALSE})
 #' @details If you are replacing one or more already defined rules, 
 #'          you need to set \code{restartSession} to \code{TRUE} to avoid errors.
 #'
@@ -62,13 +61,9 @@ vtlStudio <- function(launch.browser = T, ...) {
 #'                                   g := -f;
 #'                                   test := a * b + c / a;')
 #'   }
-vtlAddStatements <- function(sessionID, statements, restartSession = F) {
-  if(restartSession) {
-    VTLSessionManager$kill(sessionID)
-  }
-
-  session = VTLSessionManager$getOrCreate(sessionID)$addStatements(statements)
-  print('Statements added')
+vtlAddStatements <- function(sessionID, statements) {
+  VTLSessionManager$kill(sessionID)
+  session = VTLSessionManager$getOrCreate(sessionID)$setText(statements)
   return(T)
 }
 
@@ -91,7 +86,7 @@ vtlAddStatements <- function(sessionID, statements, restartSession = F) {
 #'   vtlListStatements('test')
 #' }
 vtlListStatements <- function(sessionID) {
-  jstatements = VTLSessionManager$find(sessionID)$getStatements()
+  jstatements = VTLSessionManager$getOrCreate(sessionID)$getStatements()
   return(sapply(jstatements$entrySet(), function (x) stats::setNames(list(x$getValue()), x$getKey())))
 }
 
@@ -115,7 +110,7 @@ vtlListStatements <- function(sessionID) {
 #'   vtlGetStructure('test', 'test')
 #' }
 vtlGetStructure <- function(sessionID, node) {
-  jstructure = VTLSessionManager$find(sessionID)$getMetadata(node)
+  jstructure = VTLSessionManager$getOrCreate(sessionID)$getMetadata(node)
   return(jstructure)
 }
 
@@ -148,7 +143,7 @@ vtlGetStructure <- function(sessionID, node) {
 #' }
 vtlCompile <- function(sessionID) {
   result <- vtlTryCatch({
-    VTLSessionManager$find(sessionID)$compile()
+    VTLSessionManager$getOrCreate(sessionID)$compile()
     print('Compilation successful!')
     return(T)
   })
@@ -185,7 +180,7 @@ vtlCompile <- function(sessionID) {
 #'   vtlEvalNodes('test', vtlListNodes('test'))    
 #' }
 vtlEvalNodes <- function(sessionID, nodes) {
-  VTLSessionManager$find(sessionID)$getValues(nodes)
+  VTLSessionManager$getOrCreate(sessionID)$getValues(nodes)
 }
 
 #' @title List session nodes
@@ -208,7 +203,7 @@ vtlEvalNodes <- function(sessionID, nodes) {
 #'   vtlListNodes('test')
 #' }
 vtlListNodes <- function(sessionID){
-  return(VTLSessionManager$find(sessionID)$getNodes())
+  return(VTLSessionManager$getOrCreate(sessionID)$getNodes())
 }
 
 #' @title List sessions

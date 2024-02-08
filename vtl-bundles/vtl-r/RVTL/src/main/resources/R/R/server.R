@@ -22,7 +22,7 @@ repoImpls <- c(
   `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
   `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
   `Json URL repository` = 'it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository',
-  `SDMX REST Metadata repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository'
+  `SDMX REST Metadata repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository',
   `SDMX REST & Json combined repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository'
 )
 
@@ -48,7 +48,7 @@ vtlServer <- function(input, output, session) {
   configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
   vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
 
-  currentSession <- reactive(VTLSessionManager$find(input$sessionID)) |> bindEvent(input$sessionID)
+  currentSession <- reactive(VTLSessionManager$getOrCreate(input$sessionID)) |> bindEvent(input$sessionID)
   evalNode <- reactive(currentSession()$getValues(input$selectDatasets)) |> bindEvent(input$selectDatasets)
   isCompiled <- reactiveVal(F)
   
@@ -174,7 +174,7 @@ vtlServer <- function(input, output, session) {
       colnames(df) <- c("Domain")
       df
     } else if (jstr %instanceof% "it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder$DataStructureImpl") {
-      df <- data.table::transpose(data.frame(lapply(jstr, function(x) { c(x$getName(), x$getDomain()$toString(), x$getRole()$getSimpleName()) } ), check.names = FALSE))
+      df <- data.table::transpose(data.frame(lapply(jstr, function(x) { c(x$getVariable()$getName(), x$getVariable()$getDomain()$toString(), x$getRole()$getSimpleName()) } ), check.names = FALSE))
       colnames(df) <- c("Name", "Domain", "Role")
       df
     } else {
@@ -364,8 +364,8 @@ vtlServer <- function(input, output, session) {
     shinyjs::disable("compile")
     vtlSession <- currentSession()
     statements <- input$vtlStatements
-    withProgress(message = 'Compiling current session', value = 0, tryCatch({ 
-      vtlSession$addStatements(statements, restart = T) 
+    withProgress(message = 'Compiling...', value = 0, tryCatch({ 
+      vtlSession$setText(statements) 
       setProgress(value = 0.5)
       vtlSession$compile()
       isCompiled(T)
