@@ -40,10 +40,10 @@ public class VTLSessionManager
 
 	@Autowired private HttpSession httpSession;
 
-	public UUID createSession()
+	public UUID createSession(String code)
 	{
 		UUID uuid = UUID.randomUUID();
-		httpSession.setAttribute(uuid.toString(), ConfigurationManager.getDefault().createSession());
+		httpSession.setAttribute(uuid.toString(), ConfigurationManager.getDefault().createSession(code));
 		LOGGER.info("Created session with UUID {}", uuid);
 		return uuid;
 	}

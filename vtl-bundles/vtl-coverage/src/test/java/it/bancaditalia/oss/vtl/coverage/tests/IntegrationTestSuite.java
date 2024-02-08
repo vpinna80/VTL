@@ -93,9 +93,8 @@ public class IntegrationTestSuite
 	{
 		try
 		{
-			VTLSessionImpl session = new VTLSessionImpl();
 			System.out.println(testCode);
-			session.addStatements(testCode);
+			VTLSessionImpl session = new VTLSessionImpl(testCode);
 			session.compile();
 			VTLValue result = session.resolve("test_result");
 			if (result instanceof DataSet)

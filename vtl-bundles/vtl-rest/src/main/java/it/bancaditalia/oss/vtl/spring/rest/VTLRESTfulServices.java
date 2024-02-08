@@ -59,9 +59,8 @@ public class VTLRESTfulServices extends SpringBootServletInitializer
 	@PostMapping(path = "/compile", params = "code")
 	public @NonNull UUIDBean compile(@RequestParam @NonNull String code) 
 	{
-		UUID uuid = manager.createSession();
+		UUID uuid = manager.createSession(code);
 		VTLSession session = manager.getSession(uuid);
-		session.addStatements(code);
 		session.compile();
 		return new UUIDBean(uuid);
 	}

@@ -24,10 +24,9 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.stream.Collectors.toList;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Spliterator;
@@ -74,10 +73,10 @@ public class VTLShell implements Callable<Void>
 				"it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment", 
 				"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl");
 		
-		VTLSession session = manager.createSession();
-		try (Reader reader = new InputStreamReader(file != null ? new FileInputStream(file) : System.in, StandardCharsets.UTF_8))
+		VTLSession session;
+		try (Reader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8))
 		{
-			session.addStatements(reader);
+			session = manager.createSession(reader);
 			session.compile();
 		}
 
