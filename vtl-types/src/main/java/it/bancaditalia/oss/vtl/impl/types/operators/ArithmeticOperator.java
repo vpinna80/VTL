@@ -46,22 +46,22 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public enum ArithmeticOperator
 {
-	SUM(" + ", (l, r) -> l + r, (l, r) -> l + r, BigDecimal::add),
-	DIFF(" - ", (l, r) -> l - r, (l, r) -> l - r, BigDecimal::subtract), 
-	MULT(" * ", (l, r) -> l * r, (l, r) -> l * r, (l, r) -> l.multiply(r, DECIMAL128)), 
-	DIV(" / ", (l, r) -> l / r, (l, r) -> l / r, (l, r) -> l.divide(r, DECIMAL128)),
-	MOD("mod", (l, r) -> l % r, (l, r) -> l % r, BigDecimal::remainder),
-	POWER("power", (l, r) -> (long) pow(l, r), Math::pow, (l, r) -> BigDecimal.valueOf(pow(l.doubleValue(), r.doubleValue()))),
-	LOG("log", (l, r) -> (long) (log(l) / log(r)), (l, r) -> log(l) / log(r), (l, r) -> BigDecimal.valueOf(log(l.doubleValue()) / log(r.doubleValue()))),
-	ROUND("round", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).intValue(), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).doubleValue(), (l, r) -> l.setScale(r.intValue(), HALF_UP)),
-	TRUNC("trunc", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue(), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN));
+	SUM(" + ", (l, r) -> l + r, BigDecimal::add, (l, r) -> l + r),
+	DIFF(" - ", (l, r) -> l - r, BigDecimal::subtract, (l, r) -> l - r), 
+	MULT(" * ", (l, r) -> l * r, (l, r) -> l.multiply(r, DECIMAL128), (l, r) -> l * r), 
+	DIV(" / ", (l, r) -> l / r, (l, r) -> l.divide(r, DECIMAL128), (l, r) -> l / r),
+	MOD("mod", (l, r) -> l % r, BigDecimal::remainder, (l, r) -> l % r),
+	POWER("power", Math::pow, (l, r) -> BigDecimal.valueOf(pow(l.doubleValue(), r.doubleValue())), (l, r) -> (long) pow(l, r)),
+	LOG("log", (l, r) -> log(l) / log(r), (l, r) -> BigDecimal.valueOf(log(l.doubleValue()) / log(r.doubleValue())), (l, r) -> (long) (log(l) / log(r))),
+	ROUND("round", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).doubleValue(), (l, r) -> l.setScale(r.intValue(), HALF_UP), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).intValue()),
+	TRUNC("trunc", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue());
 
 	private final String name;
 	private final LongBinaryOperator opLong;
 	private final DoubleBinaryOperator opDouble;
 	private final SerBinaryOperator<BigDecimal> opBigd;
 	
-	private ArithmeticOperator(String name, LongBinaryOperator opLong, DoubleBinaryOperator opDouble, SerBinaryOperator<BigDecimal> opBigd)
+	private ArithmeticOperator(String name, DoubleBinaryOperator opDouble, SerBinaryOperator<BigDecimal> opBigd, LongBinaryOperator opLong)
 	{
 		this.name = name;
 		this.opLong = opLong;

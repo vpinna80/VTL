@@ -38,13 +38,17 @@ import java.net.Proxy.Type;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -93,6 +97,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -106,13 +111,12 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
 	public static final VTLProperty SDMX_META_USERNAME = new VTLPropertyImpl("vtl.sdmx.meta.user", "SDMX REST user name", "", EnumSet.noneOf(Flags.class));
 	public static final VTLProperty SDMX_META_PASSWORD = new VTLPropertyImpl("vtl.sdmx.meta.password", "SDMX REST password", "", EnumSet.of(PASSWORD));
-	public static final VTLProperty SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS = new VTLPropertyImpl("vtl.sdmx.keep.identifiers", "True to keep subspaced identifiers", "false", EnumSet.noneOf(Flags.class), "false");
 
-	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/.*)?$");
+	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
 
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(SDMXRepository.class, SDMX_REGISTRY_ENDPOINT, SDMX_API_VERSION, SDMX_META_USERNAME, SDMX_META_PASSWORD, SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS);
+		ConfigurationManagerFactory.registerSupportedProperties(SDMXRepository.class, SDMX_REGISTRY_ENDPOINT, SDMX_API_VERSION, SDMX_META_USERNAME, SDMX_META_PASSWORD);
 
 		// SDMX client configuration
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
@@ -122,8 +126,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 
 	private final String url = SDMX_REGISTRY_ENDPOINT.getValue();
-	private final boolean drop = Boolean.parseBoolean(SDMX_ENVIRONMENT_AUTODROP_IDENTIFIERS.getValue());
-	private final Map<String, DataSetMetadata> dataflows = new HashMap<>();
+	private final Map<String, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
 	private final Map<String, Variable<?, ?>> variables = new HashMap<>();
 	private final Map<String, Set<String>> multiReprs = new HashMap<>();
 	private final Map<String, String> schemes = new HashMap<>();
@@ -171,17 +174,20 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		}
 
 		// Load structures
-		Map<String, DataSetMetadata> structures = new HashMap<>();
+		Map<String, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> structures = new HashMap<>();
 		for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
 		{
 			DataStructureBuilder builder = new DataStructureBuilder();
 			String dsdName = sdmxRef2VtlName(dsd.asReference());
 			LOGGER.info("Loading structure {}", dsdName);
+			Map<Integer, DataStructureComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
 			
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
 			{
 				ValueDomainSubset<?, ?> domain = dimBean.isTimeDimension() ? TIMEDS : getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation()));
-				builder.addComponent(structHelper(dimBean, Identifier.class, domain));
+				DataStructureComponentImpl<Identifier, ?, ?> id = structHelper(dimBean, Identifier.class, domain);
+				builder.addComponent(id);
+				enumIds.put(dimBean.getPosition() - 1, id);
 			}
 
 			builder.addComponent(DataStructureComponentImpl.of(dsd.getPrimaryMeasure().getId(), Measure.class, NUMBERDS));
@@ -212,7 +218,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				builder.addComponent(structHelper(attrBean, Attribute.class, domain));
 			}
 
-			structures.put(dsdName, builder.build());
+			structures.put(dsdName, new SimpleEntry<>(builder.build(), new ArrayList<>(enumIds.values())));
 		}
 		
 		// Load dataflows
@@ -274,14 +280,26 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	{
 		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias);
 		if (matcher.matches() && dataflows.containsKey(matcher.group(1)))
-			return dataflows.get(matcher.group(1));
+		{
+			Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>> entry = dataflows.get(matcher.group(1));
+			DataSetMetadata structure = entry.getKey();
+			// drop identifiers in the query part of the id
+			if (matcher.group(2) != null)
+			{
+				DataStructureBuilder builder = new DataStructureBuilder(structure);
+				
+				String[] dims = matcher.group(2).split("\\.");
+				for (int i = 0; i < dims.length; i++)
+					if (!dims[i].isEmpty() && dims[i].indexOf('+') <= 0)
+						builder.removeComponent(entry.getValue().get(i));
+				
+				structure = builder.build();
+			}
+			
+			return structure;
+		}
 		else
 			return super.getStructure(alias);
-	}
-
-	public boolean isDrop()
-	{
-		return drop;
 	}
 	
 	private static String sdmxRef2VtlName(StructureReferenceBean ref)
