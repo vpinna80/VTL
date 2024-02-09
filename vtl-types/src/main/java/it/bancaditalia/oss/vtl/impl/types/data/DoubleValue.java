@@ -41,7 +41,7 @@ public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends 
 		super(value, domain);
 	}
 	
-	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(Double value)
+	static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(Double value)
 	{
 		return value == null ? NULLINSTANCE : new DoubleValue<>(value, NUMBERDS);
 	}

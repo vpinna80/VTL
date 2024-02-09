@@ -83,6 +83,11 @@ public enum VTLGeneralProperties implements VTLProperty
 	 */
 	USE_BIG_DECIMAL("vtl.config.use.bigdecimal", false, "false");
 
+	public static boolean isUseBigDecimal()
+	{
+		return Boolean.valueOf(USE_BIG_DECIMAL.getValue());
+	}
+	
 	private final String name;
 	private final boolean multiple;
 	private final String defaultValue;

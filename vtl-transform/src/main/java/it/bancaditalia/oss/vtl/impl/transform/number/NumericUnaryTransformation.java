@@ -19,10 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.number;
 
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static java.util.function.DoubleUnaryOperator.identity;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -32,9 +36,11 @@ import java.util.function.LongFunction;
 import java.util.function.UnaryOperator;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -49,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class NumericUnaryTransformation extends UnaryTransformation
 {
@@ -56,23 +63,25 @@ public class NumericUnaryTransformation extends UnaryTransformation
 
 	public enum NumericOperator implements UnaryOperator<ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain>>
 	{
-		CEIL("ceil", Math::ceil, l -> l),
-		FLOOR("floor", Math::floor, l -> l),
-		ABS("abs", Math::abs, l -> l > 0 ? l : -l),
-		EXP("exp", Math::exp, Math::exp),
-		LN("ln", Math::log, Math::log),
-		SQRT("sqrt", Math::sqrt, Math::sqrt),
-		UNARY_PLUS("+", identity(), l -> l),
-		UNARY_MINUS("-", d -> -d, l -> -l);
+		CEIL("ceil", Math::ceil, bd -> bd.setScale(0, RoundingMode.CEILING), l -> l),
+		FLOOR("floor", Math::floor, bd -> bd.setScale(0, RoundingMode.FLOOR), l -> l),
+		ABS("abs", Math::abs, BigDecimal::abs, l -> l > 0 ? l : -l),
+		EXP("exp", Math::exp, bd -> new BigDecimal(Math.exp(bd.doubleValue())), Math::exp),
+		LN("ln", Math::log, bd -> new BigDecimal(Math.log(bd.doubleValue())), Math::log),
+		SQRT("sqrt", Math::sqrt, bd -> new BigDecimal(Math.sqrt(bd.doubleValue())), Math::sqrt),
+		UNARY_PLUS("+", identity(), SerUnaryOperator.identity(), l -> l),
+		UNARY_MINUS("-", d -> -d, BigDecimal::negate, l -> -l);
 
 		private final DoubleUnaryOperator doubleOp;
+		private final SerUnaryOperator<BigDecimal> bigdOp;
 		private final LongFunction<Number> longOp;
 		private final String name;
 
-		private NumericOperator(String name, DoubleUnaryOperator doubleOp, LongFunction<Number> longOp)
+		private NumericOperator(String name, DoubleUnaryOperator doubleOp, SerUnaryOperator<BigDecimal> bigdOp, LongFunction<Number> longOp)
 		{
 			this.name = name;
-			this.doubleOp = doubleOp; 
+			this.doubleOp = doubleOp;
+			this.bigdOp = bigdOp; 
 			this.longOp = longOp; 
 		}
 
@@ -84,10 +93,12 @@ public class NumericUnaryTransformation extends UnaryTransformation
 			if (number instanceof IntegerValue)
 			{
 				Number res = longOp.apply(((IntegerValue<?, ?>) number).get());
-				return res instanceof Long ? IntegerValue.of(res.longValue()) : DoubleValue.of(res.doubleValue());
+				return res instanceof Long ? IntegerValue.of(res.longValue()) : createNumberValue(res);
 			}
+			else if (isUseBigDecimal())
+				return NumberValueImpl.createNumberValue(bigdOp.apply(((BigDecimalValue<?>) number).get()));
 			else
-				return DoubleValue.of(doubleOp.applyAsDouble(((DoubleValue<?>) number).get().doubleValue()));
+				return NumberValueImpl.createNumberValue(doubleOp.applyAsDouble(((DoubleValue<?>) number).get().doubleValue()));
 		}
 		
 		public String capsize(Transformation operand)

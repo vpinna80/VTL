@@ -44,6 +44,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
@@ -167,44 +168,33 @@ public class CastTransformation extends UnaryTransformation
 
 	private ScalarValue<?, ?, ?, ?> castScalar(ScalarValue<?, ?, ?, ?> scalar)
 	{
-		try
-		{
-			if (scalar.getDomain() == target.getDomain())
-				return scalar;
-			
-			DecimalFormat formatter = getNumberFormatter();
-			
-			if (scalar instanceof NullValue)
-				return target.getDomain().cast(scalar);
-			else if (scalar instanceof StringValue && target == DATE)
-				return DateValue.of(parseString(scalar.get().toString(), mask));
-			else if (scalar instanceof StringValue && TIME_PERIODS.contains(target))
-				return TimePeriodValue.of(scalar.get().toString(), mask);
-			else if (scalar instanceof DateValue && target == STRING)
-				return StringValue.of(parseTemporal((LocalDate) scalar.get(), mask));
-			else if (scalar instanceof TimePeriodValue && target == STRING)
-				return StringValue.of(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
-			else if (scalar instanceof StringValue && target == INTEGER)
-				return IntegerValue.of(Long.parseLong((String) scalar.get()));
-			else if (scalar instanceof StringValue && target == NUMBER)
-			{
-				// DecimalFormat ignores the number of decimals specified in the mask
-				double parsed = formatter.parse((String) scalar.get()).doubleValue();
-				return DoubleValue.of(formatter.parse(formatter.format(parsed)).doubleValue());
-			}
-			else if (scalar instanceof NumberValue && target == INTEGER)
-				return IntegerValue.of(((Number) scalar.get()).longValue());
-			else if (scalar instanceof IntegerValue && target == STRING)
-				return StringValue.of(formatter.format(((Number) scalar.get()).longValue()));
-			else if (scalar instanceof NumberValue && target == STRING)
-				return StringValue.of(formatter.format(((Number) scalar.get()).doubleValue()));
-			else
-				throw new UnsupportedOperationException("cast " + scalar.getDomain() + " => " + target.getDomain() + " not implemented ");
-		}
-		catch (ParseException e)
-		{
-			throw new VTLNestedException("Number '" + scalar.get() + "' unparseable with mask '" + mask + "'", e);
-		}
+		if (scalar.getDomain() == target.getDomain())
+			return scalar;
+		
+		DecimalFormat formatter = getNumberFormatter();
+		
+		if (scalar instanceof NullValue)
+			return target.getDomain().cast(scalar);
+		else if (scalar instanceof StringValue && target == DATE)
+			return DateValue.of(parseString(scalar.get().toString(), mask));
+		else if (scalar instanceof StringValue && TIME_PERIODS.contains(target))
+			return TimePeriodValue.of(scalar.get().toString(), mask);
+		else if (scalar instanceof DateValue && target == STRING)
+			return StringValue.of(parseTemporal((LocalDate) scalar.get(), mask));
+		else if (scalar instanceof TimePeriodValue && target == STRING)
+			return StringValue.of(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
+		else if (scalar instanceof StringValue && target == INTEGER)
+			return IntegerValue.of(Long.parseLong((String) scalar.get()));
+		else if (scalar instanceof StringValue && target == NUMBER)
+			return NumberValueImpl.createNumberValue((String) scalar.get());
+		else if (scalar instanceof NumberValue && target == INTEGER)
+			return IntegerValue.of(((Number) scalar.get()).longValue());
+		else if (scalar instanceof IntegerValue && target == STRING)
+			return StringValue.of(formatter.format(((Number) scalar.get()).longValue()));
+		else if (scalar instanceof NumberValue && target == STRING)
+			return StringValue.of(formatter.format(((Number) scalar.get()).doubleValue()));
+		else
+			throw new UnsupportedOperationException("cast " + scalar.getDomain() + " => " + target.getDomain() + " not implemented ");
 	}
 	
 	@Override

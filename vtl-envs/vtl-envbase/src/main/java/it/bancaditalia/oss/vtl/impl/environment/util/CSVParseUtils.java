@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.util;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.USE_BIG_DECIMAL;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
@@ -27,7 +27,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
-import java.math.BigDecimal;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,10 +39,8 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
@@ -103,10 +100,8 @@ public class CSVParseUtils
 			{
 				if (stringRepresentation.trim().isEmpty())
 					return NullValue.instance(NUMBERDS);
-				else if (Boolean.valueOf(USE_BIG_DECIMAL.getValue()))
-					return BigDecimalValue.of(new BigDecimal(stringRepresentation));
-				else
-					return DoubleValue.of(Double.parseDouble(stringRepresentation));
+				else 
+					return createNumberValue(stringRepresentation);
 			}
 			catch (NumberFormatException e)
 			{

@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -96,7 +96,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 				if (newV instanceof NullValue || oldV instanceof NullValue)
 					return singleton(newV);
 				else if (newV instanceof NumberValue && oldV instanceof NumberValue)
-					return singleton(DoubleValue.of(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
+					return singleton(NumberValueImpl.createNumberValue(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
 				else
 					throw new UnsupportedOperationException();
 			}));

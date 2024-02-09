@@ -22,13 +22,12 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
-import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
@@ -63,27 +62,10 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 		{
 			if (value instanceof NullValue)
 				return NullValue.instance(this);
-			Object implValue = value.get();
-			if (implValue instanceof Double)
-				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
-					return BigDecimalValue.of(BigDecimal.valueOf((Double) implValue));
-				else 
-					return DoubleValue.of((Double) implValue);
-			if (implValue instanceof BigDecimal)
-				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
-					return BigDecimalValue.of((BigDecimal) implValue);
-				else 
-					return DoubleValue.of(((BigDecimal) implValue).doubleValue());
-			else if (implValue instanceof Long)
-				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
-					return BigDecimalValue.of(BigDecimal.valueOf((long) implValue));
-				else
-					return DoubleValue.of((double) (long) implValue);
-			else if (implValue instanceof String)
-				if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
-					return BigDecimalValue.of(new BigDecimal((String) implValue));
-				else
-					return DoubleValue.of(Double.parseDouble((String)implValue));
+			else if (value instanceof NumberValue)
+				return NumberValueImpl.createNumberValue((Number) value.get());
+			else if (value instanceof StringValue)
+				return NumberValueImpl.createNumberValue((String) value.get());
 			else 
 				throw new UnsupportedOperationException("Cast to double from " + value.getClass());
 		}

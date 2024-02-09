@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransf
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyOutput.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyOutput.COMPUTED;
 import static it.bancaditalia.oss.vtl.impl.types.data.DoubleValue.ZERO;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
@@ -49,6 +50,7 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
@@ -203,11 +205,11 @@ public class HierarchyTransformation extends TransformationImpl
 			if (mode == NON_NULL)
 			{
 				isValidOutput = Double.isNaN(acc);
-				result = isValidOutput ? DoubleValue.of(acc) : NullValue.instance(NUMBERDS);
+				result = isValidOutput ? createNumberValue(acc) : NullValue.instance(NUMBERDS);
 			}
 			else if (mode == NON_ZERO)
 			{
-				result = !Double.isNaN(acc) ? DoubleValue.of(acc) : NullValue.instance(NUMBERDS);
+				result = !Double.isNaN(acc) ? createNumberValue(acc) : NullValue.instance(NUMBERDS);
 				isValidOutput = !Double.isNaN(acc) && acc != 0.0;
 			}
 			

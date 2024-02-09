@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
@@ -59,6 +61,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -109,7 +112,7 @@ public enum AggregateOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / acu[0], EnumSet.of(UNORDERED))), DoubleValue::of)),
+	        acu -> acu[2] / acu[0], EnumSet.of(UNORDERED))), NumberValueImpl::createNumberValue)),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	VAR_SAMP("stddev_samp", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>)v).get().doubleValue(), SerCollector.of( 
 	        () -> new double[3],
@@ -127,9 +130,9 @@ public enum AggregateOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / (acu[0] + 1.0), EnumSet.of(UNORDERED))), DoubleValue::of)),
-	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
-	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get()))));
+	        acu -> acu[2] / (acu[0] + 1.0), EnumSet.of(UNORDERED))), NumberValueImpl::createNumberValue)),
+	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),
+	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get()))));
 
 	public static final Set<DataStructureComponent<Measure, ?, ?>> COUNT_MEASURE = singleton(DataStructureComponentImpl.of(Measure.class, INTEGERDS));
 	private static final SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> FLAGMAP = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
@@ -145,10 +148,10 @@ public enum AggregateOperator
 	
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getSummingCollector()
 	{
-		if (Boolean.valueOf(VTLGeneralProperties.USE_BIG_DECIMAL.getValue()))
+		if (isUseBigDecimal())
 			return collectingAndThen(summingBigDecimal(v -> (BigDecimal) v.get()), BigDecimalValue::of);
-		
-		return teeing(filtering(v -> v instanceof DoubleValue, counting()),
+		else
+			return teeing(filtering(v -> v instanceof DoubleValue, counting()),
 				filtering(v -> !(v instanceof NullValue), teeing(
 						summingDouble(v -> ((Number) v.get()).doubleValue()), 
 						summingLong(v -> ((Number) v.get()).longValue()), 

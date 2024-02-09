@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
@@ -38,6 +40,7 @@ import static org.apache.spark.sql.types.DataTypes.DateType;
 import static org.apache.spark.sql.types.DataTypes.DoubleType;
 import static org.apache.spark.sql.types.DataTypes.LongType;
 import static org.apache.spark.sql.types.DataTypes.StringType;
+import static org.apache.spark.sql.types.DataTypes.createDecimalType;
 
 import java.io.Serializable;
 import java.sql.Date;
@@ -62,7 +65,6 @@ import org.apache.spark.sql.types.StructType;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
@@ -98,14 +100,18 @@ public class SparkUtils
 		DOMAIN_DATATYPES.put(BOOLEANDS, BooleanType);
 		DOMAIN_DATATYPES.put(STRINGDS, StringType);
 		DOMAIN_DATATYPES.put(INTEGERDS, LongType);
-		DOMAIN_DATATYPES.put(NUMBERDS, DoubleType);
+		
+		if (isUseBigDecimal())
+			DOMAIN_DATATYPES.put(NUMBERDS, createDecimalType());
+		else
+			DOMAIN_DATATYPES.put(NUMBERDS, DoubleType);
 		DOMAIN_DATATYPES.put(TIMEDS, DateType);
 		DOMAIN_DATATYPES.put(DATEDS, DateType);
 
 		DOMAIN_BUILDERS.put(BOOLEANDS, v -> BooleanValue.of((Boolean) v));
 		DOMAIN_BUILDERS.put(STRINGDS, v -> StringValue.of((String) v));
 		DOMAIN_BUILDERS.put(INTEGERDS, v -> IntegerValue.of((Long) v));
-		DOMAIN_BUILDERS.put(NUMBERDS, v -> DoubleValue.of((Double) v));
+		DOMAIN_BUILDERS.put(NUMBERDS, v -> createNumberValue((Number) v));
 		DOMAIN_BUILDERS.put(TIMEDS, v -> DateValue.of((LocalDate) v));
 		DOMAIN_BUILDERS.put(DATEDS, v -> DateValue.of((LocalDate) v));
 	}

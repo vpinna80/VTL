@@ -32,9 +32,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
@@ -68,7 +68,7 @@ public class SampleValues
 		});
 
 		WRAPPERS.put("INTEGER", v -> v == null ? NullValue.instance(INTEGERDS) : IntegerValue.of((Long) v));
-		WRAPPERS.put("NUMBER", v -> v == null ? NullValue.instance(NUMBERDS) : DoubleValue.of((Double) v));
+		WRAPPERS.put("NUMBER", v -> v == null ? NullValue.instance(NUMBERDS) : NumberValueImpl.createNumberValue((Double) v));
 		WRAPPERS.put("STRING", v -> v == null ? NullValue.instance(STRINGDS) : StringValue.of((String) v));
 		WRAPPERS.put("BOOLEAN", v -> v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of((Boolean) v));
 	}

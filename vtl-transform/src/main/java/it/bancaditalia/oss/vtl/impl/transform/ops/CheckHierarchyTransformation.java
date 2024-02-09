@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransform
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Input.DATASET_PRIORITY;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.INVALID;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
@@ -54,6 +55,7 @@ import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterExce
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -280,7 +282,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 					if (output != INVALID)
 						builder = builder.add(BOOL_VAR, BooleanValue.of(sat));
 
-					result.add(builder.add(idComp, rule.getLeftCodeItem()).add(RULEID, StringValue.of(rule.getName())).add(IMBALANCE, DoubleValue.of(imbalance)).add(ERRORCODE, rule.getErrorCode())
+					result.add(builder.add(idComp, rule.getLeftCodeItem()).add(RULEID, StringValue.of(rule.getName())).add(IMBALANCE, createNumberValue(imbalance)).add(ERRORCODE, rule.getErrorCode())
 							.add(ERRORLEVEL, rule.getErrorLevel()).build(LineageNode.of("hierarchy"), newStructure));
 				}
 			}

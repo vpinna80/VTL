@@ -19,8 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+
+import java.math.BigDecimal;
 import java.util.Objects;
 
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -32,6 +37,27 @@ public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R e
 {
 	private static final long serialVersionUID = 1L;
 
+	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> createNumberValue(Number n, S domain)
+	{
+		if (isUseBigDecimal())
+			return BigDecimalValue.of(n == null || n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.doubleValue()), domain);
+		else
+			return DoubleValue.of(n == null || n instanceof Double ? (Double) n : n.doubleValue(), domain);
+	}
+	
+	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> createNumberValue(Number n)
+	{
+		return createNumberValue(n, NUMBERDS);
+	}
+	
+	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> createNumberValue(String s)
+	{
+		if (isUseBigDecimal())
+			return BigDecimalValue.of(s != null ? new BigDecimal(s) : null);
+		else
+			return DoubleValue.of(s != null ? Double.parseDouble(s) : null);
+	}
+	
 	public NumberValueImpl(R value, S domain)
 	{
 		super(Objects.requireNonNull(value), domain);
@@ -40,11 +66,19 @@ public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R e
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
-		if (this instanceof IntegerValue && o instanceof IntegerValue)
+		if (o instanceof NullValue)
+			throw new NullPointerException("Comparison with null values");
+		else if (this instanceof IntegerValue && o instanceof IntegerValue)
 			return Long.valueOf(get().longValue()).compareTo(Long.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).get().longValue()));
-		if (o instanceof NumberValue)
-			return Double.valueOf(get().doubleValue()).compareTo(Double.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).get().doubleValue()));
-		
-		throw new VTLIncompatibleTypesException("comparison", getDomain(), o.getDomain());
+		else if (this instanceof DoubleValue || o instanceof DoubleValue)
+			return Double.compare(get().doubleValue(), ((NumberValueImpl<?, ?, ?, ?>) o).get().doubleValue());
+		else if (this instanceof BigDecimalValue && o instanceof BigDecimalValue)
+			return ((BigDecimal) get()).compareTo((BigDecimal) o.get());
+		else if (this instanceof BigDecimalValue && o instanceof IntegerValue)
+			return ((BigDecimal) get()).compareTo(new BigDecimal((Long) o.get()));
+		else if (this instanceof IntegerValue && o instanceof BigDecimalValue)
+			return ((BigDecimal) o.get()).compareTo(new BigDecimal((Long) get()));
+		else
+			throw new VTLIncompatibleTypesException("comparison", getDomain(), o.getDomain());
 	}
 }

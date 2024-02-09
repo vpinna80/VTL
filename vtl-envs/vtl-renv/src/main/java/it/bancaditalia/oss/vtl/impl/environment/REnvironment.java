@@ -68,9 +68,9 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.environment.dataset.ColumnarDataSet;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
@@ -228,7 +228,7 @@ public class REnvironment implements Environment
 						result = StringValue.of(data.asString());
 						break;
 					case XT_ARRAY_DOUBLE:
-						result = DoubleValue.of(data.asDoubleArray()[0]);
+						result = NumberValueImpl.createNumberValue(data.asDoubleArray()[0]);
 						break;
 					case XT_ARRAY_INT:
 						result = IntegerValue.of((long) data.asIntArray()[0]);
@@ -283,7 +283,7 @@ public class REnvironment implements Environment
 					{
 						// NAs are mapped to something that retrns true to is.NaN()
 						domain = NUMBERDS;
-						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(DoubleValue::of);
+						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(NumberValueImpl::createNumberValue);
 					}
 					break;
 				case XT_ARRAY_INT:

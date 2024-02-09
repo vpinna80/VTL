@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.USE_BIG_DECIMAL;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static java.lang.Double.NaN;
@@ -34,9 +34,9 @@ import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -79,24 +79,21 @@ public enum ArithmeticOperator
 	
 	public ScalarValue<?, ?, ? extends NumberDomainSubset<?, ? extends NumberDomain>, ? extends NumberDomain> applyAsNumber(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (Boolean.valueOf(USE_BIG_DECIMAL.getValue())) 
-			if (left instanceof NullValue || right instanceof NullValue)
-				return NullValue.instance(NUMBERDS);
-			else
-				return BigDecimalValue.of(opBigd.apply(toBigDecimal(((Number) (NUMBERDS.cast(left)).get())), 
-						toBigDecimal((((Number) NUMBERDS.cast(right).get()).doubleValue()))));
-		else if (left instanceof NullValue || right instanceof NullValue)
-				return NullValue.instance(NUMBERDS);
-			else
-			{
-				double leftD = ((Number) (NUMBERDS.cast(left)).get()).doubleValue();
-				double rightD = ((Number) (NUMBERDS.cast(right)).get()).doubleValue();
-				
-				if (!Double.isFinite(leftD) || !Double.isFinite(rightD))
-					return DoubleValue.of(NaN);
-				
-				return DoubleValue.of(opDouble.applyAsDouble(leftD, rightD));
-			}
+		if (left instanceof NullValue || right instanceof NullValue)
+			return NullValue.instance(NUMBERDS);
+		else if (isUseBigDecimal()) 
+			return BigDecimalValue.of(opBigd.apply(toBigDecimal(((Number) (NUMBERDS.cast(left)).get())), 
+					toBigDecimal((((Number) NUMBERDS.cast(right).get()).doubleValue()))));
+		else
+		{
+			double leftD = ((Number) (NUMBERDS.cast(left)).get()).doubleValue();
+			double rightD = ((Number) (NUMBERDS.cast(right)).get()).doubleValue();
+			
+			if (!Double.isFinite(leftD) || !Double.isFinite(rightD))
+				return NumberValueImpl.createNumberValue(NaN);
+			
+			return NumberValueImpl.createNumberValue(opDouble.applyAsDouble(leftD, rightD));
+		}
 	}
 
 	private static BigDecimal toBigDecimal(Number number)

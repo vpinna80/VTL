@@ -49,7 +49,7 @@ public class Paginator implements AutoCloseable
 	private static final double R_DOUBLE_NA = Double.longBitsToDouble(0x7ff00000000007a2L);
 	private static final int R_INT_NA = Integer.MIN_VALUE;
 	
-	private final BlockingQueue<DataPoint> queue = new ArrayBlockingQueue<>(100);
+	private final BlockingQueue<DataPoint> queue = new ArrayBlockingQueue<>(1000);
 	private final DataSetMetadata dataStructure;
 
 	private boolean closed = false;
@@ -61,7 +61,7 @@ public class Paginator implements AutoCloseable
 		Thread thread = new Thread(() -> {
 			try (Stream<DataPoint> stream = dataset.stream())
 			{
-				stream.forEach(dp -> {
+				for (DataPoint dp: (Iterable<DataPoint>) stream::iterator)
 					while (!isClosed())
 						try
 						{
@@ -73,11 +73,10 @@ public class Paginator implements AutoCloseable
 							close();
 							Thread.currentThread().interrupt();
 						}
-				});
 			}
-			catch (Exception e)
+			catch (Throwable t)
 			{
-				LOGGER.error(e.getMessage(), e);
+				LOGGER.error(t.getMessage(), t);
 			}
 			finally
 			{

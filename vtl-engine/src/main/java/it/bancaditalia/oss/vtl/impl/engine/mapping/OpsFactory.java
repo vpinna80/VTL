@@ -86,6 +86,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -580,7 +581,7 @@ public class OpsFactory implements Serializable
 		switch (tokenType)
 		{
 			case Vtl.INTEGER_CONSTANT: return IntegerValue.of(Long.parseLong(text));
-			case Vtl.NUMBER_CONSTANT: return DoubleValue.of(Double.parseDouble(text));
+			case Vtl.NUMBER_CONSTANT: return NumberValueImpl.createNumberValue(text);
 			case Vtl.BOOLEAN_CONSTANT: return BooleanValue.of(Boolean.parseBoolean(text));
 			case Vtl.STRING_CONSTANT: return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
 			case Vtl.NULL_CONSTANT: return NullValue.instance(NULLDS);

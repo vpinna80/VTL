@@ -27,7 +27,6 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatte
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.YEAR_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-import static java.lang.Double.parseDouble;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Spliterator.IMMUTABLE;
@@ -96,8 +95,8 @@ import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
@@ -330,7 +329,7 @@ public class SDMXEnvironment implements Environment, Serializable
 			
 			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
 			builder.add(measure, obs.getMeasureValue(measure.getVariable().getName()) != null 
-					? DoubleValue.of(parseDouble(obs.getMeasureValue(measure.getVariable().getName())))
+					? NumberValueImpl.createNumberValue(obs.getMeasureValue(measure.getVariable().getName()))
 					: NullValue.instanceFrom(measure));
 
 			TemporalAccessor parsed; 

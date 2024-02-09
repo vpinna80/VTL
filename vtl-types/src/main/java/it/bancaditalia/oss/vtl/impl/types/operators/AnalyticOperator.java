@@ -40,6 +40,7 @@ import java.util.List;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -58,7 +59,7 @@ public enum AnalyticOperator
 				List<Double> c = new ArrayList<>(l);
 				Collections.sort(c);
 				int s = c.size();
-				return DoubleValue.of(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
+				return NumberValueImpl.createNumberValue(s % 2 == 0 ? c.get(s / 2) : (c.get(s /2) + c.get(s / 2 + 1)) / 2);
 			})),
 	MIN("min", collectingAndThen(filtering(v -> !(v instanceof NullValue), minBy(ScalarValue::compareTo)), v -> v.orElse(NullValue.instance(NULLDS)))),
 	MAX("max", collectingAndThen(filtering(v -> !(v instanceof NullValue), maxBy(ScalarValue::compareTo)), v -> v.orElse(NullValue.instance(NULLDS)))),
@@ -79,7 +80,7 @@ public enum AnalyticOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / acu[0], EnumSet.of(UNORDERED))), DoubleValue::of)),
+	        acu -> acu[2] / acu[0], EnumSet.of(UNORDERED))), NumberValueImpl::createNumberValue)),
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	VAR_SAMP("var_samp", collectingAndThen(mapping(v -> ((NumberValue<?, ?, ?, ?>) v).get().doubleValue(), SerCollector.of( 
 	        () -> new double[3],
@@ -97,9 +98,9 @@ public enum AnalyticOperator
 	            acuA[0] = count;
 	            return acuA;
 	        },
-	        acu -> acu[2] / (acu[0] + 1.0), EnumSet.of(UNORDERED))), DoubleValue::of)),
-	STDDEV_POP("stddev_pop", collectingAndThen(VAR_POP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
-	STDDEV_SAMP("stddev_var", collectingAndThen(VAR_SAMP.getReducer(), dv -> DoubleValue.of(Math.sqrt((Double) dv.get())))),
+	        acu -> acu[2] / (acu[0] + 1.0), EnumSet.of(UNORDERED))), NumberValueImpl::createNumberValue)),
+	STDDEV_POP("stddev_pop", collectingAndThen(VAR_POP.getReducer(), dv -> NumberValueImpl.createNumberValue(Math.sqrt((Double) dv.get())))),
+	STDDEV_SAMP("stddev_var", collectingAndThen(VAR_SAMP.getReducer(), dv -> NumberValueImpl.createNumberValue(Math.sqrt((Double) dv.get())))),
 	FIRST_VALUE("first_value", collectingAndThen(reducing((a, b) -> a), o -> o.orElse(NullValue.instance(NULLDS)))),
 	LAST_VALUE("last_value", collectingAndThen(reducing((a, b) -> b), o -> o.orElse(NullValue.instance(NULLDS))));
 
