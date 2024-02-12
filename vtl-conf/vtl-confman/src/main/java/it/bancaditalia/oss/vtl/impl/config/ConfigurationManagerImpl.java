@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEME
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
+import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -76,9 +77,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 		{
 			return Class.forName(SESSION_IMPLEMENTATION.getValue(), true, Thread.currentThread().getContextClassLoader()).asSubclass(VTLSession.class).getDeclaredConstructor(String.class).newInstance(code);
 		}
-		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
 		{
 			throw new VTLNestedException("Error initializing session", e);
+		}
+		catch (InvocationTargetException e)
+		{
+			VTLNestedException wrapped = new VTLNestedException("Error parsing code", e.getCause());
+			LOGGER.error("Error while parsing the following VTL code: {}", code.lines().map(s -> s + "        ").collect(joining(System.lineSeparator())), e.getCause());
+			throw wrapped;
 		}
 	}
 

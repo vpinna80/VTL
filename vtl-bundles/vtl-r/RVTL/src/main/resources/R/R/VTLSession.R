@@ -79,7 +79,10 @@ VTLSession <- R6Class("VTLSession",
       
       #' @description
       #' Compiles the VTL statements submitted for this session.
-      compile = function () { private$checkInstance()$compile() },
+      compile = function () {
+        private$instance = NULL; 
+        private$checkInstance()$compile()
+      },
       
       #' @description
       #' Obtains a named list of all the VTL statements submitted for this session.
