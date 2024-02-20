@@ -20,8 +20,11 @@
 package it.bancaditalia.oss.vtl.spring.rest;
 
 import static io.restassured.RestAssured.given;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
@@ -33,6 +36,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.requestP
 import static org.springframework.restdocs.restassured3.RestAssuredRestDocumentation.document;
 import static org.springframework.restdocs.restassured3.RestAssuredRestDocumentation.documentationConfiguration;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +58,13 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
+import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.session.VTLSession;
 import it.bancaditalia.oss.vtl.spring.rest.result.UUIDBean;
 
 @ExtendWith({RestDocumentationExtension.class, SpringExtension.class})
@@ -65,15 +76,33 @@ public class VTLRESTfulServicesTest
 	private static String jSessionID;
 	private static UUID uuid;
 
-	static {
-		System.setProperty("vtl.r", "disable");
-	}
-
 	private RequestSpecification documentationSpec;
 	@LocalServerPort private int port;
+	
+	public static class ConfManTest implements ConfigurationManager
+	{
+		@Override
+		public VTLSession createSession(String code)
+		{
+			final VTLSession mock = mock(VTLSession.class);
+			when(mock.getMetadata("c")).thenReturn(INTEGER);
+			when(mock.resolve("c")).thenReturn(IntegerValue.of(3L));
+			return mock;
+		}
 
+		@Override public Engine getEngine() 							{ throw new UnsupportedOperationException(); } 
+		@Override public MetadataRepository getMetadataRepository() 	{ throw new UnsupportedOperationException(); }
+		@Override public List<? extends Environment> getEnvironments() 	{ throw new UnsupportedOperationException(); }
+	}
+	
+	static
+	{
+		VTLGeneralProperties.CONFIG_MANAGER.setValue(ConfManTest.class.getName());
+	}
+	
 	@BeforeEach
-	public void setUp(RestDocumentationContextProvider restDocumentation) {
+	public void setUp(RestDocumentationContextProvider restDocumentation)
+	{
 		this.documentationSpec = new RequestSpecBuilder()
 				.addFilter(documentationConfiguration(restDocumentation)) 
 				.build();

@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.spring.rest;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.UUID;
 
 import javax.servlet.http.HttpSession;
@@ -43,7 +45,7 @@ public class VTLSessionManager
 	public UUID createSession(String code)
 	{
 		UUID uuid = UUID.randomUUID();
-		httpSession.setAttribute(uuid.toString(), ConfigurationManager.getDefault().createSession(code));
+		httpSession.setAttribute(uuid.toString(), requireNonNull(ConfigurationManager.getDefault().createSession(code)));
 		LOGGER.info("Created session with UUID {}", uuid);
 		return uuid;
 	}
