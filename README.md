@@ -157,11 +157,11 @@ The following table shows the current implementation status:
 | isnull                      | &#10004;  | &#10004;  | &#10004;  |
 | exists_in                   |           | &#10004;  |           |
 | boolean operators           | &#10004;  | &#10004;  | &#10004;  |
-| period_indicator            | &#10008;  | &#10008;  | &#10008;  |
+| period_indicator            | &#10004;  | &#10004;  | &#10004;  |
 | fill_time_series            |           | &#10004;  |           |
 | flow_to_stock               |           | &#10004;  |           |
 | stock_to_flow               |           | &#10004;  |           |
 | timeshift                   |           | &#10004;  |           |
-| timeagg                     | &#10008;  | &#10008;  | &#10008;  |
+| timeagg                     | &#10004;  | &#10004;  | &#10004;  |
 | current_date                | &#10004;  |           | &#10004;  |
 | union                       |           | &#10004;  |           |
