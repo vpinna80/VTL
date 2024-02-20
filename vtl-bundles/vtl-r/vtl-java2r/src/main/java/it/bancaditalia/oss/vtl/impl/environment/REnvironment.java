@@ -24,12 +24,11 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL;
 import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL_INT;
@@ -378,13 +377,13 @@ public class REnvironment implements Environment
 			else if (value instanceof NumberValue)
 			{
 				int year = ((Number) value.get()).intValue();
-				return new TimePeriodValue<>(new YearPeriodHolder(Year.of(year)), YEARSDS);
+				return new TimePeriodValue<>(new YearPeriodHolder(Year.of(year)), TIME_PERIODDS);
 			}
 			else if (value instanceof StringValue)
 			{
 				String dt = value.get().toString(); 
 				if (dt.matches("^\\d{4}-\\d{2}$"))
-					return new TimePeriodValue<>(new MonthPeriodHolder(YearMonth.parse(dt)), MONTHSDS);
+					return new TimePeriodValue<>(new MonthPeriodHolder(YearMonth.parse(dt)), TIME_PERIODDS);
 				else if (dt.matches("^\\d{4}-\\d{2}-\\d{2}$"))
 					return new DateValue<>(LocalDate.parse(dt), DATEDS);
 				else

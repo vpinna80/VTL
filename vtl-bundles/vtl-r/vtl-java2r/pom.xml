@@ -19,7 +19,8 @@
     permissions and limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
@@ -34,6 +35,10 @@
 
 	<name>vtl-java2r</name>
 	<description>VTL R/Java Integration</description>
+
+	<properties>
+		<r.runtime.version>4.3.2</r.runtime.version>
+	</properties>
 
 	<dependencyManagement>
 		<dependencies>
@@ -50,7 +55,13 @@
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-types</artifactId>
+			<artifactId>vtl-envbase</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.rosuda.JRI</groupId>
+			<artifactId>Rengine</artifactId>
+			<version>${r.runtime.version}</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 

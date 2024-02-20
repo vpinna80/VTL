@@ -209,11 +209,11 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+	public DataSet aggregate(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
 			SerCollector<DataPoint, ?, DataPoint> groupCollector,
 			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{
-		return dataset.aggr(structure, keys, groupCollector, finisher);
+		return dataset.aggregate(structure, keys, groupCollector, finisher);
 	}
 
 	@Override
