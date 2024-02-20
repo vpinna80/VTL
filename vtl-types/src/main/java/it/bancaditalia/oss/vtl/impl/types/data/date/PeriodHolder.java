@@ -32,15 +32,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 import java.util.function.Supplier;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Temporal, Comparable<PeriodHolder<?>>, Serializable, TimeHolder
 {
@@ -97,46 +96,23 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 		}
 	}
 
-	public I incrementSmallest(long amount)
+	public PeriodHolder<?> incrementSmallest(long amount)
 	{
 		try
 		{
-			@SuppressWarnings("unchecked")
-			final I instance = (I) getClass().getConstructor(TemporalAccessor.class).newInstance(plus(amount, smallestUnit()));
-			return instance;
+			return getClass().getConstructor(TemporalAccessor.class).newInstance(plus(amount, smallestUnit()));
 		}
 		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
 		{
 			throw new IllegalStateException(e); // never occurs
 		}
 	}
-	
+
 	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate();
 
 	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate();
 
+	public abstract DurationValue getPeriodIndicator();
+
 	protected abstract TemporalUnit smallestUnit();
-
-	@Override
-	public abstract int hashCode();
-
-	@Override
-	public abstract boolean equals(Object obj);
-
-	@Override
-	public abstract String toString();
-
-	@Override
-	public long until(Temporal endExclusive, TemporalUnit unit)
-	{
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override
-	public Temporal with(TemporalField field, long newValue)
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	public abstract TimePeriodDomainSubset<?> getDomain();
 }

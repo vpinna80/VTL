@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT_MEASURE;
@@ -36,6 +37,8 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -46,9 +49,11 @@ import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.Component;
@@ -128,8 +133,26 @@ public class AggregateTransformation extends UnaryTransformation
 		else
 			outputComponent = dataset.getMetadata().getMeasures().iterator().next();
 		
+		DataSet dataset2;
+		if (groupingClause.getFrequency() != null)
+		{
+			DataStructureComponent<Identifier, ?, ?> timeID = groupIDs.stream()
+					.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
+					.findAny()
+					.orElse(null);
+			
+			DataSetMetadata origStructure = dataset.getMetadata();
+			dataset2 = new StreamWrapperDataSet(origStructure, () -> dataset.stream().map(dp -> {
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> c = new HashMap<>(dp);
+				c.compute(timeID, (k, v) -> groupingClause.getFrequency().wrap((TimeValue<?, ?, ?, ?>) v));
+				return new DataPointBuilder(c).build(dp.getLineage(), origStructure);
+			}));
+		}
+		else
+			dataset2 = dataset;
+		
 		// dataset-level aggregation
-		DataSet aggr = dataset.aggr((DataSetMetadata) metadata, groupIDs, reducer, (dp, keyValues) -> {
+		DataSet aggr = dataset2.aggregate((DataSetMetadata) metadata, groupIDs, reducer, (dp, keyValues) -> {
 			DataPointBuilder builder = new DataPointBuilder(keyValues);
 			if (name == null)
 				builder = builder.addAll(dp);
@@ -170,7 +193,7 @@ public class AggregateTransformation extends UnaryTransformation
 
 				if (operand != null)
 					return new DataStructureBuilder(newMeasures).build();
-
+				
 				if (measures.size() == 1)
 					return measures.iterator().next().getVariable();
 				else
@@ -184,7 +207,15 @@ public class AggregateTransformation extends UnaryTransformation
 				if (nonID.isPresent())
 					throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
 				
-				DataStructureBuilder builder = new DataStructureBuilder(groupComps.stream().map(c -> c.asRole(Identifier.class)).collect(toSet()));
+				if (groupingClause.getFrequency() != null)
+				{
+					Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = groupComps.stream()
+						.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
+						.collect(toSet());
+					
+					if (timeIDs.size() != 1)
+						throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
+				}
 				
 				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getMeasures();
 				if (aggregation == COUNT)
@@ -200,9 +231,7 @@ public class AggregateTransformation extends UnaryTransformation
 					else
 						newComps = singleton(DataStructureComponentImpl.of(name, role, measures.iterator().next().getVariable().getDomain()));
 
-				builder = builder.addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newComps);
-				
-				return builder.build();
+				return new DataStructureBuilder(groupComps).addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newComps).build();
 			}
 		}
 		else

@@ -20,26 +20,27 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATION;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 
+import java.util.Collections;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
-import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -49,7 +50,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -58,103 +59,105 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class PeriodIndicatorTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> DURATION_MEASURE = DataStructureComponentImpl.of(Measure.class, STRINGDS);
-
+	private static final DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> DURATION_MEASURE = DataStructureComponentImpl.of(Measure.class, DURATIONDS);
+	
 	private final Transformation operand;
-	private transient String componentName = null;
 
 	public PeriodIndicatorTransformation(Transformation operand)
 	{
 		this.operand = operand;
 	}
-
+	
 	@Override
-	public VTLValue eval(TransformationScheme session)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		VTLValue value;
-		if (operand == null)
-			value = session.resolve(componentName);
-		else
-			value = operand.eval(session);
+		VTLValue value = operand != null ? operand.eval(scheme) : ((DatapointScope) scheme).getTimeIdValue();
 
 		if (value instanceof ScalarValue)
-			return StringValue.of(((TimePeriodValue<?>) value).getPeriodIndicator());
-		else
+			return evalScalar((ScalarValue<?, ?, ? ,?>) value);
+		else 
 		{
-			DataSet ds = (DataSet) value;
+			DataSet dataset = (DataSet) value;
 			
-			DataSetMetadata metadata = new DataStructureBuilder(ds.getMetadata().getIDs())
-					.addComponent(DURATION_MEASURE)
-					.build();
-			
-			Class<? extends Component> role = operand == null ? Identifier.class : Measure.class; 
-			DataStructureComponent<?, ?, ?> component = ds.getMetadata().getComponents(role).stream().filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain())).findAny().get();
+			DataStructureComponent<?, ?, ?> component = dataset.getMetadata().getIDs().stream()
+					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+					.findAny()
+					.get();
 
-			return ds.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(DURATION_MEASURE,
-							StringValue.of(((TimePeriodValue<?>) dp.get(component)).getPeriodIndicator())));
+			return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), dp -> LineageNode.of(this, dp.getLineage()), 
+					dp -> singletonMap(DURATION_MEASURE, this.evalScalar(dp.get(component))));
 		}
 	}
 
-	@Override
-	public VTLValueMetadata computeMetadata(TransformationScheme session)
+	private ScalarValue<?, ?, ?, ?> evalScalar(ScalarValue<?, ?, ?, ?> value)
 	{
-		VTLValueMetadata value;
-		if (operand == null)
-			value = session.getMetadata(THIS);
+		if (value instanceof NullValue)
+			return NullValue.instance(TIMEDS);
+		else if (value instanceof DateValue)
+			return Duration.D.get();
 		else
-			value = operand.getMetadata(session);
+			return ((TimePeriodValue<?>) value).getPeriodIndicator();
+	}
 
-		if (value instanceof ScalarValueMetadata)
+	@Override
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
+	{
+		if (operand == null)
 		{
-			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) value).getDomain();
-			if (!TIME.isAssignableFrom(domain))
-				throw new VTLIncompatibleTypesException("period_indicator", TIME, domain);
-			else
-				return STRING;
+			Set<DataStructureComponent<Identifier, ?, ?>> ids = ((DataSetMetadata) scheme.getMetadata(THIS)).getIDs();
+			
+			Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ids.stream()
+					.map(c -> c.asRole(Identifier.class))
+					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+					.collect(toSet());
+			
+			if (timeIDs.size() != 1)
+				throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
+
+			return new DataStructureBuilder(ids)
+					.addComponent(DURATION_MEASURE)
+					.build();
 		}
 		else
 		{
-			DataSetMetadata ds = (DataSetMetadata) value;
-
-			if (operand == null)
+			VTLValueMetadata metadata = operand.getMetadata(scheme);
+			
+			if (metadata instanceof ScalarValueMetadata)
 			{
-				Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ds.getIDs().stream()
-						.map(c -> c.asRole(Identifier.class))
-						.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
-						.collect(toSet());
-				if (timeIDs.size() != 1)
-					throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
-				
-				componentName = timeIDs.iterator().next().getVariable().getName();
+				ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) metadata).getDomain();
+				if (!TIMEDS.isAssignableFrom(domain))
+					throw new VTLIncompatibleTypesException("period_indicator", TIMEDS, domain);
+				else
+					return DURATION;
 			}
 			else
 			{
-				Set<DataStructureComponent<Measure, ?, ?>> components = ds.getMeasures();
-				if (components.size() != 1)
-					throw new VTLSingletonComponentRequiredException(Measure.class, components);
-
-				DataStructureComponent<Measure, ?, ?> anyDomainComponent = components.iterator().next();
-				if (!TIME.isAssignableFrom(anyDomainComponent.getVariable().getDomain()))
-					throw new VTLIncompatibleTypesException("period_indicator", TIMEDS, anyDomainComponent);
+				Set<DataStructureComponent<Identifier, ?, ?>> ids = ((DataSetMetadata) metadata).getIDs();
 				
-				componentName = anyDomainComponent.getVariable().getName();
+				Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ids.stream()
+						.map(c -> c.asRole(Identifier.class))
+						.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+						.collect(toSet());
+				
+				if (timeIDs.size() != 1)
+					throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
+			
+				return new DataStructureBuilder(ids)
+						.addComponent(DURATION_MEASURE)
+						.build();
 			}
-
-			return new DataStructureBuilder(ds.getIDs())
-					.addComponent(DURATION_MEASURE)
-					.build();
 		}
 	}
 
 	@Override
 	public boolean isTerminal()
 	{
-		return false;
+		return operand == null;
 	}
 
 	@Override
 	public Set<LeafTransformation> getTerminals()
 	{
-		return operand != null ? operand.getTerminals() : emptySet();
+		return operand == null ? Collections.emptySet() : operand.getTerminals();
 	}
 }

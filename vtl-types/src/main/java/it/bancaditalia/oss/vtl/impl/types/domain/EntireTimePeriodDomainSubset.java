@@ -19,141 +19,26 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
-
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset<S>> extends EntireDomainSubset<S, TimePeriodDomain> implements TimePeriodDomainSubset<S>
+public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimePeriodDomainSubset, TimePeriodDomain> implements TimePeriodDomainSubset<EntireTimePeriodDomainSubset>
 {
 	private static final long serialVersionUID = 1L;
+	private static final EntireTimePeriodDomainSubset INSTANCE = new EntireTimePeriodDomainSubset(null);
 	
-	public static class YearsDomainSubset extends EntireTimePeriodDomainSubset<YearsDomainSubset>
+	public static EntireTimePeriodDomainSubset getInstance()
 	{
-		private static final long serialVersionUID = 1L;
-		
-		public YearsDomainSubset()
-		{
-			super(YEARSDS);
-		}
-
-		@Override
-		protected YearPeriodHolder getHolder(PeriodHolder<?> holder)
-		{
-			return new YearPeriodHolder(holder);
-		}
-
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset || other instanceof SemestersDomainSubset || other instanceof YearsDomainSubset;
-		}
-	};
+		return INSTANCE;
+	}
 	
-	public static class SemestersDomainSubset extends EntireTimePeriodDomainSubset<SemestersDomainSubset>
-	{
-		private static final long serialVersionUID = 1L;
-		
-		public SemestersDomainSubset()
-		{
-			super(SEMESTERSDS);
-		}
-
-		@Override
-		protected SemesterPeriodHolder getHolder(PeriodHolder<?> holder)
-		{
-			return new SemesterPeriodHolder(holder);
-		}
-
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset || other instanceof SemestersDomainSubset;
-		}
-	};
-	
-	public static class QuartersDomainSubset extends EntireTimePeriodDomainSubset<QuartersDomainSubset>
-	{
-		private static final long serialVersionUID = 1L;
-
-		public QuartersDomainSubset()
-		{
-			super(QUARTERSDS);
-		}
-		
-		@Override
-		protected QuarterPeriodHolder getHolder(PeriodHolder<?> holder)
-		{
-			return new QuarterPeriodHolder(holder);
-		}
-
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return other instanceof MonthsDomainSubset || other instanceof QuartersDomainSubset;
-		}
-	};
-	
-	public static class MonthsDomainSubset extends EntireTimePeriodDomainSubset<MonthsDomainSubset>
-	{
-		private static final long serialVersionUID = 1L;
-
-		public MonthsDomainSubset()
-		{
-			super(MONTHSDS);
-		}
-		
-		@Override
-		protected MonthPeriodHolder getHolder(PeriodHolder<?> holder)
-		{
-			return new MonthPeriodHolder(holder);
-		}
-
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return other instanceof MonthsDomainSubset;
-		}
-	};
-
-	public static class WeeksDomainSubset extends EntireTimePeriodDomainSubset<WeeksDomainSubset>
-	{
-		private static final long serialVersionUID = 1L;
-		
-		public WeeksDomainSubset()
-		{
-			super(WEEKSDS);
-		}
-
-		@Override
-		protected WeekPeriodHolder getHolder(PeriodHolder<?> holder)
-		{
-			return new WeekPeriodHolder(holder);
-		}
-
-		@Override
-		public boolean isAssignableFrom(ValueDomain other)
-		{
-			return other instanceof WeeksDomainSubset;
-		}
-	};
-	
-	public EntireTimePeriodDomainSubset(TimePeriodDomain parentDomain)
+	private EntireTimePeriodDomainSubset(TimePeriodDomain parentDomain)
 	{
 		super(parentDomain);
 	}
@@ -164,22 +49,14 @@ public class EntireTimePeriodDomainSubset<S extends EntireTimePeriodDomainSubset
 		throw new UnsupportedOperationException();
 	}
 
-	@SuppressWarnings("unchecked")
-	public ScalarValue<?, ?, S, TimePeriodDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireTimePeriodDomainSubset, TimePeriodDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof NullValue)
-			return NullValue.instance((S) this);
-		else if (value.getDomain() == this)
-			return (ScalarValue<?, ?, S, TimePeriodDomain>) value;
+			return NullValue.instance(this);
 		else if (value instanceof TimePeriodValue)
-			return new TimePeriodValue<>(getHolder((PeriodHolder<?>) value.get()), (S) this);
+			return new TimePeriodValue<>((PeriodHolder<?>) value.get(), this);
 		else
 			throw new VTLCastException(this, value);
-	}
-
-	protected PeriodHolder<?> getHolder(PeriodHolder<?> value)
-	{
-		throw new UnsupportedOperationException("Undetermined time period frequency.");
 	}
 
 	@Override

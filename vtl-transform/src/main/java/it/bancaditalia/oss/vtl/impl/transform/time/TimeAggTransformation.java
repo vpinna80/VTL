@@ -22,19 +22,16 @@ package it.bancaditalia.oss.vtl.impl.transform.time;
 import static it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation.PeriodDelimiter.FIRST;
 import static it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation.PeriodDelimiter.LAST;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-import static java.util.stream.Collectors.toSet;
+import static java.util.Collections.singletonMap;
 
-import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Durations;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -46,7 +43,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -55,54 +51,48 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class TimeAggTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	
+
 	public enum PeriodDelimiter
 	{
 		FIRST, LAST
 	}
 
-	private final DataStructureComponent<Measure, ?, ?> periodComponent;
-	private final Durations frequency;
+	private final Duration frequency;
 	private final PeriodDelimiter delimiter;
 
 	public TimeAggTransformation(Transformation operand, String periodTo, String periodFrom, PeriodDelimiter delimiter)
 	{
 		super(operand);
-		frequency = Durations.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
-		TimePeriodDomainSubset<?> periodDomain = frequency.getRelatedTimePeriodDomain();
-		periodComponent = DataStructureComponentImpl.of(Measure.class, periodDomain).asRole(Measure.class);
+		frequency = Duration.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
 		this.delimiter = Utils.coalesce(delimiter, LAST);
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		if (scalar instanceof NullValue)
 			return scalar;
-		else if (scalar instanceof DateValue)
+		else if (scalar instanceof TimeValue)
 		{
-			TimePeriodValue<?> period = ((DateValue<?>) scalar).wrap(frequency);
-			return delimiter == FIRST ? period.get().startDate() : period.get().endDate();
+			TimePeriodValue<?> period = frequency.wrap((TimeValue<?, ?, ?, ?>) scalar);
+			if (scalar instanceof DateValue)
+				return delimiter == FIRST ? period.get().startDate() : period.get().endDate();
+			else if (scalar instanceof TimePeriodValue)
+				return period;
+			else
+				throw new UnsupportedOperationException("time_agg on time values not implemented");
 		}
-		else if (scalar instanceof TimePeriodValue)
-			return ((TimeValue<?, ?, ?, ?>) scalar).wrap(frequency);
 		else
-			throw new UnsupportedOperationException("time_agg on time values not implemented");
+			throw new VTLIncompatibleTypesException("time_agg", TIMEDS, scalar.getDomain());
 	}
 
 	@Override
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Measure, ?, ?> timeMeasure = dataset.getMetadata().getComponents(Measure.class, TIMEDS).iterator().next();
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata())
-				.addComponent(periodComponent)
-				.build();
+		DataStructureComponent<Measure, ?, ?> measure = ((DataSetMetadata) metadata).getComponents(Measure.class).iterator().next();
 		
-		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = dp.getValues(Measure.class);
-				map.put(periodComponent, ((TimeValue<?, ?, ?, ?>) dp.get(timeMeasure)).wrap(frequency));
-				return map;
-		});
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
+				dp -> singletonMap(measure, evalOnScalar(dp.get(measure), null)));
 	}
 
 	@Override
@@ -116,24 +106,21 @@ public class TimeAggTransformation extends UnaryTransformation
 			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) value).getDomain();
 			if (!TIMEDS.isAssignableFrom(domain))
 				throw new VTLIncompatibleTypesException("time_agg", TIMEDS, domain);
-			else
-				return periodComponent.getVariable();
+			
+			return value;
 		}
 		else
 		{
-			DataSetMetadata ds = (DataSetMetadata) value;
-
-			Set<DataStructureComponent<Measure, ?, ?>> timeMeasures = ds.getMeasures().stream()
-					.map(c -> c.asRole(Measure.class))
-					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
-					.collect(toSet());
+			Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) value).getMeasures();
 				
-			if (timeMeasures.size() != 1)
-				throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, ds);
+			if (measures.size() != 1)
+				throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, measures);
 			
-			return new DataStructureBuilder(ds.getIDs())
-					.addComponent(periodComponent)
-					.build();
+			DataStructureComponent<Measure, ?, ?> timeMeasure = measures.iterator().next();
+			if (!TIMEDS.isAssignableFrom(timeMeasure.getVariable().getDomain()))
+				throw new VTLIncompatibleTypesException("time_agg", TIMEDS, timeMeasure);
+			
+			return value;
 		}
 	}
 	

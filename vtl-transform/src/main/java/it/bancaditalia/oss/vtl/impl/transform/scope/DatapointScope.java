@@ -22,14 +22,19 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -41,11 +46,13 @@ public class DatapointScope extends AbstractScope
 	
 	private final DataPoint dp;
 	private final DataSetMetadata structure;
+	private final DataStructureComponent<Identifier, ?, ?> timeId;
 	
-	public DatapointScope(DataPoint dp, DataSetMetadata structure) 
+	public DatapointScope(DataPoint dp, DataSetMetadata structure, DataStructureComponent<Identifier, ?, ?> timeId) 
 	{
 		this.dp = dp;
 		this.structure = structure;
+		this.timeId = timeId;
 	}
 
 	@Override
@@ -60,6 +67,9 @@ public class DatapointScope extends AbstractScope
 	@Override
 	public VTLValue resolve(String alias) 
 	{
+		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
+			return new StreamWrapperDataSet(structure, Collections.singleton(dp)::stream);
+			
 		LOGGER.trace("Querying {} for {}:{}", alias, dp.hashCode(), dp);
 		return structure.getComponent(alias).map(dp::get).orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
@@ -84,5 +94,10 @@ public class DatapointScope extends AbstractScope
 	public MetadataRepository getRepository()
 	{
 		throw new UnsupportedOperationException();
+	}
+
+	public ScalarValue<?, ?, ?, ?> getTimeIdValue()
+	{
+		return dp.get(timeId);
 	}
 }

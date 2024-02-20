@@ -268,6 +268,16 @@ STRING_CONSTANT
   '"' (~'"')* '"'
   ;
 
+FREQUENCY
+  :
+  'A'
+  | 'S'
+  | 'Q'
+  | 'M'
+  | 'W'
+  | 'D'
+  ;
+
 IDENTIFIER
   :
   LETTER ([A-Za-z0-9_.])*
@@ -383,15 +393,3 @@ ML_COMMENT
 SL_COMMENT
   :
   ('//' (.)*? '\n') ->channel(2);
-
-/*
-
-FREQUENCY
-  :
-  'A'
-  | 'S'
-  | 'Q'
-  | 'M'
-  | 'W'
-  | 'D'
-  ;*/

@@ -35,14 +35,14 @@ import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
  * 
  * @author Valentino Pinna
  */
-public interface HierarchicalRuleSet<C extends CodeItem<C, R, S, D>, I extends Rule<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain> extends RuleSet
+public interface HierarchicalRuleSet<C extends CodeItem<C, R, S, D>, I extends Rule<C, R, S, D>, R extends Comparable<? super R> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain> extends RuleSet
 {
 	public enum RuleSetType
 	{
 		VARIABLE, VALUE_DOMAIN;
 	}
 	
-	public interface Rule<C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain>
+	public interface Rule<C extends CodeItem<C, R, S, D>, R extends Comparable<? super R> & Serializable, S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain>
 	{
 		public String getName();
 		

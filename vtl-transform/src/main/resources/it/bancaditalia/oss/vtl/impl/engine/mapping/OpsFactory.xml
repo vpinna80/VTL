@@ -21,6 +21,15 @@
 
 -->
 <parserconfig xmlns="http://oss.bancaditalia.it/vtl">
+	<tokenset name="Duration" class="it.bancaditalia.oss.vtl.impl.types.data.DurationValue$Duration">
+		<tokenmapping name="A" value="A" />
+		<tokenmapping name="S" value="S" />
+		<tokenmapping name="Q" value="Q" />
+		<tokenmapping name="M" value="M" />
+		<tokenmapping name="W" value="W" />
+		<tokenmapping name="D" value="D" />
+	</tokenset>
+
 	<tokenset name="HierarchyMode" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyMode">
 		<tokenmapping name="NON_NULL" value="NON_NULL" />
 		<tokenmapping name="NON_ZERO" value="NON_ZERO" />
@@ -88,10 +97,10 @@
 		<tokenmapping name="DURATION" value="DURATION" />
 	</tokenset>
 
-	<tokenset name="PeriodDelimiter" class="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation$PeriodDelimiter">
+	<!-- tokenset name="PeriodDelimiter" class="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation$PeriodDelimiter">
 		<tokenmapping name="FIRST" value="FIRST" />
 		<tokenmapping name="LAST" value="LAST" />
-	</tokenset>
+	</tokenset -->
 	
 	<tokenset name="StringOperator" class="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation$StringOperator">
 		<tokenmapping name="TRIM" value="TRIM" />
@@ -440,6 +449,7 @@
 					<listparam name="componentID">
 						<stringparam />
 					</listparam>
+					<tokensetparam name="FREQUENCY" tokenset="Duration" />
 				</customparam>
 			</nestedparam>
 			<exprparam name="havingClause" />
@@ -504,6 +514,7 @@
 					<listparam name="componentID">
 						<stringparam />
 					</listparam>
+					<tokensetparam name="FREQUENCY" tokenset="Duration" />
 				</customparam>
 			</nestedparam>
 			<exprparam name="havingClause" />
@@ -677,7 +688,7 @@
 		</params>
 	</mapping>
 
-	<mapping from="TimeAggAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
+	<!-- mapping from="TimeAggAtomContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
 		<params>
 			<nestedparam name="op">
 				<exprparam name="expr" />
@@ -686,16 +697,16 @@
 			<stringparam name="periodIndFrom" />
 			<tokensetparam name="delim" tokenset="PeriodDelimiter" />
 		</params>
-	</mapping>
+	</mapping -->
 
-	<mapping from="TimeAggAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
+	<!-- mapping from="TimeAggAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
 		<params>
 			<nestedparam name="op">
 				<exprparam name="exprComponent" />
 			</nestedparam>
 			<stringparam name="periodIndTo" />
 		</params>
-	</mapping>
+	</mapping -->
 
 	<mapping from="MembershipExprContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.BracketTransformation">
 		<params>

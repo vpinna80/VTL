@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
 import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
@@ -35,10 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class YearPeriodHolder extends PeriodHolder<YearPeriodHolder>
 {
@@ -126,13 +126,6 @@ public class YearPeriodHolder extends PeriodHolder<YearPeriodHolder>
 	}
 	
 	@Override
-	public TimePeriodDomainSubset<?> getDomain()
-	{
-		return YEARSDS;
-	}
-
-
-	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
 	{
 		return DateValue.of(LocalDate.from(year.with(firstDayOfYear())));
@@ -142,5 +135,25 @@ public class YearPeriodHolder extends PeriodHolder<YearPeriodHolder>
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
 	{
 		return DateValue.of(LocalDate.from(year.with(lastDayOfYear())));
+	}
+	
+	@Override
+	public DurationValue getPeriodIndicator()
+	{
+		return Duration.A.get();
+	}
+
+	@Override
+	public Temporal with(TemporalField field, long newValue)
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public long until(Temporal endExclusive, TemporalUnit unit)
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
 	}
 }

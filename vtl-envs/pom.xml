@@ -42,12 +42,6 @@
 			</modules>
 		</profile>
 		<profile>
-			<id>with-r</id>
-			<modules>
-				<module>vtl-renv</module>
-			</modules>
-		</profile>
-		<profile>
       		<id>with-sdmx</id>
       		<modules>
 				<module>vtl-sdmxenv</module>
@@ -60,11 +54,6 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-envbase</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-renv</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

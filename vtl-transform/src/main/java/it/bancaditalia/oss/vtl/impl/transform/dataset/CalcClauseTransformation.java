@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
@@ -192,11 +193,17 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		
 		String lineageString = calcClauses.stream().map(CalcClauseItem::getName).collect(joining(", ", "calc ", ""));
 		
+		DataStructureComponent<Identifier, ?, ?> timeId = metadata.getIDs().stream()
+					.map(c -> c.asRole(Identifier.class))
+					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+					.reduce((a, b) -> null)
+					.orElse(null);
+		
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
 			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> {
-					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata);
+					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata, timeId);
 					
 					// place calculated components (eventually overriding existing ones) 
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 

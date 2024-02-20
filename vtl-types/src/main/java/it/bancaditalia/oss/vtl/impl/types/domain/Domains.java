@@ -19,13 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import java.util.EnumSet;
-
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.MonthsDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.QuartersDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.SemestersDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.WeeksDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset.YearsDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -40,15 +33,9 @@ public enum Domains implements ScalarValueMetadata
 	NUMBER(new EntireNumberDomainSubset()),
 	TIME(EntireTimeDomainSubset.getInstance()),
 	DATE(EntireDateDomainSubset.getInstance()),
-	TIME_PERIOD_WEEKS(new WeeksDomainSubset()),
-	TIME_PERIOD_MONTHS(new MonthsDomainSubset()),
-	TIME_PERIOD_QUARTERS(new QuartersDomainSubset()),
-	TIME_PERIOD_SEMESTERS(new SemestersDomainSubset()),
-	TIME_PERIOD_YEARS(new YearsDomainSubset()),
+	TIME_PERIOD(EntireTimePeriodDomainSubset.getInstance()),
 	NULL(new NullDomain());
 	
-	public static final EnumSet<Domains> TIME_PERIODS = EnumSet.of(TIME_PERIOD_WEEKS, TIME_PERIOD_MONTHS, TIME_PERIOD_QUARTERS, TIME_PERIOD_SEMESTERS, TIME_PERIOD_YEARS);
-
 	public static final EntireDurationDomainSubset DURATIONDS = (EntireDurationDomainSubset) DURATION.getDomain();
 	public static final EntireNumberDomainSubset NUMBERDS = (EntireNumberDomainSubset) NUMBER.getDomain();
 	public static final EntireIntegerDomainSubset INTEGERDS = (EntireIntegerDomainSubset) INTEGER.getDomain();
@@ -56,14 +43,8 @@ public enum Domains implements ScalarValueMetadata
 	public static final EntireStringDomainSubset STRINGDS = (EntireStringDomainSubset) STRING.getDomain();
 	public static final EntireDateDomainSubset DATEDS = (EntireDateDomainSubset) DATE.getDomain();
 	public static final EntireTimeDomainSubset TIMEDS = (EntireTimeDomainSubset) TIME.getDomain();
-	public static final WeeksDomainSubset WEEKSDS = (WeeksDomainSubset) TIME_PERIOD_WEEKS.getDomain();
-	public static final MonthsDomainSubset MONTHSDS = (MonthsDomainSubset) TIME_PERIOD_MONTHS.getDomain();
-	public static final QuartersDomainSubset QUARTERSDS = (QuartersDomainSubset) TIME_PERIOD_QUARTERS.getDomain();
-	public static final SemestersDomainSubset SEMESTERSDS = (SemestersDomainSubset) TIME_PERIOD_SEMESTERS.getDomain();
-	public static final YearsDomainSubset YEARSDS = (YearsDomainSubset) TIME_PERIOD_YEARS.getDomain();
+	public static final EntireTimePeriodDomainSubset TIME_PERIODDS = (EntireTimePeriodDomainSubset) TIME_PERIOD.getDomain();
 	public static final NullDomain NULLDS = (NullDomain) NULL.getDomain();
-
-//	public static final Set<ValueDomainSubset<?, ?>> TIME_PERIODS_DS = Set.of(YEARSDS, SEMESTERSDS, QUARTERSDS, MONTHSDS, WEEKSDS);
 
 	private final ValueDomainSubset<?, ? extends ValueDomain> valueDomain;
 	

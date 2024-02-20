@@ -1,80 +1,72 @@
-/*
- * Copyright © 2020 Banca D'Italia
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+
+import java.io.Serializable;
+import java.time.temporal.TemporalAccessor;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DurationHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
-import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerSupplier;
 
-public class DurationValue<S extends DurationDomainSubset<S>> extends BaseScalarValue<DurationValue<S>, DurationHolder, S, DurationDomain>
+public class DurationValue extends BaseScalarValue<DurationValue, Duration, EntireDurationDomainSubset, DurationDomain> implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-	public static enum Durations
+	
+	public enum Duration implements SerSupplier<DurationValue>
 	{
-		A(YEARSDS), H(SEMESTERSDS), Q(QUARTERSDS), M(MONTHSDS), W(WEEKSDS), D(null);
-
-		private final TimePeriodDomainSubset<?> related;
-
-		Durations(TimePeriodDomainSubset<?> related)
+		D(null), W(WeekPeriodHolder::new), M(MonthPeriodHolder::new), Q(QuarterPeriodHolder::new), S(SemesterPeriodHolder::new), A(YearPeriodHolder::new);
+		
+		private final DurationValue value;
+		private final SerFunction<TemporalAccessor, ? extends PeriodHolder<?>> holderAllocator;
+		
+		private Duration(SerFunction<TemporalAccessor, ? extends PeriodHolder<?>> holderAllocator)
 		{
-			this.related = related;
+			this.holderAllocator = holderAllocator;
+			value = new DurationValue(this);
 		}
 
-		public TimePeriodDomainSubset<?> getRelatedTimePeriodDomain()
+		public DurationValue get()
 		{
-			return related;
+			return value;
+		}
+		
+		public TimePeriodValue<EntireTimePeriodDomainSubset> wrap(TimeValue<?, ?, ?, ?> toWrap)
+		{
+			if (toWrap instanceof TimePeriodValue || toWrap instanceof DateValue)
+			{
+				TemporalAccessor accessor = ((TemporalAccessor) toWrap.get());
+				return TimePeriodValue.of(holderAllocator.apply(accessor));
+			}
+			else
+				throw new VTLCastException(TIMEDS, toWrap);
+			 
 		}
 	}
 	
-	private DurationValue(DurationHolder holder, S domain)
+	private DurationValue(Duration value)
 	{
-		super(holder, domain);
-	}
-
-	public static DurationValue<EntireDurationDomainSubset> of(double value, Durations duration)
-	{
-		return new DurationValue<>(new DurationHolder(value, duration), DURATIONDS);
-	}
-
-	public static DurationValue<EntireDurationDomainSubset> of(DurationHolder holder)
-	{
-		return new DurationValue<>(holder, DURATIONDS);
+		super(value, DURATIONDS);
 	}
 
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
 		if (o instanceof DurationValue)
-			return get().compareTo((DurationHolder) o.get());
+			return get().compareTo(((DurationValue) o).get());
 		else
-			throw new VTLCastException(getDomain(), o);
+			throw new VTLCastException(DURATIONDS, o);
 	}
 }

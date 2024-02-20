@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
@@ -169,6 +170,12 @@ public enum AggregateOperator
 		}
 	}
 
+	/**
+	 * Create a {@link Collector} that reduces datapoints by combining the same measures in each datapoint according to this {@link AggregateOperator}
+	 *   
+	 * @param measures
+	 * @return
+	 */
 	public SerCollector<DataPoint, ?, DataPoint> getReducer(Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures)
 	{
 		// Special collector for COUNT that collects all measures into one

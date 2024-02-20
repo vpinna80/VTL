@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoUnit.SEMESTERS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 import static java.time.temporal.IsoFields.QUARTER_YEARS;
 import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
@@ -34,10 +33,11 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 {
@@ -138,12 +138,6 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 	}
 
 	@Override
-	public TimePeriodDomainSubset<?> getDomain()
-	{
-		return QUARTERSDS;
-	}
-
-	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
 	{
 		return DateValue.of(LocalDate.from(year.atMonth(1 + ((int) quarter - 1) * 3).atDay(1).with(firstDayOfMonth())));
@@ -153,5 +147,25 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
 	{
 		return DateValue.of(LocalDate.from(year.atMonth(3 + ((int) quarter - 1) * 3).atDay(1).with(lastDayOfMonth())));
+	}
+
+	@Override
+	public DurationValue getPeriodIndicator()
+	{
+		return Duration.Q.get();
+	}
+
+	@Override
+	public Temporal with(TemporalField field, long newValue)
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public long until(Temporal endExclusive, TemporalUnit unit)
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
 	}
 }

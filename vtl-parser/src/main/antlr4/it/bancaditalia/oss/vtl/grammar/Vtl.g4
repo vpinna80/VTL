@@ -31,18 +31,18 @@ expr:
 ;
 
 exprComponent:
-    LPAREN exprComponent RPAREN                                                                             # parenthesisExprComp
-    | functionsComponents                                                                                   # functionsExpressionComp
-    | op=(PLUS|MINUS|NOT) right=exprComponent                                                               # unaryExprComp
-    | left=exprComponent op=(MUL|DIV) right=exprComponent                                                   # arithmeticExprComp
-    | left=exprComponent op=(PLUS|MINUS|CONCAT) right=exprComponent                                         # arithmeticExprOrConcatComp
-    | left=exprComponent comparisonOperand right=exprComponent                                              # comparisonExprComp
-    | left=exprComponent op=(IN|NOT_IN) right=inexpr                                                        # inNotInExprComp
-    | left=exprComponent op=AND right=exprComponent                                                         # booleanExprComp
-    | left=exprComponent op=(OR|XOR) right=exprComponent                                                    # booleanExprComp
-    | IF  conditionalExpr=exprComponent  THEN thenExpr=exprComponent ELSE elseExpr=exprComponent            # ifExprComp
-    | constant                                                                                              # constantExprComp
-    | componentID                                                                                           # compId
+    LPAREN exprComponent RPAREN                                                                  # parenthesisExprComp
+    | functionsComponents                                                                        # functionsExpressionComp
+    | op=(PLUS|MINUS|NOT) right=exprComponent                                                    # unaryExprComp
+    | left=exprComponent op=(MUL|DIV) right=exprComponent                                        # arithmeticExprComp
+    | left=exprComponent op=(PLUS|MINUS|CONCAT) right=exprComponent                              # arithmeticExprOrConcatComp
+    | left=exprComponent comparisonOperand right=exprComponent                                   # comparisonExprComp
+    | left=exprComponent op=(IN|NOT_IN) right=inexpr                                             # inNotInExprComp
+    | left=exprComponent op=AND right=exprComponent                                              # booleanExprComp
+    | left=exprComponent op=(OR|XOR) right=exprComponent                                         # booleanExprComp
+    | IF conditionalExpr=exprComponent THEN thenExpr=exprComponent ELSE elseExpr=exprComponent   # ifExprComp
+    | constant                                                                                   # constantExprComp
+    | componentID                                                                                # compId
 ;
 
 functionsComponents:
@@ -209,7 +209,7 @@ timeOperators:
     | FILL_TIME_SERIES LPAREN expr (COMMA op=(SINGLE|ALL))? RPAREN                                                                      # fillTimeAtom
     | op=(FLOW_TO_STOCK | STOCK_TO_FLOW) LPAREN expr RPAREN	                                                                            # flowAtom
     | TIMESHIFT LPAREN expr COMMA signedInteger RPAREN                                                                                  # timeShiftAtom
-    | TIME_AGG LPAREN periodIndTo=STRING_CONSTANT (COMMA periodIndFrom=(STRING_CONSTANT| OPTIONAL ))? (COMMA op=optionalExpr)? (COMMA delim=(FIRST|LAST))? RPAREN     # timeAggAtom
+    | TIME_AGG LPAREN periodIndTo=FREQUENCY (COMMA periodIndFrom=(FREQUENCY | OPTIONAL))? (COMMA op=optionalExpr)? (COMMA delim=(FIRST|LAST))? RPAREN     # timeAggAtom
     | CURRENT_DATE LPAREN RPAREN                                                                                                        # currentDateAtom
 ;
 
@@ -272,7 +272,7 @@ aggrOperatorsGrouping:
         | STDDEV_POP
         | STDDEV_SAMP
         | VAR_POP
-        | VAR_SAMP) LPAREN expr (groupingClause havingClause?)? RPAREN  #aggrDataset
+        | VAR_SAMP) LPAREN expr RPAREN (groupingClause havingClause?)? #aggrDataset
 
 ;
 
@@ -289,9 +289,9 @@ aggrOperatorsGrouping:
         | VAR_SAMP
         | FIRST_VALUE
         | LAST_VALUE)
-        LPAREN expr OVER LPAREN (partition=partitionByClause? orderBy=orderByClause? windowing=windowingClause?)RPAREN RPAREN       #anSimpleFunction
-    | op=(LAG |LEAD)  LPAREN expr (COMMA offet=signedInteger(defaultValue=constant)?)?  OVER  LPAREN (partition=partitionByClause? orderBy=orderByClause)   RPAREN RPAREN    # lagOrLeadAn
-    | op=RATIO_TO_REPORT LPAREN expr OVER  LPAREN (partition=partitionByClause) RPAREN RPAREN                                                                           # ratioToReportAn
+        LPAREN expr OVER (partition=partitionByClause? orderBy=orderByClause? windowing=windowingClause?)RPAREN                                          # anSimpleFunction
+    | op=(LAG |LEAD) LPAREN expr (COMMA offet=signedInteger(defaultValue=constant)?)? OVER (partition=partitionByClause? orderBy=orderByClause) RPAREN   # lagOrLeadAn
+    | op=RATIO_TO_REPORT LPAREN expr OVER (partition=partitionByClause) RPAREN                                                                           # ratioToReportAn
 ;
 
  anFunctionComponent:
@@ -307,10 +307,10 @@ aggrOperatorsGrouping:
          | VAR_SAMP
          | FIRST_VALUE
          | LAST_VALUE)
-         LPAREN exprComponent OVER LPAREN (partition=partitionByClause? orderBy=orderByClause? windowing=windowingClause?)RPAREN RPAREN       #anSimpleFunctionComponent
-    | op=(LAG |LEAD)  LPAREN exprComponent (COMMA offet=signedInteger(defaultValue=constant)?)?  OVER  LPAREN (partition=partitionByClause? orderBy=orderByClause)   RPAREN RPAREN   # lagOrLeadAnComponent
-    | op=RANK LPAREN  OVER  LPAREN (partition=partitionByClause? orderBy=orderByClause) RPAREN RPAREN                                                                           # rankAnComponent
-    | op=RATIO_TO_REPORT LPAREN exprComponent OVER  LPAREN (partition=partitionByClause) RPAREN RPAREN                                                                          # ratioToReportAnComponent
+         LPAREN exprComponent OVER  (partition=partitionByClause? orderBy=orderByClause? windowing=windowingClause?)RPAREN                                          # anSimpleFunctionComponent
+    | op=(LAG |LEAD)  LPAREN exprComponent (COMMA offet=signedInteger(defaultValue=constant)?)? OVER (partition=partitionByClause? orderBy=orderByClause) RPAREN    # lagOrLeadAnComponent
+    | op=RANK LPAREN  OVER   (partition=partitionByClause? orderBy=orderByClause) RPAREN                                                                            # rankAnComponent
+    | op=RATIO_TO_REPORT LPAREN exprComponent OVER   (partition=partitionByClause) RPAREN                                                                           # ratioToReportAnComponent
 ;
 /*---------------------------------------------------END FUNCTIONS-------------------------------------------------*/
 
@@ -405,8 +405,8 @@ limitClauseItem:
 /*--------------------------------------------END ANALYTIC CLAUSE -----------------------------------------------*/
 /* ------------------------------------------------------------ GROUPING CLAUSE ------------------------------------*/
 groupingClause:
-    GROUP op=(BY | EXCEPT) componentID (COMMA componentID)*     # groupByOrExcept
-    | GROUP ALL exprComponent                                   # groupAll
+    GROUP op=(BY | EXCEPT) componentID (COMMA componentID)* ( TIME_AGG LPAREN FREQUENCY RPAREN )?     # groupByOrExcept
+    | GROUP ALL exprComponent ( TIME_AGG LPAREN FREQUENCY RPAREN )?                                   # groupAll
   ;
 
 havingClause:

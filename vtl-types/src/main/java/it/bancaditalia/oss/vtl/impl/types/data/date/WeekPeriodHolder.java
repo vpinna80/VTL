@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.WEEK_PERIOD_FORMATTER;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
 import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
 import static java.time.temporal.ChronoUnit.WEEKS;
 
@@ -33,10 +32,11 @@ import java.time.temporal.TemporalUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
 public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 {
@@ -123,12 +123,6 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 	{
 		return WEEKS;
 	}
-	
-	@Override
-	public TimePeriodDomainSubset<?> getDomain()
-	{
-		return WEEKSDS;
-	}
 
 	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
@@ -139,6 +133,26 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 
 	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public DurationValue getPeriodIndicator()
+	{
+		return Duration.W.get();
+	}
+
+	@Override
+	public Temporal with(TemporalField field, long newValue)
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public long until(Temporal endExclusive, TemporalUnit unit)
 	{
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException();

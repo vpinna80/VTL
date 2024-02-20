@@ -212,7 +212,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		String[] query = alias.split("/", 2);
 		String dataflow = query[0].replace(':', ',').replace('(', ',').replaceAll("\\)(?=/|$)", "");
 		String resource = query.length > 1 ? "/" + query[1] : "";
-		String[] dims = alias.indexOf('/') > 0 ? resource.split("\\.") : new String[] {};
+		String[] dims = query.length > 1 ? query[1].split("\\.") : new String[] {};
 
 		String path = endpoint + "/data/" + dataflow + resource;
 		ReadableDataLocation rdl;

@@ -22,13 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 import java.io.Serializable;
 import java.time.temporal.TemporalAccessor;
 
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Durations;
-import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
@@ -43,20 +36,4 @@ public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Compa
 	}
 
 	public abstract TimeValue<?, ?, ?, ?> increment(long amount);
-	
-	public TimePeriodValue<?> wrap(Durations duration)
-	{
-		PeriodHolder<?> holder;
-		switch (duration)
-		{
-			case A: holder = new YearPeriodHolder(get()); break;
-			case H: holder = new SemesterPeriodHolder(get()); break;
-			case Q: holder = new QuarterPeriodHolder(get()); break;
-			case M: holder = new MonthPeriodHolder(get()); break;
-			case W: holder = new WeekPeriodHolder(get()); break;
-			default: throw new IllegalStateException(); // Should never occur
-		}
-		
-		return TimePeriodValue.of(holder);
-	}
 }

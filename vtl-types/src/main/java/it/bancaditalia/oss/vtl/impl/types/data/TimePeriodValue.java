@@ -19,19 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.MONTHSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.QUARTERSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.SEMESTERSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.WEEKSDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.YEARSDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.ValueRange;
-import java.util.HashMap;
-import java.util.Map;
 
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
@@ -40,6 +34,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns;
 import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
@@ -48,24 +43,10 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeValue<TimePeriodValue<S>, PeriodHolder<?>, S, TimePeriodDomain> implements TemporalAccessor
 {
 	private static final long serialVersionUID = 1L;
-
-	private static final Map<Class<?>, TimePeriodDomainSubset<?>> DOMAINS_MAP = new HashMap<>();
 	
-	static 
+	public static TimePeriodValue<EntireTimePeriodDomainSubset> of(PeriodHolder<?> holder)
 	{
-		DOMAINS_MAP.put(WeekPeriodHolder.class, WEEKSDS);
-		DOMAINS_MAP.put(MonthPeriodHolder.class, MONTHSDS);
-		DOMAINS_MAP.put(QuarterPeriodHolder.class, QUARTERSDS);
-		DOMAINS_MAP.put(SemesterPeriodHolder.class, SEMESTERSDS);
-		DOMAINS_MAP.put(YearPeriodHolder.class, YEARSDS);
-	}
-	
-	public static TimePeriodValue<?> of(PeriodHolder<?> holder)
-	{
-		TimePeriodDomainSubset<?> domain = DOMAINS_MAP.get(holder.getClass());
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		final TimePeriodValue<?> result = (TimePeriodValue<?>) new TimePeriodValue(holder, domain);
-		return result;
+		return new TimePeriodValue<>(holder, TIME_PERIODDS);
 	}
 	
 	public static TimePeriodValue<?> of(String string, String mask)
@@ -111,9 +92,9 @@ public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeVa
 		throw new UnsupportedOperationException("Unknown class " + holder);
 	}
 	
-	public String getPeriodIndicator()
+	public DurationValue getPeriodIndicator()
 	{
-		return null;
+		return get().getPeriodIndicator();
 	}
 
 	public boolean isSupported(TemporalField field)

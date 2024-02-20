@@ -25,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +41,8 @@ public class MappingTest
 	@Test
 	public void mappingTest() throws IOException
 	{
-		Pattern pattern = Pattern.compile("^.*class=\"(.*?)\".*$");
+		Pattern pattern = Pattern.compile("^.*<[^!]* (?:class|to)=\"(.*?)\".*$");
+		List<String> notFound = new ArrayList<>();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(MappingTest.class.getResourceAsStream("OpsFactory.xml"), UTF_8)))
 		{
 			boolean failed = false;
@@ -50,18 +53,19 @@ public class MappingTest
 				if (matcher.matches())
 					try
 					{
-						Class.forName(matcher.group(1));
+						Class<?> c = Class.forName(matcher.group(1));
+						LOGGER.info("Class {} found", c.getName());
 					}
 					catch (ClassNotFoundException e)
 					{
 						LOGGER.error(matcher.group(1));
-						System.err.println(e.getMessage());
+						notFound.add(matcher.group(1));
 						failed = true;
 					}
 			}
 			
 			if (failed)
-				fail("One or more classes not found");
+				fail("One or more classes not found: " + notFound);
 		};
 	}
 }

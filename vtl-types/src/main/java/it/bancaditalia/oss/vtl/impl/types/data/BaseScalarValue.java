@@ -36,7 +36,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
  * @param <S> The domain subset
  * @param <D> the parent domain
  */
-public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R extends Comparable<?> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements ScalarValue<V, R, S, D>, Serializable
+public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R extends Comparable<? super R> & Serializable, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements ScalarValue<V, R, S, D>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 

@@ -83,7 +83,6 @@ import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Tokenset;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Tokensetparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Valueparam;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
@@ -608,14 +607,13 @@ public class OpsFactory implements Serializable
 			{
 				if (rule instanceof ParserRuleContext)
 					rule = ((ParserRuleContext) rule).getChild(TerminalNode.class, 0);
-				if (rule != null)
+				if (rule instanceof Token || rule instanceof TerminalNode)
 				{
-					Token token = rule instanceof Token ? (Token) rule : (Token) ((TerminalNode) rule).getPayload();
-					String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(token.getType());
+					String tokenGroup = rule instanceof Token ? VtlTokens.VOCABULARY.getSymbolicName(((Token) rule).getType()) : ((Token) ((TerminalNode) rule).getPayload()).getText();
 					// find corresponding enum value
-					Optional<Tokenmapping> matchingToken = tokenset.getTokenmapping().stream().filter(t -> t.getName().equals(sourceToken)).findAny();
+					Optional<Tokenmapping> matchingToken = tokenset.getTokenmapping().stream().filter(t -> t.getName().equals(tokenGroup)).findAny();
 					if (!matchingToken.isPresent())
-						throw new VTLUnmappedTokenException(sourceToken, tokenset);
+						throw new VTLUnmappedTokenException(tokenGroup, tokenset);
 					// get the enum value
 					Enum<?> enumValue = Enum.valueOf(Class.forName(tokenset.getClazz()).asSubclass(Enum.class), matchingToken.get().getValue());
 					result = enumValue;

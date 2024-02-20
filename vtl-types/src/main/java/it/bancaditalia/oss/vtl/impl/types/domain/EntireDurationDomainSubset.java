@@ -23,9 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 
 import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.DurationHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
@@ -61,8 +59,8 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	{
 		if (value instanceof NullValue)
 			return NullValue.instance(INSTANCE);
-		else if (value instanceof DurationValue)
-			return DurationValue.of((DurationHolder) value.get());
+//		else if (value instanceof DurationValue)
+//			return DurationValue.of((DurationHolder) value.get());
 		throw new UnsupportedOperationException("Cast to duration domain");
 	}
 	

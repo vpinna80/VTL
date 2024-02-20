@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform;
 import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_EXCEPT;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -29,10 +30,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -62,11 +63,13 @@ public class GroupingClause implements Serializable
 
 	private final GroupingMode mode;
 	private final String[] fields;
+	private final Duration frequency;
 
-	public GroupingClause(GroupingMode mode, List<String> fields)
+	public GroupingClause(GroupingMode mode, List<String> fields, Duration frequency)
 	{
 		this.mode = mode;
 		this.fields = fields.stream().map(Variable::normalizeAlias).collect(toArray(new String[fields.size()]));
+		this.frequency = frequency;
 	}
 
 	public GroupingMode getMode()
@@ -77,6 +80,11 @@ public class GroupingClause implements Serializable
 	public String[] getFields()
 	{
 		return fields;
+	}
+	
+	public Duration getFrequency()
+	{
+		return frequency;
 	}
 	
 	public Set<DataStructureComponent<Identifier, ?, ?>> getGroupingComponents(DataSetMetadata dataset)
@@ -102,6 +110,6 @@ public class GroupingClause implements Serializable
 	@Override
 	public String toString()
 	{
-		return Arrays.stream(fields).collect(Collectors.joining(", ", mode + " ", ""));
+		return Arrays.stream(fields).collect(joining(", ", mode + " ", frequency != null ? " time_agg( " + frequency + " )" : ""));
 	}
 }

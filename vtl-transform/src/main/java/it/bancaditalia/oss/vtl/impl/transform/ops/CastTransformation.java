@@ -26,22 +26,19 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIOD;
 import static java.util.Collections.singletonMap;
 import static java.util.Locale.ENGLISH;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
@@ -135,26 +132,22 @@ public class CastTransformation extends UnaryTransformation
 			domain = measure.getVariable().getDomain();
 		}
 
-		if (domain == target.getDomain())
+		if (domain instanceof NullDomain)
+			return NULL;
+		else if (domain == target.getDomain())
 			return target;
-		else if (domain instanceof StringDomainSubset && TIME_PERIODS.contains(target))
+		else if (domain instanceof StringDomainSubset && target == TIME_PERIOD)
 			return target;
 		else if (domain instanceof StringDomainSubset && target == INTEGER)
 			return INTEGER;
 		else if (domain instanceof StringDomainSubset && target == NUMBER)
 			return NUMBER;
-		else if (domain instanceof StringDomainSubset && TIME_PERIODS.contains(target))
-			return target;
 		else if (domain instanceof StringDomainSubset && target == DATE)
 			return DATE;
 		else if (domain instanceof TimeDomainSubset && target == STRING)
 			return STRING;
-		else if (domain instanceof NullDomain)
-			return NULL;
 		else if (domain instanceof NumberDomainSubset && target == INTEGER)
 			return INTEGER;
-		else if (domain instanceof NumberDomainSubset && target == STRING)
-			return STRING;
 		else if (domain instanceof NumberDomainSubset && target == STRING)
 			return STRING;
 		else
@@ -177,7 +170,7 @@ public class CastTransformation extends UnaryTransformation
 			return target.getDomain().cast(scalar);
 		else if (scalar instanceof StringValue && target == DATE)
 			return DateValue.of(parseString(scalar.get().toString(), mask));
-		else if (scalar instanceof StringValue && TIME_PERIODS.contains(target))
+		else if (scalar instanceof StringValue && target == TIME_PERIOD)
 			return TimePeriodValue.of(scalar.get().toString(), mask);
 		else if (scalar instanceof DateValue && target == STRING)
 			return StringValue.of(parseTemporal((LocalDate) scalar.get(), mask));
