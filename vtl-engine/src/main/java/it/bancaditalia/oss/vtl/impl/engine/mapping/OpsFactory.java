@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.engine.mapping;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -607,15 +608,20 @@ public class OpsFactory implements Serializable
 			{
 				if (rule instanceof ParserRuleContext)
 					rule = ((ParserRuleContext) rule).getChild(TerminalNode.class, 0);
-				if (rule instanceof Token || rule instanceof TerminalNode)
+				if (rule instanceof TerminalNode)
+					rule = ((TerminalNode) rule).getPayload();
+				if (rule instanceof Token)
 				{
-					String tokenGroup = rule instanceof Token ? VtlTokens.VOCABULARY.getSymbolicName(((Token) rule).getType()) : ((Token) ((TerminalNode) rule).getPayload()).getText();
+					String ruleText = ((Token) rule).getText();
+					String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(((Token) rule).getType());
 					// find corresponding enum value
-					Optional<Tokenmapping> matchingToken = tokenset.getTokenmapping().stream().filter(t -> t.getName().equals(tokenGroup)).findAny();
-					if (!matchingToken.isPresent())
-						throw new VTLUnmappedTokenException(tokenGroup, tokenset);
+					Set<Tokenmapping> matchingTokens = tokenset.getTokenmapping().stream()
+							.filter(t -> t.getName().equals(sourceToken) || t.getName().equals(ruleText))
+							.collect(toSet());
+					if (matchingTokens.size() != 1)
+						throw new VTLUnmappedTokenException(sourceToken, tokenset);
 					// get the enum value
-					Enum<?> enumValue = Enum.valueOf(Class.forName(tokenset.getClazz()).asSubclass(Enum.class), matchingToken.get().getValue());
+					Enum<?> enumValue = Enum.valueOf(Class.forName(tokenset.getClazz()).asSubclass(Enum.class), matchingTokens.iterator().next().getValue());
 					result = enumValue;
 				}
 				else

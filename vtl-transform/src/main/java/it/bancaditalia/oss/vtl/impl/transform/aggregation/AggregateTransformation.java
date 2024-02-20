@@ -134,7 +134,7 @@ public class AggregateTransformation extends UnaryTransformation
 			outputComponent = dataset.getMetadata().getMeasures().iterator().next();
 		
 		DataSet dataset2;
-		if (groupingClause.getFrequency() != null)
+		if (groupingClause != null && groupingClause.getFrequency() != null)
 		{
 			DataStructureComponent<Identifier, ?, ?> timeID = groupIDs.stream()
 					.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))

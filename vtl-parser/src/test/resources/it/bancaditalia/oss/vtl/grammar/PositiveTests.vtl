@@ -26,8 +26,8 @@ end datapoint ruleset;
 /*NOTE: the following 2 examples are slightly modified than those in the published reference
 manual to contain the 'as' in the valuedomain */
 
-define datapoint ruleset DPR_1 ( valuedomain flow_type as A, numeric_value as B ) is
-when A = "CREDIT" or A = "DEBIT" then B >= 0 errorcode "Bad value" errorlevel 10
+define datapoint ruleset DPR_1 ( valuedomain flow_type as A1, numeric_value as B1 ) is
+when A1 = "CREDIT" or A1 = "DEBIT" then B1 >= 0 errorcode "Bad value" errorlevel 10
 end datapoint ruleset;
 
 define datapoint ruleset DPR_2 ( variable flow as F, obs_value as O) is
@@ -473,24 +473,24 @@ DS_r := timeshift(DS_3,1);
 DS_r := timeshift(DS_3, -1);
 
 //The following example is modified in order to match the time_agg syntax (line 4854)
-DS_R := sum ( DS group all time_agg ("A", Me)) ;
+DS_R := sum ( DS group all time_agg (A)) ;
 
-DS_R := time_agg("A",cast("2012Q1", time_period, "YYYY\Qq"));
+DS_R := time_agg(A, _, cast("2012Q1", time_period, "YYYY\Qq"));
 
-DS_R := time_agg("M", cast("2012-12-23",date,"YYYY-MM-DD"));
+DS_R := time_agg(M, _, cast("2012-12-23", date, "YYYY-MM-DD"));
 
-DS_R := time_agg("M", DS1);
+DS_R := time_agg(M, _, DS1);
 
-ds_2 := ds1[calc Me1 := time_agg("M",Me1)];
+ds_2 := ds1[calc Me1 := time_agg(M, _, Me1)];
 
-DS_r := sum ( DS_1 group all time_agg ( "A",_,Me_1));
+DS_r := sum ( DS_1 group all time_agg (A));
 
 //The following example is modified to remove a space inside keyword time_agg (line 4909)
-DS_r := time_agg ("Q", cast("2012M01",time_period, "YYYY\MMM"));
+DS_r := time_agg (Q, cast("2012M01",time_period, "YYYY\MMM"));
 
 /*The following two examples need to be modified in order to match the syntax definition (lines 4915, 4921)
-DS_R := time_agg( "Q", cast("20120213", date, "YYYYMMDD"), _ , false );
-DS_R := time_agg(cast( "A", "2012M1", date, "YYYYMMDD"), _, true ) */
+DS_R := time_agg(Q, cast("20120213", date, "YYYYMMDD"), _ , first );
+DS_R := time_agg(A, cast("2012M1", date, "YYYYMMDD"), _, last ) */
 
 DS_R := cast(current_date(), string, "YYYY.MM.DD");
 
@@ -518,7 +518,7 @@ DS_R := avg ( DS_1 group by Id_1, Id_2 );
 
 DS_R := avg ( DS_1 group except Id_1, Id_2 );
 
-DS_R := avg ( DS_1 group all time_agg ("Q"));
+DS_R := avg ( DS_1 group all time_agg (Q));
 
 DS_r := avg ( DS_1 group by Id_1 );
 
