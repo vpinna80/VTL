@@ -82,10 +82,6 @@
 			<dependencies>
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-renv</artifactId>
-				</dependency>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
 					<artifactId>vtl-confman</artifactId>
 				</dependency>
 			</dependencies>
@@ -145,10 +141,6 @@
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-metadb</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-metajson</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>

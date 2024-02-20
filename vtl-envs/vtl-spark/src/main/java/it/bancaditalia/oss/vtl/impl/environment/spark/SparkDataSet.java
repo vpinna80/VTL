@@ -517,7 +517,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 	
 	@Override
-	public DataSet aggr(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
+	public DataSet aggregate(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
 			SerCollector<DataPoint, ?, DataPoint> groupCollector,
 			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{

@@ -85,10 +85,6 @@
 					<artifactId>vtl-java2r</artifactId>
 					<version>${project.version}</version>
 				</dependency>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-renv</artifactId>
-				</dependency>
 			</dependencies>
 		</profile>
 	</profiles>
@@ -137,10 +133,6 @@
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-metabase</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-metajson</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>

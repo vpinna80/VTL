@@ -291,11 +291,6 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-renv</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-rest</artifactId>
 				<type>war</type>
 				<version>${project.version}</version>
