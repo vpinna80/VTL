@@ -20,16 +20,11 @@
 package it.bancaditalia.oss.vtl.util;
 
 import static java.time.temporal.ChronoUnit.DAYS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.Iterator;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -43,59 +38,43 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 
-public class Paginator implements AutoCloseable
+public class Paginator
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Paginator.class);
 	private static final double R_DOUBLE_NA = Double.longBitsToDouble(0x7ff00000000007a2L);
 	private static final int R_INT_NA = Integer.MIN_VALUE;
 	
-	private final BlockingQueue<DataPoint> queue = new ArrayBlockingQueue<>(1000);
 	private final DataSetMetadata dataStructure;
+	private final Iterator<DataPoint> iterator;
+	private final DataStructureComponent<?, ?, ?>[] comps;
+	private final int[] types;
+	private final int size;
+	private final Object[] result;
 
-	private boolean closed = false;
-	private RuntimeException lastException = null;
 	
-	public Paginator(DataSet dataset)
+	public Paginator(DataSet dataset, int size)
 	{
+		this.size = size;
 		dataStructure = dataset.getMetadata();
-		Thread thread = new Thread(() -> {
-			try (Stream<DataPoint> stream = dataset.stream())
-			{
-				for (DataPoint dp: (Iterable<DataPoint>) stream::iterator)
-					while (!isClosed())
-						try
-						{
-							queue.put(dp);
-							break;
-						}
-						catch (InterruptedException e)
-						{
-							close();
-							Thread.currentThread().interrupt();
-						}
-			}
-			catch (Throwable t)
-			{
-				LOGGER.error(t.getMessage(), t);
-			}
-			finally
-			{
-				close();
-			}
-		});
-		thread.setDaemon(true);
-		thread.start();
-	}
+		comps = dataStructure.stream().toArray(DataStructureComponent<?, ?, ?>[]::new);
+		result = new Object[comps.length];
+		types = new int[comps.length];
+		for (int i = 0; i < comps.length; i++)
+		{
+			if (comps[i].getVariable().getDomain() instanceof NumberDomain)
+				types[i] = 1;
+			else if (comps[i].getVariable().getDomain() instanceof BooleanDomain)
+				types[i] = 2;
+			else if (comps[i].getVariable().getDomain() instanceof DateDomain)
+				types[i] = 3;
+			else // StringDomain, TimeDomain, TimePeriodDomain
+				types[i] = 4;
+		}
 
-	public boolean isClosed()
-	{
-		return closed;
-	}
-
-	@Override
-	public void close()
-	{
-		closed = true;
+		try (Stream<DataPoint> stream = dataset.stream())
+		{
+			iterator = stream.iterator();
+		}
 	}
 
 	public DataSetMetadata getDataStructure()
@@ -103,78 +82,77 @@ public class Paginator implements AutoCloseable
 		return dataStructure;
 	}
 
-	public List<DataPoint> moreDataPoints()
+	public int getType(int i)
 	{
-		return moreDataPoints(20);
+		return types[i];
 	}
 
-	public List<DataPoint> moreDataPoints(int size)
+	public String getName(int i)
 	{
-		List<DataPoint> result = new ArrayList<>();
+		return comps[i].getVariable().getName();
+	}
 
-		while ((!isClosed() || !queue.isEmpty()) && (size <= 0 || result.size() < size))
-			try
-			{
-				DataPoint element = queue.poll(1, SECONDS);
-				if (element != null)
-					result.add(element);
-			}
-			catch (InterruptedException e)
-			{
-				close();
-				Thread.currentThread().interrupt();
-			}
-
-		if (lastException != null)
-			throw lastException;
+	public int[] getIntColumn(int i)
+	{
+		return (int[]) result[i];
+	}
+	
+	public double[] getDoubleColumn(int i)
+	{
+		return (double[]) result[i];
+	}
+	
+	public String[] getStringColumn(int i)
+	{
+		return (String[]) result[i];
+	}
+	
+	public void prepareMore()
+	{
+		ArrayList<DataPoint> dps = new ArrayList<>(size);
+		for (int i = 0; i < size && iterator.hasNext(); i++)
+			dps.add(iterator.next());
 		
-		return result;
-	}
+		int newSize = dps.size();
+		
+		LOGGER.info("Retrieving {} rows from dataset.", newSize);
 
-	public Map<String, Object> more()
-	{
-		return more(20);
-	}
-
-	public Map<String, Object> more(int size)
-	{
-		List<DataPoint> datapoints = moreDataPoints(size);
-		Map<String, Object> result = new HashMap<>();
-
-		for (DataStructureComponent<?, ?, ?> c: dataStructure)
-			if (c.getVariable().getDomain() instanceof NumberDomain)
+		boolean test = result[0] == null;
+		if (!test)
+			switch (types[0])
 			{
-				double[] array = (double[]) result.computeIfAbsent(c.getVariable().getName(), n -> new double[datapoints.size()]);
-				for (int i = 0; i < datapoints.size(); i++)
-				{
-					Serializable v = datapoints.get(i).get(c).get();
-					array[i] = v == null ? R_DOUBLE_NA : ((Number) v).doubleValue();
-				}
+				case 1: test = ((double[]) result[0]).length != newSize; break;
+				case 2: 
+				case 3: test = ((int[]) result[0]).length != newSize; break;
+				case 4: test = ((String[]) result[0]).length != newSize; break;
 			}
-			else if (c.getVariable().getDomain() instanceof BooleanDomain || c.getVariable().getDomain() instanceof DateDomain)
+		if (test)
+			for (int i = 0; i < comps.length; i++)
+				switch (types[i])
+				{
+					case 1: result[i] = new double[newSize]; break;
+					case 2: result[i] = new int[newSize]; break;
+					case 3: result[i] = new int[newSize]; break;
+					case 4: result[i] = new String[newSize]; break;
+					default: throw new IllegalStateException();
+				}
+		
+		for (int i = 0; i < result.length; i++)
+		{
+			Object array = result[i];
+			for (int j = 0; j < newSize; j++)
 			{
-				int[] array = (int[]) result.computeIfAbsent(c.getVariable().getName(), n -> new int[datapoints.size()]);
-				for (int i = 0; i < datapoints.size(); i++)
+				Serializable value = dps.get(j).get(comps[i]).get();
+				switch (types[i])
 				{
-					Serializable v = datapoints.get(i).get(c).get();
-					if (v == null)
-						array[i] = R_INT_NA;
-					else if (c.getVariable().getDomain() instanceof BooleanDomain)
-						array[i] = (Boolean) v ? 1 : 0;
-					else
-						array[i] = (int) DAYS.between(LocalDate.of(1970, 1, 1), (LocalDate) v);
+					case 1: ((double[]) array)[j] = value == null ? R_DOUBLE_NA : ((Number) value).doubleValue(); break;
+					case 2: ((int[]) array)[j] = value == null ? R_INT_NA : value == Boolean.TRUE ? 1 : 0; break;
+					case 3: ((int[]) array)[j] = value == null ? R_INT_NA : (int) DAYS.between(LocalDate.of(1970, 1, 1), (LocalDate) value); break;
+					case 4: ((String[]) array)[j] = value == null ? null : value.toString(); break;
 				}
-			}
-			else // StringDomain, TimeDomain, TimePeriodDomain
-			{
-				String[] array = (String[]) result.computeIfAbsent(c.getVariable().getName(), n -> new String[datapoints.size()]);
-				for (int i = 0; i < datapoints.size(); i++)
-				{
-					Serializable v = datapoints.get(i).get(c).get();
-					array[i] = v == null ? null : v.toString();
-				}
-			}
-
-		return result;
+			}		
+		}
+		
+		LOGGER.debug("Retrieving {} rows from dataset finished.", newSize);
 	}
 }

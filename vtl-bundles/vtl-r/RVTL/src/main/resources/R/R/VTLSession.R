@@ -115,13 +115,12 @@ VTLSession <- R6Class("VTLSession",
                       }
                       else if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
                         pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
-                                       .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"))
-                        df <- convertToDF(tryCatch({ pager$more(-1L) },
-                          error = function(e) {
-                            e$jobj$printStackTrace()
-                            signalCondition(e)
-                          }, finally = { pager$close() })
-                        )
+                                       .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
+                        nc <- jnode$getMetadata()$size()
+                        df <- tryCatch(convertDF(pager, nc), error = function(e) {
+                          e$jobj$printStackTrace()
+                          signalCondition(e)
+                        })
                         attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getName() })
                         attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getName() })
                       }

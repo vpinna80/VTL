@@ -131,7 +131,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final DataStructureComponent<Identifier,EntireTimeDomainSubset,TimeDomain> TIME_PERIOD = DataStructureComponentImpl.of("TIME_PERIOD", Identifier.class, TIMEDS);
-	private static final DataReaderManager DR_MANAGER = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
+//	private static final DataReaderManager DR_MANAGER = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
 
 	private final SDMXRepository repo;
@@ -214,42 +214,45 @@ public class SDMXEnvironment implements Environment, Serializable
 		String resource = query.length > 1 ? "/" + query[1] : "";
 		String[] dims = query.length > 1 ? query[1].split("\\.") : new String[] {};
 
-		String path = endpoint + "/data/" + dataflow + resource;
-		ReadableDataLocation rdl;
-		try 
-		{
-			rdl = RDL_FACTORY.getReadableDataLocation(path);
-		}
-		catch (SdmxUnauthorisedException e)
-		{
-			try
-			{
-				URL url = new URI(path).toURL();
-				URLConnection urlc = url.openConnection();
-				urlc.setDoOutput(true);
-				urlc.setAllowUserInteraction(false);
-				urlc.addRequestProperty("Accept-Encoding", "gzip");
-				urlc.addRequestProperty("Accept", "*/*;q=1.0");
-				urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((SDMX_DATA_USERNAME.getValue() + ":" + SDMX_DATA_PASSWORD.getValue()).getBytes()));
-				((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
-				InputStream is = urlc.getInputStream();
-				rdl = RDL_FACTORY.getReadableDataLocation("gzip".equals(urlc.getContentEncoding()) ? new GZIPInputStream(is) : is);
-			}
-			catch (IOException | URISyntaxException e1)
-			{
-				throw new VTLException("Error in creating readableDataLocation", e);
-			}
-		}
-		
-		DataReaderEngine dre = DR_MANAGER.getDataReaderEngine(rdl, repo.getBeanRetrievalManager(), new FirstFailureErrorHandler());
-		
 		return Optional.of(new AbstractDataSet(structure) {
 			private static final long serialVersionUID = 1L;
-
+		
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
-				return StreamSupport.stream(Spliterators.spliterator(new ObsIterator(alias, dre, structure, dims), 20, IMMUTABLE), false);
+				synchronized (SDMXEnvironment.this)
+				{
+					String path = endpoint + "/data/" + dataflow + resource;
+					ReadableDataLocation rdl;
+					try 
+					{
+						rdl = RDL_FACTORY.getReadableDataLocation(path);
+					}
+					catch (SdmxUnauthorisedException e)
+					{
+						try
+						{
+							URL url = new URI(path).toURL();
+							URLConnection urlc = url.openConnection();
+							urlc.setDoOutput(true);
+							urlc.setAllowUserInteraction(false);
+							urlc.addRequestProperty("Accept-Encoding", "gzip");
+							urlc.addRequestProperty("Accept", "*/*;q=1.0");
+							urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((SDMX_DATA_USERNAME.getValue() + ":" + SDMX_DATA_PASSWORD.getValue()).getBytes()));
+							((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
+							InputStream is = urlc.getInputStream();
+							rdl = RDL_FACTORY.getReadableDataLocation("gzip".equals(urlc.getContentEncoding()) ? new GZIPInputStream(is) : is);
+						}
+						catch (IOException | URISyntaxException e1)
+						{
+							throw new VTLException("Error in creating readableDataLocation", e);
+						}
+					}
+	
+					DataReaderManager manager = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
+					DataReaderEngine dre = manager.getDataReaderEngine(rdl, repo.getBeanRetrievalManager(), new FirstFailureErrorHandler());
+					return StreamSupport.stream(Spliterators.spliterator(new ObsIterator(alias, dre, structure, dims), 20, IMMUTABLE), false);
+				}
 			}
 		});
 	}

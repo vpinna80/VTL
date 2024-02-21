@@ -43,13 +43,26 @@ vtlTryCatch <- function(expr) {
   }))
 }
 
-convertToDF <- function(jnode) {
-  nodenames <- sapply(jnode$keySet(), .jstrVal)
-  nodesvals <- lapply(nodenames, jnode$get)
-  names(nodesvals) <- nodenames
-  bools <- which(sapply(nodesvals, function(array) is.integer(array) && all(array %in% as.integer(c(1L, 0L, NA)))))
-  dates <- which(sapply(nodesvals, function(array) is.integer(array) && !all(array %in% as.integer(c(1L, 0L, NA)))))
-  nodesvals[dates] <- lapply(nodesvals[dates], as.Date, as.Date("1970-01-01"))
-  nodesvals[bools] <- lapply(nodesvals[bools], as.logical)
-  return(as.data.frame(nodesvals))
+convertDF <- function(pager, nc) {
+  total <- NULL
+  repeat {               
+    pager$prepareMore()
+    part <- lapply(0:(nc - 1), function(i) {
+    	switch (pager$getType(i),
+    	  pager$getDoubleColumn(i),  
+    	  lapply(pager$getIntColumn(i), as.logical),
+    	  lapply(pager$getIntColumn(i), as.Date, as.Date("1970-01-01")),
+    	  sapply(pager$getStringColumn(i), .jstrVal)
+    	)  
+    })
+    names(part) <- sapply(0:(nc - 1), function(i) .jstrVal(pager$getName(i)))
+    part <- as.data.frame(part)
+    if (nrow(part) > 0) {
+      total <- if (is.null(total)) part else rbind(total, part)
+    } else {
+      break
+    }
+  }
+  
+  invisible(total)
 }
