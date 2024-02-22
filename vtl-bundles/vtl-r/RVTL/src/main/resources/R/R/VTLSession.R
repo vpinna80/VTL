@@ -53,7 +53,7 @@ VTLSession <- R6Class("VTLSession",
       #' This method should not be called by the application.
       finalize = function() { 
                     finalized <- T
-                    private$instance <- NULL
+                    private$clearInstance() 
                     return(invisible()) 
                   },
 
@@ -73,14 +73,14 @@ VTLSession <- R6Class("VTLSession",
       #' The editor code to associate this session
       setText = function(code) { 
         self$text <- code
-        instance <- NULL
+        private$clearInstance()
         return(invisible(self)) 
       },
       
       #' @description
       #' Compiles the VTL statements submitted for this session.
       compile = function () {
-        private$instance = NULL; 
+        private$clearInstance()
         private$checkInstance()$compile()
       },
       
@@ -107,13 +107,16 @@ VTLSession <- R6Class("VTLSession",
       #' @param nodes
       #' a list of names of nodes to compute from this session
       getValues = function (nodes) {
-                    jnodes <- sapply(X = nodes, private$checkInstance()$resolve)
-                    nodesdf <- lapply(names(jnodes), FUN = function(x, jnodes, jstructs) {
-                      jnode <- jnodes[[x]]
+                    nodesdf <- lapply(nodes, function(node) {
+                      df <- get0(node, envir = private$env)
+                      if (!is.null(df)) {
+                        return(df)
+                      } 
+                      
+                      jnode <- private$checkInstance()$resolve(node)
                       if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
                         df <- as.data.frame(list(Scalar = jnode$get()))
-                      }
-                      else if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
+                      } else {
                         pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
                                        .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
                         nc <- jnode$getMetadata()$size()
@@ -123,13 +126,15 @@ VTLSession <- R6Class("VTLSession",
                         })
                         attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getName() })
                         attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getName() })
+                      } else {
+                         stop(paste0("Unsupported result class: ", jnode$getClass()$getName()))
                       }
-                      else
-                        stop(paste0("Unsupported result class: ", jnode$getClass()$getName()))
                       
-                      return (df)
-                    }, jnodes, jstructs)
-                    names(nodesdf) <- names(jnodes)
+                      assign(node, df, envir = private$env)
+                      return(df)
+                    })
+                    
+                    names(nodesdf) <- nodes
                     return(nodesdf)
                   },
       
@@ -198,6 +203,7 @@ VTLSession <- R6Class("VTLSession",
     ),
     private = list(
       instance = NULL,
+      env <- new.env(parent = emptyenv())
       finalized = F,
       checkInstance = function() {
         if (private$finalized)
@@ -206,6 +212,11 @@ VTLSession <- R6Class("VTLSession",
           private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
         }
         return(invisible(private$instance))
+      }
+      clearInstance = function() {
+        self$instance <- NULL
+        self$env <- new.env(parent = emptyenv())
+        .jgc()
       }
     )
   )
