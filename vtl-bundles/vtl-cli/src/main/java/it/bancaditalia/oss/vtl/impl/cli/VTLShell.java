@@ -19,28 +19,27 @@
  */
 package it.bancaditalia.oss.vtl.impl.cli;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Spliterator;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
-import it.bancaditalia.oss.vtl.util.Utils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -67,42 +66,34 @@ public class VTLShell implements Callable<Void>
 
 	public Void call() throws Exception
 	{
+		Path properties = Path.of(System.getProperty("user.home"), ".vtlStudio.properties");
+		if (!Files.exists(properties))
+			throw new IllegalStateException("Please first configure your working environment with VTL Studio.");
+		if (names == null)
+			throw new InvalidParameterException("Please specify one or more rules to compute and retrieve.");
+		
+		try (BufferedReader reader = Files.newBufferedReader(properties))
+		{
+			ConfigurationManagerFactory.loadConfiguration(reader);
+		}
+		
 		ConfigurationManager manager = ConfigurationManager.getDefault();
-		ENVIRONMENT_IMPLEMENTATION.setValues(
-				"it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
-				"it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment", 
-				"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl");
 		
 		VTLSession session;
-		try (Reader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8))
+		try (Reader reader = file != null ? Files.newBufferedReader(file.toPath(), UTF_8) : new BufferedReader(new InputStreamReader(System.in, UTF_8)))
 		{
 			session = manager.createSession(reader);
 			session.compile();
 		}
-
+			
 		List<String> outNames = coalesce(Arrays.asList(names), session.getWorkspace().getRules().stream().map(Statement::getAlias).collect(toList())); 
 		for (String name: outNames)
 		{
 			final VTLValue result = session.resolve(name);
 			System.out.println(result + " := {");
 			if (result instanceof DataSet)
-				try (Stream<DataPoint> stream = ((DataSet) result).stream())
-				{
-					final Spliterator<DataPoint> spliterator = stream.spliterator();
-					spliterator.tryAdvance(dp -> {
-						System.out.print("\t");
-						System.out.print(dp);
-					});
-					
-					try (Stream<DataPoint> stream2 = StreamSupport.stream(spliterator, !Utils.SEQUENTIAL))
-					{
-						stream2.forEach(dp -> {
-							System.out.print(",\n\t");
-							System.out.print(dp);
-						});
-						System.out.println("\n}");
-					}
-				}
+				((DataSet) result).forEach(dp -> { System.out.print("\t"); System.out.println(dp); });
+			System.out.println("}\n");
 		}
 		
 		return null;
