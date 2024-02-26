@@ -45,6 +45,7 @@ VTLSession <- R6Class("VTLSession",
                       if (!is.character(name) || length(name) != 1 || nchar(name) == 0)
                         stop("name must be a non-empty character vector with exactly 1 element")
                       self$name <- name
+                      private$env <- new.env(parent = emptyenv())
                     }, 
 
       #' @description
@@ -126,8 +127,6 @@ VTLSession <- R6Class("VTLSession",
                         })
                         attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getName() })
                         attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getName() })
-                      } else {
-                         stop(paste0("Unsupported result class: ", jnode$getClass()$getName()))
                       }
                       
                       assign(node, df, envir = private$env)
@@ -203,7 +202,7 @@ VTLSession <- R6Class("VTLSession",
     ),
     private = list(
       instance = NULL,
-      env <- new.env(parent = emptyenv())
+      env = NULL,
       finalized = F,
       checkInstance = function() {
         if (private$finalized)
@@ -212,10 +211,10 @@ VTLSession <- R6Class("VTLSession",
           private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
         }
         return(invisible(private$instance))
-      }
+      },
       clearInstance = function() {
-        self$instance <- NULL
-        self$env <- new.env(parent = emptyenv())
+        private$instance <- NULL
+        private$env <- new.env(parent = emptyenv())
         .jgc()
       }
     )
