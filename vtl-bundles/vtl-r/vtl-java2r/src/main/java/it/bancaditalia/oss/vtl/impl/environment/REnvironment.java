@@ -95,7 +95,6 @@ public class REnvironment implements Environment
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);;
 	
-	private final Map<String, VTLValue>	values	= new HashMap<>();
 	private final Rengine engine = RUtils.RENGINE;
 
 	public Rengine getEngine()
@@ -106,12 +105,6 @@ public class REnvironment implements Environment
 	@Override
 	public Optional<VTLValueMetadata> getValueMetadata(String name)
 	{
-		if (!name.matches("[A-Za-z0-9._]+"))
-			return Optional.empty();
-		
-		if (values.containsKey(name))
-			return Optional.of(values.get(name).getMetadata());
-
 		LOGGER.info("Searching for {} in R global environment...");
 		if (reval("exists('???')", name).asBool().isTRUE())
 		{
@@ -202,12 +195,6 @@ public class REnvironment implements Environment
 	@Override
 	public Optional<VTLValue> getValue(String name)
 	{
-		if (!name.matches("[A-Za-z0-9._]+"))
-			return Optional.empty();
-
-		if (values.containsKey(name))
-			return Optional.of(values.get(name));
-
 		if (reval("exists('???')", name).asBool().isTRUE())
 		{
 			VTLValue result;
@@ -215,7 +202,6 @@ public class REnvironment implements Environment
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE()) {
 				DataSetMetadata metadata = ConfigurationManagerFactory.getInstance().getMetadataRepository().getStructure(name);
 				result = parseDataFrame(name, metadata);
-				values.put(name, result);
 				return Optional.of(result);
 			}
 			else if (reval("is.integer(`???`) || is.numeric(`???`) || is.character(`???`)", name).asBool().isTRUE())
@@ -238,7 +224,6 @@ public class REnvironment implements Environment
 					default:
 						throw new IllegalStateException("Node: " + name + " of scalar type: " + REXP.xtName(data.getType()) + ". This is not supported.");
 				}
-				values.put(name, result);
 				return Optional.of(result);
 			}
 		}
@@ -359,9 +344,9 @@ public class REnvironment implements Environment
 	}
 
 	@Override
-	public boolean contains(String id)
+	public boolean contains(String alias)
 	{
-		return values.containsKey(id);
+		return reval("exists('???')", alias).asBool().isTRUE();
 	}
 	
 	private REXP reval(String format, String name) 
