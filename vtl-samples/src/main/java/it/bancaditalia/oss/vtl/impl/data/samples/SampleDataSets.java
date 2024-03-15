@@ -209,9 +209,9 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public DataSet aggregate(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			SerCollector<DataPoint, ?, DataPoint> groupCollector,
-			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
+	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
+			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
+			SerBiFunction<T, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{
 		return dataset.aggregate(structure, keys, groupCollector, finisher);
 	}

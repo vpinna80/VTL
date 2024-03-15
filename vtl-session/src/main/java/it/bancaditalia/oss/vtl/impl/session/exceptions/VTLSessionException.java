@@ -31,7 +31,7 @@ public class VTLSessionException extends VTLException
 
 	public VTLSessionException(String message)
 	{
-		super(message, null);
+		super(message);
 	}
 
 	VTLSessionException(IOException cause)

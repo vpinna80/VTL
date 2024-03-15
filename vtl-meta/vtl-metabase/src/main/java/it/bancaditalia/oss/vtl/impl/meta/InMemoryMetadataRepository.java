@@ -19,21 +19,26 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -43,11 +48,18 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	private static final long serialVersionUID = 1L;
 
 	private final Map<String, ValueDomainSubset<?, ?>> domains = new ConcurrentHashMap<>();
+	private final Map<ValueDomainSubset<?, ?>, Variable<?, ?>> defaultVars = new HashMap<>();
+	private final Map<String, Variable<?, ?>> vars = new ConcurrentHashMap<>();
 	
 	public InMemoryMetadataRepository() 
 	{
 		for (Domains domain: EnumSet.allOf(Domains.class))
-			domains.put(domain.name().toLowerCase(), domain.getDomain());
+		{
+			ValueDomainSubset<?, ?> d = domain.getDomain();
+			domains.put(domain.name().toLowerCase(), d);
+			if (domain != NULL)
+				defaultVars.put(d, VariableImpl.of(d.getName() + "_var", d));
+		}
 	}
 	
 	@Override
@@ -92,16 +104,36 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	{
 		throw new VTLException("Hierarchical ruleset " + alias + " not found.");
 	}
-
+	
 	@Override
-	public Variable<?, ?> getVariable(String alias)
+	public DataPointRuleSet getDataPointRuleset(String alias)
 	{
-		throw new UnsupportedOperationException("getVariable " + alias);
+		throw new VTLException("Data point ruleset " + alias + " not found.");
 	}
 
 	@Override
 	public TransformationScheme getTransformationScheme(String alias)
 	{
 		throw new UnsupportedOperationException("getTransformationScheme " + alias);
+	}
+
+	@Override
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getDefaultVariable(ValueDomainSubset<S, D> domain)
+	{
+		@SuppressWarnings("unchecked")
+		Variable<S, D> instance = (Variable<S, D>) defaultVars.get(domain);
+		
+		return instance;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getVariable(String alias, ValueDomainSubset<S, D> domain)
+	{
+		Variable<S, D> instance = (Variable<S, D>) vars.get(alias);
+		if (instance == null && domain != null)
+			instance = (Variable<S, D>) vars.computeIfAbsent(alias, a -> VariableImpl.of(alias, domain));
+		
+		return instance;
 	}
 }

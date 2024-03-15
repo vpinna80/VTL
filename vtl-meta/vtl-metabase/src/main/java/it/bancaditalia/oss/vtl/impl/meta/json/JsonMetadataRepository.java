@@ -26,11 +26,11 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.InvalidParameterException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -42,9 +42,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -52,7 +52,10 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.util.SerBiConsumer;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
 {
@@ -60,19 +63,19 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(JsonMetadataRepository.class);
-	private static final Map<String, Class<? extends Component>> ROLE_ELEMENTS = new HashMap<>(); 
+	private static final Map<String, Class<? extends Component>> ROLES = new HashMap<>(); 
 	
 	static
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(JsonMetadataRepository.class, JSON_METADATA_URL);
 		
-		ROLE_ELEMENTS.put("identifiers", Identifier.class);
-		ROLE_ELEMENTS.put("measures", Measure.class);
-		ROLE_ELEMENTS.put("attributes", Attribute.class);
-		ROLE_ELEMENTS.put("viralAttributes", ViralAttribute.class);
+		ROLES.put("Identifier", Identifier.class);
+		ROLES.put("Measure", Measure.class);
+		ROLES.put("Attribute", Attribute.class);
+		ROLES.put("Viral Attribute", ViralAttribute.class);
 	}
 
-	private final Map<String, ValueDomainSubset<?, ?>> variables = new HashMap<>(); 
+	private final Map<String, Variable<?, ?>> variables = new HashMap<>(); 
 	private final Map<String, DataSetMetadata> structures = new HashMap<>(); 
 	private final Map<String, String> datasets = new HashMap<>(); 
 	
@@ -84,13 +87,12 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 
 		try (InputStream source = new URL(url).openStream())
 		{
-			@SuppressWarnings("unchecked")
-			Map<?, Map<?, ?>> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
+			Map<?, ?> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
 			
-			readDomains(json.get("domains"));
-			readVariables((List<Map<String, ?>>) json.get("variables"));
-			readStructures((List<Map<String, ?>>) json.get("structures"));
-			readDatasets((List<Map<String, ?>>) json.get("datasets"));
+			iterate((List<?>) json.get("domains"), this::createDomain);
+			iterate((List<?>) json.get("variables"), this::createVariable);
+			iterate((List<?>) json.get("structures"), this::createStructure);
+			iterate((List<?>) json.get("datasets"), this::createDataset);
 		}
 	}
 	
@@ -101,88 +103,116 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return structureFor != null ? structures.get(structureFor) : null;
 	}
 	
-	private void readDomains(Map<?, ?> domainsSource)
+	@SuppressWarnings("unchecked")
+	@Override
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getVariable(String alias, ValueDomainSubset<S, D> domain)
 	{
-		for (Entry<?, ?> domainEntry: domainsSource.entrySet())
+		Variable<?, ?> variable = variables.get(alias);
+		
+		if (variable != null && domain != null && domain.equals(variable.getDomain())) 
+			return (Variable<S, D>) variable;
+		else if (variable != null && domain == null)
+			return (Variable<S, D>) variable;
+		else
+			return super.getVariable(alias, domain);
+	}
+	
+	private void iterate(List<?> list, SerBiConsumer<String, Map<?, ?>> processor)
+	{
+		for (Object entry: list)
 		{
-			Object name = domainEntry.getKey();
-			Object domainDef = domainEntry.getValue();
-			if (name == null || !(name instanceof String))
-				throw new IllegalStateException("Found domain missing name.");
-			if (domainDef == null || !(domainDef instanceof Map))
-				throw new IllegalStateException("Found domain with missing or invalid definition.");
-
-			Object parent = ((Map<?, ?>) domainDef).get("parent");
-			if (parent == null || !(parent instanceof String))
-				throw new UnsupportedOperationException("Parent domain invalid or not specified for " + name + ".");
-
-			LOGGER.debug("Found domain {}", name);
-			if (((Map<?, ?>) domainDef).containsKey("codes") && "string".equals(parent))
+			if (entry instanceof Map)
 			{
-				// Fail-fast casting
-				Set<String> codes = ((List<?>) ((Map<?, ?>) domainDef).get("codes")).stream().map(String.class::cast).collect(toSet());
-				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
-				defineDomain((String) name, new StringCodeList(STRINGDS, (String) name, codes));
+				Map<?, ?> obj = (Map<?, ?>) entry;
+				if (!obj.containsKey("name"))
+					throw new IllegalStateException("missing name for object");
+				if (!(obj.get("name") instanceof String))
+					throw new IllegalStateException("object name is not a string");
+				
+				processor.accept((String) obj.get("name"), obj);
 			}
-			else if (((Map<?, ?>) domainDef).containsKey("codes"))
-				LOGGER.warn("Ignoring non-string codelist {}[{}].", name, parent);
+			else
+				throw new InvalidParameterException("Expected JSON object but found " + entry.getClass());
+		}
+	}
+	
+	private void createDomain(String name, Map<?, ?> domain)
+	{
+		Object parent = ((Map<?, ?>) domain).get("parent");
+		if (parent == null || !(parent instanceof String))
+			throw new InvalidParameterException("Parent domain invalid or not specified for " + name + ".");
+
+		LOGGER.debug("Found domain {}", name);
+		Object enumerated = domain.get("enumerated");
+		if (enumerated instanceof List)
+			if ("string".equals(parent))
+			{
+				Set<String> codes = ((List<?>) enumerated).stream().map(String.class::cast).collect(toSet());
+				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
+				defineDomain(name, new StringCodeList(STRINGDS, name, codes));
+			}
 			else
 				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
-		}
+		else if (enumerated != null)
+			throw new InvalidParameterException("Invalid enumerated domain definition for " + name + ".");
+		else
+			LOGGER.warn("Ignoring unsupported domain type {}[{}].", name, parent);
 	}
 	
-	private void readVariables(List<Map<String, ?>> variablesSource)
+	private void createVariable(String name, Map<?, ?> variable)
 	{
-		for (Map<String, ?> variable: variablesSource)
-		{
-			String name = (String) variable.get("name");
-			String domain = (String) variable.get("domain");
-			if (name == null || !(name instanceof String))
-				throw new IllegalStateException("Found variable without or with invalid name.");
-			if (domain == null || !(domain instanceof String))
-				throw new UnsupportedOperationException("Found variable without or with invalid domain for " + name + ".");
-			LOGGER.debug("Found variable {} with domain {}", name, domain);
-			variables.put((String) name, getDomain((String) domain));
-		}
+		Object domainName = variable.get("domain");
+		if (domainName == null || !(domainName instanceof String))
+			throw new InvalidParameterException("Invalid domain for variable " + name);
+		
+		ValueDomainSubset<?, ?> domain = maybeGetDomain((String) domainName)
+				.orElseThrow(() -> new InvalidParameterException("Domain " + domainName + " not found for variable " + name));
+		
+		LOGGER.debug("Found variable {} with domain {}", name, domain);
+		variables.put(name, VariableImpl.of(name, domain));
 	}
 	
-	private void readStructures(List<Map<String, ?>> list)
+	private void createStructure(String name, Map<?, ?> structure)
 	{
-		for (Map<String, ?> structureDescriptor: list)
-		{
-			Object name = structureDescriptor.get("name");
-			if (name == null || !(name instanceof String))
-				throw new IllegalStateException("Found structure without or with invalid name.");
+		DataStructureBuilder builder = new DataStructureBuilder();
+		
+		Object components = structure.get("components");
+		if (components == null || !(components instanceof List))
+			throw new InvalidParameterException("components list not found for structure " + name + ".");
+		
+		for (Object component: (List<?>) components)
+			if (component != null && component instanceof Map)
+			{
+				Object varName = ((Map<?,?>) component).get("name");
+				if (!(varName instanceof String))
+					throw new InvalidParameterException("Invalid component name in structure " + name);
+				if (!variables.containsKey(varName))
+					throw new InvalidParameterException("Undefined variable for component " + varName + " in structure " + name);
+				
+				Object role = ((Map<?,?>) component).get("role");
+				if (!(role instanceof String))
+					throw new InvalidParameterException("Invalid role for component " + varName + " in structure " + name);
+				if (!ROLES.containsKey(role))
+					throw new InvalidParameterException("Invalid role " + role + " for component " + varName + " in structure " + name);
+				
+				builder.addComponent(variables.get(varName).getComponent(ROLES.get(role)));
+			}
+			else
+				throw new InvalidParameterException("Invalid or null component in structure " + name);
 
-			DataStructureBuilder builder = new DataStructureBuilder();
-			
-			for (String role: List.of("identifiers", "measures", "attributes"))
-				for (Object varName: (List<?>) structureDescriptor.get(role))
-					if (!(varName instanceof String))
-						throw new IllegalStateException("Found dataset without or with invalid name.");
-					else
-						builder.addComponent(DataStructureComponentImpl.of((String) varName, ROLE_ELEMENTS.get(role), variables.get(varName)));
-
-			DataSetMetadata structure = builder.build();
-			LOGGER.info("Found structure {}: {}", name, structure);
-			structures.put((String) name, structure);
-		}
+		DataSetMetadata meta = builder.build();
+		LOGGER.info("Found structure {}: {}", name, meta);
+		structures.put(name, meta);
 	}
 
-	private void readDatasets(List<Map<String, ?>> list)
+	private void createDataset(String name, Map<?, ?> dataset)
 	{
-		for (Map<String, ?> dataset: list)
-		{
-			Object name = (String) dataset.get("name");
-			Object structure = (String) dataset.get("structure");
-			
-			if (name == null || !(name instanceof String))
-				throw new IllegalStateException("Found dataset without or with invalid name.");
-			if (structure == null || !(structure instanceof String) || !structures.containsKey(structure))
-				throw new UnsupportedOperationException("Found dataset without or with invalid structure for " + name + ".");
-			
-			LOGGER.debug("Found dataset {} with structure {}", name, structure);
-			datasets.put((String) name, (String) structure);
-		}
+		Object structure = dataset.get("structure");
+		
+		if (structure == null || !(structure instanceof String) || !structures.containsKey(structure))
+			throw new InvalidParameterException("Found dataset without or with invalid structure for " + name + ".");
+		
+		LOGGER.debug("Found dataset {} with structure {}", name, structure);
+		datasets.put(name, (String) structure);
 	}
 }

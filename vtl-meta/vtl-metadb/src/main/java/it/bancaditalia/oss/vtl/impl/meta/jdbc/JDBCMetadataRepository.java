@@ -49,12 +49,12 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerDomainRangeSubset;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.SizedStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.MaxStrlenDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -208,7 +208,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				for (int i = l - d - 1; i >= 0; i--)
 					pow *= 10;
 				if (d == 0)
-					domain = new IntegerDomainRangeSubset(domainName, posOnly ? 0 : -pow + 1, pow - 1, INTEGERDS);
+					domain = new RangeIntegerDomainSubset(domainName, posOnly ? 0 : -pow + 1, pow - 1, INTEGERDS);
 				else
 					throw new UnsupportedOperationException("Fixed-point decimals not supported: " + domainName);
 			}
@@ -216,7 +216,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				domain = NUMBERDS;
 		else
 			if (sized)
-				domain = new SizedStringDomainSubset<>(domainName, STRINGDS, l);
+				domain = new MaxStrlenDomainSubset(domainName, STRINGDS, l);
 			else
 				domain = STRINGDS;
 		
