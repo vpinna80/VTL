@@ -21,10 +21,11 @@ package it.bancaditalia.oss.vtl.impl.transform;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -40,7 +41,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 
 	public UnaryTransformation(Transformation operand)
 	{
-		this.operand = requireNonNull(operand);
+		this.operand = operand;
 	}
 	
 	@Override
@@ -60,10 +61,17 @@ public abstract class UnaryTransformation extends TransformationImpl
 	{
 		VTLValue value = operand == null ? scheme.resolve(THIS) : operand.eval(scheme);
 		
-		if (value instanceof DataSet)
-			return evalOnDataset((DataSet) value, getMetadata(scheme));
-		else
-			return evalOnScalar((ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme));
+		try
+		{
+			if (value instanceof DataSet)
+				return evalOnDataset((DataSet) value, getMetadata(scheme));
+			else
+				return evalOnScalar((ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme));
+		}
+		catch (VTLException e)
+		{
+			throw new VTLNestedException("In expression " + this, e);
+		}
 	}
 
 	public Transformation getOperand()

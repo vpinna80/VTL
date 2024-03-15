@@ -26,7 +26,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
-import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT_MEASURE;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_POP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
@@ -43,18 +42,20 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -68,6 +69,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollector;
@@ -75,6 +77,8 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class AggregateTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
+
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
 	private final Transformation having;
@@ -128,11 +132,16 @@ public class AggregateTransformation extends UnaryTransformation
 		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(dataset.getMetadata().getMeasures());
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 		DataStructureComponent<?, ?, ?> outputComponent;
-		if (name != null)
+
+		if (aggregation == COUNT && name != null)
+			outputComponent = ConfigurationManager.getDefault().getMetadataRepository().getVariable(name, INTEGERDS).getComponent(Measure.class);
+		else if (aggregation == COUNT)
+			outputComponent = ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(INTEGERDS).getComponent(Measure.class);
+		else if (name != null)
 			outputComponent = ((DataSetMetadata) metadata).getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset.getMetadata()));
 		else
 			outputComponent = dataset.getMetadata().getMeasures().iterator().next();
-		
+
 		DataSet dataset2;
 		if (groupingClause != null && groupingClause.getFrequency() != null)
 		{
@@ -171,9 +180,12 @@ public class AggregateTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
 		
-		if (opmeta instanceof ScalarValueMetadata && NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))
-			return NUMBER;
-		else if (opmeta instanceof DataSetMetadata)
+		if (opmeta instanceof ScalarValueMetadata)
+			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))
+				return NUMBER;
+			else
+				throw new VTLIncompatibleTypesException(aggregation.toString().toLowerCase(), ((ScalarValueMetadata<?, ?>) opmeta).getDomain(), NUMBERDS);
+		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) opmeta;
 			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMeasures();
@@ -181,11 +193,11 @@ public class AggregateTransformation extends UnaryTransformation
 			if (groupingClause == null)
 			{
 				if (measures.isEmpty())
-					throw new VTLExpectedComponentException(Measure.class, dataset);
+					throw new VTLExpectedRoleException(Measure.class, dataset);
 
 				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = measures;
 				if (aggregation == COUNT)
-					newMeasures = COUNT_MEASURE;
+					newMeasures = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newMeasures = newMeasures.stream()
 						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? DataStructureComponentImpl.of(c.getVariable().getName(), Measure.class, NUMBERDS) : c)
@@ -218,8 +230,10 @@ public class AggregateTransformation extends UnaryTransformation
 				}
 				
 				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getMeasures();
-				if (aggregation == COUNT)
-					newComps = COUNT_MEASURE;
+				if (aggregation == COUNT && name != null)
+					newComps = singleton(COUNT_MEASURE.rename(name));
+				else if (aggregation == COUNT)
+					newComps = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newComps = newComps.stream()
 						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? DataStructureComponentImpl.of(c.getVariable().getName(), Measure.class, NUMBERDS) : c)
@@ -231,13 +245,15 @@ public class AggregateTransformation extends UnaryTransformation
 					else
 						newComps = singleton(DataStructureComponentImpl.of(name, role, measures.iterator().next().getVariable().getDomain()));
 
-				return new DataStructureBuilder(groupComps).addComponents(aggregation == COUNT ? AggregateOperator.COUNT_MEASURE : newComps).build();
+				return new DataStructureBuilder(groupComps).addComponents(newComps).build();
 			}
 		}
-		else
-			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class, ScalarValueMetadata.class);
 	}
 
+	public AggregateOperator getAggregation()
+	{
+		return aggregation;
+	}
 
 	@Override
 	public String toString()

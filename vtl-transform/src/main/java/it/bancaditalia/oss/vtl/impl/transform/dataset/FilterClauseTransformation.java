@@ -27,14 +27,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -86,16 +84,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 				throw new VTLIncompatibleTypesException("filter", BOOLEANDS, ((ScalarValueMetadata<?, ?>) filterMetadata).getDomain());
 		}
 		else
-		{
-			DataSetMetadata filterDataset = (DataSetMetadata) filterMetadata;
-			Set<DataStructureComponent<Measure, ?, ?>> measures = filterDataset.getMeasures();
-			if (measures.size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
-			
-			DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
-			if (!BOOLEANDS.isAssignableFrom(measure.getVariable().getDomain()))
-				throw new VTLIncompatibleTypesException("filter", BOOLEANDS, measure.getVariable().getDomain());
-		}
+			((DataSetMetadata) filterMetadata).getSingleton(Measure.class, BOOLEANDS);
 			
 		
 		return getThisMetadata(scheme);

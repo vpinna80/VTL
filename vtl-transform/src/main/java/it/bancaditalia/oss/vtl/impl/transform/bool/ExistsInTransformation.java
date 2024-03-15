@@ -30,13 +30,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
@@ -139,7 +139,7 @@ public class ExistsInTransformation extends BinaryTransformation
 				rightMeasure = rightMeasures.iterator().next();
 		
 		if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain()) && !rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
-			throw new VTLIncompatibleMeasuresException("EXISTS_IN", leftMeasure, rightMeasure);
+			throw new VTLIncompatibleTypesException("exists_in", leftMeasure, rightMeasure);
 		
 		DataStructureBuilder builder = new DataStructureBuilder((DataSetMetadata) left)
 				.addComponent(DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS));

@@ -20,12 +20,13 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,18 +34,17 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
-import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -67,12 +67,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(AggrClauseTransformation.class);
 
-	public static class AggrClauseItem extends TransformationImpl
+	public static class AggrClauseItem implements Serializable
 	{
 		private static final long serialVersionUID = 1L;
 		
-		private final String                         name;
-		private final AggregateTransformation        operand;
+		private final String name;
+		private final AggregateTransformation operand;
 		private final Class<? extends Component> role;
 
 		public AggrClauseItem(Class<? extends Component> role, String name, AggregateTransformation operand)
@@ -109,30 +109,6 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		{
 			return (role != null ? role.getSimpleName().toUpperCase() + " " : "") + name + " := " + operand;
 		}
-
-		@Override
-		public boolean isTerminal()
-		{
-			return false;
-		}
-
-		@Override
-		public Set<LeafTransformation> getTerminals()
-		{
-			return operand.getTerminals();
-		}
-
-		@Override
-		public VTLValue eval(TransformationScheme session)
-		{
-			return operand.eval(session);
-		}
-
-		@Override
-		protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
-		{
-			return operand.getMetadata(scheme);
-		}
 	}
 
 	private final List<AggrClauseItem> aggrItems;
@@ -158,11 +134,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
-		DataSet operand = (DataSet) getThisValue(scheme);
+		DataSet dataset = (DataSet) getThisValue(scheme);
 
-		TransformationScheme thisScope = new ThisScope(operand);
+		TransformationScheme thisScope = new ThisScope(dataset);
 		
 		List<DataSet> resultList = aggrItems.stream()
+			.map(AggrClauseItem::getOperand)
 			.map(thisScope::eval)
 			.map(DataSet.class::cast)
 			.collect(toList());
@@ -177,7 +154,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			DataSetMetadata otherStructure = other.getMetadata();
 			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
 			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> {
-				return dp1.combine(dp2, (d1, d2) -> LineageNode.of(aggrItem, dp1.getLineage(), dp2.getLineage()));
+				return dp1.combine(dp2, (d1, d2) -> LineageNode.of(aggrItem.getOperand(), dp1.getLineage(), dp2.getLineage()));
 			}, false);
 		}
 

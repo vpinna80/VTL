@@ -23,7 +23,6 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parse
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseTemporal;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIOD;
@@ -34,10 +33,9 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.Set;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -46,9 +44,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.impl.types.domain.NullDomain;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -104,17 +100,18 @@ public class CastTransformation extends UnaryTransformation
 		if (target.getDomain() == oldMeasure.getVariable().getDomain())
 			return dataset;
 		
-		DataStructureComponent<Measure, ?, ?> measure = DataStructureComponentImpl.of(Measure.class, target.getDomain()).asRole(Measure.class);
+		DataStructureComponent<Measure, ?, ?> measure = ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(target.getDomain()).getComponent(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(measure)
 				.build();
+		
 		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
 	}
 
 	@Override
-	public VTLValueMetadata computeMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata meta = operand.getMetadata(session);
+		VTLValueMetadata meta = operand.getMetadata(scheme);
 		ValueDomainSubset<?, ?> domain;
 		
 		if (meta instanceof ScalarValueMetadata)
@@ -122,19 +119,11 @@ public class CastTransformation extends UnaryTransformation
 		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
-			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
-			if (measures.size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, measures);
-			
-			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-			
+			DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getSingleton(Measure.class);
 			domain = measure.getVariable().getDomain();
 		}
 
-		if (domain instanceof NullDomain)
-			return NULL;
-		else if (domain == target.getDomain())
+		if (domain == target.getDomain())
 			return target;
 		else if (domain instanceof StringDomainSubset && target == TIME_PERIOD)
 			return target;

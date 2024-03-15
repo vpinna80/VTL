@@ -30,10 +30,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;

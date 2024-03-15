@@ -41,14 +41,14 @@ import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;

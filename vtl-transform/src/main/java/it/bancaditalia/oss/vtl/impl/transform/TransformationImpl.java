@@ -24,6 +24,8 @@ import static java.util.Objects.requireNonNull;
 import java.io.Serializable;
 import java.util.Map;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -35,15 +37,22 @@ public abstract class TransformationImpl implements Transformation, Serializable
 	@Override
 	public final VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		Map<Transformation, VTLValueMetadata> holder = scheme.getResultHolder(VTLValueMetadata.class);
-		VTLValueMetadata metadata = holder.get(this);
-		if (metadata == null)
+		try
 		{
-			metadata = computeMetadata(scheme);
-			holder.put(this, metadata);
+			Map<Transformation, VTLValueMetadata> holder = scheme.getResultHolder(VTLValueMetadata.class);
+			VTLValueMetadata metadata = holder.get(this);
+			if (metadata == null)
+			{
+				metadata = computeMetadata(scheme);
+				holder.put(this, metadata);
+			}
+			
+			return requireNonNull(metadata);
 		}
-		
-		return requireNonNull(metadata);
+		catch (VTLException e)
+		{
+			throw new VTLNestedException("In expression " + this, e);
+		}
 	}
 
 	protected abstract VTLValueMetadata computeMetadata(TransformationScheme scheme);

@@ -30,8 +30,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -82,7 +82,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 				.collect(toSet());
 		
 		if (missing.size() > 0)
-			throw new VTLMissingComponentsException(missing, dataset.getIDs());
+			throw new VTLMissingComponentsException(dataset.getIDs(), missing.toArray(String[]::new));
 
 		Set<DataStructureComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "sub");
 		

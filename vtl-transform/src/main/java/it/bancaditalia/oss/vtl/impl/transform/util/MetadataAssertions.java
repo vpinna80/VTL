@@ -27,12 +27,11 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -72,7 +71,7 @@ public class MetadataAssertions<R extends Component, S extends ValueDomainSubset
 	public MetadataAssertions<R, S, D> withAtLeastOne()
 	{
 		if (components.isEmpty())
-			throw new VTLExpectedComponentException(role, components);
+			throw new VTLExpectedRoleException(role, components);
 		
 		return this;
 	}
@@ -144,19 +143,5 @@ public class MetadataAssertions<R extends Component, S extends ValueDomainSubset
 		}
 		
 		return filtered;
-	}
-
-	public DataStructureComponent<R, S, D> getAsSingleton()
-	{
-		if (components.size() != 1)
-			if (role != null)
-				if (domain != null)
-					throw new VTLSingletonComponentRequiredException(role, domain, components);
-				else
-					throw new VTLSingletonComponentRequiredException(role, components);
-			else 
-				throw new VTLSingletonComponentRequiredException(name, components);
-		
-		return components.iterator().next();
 	}
 }

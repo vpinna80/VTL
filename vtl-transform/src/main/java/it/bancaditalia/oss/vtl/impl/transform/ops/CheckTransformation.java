@@ -32,10 +32,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -43,7 +43,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -137,10 +136,7 @@ public class CheckTransformation extends TransformationImpl
 		else
 		{
 			DataSetMetadata dataset = (DataSetMetadata) meta;
-
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getComponents(Measure.class, BOOLEANDS);
-			if (measures.size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, measures);
+			dataset.getSingleton(Measure.class, BOOLEANDS);
 
 			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> identifiers = dataset.getIDs();
 			DataStructureBuilder metadata = new DataStructureBuilder().addComponents(identifiers);
@@ -153,10 +149,7 @@ public class CheckTransformation extends TransformationImpl
 				if (!identifiers.equals(imbalanceIdentifiers))
 					throw new VTLInvariantIdentifiersException("check imbalance", identifiers, imbalanceIdentifiers);
 				
-				Set<? extends DataStructureComponent<? extends Measure, ?, ?>> imbalanceMeasures = imbalanceDataset.getComponents(Measure.class, NUMBERDS);
-				if (imbalanceMeasures.size() != 1)
-					throw new VTLExpectedComponentException(Measure.class, NUMBERDS, measures);
-				
+				imbalanceDataset.getSingleton(Measure.class, NUMBERDS);
 				metadata.addComponent(IMBALANCE);
 			}
 

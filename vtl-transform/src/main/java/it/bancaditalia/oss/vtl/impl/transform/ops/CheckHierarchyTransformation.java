@@ -31,8 +31,8 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
-import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VARIABLE;
+import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
+import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -48,10 +48,12 @@ import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
@@ -63,8 +65,6 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -149,7 +149,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			idComp = dataset.getComponent(id).orElseThrow(() -> new VTLMissingComponentsException(id, ids));
 		else
 		{
-			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleset.getRuleId());
+			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleset.getRuleId(), null);
 			idComp = dataset.getComponent(variable.getName()).orElseThrow(() -> new VTLMissingComponentsException(variable.getName(), ids));
 		}
 		
@@ -181,10 +181,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 				DataStructureComponent<?, ?, ?> idComp;
 
 				if (ruleset.getType() == VARIABLE)
-				{
-					Variable<?, ?> variable = scheme.getRepository().getVariable(ruleset.getRuleId());
-					idComp = opMeta.getComponent(variable.getName()).orElseThrow(() -> new VTLMissingComponentsException(variable.getName(), opMeta.getIDs()));
-				}
+					idComp = opMeta.getComponent(ruleset.getRuleId()).orElseThrow(() -> new VTLMissingComponentsException(ruleset.getRuleId(), opMeta.getIDs()));
 				else if (id != null)
 					idComp = opMeta.getComponent(id).orElseThrow(() -> new VTLMissingComponentsException(id, opMeta.getIDs()));
 				else

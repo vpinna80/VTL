@@ -48,14 +48,14 @@ import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import java.util.HashSet;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNonPositiveConstantException;
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -96,9 +96,9 @@ public class SubstrTransformation extends TransformationImpl
 		ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> len = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) lenOperand.eval(session));
 		
 		if (start instanceof IntegerValue && (Long) start.get() < 1)
-			throw new VTLSyntaxException("substr: start parameter must be positive but it is " + start.get());
+			throw new VTLNonPositiveConstantException("substr", start);
 		if (len instanceof IntegerValue && (Long) len.get() < 1)
-			throw new VTLSyntaxException("substr: length parameter must be positive but it is " + len.get());
+			throw new VTLNonPositiveConstantException("substr", len);
 		
 		if (expr instanceof DataSet)
 		{
@@ -153,15 +153,15 @@ public class SubstrTransformation extends TransformationImpl
 		if (!(len instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(len, DataSetMetadata.class);
 		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
-			throw new VTLIncompatibleTypesException("substr: start parameter", STRING, ((ScalarValueMetadata<?, ?>) start).getDomain());
+			throw new VTLIncompatibleTypesException("substr: start parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) start).getDomain());
 		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) len).getDomain()))
-			throw new VTLIncompatibleTypesException("substr: len parameter", STRING, ((ScalarValueMetadata<?, ?>) len).getDomain());
+			throw new VTLIncompatibleTypesException("substr: len parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) len).getDomain());
 		
 		if (source instanceof ScalarValueMetadata)
 		{
 			ScalarValueMetadata<?, ?> scalar = (ScalarValueMetadata<?, ?>) source; 
 			if (!(STRING.isAssignableFrom(scalar.getDomain())))
-				throw new VTLIncompatibleTypesException("substr", STRING, scalar.getDomain());
+				throw new VTLIncompatibleTypesException("substr", STRINGDS, scalar.getDomain());
 			else
 				return STRING;
 		}

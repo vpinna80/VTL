@@ -47,19 +47,19 @@ import static java.util.Collections.singletonMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNonPositiveConstantException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -106,9 +106,9 @@ public class InStrTransformation extends TransformationImpl
 		String pattern = right instanceof NullValue ? null : STRINGDS.cast(right).get().toString();
 		
 		if (startPos < 1)
-			throw new VTLSyntaxException("instr: start parameter must be positive but it was " + (startPos));
+			throw new VTLNonPositiveConstantException("instr", start);
 		if (nOcc < 1)
-			throw new VTLSyntaxException("instr: occurrence parameter must be positive but it was " + (nOcc));
+			throw new VTLNonPositiveConstantException("instr", occurrence);
 		
 		if (left instanceof DataSet)
 		{
@@ -156,9 +156,9 @@ public class InStrTransformation extends TransformationImpl
 		if (!(occurrence instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(occurrence, ScalarValueMetadata.class);
 		if (!INTEGER.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
-			throw new VTLIncompatibleTypesException("instr: start parameter", INTEGER, ((ScalarValueMetadata<?, ?>) start).getDomain());
+			throw new VTLIncompatibleTypesException("instr: start parameter", INTEGERDS, ((ScalarValueMetadata<?, ?>) start).getDomain());
 		if (!INTEGER.isAssignableFrom(((ScalarValueMetadata<?, ?>) occurrence).getDomain()))
-			throw new VTLIncompatibleTypesException("instr: occurrence parameter", INTEGER, ((ScalarValueMetadata<?, ?>) occurrence).getDomain());
+			throw new VTLIncompatibleTypesException("instr: occurrence parameter", INTEGERDS, ((ScalarValueMetadata<?, ?>) occurrence).getDomain());
 		
 		if (left instanceof ScalarValueMetadata)
 		{
@@ -168,10 +168,10 @@ public class InStrTransformation extends TransformationImpl
 			if (!(right instanceof ScalarValueMetadata))
 				throw new VTLInvalidParameterException(right, ScalarValueMetadata.class);
 			else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
-				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) right).getDomain());
+				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) right).getDomain());
 
 			if (!(STRING.isAssignableFrom(leftV.getDomain())))
-				throw new VTLIncompatibleTypesException("instr", STRING, leftV.getDomain());
+				throw new VTLIncompatibleTypesException("instr", STRINGDS, leftV.getDomain());
 			else
 				return INTEGER;
 		}
@@ -187,16 +187,9 @@ public class InStrTransformation extends TransformationImpl
 					throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, patternMeasures);
 			}
 			else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
-				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) right).getDomain());
+				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) right).getDomain());
 
-			final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = metadata.getMeasures();
-			if (measures.size() != 1)
-				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
-			
-			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-			if (!STRING.isAssignableFrom(measure.getVariable().getDomain()))
-				throw new VTLExpectedComponentException(Measure.class, STRING, measures);
-			
+			metadata.getSingleton(Measure.class, STRINGDS);
 			return new DataStructureBuilder(metadata.getIDs())
 					.addComponent(INT_MEASURE)
 					.build();

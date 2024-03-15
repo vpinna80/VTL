@@ -28,16 +28,14 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
 import it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -153,10 +151,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		ValueDomainSubset<?, ?> scalarDomain = scalar.getDomain();
-
-		if (dataset.getMeasures().size() != 1)
-			throw new VTLExpectedComponentException(Measure.class, dataset);
-		DataStructureComponent<?, ?, ?> measure = dataset.getMeasures().iterator().next();
+		DataStructureComponent<?, ?, ?> measure = dataset.getSingleton(Measure.class);
 		
 		boolean castToLeft;
 		if (datasetIsLeftOp)
@@ -191,7 +186,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		
 		if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain()) && 
 				!rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
-			throw new VTLIncompatibleMeasuresException("comparison", leftMeasure, rightMeasure);
+			throw new VTLIncompatibleTypesException("comparison", leftMeasure, rightMeasure);
 
 		return new DataStructureBuilder()
 				.addComponents(left.getIDs())

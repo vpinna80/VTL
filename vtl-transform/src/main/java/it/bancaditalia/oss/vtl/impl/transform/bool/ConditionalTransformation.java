@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
-import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
@@ -31,14 +30,14 @@ import static java.util.stream.Stream.concat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleParametersException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleMeasuresException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -54,10 +53,10 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -185,13 +184,11 @@ public class ConditionalTransformation extends TransformationImpl
 		VTLValueMetadata left = metas[1]; 
 		VTLValueMetadata right = metas[2]; 
 
-		if (cond instanceof UnknownValueMetadata || left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
-			return INSTANCE;
-		else if (cond instanceof ScalarValueMetadata && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) cond).getDomain()))
+		if (cond instanceof ScalarValueMetadata && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) cond).getDomain()))
 			if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
 				return left;
 			else
-				throw new UnsupportedOperationException("Incompatible types in conditional expression: " + left + ", " + right);
+				throw new VTLIncompatibleParametersException("if-then-else", left, right);
 		else // if (cond instanceof VTLDataSetMetadata)
 		{
 			// both 'then' and 'else' are scalar
@@ -199,42 +196,41 @@ public class ConditionalTransformation extends TransformationImpl
 				return left;
 			
 			// one is a dataset, first check it
-			Set<? extends DataStructureComponent<?, ?, ?>> condMeasures = ((DataSetMetadata) cond).getComponents(Measure.class, BOOLEANDS);
+			((DataSetMetadata) cond).getSingleton(Measure.class, BOOLEANDS);
 			DataSetMetadata dataset = (DataSetMetadata) (left instanceof DataSetMetadata ? left : right);
 			VTLValueMetadata other = left instanceof DataSetMetadata ? right : left;
-
-			if (condMeasures.size() != 1)
-				throw new VTLExpectedComponentException(Measure.class, BOOLEANDS, ((DataSetMetadata) cond).getMeasures());
 
 			if (!dataset.getIDs().equals(((DataSetMetadata) cond).getIDs()))
 				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getIDs() + " -- " + ((DataSetMetadata) cond).getIDs());
 
 			if (other instanceof DataSetMetadata)
 			{
-				// the other is a dataset too, check structures are equal
+				// if structures are not equal, each dataset must have only one measure and they must be of compatible domains
 				if (!dataset.equals(other))
-					if (dataset.getMeasures().size() == 1 && ((DataSetMetadata) other).getMeasures().size() == 1)
-					{
-						// Momomeasure datasets, ignore names as long as the domains are compatible
-						DataStructureComponent<Measure, ?, ?> leftMeasure = dataset.getMeasures().iterator().next();
-						DataStructureComponent<Measure, ?, ?> rightMeasure = ((DataSetMetadata) other).getMeasures().iterator().next();
-						if (!leftMeasure.getVariable().getDomain().equals(rightMeasure.getVariable().getDomain()))
-							if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain())
-									&& rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
-								dataset = new DataStructureBuilder(dataset)
-									.removeComponent(leftMeasure)
-									.addComponent(rightMeasure)
-									.build();
-							else
-								throw new VTLIncompatibleMeasuresException("if-then-else", leftMeasure, rightMeasure);
-					}
-					else
-						throw new VTLIncompatibleStructuresException("then and else must have the same structure", dataset, (DataSetMetadata) other);
+				{
+					DataStructureComponent<Measure, ?, ?> leftMeasure = dataset.getSingleton(Measure.class);
+					DataStructureComponent<Measure, ?, ?> rightMeasure = ((DataSetMetadata) other).getSingleton(Measure.class);
+					if (!leftMeasure.getVariable().getDomain().equals(rightMeasure.getVariable().getDomain()))
+						if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain())
+								&& rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
+							dataset = new DataStructureBuilder(dataset)
+								.removeComponent(leftMeasure)
+								.addComponent(rightMeasure)
+								.build();
+						else
+							throw new VTLIncompatibleTypesException("if-then-else", leftMeasure, rightMeasure);
+				}
 			}
-			else 
-				// the other is a scalar, all measures in dataset must be assignable from the scalar
-				if (!dataset.getMeasures().stream().allMatch(c -> c.getVariable().getDomain().isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain())))
-					throw new UnsupportedOperationException("All measures must be assignable from " + ((ScalarValueMetadata<?, ?>) other).getDomain() + ": " + dataset.getMeasures());
+			else
+			{
+				// If other is a scalar check that all measures are compatible with the scalar valuedomain
+				Optional<? extends ValueDomainSubset<?, ?>> wrongMeasure = dataset.getMeasures().stream()
+						.map(c -> c.getVariable().getDomain())
+						.filter(d -> !d.isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain()))
+						.findAny();
+				if (wrongMeasure.isPresent())
+					throw new VTLIncompatibleTypesException("if-then-else", ((ScalarValueMetadata<?, ?>) other).getDomain(), wrongMeasure.get());
+			}
 
 			return dataset;
 		}

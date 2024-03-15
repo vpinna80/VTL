@@ -42,16 +42,16 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
@@ -226,9 +226,13 @@ public class ArithmeticTransformation extends BinaryTransformation
 	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		if (dataset.getMeasures().size() == 0)
-			throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
-		if (dataset.getMeasures().stream().anyMatch(c -> !NUMBERDS.isAssignableFrom(c.getVariable().getDomain())))
-			throw new UnsupportedOperationException("Expected only numeric measures but found: " + dataset.getMeasures());
+			throw new VTLExpectedRoleException(Measure.class, dataset);
+		
+		dataset.getMeasures().stream()
+			.filter(c -> !NUMBERDS.isAssignableFrom(c.getVariable().getDomain()))
+			.map(c -> new VTLIncompatibleTypesException(operator.toString().toLowerCase(), c, NUMBERDS))
+			.forEach(e -> { throw e; });
+		
 		if (INTEGERDS.isAssignableFrom(scalar.getDomain()))
 			return dataset;
 		
@@ -255,11 +259,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
 		
 		if (leftMeasures.size() == 0)
-			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, leftMeasures);
+			throw new VTLExpectedRoleException(Measure.class, NUMBERDS, leftMeasures);
 		if (rightMeasures.size() == 0)
-			throw new VTLExpectedComponentException(Measure.class, NUMBERDS, rightMeasures);
-
-
+			throw new VTLExpectedRoleException(Measure.class, NUMBERDS, rightMeasures);
 
 		if (!left.getIDs().containsAll(right.getIDs())
 				&& !right.getIDs().containsAll(left.getIDs()))

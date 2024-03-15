@@ -48,14 +48,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -132,15 +132,15 @@ public class ReplaceTransformation extends TransformationImpl
 			if (!(replace instanceof ScalarValueMetadata))
 				throw new VTLInvalidParameterException(replace, DataSetMetadata.class);
 			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
-				throw new VTLIncompatibleTypesException("replace: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
+				throw new VTLIncompatibleTypesException("replace: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
 			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) replace).getDomain()))
-				throw new VTLIncompatibleTypesException("replace: replacement parameter", STRING, ((ScalarValueMetadata<?, ?>) replace).getDomain());
+				throw new VTLIncompatibleTypesException("replace: replacement parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) replace).getDomain());
 			
 			if (source instanceof ScalarValueMetadata)
 			{
 				ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) source; 
 				if (!(STRING.isAssignableFrom(leftV.getDomain())))
-					throw new VTLIncompatibleTypesException("replace", STRING, leftV.getDomain());
+					throw new VTLIncompatibleTypesException("replace", STRINGDS, leftV.getDomain());
 				else
 					return STRING;
 			}

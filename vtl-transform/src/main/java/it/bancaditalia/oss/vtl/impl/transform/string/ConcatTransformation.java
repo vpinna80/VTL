@@ -31,13 +31,14 @@ import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -51,6 +52,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
@@ -95,7 +97,7 @@ public class ConcatTransformation extends BinaryTransformation
 
 		DataSet streamed = leftHasMoreIdentifiers ? right: left;
 		DataSet indexed = leftHasMoreIdentifiers ? left: right;
-		Set<DataStructureComponent<Measure, ?, ?>> resultMeasures = ((DataSetMetadata) metadata).getComponents(Measure.class, STRINGDS);
+		Set<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = ((DataSetMetadata) metadata).getComponents(Measure.class, STRINGDS);
 		
 		if (resultMeasures.size() == 1 && (!left.getMetadata().containsAll(resultMeasures) || !right.getMetadata().containsAll(resultMeasures)))
 		{

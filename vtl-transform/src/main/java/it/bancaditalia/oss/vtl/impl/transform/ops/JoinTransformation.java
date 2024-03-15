@@ -70,13 +70,14 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLAmbiguousComponentException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUnaliasedExpressionException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUniqueAliasException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLAmbiguousComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLIncompatibleStructuresException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.JoinApplyScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -432,7 +433,7 @@ public class JoinTransformation extends TransformationImpl
 	{
 		// check if expressions have aliases
 		operands.stream().filter(o -> o.getId() == null).map(JoinOperand::getOperand).findAny().ifPresent(unaliased -> {
-			throw new VTLSyntaxException("Join expressions must be aliased: " + unaliased + ".", null);
+			throw new VTLUnaliasedExpressionException(unaliased);
 		});
 
 		// check for duplicate aliases
@@ -441,7 +442,7 @@ public class JoinTransformation extends TransformationImpl
 				.map(Entry::getKey)
 				.findAny()
 				.ifPresent(alias -> {
-					throw new VTLSyntaxException("Join aliases must be unique: " + alias);
+					throw new VTLUniqueAliasException(operator.toString().toLowerCase(), alias);
 				});
 
 		Map<JoinOperand, DataSetMetadata> datasetsMeta = new HashMap<>();
@@ -590,7 +591,7 @@ public class JoinTransformation extends TransformationImpl
 		{
 			unique.clear();
 			Set<DataStructureComponent<?, ?, ?>> available = datasets.stream().flatMap(Collection::stream).filter(c -> unique.putIfAbsent(c.getVariable().getName(), TRUE) == null).collect(toSet());
-			throw new VTLMissingComponentsException(missing, available);
+			throw new VTLMissingComponentsException(available, missing.toArray(String[]::new));
 		}
 
 		return usingComps;

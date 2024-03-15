@@ -32,13 +32,13 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLSyntaxException;
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -114,7 +114,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 			.collect(toSet());
 
 		if (domains.size() != 1)
-			throw new VTLSyntaxException("For unpivot, all measures must be defined on the same domain, but " + domains + " were found.");
+			throw new VTLException("For unpivot, all measures must be defined on the same domain, but " + domains + " were found.");
 		
 		ValueDomainSubset<?, ?> domain = domains.iterator().next();
 

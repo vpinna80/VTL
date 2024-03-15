@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
@@ -39,19 +40,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -196,8 +196,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		DataStructureComponent<Identifier, ?, ?> timeId = metadata.getIDs().stream()
 					.map(c -> c.asRole(Identifier.class))
 					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
-					.reduce((a, b) -> null)
-					.orElse(null);
+					.collect(collectingAndThen(toSet(), s -> s.isEmpty() || s.size() > 1 ? null : s.iterator().next()));
 		
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
@@ -289,10 +288,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// calc item expression is a component, check for mono-measure dataset
 				DataSetMetadata value = (DataSetMetadata) itemMeta;
-				if (value.getMeasures().size() != 1)
-					throw new VTLExpectedComponentException(Measure.class, value);
-
-				domain = value.getMeasures().iterator().next().getVariable().getDomain();
+				domain = value.getSingleton(Measure.class).getVariable().getDomain();
 			} 
 			else
 				domain = ((ScalarValueMetadata<?, ?>) itemMeta).getDomain();

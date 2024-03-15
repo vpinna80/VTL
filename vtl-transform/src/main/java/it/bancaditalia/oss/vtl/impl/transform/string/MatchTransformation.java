@@ -44,18 +44,14 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.Collections.singletonMap;
 
-import java.util.Set;
-
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -116,9 +112,9 @@ public class MatchTransformation extends BinaryTransformation
 		if (!(pattern instanceof ScalarValueMetadata))
 			throw new VTLInvalidParameterException(pattern, ScalarValueMetadata.class);
 		else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
-			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
+			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
 		else if (!(STRING.isAssignableFrom(scalar.getDomain())))
-			throw new VTLIncompatibleTypesException("match_characters", STRING, scalar.getDomain());
+			throw new VTLIncompatibleTypesException("match_characters", STRINGDS, scalar.getDomain());
 		else
 			return BOOLEAN;
 	}
@@ -129,15 +125,9 @@ public class MatchTransformation extends BinaryTransformation
 		if (!datasetIsLeftOp)
 			throw new VTLInvalidParameterException(pattern, ScalarValueMetadata.class);
 		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
-			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRING, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
+			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
 
-		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
-		if (measures.size() != 1)
-			throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, measures);
-		
-		DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
-		if (!STRING.isAssignableFrom(measure.getVariable().getDomain()))
-			throw new VTLExpectedComponentException(Measure.class, STRING, measures);
+		dataset.getSingleton(Measure.class, STRINGDS);
 		
 		return new DataStructureBuilder(dataset.getIDs())
 				.addComponent(BOOL_MEASURE)

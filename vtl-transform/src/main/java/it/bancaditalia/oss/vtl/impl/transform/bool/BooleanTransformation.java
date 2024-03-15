@@ -25,11 +25,11 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
-import java.util.Set;
 import java.util.function.BinaryOperator;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.exceptions.VTLExpectedComponentException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -188,7 +187,7 @@ public class BooleanTransformation extends BinaryTransformation
 		if (!BOOLEANDS.isAssignableFrom(right.getDomain()))
 			throw new VTLIncompatibleTypesException(operator.toString(), right.getDomain(), BOOLEANDS);
 		else if (dataset.getComponents(Measure.class, Domains.BOOLEANDS).size() == 0)
-			throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, dataset);
+			throw new VTLExpectedRoleException(Measure.class, Domains.BOOLEANDS, dataset);
 		else
 			return dataset;
 	}
@@ -196,20 +195,11 @@ public class BooleanTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
 	{
-		if (!left.getIDs().containsAll(right.getIDs())
-				&& !right.getIDs().containsAll(left.getIDs()))
+		if (!left.getIDs().containsAll(right.getIDs()) && !right.getIDs().containsAll(left.getIDs()))
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
 
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getMeasures();
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
-
-		if (leftMeasures.size() != 1)
-			throw new UnsupportedOperationException("Expected single boolean measure but found: " + leftMeasures);
-		if (rightMeasures.size() != 1)
-			throw new UnsupportedOperationException("Expected single boolean measure but found: " + rightMeasures);
-
-		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = leftMeasures.iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> rightMeasure = rightMeasures.iterator().next();
+		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getSingleton(Measure.class);
+		DataStructureComponent<? extends Measure, ?, ?> rightMeasure = right.getSingleton(Measure.class);
 
 		if (!BOOLEANDS.isAssignableFrom(leftMeasure.getVariable().getDomain()))
 			throw new UnsupportedOperationException("Expected boolean measure but found: " + leftMeasure);
