@@ -23,7 +23,7 @@
 .onAttach <- function(libname, pkgname) {
 
   spark <- Sys.getenv('SPARK_HOME')
-  jars = c("log4j2.xml", list.files(system.file("java", package = pkgname), ".*\\.jar"))
+  jars = c("log4j2.xml", system.file("java/log4j2.xml", package = pkgname), list.files(system.file("java", package = pkgname), ".*\\.jar"))
   files <- if (spark != '') list.files(paste0(spark, '/jars'), full.names = T) else ''
   files <- c(files, list.files(paste0(find.package("rJava"), "/jri/"), pattern = '.*\\.jar', full.names = T))
   files <- files[!grepl("log4j", files)]
