@@ -20,17 +20,13 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.WEEK_PERIOD_FORMATTER;
-import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
-import static java.time.temporal.ChronoUnit.WEEKS;
 
-import java.time.Year;
-import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.threeten.extra.YearWeek;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
@@ -43,33 +39,29 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 	private final static Logger LOGGER = LoggerFactory.getLogger(WeekPeriodHolder.class);
 	private static final long serialVersionUID = 1L;
 
-	private final long weekOfYear;
-	private final Year year;
+	private final YearWeek yearWeek;
 
 	public WeekPeriodHolder(TemporalAccessor other)
 	{
-		this.year = Year.from(other);
-		this.weekOfYear = other.getLong(ALIGNED_WEEK_OF_YEAR);
+		this.yearWeek = YearWeek.from(other);
 	}
 
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return field == ALIGNED_WEEK_OF_YEAR ? weekOfYear : year.getLong(field);
+		return yearWeek.getLong(field);
 	}
 	
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return field == ALIGNED_WEEK_OF_YEAR || year.isSupported(field);
+		return yearWeek.isSupported(field);
 	}
 	
 	@Override
 	public int compareTo(PeriodHolder<?> other)
 	{
-		int c = year.compareTo(Year.from(other));
-		if (c == 0)
-			c = Integer.compare(get(ALIGNED_WEEK_OF_YEAR), other.get(ALIGNED_WEEK_OF_YEAR));
+		int c = yearWeek.compareTo(YearWeek.from(other));
 		LOGGER.trace("Comparing {} and {} yield {}.", this, other, c);
 		return c;
 	}
@@ -79,24 +71,27 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) (weekOfYear ^ (weekOfYear >>> 32));
-		result = prime * result + ((year == null) ? 0 : year.hashCode());
+		result = prime * result + ((yearWeek == null) ? 0 : yearWeek.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj)
 	{
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (getClass() != obj.getClass()) return false;
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
 		WeekPeriodHolder other = (WeekPeriodHolder) obj;
-		if (weekOfYear != other.weekOfYear) return false;
-		if (year == null)
+		if (yearWeek == null)
 		{
-			if (other.year != null) return false;
+			if (other.yearWeek != null)
+				return false;
 		}
-		else if (!year.equals(other.year)) return false;
+		else if (!yearWeek.equals(other.yearWeek))
+			return false;
 		return true;
 	}
 
@@ -104,24 +99,6 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 	public String toString()
 	{
 		return WEEK_PERIOD_FORMATTER.get().format(this);
-	}
-
-	@Override
-	public boolean isSupported(TemporalUnit unit)
-	{
-		return unit == WEEKS || year.isSupported(unit);
-	}
-
-	@Override
-	public Temporal plus(long amount, TemporalUnit unit)
-	{
-		throw new UnsupportedOperationException("plus");
-	}
-
-	@Override
-	protected TemporalUnit smallestUnit()
-	{
-		return WEEKS;
 	}
 
 	@Override
@@ -142,19 +119,5 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 	public DurationValue getPeriodIndicator()
 	{
 		return Duration.W.get();
-	}
-
-	@Override
-	public Temporal with(TemporalField field, long newValue)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public long until(Temporal endExclusive, TemporalUnit unit)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
 	}
 }

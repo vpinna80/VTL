@@ -19,16 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static java.time.temporal.ChronoUnit.MONTHS;
-import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
-
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,50 +102,20 @@ public class MonthPeriodHolder extends PeriodHolder<MonthPeriodHolder>
 	}
 
 	@Override
-	public boolean isSupported(TemporalUnit unit)
-	{
-		return yearMonth.isSupported(unit);
-	}
-
-	@Override
-	public Temporal plus(long amount, TemporalUnit unit)
-	{
-		return new MonthPeriodHolder(yearMonth.plus(amount, unit));
-	}
-
-	@Override
-	protected TemporalUnit smallestUnit()
-	{
-		return MONTHS;
-	}
-
-	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
 	{
-		return DateValue.of(LocalDate.from(yearMonth.with(firstDayOfMonth())));
+		return DateValue.of(LocalDate.from(yearMonth.atDay(1)));
 	}
 
 	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
 	{
-		return DateValue.of(LocalDate.from(yearMonth.with(lastDayOfMonth())));
+		return DateValue.of(LocalDate.from(yearMonth.atEndOfMonth()));
 	}
 
 	@Override
 	public DurationValue getPeriodIndicator()
 	{
 		return Duration.M.get();
-	}
-	
-	@Override
-	public long until(Temporal endExclusive, TemporalUnit unit)
-	{
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override
-	public Temporal with(TemporalField field, long newValue)
-	{
-		return yearMonth.with(field, newValue);
 	}
 }

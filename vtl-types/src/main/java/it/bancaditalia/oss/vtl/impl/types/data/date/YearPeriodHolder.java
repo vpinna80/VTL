@@ -19,16 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static java.time.temporal.ChronoUnit.YEARS;
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
 import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
 
 import java.time.LocalDate;
 import java.time.Year;
-import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,24 +103,6 @@ public class YearPeriodHolder extends PeriodHolder<YearPeriodHolder>
 			return false;
 		return true;
 	}
-
-	@Override
-	public boolean isSupported(TemporalUnit unit)
-	{
-		return year.isSupported(unit);
-	}
-
-	@Override
-	public Temporal plus(long amount, TemporalUnit unit)
-	{
-		return new YearPeriodHolder(year.plus(amount, unit));
-	}
-
-	@Override
-	protected TemporalUnit smallestUnit()
-	{
-		return YEARS;
-	}
 	
 	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
@@ -141,19 +120,5 @@ public class YearPeriodHolder extends PeriodHolder<YearPeriodHolder>
 	public DurationValue getPeriodIndicator()
 	{
 		return Duration.A.get();
-	}
-
-	@Override
-	public Temporal with(TemporalField field, long newValue)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public long until(Temporal endExclusive, TemporalUnit unit)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
 	}
 }

@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -119,16 +120,16 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringCode
 	private final String ruleComp;
 	private final Map<StringCodeItem, List<StringRule>> rules;
 	private final Map<StringCodeItem, Set<StringRule>> depends;
-	private final RuleSetType valueDomainHierarchy;
+	private final RuleSetType type;
 	private final StringCodeList domain;
 	private final Set<StringCodeItem> leaves;
 
-	public StringHierarchicalRuleSet(String name, String ruleComp, StringCodeList domain, RuleSetType valueDomainHierarchy, List<StringRule> rules)
+	public StringHierarchicalRuleSet(String name, String ruleComp, StringCodeList domain, RuleSetType type, List<StringRule> rules)
 	{
 		this.name = name; 
 		this.ruleComp = requireNonNull(ruleComp);
 		this.domain = requireNonNull(domain);
-		this.valueDomainHierarchy = valueDomainHierarchy;
+		this.type = type;
 
 		this.rules = new HashMap<>();
 		rules.forEach(rule -> this.rules.computeIfAbsent(rule.getLeftCodeItem(), c -> new ArrayList<>()).add(rule));
@@ -145,7 +146,7 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringCode
 	@Override
 	public RuleSetType getType()
 	{
-		return valueDomainHierarchy;
+		return type;
 	}
 
 	@Override
@@ -157,7 +158,7 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringCode
 	@Override
 	public Set<StringRule> getDependingRules(CodeItem<?, ?, ?, ?> code)
 	{
-		return Utils.coalesce(depends.get(code), emptySet());
+		return coalesce(depends.get(code), emptySet());
 	}
 	
 	@Override

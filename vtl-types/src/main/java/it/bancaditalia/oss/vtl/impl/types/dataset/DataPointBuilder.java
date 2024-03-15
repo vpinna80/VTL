@@ -184,7 +184,7 @@ public class DataPointBuilder implements Serializable
 	private static class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable
 	{
 		private static final long serialVersionUID = 1L;
-		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
+//		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
 		private final Lineage lineage;
@@ -211,9 +211,7 @@ public class DataPointBuilder implements Serializable
 					.filter(c -> !structure.contains(c))
 					.findAny()
 					.ifPresent(nonExistingComp -> {
-						IllegalStateException e = new IllegalStateException("Component " + nonExistingComp + " has a value but is not defined on " + structure);
-						LOGGER.error("In datapoint from {}, component {} has a value but is not defined on {} in datapoint {}", lineage, nonExistingComp, structure, values, e);
-						throw e;
+						throw new VTLMissingComponentsException(nonExistingComp, structure);
 					});
 
 				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);

@@ -20,17 +20,14 @@
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoUnit.SEMESTERS;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
 import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
 import java.time.LocalDate;
 import java.time.Year;
-import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
@@ -52,7 +49,7 @@ public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 		this.semester = other.get(SEMESTER_OF_YEAR);
 	}
 
-	private SemesterPeriodHolder(Year year, int semester)
+	public SemesterPeriodHolder(Year year, int semester)
 	{
 		this.year = year;
 		this.semester = semester;
@@ -116,27 +113,6 @@ public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 	}
 
 	@Override
-	public boolean isSupported(TemporalUnit unit)
-	{
-		return SEMESTERS.equals(unit) || year.isSupported(unit);
-	}
-
-	@Override
-	public Temporal plus(long amount, TemporalUnit unit)
-	{
-		if (SEMESTERS.equals(unit))
-			return new SemesterPeriodHolder(year.plusYears((semester + amount) / 2), (int)(semester + amount) % 2);
-		else
-			return new SemesterPeriodHolder(year.plus(amount, unit), semester);
-	}
-
-	@Override
-	protected TemporalUnit smallestUnit()
-	{
-		return SEMESTERS;
-	}
-
-	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
 	{
 		return DateValue.of(LocalDate.from(year.with(MONTH_OF_YEAR, 1 + semester * 6).with(firstDayOfMonth())));
@@ -152,19 +128,5 @@ public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 	public DurationValue getPeriodIndicator()
 	{
 		return Duration.S.get();
-	}
-
-	@Override
-	public Temporal with(TemporalField field, long newValue)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public long until(Temporal endExclusive, TemporalUnit unit)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
 	}
 }

@@ -41,7 +41,6 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
-import static java.util.Collections.singleton;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
@@ -100,7 +99,7 @@ public enum AggregateOperator
 	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get()))));
 
-	public static final Set<DataStructureComponent<Measure, ?, ?>> COUNT_MEASURE = singleton(DataStructureComponentImpl.of(Measure.class, INTEGERDS));
+	private static final DataStructureComponent<Measure, ?, ?> COUNT_MEASURE = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
 	private static final SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> FLAGMAP = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
 
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
@@ -169,7 +168,7 @@ public enum AggregateOperator
 			allIntegers = new ConcurrentHashMap<>();
 		}
 	}
-
+	
 	/**
 	 * Create a {@link Collector} that reduces datapoints by combining the same measures in each datapoint according to this {@link AggregateOperator}
 	 *   
@@ -181,7 +180,7 @@ public enum AggregateOperator
 		// Special collector for COUNT that collects all measures into one
 		if (this == COUNT)
 		{
-			DataStructureComponent<Measure, ?, ?> measure = COUNT_MEASURE.iterator().next();
+			DataStructureComponent<Measure, ?, ?> measure = COUNT_MEASURE;
 			DataSetMetadata structure = new DataStructureBuilder(COUNT_MEASURE).build();
 			return collectingAndThen(counting(), c -> {
 				return new DataPointBuilder()
@@ -237,7 +236,7 @@ public enum AggregateOperator
 						toConcurrentMap(e -> {
 							DataStructureComponent<? extends Measure, ?, ?> m = e.getKey();
 							if (this == COUNT)
-								m = COUNT_MEASURE.iterator().next();
+								m = COUNT_MEASURE;
 							else if (isChanging)
 								m = INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? DataStructureComponentImpl.of(m.getVariable().getName(), Measure.class, NUMBERDS) : m;
 							return m;

@@ -27,13 +27,15 @@ import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
+import java.time.Year;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalUnit;
 import java.util.function.Supplier;
+
+import org.threeten.extra.YearQuarter;
+import org.threeten.extra.YearWeek;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
@@ -41,7 +43,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 
-public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Temporal, Comparable<PeriodHolder<?>>, Serializable, TimeHolder
+public abstract class PeriodHolder<I extends PeriodHolder<I>> implements TemporalAccessor, Comparable<PeriodHolder<?>>, Serializable, TimeHolder
 {
 	private static final long serialVersionUID = 1L;
 
@@ -98,14 +100,22 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 
 	public PeriodHolder<?> incrementSmallest(long amount)
 	{
-		try
+		if (this instanceof YearPeriodHolder)
+			return new YearPeriodHolder(Year.from(this).plusYears(amount));
+		else if (this instanceof SemesterPeriodHolder)
 		{
-			return getClass().getConstructor(TemporalAccessor.class).newInstance(plus(amount, smallestUnit()));
+			int sem = (int)(this.get(SEMESTER_OF_YEAR) + amount) % 2; 
+			int year = (int) ((int) this.get(YEAR) + (amount + this.get(SEMESTER_OF_YEAR)) / 2); 
+			return new SemesterPeriodHolder(Year.of(year), sem);
 		}
-		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
-		{
-			throw new IllegalStateException(e); // never occurs
-		}
+		else if (this instanceof QuarterPeriodHolder)
+			return new QuarterPeriodHolder(YearQuarter.from(this).plusQuarters(amount));
+		else if (this instanceof MonthPeriodHolder)
+			return new MonthPeriodHolder(YearMonth.from(this).plusMonths(amount));
+		else if (this instanceof WeekPeriodHolder)
+			return new WeekPeriodHolder(YearWeek.from(this).plusWeeks(amount));
+		else
+			throw new UnsupportedOperationException("Invalid PeriodHolder: " + this); 
 	}
 
 	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate();
@@ -113,6 +123,4 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate();
 
 	public abstract DurationValue getPeriodIndicator();
-
-	protected abstract TemporalUnit smallestUnit();
 }

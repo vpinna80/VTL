@@ -19,18 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoUnit.SEMESTERS;
-import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
-import static java.time.temporal.IsoFields.QUARTER_YEARS;
-import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
-
 import java.time.LocalDate;
-import java.time.Year;
-import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
+
+import org.threeten.extra.YearQuarter;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
@@ -43,44 +36,35 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Year year;
-	private final long quarter;
+	private final YearQuarter yearQtr;
 
 	public QuarterPeriodHolder(TemporalAccessor other)
 	{
-		this.year = Year.from(other);
-		this.quarter = other.getLong(QUARTER_OF_YEAR);
-	}
-
-	public QuarterPeriodHolder(Year year, long quarter)
-	{
-		this.year = year;
-		this.quarter = quarter;
+		this.yearQtr = YearQuarter.from(other);
 	}
 
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return QUARTER_OF_YEAR.equals(field) ? quarter : year.getLong(field);
+		return yearQtr.getLong(field);
 	}
 
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return QUARTER_OF_YEAR.equals(field) || year.isSupported(field);
+		return yearQtr.isSupported(field);
 	}
 
 	@Override
 	public int compareTo(PeriodHolder<?> other)
 	{
-		int c = year.compareTo(Year.from(other));
-		return c != 0 ? c : Long.compare(quarter, ((QuarterPeriodHolder) other).quarter);
+		return yearQtr.compareTo(YearQuarter.from(other));
 	}
 
 	@Override
 	public String toString()
 	{
-		return year.toString() + "-Q" + quarter;
+		return yearQtr.toString();
 	}
 
 	@Override
@@ -88,8 +72,7 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) quarter;
-		result = prime * result + ((year == null) ? 0 : year.hashCode());
+		result = prime * result + ((yearQtr == null) ? 0 : yearQtr.hashCode());
 		return result;
 	}
 
@@ -103,69 +86,31 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 		if (getClass() != obj.getClass())
 			return false;
 		QuarterPeriodHolder other = (QuarterPeriodHolder) obj;
-		if (quarter != other.quarter)
-			return false;
-		if (year == null)
+		if (yearQtr == null)
 		{
-			if (other.year != null)
+			if (other.yearQtr != null)
 				return false;
 		}
-		else if (!year.equals(other.year))
+		else if (!yearQtr.equals(other.yearQtr))
 			return false;
 		return true;
 	}
 
 	@Override
-	public boolean isSupported(TemporalUnit unit)
-	{
-		return QUARTER_YEARS.equals(unit) || SEMESTERS.equals(unit) || year.isSupported(unit);
-	}
-
-	@Override
-	public Temporal plus(long amount, TemporalUnit unit)
-	{
-		if (QUARTER_YEARS.equals(unit))
-			return new QuarterPeriodHolder(year, quarter + amount);
-		else if (SEMESTERS.equals(unit))
-			return new QuarterPeriodHolder(year, quarter + amount * 2);
-		return null;
-	}
-	
-	@Override
-	protected TemporalUnit smallestUnit()
-	{
-		return QUARTER_YEARS;
-	}
-
-	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
 	{
-		return DateValue.of(LocalDate.from(year.atMonth(1 + ((int) quarter - 1) * 3).atDay(1).with(firstDayOfMonth())));
+		return DateValue.of(LocalDate.from(yearQtr.atDay(1)));
 	}
 
 	@Override
 	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
 	{
-		return DateValue.of(LocalDate.from(year.atMonth(3 + ((int) quarter - 1) * 3).atDay(1).with(lastDayOfMonth())));
+		return DateValue.of(LocalDate.from(yearQtr.atEndOfQuarter()));
 	}
 
 	@Override
 	public DurationValue getPeriodIndicator()
 	{
 		return Duration.Q.get();
-	}
-
-	@Override
-	public Temporal with(TemporalField field, long newValue)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public long until(Temporal endExclusive, TemporalUnit unit)
-	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
 	}
 }

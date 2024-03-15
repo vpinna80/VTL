@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -46,21 +47,14 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 		return new DataStructureComponentImpl<>(role, variable);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain, R extends Component> DataStructureComponent<R, S, D> of(String name, Class<R> role, ValueDomainSubset<S, D> domain)
 	{
-		return new DataStructureComponentImpl<>(role, new VariableImpl<>(name, (S) domain));
+		return new DataStructureComponentImpl<>(role, ConfigurationManager.getDefault().getMetadataRepository().getVariable(name, domain));
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain, R extends Component> DataStructureComponent<R, S, D> of(Class<R> role, ValueDomainSubset<S, D> domain)
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain, R extends Component> DataStructureComponent<R, S, D> of(Class<R> role, S domain)
 	{
-		return new DataStructureComponentImpl<>(role, new VariableImpl<>((S) domain));
-	}
-
-	public DataStructureComponentImpl(Class<R> role, S domain)
-	{
-		this(role, new VariableImpl<>(domain));
+		return new DataStructureComponentImpl<>(role, ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(domain));
 	}
 
 	@Override

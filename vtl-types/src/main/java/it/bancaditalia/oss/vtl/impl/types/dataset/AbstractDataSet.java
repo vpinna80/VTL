@@ -55,8 +55,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
@@ -272,13 +272,13 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet aggregate(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			SerCollector<DataPoint, ?, DataPoint> groupCollector,
-			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
+	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
+			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
+			SerBiFunction<T, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
 	{
 		return new AbstractDataSet(structure) {
 			private static final long serialVersionUID = 1L;
-			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> cache = null;
+			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T>> cache = null;
 			
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
@@ -290,7 +290,7 @@ public abstract class AbstractDataSet implements DataSet
 			}
 
 			private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-					SerCollector<DataPoint, ?, DataPoint> groupCollector)
+					SerCollector<DataPoint, ?, T> groupCollector)
 			{
 				if (cache == null)
 					try (Stream<DataPoint> stream = AbstractDataSet.this.stream())

@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLNullCompareException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNullCompareException;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;

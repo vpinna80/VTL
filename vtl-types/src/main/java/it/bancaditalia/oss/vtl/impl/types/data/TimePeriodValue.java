@@ -27,6 +27,7 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.ValueRange;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
@@ -35,7 +36,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns;
 import it.bancaditalia.oss.vtl.impl.types.data.date.WeekPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimePeriodDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;

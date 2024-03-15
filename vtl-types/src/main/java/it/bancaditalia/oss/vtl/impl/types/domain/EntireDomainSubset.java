@@ -38,7 +38,6 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D extends ValueDomain> implements DescribedDomainSubset<S, D>
 {
 	private static final long serialVersionUID = 1L;
-
 	private final D parentDomain;
 	
 	public static final Transformation ENTIRE = new Transformation() {

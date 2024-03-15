@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -202,7 +203,8 @@ public class DataStructureBuilder
 			if (component.is(Measure.class))
 				return new DataStructureBuilder().addComponents(component).addComponents(getIDs()).build();
 			else
-				return new DataStructureBuilder().addComponent(DataStructureComponentImpl.of(Measure.class, component.getVariable().getDomain()))
+				return new DataStructureBuilder()
+						.addComponent(ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(component.getVariable().getDomain()).getComponent(Measure.class))
 						.addComponents(getIDs()).build();
 		}
 
