@@ -28,6 +28,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -84,11 +85,13 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return A set of the queried components.
 	 */
-	public default <R extends Component> Set<DataStructureComponent<R, ?, ?>> getComponents(Class<R> role, ValueDomainSubset<?, ?> domain)
+	@SuppressWarnings("unchecked")
+	public default <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> Set<DataStructureComponent<R, S, D>> getComponents(Class<R> role, S domain)
 	{
 		return getComponents(role).stream()
 				.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()))
 				.map(c -> c.asRole(role))
+				.map(c -> (DataStructureComponent<R, S, D>) c)
 				.collect(toSet());
 	}
 
@@ -199,6 +202,41 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 */
 	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ?, ?> identifier, DataStructureComponent<Measure, S, D> measure);
 
+	/**
+	 * Extracts a singleton component of a given role if it exists in the current structure, or throws an exception otherwise.
+	 * 
+	 * @param <R> The role type
+	 * @param role The class representing the role
+	 * @return the singleton component of given role
+	 */
+	public default <R extends Component> DataStructureComponent<R, ?, ?> getSingleton(Class<R> role)
+	{
+		Set<DataStructureComponent<R, ?, ?>> set = getComponents(role);
+		if (set.size() != 1)
+			throw new VTLSingletonComponentRequiredException(role, set);
+		
+		return set.iterator().next();
+	}
+
+	/**
+	 * Extracts a singleton component of a given role that is assignable to the given domain if it exists in this structure, or throws an exception otherwise.
+	 * 
+	 * @param <R> The role type
+	 * @param <S> the domain subset type of the component
+	 * @param <D> the domain type of the component
+	 * @param role The class representing the role
+	 * @param role The valuedomain subset which the component must be assignable to
+	 * @return the singleton component
+	 */
+	public default <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureComponent<R, S, D> getSingleton(Class<R> role, S domain)
+	{
+		Set<DataStructureComponent<R, S, D>> set = getComponents(role, domain);
+		if (set.size() != 1)
+			throw new VTLSingletonComponentRequiredException(role, domain ,set);
+		
+		return set.iterator().next();
+	}
+	
 	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends String> names, String operation)
 	{
 		if (names == null || names.isEmpty())

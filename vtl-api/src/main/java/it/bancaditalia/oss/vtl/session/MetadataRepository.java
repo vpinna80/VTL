@@ -25,7 +25,9 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -66,10 +68,18 @@ public interface MetadataRepository
 	public DataSetMetadata getStructure(String name);
 
 	/**
+	 * Returns a data point ruleset with the specified name if it exists.
+	 * 
+	 * @param name the name of the ruleset
+	 * @return the ruleset or null if none exists.
+	 */
+	public DataPointRuleSet getDataPointRuleset(String name);
+
+	/**
 	 * Returns a hierarchical ruleset with the specified name if it exists.
 	 * 
 	 * @param name the name of the ruleset
-	 * @return the structure or null if none exists.
+	 * @return the ruleset or null if none exists.
 	 */
 	public HierarchicalRuleSet<?, ?, ?, ?, ?> getHierarchyRuleset(String name);
 
@@ -90,7 +100,9 @@ public interface MetadataRepository
 	 * @return a {@link Variable} instance.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public Variable<?, ?> getVariable(String alias);
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getVariable(String alias, ValueDomainSubset<S, D> domain);
+
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getDefaultVariable(ValueDomainSubset<S, D> domain);
 	
 	public TransformationScheme getTransformationScheme(String alias);
 	

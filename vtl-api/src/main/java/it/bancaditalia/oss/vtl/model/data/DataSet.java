@@ -283,9 +283,9 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return a new dataset where each datapoint is the result of the aggregation of a group.
 	 */
-	public DataSet aggregate(DataSetMetadata structure, Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			SerCollector<DataPoint, ?, DataPoint> groupCollector,
-			SerBiFunction<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
+	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
+			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
+			SerBiFunction<T, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
 	
 	/**
 	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet.

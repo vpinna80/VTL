@@ -27,8 +27,8 @@ import static it.bancaditalia.oss.vtl.model.data.Component.Role.COMPONENT;
 import static it.bancaditalia.oss.vtl.model.data.Component.Role.IDENTIFIER;
 import static it.bancaditalia.oss.vtl.model.data.Component.Role.MEASURE;
 import static it.bancaditalia.oss.vtl.model.data.Component.Role.VIRAL_ATTRIBUTE;
-import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
-import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VARIABLE;
+import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
+import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -57,6 +57,7 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.CompConstraintContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentIDContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DatasetTypeContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.DefDatapointRulesetContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefHierarchicalContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorsContext;
@@ -66,6 +67,7 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.MultModifierContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.OutputParameterTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ParameterItemContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.PersistAssignmentContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.RuleItemDatapointContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.RuleItemHierarchicalContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.ScalarTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
@@ -74,7 +76,7 @@ import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextExceptio
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints;
 import it.bancaditalia.oss.vtl.model.data.Component.Role;
-import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType;
+import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType;
 import it.bancaditalia.oss.vtl.model.transform.Parameter;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -103,7 +105,7 @@ public class StatementFactory implements Serializable
 			PersistAssignmentContext asc = (PersistAssignmentContext) ctx;
 			return new AssignStatement(asc.varID().getText(), buildExpr(asc.expr()), true);
 		}
-		else
+		else if (ctx instanceof DefineExpressionContext)
 		{
 			DefOperatorsContext defineContext = ((DefineExpressionContext) ctx).defOperators();
 			if (defineContext instanceof DefOperatorContext)
@@ -154,9 +156,38 @@ public class StatementFactory implements Serializable
 				
 				return new DefineHierarchyStatement(alias, rulesetType, ruleID, names, leftOps, compOps, rightOps, ercodes, erlevels);
 			}
+			else if (defineContext instanceof DefDatapointRulesetContext)
+			{
+				DefDatapointRulesetContext defineDatapoint = (DefDatapointRulesetContext) defineContext;
+
+				String alias = defineDatapoint.rulesetID().getText();
+				RuleSetType rulesetType = defineDatapoint.rulesetSignature().VALUE_DOMAIN() != null ? VALUE_DOMAIN : VARIABLE;
+				List<Entry<String, String>> vars = defineDatapoint.rulesetSignature().signature().stream()
+						.map(s -> new SimpleEntry<>(s.varID().getText(), s.alias() != null ? s.alias().getText() : null))
+						.collect(toList());
+				
+				List<String> ruleIDs = new ArrayList<>();
+				List<Transformation> conds = new ArrayList<>();
+				List<Transformation> exprs = new ArrayList<>();
+				List<String> ercodes = new ArrayList<>();
+				List<Long> erlevels = new ArrayList<>();
+
+				for (RuleItemDatapointContext rule: defineDatapoint.ruleClauseDatapoint().ruleItemDatapoint())
+				{
+					ruleIDs.add(rule.ruleName != null ? rule.ruleName.getText() : null);
+					conds.add(rule.antecedentContiditon != null ? buildExpr(rule.antecedentContiditon) : null);
+					exprs.add(buildExpr(rule.consequentCondition));
+					ercodes.add(rule.erCode() != null ? rule.erCode().constant().getText() : null);
+					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
+				}
+
+				return new DefineDataPointStatement(alias, rulesetType, vars, ruleIDs, conds, exprs, ercodes, erlevels);
+			}
 			else
-				throw new VTLUnmappedContextException(ctx);
+				throw new VTLUnmappedContextException(defineContext);
 		}
+		else
+			throw new VTLUnmappedContextException(ctx);
 	}
 
 	private Transformation buildExpr(ParserRuleContext ctx) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException

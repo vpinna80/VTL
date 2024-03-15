@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import java.util.Comparator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,12 +28,20 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 /**
- * TODO Representation of a VTL variable
+ * Representation of a VTL variable.
+ * 
  * @author Valentino Pinna
- *
  */
 public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends ScalarValueMetadata<S, D>
 {
+	/**
+	 * A Comparator to lexically sort Variables by their name.
+	 * @see Comparator#compare(Object, Object)
+	 *  
+	 * @param v1
+	 * @param v2
+	 * @return 
+	 */
 	public static int byName(Variable<?, ?> v1, Variable<?, ?> v2)
 	{
 		String n1 = v1.getName(), n2 = v2.getName();
@@ -44,14 +53,13 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 			return n1.compareTo(n2);
 	}
 
-	public String getName();
-	
 	/**
-	 * @return The domain subset of this {@link DataStructureComponent}.
+	 * Normalize a VTL alias to lowercase unless it is single-quoted.
+	 * 
+	 * @param alias the alias to normalize
+	 * @return the normalized alias
 	 */
-	public S getDomain();
-
-	static String normalizeAlias(String alias)
+	public static String normalizeAlias(String alias)
 	{
 		if (alias.matches("'.*'"))
 			return alias.replaceAll("'(.*)'", "$1");
@@ -60,11 +68,25 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	}
 
 	/**
-	 * Casts a given value to the domain subset of this {@link DataStructureComponent} if possible.
+	 * @return the name of this {@link Variable}.
+	 */
+	public String getName();
+
+	public <R extends Component> DataStructureComponent<R, S, D> getComponent(Class<R> role);
+
+	/**
+	 * @return The domain subset of this {@link Variable}.
+	 */
+	public S getDomain();
+
+	/**
+	 * Casts a given value to the domain subset of this {@link Variable} if possible.
+	 * 
+	 * Equivalent to <code>getDomain().cast(value)</code>
 	 * 
 	 * @param value the value to cast
 	 * @return the casted value.
-	 * @throws VTLCastException if the value cannot be casted to the domain of this component.
+	 * @throws VTLCastException if the value cannot be casted to the domain of this variable.
 	 */
 	public default ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{

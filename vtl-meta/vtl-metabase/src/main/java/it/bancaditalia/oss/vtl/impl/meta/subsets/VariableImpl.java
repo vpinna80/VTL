@@ -17,12 +17,21 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.types.dataset;
+package it.bancaditalia.oss.vtl.impl.meta.subsets;
 
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -30,9 +39,11 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	
 	private final String name;
 	private final S domain;
 	private final int hashCode;
+	private final Map<Class<? extends Component>, DataStructureComponent<?, ?, ?>> components = new HashMap<>();
 	
 	public VariableImpl(String name, S domain)
 	{
@@ -44,11 +55,9 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 		result = prime * result + domain.hashCode();
 		result = prime * result + name.hashCode();
 		hashCode = result;
-	}
-	
-	public VariableImpl(S domain)
-	{
-		this(domain.getDefaultVariableName(), domain);
+		
+		for (Class<? extends Component> role: Set.of(Identifier.class, Measure.class, Attribute.class))
+			components.put(role, new DataStructureComponentImpl<>(role, this));
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -94,5 +103,12 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	public String toString()
 	{
 		return name + "[" + domain + "]";
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public <R extends Component> DataStructureComponent<R, S, D> getComponent(Class<R> role)
+	{
+		return (DataStructureComponent<R, S, D>) components.get(role);
 	}
 }

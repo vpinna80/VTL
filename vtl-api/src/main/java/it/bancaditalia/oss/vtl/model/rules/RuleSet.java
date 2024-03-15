@@ -21,6 +21,11 @@ package it.bancaditalia.oss.vtl.model.rules;
 
 public interface RuleSet
 {
+	public enum RuleSetType
+	{
+		VARIABLE, VALUE_DOMAIN;
+	}
+	
 	enum RuleType
 	{
 		EQ("="), LT("<"), LE("<="), GT(">"), GE(">=");
@@ -38,4 +43,6 @@ public interface RuleSet
 			return toString;
 		}
 	}
+	
+	public RuleSetType getType();
 }

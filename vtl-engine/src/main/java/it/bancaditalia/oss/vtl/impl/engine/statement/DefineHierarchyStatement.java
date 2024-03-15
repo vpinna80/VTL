@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
+import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.stream.Collectors.toMap;
@@ -40,7 +40,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType;
+import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -81,7 +81,7 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 			cl = scheme.getRepository().getDomain(ruleID);
 		else
 		{
-			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleID);
+			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleID, null);
 			cl = variable.getDomain();
 		}
 
