@@ -97,10 +97,10 @@
 		<tokenmapping name="DURATION" value="DURATION" />
 	</tokenset>
 
-	<!-- tokenset name="PeriodDelimiter" class="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation$PeriodDelimiter">
+	<tokenset name="PeriodDelimiter" class="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation$PeriodDelimiter">
 		<tokenmapping name="FIRST" value="FIRST" />
 		<tokenmapping name="LAST" value="LAST" />
-	</tokenset -->
+	</tokenset>
 	
 	<tokenset name="StringOperator" class="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation$StringOperator">
 		<tokenmapping name="TRIM" value="TRIM" />
@@ -449,7 +449,7 @@
 					<listparam name="componentID">
 						<stringparam />
 					</listparam>
-					<tokensetparam name="FREQUENCY" tokenset="Duration" />
+					<tokensetparam name="TIME_UNIT" tokenset="Duration" />
 				</customparam>
 			</nestedparam>
 			<exprparam name="havingClause" />
@@ -514,7 +514,7 @@
 					<listparam name="componentID">
 						<stringparam />
 					</listparam>
-					<tokensetparam name="FREQUENCY" tokenset="Duration" />
+					<tokensetparam name="TIME_UNIT" tokenset="Duration" />
 				</customparam>
 			</nestedparam>
 			<exprparam name="havingClause" />
@@ -699,14 +699,16 @@
 		</params>
 	</mapping -->
 
-	<!-- mapping from="TimeAggAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
+	<mapping from="TimeAggAtomComponentContext" to="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation">
 		<params>
 			<nestedparam name="op">
 				<exprparam name="exprComponent" />
 			</nestedparam>
 			<stringparam name="periodIndTo" />
+			<stringparam name="periodIndFrom" />
+			<tokensetparam name="delim" tokenset="PeriodDelimiter" />
 		</params>
-	</mapping -->
+	</mapping>
 
 	<mapping from="MembershipExprContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.BracketTransformation">
 		<params>

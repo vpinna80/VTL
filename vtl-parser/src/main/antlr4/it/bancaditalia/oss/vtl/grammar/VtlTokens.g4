@@ -268,15 +268,16 @@ STRING_CONSTANT
   '"' (~'"')* '"'
   ;
 
-FREQUENCY
+TIME_UNIT
   :
-  'A'
-  | 'S'
-  | 'Q'
-  | 'M'
-  | 'W'
-  | 'D'
-  ;
+    'A'
+    |'S'
+    |'Q'
+    |'M'
+    |'W'
+    |'D'
+    |'T'
+    ;
 
 IDENTIFIER
   :

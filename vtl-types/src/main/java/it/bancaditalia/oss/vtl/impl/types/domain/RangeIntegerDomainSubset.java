@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.meta.subsets;
+package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -30,7 +30,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDomainRangeSubset, IntegerDomain>, IntegerDomainSubset<IntegerDomainRangeSubset>
+public class RangeIntegerDomainSubset implements DescribedDomainSubset<RangeIntegerDomainSubset, IntegerDomain>, IntegerDomainSubset<RangeIntegerDomainSubset>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -49,7 +49,7 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 		}
 	};
 	
- 	public IntegerDomainRangeSubset(String name, long minInclusive, long maxInclusive, IntegerDomainSubset<?> parent)
+ 	public RangeIntegerDomainSubset(String name, long minInclusive, long maxInclusive, IntegerDomainSubset<?> parent)
 	{
 		this.name = name;
 		this.minInclusive = minInclusive;
@@ -64,7 +64,7 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 	}
 
 	@Override
-	public ScalarValue<?, ?, IntegerDomainRangeSubset, IntegerDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, RangeIntegerDomainSubset, IntegerDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof NullValue)
 			return NullValue.instance(this);
@@ -96,7 +96,7 @@ public class IntegerDomainRangeSubset implements DescribedDomainSubset<IntegerDo
 	}
 	
 	@Override
-	public ScalarValue<?, ?, IntegerDomainRangeSubset, IntegerDomain> getDefaultValue()
+	public ScalarValue<?, ?, RangeIntegerDomainSubset, IntegerDomain> getDefaultValue()
 	{
 		return NullValue.instance(this);
 	}

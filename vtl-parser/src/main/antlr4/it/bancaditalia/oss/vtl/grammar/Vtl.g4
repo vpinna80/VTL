@@ -209,7 +209,7 @@ timeOperators:
     | FILL_TIME_SERIES LPAREN expr (COMMA op=(SINGLE|ALL))? RPAREN                                                                      # fillTimeAtom
     | op=(FLOW_TO_STOCK | STOCK_TO_FLOW) LPAREN expr RPAREN	                                                                            # flowAtom
     | TIMESHIFT LPAREN expr COMMA signedInteger RPAREN                                                                                  # timeShiftAtom
-    | TIME_AGG LPAREN periodIndTo=FREQUENCY (COMMA periodIndFrom=(FREQUENCY | OPTIONAL))? (COMMA op=optionalExpr)? (COMMA delim=(FIRST|LAST))? RPAREN     # timeAggAtom
+    | TIME_AGG LPAREN periodIndTo=TIME_UNIT (COMMA periodIndFrom=(TIME_UNIT | OPTIONAL))? (COMMA op=optionalExpr)? (COMMA delim=(FIRST|LAST))? RPAREN     # timeAggAtom
     | CURRENT_DATE LPAREN RPAREN                                                                                                        # currentDateAtom
 ;
 
@@ -218,7 +218,7 @@ timeOperatorsComponent:
     | FILL_TIME_SERIES LPAREN exprComponent (COMMA (SINGLE|ALL))? RPAREN                                                                        # fillTimeAtomComponent
     | op=(FLOW_TO_STOCK | STOCK_TO_FLOW) LPAREN exprComponent RPAREN	                                                                                    # flowAtomComponent
     | TIMESHIFT LPAREN exprComponent COMMA signedInteger RPAREN                                                                                 # timeShiftAtomComponent
-    | TIME_AGG LPAREN periodIndTo=FREQUENCY (COMMA periodIndFrom=(FREQUENCY | OPTIONAL ))? (COMMA op=optionalExprComponent)? (COMMA delim=(FIRST|LAST))? RPAREN    # timeAggAtomComponent
+    | TIME_AGG LPAREN periodIndTo=TIME_UNIT (COMMA periodIndFrom=(TIME_UNIT | OPTIONAL ))? (COMMA op=optionalExprComponent)? (COMMA delim=(FIRST|LAST))? RPAREN    # timeAggAtomComponent
     | CURRENT_DATE LPAREN RPAREN                                                                                                                # currentDateAtomComponent
 ;
 
@@ -405,8 +405,8 @@ limitClauseItem:
 /*--------------------------------------------END ANALYTIC CLAUSE -----------------------------------------------*/
 /* ------------------------------------------------------------ GROUPING CLAUSE ------------------------------------*/
 groupingClause:
-    GROUP op=(BY | EXCEPT) componentID (COMMA componentID)* ( TIME_AGG LPAREN FREQUENCY RPAREN )?     # groupByOrExcept
-    | GROUP ALL exprComponent ( TIME_AGG LPAREN FREQUENCY RPAREN )?                                   # groupAll
+    GROUP op=(BY | EXCEPT) componentID (COMMA componentID)* ( TIME_AGG LPAREN TIME_UNIT (COMMA delim=(FIRST|LAST))? RPAREN )?     # groupByOrExcept
+    | GROUP ALL exprComponent ( TIME_AGG LPAREN TIME_UNIT RPAREN )?                                   # groupAll
   ;
 
 havingClause:
@@ -465,7 +465,7 @@ scalarSetType:
 dpRuleset:
     DATAPOINT                                                                               # dataPoint
     | DATAPOINT_ON_VD  (GLPAREN  valueDomainName (MUL valueDomainName)*  GRPAREN )?         # dataPointVd
-    | DATAPOINT_ON_VAR  (GLPAREN  varID (MUL varID)*  GRPAREN )?                            # dataPointVar
+    | DATAPOINT_ON_VAR (GLPAREN  varID (MUL varID)*  GRPAREN )?                             # dataPointVar
 ;
 
 hrRuleset:
