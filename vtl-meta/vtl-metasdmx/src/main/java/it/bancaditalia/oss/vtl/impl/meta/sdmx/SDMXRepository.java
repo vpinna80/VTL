@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 import static io.sdmx.api.sdmx.constants.TEXT_TYPE.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.PASSWORD;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -42,7 +43,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -68,6 +68,7 @@ import io.sdmx.api.sdmx.model.beans.datastructure.AttributeBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataStructureBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataflowBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DimensionBean;
+import io.sdmx.api.sdmx.model.beans.datastructure.PrimaryMeasureBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
 import io.sdmx.api.sdmx.model.beans.transformation.ITransformationSchemeBean;
 import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
@@ -86,12 +87,18 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.VariableImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.MaxIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.MaxNumberDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.MaxStrlenDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.MinIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.MinNumberDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.MinStrlenDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.RegExpDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -99,6 +106,10 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -106,19 +117,20 @@ public class SDMXRepository extends InMemoryMetadataRepository
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXRepository.class);
+	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
+	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset("ALPHA", "?U^\\p{Alpha}*$", STRINGDS);
+	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset("ALPHA_NUMERIC", "?U^\\p{Alnum}*$", STRINGDS);
 
 	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
 	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
 	public static final VTLProperty SDMX_META_USERNAME = new VTLPropertyImpl("vtl.sdmx.meta.user", "SDMX REST user name", "", EnumSet.noneOf(Flags.class));
 	public static final VTLProperty SDMX_META_PASSWORD = new VTLPropertyImpl("vtl.sdmx.meta.password", "SDMX REST password", "", EnumSet.of(PASSWORD));
 
-	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
-
 	static
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(SDMXRepository.class, SDMX_REGISTRY_ENDPOINT, SDMX_API_VERSION, SDMX_META_USERNAME, SDMX_META_PASSWORD);
 
-		// SDMX client configuration
+		// sdmx.io singletons initialization
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
 		SingletonStore.registerInstance(new StructureQueryBuilderRest());
 		SingletonStore.registerInstance(new StructureReaderManagerImpl());
@@ -127,8 +139,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 
 	private final String url = SDMX_REGISTRY_ENDPOINT.getValue();
 	private final Map<String, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
-	private final Map<String, Variable<?, ?>> variables = new HashMap<>();
-	private final Map<String, Set<String>> multiReprs = new HashMap<>();
+	private final Map<String, Map<String, Variable<?, ?>>> variables = new HashMap<>();
 	private final Map<String, String> schemes = new HashMap<>();
 	private final SdmxRestToBeanRetrievalManager rbrm;
 
@@ -173,6 +184,10 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			defineDomain(clName, new SdmxCodeList(codelist));
 		}
 
+		// Define ALPHA and ALPHA_NUMERIC domains
+		defineDomain("ALPHA", VTL_ALPHA);
+		defineDomain("ALPHA_NUMERIC", VTL_ALPHA_NUMERIC);
+		
 		// Load structures
 		Map<String, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> structures = new HashMap<>();
 		for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
@@ -185,12 +200,12 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
 			{
 				ValueDomainSubset<?, ?> domain = dimBean.isTimeDimension() ? TIMEDS : getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation()));
-				DataStructureComponentImpl<Identifier, ?, ?> id = structHelper(dimBean, Identifier.class, domain);
+				DataStructureComponent<Identifier, ?, ?> id = createComponent(dimBean, Identifier.class, domain);
 				builder.addComponent(id);
 				enumIds.put(dimBean.getPosition() - 1, id);
 			}
 
-			builder.addComponent(DataStructureComponentImpl.of(dsd.getPrimaryMeasure().getId(), Measure.class, NUMBERDS));
+			builder.addComponent(createObsValue(dsd.getPrimaryMeasure()));
 			
 			for (AttributeBean attrBean: dsd.getAttributeList().getAttributes())
 			{
@@ -200,22 +215,79 @@ public class SDMXRepository extends InMemoryMetadataRepository
 					domain = getDomain(sdmxRef2VtlName(attrBean.getEnumeratedRepresentation()));
 				else
 				{
-					TEXT_TYPE type = Optional.of(attrBean)
+					Optional<TextFormatBean> optFormat = Optional.of(attrBean)
 							.map(AttributeBean::getRepresentation)
-							.map(RepresentationBean::getTextFormat)
+							.map(RepresentationBean::getTextFormat);
+					
+					TextFormatBean format = optFormat.orElse(null);
+					TEXT_TYPE type = optFormat
 							.map(TextFormatBean::getTextType)
 							.orElse(STRING);
 					
 					switch (type)
 					{
+						// TODO: Implement more SDMX representations
+						// BASIC_TIME_PERIOD, DATE_TIME, DAY, DURATION, EXCLUSIVE_VALUE_RANGE, GEO, GREGORIAN_DAY, GREGORIAN_TIME_PERIOD, 
+						// GREGORIAN_YEAR, GREGORIAN_YEAR_MONTH, INCLUSIVE_VALUE_RANGE, INCREMENTAL, MONTH, MONTH_DAY, OBSERVATIONAL_TIME_PERIOD, REPORTING_DAY,
+						// REPORTING_MONTH, REPORTING_QUARTER, REPORTING_SEMESTER, REPORTING_TIME_PERIOD, REPORTING_TRIMESTER, REPORTING_WEEK, REPORTING_YEAR, 
+						// STANDARD_TIME_PERIOD, TIME, TIME_RANGE, URI, XHTML
+						case ALPHA: domain = VTL_ALPHA; break;
+						case ALPHA_NUMERIC: domain = VTL_ALPHA_NUMERIC; break;
+						case BOOLEAN: domain = BOOLEANDS; break;
 						case STRING: domain = STRINGDS; break;
-						case FLOAT: domain = NUMBERDS; break;
-						case BIG_INTEGER: domain = INTEGERDS; break;
-						default: throw new UnsupportedOperationException("Cannot map representation " + type + " to a VTL scalar type.");
+						case FLOAT: case DOUBLE: case NUMERIC: case DECIMAL: domain = NUMBERDS; break;
+						case BIG_INTEGER: case COUNT: case LONG: case INTEGER: case SHORT: domain = INTEGERDS; break;
+						default: throw new UnsupportedOperationException("Mapping of representation " + type + " to a VTL scalar type is not implemented.");
+					}
+					
+					if (format != null)
+					{
+						if (STRINGDS.isAssignableFrom(domain) && format.getMinLength() != null)
+						{
+							int minLen = format.getMinLength().intValueExact();
+							String name = domain.getName() + ">" + minLen;
+							domain = new MinStrlenDomainSubset(name, (StringDomainSubset<?>) domain, minLen);
+						}
+						if (STRINGDS.isAssignableFrom(domain) && format.getMaxLength() != null)
+						{
+							int maxLen = format.getMaxLength().intValueExact();
+							String name = domain.getName() + "<" + maxLen;
+							domain = new MaxStrlenDomainSubset(name, (StringDomainSubset<?>) domain, maxLen);
+						}
+						if (format.getMinValue() != null)
+						{
+							if (INTEGERDS.isAssignableFrom(domain))
+							{
+								long min = format.getMinValue().longValueExact();
+								String name = domain.getName() + ">=" + min;
+								domain = new MinIntegerDomainSubset(name, (IntegerDomainSubset<?>) domain, min);
+							}
+							else if (NUMBERDS.isAssignableFrom(domain))
+							{
+								double min = format.getMinValue().doubleValue();
+								String name = domain.getName() + ">=" + min;
+								domain = new MinNumberDomainSubset(name, (NumberDomainSubset<?, ?>) domain, min);
+							}						
+						}
+						if (format.getMaxValue() != null)
+						{
+							if (INTEGERDS.isAssignableFrom(domain))
+							{
+								long max = format.getMinValue().longValueExact();
+								String name = domain.getName() + "<" + max;
+								domain = new MaxIntegerDomainSubset(name, (IntegerDomainSubset<?>) domain, max);
+							}						
+							else if (NUMBERDS.isAssignableFrom(domain))
+							{
+								double max = format.getMinValue().doubleValue();
+								String name = domain.getName() + "<" + max;
+								domain = new MaxNumberDomainSubset(name, (NumberDomainSubset<?, ?>) domain, max);
+							}
+						}
 					}
 				}
 				
-				builder.addComponent(structHelper(attrBean, Attribute.class, domain));
+				builder.addComponent(createComponent(attrBean, Attribute.class, domain));
 			}
 
 			structures.put(dsdName, new SimpleEntry<>(builder.build(), new ArrayList<>(enumIds.values())));
@@ -238,30 +310,28 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
 			schemes.put(sdmxRef2VtlName(scheme.asReference()), code);
 		}
-		
-		variables.keySet().removeAll(multiReprs.keySet());
-		
-		for (Entry<String, Set<String>> reprs: multiReprs.entrySet())
-			LOGGER.warn("Found {} representations for concept {}: {}.", reprs.getValue().size(), reprs.getKey(), reprs.getValue());
 	}
 	
-	private <R extends Component> DataStructureComponentImpl<R, ?, ?> structHelper(ComponentBean bean, Class<R> role, ValueDomainSubset<?, ?> domain)
+	private DataStructureComponent<Measure, ?, ?> createObsValue(PrimaryMeasureBean obs_value)
+	{
+		String alias = obs_value.getId();
+		return variables.computeIfAbsent(obs_value.getId(), id -> new HashMap<>())
+			.computeIfAbsent(obs_value.getMaintainableParent().getAgencyId(), ag -> VariableImpl.of(alias, NUMBERDS))
+			.getComponent(Measure.class);
+	}
+
+	private <R extends Component> DataStructureComponent<R, ?, ?> createComponent(ComponentBean bean, Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
 		String name = bean.getId();
-		String concept = sdmxRef2VtlName(bean.getConceptRef()) + "." + name;
 		
-		Variable<?, ?> variable = VariableImpl.of(name, domain);
-		Variable<?, ?> old = variables.put(concept, variable);
-		if (old != null && !old.equals(variable))
-		{
-			Set<String> reprs = multiReprs.computeIfAbsent(concept, c -> new HashSet<>());
-			reprs.add(variable.getDomain().toString());
-			reprs.add(old.getDomain().toString());
-		}
-		DataStructureComponentImpl<R, ?, ?> component = new DataStructureComponentImpl<>(role, variable);
+		variables.putIfAbsent(name, new HashMap<>());
+		Variable<?, ?> variable = variables.get(name).compute(bean.getConceptRef().getAgencyId(), (ag, v) -> VariableImpl.of(name, domain));
+		DataStructureComponent<R, ?, ?> component = variable.getComponent(role);
+		
 		String sdmxType = bean.getClass().getSimpleName();
 		sdmxType = sdmxType.substring(0, sdmxType.length() - 8);
-		LOGGER.debug("{} {} with concept {} converted to component {}", sdmxType, name, concept, component);
+		LOGGER.debug("{} {} converted to component {}", sdmxType, name, component);
+		
 		return component;
 	}
 	
@@ -308,15 +378,26 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public Variable<?, ?> getVariable(String alias)
+	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getVariable(String alias, ValueDomainSubset<S, D> domain)
 	{
-		if (multiReprs.containsKey(alias))
-			throw new VTLException("Concept " + alias + " has conflicting representations: " 
-					+ multiReprs.get(alias).stream().map(Object::toString).map(r -> r.replaceAll(":string", "")).collect(joining(", ")));
+		String agency = domain instanceof SdmxCodeList ? ((SdmxCodeList) domain).getAgency() : null;
 		
-		Variable<?, ?> variable = variables.get(alias);
+		Variable<?, ?> variable = null;
+		Map<String, Variable<?, ?>> varsOfConcept = variables.get(alias);
+		if (agency != null)
+			variable = varsOfConcept.get(agency);
+		else if (varsOfConcept != null && !varsOfConcept.isEmpty())
+			variable = varsOfConcept.values().iterator().next();
+		
+		if (variable == null)
+			variable = super.getVariable(alias, domain);
+		
 		if (variable != null)
-			return variable;
+		{
+			@SuppressWarnings("unchecked")
+			Variable<S, D> ret = (Variable<S, D>) variable;
+			return ret;
+		}
 		else
 			throw new VTLException("Variable " + alias + " not found.");
 	}

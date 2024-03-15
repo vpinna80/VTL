@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.RuleSetType.VALUE_DOMAIN;
+import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static java.lang.Boolean.TRUE;
@@ -43,10 +43,14 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 	private static final long serialVersionUID = 1L;
 	
 	private final StringHierarchicalRuleSet defaultRuleSet;
+
+	private final String agency;
 	
 	public SdmxCodeList(CodelistBean codelist)
 	{
 		super(STRINGDS, codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")");
+		
+		this.agency = codelist.getAgencyId();
 		
 		// retrieve codelist 
 		String clAlias = codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")";
@@ -83,5 +87,10 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 	public StringHierarchicalRuleSet getDefaultRuleSet()
 	{
 		return defaultRuleSet;
+	}
+	
+	public String getAgency()
+	{
+		return agency;
 	}
 }
