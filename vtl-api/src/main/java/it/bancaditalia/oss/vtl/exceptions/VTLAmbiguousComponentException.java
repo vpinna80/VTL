@@ -17,18 +17,20 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.types.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
-public class VTLNullCompareException extends RuntimeException
+import static java.util.stream.Collectors.joining;
+
+import java.util.Set;
+
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+
+public class VTLAmbiguousComponentException extends VTLException
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLNullCompareException()
+	public VTLAmbiguousComponentException(String name, Set<DataStructureComponent<?, ?, ?>> ambiguousSet)
 	{
-		super("Cannot compare to a null value.");
+		super(ambiguousSet.stream().map(Object::toString).collect(joining(", ", "Component " + name + " is ambiguous: it appears as ", ".")));
 	}
-	
 }

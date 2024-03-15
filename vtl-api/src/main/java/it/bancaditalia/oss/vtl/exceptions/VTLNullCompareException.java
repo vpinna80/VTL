@@ -17,18 +17,18 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.transform.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.transform.Parameter;
-
-public class VTLParameterMismatchException extends VTLException
+public class VTLNullCompareException extends RuntimeException
 {
+	/**
+	 * 
+	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLParameterMismatchException(Parameter param, VTLValueMetadata metadata)
+	public VTLNullCompareException()
 	{
-		super("The argument " + metadata + " does not match parameter " + param.getAlias() + ": " + param.getDefinitionString());
+		super("Cannot compare to a null value.");
 	}
+	
 }

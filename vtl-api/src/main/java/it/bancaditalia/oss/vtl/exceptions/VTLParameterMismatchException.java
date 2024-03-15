@@ -19,22 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
-public class VTLException extends RuntimeException
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.transform.Parameter;
+
+public class VTLParameterMismatchException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLException(String message, Throwable cause) 
+	public VTLParameterMismatchException(Parameter param, VTLValueMetadata metadata)
 	{
-		super(message, cause);
-	}
-
-	public VTLException(String message) 
-	{
-		super(message);
-	}
-
-	public VTLException(String format, Object... parameters) 
-	{
-		super(String.format(format, parameters));
+		super("The argument " + metadata + " does not match parameter " + param.getAlias() + ": " + param.getDefinitionString());
 	}
 }

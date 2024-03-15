@@ -17,17 +17,22 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.transform.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
-public class VTLEvalException extends VTLException
+public class VTLIncompatibleParametersException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLEvalException(Transformation transformation, Exception e)
+	public VTLIncompatibleParametersException(String operation, VTLValueMetadata param1, VTLValueMetadata param2)
 	{
-		super("While evaluating " + transformation, e);
+		super("In " + operation + ", parameters are incompatible: " + param1 + " and " + param2 + ".");
+	}
+
+	public VTLIncompatibleParametersException(String operation, VTLValue param1, VTLValue param2)
+	{
+		super("In " + operation + ", parameters are incompatible: " + param1.getMetadata() + " and " + param2.getMetadata() + ".");
 	}
 }

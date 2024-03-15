@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -38,29 +37,14 @@ public class VTLMissingComponentsException extends VTLException
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLMissingComponentsException(Collection<String> missing, Set<? extends DataStructureComponent<?, ?, ?>> operand)
+	public VTLMissingComponentsException(String missing, Collection<? extends DataStructureComponent<?, ?, ?>> structure)
 	{
-		super("Components " + missing + " not found in " + operand);
-	}
-
-	public VTLMissingComponentsException(Collection<String> missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint)
-	{
-		super("Component " + missing + " not found in " + datapoint);
-	}
-
-	public VTLMissingComponentsException(String missing, Collection<? extends DataStructureComponent<?, ?, ?>> operand)
-	{
-		super("Component " + missing + " not found in " + operand);
+		super("Component " + missing + " not found in " + structure);
 	}
 
 	public VTLMissingComponentsException(Collection<? extends DataStructureComponent<?, ?, ?>> operand, String... names)
 	{
 		super("Components " + Arrays.toString(names) + " not found in " + operand);
-	}
-
-	public VTLMissingComponentsException(String missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint)
-	{
-		super("Component " + missing + " not found in " + datapoint);
 	}
 
 	public VTLMissingComponentsException(Set<? extends DataStructureComponent<?, ?, ?>> missing, Set<? extends DataStructureComponent<?, ?, ?>> operand)
@@ -69,11 +53,6 @@ public class VTLMissingComponentsException extends VTLException
 	}
 
 	public VTLMissingComponentsException(DataStructureComponent<?, ?, ?> missing, Collection<? extends DataStructureComponent<?, ?, ?>> operand)
-	{
-		super("Component " + missing.getVariable().getName() + " not found in " + operand);
-	}
-
-	public VTLMissingComponentsException(DataStructureComponent<?, ?, ?> missing, DataPoint operand)
 	{
 		super("Component " + missing.getVariable().getName() + " not found in " + operand);
 	}

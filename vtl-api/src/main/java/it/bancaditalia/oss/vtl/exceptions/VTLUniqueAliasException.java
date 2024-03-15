@@ -17,24 +17,14 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.transform.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
-
-public class VTLSyntaxException extends VTLException
+public class VTLUniqueAliasException extends VTLException
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLSyntaxException(String message, Exception cause)
+	public VTLUniqueAliasException(String operation, String alias)
 	{
-		super("Syntax error: " + message, cause);
-	}
-
-	public VTLSyntaxException(String message)
-	{
-		super("Syntax error: " + message);
+		super("In " + operation + ", alias " + alias + " is not unique.");
 	}
 }

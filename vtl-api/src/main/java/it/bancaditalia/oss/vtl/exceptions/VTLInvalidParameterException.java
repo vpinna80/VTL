@@ -17,31 +17,22 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.transform.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.joining;
-
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
 public class VTLInvalidParameterException extends VTLException
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	
-	@SafeVarargs
-	public <T extends VTLValue> VTLInvalidParameterException(T actual, Class<? extends VTLValue>... expected)
+	public <T extends VTLValue> VTLInvalidParameterException(T actual, Class<? extends VTLValue> expected)
 	{
-		super("Expected [" + stream(expected).map(Class::getSimpleName).collect(joining(", ")) + "] but found " + actual.getClass().getSimpleName(), null);
+		super("Expected " + expected.getSimpleName() + " but found " + actual.getClass().getSimpleName());
 	}
 
-	@SafeVarargs
-	public <T extends VTLValueMetadata> VTLInvalidParameterException(T actual, Class<? extends VTLValueMetadata>... expected)
+	public <T extends VTLValueMetadata> VTLInvalidParameterException(T actual, Class<? extends VTLValueMetadata> expected)
 	{
-		super("Expected [" + stream(expected).map(Class::getSimpleName).collect(joining(", ")) + "] but found " + actual.getClass().getSimpleName(), null);
+		super("Expected " + expected.getSimpleName() + " but found " + actual.getClass().getSimpleName());
 	}
 }

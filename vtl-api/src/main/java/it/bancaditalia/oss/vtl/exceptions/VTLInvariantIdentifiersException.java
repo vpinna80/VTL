@@ -17,11 +17,10 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.types.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -42,7 +41,7 @@ public class VTLInvariantIdentifiersException extends VTLException
 
 	public VTLInvariantIdentifiersException(String operation, DataStructureComponent<?, ?, ?> before)
 	{
-		super(operation + " cannot change component " + before + " to an identifier.");
+		super(operation + " cannot change " + before + " to an identifier.");
 	}
 
 	public VTLInvariantIdentifiersException(String operation, Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> before, Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> after)

@@ -17,14 +17,13 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.transform.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public class VTLIncompatibleStructuresException extends VTLException

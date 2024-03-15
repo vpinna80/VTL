@@ -17,55 +17,45 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.types.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class VTLIncompatibleTypesException extends VTLException
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	
 	public VTLIncompatibleTypesException(String operation, ValueDomain left, ValueDomain right)
 	{
-		super("Found incompatible types in " + operation + ": " + left + ", " + right, null);
-	}
-	
-	public VTLIncompatibleTypesException(String operation, Domains left, ValueDomain right)
-	{
-		super("Found incompatible types in " + operation + ": " + left.getDomain() + ", " + right, null);
-	}
-	
-	public VTLIncompatibleTypesException(String operation, ValueDomain left, Domains right)
-	{
-		super("Found incompatible types in " + operation + ": " + left + ", " + right.getDomain(), null);
+		super("Incompatible types in " + operation + ": " + left + ", " + right);
 	}
 	
 	public VTLIncompatibleTypesException(String operation, DataStructureComponent<?, ?, ?> left, ValueDomain right)
 	{
-		super("Found incompatible types in " + operation + ": " + left + ", " + right, null);
+		super("Incompatible types in " + operation + ": " + left + ", " + right);
+	}
+	
+	public VTLIncompatibleTypesException(String operation, DataStructureComponent<?, ?, ?> left, DataStructureComponent<?, ?, ?> right)
+	{
+		super("Incompatible types in " + operation + ": " + left + ", " + right);
 	}
 	
 	public VTLIncompatibleTypesException(String operation, ValueDomain left, DataStructureComponent<?, ?, ?> right)
 	{
-		super("Found incompatible types in " + operation + ": " + left + ", " + right, null);
+		super("Incompatible types in " + operation + ": " + left + ", " + right);
 	}
 	
 	public VTLIncompatibleTypesException(String operation, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		super("Found incompatible types in " + operation + ": " + left + ": " + left.getDomain() + ", " + right + ": " + right.getDomain(), null);
+		super("Incompatible types in " + operation + ": " + left.getDomain() + "=" + left + ", " + right.getDomain() + "=" + right);
 	}
 	
 	public VTLIncompatibleTypesException(String operation, Set<? extends DataStructureComponent<?, ?, ?>> invalid, ValueDomain domain)
 	{
-		super("Incompatible types in " + operation + ": found " + invalid + ", but " + domain + " was expected", null);
+		super("Incompatible types in " + operation + ": found " + invalid + ", but " + domain + " was expected");
 	}
 }

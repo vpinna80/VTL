@@ -17,38 +17,25 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.types.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class VTLSingletonComponentRequiredException extends VTLException
 {
-	public VTLSingletonComponentRequiredException(String name, DataStructureComponent<?, ?, ?>... components)
-	{
-		this(name, Arrays.asList(components));
-	}
+	private static final long serialVersionUID = 1L;
 
 	public VTLSingletonComponentRequiredException(Class<? extends Component> role, Set<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		super("Required exactly one " + role.getSimpleName() + " component but found: " + components);
+		super("Required exactly one " + role.getSimpleName() + " but found: " + components);
 	}
 
 	public VTLSingletonComponentRequiredException(Class<? extends Component> role, ValueDomain domain, Set<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		super("Required exactly one " + role.getSimpleName() + " of domain " + domain + " but found: " + components);
 	}
-
-	public VTLSingletonComponentRequiredException(String name, Collection<? extends DataStructureComponent<?, ?, ?>> components)
-	{
-		super("Required exactly one more component to add to " + name + " but found: " + components);
-	}
-
-	private static final long serialVersionUID = 1L;
 }

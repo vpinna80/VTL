@@ -19,22 +19,23 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
-public class VTLException extends RuntimeException
+import java.util.Collection;
+
+import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+
+public class VTLExpectedRoleException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLException(String message, Throwable cause) 
+	public VTLExpectedRoleException(Class<? extends Component> role, ValueDomainSubset<?, ?> domain, Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		super(message, cause);
+		super("Required at least one " + role.getSimpleName() + " of type " + domain + " but found: " + components);
 	}
 
-	public VTLException(String message) 
+	public VTLExpectedRoleException(Class<? extends Component> role, Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		super(message);
-	}
-
-	public VTLException(String format, Object... parameters) 
-	{
-		super(String.format(format, parameters));
+		super("Required at least one " + role.getSimpleName() + " but found " + components);
 	}
 }

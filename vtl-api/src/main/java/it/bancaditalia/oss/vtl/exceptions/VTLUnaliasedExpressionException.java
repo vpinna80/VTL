@@ -17,21 +17,19 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.transform.exceptions;
+package it.bancaditalia.oss.vtl.exceptions;
 
-import static java.util.stream.Collectors.joining;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-import java.util.Set;
-
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-
-public class VTLAmbiguousComponentException extends VTLException
+public class VTLUnaliasedExpressionException extends VTLException
 {
+	/**
+	 * 
+	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLAmbiguousComponentException(String name, Set<DataStructureComponent<?, ?, ?>> ambiguousSet)
+	public VTLUnaliasedExpressionException(Transformation expr)
 	{
-		super(ambiguousSet.stream().map(Object::toString).collect(joining(", ", "Component " + name + " is ambiguous: it appears as ", ".")));
+		super("VTL expression " + expr + " must have an alias.");
 	}
 }
