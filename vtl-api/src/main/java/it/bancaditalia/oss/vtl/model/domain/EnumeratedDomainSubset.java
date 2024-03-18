@@ -31,7 +31,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  *
  * @param <S> the enumerated domain subset
  * @param <D> the base domain
- * @param <C> the code
  */
 public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> 
 	extends ValueDomainSubset<S, D>

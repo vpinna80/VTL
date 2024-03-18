@@ -137,6 +137,7 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 		if (processError(process))
 			return;
 
+		@SuppressWarnings("resource")
 		Path kernelPath = Paths.get(new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)).readLine()).resolve("kernels").resolve("VTL_EnE");
 		if (!Files.isDirectory(kernelPath))
 			Files.createDirectory(kernelPath);
