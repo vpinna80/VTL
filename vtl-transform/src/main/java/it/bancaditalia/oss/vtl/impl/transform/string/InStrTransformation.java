@@ -47,7 +47,6 @@ import static java.util.Collections.singletonMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNonPositiveConstantException;

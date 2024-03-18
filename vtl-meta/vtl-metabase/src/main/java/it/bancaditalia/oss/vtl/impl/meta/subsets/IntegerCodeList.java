@@ -28,29 +28,29 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.IntegerCodeItem;
+import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.IntegerEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements IntegerEnumeratedDomainSubset<IntegerCodeList<I>, IntegerCodeList<I>.IntegerCodeItemImpl, Long>, Serializable
+public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, IntegerDomain>, IntegerDomainSubset<IntegerCodeList>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
 	private final String name; 
-	private final Set<IntegerCodeItemImpl> items = new HashSet<>();
+	private final IntegerDomainSubset<?> parent;
+	private final Set<CodeItem<?, ?, IntegerCodeList, IntegerDomain>> items = new HashSet<>();
 	private final int hashCode;
-	private final IntegerDomainSubset<I> parent;
 
-	public class IntegerCodeItemImpl extends IntegerValue<IntegerCodeItemImpl, IntegerCodeList<I>> implements IntegerCodeItem<IntegerCodeItemImpl, Long, IntegerCodeList<I>>
+	public class IntegerCodeItem extends IntegerValue<IntegerCodeItem, IntegerCodeList> implements CodeItem<IntegerCodeItem, Long, IntegerCodeList, IntegerDomain>
 	{
 		private static final long serialVersionUID = 1L;
-
-		public IntegerCodeItemImpl(Long value)
+		
+		public IntegerCodeItem(Long value, IntegerCodeList parent)
 		{
-			super(value, IntegerCodeList.this);
+			super(value, parent);
 		}
 
 		@Override
@@ -66,13 +66,13 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 		}
 	}
 	
-	public IntegerCodeList(IntegerDomainSubset<I> parent, String name, Set<? extends Long> items)
+	public IntegerCodeList(IntegerDomainSubset<?> parent, String name, Set<? extends Long> items)
 	{
 		this.parent = parent;
 		this.name = name;
 		this.hashCode = 31 + name.hashCode();
 		for (Long item: items)
-			this.items.add(new IntegerCodeItemImpl(item));
+			this.items.add(new IntegerCodeItem(item, this));
 	}
 	
 	@Override
@@ -82,17 +82,17 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 	}
 
 	@Override
-	public IntegerDomainSubset<I> getParentDomain()
+	public IntegerDomainSubset<?> getParentDomain()
 	{
 		return parent;
 	}
 
 	@Override
-	public IntegerCodeItemImpl cast(ScalarValue<?, ?, ?, ?> value)
+	public IntegerCodeItem cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof IntegerValue)
 		{
-			IntegerCodeItemImpl item = new IntegerCodeItemImpl((Long) value.get());
+			IntegerCodeItem item = new IntegerCodeItem((Long) value.get(), this);
 			if (items.contains(item))
 				return item;
 		}
@@ -103,7 +103,7 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof IntegerCodeList && name.equals(((IntegerCodeList<?>) other).name);
+		return other instanceof IntegerCodeList && name.equals(((IntegerCodeList) other).name);
 	}
 
 	@Override
@@ -113,7 +113,7 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 	}
 
 	@Override
-	public Set<IntegerCodeItemImpl> getCodeItems()
+	public Set<CodeItem<?, ?, IntegerCodeList, IntegerDomain>> getCodeItems()
 	{
 		return items;
 	}
@@ -139,13 +139,8 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		IntegerCodeList<?> other = (IntegerCodeList<?>) obj;
-		if (name == null)
-		{
-			if (other.name != null)
-				return false;
-		}
-		else if (!name.equals(other.name))
+		IntegerCodeList other = (IntegerCodeList) obj;
+		if (!name.equals(other.name))
 			return false;
 		if (!items.equals(other.items))
 			return false;
@@ -154,7 +149,7 @@ public class IntegerCodeList<I extends IntegerDomainSubset<I>> implements Intege
 	}
 
 	@Override
-	public ScalarValue<?, ?, IntegerCodeList<I>, IntegerDomain> getDefaultValue()
+	public ScalarValue<?, ?, IntegerCodeList, IntegerDomain> getDefaultValue()
 	{
 		return NullValue.instance(this);
 	}

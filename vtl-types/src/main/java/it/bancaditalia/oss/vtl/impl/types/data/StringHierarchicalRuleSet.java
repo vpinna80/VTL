@@ -46,11 +46,11 @@ import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringCodeItem, StringRule, String, StringCodeList, StringDomain>, Serializable
+public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule, StringCodeList, StringDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	public static class StringRule implements Rule<StringCodeItem, String, StringCodeList, StringDomain>
+	public static class StringRule implements Rule<StringCodeList, StringDomain>
 	{
 		private final String name;
 		private final StringCodeItem leftCodeItem;
@@ -122,7 +122,7 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringCode
 	private final Map<StringCodeItem, Set<StringRule>> depends;
 	private final RuleSetType type;
 	private final StringCodeList domain;
-	private final Set<StringCodeItem> leaves;
+	private final Set<CodeItem<?, ?, StringCodeList, StringDomain>> leaves;
 
 	public StringHierarchicalRuleSet(String name, String ruleComp, StringCodeList domain, RuleSetType type, List<StringRule> rules)
 	{
@@ -162,7 +162,7 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringCode
 	}
 	
 	@Override
-	public Set<StringCodeItem> getLeaves()
+	public Set<CodeItem<?, ?, StringCodeList, StringDomain>> getLeaves()
 	{
 		return leaves;
 	}

@@ -19,97 +19,51 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import java.util.OptionalLong;
+
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.operators.CriterionTransformation;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class RangeIntegerDomainSubset implements DescribedDomainSubset<RangeIntegerDomainSubset, IntegerDomain>, IntegerDomainSubset<RangeIntegerDomainSubset>
+public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends CriterionDomainSubset<RangeIntegerDomainSubset<S>, IntegerValue<?, S>, S, IntegerDomain> implements IntegerDomainSubset<RangeIntegerDomainSubset<S>>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String name;
-	private final long minInclusive;
-	private final long maxInclusive;
-	private final IntegerDomainSubset<?> parent;
-	private final Transformation range = new CriterionTransformation() {
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public boolean test(ScalarValue<?, ?, ?, ?> scalar)
-		{
-			return scalar instanceof NullValue ||
-					scalar instanceof IntegerValue && minInclusive <= (Long) scalar.get() && (Long) scalar.get() <= maxInclusive;
-		}
-	};
+	private final OptionalLong minInclusive;
+	private final OptionalLong maxInclusive;
 	
- 	public RangeIntegerDomainSubset(String name, long minInclusive, long maxInclusive, IntegerDomainSubset<?> parent)
+ 	public RangeIntegerDomainSubset(String name, S parent, OptionalLong minInclusive, OptionalLong maxInclusive)
 	{
-		this.name = name;
-		this.minInclusive = minInclusive;
+ 		super(name, parent);
+
+ 		this.minInclusive = minInclusive;
 		this.maxInclusive = maxInclusive;
-		this.parent = parent;
-	}
-
-	@Override
-	public IntegerDomainSubset<?> getParentDomain()
-	{
-		return parent;
-	}
-
-	@Override
-	public ScalarValue<?, ?, RangeIntegerDomainSubset, IntegerDomain> cast(ScalarValue<?, ?, ?, ?> value)
-	{
-		if (value instanceof NullValue)
-			return NullValue.instance(this);
-		
-		long casted = ((Number) parent.cast(value).get()).longValue();
-		
-		if (minInclusive <= casted && casted <= maxInclusive)
-			return IntegerValue.of(casted, this);
-		else
-			throw new VTLCastException(this, value);
-	}
-
-	@Override
-	public boolean isAssignableFrom(ValueDomain other)
-	{
-		return other == this;
-	}
-
-	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return parent.isComparableWith(other);  
 	}
 
 	@Override
 	public Transformation getCriterion()
 	{
-		return range;
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean test(IntegerValue<?, S> value)
+	{
+		Long val = value.get();
+		
+		return (minInclusive.isEmpty() || minInclusive.getAsLong() < val) && (maxInclusive.isEmpty() || maxInclusive.getAsLong() > val);
 	}
 	
 	@Override
-	public ScalarValue<?, ?, RangeIntegerDomainSubset, IntegerDomain> getDefaultValue()
+	protected ScalarValue<?, ?, RangeIntegerDomainSubset<S>, IntegerDomain> castCasted(IntegerValue<?, S> value)
 	{
-		return NullValue.instance(this);
-	}
-	
-	@Override
-	public String getName()
-	{
-		return name + "{" + minInclusive + "," + maxInclusive + "}";
-	}
-	
-	@Override
-	public String toString()
-	{
-		return name + ":" + parent.getName();
+		if (test(value))
+			return IntegerValue.of(value.get(), this);
+		else
+			throw new VTLCastException(this, value);
 	}
 }

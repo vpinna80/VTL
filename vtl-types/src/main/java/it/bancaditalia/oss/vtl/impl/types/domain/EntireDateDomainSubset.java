@@ -30,7 +30,7 @@ import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainSubset, DateDomain> implements DateDomainSubset<EntireDateDomainSubset>, Serializable
+public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainSubset, DateValue<EntireDateDomainSubset>, EntireDateDomainSubset, DateDomain> implements DateDomainSubset<EntireDateDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final EntireDateDomainSubset INSTANCE = new EntireDateDomainSubset();

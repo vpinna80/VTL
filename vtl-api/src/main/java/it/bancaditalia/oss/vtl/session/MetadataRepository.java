@@ -81,7 +81,7 @@ public interface MetadataRepository
 	 * @param name the name of the ruleset
 	 * @return the ruleset or null if none exists.
 	 */
-	public HierarchicalRuleSet<?, ?, ?, ?, ?> getHierarchyRuleset(String name);
+	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(String name);
 
 	/**
 	 * Registers a new domain instance inside this repository if it is not.

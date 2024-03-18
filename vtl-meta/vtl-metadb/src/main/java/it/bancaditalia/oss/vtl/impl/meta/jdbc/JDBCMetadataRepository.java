@@ -34,6 +34,9 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Objects;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -54,8 +57,8 @@ import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.MaxStrlenDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -208,7 +211,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				for (int i = l - d - 1; i >= 0; i--)
 					pow *= 10;
 				if (d == 0)
-					domain = new RangeIntegerDomainSubset(domainName, posOnly ? 0 : -pow + 1, pow - 1, INTEGERDS);
+					domain = new RangeIntegerDomainSubset<>(domainName, INTEGERDS, OptionalLong.of(posOnly ? 0 : -pow + 1), OptionalLong.of(pow - 1));
 				else
 					throw new UnsupportedOperationException("Fixed-point decimals not supported: " + domainName);
 			}
@@ -216,7 +219,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				domain = NUMBERDS;
 		else
 			if (sized)
-				domain = new MaxStrlenDomainSubset(domainName, STRINGDS, l);
+				domain = new StrlenDomainSubset(domainName, STRINGDS, OptionalInt.empty(), OptionalInt.of(l));
 			else
 				domain = STRINGDS;
 		
@@ -241,8 +244,16 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 					.map(a -> a[0].trim())
 					.filter(s -> !s.isEmpty());
 				if (INTEGERDS.isAssignableFrom(domain))
-					return new IntegerCodeList<>((IntegerDomainSubset<?>) domain, setId, stream.filter(JDBCMetadataRepository::matchesLong).map(JDBCMetadataRepository::extractLong)
-							.map(Long::valueOf).peek(c -> LOGGER.trace("Subset {} has code {}", setId, c)).collect(toSet()));
+				{
+					Set<Long> set = stream
+								.filter(JDBCMetadataRepository::matchesLong)
+								.map(JDBCMetadataRepository::extractLong)
+								.map(Long::valueOf)
+								.peek(c -> LOGGER.trace("Subset {} has code {}", setId, c))
+								.collect(toSet());
+					
+					return new IntegerCodeList((IntegerDomainSubset<?>) domain, setId, set);
+				}
 				else
 					return new StringCodeList((StringDomainSubset<?>) domain, setId, stream.peek(c -> LOGGER.trace("Found code {}" + c)).collect(toSet()));
 			}

@@ -33,6 +33,8 @@ import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
@@ -47,10 +49,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -92,13 +97,9 @@ import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.MaxIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.MaxNumberDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.MaxStrlenDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.MinIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.MinNumberDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.MinStrlenDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RegExpDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -106,8 +107,6 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -237,52 +236,24 @@ public class SDMXRepository extends InMemoryMetadataRepository
 						case STRING: domain = STRINGDS; break;
 						case FLOAT: case DOUBLE: case NUMERIC: case DECIMAL: domain = NUMBERDS; break;
 						case BIG_INTEGER: case COUNT: case LONG: case INTEGER: case SHORT: domain = INTEGERDS; break;
-						default: throw new UnsupportedOperationException("Mapping of representation " + type + " to a VTL scalar type is not implemented.");
+						default: LOGGER.warn("Representation {} is not implemented, String will be used instead.", type); domain = STRINGDS;
 					}
 					
 					if (format != null)
 					{
-						if (STRINGDS.isAssignableFrom(domain) && format.getMinLength() != null)
+						if (STRINGDS.isAssignableFrom(domain))
 						{
-							int minLen = format.getMinLength().intValueExact();
-							String name = domain.getName() + ">" + minLen;
-							domain = new MinStrlenDomainSubset(name, (StringDomainSubset<?>) domain, minLen);
+							OptionalInt minLen = Stream.of(format).map(TextFormatBean::getMinLength).mapToInt(BigInteger::intValueExact).findAny();
+							OptionalInt maxLen = Stream.of(format).map(TextFormatBean::getMaxLength).mapToInt(BigInteger::intValueExact).findAny();
+							String name = domain.getName() + ">=" + minLen.orElse(0) + "<" + maxLen.orElse(Integer.MAX_VALUE);
+							domain = new StrlenDomainSubset(name, (StringDomainSubset<?>) domain, minLen, maxLen);
 						}
-						if (STRINGDS.isAssignableFrom(domain) && format.getMaxLength() != null)
+						if (INTEGERDS.isAssignableFrom(domain))
 						{
-							int maxLen = format.getMaxLength().intValueExact();
-							String name = domain.getName() + "<" + maxLen;
-							domain = new MaxStrlenDomainSubset(name, (StringDomainSubset<?>) domain, maxLen);
-						}
-						if (format.getMinValue() != null)
-						{
-							if (INTEGERDS.isAssignableFrom(domain))
-							{
-								long min = format.getMinValue().longValueExact();
-								String name = domain.getName() + ">=" + min;
-								domain = new MinIntegerDomainSubset(name, (IntegerDomainSubset<?>) domain, min);
-							}
-							else if (NUMBERDS.isAssignableFrom(domain))
-							{
-								double min = format.getMinValue().doubleValue();
-								String name = domain.getName() + ">=" + min;
-								domain = new MinNumberDomainSubset(name, (NumberDomainSubset<?, ?>) domain, min);
-							}						
-						}
-						if (format.getMaxValue() != null)
-						{
-							if (INTEGERDS.isAssignableFrom(domain))
-							{
-								long max = format.getMinValue().longValueExact();
-								String name = domain.getName() + "<" + max;
-								domain = new MaxIntegerDomainSubset(name, (IntegerDomainSubset<?>) domain, max);
-							}						
-							else if (NUMBERDS.isAssignableFrom(domain))
-							{
-								double max = format.getMinValue().doubleValue();
-								String name = domain.getName() + "<" + max;
-								domain = new MaxNumberDomainSubset(name, (NumberDomainSubset<?, ?>) domain, max);
-							}
+							OptionalLong minLen = Stream.of(format).map(TextFormatBean::getMinValue).mapToLong(BigDecimal::longValueExact).findAny();
+							OptionalLong maxLen = Stream.of(format).map(TextFormatBean::getMaxValue).mapToLong(BigDecimal::longValueExact).findAny();
+							String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
+							domain = new RangeIntegerDomainSubset<>(name, INTEGERDS, minLen, maxLen);
 						}
 					}
 				}

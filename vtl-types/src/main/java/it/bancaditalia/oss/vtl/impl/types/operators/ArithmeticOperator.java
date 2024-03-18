@@ -40,8 +40,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public enum ArithmeticOperator
@@ -77,7 +75,7 @@ public enum ArithmeticOperator
 				(((Number) INTEGERDS.cast(right).get()).longValue())));
 	}
 	
-	public ScalarValue<?, ?, ? extends NumberDomainSubset<?, ? extends NumberDomain>, ? extends NumberDomain> applyAsNumber(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	public ScalarValue<?, ?, ?, ?> applyAsNumber(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(NUMBERDS);

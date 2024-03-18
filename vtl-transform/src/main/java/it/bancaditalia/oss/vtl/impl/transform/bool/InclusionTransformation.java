@@ -100,7 +100,7 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		super(operand);
 		this.operator = operator;
-		EnumeratedDomainSubset<?, ?, ?, ?> domain = (EnumeratedDomainSubset<?, ?, ?, ?>) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
+		EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
 		this.set = new HashSet<>(domain.getCodeItems());
 	}
 

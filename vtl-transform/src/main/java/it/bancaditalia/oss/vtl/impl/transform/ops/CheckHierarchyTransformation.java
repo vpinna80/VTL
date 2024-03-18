@@ -140,8 +140,8 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	{
 		DataSet dataset = (DataSet) operand.eval(scheme);
 
-		HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
-		List<? extends Rule<?, ?, ?, ?>> allRules = ruleset.getRules();
+		HierarchicalRuleSet<?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
+		List<? extends Rule<?, ?>> allRules = ruleset.getRules();
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(dataset.getMetadata().getIDs());
 		
 		DataStructureComponent<?, ?, ?> idComp;
@@ -175,7 +175,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		{
 			DataSetMetadata opMeta = (DataSetMetadata) metadata;
 
-			HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
+			HierarchicalRuleSet<?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
 			if (ruleset != null)
 			{
 				DataStructureComponent<?, ?, ?> idComp;
@@ -235,12 +235,12 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	{
 		private static final long serialVersionUID = 1L;
 		
-		private final List<? extends Rule<?, ?, ?, ?>> allRules;
+		private final List<? extends Rule<?, ?>> allRules;
 		private final DataStructureComponent<?, ?, ?> idComp;
 		private final DataStructureComponent<Measure, ?, ?> measure;
 		private final DataSetMetadata newStructure;
 		
-		public Finisher(List<? extends Rule<?, ?, ?, ?>> allRules, DataStructureComponent<?, ?, ?> idComp, DataStructureComponent<Measure, ?, ?> measure, DataSetMetadata newStructure)
+		public Finisher(List<? extends Rule<?, ?>> allRules, DataStructureComponent<?, ?, ?> idComp, DataStructureComponent<Measure, ?, ?> measure, DataSetMetadata newStructure)
 		{
 			this.allRules = allRules;
 			this.idComp = idComp;
@@ -252,7 +252,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		{
 			List<DataPoint> result = new ArrayList<>();
 
-			for (Rule<?, ?, ?, ?> rule : allRules)
+			for (Rule<?, ?> rule : allRules)
 			{
 				double imbalance = 0;
 				for (CodeItem<?, ?, ?, ?> rightCode : rule.getRightCodeItems())

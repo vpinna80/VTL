@@ -19,8 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
-import java.util.Set;
-
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 
 /**
@@ -28,8 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.CodeItem;
  * 
  * @author Valentino Pinna
  */
-public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C>, C extends CodeItem<C, String, S, StringDomain>> extends EnumeratedDomainSubset<S, StringDomain, C, String>, StringDomainSubset<S>
+public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C>, C extends CodeItem<C, String, S, StringDomain>> extends EnumeratedDomainSubset<S, StringDomain>, StringDomainSubset<S>
 {
-	@Override
-	public Set<C> getCodeItems();
+	
 }

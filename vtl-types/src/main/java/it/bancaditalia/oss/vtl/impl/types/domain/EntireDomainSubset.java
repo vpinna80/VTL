@@ -35,7 +35,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D extends ValueDomain> implements DescribedDomainSubset<S, D>
+public abstract class EntireDomainSubset<E extends EntireDomainSubset<E, V, S, D>, V extends ScalarValue<?, ?, S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DescribedDomainSubset<E, V, S, D>
 {
 	private static final long serialVersionUID = 1L;
 	private final D parentDomain;
@@ -126,8 +126,14 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public ScalarValue<?, ?, S, D> getDefaultValue()
+	public ScalarValue<?, ?, E, D> getDefaultValue()
 	{
-		return NullValue.instance((S) this);
+		return NullValue.instance((E) this);
+	}
+	
+	@Override
+	public boolean test(V value)
+	{
+		return true;
 	}
 }

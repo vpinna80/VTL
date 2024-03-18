@@ -17,18 +17,12 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.model.domain;
+package it.bancaditalia.oss.vtl.util;
 
 import java.io.Serializable;
+import java.util.function.LongPredicate;
 
-import it.bancaditalia.oss.vtl.model.data.CodeItem;
-
-/**
- * A {@link CodeItem} having a Integer value that is allowed in an {@link IntegerEnumeratedDomainSubset}.
- * 
- * @author Valentino Pinna
- */
-public interface IntegerCodeItem<C extends IntegerCodeItem<C, R, S>, R extends Comparable<?> & Serializable, S extends IntegerEnumeratedDomainSubset<S, C, R>> extends CodeItem<C, R, S, IntegerDomain>
+public interface SerLongPredicate extends LongPredicate, Serializable 
 {
-
+	
 }

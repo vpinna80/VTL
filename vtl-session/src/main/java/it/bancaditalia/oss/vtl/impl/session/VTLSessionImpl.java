@@ -106,7 +106,7 @@ public class VTLSessionImpl implements VTLSession
 		this.environments = config.getEnvironments();
 
 		Workspace selectedWorkspace = null;
-		for (Environment env: getEnvironments())
+		for (Environment env: environments)
 			if (env instanceof Workspace)
 				selectedWorkspace = (Workspace) env;
 		
@@ -190,7 +190,7 @@ public class VTLSessionImpl implements VTLSession
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?, ?, ?> findHierarchicalRuleset(String alias)
+	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(String alias)
 	{
 		return findRuleset(alias, HierarchicalRuleSet.class);
 	}

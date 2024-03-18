@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
@@ -32,7 +33,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 /**
  * Must be in period-length order 
  */
-public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDurationDomainSubset, DurationDomain> implements DurationDomainSubset<EntireDurationDomainSubset>, Serializable
+public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDurationDomainSubset, DurationValue, EntireDurationDomainSubset, DurationDomain> implements DurationDomainSubset<EntireDurationDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	public static final EntireDurationDomainSubset INSTANCE = new EntireDurationDomainSubset();

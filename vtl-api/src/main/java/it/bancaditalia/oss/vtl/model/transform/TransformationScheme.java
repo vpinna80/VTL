@@ -114,7 +114,7 @@ public interface TransformationScheme
 	 * @return a {@link HierarchicalRuleSet} instance describing the rule if found.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public HierarchicalRuleSet<?, ?, ?, ?, ?> findHierarchicalRuleset(String alias);
+	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(String alias);
 
 	/**
 	 * Returns a {@link DataPointRuleSet} referred by an alias defined in this TransformationScheme.

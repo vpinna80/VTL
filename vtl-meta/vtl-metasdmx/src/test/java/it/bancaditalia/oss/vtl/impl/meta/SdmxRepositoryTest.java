@@ -50,11 +50,13 @@ import org.xml.sax.SAXException;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
+import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
@@ -88,7 +90,7 @@ public class SdmxRepositoryTest
 		assertTrue(repo instanceof SDMXRepository);
 		ValueDomainSubset<?, ?> domain = repo.getDomain("ECB:CL_CURRENCY(1.0)");
 		assertTrue(domain instanceof SdmxCodeList);
-		Set<StringCodeItem> codes = ((SdmxCodeList) domain).getCodeItems();
+		Set<CodeItem<?, ?, StringCodeList, StringDomain>> codes = ((SdmxCodeList) domain).getCodeItems();
 		assertEquals(369, codes.size());
 	}
 

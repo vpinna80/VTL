@@ -23,12 +23,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainSubset, TimeDomain> implements TimeDomainSubset<EntireTimeDomainSubset, TimeDomain>, Serializable
+public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainSubset, TimeValue<?, ?, EntireTimeDomainSubset, TimeDomain>, EntireTimeDomainSubset, TimeDomain> implements TimeDomainSubset<EntireTimeDomainSubset, TimeDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final EntireTimeDomainSubset INSTANCE = new EntireTimeDomainSubset();

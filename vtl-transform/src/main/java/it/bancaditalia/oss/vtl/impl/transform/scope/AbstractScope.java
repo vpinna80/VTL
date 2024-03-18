@@ -53,7 +53,7 @@ public abstract class AbstractScope implements TransformationScheme, Serializabl
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?, ?, ?> findHierarchicalRuleset(String alias)
+	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(String alias)
 	{
 		throw new UnsupportedOperationException();
 	}

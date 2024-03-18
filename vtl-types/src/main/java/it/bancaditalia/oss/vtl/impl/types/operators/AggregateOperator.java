@@ -140,7 +140,7 @@ public enum AggregateOperator
 						summingDouble(v -> ((Number) v.get()).doubleValue()), 
 						summingLong(v -> ((Number) v.get()).longValue()), 
 						SimpleEntry::new)
-				), (c, e) -> (ScalarValue<?, ?, ?, ?>) (c > 0 ? DoubleValue.of(e.getKey()) : IntegerValue.of(e.getValue())));
+				), (c, e) -> (c > 0 ? (ScalarValue<?, ?, ?, ?>) DoubleValue.of(e.getKey()) : (ScalarValue<?, ?, ?, ?>) IntegerValue.of(e.getValue())));
 	}
 
 	private static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector()

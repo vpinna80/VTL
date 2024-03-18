@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
-import java.io.Serializable;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
@@ -34,7 +33,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * @param <D> the base domain
  * @param <C> the code
  */
-public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D, C, R>, D extends ValueDomain, C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable> extends ValueDomainSubset<S, D>
+public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> 
+	extends ValueDomainSubset<S, D>
 {
 	/**
 	 * @return the domain name.
@@ -46,7 +46,7 @@ public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D, C
 	 * 
 	 * @return the set of all the code items in this domain.
 	 */
-	public Set<C> getCodeItems();
+	public Set<CodeItem<?, ?, S, D>> getCodeItems();
 
 	@Override ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
 }

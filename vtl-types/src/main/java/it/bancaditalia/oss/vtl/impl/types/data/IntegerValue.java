@@ -26,7 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 
-public class IntegerValue<C extends IntegerValue<C, S>, S extends IntegerDomainSubset<S>> extends NumberValueImpl<C, Long, S, IntegerDomain>
+public class IntegerValue<I extends IntegerValue<I, S>, S extends IntegerDomainSubset<S>> extends NumberValueImpl<I, Long, S, IntegerDomain>
 {
 	private static final long serialVersionUID = 1L;
 

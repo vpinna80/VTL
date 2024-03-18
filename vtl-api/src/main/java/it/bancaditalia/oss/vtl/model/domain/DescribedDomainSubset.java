@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 /**
@@ -29,7 +30,9 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
  *
  * @param <D> the original domain
  */
-public interface DescribedDomainSubset<S extends DescribedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
+public interface DescribedDomainSubset<DS extends DescribedDomainSubset<DS, V, S, D>, V extends ScalarValue<?, ?, S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<DS, D>
 {
 	public Transformation getCriterion();
+	
+	public boolean test(V value);
 }

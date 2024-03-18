@@ -266,7 +266,7 @@ public class DataStructureBuilder
 		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ?, ?> identifier,
 				DataStructureComponent<Measure, S, D> measure)
 		{
-			return Utils.getStream(((EnumeratedDomainSubset<?, ?, ?, ?>) identifier.getVariable().getDomain()).getCodeItems())
+			return Utils.getStream(((EnumeratedDomainSubset<?, ?>) identifier.getVariable().getDomain()).getCodeItems())
 					.map(item -> DataStructureComponentImpl.of(item.get().toString(), Measure.class, measure.getVariable().getDomain()))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponents(getIDs())

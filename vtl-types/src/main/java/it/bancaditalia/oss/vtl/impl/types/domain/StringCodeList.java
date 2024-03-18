@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
@@ -41,7 +40,7 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, StringDomain, StringCodeItem, String>, StringDomainSubset<StringCodeList>, Serializable
+public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, StringDomain>, StringDomainSubset<StringCodeList>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(StringCodeList.class);
@@ -70,7 +69,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 
 	protected final StringDomainSubset<?> parent;
 	protected final String name; 
-	protected final Set<StringCodeItem> items = new HashSet<>();
+	protected final Set<CodeItem<?, ?, StringCodeList, StringDomain>> items = new HashSet<>();
 	
 	protected int hashCode;
 
@@ -168,7 +167,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	}
 
 	@Override
-	public Set<StringCodeItem> getCodeItems()
+	public Set<CodeItem<?, ?, StringCodeList, StringDomain>> getCodeItems()
 	{
 		return items;
 	}

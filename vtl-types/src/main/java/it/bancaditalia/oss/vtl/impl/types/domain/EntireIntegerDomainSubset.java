@@ -36,7 +36,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerDomainSubset, IntegerDomain> implements IntegerDomainSubset<EntireIntegerDomainSubset>, Serializable
+public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerDomainSubset, IntegerValue<?, EntireIntegerDomainSubset>, EntireIntegerDomainSubset, IntegerDomain> implements IntegerDomainSubset<EntireIntegerDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 

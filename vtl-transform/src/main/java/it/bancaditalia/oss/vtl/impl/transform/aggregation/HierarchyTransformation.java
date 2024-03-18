@@ -125,7 +125,7 @@ public class HierarchyTransformation extends TransformationImpl
 	{
 		DataSet dataset = (DataSet) operand.eval(scheme);
 		
-		HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
+		HierarchicalRuleSet<?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(dataset.getMetadata().getIDs());
 		DataStructureComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? dataset.getComponent(id) : dataset.getComponent(ruleset.getRuleId()))
@@ -133,7 +133,7 @@ public class HierarchyTransformation extends TransformationImpl
 		ids.remove(idComp);
 		
 		// Code items that are left-hand in any rule
-		List<? extends Rule<?, ?, ?, ?>> rules = ruleset.getRules();
+		List<? extends Rule<?, ?>> rules = ruleset.getRules();
 		Set<CodeItem<?, ?, ?, ?>> computed = rules.stream().filter(rule -> rule.getRuleType() == EQ).map(Rule::getLeftCodeItem).collect(toSet());
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		DataSetMetadata newStructure = new DataStructureBuilder(ids).addComponent(measure).addComponent(idComp).build();
@@ -155,7 +155,7 @@ public class HierarchyTransformation extends TransformationImpl
 						if (output == ALL)
 							results.add(new DataPointBuilder(dp.getValues(newStructure)).build(dp.getLineage(), newStructure));
 						
-						for (Rule<?, ?, ?, ?> rule: ruleset.getDependingRules(code))
+						for (Rule<?, ?> rule: ruleset.getDependingRules(code))
 							processRule(ruleset, rule, idComp, measure, newStructure, index, key, code, results, dp.get(measure));
 					}
 				}
@@ -169,13 +169,13 @@ public class HierarchyTransformation extends TransformationImpl
 			for (Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> key: index.keySet())
 				for (CodeItem<?, ?, ?, ?> code: ruleset.getLeaves())
 					if (!index.get(key).containsKey(code))
-						for (Rule<?, ?, ?, ?> rule: ruleset.getDependingRules(code))
+						for (Rule<?, ?> rule: ruleset.getDependingRules(code))
 							processRule(ruleset, rule, idComp, measure, newStructure, index, key, code, results, ZERO);
 		
 		return new StreamWrapperDataSet(newStructure, results::stream); 
 	}
 
-	private void processRule(HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset, Rule<?, ?, ?, ?> rule, DataStructureComponent<?, ?, ?> idComp, 
+	private void processRule(HierarchicalRuleSet<?, ?, ?> ruleset, Rule<?, ?> rule, DataStructureComponent<?, ?, ?> idComp, 
 			DataStructureComponent<Measure, ?, ?> measure, DataSetMetadata newStructure, Map<Map<DataStructureComponent<?, ?, ?>, 
 			ScalarValue<?, ?, ?, ?>>, Map<CodeItem<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> index, Map<DataStructureComponent<?, ?, ?>, 
 			ScalarValue<?, ?, ?, ?>> key, CodeItem<?, ?, ?, ?> code, Set<DataPoint> results, ScalarValue<?, ?, ?, ?> value)
@@ -220,7 +220,7 @@ public class HierarchyTransformation extends TransformationImpl
 
 			// recursively invoke processRule in order to reach the subtree leaves of the ruleset
 			CodeItem<?, ?, ?, ?> leftCode = rule.getLeftCodeItem();
-			for (Rule<?, ?, ?, ?> childRule: ruleset.getDependingRules(leftCode))
+			for (Rule<?, ?> childRule: ruleset.getDependingRules(leftCode))
 				processRule(ruleset, childRule, idComp, measure, newStructure, index, key, leftCode, results, result);
 		}
 	}
@@ -234,7 +234,7 @@ public class HierarchyTransformation extends TransformationImpl
 		{
 			DataSetMetadata opMeta = (DataSetMetadata) metadata;
 			
-			HierarchicalRuleSet<?, ?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
+			HierarchicalRuleSet<?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
 			if (ruleset != null)
 			{
 				if (ruleset.getType() == VALUE_DOMAIN && id == null)
