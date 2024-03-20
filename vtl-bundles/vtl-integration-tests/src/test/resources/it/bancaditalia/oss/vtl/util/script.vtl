@@ -18,14 +18,15 @@
  * permissions and limitations under the License.
  */
 
-'spark:parquet:d:\dati\EXR.parquet' <- 'ECB:EXR(1.0)/D..EUR.SP00.A';
-/* 
-b := max('spark:parquet:d:\dati\EXR.parquet'[filter not isnull(obs_value)] group by currency);
-d := 'spark:parquet:d:\dati\EXR.parquet'
-     [keep obs_value];
-c := d[calc
-		value_avg := avg(obs_value over(partition by currency order by 'time_period' data points between 1 preceding and 1 following)),
-		value_max := max(obs_value over(partition by currency order by 'time_period' data points between 1 preceding and 1 following)),
-		value_min := min(obs_value over(partition by currency order by 'time_period' data points between 1 preceding and 1 following))
-      ];
+test := avg('ECB:EXR(1.0)/D.USD+GBP.EUR.SP00.A'[keep 'OBS_VALUE'] group all identifier end_p := time_agg(M, _, 'TIME_PERIOD', last)]
+		[aggr average := avg('OBS_VALUE'), rep_days := count() group except 'TIME_PERIOD']
+		[filter rep_days = cast(cast(end_p, string, "DD"), integer)];
+
+/*
+define datapoint ruleset currency_ranges ( variable 'ECB:CURRENCY(1.0)' as currency, 'ECB:OBS_VALUE(1.0)' as value ) is
+	when currency = "USD" then between(value, 0.70, 1.00) errorcode "outlier" errorlevel 1;
+	when currency = "GBP" then between(value, 0.95, 1.20) errorcode "outlier" errorlevel 1
+end datapoint ruleset;
+
+test := check_datapoint('ECB:EXR(1.0)/D.USD+GBP.EUR.SP00.A', currency_ranges);
 */

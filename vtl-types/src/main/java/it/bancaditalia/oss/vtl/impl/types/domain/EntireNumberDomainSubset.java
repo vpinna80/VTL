@@ -26,10 +26,8 @@ import java.io.Serializable;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -52,7 +50,7 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NullDomain || other instanceof NumberDomainSubset  || other instanceof BooleanDomainSubset;
+		return other instanceof NullDomain || other instanceof NumberDomainSubset;
 	}
 
 	@Override
@@ -64,8 +62,6 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 				return NullValue.instance(this);
 			else if (value instanceof NumberValue)
 				return NumberValueImpl.createNumberValue((Number) value.get());
-			else if (value instanceof StringValue)
-				return NumberValueImpl.createNumberValue((String) value.get());
 			else 
 				throw new UnsupportedOperationException("Cast to double from " + value.getClass());
 		}

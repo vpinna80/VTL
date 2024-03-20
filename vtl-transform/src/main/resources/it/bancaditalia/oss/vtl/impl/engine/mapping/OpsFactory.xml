@@ -476,16 +476,6 @@
 		</params>
 	</mapping>
 
-	<!-- mapping from="AggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
-		<tokens name="op">
-			<value>COUNT</value>
-		</tokens>
-		<params>
-			<nullparam />
-			<nullparam />
-		</params>
-	</mapping -->
-
 	<mapping from="CountAggrCompContext" to="it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation">
 		<params>
 			<nullparam />
@@ -493,19 +483,15 @@
 		</params>
 	</mapping>
 
-	<mapping from="AggrFunctionClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.AggrClauseTransformation$AggrClauseItem">
-		<params>
-			<roleparam name="componentRole" />
-			<stringparam name="componentID" />
-			<exprparam name="aggrOperators" />
-		</params>
-	</mapping>
-
 	<mapping from="AggrClauseContext" to="it.bancaditalia.oss.vtl.impl.transform.dataset.AggrClauseTransformation">
 		<params>
 			<nestedparam name="aggregateClause">
 				<listparam name="aggrFunctionClause">
-					<exprparam />
+					<customparam class="it.bancaditalia.oss.vtl.impl.transform.dataset.AggrClauseTransformation$AggrClauseItem">
+						<roleparam name="componentRole" />
+						<stringparam name="componentID" />
+						<exprparam name="aggrOperators" />
+					</customparam>
 				</listparam>
 			</nestedparam>
 			<nestedparam name="groupingClause">

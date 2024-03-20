@@ -19,6 +19,6 @@
  */
 /* Load dataset 1 from csv */
 ds1:= 'csv:match_characters_test.csv';
-result:= match_characters(ds1, "\b([A-Z]{2})((?![A-Z]{10}\b)[A-Z0-9]{10})\b")[rename boolean_var to bool_var];
+result:= match_characters(ds1, "\b([A-Z]{2})((?![A-Z]{10}\b)[A-Z0-9]{10})\b");
 ref_output := 'csv:match_characters_1.csv';
 test_result := result#bool_var = ref_output#bool_var;

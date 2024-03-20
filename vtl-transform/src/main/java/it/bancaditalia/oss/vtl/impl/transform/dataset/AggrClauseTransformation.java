@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
@@ -78,7 +79,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		{
 			this.name = Variable.normalizeAlias(name);
 			this.operand = operand;
-			this.role = role;
+			this.role = coalesce(role, Measure.class);
 		}
 
 		public AggrClauseItem(AggrClauseItem other, GroupingClause groupingClause)
@@ -205,8 +206,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 						builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).getComponent(requestedRole));
 				}
 				else
-					throw new UnsupportedOperationException("Implementation TODO");
-					//builder = builder.addComponent(DataStructureComponentImpl.of(clause.getComponent(), requestedRole, NUMBERDS));
+					builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).getComponent(requestedRole));
 			}
 
 			if (having != null)

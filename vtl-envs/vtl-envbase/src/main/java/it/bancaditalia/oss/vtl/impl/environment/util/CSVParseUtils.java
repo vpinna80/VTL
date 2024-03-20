@@ -140,6 +140,9 @@ public class CSVParseUtils
 
 	public static Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> extractMetadata(String headers[])
 	{
+		// first argument avoids varargs mismatch
+		LOGGER.debug("Processing CSV header: {}{}", "", headers);
+		
 		List<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>();
 		Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();
 		for (String header: headers)

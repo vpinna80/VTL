@@ -185,6 +185,7 @@ public class CSVFileEnvironment implements Environment
 				Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
 				metadata = headerInfo.getKey();
 				masks = headerInfo.getValue();
+				LOGGER.debug("Got structure from CSV file: {}", metadata);
 				maybeStructure = new DataStructureBuilder(metadata).build();
 			}
 			else

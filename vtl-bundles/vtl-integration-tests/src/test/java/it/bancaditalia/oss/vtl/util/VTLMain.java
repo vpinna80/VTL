@@ -19,25 +19,31 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class VTLMain
 {
-	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, URISyntaxException
 	{
-		Reader reader = new InputStreamReader(VTLMain.class.getResourceAsStream("script.vtl"), StandardCharsets.UTF_8);
-		VTLSessionImpl session = new VTLSessionImpl();
-		session.addStatements(reader);
-		session.compile();
-		DataSet ds = session.resolve("ds_u", DataSet.class);
-		Triple<String[], String[], Long[]> t = new LineageViewer(ds).generateAdiacenceMatrix(session);
-		for (int i = 0; i < t.getFirst().length; i++)
-			System.out.println(t.getFirst()[i] + " --- " + t.getSecond()[i] + " --- " + t.getThird()[i]);
+		try (BufferedReader reader = Files.newBufferedReader(Path.of(System.getProperty("user.home"), ".vtlStudio.properties")))
+		{
+			ConfigurationManagerFactory.loadConfiguration(reader);
+		}
+		
+		try (BufferedReader reader = Files.newBufferedReader(Path.of(VTLMain.class.getResource("script.vtl").toURI())))
+		{
+			VTLSession session = ConfigurationManager.getDefault().createSession(reader);
+			
+			session.resolve("test", DataSet.class).forEach(System.out::println);
+		}
 	}
 }

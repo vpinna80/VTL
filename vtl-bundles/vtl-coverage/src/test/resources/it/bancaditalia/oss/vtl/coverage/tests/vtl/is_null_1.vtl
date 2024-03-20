@@ -19,6 +19,6 @@
  */
 /* Load dataset 1 from csv */
 ds1:= 'csv:isnull_test1.csv';
-result:= isnull(ds1)[rename boolean_var to bool_var];
+result:= isnull(ds1);
 ref_output := 'csv:isnull_1.csv';
 test_result := result#bool_var = ref_output#bool_var;

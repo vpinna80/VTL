@@ -19,12 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.coverage.tests;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -35,6 +36,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -51,14 +54,14 @@ public class IntegrationTestSuite
 		URL root = IntegrationTestSuite.class.getResource("vtl");
 		Pattern pattern = Pattern.compile("'csv:([^']+)'");
 		List<Arguments> tests = new ArrayList<>();
-		try (BufferedReader dirReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("vtl"), StandardCharsets.UTF_8)))
+		try (BufferedReader dirReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("vtl"), UTF_8)))
 		{
 			String testName;
 			StringBuilder testCode = new StringBuilder();
 			StringBuilder parsedLine = new StringBuilder();
 			while ((testName = dirReader.readLine()) != null)
 			{
-				try (BufferedReader testReader = new BufferedReader(new InputStreamReader(new URL(root, "vtl/" + testName).openStream(), StandardCharsets.UTF_8)))
+				try (BufferedReader testReader = new BufferedReader(new InputStreamReader(new URL(root, "vtl/" + testName).openStream(), UTF_8)))
 				{
 					String testLine;
 					int headerLines = 20;
@@ -93,7 +96,14 @@ public class IntegrationTestSuite
 	{
 		try
 		{
+			((InMemoryMetadataRepository) ConfigurationManager.getDefault().getMetadataRepository()).clearVariables();
+			
+			System.out.println("------------------------------------------------------------------------------------------------");
+			System.out.println("                                        " + testName);
+			System.out.println("------------------------------------------------------------------------------------------------");
+			System.out.println();
 			System.out.println(testCode);
+			System.out.println("------------------------------------------------------------------------------------------------");
 			VTLSessionImpl session = new VTLSessionImpl(testCode);
 			session.compile();
 			VTLValue result = session.resolve("test_result");
@@ -106,7 +116,13 @@ public class IntegrationTestSuite
 		}
 		catch (RuntimeException e)
 		{
-			throw new RuntimeException("Error in testName\n" + testCode + "\n\n", e);
+			throw new RuntimeException("Error in testName\n" + testCode + "\n\n" + e.getClass().getName() + ": " + e.getMessage() + "\n", e) {
+				private static final long serialVersionUID = 1L;
+				
+				{
+					setStackTrace(e.getStackTrace());
+				}
+			};
 		}
 	}
 }

@@ -136,4 +136,9 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 		
 		return instance;
 	}
+	
+	public void clearVariables()
+	{
+		vars.clear();
+	}
 }
