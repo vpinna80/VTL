@@ -186,7 +186,10 @@ public class MessageReplies
 	{
 		String sessionName = reply.getParentHeader().get("session").toString();
 		VTLSession oldSession = SESSIONS.get(sessionName);
-		VTLSession vtlSession = SESSIONS.computeIfAbsent(sessionName, s -> ConfigurationManagerFactory.getInstance().createSession(code));
+		VTLSession vtlSession = SESSIONS.compute(sessionName, (n, v) -> {
+			String mergedCode = v == null ? code : v.getOriginalCode() + "\n\n" + code;
+			return ConfigurationManagerFactory.getInstance().createSession(mergedCode);
+		});
 		
 		Map<Statement, VTLValueMetadata> compiled = new HashMap<>(vtlSession.compile());
 		compiled.keySet().removeAll(oldSession.getWorkspace().getRules());

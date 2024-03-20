@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
 import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE16;
 import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE17;
 import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE5;
@@ -32,16 +33,27 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.SUM
 import static java.lang.Double.NaN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.RETURNS_SMART_NULLS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.MockedStatic;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
+import it.bancaditalia.oss.vtl.impl.transform.testutils.TestComponent;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -50,9 +62,12 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class AggregateTransformationTest
 {
+	private static final MockedStatic<ConfigurationManager> CONFMAN_MOCK = mockStatic(ConfigurationManager.class);
+	
 	public static Stream<Arguments> test()
 	{
 		return Stream.of(
@@ -82,7 +97,18 @@ public class AggregateTransformationTest
 				Arguments.of(COUNT, SAMPLE17, 6L)
 			);
 	}
-	
+
+	@BeforeAll
+	public static void beforeAll() throws IOException
+	{
+		MetadataRepository metarepo = mock(MetadataRepository.class, RETURNS_SMART_NULLS);
+		when(metarepo.getVariable(anyString(), any())).then(i -> new TestComponent<>(i.getArgument(0), null, i.getArgument(1)).getVariable());
+		ConfigurationManager mockConfman = mock(ConfigurationManager.class, RETURNS_SMART_NULLS);
+		CONFMAN_MOCK.when(ConfigurationManager::getDefault).thenReturn(mockConfman);
+		when(mockConfman.getMetadataRepository()).thenReturn(metarepo);
+		CONFIG_MANAGER.setValue(mockConfman.getClass().getName());
+	}
+
 	@ParameterizedTest(name = "{0} {1}")
 	@MethodSource
 	public void test(AggregateOperator operator, DataSet sample, Number result)

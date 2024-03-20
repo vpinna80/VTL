@@ -48,7 +48,6 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -153,7 +152,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				throw new VTLSingletonComponentRequiredException(Measure.class, dataset.getMeasures());
 			else
 				builder = builder.removeComponent(dataset.getMeasures().iterator().next())
-						.addComponent(DataStructureComponentImpl.of(INTEGERDS.getName(), Measure.class, INTEGERDS));
+						.addComponent(INTEGERDS.getDefaultVariable().getComponent(Measure.class));
 			
 		return builder.build();
 	}

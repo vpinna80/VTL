@@ -20,31 +20,47 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class DataStructureComponentImpl<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
+public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>, Variable<S, D>
 {
 	private static final long serialVersionUID = 1L;
-	private final Variable<S, D> variable;
-	private final Class<R> role;
-	private transient int hashCode;
 	
-	public DataStructureComponentImpl(Class<R> role, Variable<S, D> variable)
+	private final Class<R> role;
+	private final String name;
+	private final S domain;
+	
+	public ComponentMock(Class<R> role, S domain)
+	{
+		this(domain.toString().toLowerCase() + "_var", role, domain);
+	}
+
+	public ComponentMock(String name, Class<R> role, S domain)
 	{
 		this.role = role;
-		this.variable = variable;
-		this.hashCode = hashCodeInit();
+		this.name = name;
+		this.domain = domain;
+	}
+
+	@Override
+	public String getName()
+	{
+		return name;
+	}
+
+	@Override
+	public S getDomain()
+	{
+		return domain;
 	}
 	
 	@Override
 	public Variable<S, D> getVariable()
 	{
-		return variable;
+		return this;
 	}
 
 	@Override
@@ -54,17 +70,19 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 	}
 
 	@Override
-	public int hashCode()
+	public ComponentMock<R, S, D> getRenamed(String newName)
 	{
-		return hashCode == 0 ? hashCode = hashCodeInit() : hashCode;
+		throw new UnsupportedOperationException();
 	}
 
-	public int hashCodeInit()
+	@Override
+	public int hashCode()
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * variable.hashCode();
-		result = prime * result + role.hashCode();
+		result = prime * result + ((domain == null) ? 0 : domain.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((role == null) ? 0 : role.hashCode());
 		return result;
 	}
 
@@ -75,25 +93,21 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 			return true;
 		if (obj == null)
 			return false;
-		if (obj instanceof DataStructureComponent)
-		{
-			DataStructureComponent<?, ?, ?> other = (DataStructureComponent<?, ?, ?>) obj;
-			if (role == other.getRole() && variable.equals(other.getVariable()))
-				return true;
-		}
-		
-		return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ComponentMock<?, ?, ?> other = (ComponentMock<?, ?, ?>) obj;
+		if (!domain.equals(other.domain))
+			return false;
+		if (!name.equals(other.name))
+			return false;
+		if (role != other.role)
+			return false;
+		return true;
 	}
 
 	@Override
-	public String toString()
+	public <R1 extends Component> DataStructureComponent<R1, S, D> getComponent(Class<R1> role)
 	{
-		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";	
-	}
-
-	@Override
-	public DataStructureComponent<R, S, D> getRenamed(String newName)
-	{
-		return variable.getRenamed(newName).getComponent(role);
+		throw new UnsupportedOperationException();
 	}
 }

@@ -34,7 +34,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -206,13 +205,16 @@ public class BooleanTransformation extends BinaryTransformation
 		if (!BOOLEANDS.isAssignableFrom(rightMeasure.getVariable().getDomain()))
 			throw new UnsupportedOperationException("Expected boolean measure but found: " + rightMeasure);
 
-		String measureName = leftMeasure.getVariable().getName().equals(rightMeasure.getVariable().getName()) ? leftMeasure.getVariable().getName() : "bool_var";
-		
-		return new DataStructureBuilder()
+		DataStructureBuilder builder = new DataStructureBuilder()
 				.addComponents(left.getIDs())
-				.addComponents(right.getIDs())
-				.addComponent(DataStructureComponentImpl.of(measureName, Measure.class, BOOLEANDS))
-				.build();
+				.addComponents(right.getIDs());
+		
+		if (leftMeasure.getVariable().getName().equals(rightMeasure.getVariable().getName()))
+			builder.addComponent(leftMeasure);
+		else
+			builder.addComponent(BOOLEANDS.getDefaultVariable().getComponent(Measure.class));
+		
+		return builder.build();
 	}
 
 	@Override

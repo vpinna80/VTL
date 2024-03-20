@@ -32,9 +32,6 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 	private final String name;
 	private final S parent;
 	
-	@SuppressWarnings("unchecked")
-	private transient final ScalarValue<?, ?, C, D> INSTANCE = NullValue.instance((C) this);
-	
  	public CriterionDomainSubset(String name, S parent)
 	{
 		this.name = name;
@@ -48,16 +45,14 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 		return (D) parent;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public final ScalarValue<?, ?, C, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value instanceof NullValue)
-			return INSTANCE;
+			return NullValue.instance((C) this);
 		
-		@SuppressWarnings("unchecked")
-		V casted = (V) parent.cast(value);
-		
-		return castCasted((V) casted);
+		return castCasted((V) parent.cast(value));
 	}
 
 	protected abstract ScalarValue<?, ?, C, D> castCasted(V casted);
@@ -74,10 +69,11 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 		return parent.isComparableWith(other);  
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public ScalarValue<?, ?, C, D> getDefaultValue()
 	{
-		return INSTANCE;
+		return NullValue.instance((C) this);
 	}
 	
 	@Override
@@ -90,5 +86,40 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 	public String toString()
 	{
 		return name;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((parent == null) ? 0 : parent.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (!(obj instanceof CriterionDomainSubset))
+			return false;
+		CriterionDomainSubset<?, ?, ?, ?> other = (CriterionDomainSubset<?, ?, ?, ?>) obj;
+		if (name == null)
+		{
+			if (other.name != null)
+				return false;
+		}
+		else if (!name.equals(other.name))
+			return false;
+		if (parent == null)
+		{
+			if (other.parent != null)
+				return false;
+		}
+		else if (!parent.equals(other.parent))
+			return false;
+		return true;
 	}
 }

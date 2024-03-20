@@ -50,7 +50,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -144,9 +143,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 			DataStructureComponent<Measure, ?, ?> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
 			DataStructureComponent<Measure, ?, ?> resultComp;
 			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getVariable().getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getVariable().getDomain()))
-				resultComp = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
+				resultComp = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
 			else
-				resultComp = DataStructureComponentImpl.of(Measure.class, NUMBERDS);
+				resultComp = NUMBERDS.getDefaultVariable().getComponent(Measure.class);
 			
 			DataSetMetadata newStructure = new DataStructureBuilder(streamed.getMetadata().getIDs())
 					.addComponent(resultComp)
@@ -242,12 +241,12 @@ public class ArithmeticTransformation extends BinaryTransformation
 				if (measure.getVariable().getDomain() instanceof IntegerDomainSubset)
 					builder.addComponent(measure);
 				else
-					builder.addComponent(DataStructureComponentImpl.of(INTEGERDS.getName(), Measure.class, INTEGERDS));
+					builder.addComponent(INTEGERDS.getDefaultVariable().getComponent(Measure.class));
 			else
 				if (measure.getVariable().getDomain() instanceof NumberDomainSubset)
 					builder.addComponent(measure);
 				else
-					builder.addComponent(DataStructureComponentImpl.of(NUMBERDS.getName(), Measure.class, NUMBERDS));
+					builder.addComponent(NUMBERDS.getDefaultVariable().getComponent(Measure.class));
 		
 		return builder.build();
 	}
@@ -270,7 +269,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		// check if measures are the same, unless we are at component level
 		Set<DataStructureComponent<? extends Measure, ?, ?>> resultMeasures;
 		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
-			resultMeasures = singleton(DataStructureComponentImpl.of(Measure.class, NUMBERDS));
+			resultMeasures = singleton(NUMBERDS.getDefaultVariable().getComponent(Measure.class));
 		else
 		{
 			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getName()));

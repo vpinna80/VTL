@@ -20,12 +20,14 @@
 package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.environment.TestComponents.ATTRIBUTE;
+import static it.bancaditalia.oss.vtl.impl.environment.TestComponents.IDENTIFIER;
+import static it.bancaditalia.oss.vtl.impl.environment.TestComponents.MEASURE;
+import static it.bancaditalia.oss.vtl.impl.environment.TestComponents.QUOTED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.RETURNS_SMART_NULLS;
 import static org.mockito.Mockito.mock;
@@ -51,14 +53,9 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -67,10 +64,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class CSVFileEnvironmentTest
 {
 	private static final MockedStatic<ConfigurationManager> CONFMAN_MOCK = mockStatic(ConfigurationManager.class);
-	private static final DataStructureComponent<?, ?, ?> IDENTIFIER = DataStructureComponentImpl.of("IDENTIFIER", Identifier.class, DATEDS);
-	private static final DataStructureComponent<?, ?, ?> MEASURE = DataStructureComponentImpl.of("MEASURE", Measure.class, NUMBERDS);
-	private static final DataStructureComponent<?, ?, ?> ATTRIBUTE = DataStructureComponentImpl.of("ATTRIBUTE", Attribute.class, STRINGDS);
-	private static final DataStructureComponent<?, ?, ?> QUOTED = DataStructureComponentImpl.of("QUOTED", Attribute.class, STRINGDS);
+	
 	private static final String QUOTED_RESULTS[] = {
 			" Hello, \"World\"! ",
 			"Test with",
@@ -89,6 +83,8 @@ public class CSVFileEnvironmentTest
 	public static void beforeAll() throws IOException
 	{
 		MetadataRepository metarepo = mock(MetadataRepository.class, RETURNS_SMART_NULLS);
+		when(metarepo.getVariable(anyString(), any())).then(i -> new TestComponent<>(i.getArgument(0), null, i.getArgument(1)).getVariable());
+		
 		when(metarepo.getStructure(anyString())).thenReturn(null);
 		ConfigurationManager mockConfman = mock(ConfigurationManager.class, RETURNS_SMART_NULLS);
 		CONFMAN_MOCK.when(ConfigurationManager::getDefault).thenReturn(mockConfman);
@@ -141,15 +137,15 @@ public class CSVFileEnvironmentTest
 		
 		final DataSetMetadata structure = dataset.getMetadata();
 		assertEquals(4, structure.size(), "Wrong number of columns");
-		assertTrue(structure.contains(IDENTIFIER), "Missing IDENTIFIER Column");
-		assertTrue(structure.contains(MEASURE), "Missing MEASURE Column");
-		assertTrue(structure.contains(ATTRIBUTE), "Missing ATTRIBUTE Column");
-		assertTrue(structure.contains(QUOTED), "Missing QUOTED Column");
+		assertTrue(structure.contains(IDENTIFIER.get()), "Missing IDENTIFIER Column");
+		assertTrue(structure.contains(MEASURE.get()), "Missing MEASURE Column");
+		assertTrue(structure.contains(ATTRIBUTE.get()), "Missing ATTRIBUTE Column");
+		assertTrue(structure.contains(QUOTED.get()), "Missing QUOTED Column");
 		
 		Set<String> results = new HashSet<>(Arrays.asList(QUOTED_RESULTS));
 		try (Stream<DataPoint> stream = dataset.stream())
 		{
-			long count = stream.map(dp -> dp.get(QUOTED))
+			long count = stream.map(dp -> dp.get(QUOTED.get()))
 				.map(ScalarValue::get)
 				.map(c -> c == null ? "" : c.toString())
 				.peek(s -> assertTrue(results.contains(s), "Result '" + s + "' not found."))

@@ -52,7 +52,7 @@ public class IsNullTransformationTest
 		IsNullTransformation isnt = new IsNullTransformation(left);
 		DataSetMetadata structure = (DataSetMetadata) isnt.getMetadata(session);
 		
-		Optional<DataStructureComponent<Measure, ?, ?>> component = structure.getComponent("boolean_var", Measure.class, BOOLEANDS);
+		Optional<DataStructureComponent<Measure, ?, ?>> component = structure.getComponent("bool_var", Measure.class, BOOLEANDS);
 		assertTrue(component.isPresent(), "bool_var result");
 		
 		long nullCount = ((DataSet) isnt.eval(session)).stream()

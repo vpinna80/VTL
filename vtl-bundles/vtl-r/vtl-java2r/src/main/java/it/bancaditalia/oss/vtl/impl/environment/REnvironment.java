@@ -75,7 +75,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -162,7 +161,7 @@ public class REnvironment implements Environment
 									"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
 					}
 					
-					builder.addComponent(DataStructureComponentImpl.of(key, type, domain));
+					builder.addComponent(domain.getDefaultVariable().getRenamed(key).getComponent(type));
 				}
 				
 				LOGGER.info("VTL metadata for {} completed.", name);
@@ -318,7 +317,7 @@ public class REnvironment implements Environment
 					type = Identifier.class;
 				else
 					type = Attribute.class;
-				comp = DataStructureComponentImpl.of(key, type, domain);
+				comp = domain.getDefaultVariable().getRenamed(key).getComponent(type);
 			}
 			
 			dataContainer.put(comp, values.toArray(ScalarValue<?, ?, ?, ?>[]::new));

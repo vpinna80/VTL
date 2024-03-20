@@ -34,6 +34,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
@@ -176,5 +177,13 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	public boolean isAssignableFrom(ValueDomain other)
 	{
 		return other instanceof StringCodeList && name.equals(((StringCodeList) other).name);
+	}
+
+
+	@Override
+	public Variable<StringCodeList, StringDomain> getDefaultVariable()
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
 	}
 }

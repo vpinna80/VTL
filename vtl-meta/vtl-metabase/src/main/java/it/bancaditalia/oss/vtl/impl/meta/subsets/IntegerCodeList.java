@@ -28,8 +28,10 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.DefaultVariable;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -66,10 +68,10 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 		}
 	}
 	
-	public IntegerCodeList(IntegerDomainSubset<?> parent, String name, Set<? extends Long> items)
+	public IntegerCodeList(String name, IntegerDomainSubset<?> parent, Set<? extends Long> items)
 	{
-		this.parent = parent;
 		this.name = name;
+		this.parent = parent;
 		this.hashCode = 31 + name.hashCode();
 		for (Long item: items)
 			this.items.add(new IntegerCodeItem(item, this));
@@ -152,5 +154,11 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	public ScalarValue<?, ?, IntegerCodeList, IntegerDomain> getDefaultValue()
 	{
 		return NullValue.instance(this);
+	}
+
+	@Override
+	public Variable<IntegerCodeList, IntegerDomain> getDefaultVariable()
+	{
+		return new DefaultVariable<>(this);
 	}
 }

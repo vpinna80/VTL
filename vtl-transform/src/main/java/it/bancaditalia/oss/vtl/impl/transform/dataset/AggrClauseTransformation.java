@@ -44,7 +44,6 @@ import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -203,10 +202,11 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else
-						builder = builder.addComponent(DataStructureComponentImpl.of(clause.getComponent(), requestedRole, NUMBERDS));
+						builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).getComponent(requestedRole));
 				}
 				else
-					builder = builder.addComponent(DataStructureComponentImpl.of(clause.getComponent(), requestedRole, NUMBERDS));
+					throw new UnsupportedOperationException("Implementation TODO");
+					//builder = builder.addComponent(DataStructureComponentImpl.of(clause.getComponent(), requestedRole, NUMBERDS));
 			}
 
 			if (having != null)

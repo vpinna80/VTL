@@ -49,6 +49,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
@@ -128,6 +129,11 @@ public class DataPointBuilder implements Serializable
 		return add(value.getKey(), value.getValue());
 	}
 
+	public DataPointBuilder add(CommonComponents component, ScalarValue<?, ?, ?, ?> value)
+	{
+		return add(component.get(), value);
+	}
+	
 	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
 	{
 		if (!component.getVariable().getDomain().isAssignableFrom(value.getDomain()))

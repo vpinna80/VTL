@@ -72,10 +72,10 @@ import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 
 public class AbstractDataSetTest
 {
-	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> STR_ID = DataStructureComponentImpl.of("str_id", Identifier.class, Domains.STRINGDS);
-	private static final DataStructureComponent<Identifier, EntireIntegerDomainSubset, IntegerDomain> INT_ID = DataStructureComponentImpl.of("int_id", Identifier.class, INTEGERDS);
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_ME = DataStructureComponentImpl.of("int_me", Measure.class, INTEGERDS);
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOL_ME = DataStructureComponentImpl.of("bol_me", Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> STR_ID = new ComponentMock<>("str_id", Identifier.class, Domains.STRINGDS);
+	private static final DataStructureComponent<Identifier, EntireIntegerDomainSubset, IntegerDomain> INT_ID = new ComponentMock<>("int_id", Identifier.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_ME = new ComponentMock<>("int_me", Measure.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOL_ME = new ComponentMock<>("bol_me", Measure.class, BOOLEANDS);
 	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(setOf(STR_ID, INT_ID, INT_ME, BOL_ME)).build();
 	private static final String STR_ID_VAL[] = { "A", "A", "B", "B", "C" }; 
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 
@@ -112,8 +112,8 @@ public class AbstractDataSetTest
 	void testMembership()
 	{
 		Stream<Entry<DataStructureComponent<?, ?, ?>, Stream<DataStructureComponent<?, ?, ?>>>> expected = Stream.of(
-				new SimpleEntry<>(STR_ID, Stream.of(STR_ID, INT_ID, DataStructureComponentImpl.of(Measure.class, STRINGDS))),
-				new SimpleEntry<>(INT_ID, Stream.of(STR_ID, INT_ID, DataStructureComponentImpl.of(Measure.class, INTEGERDS))), 
+				new SimpleEntry<>(STR_ID, Stream.of(STR_ID, INT_ID, new ComponentMock<>(Measure.class, STRINGDS))),
+				new SimpleEntry<>(INT_ID, Stream.of(STR_ID, INT_ID, new ComponentMock<>(Measure.class, INTEGERDS))), 
 				new SimpleEntry<>(INT_ME, Stream.of(STR_ID, INT_ID, INT_ME)),
 				new SimpleEntry<>(BOL_ME, Stream.of(STR_ID, INT_ID, BOL_ME)));
 		

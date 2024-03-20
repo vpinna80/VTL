@@ -55,7 +55,6 @@ import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
@@ -154,7 +153,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 					}
 				}
 				
-				DataStructureComponent<? extends Component, ?, ?> comp = DataStructureComponentImpl.of(varName, role, domain);
+				DataStructureComponent<? extends Component, ?, ?> comp = domain.getDefaultVariable().getRenamed(varName).getComponent(role);
 				LOGGER.trace("Read component {} for {}", comp, name);
 				builder.addComponent(comp);
 			}
@@ -219,7 +218,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				domain = NUMBERDS;
 		else
 			if (sized)
-				domain = new StrlenDomainSubset(domainName, STRINGDS, OptionalInt.empty(), OptionalInt.of(l));
+				domain = new StrlenDomainSubset<>(STRINGDS, OptionalInt.empty(), OptionalInt.of(l));
 			else
 				domain = STRINGDS;
 		
@@ -252,7 +251,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 								.peek(c -> LOGGER.trace("Subset {} has code {}", setId, c))
 								.collect(toSet());
 					
-					return new IntegerCodeList((IntegerDomainSubset<?>) domain, setId, set);
+					return new IntegerCodeList(setId, (IntegerDomainSubset<?>) domain, set);
 				}
 				else
 					return new StringCodeList((StringDomainSubset<?>) domain, setId, stream.peek(c -> LOGGER.trace("Found code {}" + c)).collect(toSet()));

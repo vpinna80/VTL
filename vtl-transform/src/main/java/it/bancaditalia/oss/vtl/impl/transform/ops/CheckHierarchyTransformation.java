@@ -27,10 +27,12 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransform
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.INVALID;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCODE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.IMBALANCE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.RULEID;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
@@ -59,12 +61,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -79,9 +77,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -92,11 +87,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class CheckHierarchyTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> RULEID = DataStructureComponentImpl.of("ruleid", Identifier.class, STRINGDS);
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS);
-	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> IMBALANCE = DataStructureComponentImpl.of("imbalance", Measure.class, NUMBERDS);
-	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> ERRORCODE = DataStructureComponentImpl.of("errorcode", Measure.class, STRINGDS);
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> ERRORLEVEL = DataStructureComponentImpl.of("errorlevel", Measure.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().getComponent(Measure.class);
 
 	public enum Input
 	{
@@ -206,7 +197,8 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			if (output != INVALID)
 				builder = builder.addComponent(BOOL_VAR);
 
-			return builder.addComponents(RULEID, IMBALANCE, ERRORCODE, ERRORLEVEL).addComponents(opMeta.getComponents(Measure.class)).build();
+			return builder.addComponents(RULEID, IMBALANCE, ERRORCODE, ERRORLEVEL)
+					.addComponents(opMeta.getComponents(Measure.class)).build();
 		}
 		else
 			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
@@ -277,8 +269,12 @@ public class CheckHierarchyTransformation extends TransformationImpl
 					if (output != INVALID)
 						builder = builder.add(BOOL_VAR, BooleanValue.of(sat));
 
-					result.add(builder.add(idComp, rule.getLeftCodeItem()).add(RULEID, StringValue.of(rule.getName())).add(IMBALANCE, createNumberValue(imbalance)).add(ERRORCODE, rule.getErrorCode())
-							.add(ERRORLEVEL, rule.getErrorLevel()).build(LineageNode.of("hierarchy"), newStructure));
+					result.add(builder.add(idComp, rule.getLeftCodeItem())
+							.add(RULEID, StringValue.of(rule.getName()))
+							.add(IMBALANCE, createNumberValue(imbalance))
+							.add(ERRORCODE, rule.getErrorCode())
+							.add(ERRORLEVEL, rule.getErrorLevel())
+							.build(LineageNode.of("hierarchy"), newStructure));
 				}
 			}
 

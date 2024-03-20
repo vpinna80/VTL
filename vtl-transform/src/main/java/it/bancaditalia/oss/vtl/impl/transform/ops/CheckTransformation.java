@@ -22,6 +22,9 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator.CHECK;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation.CheckOutput.ALL;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCODE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.IMBALANCE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -39,10 +42,7 @@ import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.Bo
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -54,8 +54,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -64,10 +62,7 @@ public class CheckTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 	private static final BooleanUnaryOperator function = CHECK;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS); 
-	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> IMBALANCE = DataStructureComponentImpl.of("imbalance", Measure.class, NUMBERDS); 
-	private static final DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> ERRORCODE = DataStructureComponentImpl.of("errorcode", Measure.class, STRINGDS); 
-	private static final DataStructureComponent<Measure, EntireNumberDomainSubset, NumberDomain> ERRORLEVEL = DataStructureComponentImpl.of("errorlevel", Measure.class, NUMBERDS); 
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().getComponent(Measure.class); 
 
 	public enum CheckOutput
 	{
@@ -104,8 +99,8 @@ public class CheckTransformation extends TransformationImpl
 			dataset = dataset.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
 				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
-				result.put(ERRORCODE, NullValue.instance(STRINGDS));
-				result.put(ERRORLEVEL, NullValue.instance(NUMBERDS));
+				result.put(ERRORCODE.get(), NullValue.instance(STRINGDS));
+				result.put(ERRORLEVEL.get(), NullValue.instance(NUMBERDS));
 				return result;
 			});
 		else
@@ -150,13 +145,12 @@ public class CheckTransformation extends TransformationImpl
 					throw new VTLInvariantIdentifiersException("check imbalance", identifiers, imbalanceIdentifiers);
 				
 				imbalanceDataset.getSingleton(Measure.class, NUMBERDS);
-				metadata.addComponent(IMBALANCE);
+				metadata.addComponents(IMBALANCE);
 			}
 
 			return metadata
-					.addComponent(BOOL_VAR)
-					.addComponent(ERRORCODE)
-					.addComponent(ERRORLEVEL)
+					.addComponents(BOOL_VAR)
+					.addComponents(ERRORCODE, ERRORLEVEL)
 					.build();
 		}
 	}

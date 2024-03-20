@@ -32,7 +32,6 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -50,7 +49,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class BetweenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().getComponent(Measure.class);
 	
 	private final ScalarValue<?, ?, ?, ?> from;
 	private final ScalarValue<?, ?, ?, ?> to;
@@ -97,7 +96,7 @@ public class BetweenTransformation extends UnaryTransformation
 
 			return new DataStructureBuilder()
 					.addComponents(ds.getIDs())
-					.addComponent(BOOL_MEASURE)
+					.addComponent(BOOL_VAR)
 					.build();
 		}
 		else
@@ -114,7 +113,7 @@ public class BetweenTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_MEASURE, evalOnScalar(dp.get(measure), metadata)));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_VAR, evalOnScalar(dp.get(measure), metadata)));
 	}
 	
 	@Override

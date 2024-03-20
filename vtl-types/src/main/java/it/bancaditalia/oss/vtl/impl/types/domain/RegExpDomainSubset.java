@@ -28,6 +28,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -124,5 +125,11 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 		if (!regexpstr.equals(other.regexpstr))
 			return false;
 		return true;
+	}
+
+	@Override
+	public Variable<RegExpDomainSubset, StringDomain> getDefaultVariable()
+	{
+		return new DefaultVariable<>(this);
 	}
 }

@@ -44,7 +44,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -169,7 +168,7 @@ public class CSVParseUtils
 			else
 				role = Measure.class;
 
-			component = DataStructureComponentImpl.of(cname.replaceAll("^[$#]", ""), role, domain);
+			component = domain.getDefaultVariable().getRenamed(cname.replaceAll("^[$#]", "")).getComponent(role);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)

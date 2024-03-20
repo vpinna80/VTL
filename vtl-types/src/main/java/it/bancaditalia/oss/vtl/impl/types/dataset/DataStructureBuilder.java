@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
+import static java.util.stream.Collectors.toList;
 
 import java.io.Serializable;
 import java.util.AbstractSet;
@@ -40,8 +41,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -104,6 +105,11 @@ public class DataStructureBuilder
 	{
 		components.add(component);
 		return this;
+	}
+
+	public DataStructureBuilder addComponents(CommonComponents... components)
+	{
+		return addComponents(Arrays.stream(components).map(CommonComponents::get).collect(toList()));
 	}
 
 	public DataStructureBuilder addComponents(DataStructureComponent<?, ?, ?>... components)
@@ -204,7 +210,7 @@ public class DataStructureBuilder
 				return new DataStructureBuilder().addComponents(component).addComponents(getIDs()).build();
 			else
 				return new DataStructureBuilder()
-						.addComponent(ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(component.getVariable().getDomain()).getComponent(Measure.class))
+						.addComponent(component.getVariable().getDomain().getDefaultVariable().getComponent(Measure.class))
 						.addComponents(getIDs()).build();
 		}
 
@@ -223,7 +229,7 @@ public class DataStructureBuilder
 		@Override
 		public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName)
 		{
-			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.rename(newName)).build();
+			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.getRenamed(newName)).build();
 		}
 
 		@Override
@@ -267,7 +273,7 @@ public class DataStructureBuilder
 				DataStructureComponent<Measure, S, D> measure)
 		{
 			return Utils.getStream(((EnumeratedDomainSubset<?, ?>) identifier.getVariable().getDomain()).getCodeItems())
-					.map(item -> DataStructureComponentImpl.of(item.get().toString(), Measure.class, measure.getVariable().getDomain()))
+					.map(item -> measure.getRenamed(item.get().toString()))
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 					.addComponents(getIDs())
 					.removeComponent(identifier)

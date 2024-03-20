@@ -24,6 +24,7 @@ import java.util.OptionalLong;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -37,7 +38,7 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 	
  	public RangeIntegerDomainSubset(String name, S parent, OptionalLong minInclusive, OptionalLong maxInclusive)
 	{
- 		super(name, parent);
+ 		super(parent.getName() + (minInclusive.isPresent() ? ">=" + minInclusive.getAsLong() : "") + (maxInclusive.isPresent() ? "<" + maxInclusive.getAsLong() : ""), parent);
 
  		this.minInclusive = minInclusive;
 		this.maxInclusive = maxInclusive;
@@ -65,5 +66,38 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 			return IntegerValue.of(value.get(), this);
 		else
 			throw new VTLCastException(this, value);
+	}
+
+	@Override
+	public Variable<RangeIntegerDomainSubset<S>, IntegerDomain> getDefaultVariable()
+	{
+		return new DefaultVariable<>(this);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((maxInclusive == null) ? 0 : maxInclusive.hashCode());
+		result = prime * result + ((minInclusive == null) ? 0 : minInclusive.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (!(obj instanceof RangeIntegerDomainSubset))
+			return false;
+		RangeIntegerDomainSubset<?> other = (RangeIntegerDomainSubset<?>) obj;
+		if (!maxInclusive.equals(other.maxInclusive))
+			return false;
+		if (!minInclusive.equals(other.minInclusive))
+			return false;
+		return true;
 	}
 }

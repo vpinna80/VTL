@@ -42,7 +42,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
@@ -53,7 +52,6 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
@@ -77,7 +75,7 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class AggregateTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = DataStructureComponentImpl.of(Measure.class, INTEGERDS);
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
 
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
@@ -134,9 +132,9 @@ public class AggregateTransformation extends UnaryTransformation
 		DataStructureComponent<?, ?, ?> outputComponent;
 
 		if (aggregation == COUNT && name != null)
-			outputComponent = ConfigurationManager.getDefault().getMetadataRepository().getVariable(name, INTEGERDS).getComponent(Measure.class);
+			outputComponent = INTEGERDS.getDefaultVariable().getRenamed(name).getComponent(Measure.class);
 		else if (aggregation == COUNT)
-			outputComponent = ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(INTEGERDS).getComponent(Measure.class);
+			outputComponent = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
 		else if (name != null)
 			outputComponent = ((DataSetMetadata) metadata).getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset.getMetadata()));
 		else
@@ -200,7 +198,7 @@ public class AggregateTransformation extends UnaryTransformation
 					newMeasures = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newMeasures = newMeasures.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? DataStructureComponentImpl.of(c.getVariable().getName(), Measure.class, NUMBERDS) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getComponent(Measure.class).getRenamed(c.getVariable().getName()) : c)
 						.collect(toSet());
 
 				if (operand != null)
@@ -231,19 +229,19 @@ public class AggregateTransformation extends UnaryTransformation
 				
 				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getMeasures();
 				if (aggregation == COUNT && name != null)
-					newComps = singleton(COUNT_MEASURE.rename(name));
+					newComps = singleton(COUNT_MEASURE.getRenamed(name));
 				else if (aggregation == COUNT)
 					newComps = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newComps = newComps.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? DataStructureComponentImpl.of(c.getVariable().getName(), Measure.class, NUMBERDS) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(c.getVariable().getName()).getComponent(Measure.class) : c)
 						.collect(toSet());
 				
 				if (name != null)
 					if (measures.size() > 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, newComps);
 					else
-						newComps = singleton(DataStructureComponentImpl.of(name, role, measures.iterator().next().getVariable().getDomain()));
+						newComps = singleton(measures.iterator().next().getVariable().getRenamed(name).getComponent(role));
 
 				return new DataStructureBuilder(groupComps).addComponents(newComps).build();
 			}

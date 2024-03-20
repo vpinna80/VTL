@@ -67,7 +67,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -138,8 +137,7 @@ public class SparkUtils
 		}
 		
 		ValueDomainSubset<?, ?> domain = METAREPO.getDomain(field.metadata().getString("Domain"));
-		
-		return DataStructureComponentImpl.of(field.name(), role, domain);
+		return METAREPO.getVariable(field.name(), domain).getComponent(role);
 	}
 
 	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Object serialized)

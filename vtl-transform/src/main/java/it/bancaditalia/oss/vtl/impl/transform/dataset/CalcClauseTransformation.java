@@ -51,7 +51,6 @@ import it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation
 import it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -311,7 +310,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					{
 						// switch role (from a non-id to any)
 						builder.removeComponent(definedComponent);
-						DataStructureComponent<?, ?, ?> newComponent = DataStructureComponentImpl.of(item.getName(), item.getRole(), domain);
+						DataStructureComponent<?, ?, ?> newComponent = domain.getDefaultVariable().getRenamed(item.getName()).getComponent(item.getRole());
 						builder.addComponent(newComponent);
 					}
 				}
@@ -320,7 +319,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// new component
 				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
-				builder = builder.addComponent(DataStructureComponentImpl.of(item.getName(), newComponent, domain));
+				builder = builder.addComponent(domain.getDefaultVariable().getRenamed(item.getName()).getComponent(newComponent));
 			}
 		}
 

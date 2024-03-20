@@ -219,7 +219,7 @@ public class VTLJupyterKernel
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Map<String, Object> process(byte[] frame) throws IOException
+	private static Map<String, Object> frameToJson(byte[] frame) throws IOException
 	{
 		return FACTORY.createParser(new String(frame, ZMQ.CHARSET)).readValueAs(Map.class);
 	}
@@ -256,7 +256,7 @@ public class VTLJupyterKernel
 
 		Queue<Map<String, Object>> dicts = new LinkedList<>();
 		for (byte[] frame : frames)
-			dicts.add(process(frame));
+			dicts.add(frameToJson(frame));
 
 		return new JupyterMessage(session, dicts);
 	}

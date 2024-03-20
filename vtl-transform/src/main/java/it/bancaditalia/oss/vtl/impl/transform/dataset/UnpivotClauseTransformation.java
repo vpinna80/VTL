@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -100,13 +99,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 
 		Optional<DataStructureComponent<?, ?, ?>> maybeId = dataset.getComponent(identifierName);
 		if (maybeId.isPresent())
-		{
-			DataStructureComponent<?, ?, ?> c = maybeId.get();
-			if (c.is(Identifier.class))
-				throw new VTLInvariantIdentifiersException("unpivot", singleton(c.asRole(Identifier.class)));
-			else
-				throw new VTLInvariantIdentifiersException("unpivot", singleton(c.asRole(Identifier.class)));
-		}
+			throw new VTLInvariantIdentifiersException("unpivot", singleton(maybeId.get().asRole(Identifier.class)));
 		
 		Set<? extends ValueDomainSubset<?, ?>> domains = dataset.getMeasures().stream()
 			.map(DataStructureComponent::getVariable).map(Variable::getDomain)
@@ -118,8 +111,8 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		
 		ValueDomainSubset<?, ?> domain = domains.iterator().next();
 
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = DataStructureComponentImpl.of(identifierName, Identifier.class, STRINGDS);
-		DataStructureComponent<?, ?, ?> newMeasure = DataStructureComponentImpl.of(measureName, Measure.class, domain);
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = STRINGDS.getDefaultVariable().getRenamed(identifierName).getComponent(Identifier.class);
+		DataStructureComponent<?, ?, ?> newMeasure = domain.getDefaultVariable().getRenamed(measureName).getComponent(Measure.class);
 
 		return new DataStructureBuilder(dataset.getIDs())
 				.addComponent(newIdentifier)

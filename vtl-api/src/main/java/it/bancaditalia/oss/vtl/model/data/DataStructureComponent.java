@@ -95,5 +95,8 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 			throw new ClassCastException("In component " + this + ", cannot cast " + getRole().getSimpleName() + " to " + role.getSimpleName());
 	}
 
-	public DataStructureComponent<?, ?, ?> rename(String newName);
+	public default DataStructureComponent<R, S, D> getRenamed(String newName)
+	{
+		return getVariable().getRenamed(newName).getComponent(getRole());
+	}
 }

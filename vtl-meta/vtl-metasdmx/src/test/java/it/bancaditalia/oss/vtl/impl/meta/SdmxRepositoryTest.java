@@ -20,11 +20,10 @@
 package it.bancaditalia.oss.vtl.impl.meta;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
-import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl.of;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.TIME_PERIOD;
+import static java.util.EnumSet.allOf;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.matchers.Times.exactly;
@@ -52,10 +51,8 @@ import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -99,40 +96,12 @@ public class SdmxRepositoryTest
 	{
 		DataSetMetadata actual = repo.getStructure("ECB:EXR(1.0)");
 		DataSetMetadata expected = new DataStructureBuilder()
-				.addComponent(of("TIME_PERIOD", Identifier.class, TIMEDS))
-				.addComponent(of("FREQ", Identifier.class, repo.getDomain("ECB:CL_FREQ(1.0)")))
-				.addComponent(of("CURRENCY", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)")))
-				.addComponent(of("CURRENCY_DENOM", Identifier.class, repo.getDomain("ECB:CL_CURRENCY(1.0)")))
-				.addComponent(of("EXR_TYPE", Identifier.class, repo.getDomain("ECB:CL_EXR_TYPE(1.0)")))
-				.addComponent(of("EXR_SUFFIX", Identifier.class, repo.getDomain("ECB:CL_EXR_SUFFIX(1.0)")))
-				.addComponent(of("OBS_VALUE", Measure.class, NUMBERDS))
-				.addComponent(of("PUBL_ECB", Attribute.class, STRINGDS))
-				.addComponent(of("DOM_SER_IDS", Attribute.class, STRINGDS))
-				.addComponent(of("NAT_TITLE", Attribute.class, STRINGDS))
-				.addComponent(of("TITLE_COMPL", Attribute.class, STRINGDS))
-				.addComponent(of("TITLE", Attribute.class, STRINGDS))
-				.addComponent(of("OBS_COM", Attribute.class, STRINGDS))
-				.addComponent(of("SOURCE_AGENCY", Attribute.class, repo.getDomain("ECB:CL_ORGANISATION(1.0)")))
-				.addComponent(of("UNIT_INDEX_BASE", Attribute.class, STRINGDS))
-				.addComponent(of("SOURCE_PUB", Attribute.class, STRINGDS))
-				.addComponent(of("UNIT_MULT", Attribute.class, repo.getDomain("ECB:CL_UNIT_MULT(1.0)")))
-				.addComponent(of("PUBL_MU", Attribute.class, STRINGDS))
-				.addComponent(of("COVERAGE", Attribute.class, STRINGDS))
-				.addComponent(of("TIME_FORMAT", Attribute.class, STRINGDS))
-				.addComponent(of("BREAKS", Attribute.class, STRINGDS))
-				.addComponent(of("PUBL_PUBLIC", Attribute.class, STRINGDS))
-				.addComponent(of("DISS_ORG", Attribute.class, repo.getDomain("ECB:CL_ORGANISATION(1.0)")))
-				.addComponent(of("OBS_CONF", Attribute.class, repo.getDomain("ECB:CL_OBS_CONF(1.0)")))
-				.addComponent(of("COMPILING_ORG", Attribute.class, repo.getDomain("ECB:CL_ORGANISATION(1.0)")))
-				.addComponent(of("COLLECTION", Attribute.class, repo.getDomain("ECB:CL_COLLECTION(1.0)")))
-				.addComponent(of("UNIT", Attribute.class, repo.getDomain("ECB:CL_UNIT(1.0)")))
-				.addComponent(of("COMPILATION", Attribute.class, STRINGDS))
-				.addComponent(of("OBS_PRE_BREAK", Attribute.class, STRINGDS))
-				.addComponent(of("DECIMALS", Attribute.class, repo.getDomain("ECB:CL_DECIMALS(1.0)")))
-				.addComponent(of("OBS_STATUS", Attribute.class, repo.getDomain("ECB:CL_OBS_STATUS(1.0)")))
+				.addComponents(TIME_PERIOD)
+				.addComponents(allOf(TestComponents.class).stream().map(c -> c.get(repo)).collect(toList()))
 				.build();
-
 		
+		for (DataStructureComponent<?, ?, ?> c: actual)
+			assertTrue(expected.contains(c), c + " not found in " + expected);
 		assertEquals(expected, actual);
 	}
 }

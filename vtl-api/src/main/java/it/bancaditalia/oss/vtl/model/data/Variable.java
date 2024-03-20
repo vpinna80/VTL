@@ -92,4 +92,6 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	{
 		return getDomain().cast(value);
 	}
+
+	public Variable<S, D> getRenamed(String newName);
 }

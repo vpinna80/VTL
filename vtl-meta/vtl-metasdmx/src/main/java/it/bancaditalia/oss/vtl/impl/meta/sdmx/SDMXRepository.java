@@ -107,7 +107,6 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -117,8 +116,8 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXRepository.class);
 	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
-	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset("ALPHA", "?U^\\p{Alpha}*$", STRINGDS);
-	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset("ALPHA_NUMERIC", "?U^\\p{Alnum}*$", STRINGDS);
+	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset("ALPHA", "(?U)^\\p{Alpha}*$", STRINGDS);
+	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset("ALPHA_NUMERIC", "(?U)^\\p{Alnum}*$", STRINGDS);
 
 	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
 	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
@@ -243,15 +242,14 @@ public class SDMXRepository extends InMemoryMetadataRepository
 					{
 						if (STRINGDS.isAssignableFrom(domain))
 						{
-							OptionalInt minLen = Stream.of(format).map(TextFormatBean::getMinLength).mapToInt(BigInteger::intValueExact).findAny();
-							OptionalInt maxLen = Stream.of(format).map(TextFormatBean::getMaxLength).mapToInt(BigInteger::intValueExact).findAny();
-							String name = domain.getName() + ">=" + minLen.orElse(0) + "<" + maxLen.orElse(Integer.MAX_VALUE);
-							domain = new StrlenDomainSubset(name, (StringDomainSubset<?>) domain, minLen, maxLen);
+							OptionalInt minLen = Stream.ofNullable(format.getMinLength()).mapToInt(BigInteger::intValueExact).findAny();
+							OptionalInt maxLen = Stream.ofNullable(format.getMaxLength()).mapToInt(BigInteger::intValueExact).findAny();
+							domain = new StrlenDomainSubset<>(STRINGDS, minLen, maxLen);
 						}
 						if (INTEGERDS.isAssignableFrom(domain))
 						{
-							OptionalLong minLen = Stream.of(format).map(TextFormatBean::getMinValue).mapToLong(BigDecimal::longValueExact).findAny();
-							OptionalLong maxLen = Stream.of(format).map(TextFormatBean::getMaxValue).mapToLong(BigDecimal::longValueExact).findAny();
+							OptionalLong minLen = Stream.ofNullable(format.getMinValue()).mapToLong(BigDecimal::longValueExact).findAny();
+							OptionalLong maxLen = Stream.ofNullable(format.getMaxValue()).mapToLong(BigDecimal::longValueExact).findAny();
 							String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
 							domain = new RangeIntegerDomainSubset<>(name, INTEGERDS, minLen, maxLen);
 						}

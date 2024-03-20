@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -71,6 +72,12 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	
 	@Override
 	public String getName()
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Variable<NullDomain, ValueDomain> getDefaultVariable()
 	{
 		throw new UnsupportedOperationException();
 	}

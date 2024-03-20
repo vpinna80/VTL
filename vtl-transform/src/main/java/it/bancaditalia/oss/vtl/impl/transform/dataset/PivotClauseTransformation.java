@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -92,7 +91,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getMeasures()));
 
 		return Utils.getStream(((StringEnumeratedDomainSubset<?, ?>) identifier.getVariable().getDomain()).getCodeItems())
-				.map(i -> DataStructureComponentImpl.of(i.get().toString(), Measure.class, measure.getVariable().getDomain()))
+				.map(i -> measure.getRenamed(i.get().toString()))
 				.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
 				.addComponents(dataset.getIDs())
 				.removeComponent(identifier)
@@ -108,7 +107,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		String lineageString = toString();
 		
 		SerCollector<DataPoint, ?, DataPoint> collector = mapping(dp -> {
-				DataStructureComponent<Measure, ?, ?> name = DataStructureComponentImpl.of(dp.get(identifier).get().toString(), Measure.class, measure.getVariable().getDomain());
+				DataStructureComponent<Measure, ?, ?> name = measure.getRenamed(dp.get(identifier).get().toString());
 				return new SimpleEntry<>(name, new SimpleEntry<>(dp.getLineage(), dp.get(measure)));
 			}, collectingAndThen(entriesToMap(), map -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dp = Utils.getStream(map)

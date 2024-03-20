@@ -38,7 +38,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -59,7 +58,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class PeriodIndicatorTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> DURATION_MEASURE = DataStructureComponentImpl.of(Measure.class, DURATIONDS);
+	private static final DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> DURATION_MEASURE = DURATIONDS.getDefaultVariable().getComponent(Measure.class);
 	
 	private final Transformation operand;
 

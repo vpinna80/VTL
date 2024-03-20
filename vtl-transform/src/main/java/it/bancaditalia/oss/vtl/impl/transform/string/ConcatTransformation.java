@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -180,7 +179,7 @@ public class ConcatTransformation extends BinaryTransformation
 			return new DataStructureBuilder()
 				.addComponents(leftIds)
 				.addComponents(rightIds)
-				.addComponent(DataStructureComponentImpl.of(Measure.class, STRINGDS))
+				.addComponent(STRINGDS.getDefaultVariable().getComponent(Measure.class))
 				.build();
 		else if (!leftMeasures.equals(rightMeasures))
 			throw new VTLException("The two datasets must have the same measures.");

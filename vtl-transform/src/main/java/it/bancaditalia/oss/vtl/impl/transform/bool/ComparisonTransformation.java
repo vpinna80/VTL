@@ -35,7 +35,6 @@ import it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -164,7 +163,7 @@ public class ComparisonTransformation extends BinaryTransformation
 			throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
 		
 		return new DataStructureBuilder().addComponents(dataset.getIDs())
-				.addComponents(DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS)).build();
+				.addComponents(BOOLEANDS.getDefaultVariable().getComponent(Measure.class)).build();
 	}
 	
 	@Override
@@ -191,7 +190,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		return new DataStructureBuilder()
 				.addComponents(left.getIDs())
 				.addComponents(right.getIDs())
-				.addComponents(DataStructureComponentImpl.of("bool_var", Measure.class, BOOLEANDS))
+				.addComponents(BOOLEANDS.getDefaultVariable().getComponent(Measure.class))
 				.build();
 	}
 	
