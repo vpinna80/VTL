@@ -269,7 +269,7 @@ public class REnvironment implements Environment
 							"In node: " + name + " there is a column (" + key + ") of type " + REXP.xtName(columnData.getType()) + ". This is not supported.");
 			}
 			
-			DataStructureComponent<?, ?, ?> comp = metadata.getComponent('\'' + key + '\'').orElse(null);
+			DataStructureComponent<?, ?, ?> comp = metadata.getComponent(key).orElse(null);
 			if (comp == null)
 				continue;
 			if (comp.getVariable().getDomain() instanceof TimeDomainSubset)

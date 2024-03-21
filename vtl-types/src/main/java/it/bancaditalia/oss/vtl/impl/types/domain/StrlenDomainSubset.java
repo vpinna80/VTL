@@ -37,15 +37,15 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 {
 	private static final long serialVersionUID = 1L;
 
-	private final OptionalInt minLen;
-	private final OptionalInt maxLen;
+	private final OptionalInt minLenInclusive;
+	private final OptionalInt maxLenInclusive;
 	
-	public StrlenDomainSubset(S parent, OptionalInt minLen, OptionalInt maxLen)
+	public StrlenDomainSubset(S parent, OptionalInt minLenInclusive, OptionalInt maxLenInclusive)
 	{
-		super(parent.getName() + (minLen.isPresent() ? ">=" + minLen.getAsInt() : "") + (maxLen.isPresent() ? "<" + maxLen.getAsInt() : ""), parent);
+		super(parent.getName() + (minLenInclusive.isPresent() ? ">=" + minLenInclusive.getAsInt() : "") + (maxLenInclusive.isPresent() ? "<=" + maxLenInclusive.getAsInt() : ""), parent);
 		
-		this.minLen = requireNonNull(minLen);
-		this.maxLen = requireNonNull(maxLen);
+		this.minLenInclusive = requireNonNull(minLenInclusive);
+		this.maxLenInclusive = requireNonNull(maxLenInclusive);
 	}
 
 	@Override
@@ -57,9 +57,8 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	@Override
 	protected ScalarValue<?, ?, StrlenDomainSubset<S>, StringDomain> castCasted(StringValue<?, S> casted)
 	{
-		String str = casted.get();
-		if ((minLen.isEmpty() || str.length() >= minLen.getAsInt()) && (maxLen.isEmpty() || str.length() < maxLen.getAsInt()))
-			return new StringValue<>(str, this);
+		if (test(casted))
+			return new StringValue<>(casted.get(), this);
 		else
 			throw new VTLCastException(this, casted); 
 	}
@@ -74,9 +73,9 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	public boolean test(StringValue<?, S> value)
 	{
 		int len = ((String) value.get()).length();
-		if (minLen.isPresent() && len < minLen.getAsInt())
+		if (minLenInclusive.isPresent() && len < minLenInclusive.getAsInt())
 			return false;
-		if (maxLen.isPresent() && len >= maxLen.getAsInt())
+		if (maxLenInclusive.isPresent() && len > maxLenInclusive.getAsInt())
 			return false;
 		return true;
 	}
@@ -92,8 +91,8 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	{
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + maxLen.hashCode();
-		result = prime * result + minLen.hashCode();
+		result = prime * result + maxLenInclusive.hashCode();
+		result = prime * result + minLenInclusive.hashCode();
 		return result;
 	}
 
@@ -107,9 +106,9 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 		if (!(obj instanceof StrlenDomainSubset))
 			return false;
 		StrlenDomainSubset<?> other = (StrlenDomainSubset<?>) obj;
-		if (!maxLen.equals(other.maxLen))
+		if (!maxLenInclusive.equals(other.maxLenInclusive))
 			return false;
-		if (!minLen.equals(other.minLen))
+		if (!minLenInclusive.equals(other.minLenInclusive))
 			return false;
 		return true;
 	}

@@ -183,7 +183,6 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	@Override
 	public Variable<StringCodeList, StringDomain> getDefaultVariable()
 	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		return new DefaultVariable<>(this);
 	}
 }
