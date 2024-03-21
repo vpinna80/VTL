@@ -113,8 +113,10 @@ VTLSession <- R6Class("VTLSession",
                       if (!is.null(df)) {
                         return(df)
                       } 
-                      
-                      jnode <- private$checkInstance()$resolve(node)
+                      jnode <- tryCatch(private$checkInstance()$resolve(node), error = function(e) {
+                          e$jobj$printStackTrace()
+                          signalCondition(e)
+                      })
                       if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
                         df <- as.data.frame(list(Scalar = jnode$get()))
                       } else {
