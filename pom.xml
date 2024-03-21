@@ -113,9 +113,6 @@
 		<profile>
 			<id>with-jupyter</id>
 		</profile>
-		<profile>
-			<id>with-rest</id>
-		</profile>
 	</profiles>
 
 	<properties>
@@ -160,7 +157,7 @@
 		<jaxb.version>4.0.1</jaxb.version>
 		<jaxb.runtime.version>4.0.3</jaxb.runtime.version>
 		<thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
-		<spring.boot.version>2.7.13</spring.boot.version>
+		<spring.boot.version>2.7.18</spring.boot.version>
 		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.8</antlr4.version>
 		<io.sdmx.version>1.0.54</io.sdmx.version>
@@ -422,7 +419,7 @@
 			<dependency>
 				<groupId>io.rest-assured</groupId>
 				<artifactId>rest-assured-all</artifactId>
-				<version>4.3.1</version>
+				<version>5.4.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.openjdk.jol</groupId>
@@ -933,6 +930,7 @@
 						<requireJavaVersion>
 							<version>[11,)</version>
 						</requireJavaVersion>
+		                <requireProfileIdsExist/>
 					</rules>
 				</configuration>
 			</plugin>

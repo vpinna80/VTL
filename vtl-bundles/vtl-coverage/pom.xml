@@ -38,17 +38,6 @@
 
 	<profiles>
 		<profile>
-			<id>with-rest</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-rest</artifactId>
-					<version>${project.version}</version>
-					<classifier>classes</classifier>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
 			<id>with-spark</id>
 			<dependencies>
 				<dependency>
@@ -63,7 +52,6 @@
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
 					<artifactId>vtl-cli</artifactId>
-					<version>${project.version}</version>
 				</dependency>
 			</dependencies>
 		</profile>

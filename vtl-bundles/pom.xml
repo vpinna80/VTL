@@ -45,12 +45,6 @@
 			</modules>
 		</profile>
 		<profile>
-			<id>with-rest</id>
-			<modules>
-				<module>vtl-rest</module>
-			</modules>
-		</profile>
-		<profile>
 			<id>with-r</id>
 			<modules>
 				<module>vtl-r</module>
