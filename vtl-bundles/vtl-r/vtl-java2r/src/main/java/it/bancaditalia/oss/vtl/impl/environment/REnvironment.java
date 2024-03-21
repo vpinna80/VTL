@@ -111,14 +111,26 @@ public class REnvironment implements Environment
 			{
 				LOGGER.info("Found a data.frame, constructing VTL metadata...");
 				REXP data = reval("`???`[1, ]", name);
+				String dataflowRef = Optional.ofNullable(data.getAttribute("dataflow"))
+						.map(REXP::asString)
+						.map(s -> s.split(",", 3))
+						.filter(s -> s.length == 3)
+						.map(a -> a[0] + ":" + a[1] + "(" + a[2] + ")")
+						.orElse(name);
+				DataSetMetadata metadata = ConfigurationManagerFactory.getInstance().getMetadataRepository().getStructure(dataflowRef);
+				if (metadata != null)
+				{
+					LOGGER.info("R dataframe {} has structure {}", name, metadata);
+					return Optional.of(metadata);
+				}
+				
 				RList dataFrame = data.asList();
 
 				// manage measure and identifier attributes
 				List<String> measures = new ArrayList<>();
 				REXP measureAttrs = data.getAttribute("measures");
-				if(measureAttrs != null) {
+				if(measureAttrs != null) 
 					measures = Arrays.asList(measureAttrs.asStringArray());
-				}
 				
 				List<String> identifiers = new ArrayList<>();
 				REXP idAttr = data.getAttribute("identifiers");
@@ -144,18 +156,10 @@ public class REnvironment implements Environment
 					ValueDomainSubset<?, ?> domain;
 					switch (columnData.getType())
 					{
-						case XT_DOUBLE: case XT_ARRAY_DOUBLE:
-							domain = NUMBERDS;
-							break;
-						case XT_INT: case XT_ARRAY_INT:
-							domain = INTEGERDS;
-							break;
-						case XT_STR: case XT_ARRAY_STR:
-							domain = STRINGDS;
-							break;
-						case XT_BOOL: case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
-							domain = BOOLEANDS;
-							break;
+						case XT_DOUBLE: case XT_ARRAY_DOUBLE:                     domain = NUMBERDS; break;
+						case XT_INT: case XT_ARRAY_INT:                           domain = INTEGERDS; break;
+						case XT_STR: case XT_ARRAY_STR:                           domain = STRINGDS; break;
+						case XT_BOOL: case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT: domain = BOOLEANDS; break;
 						default:
 							throw new UnsupportedOperationException(
 									"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
@@ -173,17 +177,13 @@ public class REnvironment implements Environment
 				REXP data = reval("`???`", name);
 				switch (data.getType())
 				{
-					case XT_STR:
-						return Optional.of(STRING);
-					case XT_ARRAY_DOUBLE:
-						return Optional.of(NUMBER);
-					case XT_ARRAY_INT:
-						return Optional.of(INTEGER);
-					case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
-						return Optional.of(BOOLEAN);
+					case XT_STR:            return Optional.of(STRING);
+					case XT_ARRAY_DOUBLE:   return Optional.of(NUMBER);
+					case XT_ARRAY_INT:      return Optional.of(INTEGER);
+					case XT_ARRAY_BOOL:     return Optional.of(BOOLEAN);
+					case XT_ARRAY_BOOL_INT: return Optional.of(BOOLEAN);
 					default:
-						throw new UnsupportedOperationException(
-								"Unrecognized scalar value " + name + ": " + REXP.xtName(data.getType()) + ")");
+						throw new UnsupportedOperationException("Unrecognized scalar value " + name + ": " + REXP.xtName(data.getType()) + ")");
 				}
 			}
 		}
@@ -198,8 +198,9 @@ public class REnvironment implements Environment
 		{
 			VTLValue result;
 
-			if (reval("is.data.frame(`???`)", name).asBool().isTRUE()) {
-				DataSetMetadata metadata = ConfigurationManagerFactory.getInstance().getMetadataRepository().getStructure(name);
+			if (reval("is.data.frame(`???`)", name).asBool().isTRUE())
+			{
+				DataSetMetadata metadata = (DataSetMetadata) getValueMetadata(name).get();
 				result = parseDataFrame(name, metadata);
 				return Optional.of(result);
 			}
@@ -208,18 +209,11 @@ public class REnvironment implements Environment
 				REXP data = reval("`???`", name);
 				switch (data.getType())
 				{
-					case XT_STR:
-						result = StringValue.of(data.asString());
-						break;
-					case XT_ARRAY_DOUBLE:
-						result = NumberValueImpl.createNumberValue(data.asDoubleArray()[0]);
-						break;
-					case XT_ARRAY_INT:
-						result = IntegerValue.of((long) data.asIntArray()[0]);
-						break;
-					case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
-						result = BooleanValue.of(data.asBool().isTRUE());
-					break;
+					case XT_STR: result = StringValue.of(data.asString()); break;
+					case XT_ARRAY_DOUBLE: result = NumberValueImpl.createNumberValue(data.asDoubleArray()[0]); break;
+					case XT_ARRAY_INT: result = IntegerValue.of((long) data.asIntArray()[0]); break;
+					case XT_ARRAY_BOOL: result = BooleanValue.of(data.asBool().isTRUE()); break;
+					case XT_ARRAY_BOOL_INT: result = BooleanValue.of(data.asBool().isTRUE()); break;
 					default:
 						throw new IllegalStateException("Node: " + name + " of scalar type: " + REXP.xtName(data.getType()) + ". This is not supported.");
 				}
@@ -252,34 +246,22 @@ public class REnvironment implements Environment
 		{
 			REXP columnData = dataFrame.at(key);
 			Stream<? extends ScalarValue<?, ?, ?, ?>> values;
-			ValueDomainSubset<?, ?> domain;
 			switch (columnData.getType())
 			{
 				case XT_ARRAY_DOUBLE:
 					if(dateColumns.contains(key))
-					{
-						domain = DATEDS;
-						// NAs are mapped to something that returns true to is.NaN()
 						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) (Double.isNaN(val) ? NullValue.instance(DATEDS) :  DateValue.of(LocalDate.of(1970, 1, 1).plus((long) val, DAYS) )));   
-					}
 					else
-					{
-						// NAs are mapped to something that retrns true to is.NaN()
-						domain = NUMBERDS;
 						values = Utils.getStream(columnData.asDoubleArray()).mapToObj(NumberValueImpl::createNumberValue);
-					}
 					break;
 				case XT_ARRAY_INT:
 					// NAs are mapped to Integer.MIN_VALUE
-					domain = INTEGERDS;
 					values = Utils.getStream(columnData.asIntArray()).asLongStream().mapToObj(IntegerValue::of);
 					break;
 				case XT_ARRAY_STR:
-					domain = STRINGDS;
 					values = Utils.getStream(columnData.asStringArray()).map(StringValue::of);
 					break;
 				case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT:
-					domain = BOOLEANDS;
 					values = Utils.getStream(columnData.asIntArray()).mapToObj(val -> (ScalarValue<?, ?, ?, ?>) ((val != 1 && val != 0) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(val == 1)));
 					break;
 				default:
@@ -287,57 +269,29 @@ public class REnvironment implements Environment
 							"In node: " + name + " there is a column (" + key + ") of type " + REXP.xtName(columnData.getType()) + ". This is not supported.");
 			}
 			
-			final DataStructureComponent<?, ?, ?> comp;
-			if (metadata != null)
-			{
-				comp = metadata.getComponent('\'' + key + '\'').orElseThrow(() -> {
-					return new VTLMissingComponentsException(metadata, key);
-				});
-				if (comp.getVariable().getDomain() instanceof TimeDomainSubset)
-					values = values.map(REnvironment.toTime(comp));
-				else
-					values = values.map(v -> comp.getVariable().getDomain().cast(v));
-			}
+			DataStructureComponent<?, ?, ?> comp = metadata.getComponent('\'' + key + '\'').orElse(null);
+			if (comp == null)
+				continue;
+			if (comp.getVariable().getDomain() instanceof TimeDomainSubset)
+				values = values.map(REnvironment.toTime(comp));
 			else
-			{
-				// manage measure and identifier attributes
-				List<String> identifiers = new ArrayList<>();
-				List<String> measures = new ArrayList<>();
-				REXP measureAttr = data.getAttribute("measures");
-				if (measureAttr != null && (measureAttr.getType() == XT_ARRAY_STR || measureAttr.getType() == XT_STR))
-					measures = Arrays.asList(measureAttr.asStringArray());
-				REXP idAttr = data.getAttribute("identifiers");
-				if (idAttr != null && (idAttr.getType() == XT_ARRAY_STR || idAttr.getType() == XT_STR))
-					identifiers = Arrays.asList(idAttr.asStringArray());
-
-				Class<? extends Component> type;
-				if (measures.contains(key))
-					type = Measure.class;
-				else if (identifiers.contains(key))
-					type = Identifier.class;
-				else
-					type = Attribute.class;
-				comp = domain.getDefaultVariable().getRenamed(key).getComponent(type);
-			}
+				values = values.map(v -> comp.getVariable().getDomain().cast(v));
 			
 			dataContainer.put(comp, values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
 		}
 		
-		if (metadata != null)
-		{
-			for (DataStructureComponent<Attribute, ?, ?> comp: metadata.getComponents(Attribute.class))
-				if (!dataContainer.containsKey(comp))
-				{
-					ScalarValue<?, ?, ?, ?>[] array = new ScalarValue<?, ?, ?, ?>[len];
-					Arrays.fill(array, NullValue.instanceFrom(comp));
-					dataContainer.put(comp, array);
-				}
-			
-			Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(metadata);
-			missing.removeAll(dataContainer.keySet());
-			if (missing.size() > 0)
-				throw new VTLMissingComponentsException(metadata, missing);
-		}
+		for (DataStructureComponent<Attribute, ?, ?> comp: metadata.getComponents(Attribute.class))
+			if (!dataContainer.containsKey(comp))
+			{
+				ScalarValue<?, ?, ?, ?>[] array = new ScalarValue<?, ?, ?, ?>[len];
+				Arrays.fill(array, NullValue.instanceFrom(comp));
+				dataContainer.put(comp, array);
+			}
+		
+		Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(metadata);
+		missing.removeAll(dataContainer.keySet());
+		if (missing.size() > 0)
+			throw new VTLMissingComponentsException(metadata, missing);
 		
 		return new ColumnarDataSet(name, dataContainer);
 	}
