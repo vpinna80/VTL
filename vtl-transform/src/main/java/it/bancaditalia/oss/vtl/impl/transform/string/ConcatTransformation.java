@@ -179,7 +179,7 @@ public class ConcatTransformation extends BinaryTransformation
 			return new DataStructureBuilder()
 				.addComponents(leftIds)
 				.addComponents(rightIds)
-				.addComponent(STRINGDS.getDefaultVariable().getComponent(Measure.class))
+				.addComponent(STRINGDS.getDefaultVariable().as(Measure.class))
 				.build();
 		else if (!leftMeasures.equals(rightMeasures))
 			throw new VTLException("The two datasets must have the same measures.");

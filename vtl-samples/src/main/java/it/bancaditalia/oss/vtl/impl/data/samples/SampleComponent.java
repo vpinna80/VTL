@@ -46,7 +46,7 @@ class SampleComponent<R extends Component, S extends ValueDomainSubset<S, D>, D 
 		}
 
 		@Override
-		public <R1 extends Component> DataStructureComponent<R1, S, D> getComponent(Class<R1> role)
+		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
 		{
 			return new SampleComponent<>(name, role, domain);
 		}

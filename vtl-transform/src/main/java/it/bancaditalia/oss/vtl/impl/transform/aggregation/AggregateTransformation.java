@@ -75,7 +75,7 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class AggregateTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
 
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
@@ -132,9 +132,9 @@ public class AggregateTransformation extends UnaryTransformation
 		DataStructureComponent<?, ?, ?> outputComponent;
 
 		if (aggregation == COUNT && name != null)
-			outputComponent = INTEGERDS.getDefaultVariable().getRenamed(name).getComponent(Measure.class);
+			outputComponent = INTEGERDS.getDefaultVariable().getRenamed(name).as(Measure.class);
 		else if (aggregation == COUNT)
-			outputComponent = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
+			outputComponent = INTEGERDS.getDefaultVariable().as(Measure.class);
 		else if (name != null)
 			outputComponent = ((DataSetMetadata) metadata).getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset.getMetadata()));
 		else
@@ -198,7 +198,7 @@ public class AggregateTransformation extends UnaryTransformation
 					newMeasures = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newMeasures = newMeasures.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getComponent(Measure.class).getRenamed(c.getVariable().getName()) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class).getRenamed(c.getVariable().getName()) : c)
 						.collect(toSet());
 
 				if (operand != null)
@@ -234,14 +234,14 @@ public class AggregateTransformation extends UnaryTransformation
 					newComps = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newComps = newComps.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(c.getVariable().getName()).getComponent(Measure.class) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(c.getVariable().getName()).as(Measure.class) : c)
 						.collect(toSet());
 				
 				if (name != null)
 					if (measures.size() > 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, newComps);
 					else
-						newComps = singleton(measures.iterator().next().getVariable().getRenamed(name).getComponent(role));
+						newComps = singleton(measures.iterator().next().getVariable().getRenamed(name).as(role));
 
 				return new DataStructureBuilder(groupComps).addComponents(newComps).build();
 			}

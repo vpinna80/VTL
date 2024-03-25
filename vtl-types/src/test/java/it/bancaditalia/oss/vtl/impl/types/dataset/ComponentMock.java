@@ -25,13 +25,66 @@ import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>, Variable<S, D>
+public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
 {
 	private static final long serialVersionUID = 1L;
 	
 	private final Class<R> role;
 	private final String name;
 	private final S domain;
+	
+	private class VarImpl implements Variable<S, D>
+	{
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public String getName()
+		{
+			return name;
+		}
+
+		@Override
+		public S getDomain()
+		{
+			return domain;
+		}
+
+		@Override
+		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
+		{
+			return new ComponentMock<>(name, role, domain);
+		}
+
+		@Override
+		public Variable<S, D> getRenamed(String newName)
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + domain.hashCode();
+			result = prime * result + name.hashCode();
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj)
+				return true;
+			if (obj instanceof Variable)
+			{
+				Variable<?, ?> other = (Variable<?, ?>) obj;
+				return name.equals(other.getName()) && domain.equals(other.getDomain());
+			}
+			
+			return false;
+		}
+	}
 	
 	public ComponentMock(Class<R> role, S domain)
 	{
@@ -44,23 +97,11 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 		this.name = name;
 		this.domain = domain;
 	}
-
-	@Override
-	public String getName()
-	{
-		return name;
-	}
-
-	@Override
-	public S getDomain()
-	{
-		return domain;
-	}
 	
 	@Override
 	public Variable<S, D> getVariable()
 	{
-		return this;
+		return new VarImpl();
 	}
 
 	@Override
@@ -70,19 +111,12 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 	}
 
 	@Override
-	public ComponentMock<R, S, D> getRenamed(String newName)
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public int hashCode()
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((role == null) ? 0 : role.hashCode());
+		result = prime * result + new VarImpl().hashCode();
+		result = prime * result + role.hashCode();
 		return result;
 	}
 
@@ -91,23 +125,12 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 	{
 		if (this == obj)
 			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		ComponentMock<?, ?, ?> other = (ComponentMock<?, ?, ?>) obj;
-		if (!domain.equals(other.domain))
-			return false;
-		if (!name.equals(other.name))
-			return false;
-		if (role != other.role)
-			return false;
-		return true;
-	}
+		if (obj instanceof DataStructureComponent)
+		{
+			DataStructureComponent<?, ?, ?> other = (DataStructureComponent<?, ?, ?>) obj;
+			return role == other.getRole() && getVariable().equals(other.getVariable());
+		}
 
-	@Override
-	public <R1 extends Component> DataStructureComponent<R1, S, D> getComponent(Class<R1> role)
-	{
-		throw new UnsupportedOperationException();
+		return false;
 	}
 }

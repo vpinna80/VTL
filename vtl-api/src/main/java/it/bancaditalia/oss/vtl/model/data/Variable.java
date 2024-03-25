@@ -72,7 +72,14 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	 */
 	public String getName();
 
-	public <R extends Component> DataStructureComponent<R, S, D> getComponent(Class<R> role);
+	/**
+	 * Returns this variable as a {@link DataStructureComponent} with the specified {@link Component} role.
+	 * 
+	 * @param <R> The component role type
+	 * @param role The class of the component
+	 * @return the component
+	 */
+	public <R extends Component> DataStructureComponent<R, S, D> as(Class<R> role);
 
 	/**
 	 * @return The domain subset of this {@link Variable}.

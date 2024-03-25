@@ -7,8 +7,7 @@
     You may not use this work except in compliance with the
     License.
     You may obtain a copy of the License at:
-
-    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
 
     Unless required by applicable law or agreed to in
     writing, software distributed under the License is
@@ -122,7 +121,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
-		
+
 		<flatten.version>1.6.0</flatten.version>
 		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
 		<compiler.version>3.12.1</compiler.version>
@@ -142,31 +141,35 @@
 		<site.version>3.12.1</site.version>
 		<reflow.version>2.3.4</reflow.version>
 		<asciidoctor.version>2.2.4</asciidoctor.version>
-		<restdocs.version>2.0.8.RELEASE</restdocs.version>
 		<doxia.markdown.version>1.12.0</doxia.markdown.version>
 
-		<slf4j.version>2.0.11</slf4j.version>
-		<log4j.version>2.22.1</log4j.version>
+		<slf4j.version>2.0.12</slf4j.version>
+		<log4j.version>2.23.1</log4j.version>
 
-		<scala.version>2.13.11</scala.version>
+		<scala.version>2.13.13</scala.version>
 		<scala.compat.version>2.13</scala.compat.version>
-		<spark.version>3.5.0</spark.version>
+		<spark.version>3.5.1</spark.version>
+
+		<ac-lang.version>2.6</ac-lang.version>
+		<ac-lang3.version>3.14.0</ac-lang3.version>
+		<ac-math3.version>3.6.1</ac-math3.version>
+		<ac-compress.version>1.26.1</ac-compress.version>
+		<ac-collection.version>3.2.2</ac-collection.version>
 
 		<picocli.version>4.7.5</picocli.version>
 		<jackson.version>2.15.2</jackson.version>
-		<jaxb.version>4.0.1</jaxb.version>
-		<jaxb.runtime.version>4.0.3</jaxb.runtime.version>
+		<jaxb.version>4.0.2</jaxb.version>
+		<jaxb.runtime.version>4.0.5</jaxb.runtime.version>
 		<thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
-		<spring.boot.version>2.7.18</spring.boot.version>
 		<node.version>v10.20.1</node.version>
 		<antlr4.version>4.8</antlr4.version>
 		<io.sdmx.version>1.0.54</io.sdmx.version>
+		<spring.version>5.3.31</spring.version>
 		<guava.version>30.1.1-jre</guava.version>
-		
-		<junit.version>5.10.0</junit.version>
-		<junit-jupiter.version>${junit.version}</junit-jupiter.version>
-		<mockito.version>5.9.0</mockito.version>
-		<mockito-inline.version>5.2.0</mockito-inline.version>
+
+		<junit.version>5.10.2</junit.version>
+		<mockito.version>5.11.0</mockito.version>
+		<hsqldb.version>2.7.2</hsqldb.version>
 		<jacoco.version>0.8.11</jacoco.version>
 		<jacoco.ut.file>${project.build.directory}/jacoco-ut.exec</jacoco.ut.file>
 		<jacoco.it.file>${project.build.directory}/jacoco-it.exec</jacoco.it.file>
@@ -174,7 +177,8 @@
 
 		<scmUrl>https://github.com/vpinna80/VTL</scmUrl>
 		<siteUrl>https://vpinna80.github.io/VTL</siteUrl>
-		<licenseUrl>https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</licenseUrl>
+		<licenseUrl>
+			https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</licenseUrl>
 	</properties>
 
 	<reporting>
@@ -333,16 +337,6 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-api</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.logging.log4j</groupId>
-				<artifactId>log4j-slf4j2-impl</artifactId>
-				<version>${log4j.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.apache.logging.log4j</groupId>
 				<artifactId>log4j-bom</artifactId>
 				<version>${log4j.version}</version>
@@ -350,9 +344,45 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-framework-bom</artifactId>
+				<version>${spring.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-bom</artifactId>
+				<type>pom</type>
+				<version>${slf4j.version}</version>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
 				<groupId>org.junit.jupiter</groupId>
 				<artifactId>junit-jupiter</artifactId>
 				<version>${junit.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-bom</artifactId>
+				<type>pom</type>
+				<version>${mockito.version}</version>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<type>pom</type>
+				<version>${jackson.version}</version>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.hsqldb</groupId>
+				<artifactId>hsqldb</artifactId>
+				<version>${hsqldb.version}</version>
+				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.scala-lang</groupId>
@@ -368,58 +398,6 @@
 				<groupId>org.apache.spark</groupId>
 				<artifactId>spark-sql_${scala.compat.version}</artifactId>
 				<version>${spark.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.codehaus.janino</groupId>
-				<artifactId>commons-compiler</artifactId>
-				<version>3.0.16</version>
-			</dependency>
-			<dependency>
-				<groupId>org.codehaus.janino</groupId>
-				<artifactId>janino</artifactId>
-				<version>3.0.16</version>
-			</dependency>
-			<dependency>
-				<groupId>org.mockito</groupId>
-				<artifactId>mockito-core</artifactId>
-				<version>${mockito.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.mockito</groupId>
-				<artifactId>mockito-inline</artifactId>
-				<version>${mockito-inline.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.mockito</groupId>
-				<artifactId>mockito-junit-jupiter</artifactId>
-				<version>${mockito.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>${spring.boot.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-starter-test</artifactId>
-				<version>${spring.boot.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>junit</groupId>
-						<artifactId>junit</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.junit.vintage</groupId>
-						<artifactId>junit-vintage-engine</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>io.rest-assured</groupId>
-				<artifactId>rest-assured-all</artifactId>
-				<version>5.4.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.openjdk.jol</groupId>
@@ -439,17 +417,27 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-compress</artifactId>
-				<version>1.21</version>
+				<version>${ac-compress.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-collections</groupId>
 				<artifactId>commons-collections</artifactId>
-				<version>3.2.2</version>
+				<version>${ac-collection.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-lang</groupId>
 				<artifactId>commons-lang</artifactId>
-				<version>2.6</version>
+				<version>${ac-lang.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>${ac-lang3.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-math3</artifactId>
+				<version>${ac-math3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.xerial.snappy</groupId>
@@ -460,11 +448,6 @@
 				<groupId>org.apache.avro</groupId>
 				<artifactId>avro</artifactId>
 				<version>1.11.3</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.commons</groupId>
-				<artifactId>commons-math3</artifactId>
-				<version>3.4.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.scala-lang</groupId>
@@ -485,21 +468,6 @@
 				<groupId>org.objenesis</groupId>
 				<artifactId>objenesis</artifactId>
 				<version>2.5.1</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-core</artifactId>
-				<version>${jackson.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-databind</artifactId>
-				<version>${jackson.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-annotations</artifactId>
-				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.curator</groupId>
@@ -615,11 +583,6 @@
 							<groupId>org.asciidoctor</groupId>
 							<artifactId>asciidoctor-maven-plugin</artifactId>
 							<version>${asciidoctor.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.springframework.restdocs</groupId>
-							<artifactId>spring-restdocs-asciidoctor</artifactId>
-							<version>${restdocs.version}</version>
 						</dependency>
 						<dependency>
 							<groupId>org.apache.maven.doxia</groupId>
@@ -930,7 +893,7 @@
 						<requireJavaVersion>
 							<version>[11,)</version>
 						</requireJavaVersion>
-		                <requireProfileIdsExist/>
+						<requireProfileIdsExist />
 					</rules>
 				</configuration>
 			</plugin>
@@ -946,7 +909,8 @@
 					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
 					<asciidoc>
 						<attributes>
-							<snippets>${project.basedir}/vtl-bundles/vtl-rest/target/generated-snippets</snippets>
+							<snippets>
+								${project.basedir}/vtl-bundles/vtl-rest/target/generated-snippets</snippets>
 						</attributes>
 					</asciidoc>
 				</configuration>

@@ -97,6 +97,6 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 
 	public default DataStructureComponent<R, S, D> getRenamed(String newName)
 	{
-		return getVariable().getRenamed(newName).getComponent(getRole());
+		return getVariable().getRenamed(newName).as(getRole());
 	}
 }

@@ -68,7 +68,7 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 		}
 
 		@Override
-		public <R extends Component> DataStructureComponent<R, EntireBooleanDomainSubset, BooleanDomain> getComponent(Class<R> role)
+		public <R extends Component> DataStructureComponent<R, EntireBooleanDomainSubset, BooleanDomain> as(Class<R> role)
 		{
 			return new DataStructureComponentImpl<>(role, this);
 		}

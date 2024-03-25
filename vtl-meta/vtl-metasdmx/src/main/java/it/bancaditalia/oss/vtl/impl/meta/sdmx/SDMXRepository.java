@@ -286,7 +286,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		String alias = obs_value.getId();
 		return variables.computeIfAbsent(obs_value.getId(), id -> new HashMap<>())
 			.computeIfAbsent(obs_value.getMaintainableParent().getAgencyId(), ag -> VariableImpl.of(alias, NUMBERDS))
-			.getComponent(Measure.class);
+			.as(Measure.class);
 	}
 
 	private <R extends Component> DataStructureComponent<R, ?, ?> createComponent(ComponentBean bean, Class<R> role, ValueDomainSubset<?, ?> domain)
@@ -295,7 +295,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		
 		variables.putIfAbsent(name, new HashMap<>());
 		Variable<?, ?> variable = variables.get(name).compute(bean.getConceptRef().getAgencyId(), (ag, v) -> VariableImpl.of(name, domain));
-		DataStructureComponent<R, ?, ?> component = variable.getComponent(role);
+		DataStructureComponent<R, ?, ?> component = variable.as(role);
 		
 		String sdmxType = bean.getClass().getSimpleName();
 		sdmxType = sdmxType.substring(0, sdmxType.length() - 8);

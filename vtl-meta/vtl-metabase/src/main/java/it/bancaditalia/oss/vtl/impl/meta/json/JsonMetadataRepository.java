@@ -195,7 +195,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				if (!ROLES.containsKey(role))
 					throw new InvalidParameterException("Invalid role " + role + " for component " + varName + " in structure " + name);
 				
-				builder.addComponent(variables.get(varName).getComponent(ROLES.get(role)));
+				builder.addComponent(variables.get(varName).as(ROLES.get(role)));
 			}
 			else
 				throw new InvalidParameterException("Invalid or null component in structure " + name);

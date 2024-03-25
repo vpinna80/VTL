@@ -47,7 +47,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class StrlenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> LEN_MEASURE = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
+	private static final DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> LEN_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
 	
 	public StrlenTransformation(Transformation operand)
 	{

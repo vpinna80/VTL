@@ -163,7 +163,7 @@ public class ComparisonTransformation extends BinaryTransformation
 			throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
 		
 		return new DataStructureBuilder().addComponents(dataset.getIDs())
-				.addComponents(BOOLEANDS.getDefaultVariable().getComponent(Measure.class)).build();
+				.addComponents(BOOLEANDS.getDefaultVariable().as(Measure.class)).build();
 	}
 	
 	@Override
@@ -190,7 +190,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		return new DataStructureBuilder()
 				.addComponents(left.getIDs())
 				.addComponents(right.getIDs())
-				.addComponents(BOOLEANDS.getDefaultVariable().getComponent(Measure.class))
+				.addComponents(BOOLEANDS.getDefaultVariable().as(Measure.class))
 				.build();
 	}
 	

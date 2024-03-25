@@ -98,7 +98,7 @@ public enum AggregateOperator
 	STDDEV_POP("stddev.pop", collectingAndThen(VAR_POP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP("stddev.var", collectingAndThen(VAR_SAMP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get()))));
 
-	private static final DataStructureComponent<Measure, ?, ?> COUNT_MEASURE = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
+	private static final DataStructureComponent<Measure, ?, ?> COUNT_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
 	private static final SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean> FLAGMAP = (SerFunction<? super DataStructureComponent<?, ?, ?>, ? extends AtomicBoolean>) key -> new AtomicBoolean(false);
 
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
@@ -201,7 +201,7 @@ public enum AggregateOperator
 		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> outputMeasures;
 		if (isChanging)
 			outputMeasures = measures.stream()
-				.map(m -> INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(m.getVariable().getName()).getComponent(Measure.class) : m)
+				.map(m -> INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(m.getVariable().getName()).as(Measure.class) : m)
 				.collect(toSet());
 		else
 			outputMeasures = measures;
@@ -237,7 +237,7 @@ public enum AggregateOperator
 							if (this == COUNT)
 								m = COUNT_MEASURE;
 							else if (isChanging)
-								m = INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(m.getVariable().getName()).getComponent(Measure.class) : m;
+								m = INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(m.getVariable().getName()).as(Measure.class) : m;
 							return m;
 						}, splitting((measure, collector) -> {
 							@SuppressWarnings("unchecked")

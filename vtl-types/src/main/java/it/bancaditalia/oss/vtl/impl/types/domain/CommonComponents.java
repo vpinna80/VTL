@@ -77,7 +77,7 @@ public enum CommonComponents
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public <R1 extends Component> DataStructureComponent<R1, S, D> getComponent(Class<R1> role)
+		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
 		{
 			return this.role == role ? (DataStructureComponent<R1, S, D>) this : new CommonComponent<>(name, role, domain);
 		}

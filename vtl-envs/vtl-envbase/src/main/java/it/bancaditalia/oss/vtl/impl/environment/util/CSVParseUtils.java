@@ -171,7 +171,7 @@ public class CSVParseUtils
 			else
 				role = Measure.class;
 
-			component = domain.getDefaultVariable().getRenamed(cname.replaceAll("^[$#]", "")).getComponent(role);
+			component = domain.getDefaultVariable().getRenamed(cname.replaceAll("^[$#]", "")).as(role);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)

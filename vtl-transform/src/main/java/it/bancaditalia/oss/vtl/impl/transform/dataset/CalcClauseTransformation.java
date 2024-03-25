@@ -310,7 +310,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					{
 						// switch role (from a non-id to any)
 						builder.removeComponent(definedComponent);
-						DataStructureComponent<?, ?, ?> newComponent = domain.getDefaultVariable().getRenamed(item.getName()).getComponent(item.getRole());
+						DataStructureComponent<?, ?, ?> newComponent = domain.getDefaultVariable().getRenamed(item.getName()).as(item.getRole());
 						builder.addComponent(newComponent);
 					}
 				}
@@ -319,7 +319,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// new component
 				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
-				builder = builder.addComponent(domain.getDefaultVariable().getRenamed(item.getName()).getComponent(newComponent));
+				builder = builder.addComponent(domain.getDefaultVariable().getRenamed(item.getName()).as(newComponent));
 			}
 		}
 

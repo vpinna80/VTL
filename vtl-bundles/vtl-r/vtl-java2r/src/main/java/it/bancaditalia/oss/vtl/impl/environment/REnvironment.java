@@ -165,7 +165,7 @@ public class REnvironment implements Environment
 									"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
 					}
 					
-					builder.addComponent(domain.getDefaultVariable().getRenamed(key).getComponent(type));
+					builder.addComponent(domain.getDefaultVariable().getRenamed(key).as(type));
 				}
 				
 				LOGGER.info("VTL metadata for {} completed.", name);

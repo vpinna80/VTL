@@ -66,7 +66,7 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
 public class MatchTransformation extends BinaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = BOOLEANDS.getDefaultVariable().getComponent(Measure.class);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = BOOLEANDS.getDefaultVariable().as(Measure.class);
 
 	public MatchTransformation(Transformation operand, Transformation pattern)
 	{

@@ -152,7 +152,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				throw new VTLSingletonComponentRequiredException(Measure.class, dataset.getMeasures());
 			else
 				builder = builder.removeComponent(dataset.getMeasures().iterator().next())
-						.addComponent(INTEGERDS.getDefaultVariable().getComponent(Measure.class));
+						.addComponent(INTEGERDS.getDefaultVariable().as(Measure.class));
 			
 		return builder.build();
 	}

@@ -141,7 +141,7 @@ public class ExistsInTransformation extends BinaryTransformation
 			throw new VTLIncompatibleTypesException("exists_in", leftMeasure, rightMeasure);
 		
 		DataStructureBuilder builder = new DataStructureBuilder((DataSetMetadata) left)
-				.addComponent(BOOLEANDS.getDefaultVariable().getComponent(Measure.class));
+				.addComponent(BOOLEANDS.getDefaultVariable().as(Measure.class));
 		
 		if (mode != ALL)
 			builder.removeComponent(leftMeasure);

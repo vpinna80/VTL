@@ -210,7 +210,7 @@ public class DataStructureBuilder
 				return new DataStructureBuilder().addComponents(component).addComponents(getIDs()).build();
 			else
 				return new DataStructureBuilder()
-						.addComponent(component.getVariable().getDomain().getDefaultVariable().getComponent(Measure.class))
+						.addComponent(component.getVariable().getDomain().getDefaultVariable().as(Measure.class))
 						.addComponents(getIDs()).build();
 		}
 

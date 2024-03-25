@@ -79,7 +79,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class RankTransformation extends TransformationImpl implements AnalyticTransformation, LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
+	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
 	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
 
 	private final List<String> partitionBy;

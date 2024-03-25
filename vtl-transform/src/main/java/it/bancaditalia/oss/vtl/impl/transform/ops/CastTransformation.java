@@ -100,7 +100,7 @@ public class CastTransformation extends UnaryTransformation
 		if (target.getDomain() == oldMeasure.getVariable().getDomain())
 			return dataset;
 		
-		DataStructureComponent<Measure, ?, ?> measure = ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(target.getDomain()).getComponent(Measure.class);
+		DataStructureComponent<Measure, ?, ?> measure = ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(target.getDomain()).as(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(measure)
 				.build();

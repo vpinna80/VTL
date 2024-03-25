@@ -100,7 +100,7 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 	}
 
 	@Override
-	public <R1 extends Component> DataStructureComponent<R1, S, D> getComponent(Class<R1> role)
+	public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
 	{
 		return new DefaultVariableComponent<R1>(role);
 	}

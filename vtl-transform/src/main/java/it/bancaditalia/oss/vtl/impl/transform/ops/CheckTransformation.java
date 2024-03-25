@@ -62,7 +62,7 @@ public class CheckTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 	private static final BooleanUnaryOperator function = CHECK;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().getComponent(Measure.class); 
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().as(Measure.class); 
 
 	public enum CheckOutput
 	{

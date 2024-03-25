@@ -111,8 +111,8 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		
 		ValueDomainSubset<?, ?> domain = domains.iterator().next();
 
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = STRINGDS.getDefaultVariable().getRenamed(identifierName).getComponent(Identifier.class);
-		DataStructureComponent<?, ?, ?> newMeasure = domain.getDefaultVariable().getRenamed(measureName).getComponent(Measure.class);
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = STRINGDS.getDefaultVariable().getRenamed(identifierName).as(Identifier.class);
+		DataStructureComponent<?, ?, ?> newMeasure = domain.getDefaultVariable().getRenamed(measureName).as(Measure.class);
 
 		return new DataStructureBuilder(dataset.getIDs())
 				.addComponent(newIdentifier)

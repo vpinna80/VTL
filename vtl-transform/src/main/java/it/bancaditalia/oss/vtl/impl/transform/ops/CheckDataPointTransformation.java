@@ -107,10 +107,10 @@ public class CheckDataPointTransformation extends TransformationImpl
 		DataPointRuleSet ruleset = repo.getDataPointRuleset(rulesetID);
 		RuleSetType type = ruleset.getType();
 		List<DataPointRule> rules = ruleset.getRules();
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var = repo.getDefaultVariable(BOOLEANDS).getComponent(Measure.class);
-		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> errorcode = repo.getVariable("errorcode", STRINGDS).getComponent(Measure.class);
-		DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> errorlevel = repo.getVariable("errorlevel", INTEGERDS).getComponent(Measure.class);
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> ruleid = repo.getVariable("ruleid", STRINGDS).getComponent(Identifier.class);
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var = repo.getDefaultVariable(BOOLEANDS).as(Measure.class);
+		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> errorcode = repo.getVariable("errorcode", STRINGDS).as(Measure.class);
+		DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> errorlevel = repo.getVariable("errorlevel", INTEGERDS).as(Measure.class);
+		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> ruleid = repo.getVariable("ruleid", STRINGDS).as(Identifier.class);
 		
 		dataset = dataset.flatmapKeepingKeys(structure, DataPoint::getLineage, dp -> rules.stream()
 			.map(r -> {
@@ -172,14 +172,14 @@ public class CheckDataPointTransformation extends TransformationImpl
 				}
 			
 			if (output == ALL || output == ALL_MEASURES)
-				builder.addComponent(repo.getDefaultVariable(BOOLEANDS).getComponent(Measure.class));
+				builder.addComponent(repo.getDefaultVariable(BOOLEANDS).as(Measure.class));
 			if (output == INVALID || output == ALL_MEASURES)
 				builder.addComponents(structure.getMeasures());
 			
 			return builder
-					.addComponent(repo.getVariable("errorcode", STRINGDS).getComponent(Measure.class))
-					.addComponent(repo.getVariable("errorlevel", INTEGERDS).getComponent(Measure.class))
-					.addComponent(repo.getVariable("ruleid", STRINGDS).getComponent(Identifier.class))
+					.addComponent(repo.getVariable("errorcode", STRINGDS).as(Measure.class))
+					.addComponent(repo.getVariable("errorlevel", INTEGERDS).as(Measure.class))
+					.addComponent(repo.getVariable("ruleid", STRINGDS).as(Identifier.class))
 					.build();
 		}
 		else

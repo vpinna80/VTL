@@ -49,7 +49,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class BetweenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().getComponent(Measure.class);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().as(Measure.class);
 	
 	private final ScalarValue<?, ?, ?, ?> from;
 	private final ScalarValue<?, ?, ?, ?> to;

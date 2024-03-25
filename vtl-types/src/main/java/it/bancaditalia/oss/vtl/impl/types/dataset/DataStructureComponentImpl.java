@@ -94,6 +94,6 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 	@Override
 	public DataStructureComponent<R, S, D> getRenamed(String newName)
 	{
-		return variable.getRenamed(newName).getComponent(role);
+		return variable.getRenamed(newName).as(role);
 	}
 }

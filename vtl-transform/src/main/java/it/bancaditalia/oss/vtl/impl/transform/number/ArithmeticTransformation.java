@@ -143,9 +143,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 			DataStructureComponent<Measure, ?, ?> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
 			DataStructureComponent<Measure, ?, ?> resultComp;
 			if (getOperator() != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getVariable().getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getVariable().getDomain()))
-				resultComp = INTEGERDS.getDefaultVariable().getComponent(Measure.class);
+				resultComp = INTEGERDS.getDefaultVariable().as(Measure.class);
 			else
-				resultComp = NUMBERDS.getDefaultVariable().getComponent(Measure.class);
+				resultComp = NUMBERDS.getDefaultVariable().as(Measure.class);
 			
 			DataSetMetadata newStructure = new DataStructureBuilder(streamed.getMetadata().getIDs())
 					.addComponent(resultComp)
@@ -241,12 +241,12 @@ public class ArithmeticTransformation extends BinaryTransformation
 				if (measure.getVariable().getDomain() instanceof IntegerDomainSubset)
 					builder.addComponent(measure);
 				else
-					builder.addComponent(INTEGERDS.getDefaultVariable().getComponent(Measure.class));
+					builder.addComponent(INTEGERDS.getDefaultVariable().as(Measure.class));
 			else
 				if (measure.getVariable().getDomain() instanceof NumberDomainSubset)
 					builder.addComponent(measure);
 				else
-					builder.addComponent(NUMBERDS.getDefaultVariable().getComponent(Measure.class));
+					builder.addComponent(NUMBERDS.getDefaultVariable().as(Measure.class));
 		
 		return builder.build();
 	}
@@ -269,7 +269,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		// check if measures are the same, unless we are at component level
 		Set<DataStructureComponent<? extends Measure, ?, ?>> resultMeasures;
 		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
-			resultMeasures = singleton(NUMBERDS.getDefaultVariable().getComponent(Measure.class));
+			resultMeasures = singleton(NUMBERDS.getDefaultVariable().as(Measure.class));
 		else
 		{
 			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getName()));

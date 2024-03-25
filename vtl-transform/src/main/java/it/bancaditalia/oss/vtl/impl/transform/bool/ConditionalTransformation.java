@@ -63,7 +63,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class ConditionalTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Identifier, EntireBooleanDomainSubset, BooleanDomain> COND_ID = BOOLEANDS.getDefaultVariable().getComponent(Identifier.class);
+	private static final DataStructureComponent<Identifier, EntireBooleanDomainSubset, BooleanDomain> COND_ID = BOOLEANDS.getDefaultVariable().as(Identifier.class);
 
 	// protected: used by NVL Transformation
 	protected final Transformation condition;

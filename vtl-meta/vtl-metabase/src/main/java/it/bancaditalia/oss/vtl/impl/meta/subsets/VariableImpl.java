@@ -108,7 +108,7 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public <R extends Component> DataStructureComponent<R, S, D> getComponent(Class<R> role)
+	public <R extends Component> DataStructureComponent<R, S, D> as(Class<R> role)
 	{
 		return (DataStructureComponent<R, S, D>) components.get(role);
 	}

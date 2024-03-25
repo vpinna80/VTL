@@ -203,10 +203,10 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else
-						builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).getComponent(requestedRole));
+						builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).as(requestedRole));
 				}
 				else
-					builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).getComponent(requestedRole));
+					builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).as(requestedRole));
 			}
 
 			if (having != null)
