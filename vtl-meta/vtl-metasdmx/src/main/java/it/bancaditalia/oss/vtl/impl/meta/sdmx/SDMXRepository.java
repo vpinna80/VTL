@@ -23,10 +23,13 @@ import static io.sdmx.api.sdmx.constants.TEXT_TYPE.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.PASSWORD;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 import static java.lang.System.lineSeparator;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -49,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -98,6 +102,7 @@ import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.RangeNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RegExpDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component;
@@ -118,6 +123,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
 	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset("ALPHA", "(?U)^\\p{Alpha}*$", STRINGDS);
 	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset("ALPHA_NUMERIC", "(?U)^\\p{Alnum}*$", STRINGDS);
+	private static final RegExpDomainSubset VTL_NUMERIC = new RegExpDomainSubset("NUMERIC", "(?U)^\\p{Digit}*$", STRINGDS);
 
 	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
 	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
@@ -217,41 +223,54 @@ public class SDMXRepository extends InMemoryMetadataRepository
 							.map(AttributeBean::getRepresentation)
 							.map(RepresentationBean::getTextFormat);
 					
-					TextFormatBean format = optFormat.orElse(null);
 					TEXT_TYPE type = optFormat
 							.map(TextFormatBean::getTextType)
 							.orElse(STRING);
 					
+					boolean inclusive = true;
+					
 					switch (type)
 					{
-						// TODO: Implement more SDMX representations
-						// BASIC_TIME_PERIOD, DATE_TIME, DAY, DURATION, EXCLUSIVE_VALUE_RANGE, GEO, GREGORIAN_DAY, GREGORIAN_TIME_PERIOD, 
-						// GREGORIAN_YEAR, GREGORIAN_YEAR_MONTH, INCLUSIVE_VALUE_RANGE, INCREMENTAL, MONTH, MONTH_DAY, OBSERVATIONAL_TIME_PERIOD, REPORTING_DAY,
-						// REPORTING_MONTH, REPORTING_QUARTER, REPORTING_SEMESTER, REPORTING_TIME_PERIOD, REPORTING_TRIMESTER, REPORTING_WEEK, REPORTING_YEAR, 
-						// STANDARD_TIME_PERIOD, TIME, TIME_RANGE, URI, XHTML
 						case ALPHA: domain = VTL_ALPHA; break;
 						case ALPHA_NUMERIC: domain = VTL_ALPHA_NUMERIC; break;
+						case NUMERIC: domain = VTL_NUMERIC; break;
 						case BOOLEAN: domain = BOOLEANDS; break;
-						case STRING: domain = STRINGDS; break;
-						case FLOAT: case DOUBLE: case NUMERIC: case DECIMAL: domain = NUMBERDS; break;
+						case STRING: case URI: domain = STRINGDS; break;
+						case INCLUSIVE_VALUE_RANGE: domain = NUMBERDS; break;
+						case EXCLUSIVE_VALUE_RANGE: domain = NUMBERDS; inclusive = false; break;
+						case FLOAT: case DOUBLE: case DECIMAL: case INCREMENTAL: domain = NUMBERDS; break;
 						case BIG_INTEGER: case COUNT: case LONG: case INTEGER: case SHORT: domain = INTEGERDS; break;
-						default: LOGGER.warn("Representation {} is not implemented, String will be used instead.", type); domain = STRINGDS;
+						case DURATION: domain = DURATIONDS; break;
+						case OBSERVATIONAL_TIME_PERIOD: case STANDARD_TIME_PERIOD: case TIME_RANGE: domain = TIMEDS; break; 
+						case DATE_TIME: case BASIC_TIME_PERIOD: case GREGORIAN_TIME_PERIOD: case GREGORIAN_DAY: case GREGORIAN_YEAR: case GREGORIAN_YEAR_MONTH: domain = DATEDS; break;
+						case MONTH: case MONTH_DAY: case DAY: case TIME: domain = STRINGDS; break;
+						case REPORTING_DAY: case REPORTING_MONTH: case REPORTING_QUARTER: case REPORTING_SEMESTER:
+						case REPORTING_TIME_PERIOD: case REPORTING_TRIMESTER: case REPORTING_WEEK: case REPORTING_YEAR: domain = TIME_PERIODDS; break; 
+						case GEO: case XHTML: default: LOGGER.warn("Representation {} is not implemented, String will be used instead.", type); domain = STRINGDS; break;
 					}
 					
-					if (format != null)
+					if (optFormat.isPresent())
 					{
+						TextFormatBean format = optFormat.get();
 						if (STRINGDS.isAssignableFrom(domain))
 						{
 							OptionalInt minLen = Stream.ofNullable(format.getMinLength()).mapToInt(BigInteger::intValueExact).findAny();
 							OptionalInt maxLen = Stream.ofNullable(format.getMaxLength()).mapToInt(BigInteger::intValueExact).findAny();
 							domain = new StrlenDomainSubset<>(STRINGDS, minLen, maxLen);
 						}
-						if (INTEGERDS.isAssignableFrom(domain))
+						else if (INTEGERDS.isAssignableFrom(domain))
 						{
 							OptionalLong minLen = Stream.ofNullable(format.getMinValue()).mapToLong(BigDecimal::longValueExact).findAny();
 							OptionalLong maxLen = Stream.ofNullable(format.getMaxValue()).mapToLong(BigDecimal::longValueExact).findAny();
 							String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
-							domain = new RangeIntegerDomainSubset<>(name, INTEGERDS, minLen, maxLen);
+							domain = new RangeIntegerDomainSubset<>(name, INTEGERDS, minLen, maxLen, inclusive);
+						}
+						else if (NUMBERDS.isAssignableFrom(domain))
+						{
+							OptionalDouble minLen = Stream.ofNullable(format.getMinValue()).mapToDouble(BigDecimal::doubleValue).findAny();
+							OptionalDouble maxLen = Stream.ofNullable(format.getMaxValue()).mapToDouble(BigDecimal::doubleValue).findAny();
+							String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
+							domain = new RangeNumberDomainSubset<>(name, NUMBERDS, minLen, maxLen, inclusive);
 						}
 					}
 				}

@@ -19,27 +19,27 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import java.util.OptionalLong;
+import java.util.OptionalDouble;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends CriterionDomainSubset<RangeIntegerDomainSubset<S>, IntegerValue<?, S>, S, IntegerDomain> implements IntegerDomainSubset<RangeIntegerDomainSubset<S>>
+public class RangeNumberDomainSubset<S extends NumberDomainSubset<S, NumberDomain>> extends CriterionDomainSubset<RangeNumberDomainSubset<S>, DoubleValue<S>, S, NumberDomain> implements NumberDomainSubset<RangeNumberDomainSubset<S>, NumberDomain>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final OptionalLong min;
-	private final OptionalLong max;
+	private final OptionalDouble min;
+	private final OptionalDouble max;
 	private final boolean inclusive;
 	
- 	public RangeIntegerDomainSubset(String name, S parent, OptionalLong min, OptionalLong max, boolean inclusive)
+ 	public RangeNumberDomainSubset(String name, S parent, OptionalDouble min, OptionalDouble max, boolean inclusive)
 	{
- 		super(parent.getName() + (min.isPresent() ? ">=" + min.getAsLong() : "") + (max.isPresent() ? (inclusive ? "<=" : "<") + max.getAsLong() : ""), parent);
+ 		super(parent.getName() + (min.isPresent() ? ">=" + min.getAsDouble() : "") + (max.isPresent() ? (inclusive ? "<=" : "<") + max.getAsDouble() : ""), parent);
 
  		this.min = min;
 		this.max = max;
@@ -53,24 +53,24 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 	}
 
 	@Override
-	public boolean test(IntegerValue<?, S> value)
+	public boolean test(DoubleValue<S> value)
 	{
-		Long val = value.get();
+		Double val = value.get();
 		
-		return (min.isEmpty() || min.getAsLong() < val) && (max.isEmpty() || (inclusive ? max.getAsLong() > val : max.getAsLong() >= val));
+		return (min.isEmpty() || min.getAsDouble() < val) && (max.isEmpty() || (inclusive ? max.getAsDouble() > val : max.getAsDouble() >= val));
 	}
 	
 	@Override
-	protected ScalarValue<?, ?, RangeIntegerDomainSubset<S>, IntegerDomain> castCasted(IntegerValue<?, S> value)
+	protected ScalarValue<?, ?, RangeNumberDomainSubset<S>, NumberDomain> castCasted(DoubleValue<S> value)
 	{
 		if (test(value))
-			return IntegerValue.of(value.get(), this);
+			return DoubleValue.of(value.get(), (RangeNumberDomainSubset<S>) this);
 		else
 			throw new VTLCastException(this, value);
 	}
 
 	@Override
-	public Variable<RangeIntegerDomainSubset<S>, IntegerDomain> getDefaultVariable()
+	public Variable<RangeNumberDomainSubset<S>, NumberDomain> getDefaultVariable()
 	{
 		return new DefaultVariable<>(this);
 	}
@@ -80,8 +80,8 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 	{
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((max == null) ? 0 : max.hashCode());
-		result = prime * result + ((min == null) ? 0 : min.hashCode());
+		result = prime * result + max.hashCode();
+		result = prime * result + min.hashCode();
 		return result;
 	}
 
@@ -92,9 +92,9 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 			return true;
 		if (!super.equals(obj))
 			return false;
-		if (!(obj instanceof RangeIntegerDomainSubset))
+		if (!(obj instanceof RangeNumberDomainSubset))
 			return false;
-		RangeIntegerDomainSubset<?> other = (RangeIntegerDomainSubset<?>) obj;
+		RangeNumberDomainSubset<?> other = (RangeNumberDomainSubset<?>) obj;
 		if (!max.equals(other.max))
 			return false;
 		if (!min.equals(other.min))

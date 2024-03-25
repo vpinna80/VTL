@@ -21,9 +21,9 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static java.util.Objects.requireNonNull;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
@@ -39,10 +39,13 @@ public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R e
 
 	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> createNumberValue(Number n, S domain)
 	{
+		if (n == null)
+			return NullValue.instance(domain);
+		
 		if (isUseBigDecimal())
-			return BigDecimalValue.of(n == null || n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.doubleValue()), domain);
+			return new BigDecimalValue<>(n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.doubleValue()), domain);
 		else
-			return DoubleValue.of(n == null || n instanceof Double ? (Double) n : n.doubleValue(), domain);
+			return new DoubleValue<>(n instanceof Double ? (Double) n : n.doubleValue(), domain);
 	}
 	
 	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> createNumberValue(Number n)
@@ -60,13 +63,13 @@ public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R e
 	
 	public NumberValueImpl(R value, S domain)
 	{
-		super(Objects.requireNonNull(value), domain);
+		super(requireNonNull(value), domain);
 	}
 	
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
-		if (o instanceof NullValue)
+		if (o == null || o instanceof NullValue)
 			throw new NullPointerException("Comparison with null values");
 		else if (this instanceof IntegerValue && o instanceof IntegerValue)
 			return Long.valueOf(get().longValue()).compareTo(Long.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).get().longValue()));
@@ -74,10 +77,6 @@ public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R e
 			return Double.compare(get().doubleValue(), ((NumberValueImpl<?, ?, ?, ?>) o).get().doubleValue());
 		else if (this instanceof BigDecimalValue && o instanceof BigDecimalValue)
 			return ((BigDecimal) get()).compareTo((BigDecimal) o.get());
-		else if (this instanceof BigDecimalValue && o instanceof IntegerValue)
-			return ((BigDecimal) get()).compareTo(new BigDecimal((Long) o.get()));
-		else if (this instanceof IntegerValue && o instanceof BigDecimalValue)
-			return ((BigDecimal) o.get()).compareTo(new BigDecimal((Long) get()));
 		else
 			throw new VTLIncompatibleTypesException("comparison", getDomain(), o.getDomain());
 	}

@@ -210,7 +210,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				for (int i = l - d - 1; i >= 0; i--)
 					pow *= 10;
 				if (d == 0)
-					domain = new RangeIntegerDomainSubset<>(domainName, INTEGERDS, OptionalLong.of(posOnly ? 0 : -pow + 1), OptionalLong.of(pow - 1));
+					domain = new RangeIntegerDomainSubset<>(domainName, INTEGERDS, OptionalLong.of(posOnly ? 0 : -pow + 1), OptionalLong.of(pow - 1), true);
 				else
 					throw new UnsupportedOperationException("Fixed-point decimals not supported: " + domainName);
 			}

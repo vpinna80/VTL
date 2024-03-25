@@ -33,7 +33,7 @@ public class BigDecimalValue<S extends NumberDomainSubset<S, NumberDomain>> exte
 	private static final long serialVersionUID = 1L;
 	private static final ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> NULLINSTANCE = NullValue.instance(NUMBERDS);
 
-	private BigDecimalValue(BigDecimal value, S domain)
+	BigDecimalValue(BigDecimal value, S domain)
 	{
 		super(value, domain);
 	}

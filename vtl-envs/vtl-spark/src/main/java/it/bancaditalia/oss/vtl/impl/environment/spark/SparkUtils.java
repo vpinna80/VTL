@@ -137,7 +137,7 @@ public class SparkUtils
 		}
 		
 		ValueDomainSubset<?, ?> domain = METAREPO.getDomain(field.metadata().getString("Domain"));
-		return METAREPO.getVariable(field.name(), domain).getComponent(role);
+		return METAREPO.getVariable(field.name(), domain).as(role);
 	}
 
 	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Object serialized)

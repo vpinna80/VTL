@@ -36,7 +36,7 @@ public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends 
 	@SuppressWarnings("unchecked")
 	public static final DoubleValue<EntireNumberDomainSubset> ZERO = (DoubleValue<EntireNumberDomainSubset>) DoubleValue.of(0.0);
 
-	private DoubleValue(Double value, S domain)
+	DoubleValue(Double value, S domain)
 	{
 		super(value, domain);
 	}
