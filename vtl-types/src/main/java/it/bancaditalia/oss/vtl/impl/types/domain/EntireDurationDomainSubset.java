@@ -82,10 +82,4 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	{
 		return obj != null && obj.getClass() == getClass();
 	}
-	
-	@Override
-	public ScalarValue<?, ?, EntireDurationDomainSubset, DurationDomain> getDefaultValue()
-	{
-		return NullValue.instance(this);
-	}
 }

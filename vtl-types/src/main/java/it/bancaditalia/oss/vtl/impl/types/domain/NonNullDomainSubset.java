@@ -19,13 +19,60 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public abstract class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements ValueDomainSubset<NonNullDomainSubset<S, D>, D>  
+public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements ValueDomainSubset<S, D>  
 {
 	private static final long serialVersionUID = 1L;
 	
+	private final S subsetWithNull;
 	
+	public NonNullDomainSubset(S subsetWithNull)
+	{
+		this.subsetWithNull = subsetWithNull;
+	}
 
+	@Override
+	public boolean isAssignableFrom(ValueDomain other)
+	{
+		return subsetWithNull.isAssignableFrom(other);
+	}
+
+	@Override
+	public String getName()
+	{
+		return subsetWithNull.getName() + " not null";
+	}
+
+	@Override
+	public boolean isComparableWith(ValueDomain other)
+	{
+		return subsetWithNull.isComparableWith(other);
+	}
+
+	@Override
+	public D getParentDomain()
+	{
+		return subsetWithNull.getParentDomain(); 
+	}
+
+	@Override
+	public ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
+	{
+		if (value instanceof NullValue)
+			throw new VTLCastException(this, value);
+		else
+			return subsetWithNull.cast(value);
+	}
+
+	@Override
+	public Variable<S, D> getDefaultVariable()
+	{
+		return subsetWithNull.getDefaultVariable();
+	}
 }

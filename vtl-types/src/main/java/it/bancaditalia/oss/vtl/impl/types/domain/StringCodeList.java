@@ -154,12 +154,6 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 
 		throw new VTLCastException(this, value);
 	}
-
-	@Override
-	public ScalarValue<?, ?, StringCodeList, StringDomain> getDefaultValue()
-	{
-		return NullValue.instance(this);
-	}
 	
 	@Override
 	public String toString()

@@ -69,13 +69,6 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 		return parent.isComparableWith(other);  
 	}
 	
-	@SuppressWarnings("unchecked")
-	@Override
-	public ScalarValue<?, ?, C, D> getDefaultValue()
-	{
-		return NullValue.instance((C) this);
-	}
-	
 	@Override
 	public String getName()
 	{

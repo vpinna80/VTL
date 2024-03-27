@@ -32,8 +32,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 
-public abstract class NumberValueImpl<T extends NumberValueImpl<T, R, S, D>, R extends Number & Comparable<? super R>, S extends NumberDomainSubset<S, D>, D extends NumberDomain> 
-	extends BaseScalarValue<T, R, S, D> implements NumberValue<T, R, S, D>
+public abstract class NumberValueImpl<V extends NumberValueImpl<V, R, S, D>, R extends Number & Comparable<? super R>, S extends NumberDomainSubset<S, D>, D extends NumberDomain> 
+	extends BaseScalarValue<V, R, S, D> implements NumberValue<V, R, S, D>
 {
 	private static final long serialVersionUID = 1L;
 

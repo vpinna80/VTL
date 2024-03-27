@@ -101,6 +101,7 @@ import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.domain.NonNullDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RegExpDomainSubset;
@@ -271,6 +272,13 @@ public class SDMXRepository extends InMemoryMetadataRepository
 							OptionalDouble maxLen = Stream.ofNullable(format.getMaxValue()).mapToDouble(BigDecimal::doubleValue).findAny();
 							String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
 							domain = new RangeNumberDomainSubset<>(name, NUMBERDS, minLen, maxLen, inclusive);
+						}
+						
+						if (attrBean.isMandatory())
+						{
+							@SuppressWarnings({ "rawtypes", "unchecked" })
+							NonNullDomainSubset<?, ?> nonNullDomainSubset = new NonNullDomainSubset(domain);
+							domain = nonNullDomainSubset;
 						}
 					}
 				}

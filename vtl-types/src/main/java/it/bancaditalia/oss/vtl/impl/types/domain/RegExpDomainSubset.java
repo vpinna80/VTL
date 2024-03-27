@@ -58,12 +58,6 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 	}
 
 	@Override
-	public ScalarValue<?, ?, RegExpDomainSubset, StringDomain> getDefaultValue()
-	{
-		return NullValue.instance(this);
-	}
-
-	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
 		return parent.isAssignableFrom(other);

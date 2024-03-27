@@ -44,13 +44,6 @@ public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends 
 	 * @throws NullPointerException if the value is null
 	 */
 	public ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
-	
-	/**
-	 * If this domain has a default value defined, return it, otherwise return null.
-	 * 
-	 * @return the default value for this domain if defined. 
-	 */
-	public ScalarValue<?, ?, S, D> getDefaultValue();
 
 	/**
 	 * Return the {@link Variable} corresponding to this domain with a default name.

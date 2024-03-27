@@ -24,7 +24,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -123,13 +122,6 @@ public abstract class EntireDomainSubset<E extends EntireDomainSubset<E, V, S, D
 				return false;
 		else
 			return obj != null && obj.getClass() == getClass();
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public ScalarValue<?, ?, E, D> getDefaultValue()
-	{
-		return NullValue.instance((E) this);
 	}
 	
 	@SuppressWarnings("unchecked")

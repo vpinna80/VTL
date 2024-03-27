@@ -27,7 +27,6 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.DefaultVariable;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -148,12 +147,6 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 			return false;
 
 		return true;
-	}
-
-	@Override
-	public ScalarValue<?, ?, IntegerCodeList, IntegerDomain> getDefaultValue()
-	{
-		return NullValue.instance(this);
 	}
 
 	@Override

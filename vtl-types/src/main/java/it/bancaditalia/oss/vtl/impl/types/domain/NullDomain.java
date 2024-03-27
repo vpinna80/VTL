@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -62,12 +61,6 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	public boolean equals(Object obj)
 	{
 		return obj != null && obj.getClass() == getClass();
-	}
-	
-	@Override
-	public ScalarValue<?, ?, NullDomain, ValueDomain> getDefaultValue()
-	{
-		return NullValue.instance(this);
 	}
 	
 	@Override
