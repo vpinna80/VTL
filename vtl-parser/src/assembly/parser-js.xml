@@ -35,7 +35,7 @@
 			<directory>${project.build.directory}/generated-sources/js/it/bancaditalia/oss/vtl/grammar</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
-				<include>**/*.js</include>
+				<include>**/*.?s</include>
 			</includes>
 		</fileSet>
 	</fileSets>

@@ -2,27 +2,43 @@
 	"name": "vtl-editor",
 	"version": "${project.version}",
 	"description": "A web editor for VTL based on CodeMirror",
-	"main": "index.js",
+	"type": "module",
+	"main": "index.ts",
+	"module": "index.ts",
 	"scripts": {
-		"gen-editor": "antlr4-editor -o src -r start grammar/Vtl.g4",
-		"browserify": "browserify --standalone vtl -o bundle.js integration.js",
-		"beautify": "js-beautify -f bundle.js -o bundle-pretty.js"
-	},
-	"author": {
-		"name": "Valentino Pinna",
-		"email": "valentino.pinna@bancaditalia.it",
-		"url": "www.bancaditalia.it"
+		"esbuild": "esbuild index.ts --bundle --outfile=bundle.js --global-name=VTLEditor --keep-names --sourcemap"
 	},
 	"license": "EUPL-1.2",
 	"dependencies": {
-		"codemirror": "^5.49.0",
-		"lodash": "4.17.21",
-		"lodash.merge": "^4.6.2"
+		"codemirror": "*",
+		"antlr4": "*",
+		"@codemirror/language": "*",
+		"@codemirror/state": "*",
+		"@codemirror/view": "*",
+		"@codemirror/autocomplete": "*",
+		"@codemirror/commands": "*",
+		"@codemirror/lint": "*",
+		"@codemirror/lang-javascript": "*",
+		"@codemirror/search": "*",
+		"@codemirror/lang-html": "*",
+		"@codemirror/theme-one-dark": "*",
+		"@codemirror/lang-markdown": "*",
+		"@codemirror/lang-css": "*",
+		"@codemirror/lang-sql": "*",
+		"@codemirror/lang-python": "*",
+		"@codemirror/lang-json": "*",
+		"@codemirror/legacy-modes": "*",
+		"@codemirror/language-data": "*",
+		"@codemirror/lang-wast": "*",
+		"@codemirror/lang-less": "*",
+		"@codemirror/merge": "*",
+		"@lezer/common": "*",
+		"@lezer/highlight": "*",
+		"@uiw/codemirror-themes-all": "*",
+		"@babel/runtime": "*"
 	},
 	"devDependencies": {
-		"antlr4-editor": "1.0.77",
-		"antlr4": "4.8.0",
-		"browserify": "^16.5.0",
-		"js-beautify": "^1.10.2"
+		"esbuild": "*",
+		"typescript": "*"
 	}
 }

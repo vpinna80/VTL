@@ -1,0 +1,51 @@
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>HTML5 Boilerplate</title>
+	<script src="bundle.js"></script>
+</head>
+
+<body style="display: flex; flex-direction: column; height: calc(100vh - 10px); margin: 10px;">
+	<h1 style="flex: 0 0 auto">VTL Editor test page</h1>
+	<select id="themes" style="flex: 0 0 auto"></select>
+	<div id="parent" style="flex: 1 1 auto; overflow-y: scroll;"></div>
+
+	<script>
+		document.getElementById("parent").appendChild(VTLEditor.view.dom)
+		var selectbox = document.getElementById("themes")
+		VTLEditor.themes.forEach(n => selectbox.options.add(new Option(n, n)))
+		selectbox.addEventListener("change", function () {
+			VTLEditor.setTheme(selectbox.value)
+		})
+		setTimeout(() => {
+			document.getElementById("themes").selectedIndex = 7
+			VTLEditor.setTheme("basicLight")
+		}, 500)
+	</script>
+</body>
+
+</html>

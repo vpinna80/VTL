@@ -39,6 +39,8 @@
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-parser</artifactId>
+			<classifier>parser-js</classifier>
+			<type>zip</type>
 		</dependency>
 	</dependencies>
 
@@ -47,6 +49,17 @@
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>true</filtering>
+				<includes>
+					<include>index.ts</include>
+					<include>package.json</include>
+					<include>package-lock.json</include>
+					<include>tsconfig.json</include>
+					<include>test.html</include>
+				</includes>
+				<excludes>
+					<exclude>node_modules</exclude>
+					<exclude>Vtl*</exclude>
+				</excludes>
 			</resource>
 		</resources>
 		<plugins>
@@ -62,10 +75,9 @@
 					</execution>
 				</executions>
 				<configuration>
-					<outputDirectory>${project.build.directory}/generated-grammar</outputDirectory>
+					<outputDirectory>${project.build.outputDirectory}</outputDirectory>
 					<includeArtifactIds>vtl-parser</includeArtifactIds>
-					<classifier>grammar</classifier>
-					<version>${project.version}</version>
+					<classifier>parser-js</classifier>
 					<type>zip</type>
 				</configuration>
 			</plugin>
@@ -80,33 +92,6 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<target>
-						<mkdir dir="${project.build.outputDirectory}/grammar" />
-						<concat destfile="${project.build.outputDirectory}/grammar/Vtl.g4" overwrite="yes">
-							<fileset dir="${project.build.directory}/generated-grammar">
-								<include name="**/*.g4" />
-							</fileset>
-							<filterchain>
-								<linecontainsregexp negate="true" regexp="options|lexer grammar" />
-								<replacetokens begintoken="parser" endtoken="grammar">
-									<token key=" " value="grammar" />
-								</replacetokens>
-							</filterchain>
-						</concat>
-					</target>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
@@ -124,23 +109,13 @@
 						</configuration>
 					</execution>
 					<execution>
-						<id>gen-scripts</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>npm</goal>
-						</goals>
-						<configuration>
-							<arguments>run gen-editor</arguments>
-						</configuration>
-					</execution>
-					<execution>
 						<id>browserify</id>
 						<phase>prepare-package</phase>
 						<goals>
 							<goal>npm</goal>
 						</goals>
 						<configuration>
-							<arguments>run browserify</arguments>
+							<arguments>run esbuild</arguments>
 						</configuration>
 					</execution>
 				</executions>

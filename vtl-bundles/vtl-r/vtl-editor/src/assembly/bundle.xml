@@ -36,56 +36,7 @@
 			<directory>${project.build.outputDirectory}</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
-				<include>main.js</include>
 				<include>bundle.js</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.build.outputDirectory}/src/css</directory>
-			<outputDirectory>/</outputDirectory>
-			<includes>
-				<include>*.css</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.build.outputDirectory}/node_modules/codemirror/addon/dialog</directory>
-			<outputDirectory>/</outputDirectory>
-			<includes>
-				<include>dialog.css</include>
-				<include>dialog.js</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.build.outputDirectory}/node_modules/codemirror/addon/scroll</directory>
-			<outputDirectory>/</outputDirectory>
-			<includes>
-				<include>simplescrollbars.css</include>
-				<include>simplescrollbars.js</include>
-				<include>annotatescrollbar.css</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.build.outputDirectory}/node_modules/codemirror/addon/search</directory>
-			<outputDirectory>/</outputDirectory>
-			<includes>
-				<include>matchesonscrollbar.js</include>
-				<include>matchesonscrollbar.css</include>
-				<include>search.js</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.build.outputDirectory}/node_modules/codemirror/addon/edit</directory>
-			<outputDirectory>/</outputDirectory>
-			<includes>
-				<include>matchbrackets.js</include>
-				<include>closebrackets.js</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.build.outputDirectory}/node_modules/codemirror/addon/hint</directory>
-			<outputDirectory>/</outputDirectory>
-			<includes>
-				<include>show-hint.js</include>
 			</includes>
 		</fileSet>
 	</fileSets>
