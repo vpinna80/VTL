@@ -110,7 +110,6 @@
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-parser</artifactId>
-			<version>${project.version}</version>
 			<classifier>parser-js</classifier>
 			<type>zip</type>
 		</dependency>
