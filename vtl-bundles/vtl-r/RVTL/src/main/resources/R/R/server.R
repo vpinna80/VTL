@@ -79,6 +79,11 @@ vtlServer <- function(input, output, session) {
     do.call(tagList, ctrls)
   }) |> bindEvent(input$repoClass)
 
+  # load theme list
+  observe({
+    updateSelectInput(inputId = 'editorTheme', choices = input$themeNames)
+  }) |> bindEvent(input$themeNames)
+  
   # configure and change repository
   observe({
     output$eng_conf_output <- renderPrint({

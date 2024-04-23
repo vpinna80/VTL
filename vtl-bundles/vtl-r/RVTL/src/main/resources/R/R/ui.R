@@ -29,68 +29,6 @@ labels <- list(
   editorTheme = 'Select editor theme:'
 )
 
-themes <- list('',
-               '3024-day',
-               '3024-night',
-               'abcdef',
-               'ambiance',
-               'base16-dark',
-               'base16-light',
-               'bespin',
-               'blackboard',
-               'cobalt',
-               'colorforth',
-               'darcula',
-               'dracula',
-               'duotone-dark',
-               'duotone-light',
-               'eclipse',
-               'elegant',
-               'erlang-dark',
-               'gruvbox-dark',
-               'hopscotch',
-               'icecoder',
-               'idea',
-               'isotope',
-               'lesser-dark',
-               'liquibyte',
-               'lucario',
-               'material',
-               'material-darker',
-               'material-palenight',
-               'material-ocean',
-               'mbo',
-               'mdn-like',
-               'midnight',
-               'monokai',
-               'moxer',
-               'neat',
-               'neo',
-               'night',
-               'nord',
-               'oceanic-next',
-               'panda-syntax',
-               'paraiso-dark',
-               'paraiso-light',
-               'pastel-on-dark',
-               'railscasts',
-               'rubyblue',
-               'seti',
-               'shadowfox',
-               'solarized dark',
-               'solarized light',
-               'the-matrix',
-               'tomorrow-night-bright',
-               'tomorrow-night-eighties',
-               'ttcn',
-               'twilight',
-               'vibrant-ink',
-               'xq-dark',
-               'xq-light',
-               'yeti',
-               'yonce',
-               'zenburn')
-
 defaultProxy <- function() {
   return(list(host = '', port = '', user = ''))
 }
@@ -106,14 +44,14 @@ shinydashboard::dashboardPage(title="VTL Studio!",
       img(src="static/logo.svg", class="vtlLogo"),
       div(style="display:inline-block; vertical-align: bottom",
         h2(style="margin-bottom: 0", "VTL Studio!"),
-        div(style = "text-align: right", "Version 1.1.2-20230831140954")       
+        div(style = "text-align: right", "${r.package.version}")       
       )
     ),
     hr(),
     fileInput(inputId = 'datafile', label = 'Load CSV', accept = 'csv'),
     selectInput(inputId = 'sessionID', label = labels$sessionID, multiple = F, choices = VTLSessionManager$list(), selected = VTLSessionManager$list()[1]),
     actionButton(inputId = 'compile', label = labels$compile, 
-                onClick='Shiny.setInputValue("vtlStatements", vtl.editor.editorImplementation.getValue());'),
+      onClick='Shiny.setInputValue("vtlStatements", VTLEditor.view.state.doc.toString());'),
     downloadButton(outputId = 'saveas', label = labels$saveas),
     hr(),
     textInput(inputId = 'newSession', label = labels$newSession), 
@@ -121,52 +59,30 @@ shinydashboard::dashboardPage(title="VTL Studio!",
     actionButton(inputId = 'dupSession', label = 'Duplicate session'),
     fileInput(inputId = 'scriptFile', label = NULL, accept = 'vtl', buttonLabel = labels$scriptFile),
     hr(),
-    selectInput(inputId = 'editorTheme', label = labels$editorTheme, multiple = F, choices = themes),
+    selectInput(inputId = 'editorTheme', label = labels$editorTheme, multiple = F, choices = ''),
     numericInput('editorFontSize', 'Select font size:', 12, min = 8, max = 40, step = 1)
   ),
     
   shinydashboard::dashboardBody(
     shinyjs::useShinyjs(),
     tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/codemirror-icons.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/codemirror-editor.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/codemirror-all-themes.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/dialog.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/simplescrollbars.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/matchesonscrollbar.css"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/vtl-editor.css"),
-      tags$script(HTML('
-        Shiny.addCustomMessageHandler("editor-text", text => vtl.editor.editorImplementation.setValue(text))
-        Shiny.addCustomMessageHandler("editor-theme", theme => vtl.editor.setTheme(theme))
-        Shiny.addCustomMessageHandler("editor-fontsize", fontsize => $(".CodeMirror")[0].style.fontSize = fontsize + "pt")
-        Shiny.addCustomMessageHandler("editor-focus", discard => $("textarea")[0].focus())
-      '))
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/vtl-editor.css")
     ), shinydashboard::tabBox(width = 12, id = "navtab",
       tabPanel("VTL Editor", id = "editor-pane",
         tags$div(id = 'vtlwell'),
         verbatimTextOutput(outputId = "vtl_output", placeholder = T),
         tags$script(src="static/bundle.js", type="text/javascript"),
-        tags$script(src="static/main.js", type="text/javascript"),
-        tags$script(src="static/closebrackets.js", type="text/javascript"),
-        tags$script(src="static/dialog.js", type="text/javascript"),
-        tags$script(src="static/matchesonscrollbar.js", type="text/javascript"),
-        tags$script(src="static/matchbrackets.js", type="text/javascript"),
-        tags$script(src="static/search.js", type="text/javascript"),
-        tags$script(src="static/show-hint.js", type="text/javascript"),
-        tags$script(src="static/simplescrollbars.js", type="text/javascript"),
-        tags$script(HTML('vtl.editor.editorImplementation.setOption("matchBrackets", true)
-          vtl.editor.editorImplementation.setOption("autoCloseBrackets", true)
-          vtl.editor.editorImplementation.on("blur", function() { 
-            Shiny.setInputValue("editorText", vtl.editor.editorImplementation.getValue()); 
-          })
+        tags$script(HTML('
+          document.getElementById("vtlwell").appendChild(VTLEditor.view.dom)
           
-          vtl.editor.editorImplementation.setOption("extraKeys", {
-            \'Ctrl-Enter\': function() { $("#compile").click() },
-            \'Ctrl-N\': function() { $("#newSession")[0].focus(); $("#newSession")[0].select() },
-            \'Ctrl-O\': function() { $("#scriptFile")[0].click() },
-            \'Ctrl-S\': function() { $("#saveas")[0].click() }
+          $(document).on("shiny:connected", () => {
+            Shiny.setInputValue("themeNames", VTLEditor.themes)
+            Shiny.addCustomMessageHandler("editor-text", text => VTLEditor.view.dispatch({changes: {from: 0, to: VTLEditor.view.state.doc.length, insert: text}}))
+            Shiny.addCustomMessageHandler("editor-theme", theme => VTLEditor.setTheme(theme))
+            Shiny.addCustomMessageHandler("editor-fontsize", fontsize => { document.getElementsByClassName("cm-scroller")[0].style.fontSize = fontsize + "pt"; VTLEditor.view.requestMeasure() })
+            Shiny.addCustomMessageHandler("editor-focus", discard => VTLEditor.view.contentDOM.focus())
           })
-          
+
           $(document).ready(function () {
             $("#newSession").keyup(function(e) {
               if (e.keyCode === 13) {
@@ -174,6 +90,12 @@ shinydashboard::dashboardPage(title="VTL Studio!",
                 $("#createSession").click()
               }
             })
+
+            VTLEditor.view.dom.onblur = () => Shiny.setInputValue("editorText", VTLEditor.view.state.doc.toString())
+            VTLEditor.addHotKey("Ctrl-Enter", () => { $("#compile").click(); return true })
+            VTLEditor.addHotKey("Ctrl-n", () => { $("#newSession")[0].focus(); $("#newSession")[0].select(); return true })
+            VTLEditor.addHotKey("Ctrl-o", () => { $("#scriptFile")[0].click(); return true })
+            VTLEditor.addHotKey("Ctrl-s", () => { $("#saveas")[0].click(); return true })
           })'))
       ),
       tabPanel("Structure Explorer",

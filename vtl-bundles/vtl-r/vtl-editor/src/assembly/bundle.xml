@@ -37,6 +37,7 @@
 			<outputDirectory>/</outputDirectory>
 			<includes>
 				<include>bundle.js</include>
+				<include>bundle.js.map</include>
 			</includes>
 		</fileSet>
 	</fileSets>

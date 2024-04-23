@@ -271,9 +271,8 @@ let vtlLinter = linter((view: EditorView) => {
 })
 
 let themeCompartment = new Compartment
-export let view = new EditorView({
-	extensions: [
-	    keymap.of([
+let keymapCompartment = new Compartment
+let keyBindings = [
 	        ...closeBracketsKeymap,
 	        ...defaultKeymap,
 	        ...searchKeymap,
@@ -281,7 +280,10 @@ export let view = new EditorView({
 	        ...foldKeymap,
 	        ...completionKeymap,
 	        ...lintKeymap
-	    ]),
+	    ]
+export let view = new EditorView({
+	extensions: [
+	    keymapCompartment.of(keymap.of(keyBindings)),
 	    lineNumbers(),
 	    highlightActiveLineGutter(),
 	    highlightSpecialChars(),
@@ -306,4 +308,11 @@ export let view = new EditorView({
 export let themes = Object.getOwnPropertyNames(th).filter(s => !s.match("(^default|Init$)"))
 export let setTheme = function(themeName: string) {
 	view.dispatch({ effects: themeCompartment.reconfigure(th[themeName]) })
+}
+export let addHotKey = (hotKey: string, command: (target: EditorView) => boolean) => {
+	view.dispatch({ 
+		effects: keymapCompartment.reconfigure(keymap.of([{
+			key: hotKey, run: command
+		}, ...keymapCompartment.get(view.state).value]))
+	})
 }

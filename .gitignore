@@ -26,3 +26,4 @@ vtl-launcher/src/test/java/it/bancaditalia/oss/vtl/it/custom/
 vtl-launcher/src/test/resources/snippet.vtl
 **/.idea
 **/*.iml
+vtl-parser/.gitignore
