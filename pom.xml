@@ -162,7 +162,7 @@
 		<jaxb.version>4.0.2</jaxb.version>
 		<jaxb.runtime.version>4.0.5</jaxb.runtime.version>
 		<thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
-		<node.version>v20.12.0</node.version>
+		<node.version>v20.12.2</node.version>
 		<antlr4.version>4.13.1</antlr4.version>
 		<io.sdmx.version>1.0.57</io.sdmx.version>
 		<spring.version>5.3.31</spring.version>
