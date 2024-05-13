@@ -285,8 +285,7 @@ public abstract class AbstractDataSet implements DataSet
 			{
 				createCache(keys, groupCollector);
 
-				return Utils.getStream(cache)
-						.map(splitting((k, v) -> finisher.apply(v, k)));
+				return Utils.getStream(cache).map(splitting((k, v) -> finisher.apply(v, k)));
 			}
 
 			private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,

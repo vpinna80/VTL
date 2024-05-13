@@ -158,7 +158,7 @@ public class AggregateTransformation extends UnaryTransformation
 			else if (dp.size() == 1)
 			{
 				DataSetMetadata srcMeta = dataset.getMetadata();
-				builder = builder.add(getCompFor(srcMeta.getMeasures().iterator().next(), repo, srcMeta), dp.values().iterator().next());
+				builder = builder.add(getCompFor(srcMeta.getMeasures().iterator().next(), repo, (DataSetMetadata) metadata), dp.values().iterator().next());
 			}
 			else
 				throw new IllegalStateException();
