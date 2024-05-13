@@ -86,7 +86,6 @@ import io.sdmx.utils.core.application.SingletonStore;
 import io.sdmx.utils.core.io.SdmxSourceReadableDataLocationFactory;
 import io.sdmx.utils.http.api.model.IHttpProxy;
 import io.sdmx.utils.http.broker.RestMessageBroker;
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -129,7 +128,6 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
 
-	private final SDMXRepository repo;
 	private final String endpoint = SDMX_DATA_ENDPOINT.getValue();
 
 	static
@@ -152,13 +150,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		if (endpoint == null || endpoint.isEmpty())
 			throw new IllegalStateException("No endpoint configured for SDMX Environment.");
 		
-		MetadataRepository maybeRepo = ConfigurationManagerFactory.getInstance().getMetadataRepository();
-		if (maybeRepo instanceof SDMXRepository)
-			repo = (SDMXRepository) maybeRepo;
-		else
-			throw new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository.");
-
-		LOGGER.info("Loading SDMX data from {}", endpoint);
+		LOGGER.info("SDMX data will be loaded from {}", endpoint);
 		
 		// FMR client configuration
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
@@ -191,15 +183,15 @@ public class SDMXEnvironment implements Environment, Serializable
 	}
 	
 	@Override
-	public boolean contains(String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo2, String alias)
 	{
-		return repo.getStructure(alias) != null;
-	}
+		SDMXRepository repo;
+		if (repo2 instanceof SDMXRepository)
+			repo = (SDMXRepository) repo2;
+		else
+			throw new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository.");
 
-	@Override
-	public Optional<VTLValue> getValue(String alias)
-	{
-		DataSetMetadata structure = repo.getStructure(alias);
+		DataSetMetadata structure = repo2.getStructure(alias);
 		
 		if (structure == null)
 			return Optional.empty();
@@ -255,10 +247,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	@Override
 	public Optional<VTLValueMetadata> getValueMetadata(String alias)
 	{
-		Optional<VTLValueMetadata> structure = Optional.ofNullable(repo.getStructure(alias));
-		if (!structure.isPresent())
-			LOGGER.info("No structure in FMR corresponding to {}", alias);
-		return structure;
+		throw new IllegalStateException("SDMXEnvironment.getValueMetadata should never be called.");
 	}
 
 	private static class ObsIterator implements Iterator<DataPoint>

@@ -26,6 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class ParenthesesTransformation extends UnaryTransformation
 {
@@ -49,13 +50,13 @@ public class ParenthesesTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return scalar;
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		return dataset;
 	}

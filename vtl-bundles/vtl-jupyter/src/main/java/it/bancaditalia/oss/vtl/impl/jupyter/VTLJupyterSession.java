@@ -60,7 +60,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 		if (rule.isPresent())
 			return acquireResult(rule.get(), alias);
 		else
-			return acquireValue(alias, Environment::getValue)
+			return acquireValue(alias, (env, a) -> env.getValue(getRepository(), a))
 					.orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 	

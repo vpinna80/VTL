@@ -30,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
@@ -50,6 +49,7 @@ import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -87,41 +87,55 @@ public class InclusionTransformation extends UnaryTransformation
 
 	private final InOperator operator;
 	private final Set<ScalarValue<?, ?, ?, ?>> set;
+	private final String domainName;
 
 	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?, ?>> list)
 	{
 		super(operand);
 		this.operator = operator;
 		this.set = new HashSet<>(list);
+		domainName = null;
 	}
 
-	public InclusionTransformation(InOperator operator, Transformation operand, String dname) throws ClassNotFoundException
+	public InclusionTransformation(InOperator operator, Transformation operand, String domainName) throws ClassNotFoundException
 	{
 		super(operand);
 		this.operator = operator;
-		EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) ConfigurationManager.getDefault().getMetadataRepository().getDomain(dname);
-		this.set = new HashSet<>(domain.getCodeItems());
+		this.set = new HashSet<>();
+		this.domainName = domainName;
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
+		checkSet(repo);
 		return BooleanValue.of(operator.test(set, scalar));
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		checkSet(repo);
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
 				dp -> singletonMap(BOOL_VAR, BooleanValue.of(operator.test(set, dp.get(measure)))));
+	}
+
+	private void checkSet(MetadataRepository repo)
+	{
+		if (set.isEmpty())
+		{
+			EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) repo.getDomain(domainName);
+			set.addAll(domain.getCodeItems());
+		}
 	}
 
 	@Override
 	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata value = operand.getMetadata(session);
+		checkSet(session.getRepository());
 
 		ScalarValue<?, ?, ?, ?> item1 = null;
 		for (ScalarValue<?, ?, ?, ?> item: set)
@@ -170,6 +184,9 @@ public class InclusionTransformation extends UnaryTransformation
 	@Override
 	public String toString()
 	{
-		return operand + " " + operator + set.stream().map(Object::toString).collect(joining(", ", " {", "}"));
+		if (set.isEmpty())
+			return operand + " " + operator + " " + domainName;
+		else
+			return operand + " " + operator + set.stream().map(Object::toString).collect(joining(", ", " {", "}"));
 	}
 }

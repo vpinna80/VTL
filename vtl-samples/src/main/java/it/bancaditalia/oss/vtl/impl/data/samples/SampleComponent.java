@@ -58,12 +58,6 @@ class SampleComponent<R extends Component, S extends ValueDomainSubset<S, D>, D 
 		}
 
 		@Override
-		public Variable<S, D> getRenamed(String newName)
-		{
-			return new SampleComponent<>(newName, null, domain).getVariable();
-		}
-		
-		@Override
 		public int hashCode()
 		{
 			return varHash();
@@ -140,5 +134,10 @@ class SampleComponent<R extends Component, S extends ValueDomainSubset<S, D>, D 
 	public String toString()
 	{
 		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";	
+	}
+
+	public DataStructureComponent<?, ?, ?> getRenamed(String string)
+	{
+		return new SampleComponent<>(string, role, domain);
 	}
 }

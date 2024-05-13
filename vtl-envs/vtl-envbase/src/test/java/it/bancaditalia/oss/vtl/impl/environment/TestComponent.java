@@ -58,12 +58,6 @@ class TestComponent<R extends Component, S extends ValueDomainSubset<S, D>, D ex
 		}
 
 		@Override
-		public Variable<S, D> getRenamed(String newName)
-		{
-			return new TestComponent<>(newName, null, domain).getVariable();
-		}
-		
-		@Override
 		public int hashCode()
 		{
 			return varHash();

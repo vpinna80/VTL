@@ -23,7 +23,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransform
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.ALL_MEASURES;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.INVALID;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
 import static java.lang.Boolean.FALSE;
@@ -46,8 +45,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -58,8 +55,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet.DataPointRule;
@@ -107,17 +102,17 @@ public class CheckDataPointTransformation extends TransformationImpl
 		DataPointRuleSet ruleset = repo.getDataPointRuleset(rulesetID);
 		RuleSetType type = ruleset.getType();
 		List<DataPointRule> rules = ruleset.getRules();
-		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var = repo.getDefaultVariable(BOOLEANDS).as(Measure.class);
-		DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain> errorcode = repo.getVariable("errorcode", STRINGDS).as(Measure.class);
-		DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> errorlevel = repo.getVariable("errorlevel", INTEGERDS).as(Measure.class);
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> ruleid = repo.getVariable("ruleid", STRINGDS).as(Identifier.class);
+		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var = BOOLEANDS.getDefaultVariable().as(Measure.class);
+		DataStructureComponent<Measure, ?, ?> errorcode = repo.getVariable("errorcode").as(Measure.class);
+		DataStructureComponent<Measure, ?, ?> errorlevel = repo.getVariable("errorlevel").as(Measure.class);
+		DataStructureComponent<Identifier, ?, ?> ruleid = repo.getVariable("ruleid").as(Identifier.class);
 		
 		dataset = dataset.flatmapKeepingKeys(structure, DataPoint::getLineage, dp -> rules.stream()
 			.map(r -> {
 				if (type != VARIABLE)
 					throw new UnsupportedOperationException("check_datapoint on valuedomain ruleset not implemented");
 
-				DatapointScope scope = new DatapointScope(dp, structure, null);
+				DatapointScope scope = new DatapointScope(scheme.getRepository(), dp, structure, null);
 				
 				Boolean res = r.eval(dp, scope);
 				if (output == INVALID && res != FALSE)
@@ -157,7 +152,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 				for (int i = 0; i < vars.size(); i++)
 				{
 					String var = vars.get(i).getKey();
-					if (structure.getComponent(var).filter(c -> c.getVariable().equals(repo.getVariable(var, null))).isEmpty())
+					if (structure.getComponent(var).filter(c -> c.getVariable().equals(repo.getVariable(var))).isEmpty())
 						throw new VTLMissingComponentsException(var, structure);
 				}
 			else
@@ -172,14 +167,14 @@ public class CheckDataPointTransformation extends TransformationImpl
 				}
 			
 			if (output == ALL || output == ALL_MEASURES)
-				builder.addComponent(repo.getDefaultVariable(BOOLEANDS).as(Measure.class));
+				builder.addComponent(BOOLEANDS.getDefaultVariable().as(Measure.class));
 			if (output == INVALID || output == ALL_MEASURES)
 				builder.addComponents(structure.getMeasures());
 			
 			return builder
-					.addComponent(repo.getVariable("errorcode", STRINGDS).as(Measure.class))
-					.addComponent(repo.getVariable("errorlevel", INTEGERDS).as(Measure.class))
-					.addComponent(repo.getVariable("ruleid", STRINGDS).as(Identifier.class))
+					.addComponent(repo.getVariable("errorcode").as(Measure.class))
+					.addComponent(repo.getVariable("errorlevel").as(Measure.class))
+					.addComponent(repo.getVariable("ruleid").as(Identifier.class))
 					.build();
 		}
 		else

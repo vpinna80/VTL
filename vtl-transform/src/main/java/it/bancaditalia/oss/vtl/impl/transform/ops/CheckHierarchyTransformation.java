@@ -140,7 +140,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			idComp = dataset.getComponent(id).orElseThrow(() -> new VTLMissingComponentsException(id, ids));
 		else
 		{
-			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleset.getRuleId(), null);
+			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleset.getRuleId());
 			idComp = dataset.getComponent(variable.getName()).orElseThrow(() -> new VTLMissingComponentsException(variable.getName(), ids));
 		}
 		

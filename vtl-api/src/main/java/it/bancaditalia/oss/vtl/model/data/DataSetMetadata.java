@@ -181,28 +181,6 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	public DataSetMetadata joinForOperators(DataSetMetadata other);
 
 	/**
-	 * Creates a new structure by renaming a component of this {@link DataSetMetadata}.
-	 * 
-	 * If a component with the new name already exists, the behaviour is undefined.
-	 * 
-	 * @param component the component to rename
-	 * @param newName the new name for the component
-	 * @return the new structure.
-	 */
-	public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName);
-
-	/**
-	 * Creates a new structure by pivoting the specified measure over an identifier that is defined on a string enumerated domain (codelist).
-	 * 
-	 * @param <S> the domain subset type of the measure
-	 * @param <D> the domain type of the measure
-	 * @param identifier the identifier
-	 * @param measure the measure
-	 * @return the new structure.
-	 */
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ?, ?> identifier, DataStructureComponent<Measure, S, D> measure);
-
-	/**
 	 * Extracts a singleton component of a given role if it exists in the current structure, or throws an exception otherwise.
 	 * 
 	 * @param <R> The role type

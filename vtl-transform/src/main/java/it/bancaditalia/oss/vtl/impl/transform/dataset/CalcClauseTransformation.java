@@ -72,6 +72,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public class CalcClauseTransformation extends DatasetClauseTransformation
@@ -201,7 +202,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
 			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> {
-					DatapointScope dpSession = new DatapointScope(dp, nonAnalyticResultMetadata, timeId);
+					DatapointScope dpSession = new DatapointScope(scheme.getRepository(), dp, nonAnalyticResultMetadata, timeId);
 					
 					// place calculated components (eventually overriding existing ones) 
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
@@ -265,6 +266,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		final DataSetMetadata metadata = (DataSetMetadata) operand;
 		DataStructureBuilder builder = new DataStructureBuilder(metadata);
+		MetadataRepository repo = scheme.getRepository();
 
 		for (CalcClauseItem item : calcClauses)
 		{
@@ -310,7 +312,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					{
 						// switch role (from a non-id to any)
 						builder.removeComponent(definedComponent);
-						DataStructureComponent<?, ?, ?> newComponent = domain.getDefaultVariable().getRenamed(item.getName()).as(item.getRole());
+						DataStructureComponent<?, ?, ?> newComponent = repo.createTempVariable(item.getName(), domain).as(item.getRole());
 						builder.addComponent(newComponent);
 					}
 				}
@@ -319,7 +321,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// new component
 				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
-				builder = builder.addComponent(domain.getDefaultVariable().getRenamed(item.getName()).as(newComponent));
+				builder = builder.addComponent(repo.createTempVariable(item.getName(), domain).as(newComponent));
 			}
 		}
 

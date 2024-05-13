@@ -32,6 +32,7 @@ import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class JupyterWorkspace implements Workspace
 {
@@ -60,7 +61,7 @@ public class JupyterWorkspace implements Workspace
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
 	{
 		return Optional.ofNullable(values.get(alias));
 	}

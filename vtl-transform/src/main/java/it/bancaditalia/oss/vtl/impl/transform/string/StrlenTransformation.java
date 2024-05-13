@@ -43,6 +43,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class StrlenTransformation extends UnaryTransformation
 {
@@ -55,13 +56,13 @@ public class StrlenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return scalar instanceof NullValue ? NullValue.instance(INTEGERDS) : IntegerValue.of((long) ((StringValue<?, ?>) scalar).get().length());
 	}
 
 	@Override
-	protected DataSet evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected DataSet evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ?, ?> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		
@@ -69,7 +70,7 @@ public class StrlenTransformation extends UnaryTransformation
 				.addComponent(LEN_MEASURE)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(LEN_MEASURE, evalOnScalar(dp.get(originalMeasure), metadata)));
+		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(LEN_MEASURE, evalOnScalar(repo, dp.get(originalMeasure), metadata)));
 	}
 
 	@Override

@@ -90,10 +90,4 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 	{
 		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";	
 	}
-
-	@Override
-	public DataStructureComponent<R, S, D> getRenamed(String newName)
-	{
-		return variable.getRenamed(newName).as(role);
-	}
 }

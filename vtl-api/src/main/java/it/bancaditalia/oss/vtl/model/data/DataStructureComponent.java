@@ -26,6 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 /**
  * The immutable representation of a component of a dataset.
@@ -79,7 +80,7 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 	}
 	
 	/**
-	 * Narrows the role of this {@link DataStructureComponent} to the specified role if possible.
+	 * Convencience method that narrows the role of this {@link DataStructureComponent} to the specified role if possible.
 	 * 
 	 * @param role the role to narrow to
 	 * @return this component with the narrowed role.
@@ -94,9 +95,17 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 		else
 			throw new ClassCastException("In component " + this + ", cannot cast " + getRole().getSimpleName() + " to " + role.getSimpleName());
 	}
-
-	public default DataStructureComponent<R, S, D> getRenamed(String newName)
+	
+	/**
+	 * Convenience method that obtains a renamed component in the given {@link MetadataRepository} the same role and domain of this {@link DataStructureComponent}.
+	 * 
+	 * @param repo The repository
+	 * @param newName the new name to assign to the new component
+	 * @return the renamed component
+	 */
+	@SuppressWarnings("unchecked")
+	public default DataStructureComponent<R, S, D> getRenamed(MetadataRepository repo, String newName)
 	{
-		return getVariable().getRenamed(newName).as(getRole());
+		return ((Variable<S, D>) repo.createTempVariable(newName, getVariable().getDomain())).as(getRole());
 	}
 }

@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
 import java.util.OptionalInt;
 
+import it.bancaditalia.oss.vtl.impl.types.domain.NonNullDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -62,8 +63,8 @@ public enum TestComponents
 	SOURCE_AGENCY(Attribute.class, "ECB:CL_ORGANISATION(1.0)"),
 	SOURCE_PUB(Attribute.class, new StrlenDomainSubset<>(STRINGDS, OptionalInt.empty(), OptionalInt.of(350))),
 	TITLE(Attribute.class, new StrlenDomainSubset<>(STRINGDS, OptionalInt.empty(), OptionalInt.of(200))),
-	TITLE_COMPL(Attribute.class, new StrlenDomainSubset<>(STRINGDS, OptionalInt.of(1), OptionalInt.of(1050))),
-	TIME_FORMAT(Attribute.class, new StrlenDomainSubset<>(STRINGDS, OptionalInt.empty(), OptionalInt.of(3))),
+	TITLE_COMPL(Attribute.class, new NonNullDomainSubset<>(new StrlenDomainSubset<>(STRINGDS, OptionalInt.of(1), OptionalInt.of(1050)))),
+	TIME_FORMAT(Attribute.class, new NonNullDomainSubset<>(new StrlenDomainSubset<>(STRINGDS, OptionalInt.empty(), OptionalInt.of(3)))),
 	UNIT(Attribute.class, "ECB:CL_UNIT(1.0)"),
 	UNIT_INDEX_BASE(Attribute.class, new StrlenDomainSubset<>(STRINGDS, OptionalInt.empty(), OptionalInt.of(35))),
 	UNIT_MULT(Attribute.class, "ECB:CL_UNIT_MULT(1.0)");
@@ -114,12 +115,6 @@ public enum TestComponents
 		public S getDomain()
 		{
 			return (S) domain;
-		}
-
-		@Override
-		public TestComponent<R, S, D> getRenamed(String newName)
-		{
-			return new TestComponent<>(newName, role, domain);
 		}
 
 		@Override

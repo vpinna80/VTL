@@ -45,6 +45,7 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class BetweenTransformation extends UnaryTransformation
 {
@@ -104,16 +105,16 @@ public class BetweenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return scalar instanceof NullValue ? NullValue.instance(BOOLEANDS) : BooleanValue.of(scalar.compareTo(from) >= 0 && scalar.compareTo(to) <= 0);
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_VAR, evalOnScalar(dp.get(measure), metadata)));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_VAR, evalOnScalar(repo, dp.get(measure), metadata)));
 	}
 	
 	@Override

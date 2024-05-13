@@ -40,6 +40,7 @@ import static org.rosuda.JRI.REXP.XT_DOUBLE;
 import static org.rosuda.JRI.REXP.XT_INT;
 import static org.rosuda.JRI.REXP.XT_STR;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -60,7 +61,6 @@ import org.rosuda.JRI.Rengine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -75,6 +75,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -86,13 +87,84 @@ import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class REnvironment implements Environment
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);;
+	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
+	
+	private static class RVar<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>, Serializable
+	{
+		private static final long serialVersionUID = 1L;
+
+		private final String name;
+		private final S domain;
+		
+		private transient int hashCode;
+
+		@SuppressWarnings("unchecked")
+		public RVar(String name, ValueDomainSubset<?, ?> domain)
+		{
+			this.name = name;
+			this.domain = (S) domain;
+		}
+		
+		@Override
+		public String getName()
+		{
+			return name;
+		}
+
+		@Override
+		public S getDomain()
+		{
+			return domain;
+		}
+		
+		@Override
+		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
+		{
+			return new DataStructureComponentImpl<>(role, this);
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return hashCode == 0 ? hashCode = hashCodeInit() : hashCode;
+		}
+
+		public int hashCodeInit()
+		{
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + domain.hashCode();
+			result = prime * result + name.hashCode();
+			hashCode = result;
+
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (obj instanceof Variable)
+			{
+				Variable<?, ?> var = (Variable<?, ?>) obj;
+				return name.equals(var.getName()) && domain.equals(var.getDomain());
+			}
+			
+			return false;
+		}
+	}
 	
 	private final Rengine engine = RUtils.RENGINE;
 
@@ -111,19 +183,6 @@ public class REnvironment implements Environment
 			{
 				LOGGER.info("Found a data.frame, constructing VTL metadata...");
 				REXP data = reval("`???`[1, ]", name);
-				String dataflowRef = Optional.ofNullable(data.getAttribute("dataflow"))
-						.map(REXP::asString)
-						.map(s -> s.split(",", 3))
-						.filter(s -> s.length == 3)
-						.map(a -> a[0] + ":" + a[1] + "(" + a[2] + ")")
-						.orElse(name);
-				DataSetMetadata metadata = ConfigurationManagerFactory.getInstance().getMetadataRepository().getStructure(dataflowRef);
-				if (metadata != null)
-				{
-					LOGGER.info("R dataframe {} has structure {}", name, metadata);
-					return Optional.of(metadata);
-				}
-				
 				RList dataFrame = data.asList();
 
 				// manage measure and identifier attributes
@@ -145,13 +204,13 @@ public class REnvironment implements Environment
 				{
 					REXP columnData = dataFrame.at(key);
 
-					Class<? extends Component> type;
+					Class<? extends Component> role;
 					if (measures.contains(key))
-						type = Measure.class;
+						role = Measure.class;
 					else if (identifiers.contains(key))
-						type = Identifier.class;
+						role = Identifier.class;
 					else
-						type = Attribute.class;
+						role = Attribute.class;
 
 					ValueDomainSubset<?, ?> domain;
 					switch (columnData.getType())
@@ -165,7 +224,7 @@ public class REnvironment implements Environment
 									"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
 					}
 					
-					builder.addComponent(domain.getDefaultVariable().getRenamed(key).as(type));
+					builder.addComponent(new RVar<>(name, domain).as(role));
 				}
 				
 				LOGGER.info("VTL metadata for {} completed.", name);
@@ -192,7 +251,7 @@ public class REnvironment implements Environment
 	}
 	
 	@Override
-	public Optional<VTLValue> getValue(String name)
+	public Optional<VTLValue> getValue(MetadataRepository repo, String name)
 	{
 		if (reval("exists('???')", name).asBool().isTRUE())
 		{
@@ -200,8 +259,10 @@ public class REnvironment implements Environment
 
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE())
 			{
-				DataSetMetadata metadata = (DataSetMetadata) getValueMetadata(name).get();
-				result = parseDataFrame(name, metadata);
+				DataSetMetadata metadata = repo.getStructure(name);
+				if (metadata == null)
+					metadata = (DataSetMetadata) getValueMetadata(name).get();
+				result = parseDataFrame(metadata, name);
 				return Optional.of(result);
 			}
 			else if (reval("is.integer(`???`) || is.numeric(`???`) || is.character(`???`)", name).asBool().isTRUE())
@@ -224,7 +285,7 @@ public class REnvironment implements Environment
 		return Optional.empty();
 	}
 
-	private DataSet parseDataFrame(String name, DataSetMetadata metadata)
+	private DataSet parseDataFrame(DataSetMetadata metadata, String name)
 	{
 		List<String> dateColumns = new ArrayList<>();
  

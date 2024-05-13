@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.stream.Collectors.joining;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -34,6 +35,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
@@ -45,6 +47,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class RenameClauseTransformation extends DatasetClauseTransformation
 {
@@ -103,21 +106,30 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
 		DataSetMetadata dataset = (DataSetMetadata) operand;
-		DataSetMetadata accumulator = dataset;
+		Map<String, DataStructureComponent<?, ?, ?>> renamed = new HashMap<>();
+		MetadataRepository repo = session.getRepository();
 		
-		for (Entry<String, String> rename: renames.entrySet())
+		for (DataStructureComponent<?, ?, ?> component: dataset)
 		{
-			String alias = rename.getKey();
-			DataStructureComponent<?, ?, ?> componentFrom = dataset.getComponent(alias)
-					.orElseThrow(() -> new VTLMissingComponentsException(alias, dataset));
-			
-			if (accumulator.contains(rename.getValue()))
-				throw new VTLException("rename from " + componentFrom + " cannot override existing component " + dataset.getComponent(rename.getValue()));
-				
-			accumulator = accumulator.rename(componentFrom, rename.getValue());
+			String oldName = component.getVariable().getName();
+			String newName = renames.get(oldName);
+			if (newName != null)
+				if (renamed.containsKey(newName))
+					throw new VTLException("rename from " + oldName + " cannot override existing component " + dataset.getComponent(newName));
+				else
+					renamed.put(newName, repo.createTempVariable(newName, component.getVariable().getDomain()).as(component.getRole()));
+			else 
+				if (renamed.containsKey(oldName))
+					throw new VTLException("A rename clause overrides existing component " + dataset.getComponent(oldName));
+				else
+					renamed.put(oldName, component);
 		}
 		
-		return accumulator;
+		for (Entry<String, String> rename: renames.entrySet())
+			if (!renamed.containsKey(rename.getValue()))
+				throw new VTLMissingComponentsException(rename.getKey(), dataset);
+		
+		return new DataStructureBuilder(renamed.values()).build();
 	}
 	
 	@Override

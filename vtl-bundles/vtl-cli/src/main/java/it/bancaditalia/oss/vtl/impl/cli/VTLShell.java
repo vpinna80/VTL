@@ -77,7 +77,7 @@ public class VTLShell implements Callable<Void>
 			ConfigurationManagerFactory.loadConfiguration(reader);
 		}
 		
-		ConfigurationManager manager = ConfigurationManager.getDefault();
+		ConfigurationManager manager = ConfigurationManagerFactory.getInstance();
 		
 		VTLSession session;
 		try (Reader reader = file != null ? Files.newBufferedReader(file.toPath(), UTF_8) : new BufferedReader(new InputStreamReader(System.in, UTF_8)))

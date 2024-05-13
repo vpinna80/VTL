@@ -47,9 +47,11 @@ public class DatapointScope extends AbstractScope
 	private final DataPoint dp;
 	private final DataSetMetadata structure;
 	private final DataStructureComponent<Identifier, ?, ?> timeId;
+	private final MetadataRepository repo;
 	
-	public DatapointScope(DataPoint dp, DataSetMetadata structure, DataStructureComponent<Identifier, ?, ?> timeId) 
+	public DatapointScope(MetadataRepository repo, DataPoint dp, DataSetMetadata structure, DataStructureComponent<Identifier, ?, ?> timeId) 
 	{
+		this.repo = repo;
 		this.dp = dp;
 		this.structure = structure;
 		this.timeId = timeId;
@@ -93,7 +95,7 @@ public class DatapointScope extends AbstractScope
 	@Override
 	public MetadataRepository getRepository()
 	{
-		throw new UnsupportedOperationException();
+		return repo;
 	}
 
 	public ScalarValue<?, ?, ?, ?> getTimeIdValue()

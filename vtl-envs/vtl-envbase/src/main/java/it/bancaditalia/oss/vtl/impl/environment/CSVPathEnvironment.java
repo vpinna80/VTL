@@ -38,7 +38,8 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class CSVPathEnvironment extends CSVFileEnvironment
 {
@@ -79,12 +80,12 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
 	{
-		return mapper(alias, super::getValue);
+		return mapper(repo, alias, super::getValue);
 	}
 
-	private <T> Optional<T> mapper(String alias, SerFunction<String, Optional<T>> mapper)
+	private <T> Optional<T> mapper(MetadataRepository repo, String alias, SerBiFunction<MetadataRepository, String, Optional<T>> mapper)
 	{
 		if (alias.startsWith("csv:"))
 		{
@@ -96,7 +97,7 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 					.map(path -> { LOGGER.info("Found {} in {}", alias, path); return path; });
 			
 			final Optional<Optional<T>> optional = optional3
-					.map(path -> mapper.apply(path));
+					.map(path -> mapper.apply(repo, path));
 			
 			return optional.orElse(Optional.empty());
 		}
@@ -107,6 +108,6 @@ public class CSVPathEnvironment extends CSVFileEnvironment
 	@Override
 	public Optional<VTLValueMetadata> getValueMetadata(String alias)
 	{
-		return mapper(alias, super::getValueMetadata);
+		return mapper(null, alias, (repo, a) -> super.getValueMetadata(a));
 	}
 }

@@ -201,11 +201,10 @@ public enum AggregateOperator
 		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> outputMeasures;
 		if (isChanging)
 			outputMeasures = measures.stream()
-				.map(m -> INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(m.getVariable().getName()).as(Measure.class) : m)
+				.map(m -> INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : m)
 				.collect(toSet());
 		else
 			outputMeasures = measures;
-		
 		
 		// Combine all collectors into one
 		SerCollector<DataPoint, CombinedAccumulator, DataPoint> combined = SerCollector.of(
@@ -237,7 +236,7 @@ public enum AggregateOperator
 							if (this == COUNT)
 								m = COUNT_MEASURE;
 							else if (isChanging)
-								m = INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(m.getVariable().getName()).as(Measure.class) : m;
+								m = INTEGERDS.isAssignableFrom(m.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : m;
 							return m;
 						}, splitting((measure, collector) -> {
 							@SuppressWarnings("unchecked")

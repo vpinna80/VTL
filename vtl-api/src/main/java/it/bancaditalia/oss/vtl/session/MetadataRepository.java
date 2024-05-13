@@ -19,17 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.session;
 
-import java.util.Collection;
-
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 /**
  * A repository to contain and query all the defined domains.
@@ -38,11 +34,6 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
  */
 public interface MetadataRepository
 {
-	/**
-	 * @return a collection of all {@link ValueDomainSubset}s defined in this {@link MetadataRepository}.
-	 */
-	public Collection<ValueDomainSubset<?, ?>> getValueDomains();
-	
 	/**
 	 * Checks if a {@link ValueDomainSubset} with the specified name exists.
 	 * 
@@ -100,22 +91,14 @@ public interface MetadataRepository
 	 * @return a {@link Variable} instance.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getVariable(String alias, ValueDomainSubset<S, D> domain);
+	public Variable<?, ?> getVariable(String alias);
 
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getDefaultVariable(ValueDomainSubset<S, D> domain);
-	
-	public TransformationScheme getTransformationScheme(String alias);
-	
 	/**
-	 * Initialize this {@link MetadataRepository}.
+	 * Creates a temporary variable with provided alias and domain. An error is raised if a persistent variable with a different domain is already defined in metadata.
 	 * 
-	 * This method should be always called once per instance, before attempting any other operation.
-	 * 
-	 * @param params optional initialization parameters
-	 * @return this instance
+	 * @param alias the alias of the variable
+	 * @param alias the domain of the variable
+	 * @return a {@link Variable} instance.
 	 */
-	public default MetadataRepository init(Object... params)
-	{
-		return this;
-	}
+	public Variable<?, ?> createTempVariable(String alias, ValueDomainSubset<?, ?> domain);
 }

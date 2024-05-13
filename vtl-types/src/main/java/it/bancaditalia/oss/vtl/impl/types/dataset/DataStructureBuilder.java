@@ -50,11 +50,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class DataStructureBuilder
 {
@@ -227,12 +223,6 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public DataSetMetadata rename(DataStructureComponent<?, ?, ?> component, String newName)
-		{
-			return new DataStructureBuilder(this).removeComponent(component).addComponent(component.getRenamed(newName)).build();
-		}
-
-		@Override
 		public String toString()
 		{
 			return byName.values().toString();
@@ -266,19 +256,6 @@ public class DataStructureBuilder
 		public int size()
 		{
 			return byName.size();
-		}
-
-		@Override
-		public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetMetadata pivot(DataStructureComponent<Identifier, ?, ?> identifier,
-				DataStructureComponent<Measure, S, D> measure)
-		{
-			return Utils.getStream(((EnumeratedDomainSubset<?, ?>) identifier.getVariable().getDomain()).getCodeItems())
-					.map(item -> measure.getRenamed(item.get().toString()))
-					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge)
-					.addComponents(getIDs())
-					.removeComponent(identifier)
-					.removeComponent(measure)
-					.build();
 		}
 	}
 

@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
@@ -36,15 +35,18 @@ public class ThisScope extends AbstractScope
 	
 	private final DataSet thisValue;
 	private final DataSetMetadata thisMetadata;
+	private final MetadataRepository repo;
 	
-	public ThisScope(DataSet thisValue)
+	public ThisScope(MetadataRepository repo, DataSet thisValue)
 	{
+		this.repo = repo;
 		this.thisValue = thisValue;
 		this.thisMetadata = thisValue.getMetadata();
 	}
 
-	public ThisScope(DataSetMetadata thisMetadata)
+	public ThisScope(MetadataRepository repo, DataSetMetadata thisMetadata)
 	{
+		this.repo = repo;
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
 	}
@@ -92,6 +94,6 @@ public class ThisScope extends AbstractScope
 	@Override
 	public MetadataRepository getRepository()
 	{
-		return ConfigurationManager.getDefault().getMetadataRepository();
+		return repo;
 	}
 }

@@ -63,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.RulesetStatement;
@@ -88,9 +89,9 @@ public class VTLSessionImpl implements VTLSession
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 
-	private final ConfigurationManager config = ConfigurationManager.getDefault();
+	private final ConfigurationManager config = ConfigurationManagerFactory.getInstance();
 	private final Engine engine;
-	private final List<? extends Environment> environments;
+	private final List<Environment> environments;
 	private final Workspace workspace;
 	private final Map<String, SoftReference<VTLValue>> cache = new ConcurrentHashMap<>();
 	private final Map<String, SoftReference<VTLValueMetadata>> metacache = new ConcurrentHashMap<>();
@@ -132,7 +133,7 @@ public class VTLSessionImpl implements VTLSession
 				return acquireResult(statement, alias);
 		}
 		else
-			return cacheHelper(alias, cache, n -> acquireValue(alias, Environment::getValue)
+			return cacheHelper(alias, cache, n -> acquireValue(alias, (e, a) -> e.getValue(repository, a))
 					.orElseThrow(() -> new VTLUnboundAliasException(alias)));
 	}
 	

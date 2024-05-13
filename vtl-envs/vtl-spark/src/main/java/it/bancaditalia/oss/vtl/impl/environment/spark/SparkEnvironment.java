@@ -82,6 +82,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SparkEnvironment implements Environment
 {
@@ -181,33 +182,33 @@ public class SparkEnvironment implements Environment
 		if (frames.containsKey(name))
 			return true;
 		
-		String[] parts = name.split(":", 2);
+		String[] parts = name.split(":");
 		if (parts.length != 2)
 			return false;
 		
-		SparkDataSet dataset = null;
-		switch (parts[0])
-		{
-			case "csv":
-				dataset = inferSchema(reader.format("csv").option("header", "true").load(parts[1]), name); 
-				break;
-			default: 
-				dataset = inferSchema(reader.format(parts[0]).load(parts[1]), name); 
-				break;
-		}
-		
-		frames.put(name, dataset);
 		return true;
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(String name)
+	public Optional<VTLValue> getValue(MetadataRepository repo, String name)
 	{
 		if (!contains(name))
 			return Optional.empty();
 
-		String normalizedName = (name.matches("'.*'") ? name.replaceAll("'(.*)'", "$1") : name.toLowerCase()).substring(6);
-		return Optional.of(frames.get(normalizedName));
+		SparkDataSet dataset = null;
+		String[] parts = name.split(":");
+		switch (parts[0])
+		{
+			case "csv":
+				dataset = inferSchema(repo, reader.format("csv").option("header", "true").load(parts[1]), name); 
+				break;
+			default: 
+				dataset = inferSchema(repo, reader.format(parts[0]).load(parts[1]), name); 
+				break;
+		}
+		
+		frames.put(name, dataset);
+		return Optional.of(frames.get(name));
 	}
 	
 	@Override
@@ -255,14 +256,14 @@ public class SparkEnvironment implements Environment
 		}
 	}
 	
-	private SparkDataSet inferSchema(final Dataset<Row> sourceDataFrame, String alias)
+	private SparkDataSet inferSchema(MetadataRepository repo, Dataset<Row> sourceDataFrame, String alias)
 	{
 		StructType schema = sourceDataFrame.schema();
 		
 		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
 		{
 			// infer structure from the schema metadata
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(schema)).build();
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, schema)).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			return new SparkDataSet(session, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
@@ -279,7 +280,7 @@ public class SparkEnvironment implements Environment
 				else if (field.dataType() instanceof IntegerType)
 					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), sourceDataFrame2.col(field.name()).cast(LongType));
 			
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(sourceDataFrame2.schema())).build();
+			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, sourceDataFrame2.schema())).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
@@ -291,7 +292,7 @@ public class SparkEnvironment implements Environment
 			// infer structure from the column header names
 	
 			String[] fieldNames = schema.fieldNames();
-			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = extractMetadata(fieldNames);
+			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = extractMetadata(null, fieldNames);
 			DataSetMetadata structure = new DataStructureBuilder(metaInfo.getKey()).build();
 			
 			// masks for decoding CSV rows

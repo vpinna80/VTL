@@ -91,7 +91,6 @@ import io.sdmx.utils.core.application.SingletonStore;
 import io.sdmx.utils.http.api.model.IHttpProxy;
 import io.sdmx.utils.http.broker.RestMessageBroker;
 import io.sdmx.utils.sdmx.xs.MaintainableRefBeanImpl;
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -113,7 +112,6 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -374,9 +372,9 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getVariable(String alias, ValueDomainSubset<S, D> domain)
+	public Variable<?, ?> getVariable(String alias)
 	{
-		String agency = domain instanceof SdmxCodeList ? ((SdmxCodeList) domain).getAgency() : null;
+		String agency = alias.indexOf(":") >= 0 ? alias.split(":", 2)[0] : null;
 		
 		Variable<?, ?> variable = null;
 		Map<String, Variable<?, ?>> varsOfConcept = variables.get(alias);
@@ -385,17 +383,10 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		else if (varsOfConcept != null && !varsOfConcept.isEmpty())
 			variable = varsOfConcept.values().iterator().next();
 		
-		if (variable == null)
-			variable = super.getVariable(alias, domain);
-		
 		if (variable != null)
-		{
-			@SuppressWarnings("unchecked")
-			Variable<S, D> ret = (Variable<S, D>) variable;
-			return ret;
-		}
+			return variable;
 		else
-			throw new VTLException("Variable " + alias + " not found.");
+			return super.getVariable(alias);
 	}
 
 	public SdmxBeanRetrievalManager getBeanRetrievalManager()
@@ -403,11 +394,10 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		return rbrm;
 	}
 	
-	@Override
 	public TransformationScheme getTransformationScheme(String alias)
 	{
 		return Optional.ofNullable(schemes.get(alias))
-			.map(ConfigurationManager.getDefault()::createSession)
+			.map(ConfigurationManagerFactory.getInstance()::createSession)
 			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
 	}
 	

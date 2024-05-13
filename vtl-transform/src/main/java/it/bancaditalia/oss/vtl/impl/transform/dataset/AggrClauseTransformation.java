@@ -59,6 +59,7 @@ import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class AggrClauseTransformation extends DatasetClauseTransformation
 {
@@ -136,7 +137,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet dataset = (DataSet) getThisValue(scheme);
 
-		TransformationScheme thisScope = new ThisScope(dataset);
+		TransformationScheme thisScope = new ThisScope(scheme.getRepository(), dataset);
 		
 		List<DataSet> resultList = aggrItems.stream()
 			.map(AggrClauseItem::getOperand)
@@ -159,7 +160,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		}
 
 		if (having != null)
-			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(dp, metadata, null)) == BooleanValue.of(true), lineage -> LineageNode.of(having, lineage));
+			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(scheme.getRepository(), dp, metadata, null)) == BooleanValue.of(true), lineage -> LineageNode.of(having, lineage));
 
 		return result.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), identity());
 	}
@@ -167,6 +168,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata meta = getThisMetadata(scheme);
+		MetadataRepository repo = scheme.getRepository();
 
 		if (meta instanceof DataSetMetadata)
 		{
@@ -203,10 +205,10 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else
-						builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).as(requestedRole));
+						builder = builder.addComponent(repo.createTempVariable(clause.getComponent(), NUMBERDS).as(requestedRole));
 				}
 				else
-					builder = builder.addComponent(NUMBERDS.getDefaultVariable().getRenamed(clause.getComponent()).as(requestedRole));
+					builder = builder.addComponent(repo.createTempVariable(clause.getComponent(), NUMBERDS).as(requestedRole));
 			}
 
 			if (having != null)

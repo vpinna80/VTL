@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
 import static it.bancaditalia.oss.vtl.impl.environment.TestComponents.ATTRIBUTE;
 import static it.bancaditalia.oss.vtl.impl.environment.TestComponents.IDENTIFIER;
 import static it.bancaditalia.oss.vtl.impl.environment.TestComponents.MEASURE;
@@ -82,15 +81,6 @@ public class CSVFileEnvironmentTest
 	@BeforeAll
 	public static void beforeAll() throws IOException
 	{
-		MetadataRepository metarepo = mock(MetadataRepository.class, RETURNS_SMART_NULLS);
-		when(metarepo.getVariable(anyString(), any())).then(i -> new TestComponent<>(i.getArgument(0), null, i.getArgument(1)).getVariable());
-		
-		when(metarepo.getStructure(anyString())).thenReturn(null);
-		ConfigurationManager mockConfman = mock(ConfigurationManager.class, RETURNS_SMART_NULLS);
-		CONFMAN_MOCK.when(ConfigurationManager::getDefault).thenReturn(mockConfman);
-		when(mockConfman.getMetadataRepository()).thenReturn(metarepo);
-		CONFIG_MANAGER.setValue(mockConfman.getClass().getName());
-		
 		TEMPCSVFILE = Files.createTempFile(null, ".csv").toAbsolutePath();
 		InputStream csv = CSVFileEnvironment.class.getResourceAsStream("test.csv");
 		assertNotNull(csv, "CSV test file not found");
@@ -128,14 +118,17 @@ public class CSVFileEnvironmentTest
 	@Test
 	public void getValueTest()
 	{
-		Optional<? extends VTLValue> search = new CSVFileEnvironment().getValue(CSVALIAS);
+		MetadataRepository repoMock = mock(MetadataRepository.class, RETURNS_SMART_NULLS);
+		when(repoMock.getStructure(anyString())).thenReturn(null);
+		when(repoMock.createTempVariable(anyString(), any())).then(p -> new TestComponent<>(p.getArgument(0), null, p.getArgument(1)).getVariable());
+		Optional<? extends VTLValue> search = new CSVFileEnvironment().getValue(repoMock, CSVALIAS);
 		
 		assertTrue(search.isPresent(), "Cannot find " + CSVALIAS);
 		assertTrue(DataSet.class.isInstance(search.get()), CSVALIAS + " is not a DataSet");
 		
 		DataSet dataset = (DataSet) search.get();
 		
-		final DataSetMetadata structure = dataset.getMetadata();
+		DataSetMetadata structure = dataset.getMetadata();
 		assertEquals(4, structure.size(), "Wrong number of columns");
 		assertTrue(structure.contains(IDENTIFIER.get()), "Missing IDENTIFIER Column");
 		assertTrue(structure.contains(MEASURE.get()), "Missing MEASURE Column");

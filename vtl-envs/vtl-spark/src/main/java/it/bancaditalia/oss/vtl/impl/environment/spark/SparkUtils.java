@@ -62,7 +62,6 @@ import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -85,7 +84,6 @@ public class SparkUtils
 	private static final Map<ValueDomainSubset<?, ?>, Encoder<? extends Serializable>> DOMAIN_ENCODERS = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, DataType> DOMAIN_DATATYPES = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, SerFunction<Object, ScalarValue<?, ?, ?, ?>>> DOMAIN_BUILDERS = new ConcurrentHashMap<>();
-	private static final MetadataRepository METAREPO = ConfigurationManager.getDefault().getMetadataRepository();
 
 	static
 	{
@@ -115,16 +113,16 @@ public class SparkUtils
 		DOMAIN_BUILDERS.put(DATEDS, v -> DateValue.of((LocalDate) v));
 	}
 
-	public static Set<DataStructureComponent<?, ?, ?>> getComponentsFromStruct(StructType schema)
+	public static Set<DataStructureComponent<?, ?, ?>> getComponentsFromStruct(MetadataRepository repo, StructType schema)
 	{
 		Set<DataStructureComponent<?, ?, ?>> result = new HashSet<>();
 		for (StructField field: schema.fields())
-			result.add(getComponentFor(field));
+			result.add(getComponentFor(repo, field));
 		
 		return result;
 	}
 
-	private static DataStructureComponent<? extends Component, ?, ?> getComponentFor(StructField field)
+	private static DataStructureComponent<? extends Component, ?, ?> getComponentFor(MetadataRepository repo, StructField field)
 	{
 		Class<? extends Component> role;
 		switch ((int) field.metadata().getLong("Role"))
@@ -136,8 +134,7 @@ public class SparkUtils
 			default: throw new UnsupportedOperationException("No VTL role corresponding to metadata.");
 		}
 		
-		ValueDomainSubset<?, ?> domain = METAREPO.getDomain(field.metadata().getString("Domain"));
-		return METAREPO.getVariable(field.name(), domain).as(role);
+		return repo.getVariable(field.name()).as(role);
 	}
 
 	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Object serialized)

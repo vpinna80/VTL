@@ -24,7 +24,6 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEM
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toList;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -102,17 +101,19 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 		ConfigurationManagerFactory.loadConfiguration(new FileReader(System.getProperty("user.home") + "/.vtlStudio.properties"));
 		SESSION_IMPLEMENTATION.setValue(VTLJupyterSession.class.getName());
 		
-		String workspaceClass = ConfigurationManagerFactory.getInstance().getEnvironments().stream()
-			.filter(Workspace.class::isInstance)
-			.map(Object::getClass)
-			.map(Class::getName)
-			.findAny().orElseThrow();
-		
 		ENVIRONMENT_IMPLEMENTATION.setValues(
-				Stream.concat(ENVIRONMENT_IMPLEMENTATION.getValues().stream(), Stream.of(JupyterWorkspace.class.getName()))
-					.filter(not(workspaceClass::equals))
-					.collect(toList())
-					.toArray(new String[0]));
+				Stream.concat(ENVIRONMENT_IMPLEMENTATION.getValues().stream()
+					.filter(not(cls -> {
+						try
+						{
+							return Workspace.class.isAssignableFrom(Class.forName(cls, true, Thread.currentThread().getContextClassLoader()));
+						}
+						catch (ClassNotFoundException e)
+						{
+							throw new ExceptionInInitializerError(e);
+						}
+					})),
+					Stream.of(JupyterWorkspace.class.getName())).toArray(String[]::new));
 
 		new VTLJupyterKernel(connInfo);
 	}

@@ -53,7 +53,6 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiConsumer;
 
@@ -103,18 +102,14 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return structureFor != null ? structures.get(structureFor) : null;
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
-	public <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> getVariable(String alias, ValueDomainSubset<S, D> domain)
+	public Variable<?, ?> getVariable(String alias)
 	{
 		Variable<?, ?> variable = variables.get(alias);
-		
-		if (variable != null && domain != null && domain.equals(variable.getDomain())) 
-			return (Variable<S, D>) variable;
-		else if (variable != null && domain == null)
-			return (Variable<S, D>) variable;
+		if (variable != null)
+			return variable;
 		else
-			return super.getVariable(alias, domain);
+			return super.getVariable(alias);
 	}
 	
 	private void iterate(List<?> list, SerBiConsumer<String, Map<?, ?>> processor)

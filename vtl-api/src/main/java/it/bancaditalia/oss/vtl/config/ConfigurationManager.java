@@ -44,16 +44,6 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 public interface ConfigurationManager
 {
 	/**
-	 * Same as {@link ConfigurationManagerFactory#getInstance()}.
-	 * 
-	 * @return a default instance of this interface.
-	 */
-	public static ConfigurationManager getDefault()  
-	{
-		return ConfigurationManagerFactory.getInstance();
-	}
-
-	/**
 	 * @return The {@link MetadataRepository} instance
 	 */
 	public MetadataRepository getMetadataRepository();
@@ -82,7 +72,7 @@ public interface ConfigurationManager
 	/**
 	 * @return The {@link List} of {@link Environment} instances
 	 */
-	public List<? extends Environment> getEnvironments();
+	public List<Environment> getEnvironments();
 	
 	/**
 	 * Saves the current configuration to the provided Writer as a list of Java properties.

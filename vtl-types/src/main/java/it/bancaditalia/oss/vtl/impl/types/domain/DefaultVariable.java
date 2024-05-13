@@ -19,10 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -81,7 +82,11 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 			return DefaultVariable.this;
 		}
 		
-		
+		@Override
+		public String toString()
+		{
+			return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";	
+		}
 	}
 
 	private final String name;
@@ -135,12 +140,5 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 		}
 		else 
 			return false;
-	}
-
-	@Override
-	public Variable<S, D> getRenamed(String newName)
-	{
-		// Default variables cannot be renamed
-		return ConfigurationManager.getDefault().getMetadataRepository().getVariable(newName, domain);
 	}
 }

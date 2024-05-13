@@ -50,18 +50,11 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 public class ConfigurationManagerImpl implements ConfigurationManager
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationManagerImpl.class);
-	
-	private final MetadataRepository metadataRepositoryInstance;
-
-	public ConfigurationManagerImpl() 
-	{
-		metadataRepositoryInstance = instanceOfClass(METADATA_REPOSITORY.getValue(), MetadataRepository.class, "Error initializing repository");
-	}
 
 	@Override
 	public MetadataRepository getMetadataRepository()
 	{
-		return metadataRepositoryInstance;
+		return instanceOfClass(METADATA_REPOSITORY.getValue(), MetadataRepository.class, "Error initializing repository");
 	}
 
 	@Override
@@ -100,7 +93,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 			{
 				result.add(instanceOfClass(envName, Environment.class, "Error initializing environment " + envName));
 			}
-			catch (VTLNestedException e)
+			catch (Exception e)
 			{
 				LOGGER.error("Error initializing environment " + envName, e.getCause());
 			}

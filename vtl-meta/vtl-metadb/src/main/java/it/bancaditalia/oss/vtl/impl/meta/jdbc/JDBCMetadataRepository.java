@@ -153,7 +153,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 					}
 				}
 				
-				DataStructureComponent<? extends Component, ?, ?> comp = domain.getDefaultVariable().getRenamed(varName).as(role);
+				DataStructureComponent<? extends Component, ?, ?> comp = createTempVariable(varName, domain).as(role);
 				LOGGER.trace("Read component {} for {}", comp, name);
 				builder.addComponent(comp);
 			}

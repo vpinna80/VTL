@@ -31,10 +31,12 @@ public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends Va
 	private static final long serialVersionUID = 1L;
 	
 	private final S subsetWithNull;
+	private final int hashCode;
 	
 	public NonNullDomainSubset(S subsetWithNull)
 	{
 		this.subsetWithNull = subsetWithNull;
+		hashCode = 31 + subsetWithNull.hashCode();
 	}
 
 	@Override
@@ -74,5 +76,35 @@ public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends Va
 	public Variable<S, D> getDefaultVariable()
 	{
 		return subsetWithNull.getDefaultVariable();
+	}
+	
+	@Override
+	public String toString()
+	{
+		return subsetWithNull + " not null";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return hashCode;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (!(obj instanceof NonNullDomainSubset))
+			return false;
+		NonNullDomainSubset<?, ?> other = (NonNullDomainSubset<?, ?>) obj;
+		if (subsetWithNull == null)
+		{
+			if (other.subsetWithNull != null)
+				return false;
+		}
+		else if (!subsetWithNull.equals(other.subsetWithNull))
+			return false;
+		return true;
 	}
 }

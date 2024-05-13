@@ -36,7 +36,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -96,7 +96,7 @@ public class IntegrationTestSuite
 	{
 		try
 		{
-			((InMemoryMetadataRepository) ConfigurationManager.getDefault().getMetadataRepository()).clearVariables();
+			((InMemoryMetadataRepository) ConfigurationManagerFactory.getInstance().getMetadataRepository()).clearVariables();
 			
 			System.out.println("------------------------------------------------------------------------------------------------");
 			System.out.println("                                        " + testName);

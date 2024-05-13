@@ -21,8 +21,10 @@ package it.bancaditalia.oss.vtl.environment;
 
 import java.util.Optional;
 
+import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 /**
  * A provider of VTL data objects. 
@@ -37,15 +39,19 @@ public interface Environment
 	 * @param alias The name of requested object.
 	 * @return true if this environment provides the specified object.
 	 */
-	public boolean contains(String alias);
+	public default boolean contains(String alias)
+	{
+		return getValueMetadata(alias).isPresent();
+	}
 	
 	/**
 	 * Returns an {@link Optional} reference to a VTL object with the specified name in this environment.
 	 * 
 	 * @param alias The name of requested object.
+	 * @param repo TODO
 	 * @return An Optional with a reference to the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<VTLValue> getValue(String alias);
+	public Optional<VTLValue> getValue(MetadataRepository repo, String alias);
 
 	/**
 	 * Persistently store the given value in this environment for later use
@@ -67,18 +73,6 @@ public interface Environment
 	 */
 	public default Optional<VTLValueMetadata> getValueMetadata(String alias)
 	{
-		return getValue(alias).map(VTLValue::getMetadata);
-	}
-	
-	/**
-	 * Implementing classes may override this method if they need to use a particular initialization procedure.
-	 * 
-	 * @param configuration Parameters that may be passed to the implementing class.
-	 * 
-	 * @return {@code this} instance, initialized.
-	 */
-	public default Environment init(Object... configuration)
-	{
-		return this;
+		return getValue(null, alias).map(DataSet.class::cast).map(DataSet::getMetadata);
 	}
 }

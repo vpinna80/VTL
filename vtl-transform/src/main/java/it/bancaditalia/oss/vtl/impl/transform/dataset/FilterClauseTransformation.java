@@ -68,7 +68,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		final DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 
 		return operand.filter(dp -> {
-			final DatapointScope dpScope = new DatapointScope(dp, metadata, null);
+			final DatapointScope dpScope = new DatapointScope(scheme.getRepository(), dp, metadata, null);
 			final ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
 			return (TRUE.equals(BOOLEANDS.cast(filterValue)));
 		}, lineage -> LineageNode.of(this, lineage));

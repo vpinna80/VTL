@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
+import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,19 +38,20 @@ import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
@@ -57,6 +59,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
@@ -67,6 +70,72 @@ public class CSVParseUtils
 	public static final String PERIOD_DOMAIN_PATTERN = "^[Tt][Ii][Mm][Ee]_[Pp][Ee][Rr][Ii][Oo][Dd]\\[(.*)\\]$";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVParseUtils.class);
+
+	private static class CSVVar<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>, Serializable
+	{
+		private static final long serialVersionUID = 1L;
+
+		private final String name;
+		private final S domain;
+		
+		private transient int hashCode;
+
+		@SuppressWarnings("unchecked")
+		public CSVVar(String name, ValueDomainSubset<?, ?> domain)
+		{
+			this.name = name;
+			this.domain = (S) domain;
+		}
+
+		@Override
+		public String getName()
+		{
+			return name;
+		}
+
+		@Override
+		public S getDomain()
+		{
+			return domain;
+		}
+		
+		@Override
+		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
+		{
+			return new DataStructureComponentImpl<>(role, this);
+		}
+		
+		@Override
+		public int hashCode()
+		{
+			return hashCode == 0 ? hashCode = hashCodeInit() : hashCode;
+		}
+
+		public int hashCodeInit()
+		{
+			int prime = 31;
+			int result = 1;
+			result = prime * result + domain.hashCode();
+			result = prime * result + name.hashCode();
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (obj instanceof Variable)
+			{
+				Variable<?, ?> var = (Variable<?, ?>) obj;
+				return name.equals(var.getName()) && domain.equals(var.getDomain());
+			}
+			
+			return false;
+		}
+	}
 
 	private CSVParseUtils()
 	{
@@ -118,10 +187,8 @@ public class CSVParseUtils
 		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getVariable().getDomain());
 	}
 
-	public static Entry<ValueDomainSubset<?, ?>, String> mapVarType(String typeName)
+	public static Entry<ValueDomainSubset<?, ?>, String> mapVarType(MetadataRepository repo, String typeName)
 	{
-		MetadataRepository repository = ConfigurationManager.getDefault().getMetadataRepository();
-		
 		if ("STRING".equalsIgnoreCase(typeName))
 			return new SimpleEntry<>(STRINGDS, "");
 		else if ("NUMBER".equalsIgnoreCase(typeName))
@@ -132,13 +199,13 @@ public class CSVParseUtils
 			return new SimpleEntry<>(BOOLEANDS, "");
 		else if (typeName.matches(DATE_DOMAIN_PATTERN))
 			return new SimpleEntry<>(DATEDS, typeName.replaceAll(DATE_DOMAIN_PATTERN, "$1"));
-		else if (repository.isDomainDefined(typeName))
-			return new SimpleEntry<>(repository.getDomain(typeName), typeName);
+		else if (repo != null && repo.isDomainDefined(typeName))
+			return new SimpleEntry<>(repo.getDomain(typeName), typeName);
 	
 		throw new VTLException("Unsupported type: " + typeName);
 	}
 
-	public static Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> extractMetadata(String headers[])
+	public static Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> extractMetadata(MetadataRepository repo, String headers[])
 	{
 		// first argument avoids varargs mismatch
 		LOGGER.debug("Processing CSV header: {}{}", "", headers);
@@ -160,7 +227,7 @@ public class CSVParseUtils
 				typeName = "String";
 			}
 			
-			Entry<ValueDomainSubset<?, ?>, String> mappedType = CSVParseUtils.mapVarType(typeName);
+			Entry<ValueDomainSubset<?, ?>, String> mappedType = CSVParseUtils.mapVarType(repo, typeName);
 			ValueDomainSubset<?, ?> domain = mappedType.getKey();
 			DataStructureComponent<?, ?, ?> component;
 			Class<? extends Component> role;
@@ -171,7 +238,11 @@ public class CSVParseUtils
 			else
 				role = Measure.class;
 
-			component = domain.getDefaultVariable().getRenamed(cname.replaceAll("^[$#]", "")).as(role);
+			String compName = cname.replaceAll("^[$#]", "");
+			if (repo != null)
+				component = repo.createTempVariable(compName, domain).as(role);
+			else
+				component = new CSVVar<>(compName, domain).as(role);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)

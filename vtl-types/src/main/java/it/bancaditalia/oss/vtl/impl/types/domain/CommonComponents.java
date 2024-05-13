@@ -90,12 +90,6 @@ public enum CommonComponents
 		}
 
 		@Override
-		public CommonComponent<R, S, D> getRenamed(String newName)
-		{
-			return new CommonComponent<>(newName, role, domain);
-		}
-
-		@Override
 		public int hashCode()
 		{
 			final int prime = 31;

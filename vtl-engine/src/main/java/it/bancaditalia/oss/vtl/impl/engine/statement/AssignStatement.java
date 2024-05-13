@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -31,14 +30,12 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 class AssignStatement extends AbstractStatement implements DMLStatement, Transformation
 {
 	//private final static Logger LOGGER = LoggerFactory.getLogger(AssignStatement.class);
 	private static final long serialVersionUID = 1L;
 
-	private final MetadataRepository repository = ConfigurationManagerFactory.getInstance().getMetadataRepository();
 	private final Transformation expression;
 	private final boolean persistent;
 
@@ -88,13 +85,13 @@ class AssignStatement extends AbstractStatement implements DMLStatement, Transfo
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(TransformationScheme session)
+	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		DataSetMetadata registeredStructure = repository.getStructure(getAlias());
+		DataSetMetadata registeredStructure = scheme.getRepository().getStructure(getAlias());
 		
 		try
 		{
-			final VTLValueMetadata structure = expression.getMetadata(session);
+			final VTLValueMetadata structure = expression.getMetadata(scheme);
 			if (registeredStructure != null && !registeredStructure.equals(structure))
 				throw new VTLException("Dataset " + getAlias() + " having structure " + registeredStructure + " cannot be assigned an expression of type " + structure + "");
 			

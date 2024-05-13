@@ -56,12 +56,6 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 		}
 
 		@Override
-		public Variable<S, D> getRenamed(String newName)
-		{
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
 		public int hashCode()
 		{
 			final int prime = 31;

@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -48,9 +47,9 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class UnpivotClauseTransformation extends DatasetClauseTransformation
 {
@@ -110,13 +109,11 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 			throw new VTLException("For unpivot, all measures must be defined on the same domain, but " + domains + " were found.");
 		
 		ValueDomainSubset<?, ?> domain = domains.iterator().next();
-
-		DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> newIdentifier = STRINGDS.getDefaultVariable().getRenamed(identifierName).as(Identifier.class);
-		DataStructureComponent<?, ?, ?> newMeasure = domain.getDefaultVariable().getRenamed(measureName).as(Measure.class);
+		MetadataRepository repo = scheme.getRepository();
 
 		return new DataStructureBuilder(dataset.getIDs())
-				.addComponent(newIdentifier)
-				.addComponent(newMeasure)
+				.addComponent(repo.createTempVariable(identifierName, STRINGDS).as(Identifier.class))
+				.addComponent(repo.createTempVariable(measureName, domain).as(Measure.class))
 				.build();
 	}
 

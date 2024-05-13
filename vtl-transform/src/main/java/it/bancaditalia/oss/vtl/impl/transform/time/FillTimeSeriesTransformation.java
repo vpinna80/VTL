@@ -72,6 +72,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -107,7 +108,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet ds, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet ds, VTLValueMetadata metadata)
 	{
 		DataSetMetadata structure = ds.getMetadata();
 		DataStructureComponent<Identifier, ?, ?> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();

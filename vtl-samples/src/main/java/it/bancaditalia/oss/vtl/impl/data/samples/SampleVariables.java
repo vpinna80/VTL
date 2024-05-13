@@ -50,7 +50,7 @@ public enum SampleVariables
 	ATTRIB_BOOLEAN_1, ATTRIB_BOOLEAN_2, ATTRIB_BOOLEAN_3, ATTRIB_BOOLEAN_4,
 	ATTRIB_DATE_1, ATTRIB_DATE_2, ATTRIB_DATE_3; 
 
-	private final DataStructureComponent<?, ?, ?> component;
+	private final SampleComponent<?, ?, ?> component;
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private SampleVariables()

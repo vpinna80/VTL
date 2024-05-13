@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class WorkspaceImpl implements Workspace
 {
@@ -60,7 +61,7 @@ public class WorkspaceImpl implements Workspace
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
 	{
 		return Optional.ofNullable(values.get(alias));
 	}

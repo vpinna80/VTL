@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -70,15 +69,6 @@ public class SDMXJsonRepository extends SDMXRepository
 	public ValueDomainSubset<?, ?> getDomain(String alias)
 	{
 		return maybeGetDomain(alias).orElseGet(() -> jsonRepo.getDomain(alias));
-	}
-	
-	@Override
-	public Collection<ValueDomainSubset<?, ?>> getValueDomains()
-	{
-		Set<ValueDomainSubset<?, ?>> domains = new HashSet<>(super.getValueDomains());
-		domains.addAll(jsonRepo.getValueDomains());
-		
-		return domains;
 	}
 	
 	@Override

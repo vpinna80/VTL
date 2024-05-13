@@ -34,7 +34,6 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.util.Arrays;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -61,6 +60,7 @@ import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class CastTransformation extends UnaryTransformation
 {
@@ -88,19 +88,19 @@ public class CastTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return castScalar(scalar);
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getMetadata().getMeasures().iterator().next();
 		if (target.getDomain() == oldMeasure.getVariable().getDomain())
 			return dataset;
 		
-		DataStructureComponent<Measure, ?, ?> measure = ConfigurationManager.getDefault().getMetadataRepository().getDefaultVariable(target.getDomain()).as(Measure.class);
+		DataStructureComponent<Measure, ?, ?> measure = target.getDomain().getDefaultVariable().as(Measure.class);
 		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(measure)
 				.build();

@@ -81,7 +81,7 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 			cl = scheme.getRepository().getDomain(ruleID);
 		else
 		{
-			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleID, null);
+			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleID);
 			cl = variable.getDomain();
 		}
 

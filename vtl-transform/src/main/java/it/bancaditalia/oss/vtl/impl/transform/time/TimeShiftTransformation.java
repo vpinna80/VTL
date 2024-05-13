@@ -35,6 +35,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class TimeShiftTransformation extends TimeSeriesTransformation
 {
@@ -49,7 +50,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<Identifier, ?, ?> timeID = dataset.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
 		DataSetMetadata structure = dataset.getMetadata();

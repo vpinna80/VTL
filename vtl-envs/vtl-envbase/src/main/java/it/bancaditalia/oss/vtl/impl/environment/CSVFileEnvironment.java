@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
+import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapVarType;
 import static it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow.CSV_PROGRESS_BAR_THRESHOLD;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -61,7 +62,6 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -84,6 +84,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CSVFileEnvironment implements Environment
@@ -126,7 +127,7 @@ public class CSVFileEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(String originalName)
+	public Optional<VTLValue> getValue(MetadataRepository repo, String originalName)
 	{
 		String name = originalName.contains("****") ? originalName.split("\\*\\*\\*\\*", 2)[0] : originalName;
 		if(originalName.contains("****"))
@@ -142,14 +143,14 @@ public class CSVFileEnvironment implements Environment
 		{
 			// can't use streams, must be ordered for the first line processed to be actually the header 
 			final String[] headers = reader.readLine().split(",");
-			DataSetMetadata structure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(originalName);
+			DataSetMetadata structure = repo.getStructure(originalName);
 			
 			if (structure == null)
-				structure = new DataStructureBuilder(extractMetadata(headers).getKey()).build();
+				structure = new DataStructureBuilder(extractMetadata(repo, headers).getKey()).build();
 			else
 				LOGGER.info("CSV structure found in repository.");
 			
-			return Optional.of(new BiFunctionDataSet<>(structure, this::streamFileName, fileName, originalName));
+			return Optional.of(new BiFunctionDataSet<>(structure, (f, a) -> streamFileName(f, a, repo), fileName, originalName));
 		}
 		catch (IOException e)
 		{
@@ -172,17 +173,17 @@ public class CSVFileEnvironment implements Environment
 		return new URL(fileName).openStream();
 	}
 	
-	protected Stream<DataPoint> streamFileName(String fileName, String alias)
+	protected Stream<DataPoint> streamFileName(String fileName, String alias, MetadataRepository repo)
 	{
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
-			DataSetMetadata maybeStructure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(alias);
+			DataSetMetadata maybeStructure = repo.getStructure(alias);
 			List<DataStructureComponent<?, ?, ?>> metadata;
 			Map<DataStructureComponent<?, ?, ?>, String> masks;
 			
 			if (maybeStructure == null)
 			{
-				Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(reader.readLine().split(","));
+				Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> headerInfo = extractMetadata(repo, reader.readLine().split(","));
 				metadata = headerInfo.getKey();
 				masks = headerInfo.getValue();
 				LOGGER.debug("Got structure from CSV file: {}", metadata);
@@ -200,7 +201,7 @@ public class CSVFileEnvironment implements Environment
 				masks = metadata.stream()
 						.map(toEntryWithValue(c -> c.getVariable().getDomain()))
 						.map(keepingKey(ValueDomainSubset::getName))
-						.map(keepingKey(CSVParseUtils::mapVarType))
+						.map(keepingKey(t -> mapVarType(repo, t)))
 						.map(keepingKey(Entry::getValue))
 						.collect(entriesToMap());
 			}
@@ -291,14 +292,7 @@ public class CSVFileEnvironment implements Environment
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(aliasToInputStream(fileName), UTF_8)))
 		{
 			final String[] headers = reader.readLine().split(",");
-			DataSetMetadata structure = ConfigurationManager.getDefault().getMetadataRepository().getStructure(name);
-			
-			if (structure == null)
-				structure = new DataStructureBuilder(extractMetadata(headers).getKey()).build();
-			else
-				LOGGER.info("CSV structure found in repository.");
-
-			return Optional.of(structure);
+			return Optional.of(new DataStructureBuilder(extractMetadata(null, headers).getKey()).build());
 		}
 		catch (IOException e)
 		{

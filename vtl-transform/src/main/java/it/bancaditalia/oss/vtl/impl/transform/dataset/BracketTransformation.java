@@ -31,6 +31,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class BracketTransformation extends UnaryTransformation
 {
@@ -46,16 +47,16 @@ public class BracketTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		if (clause != null)
-			return clause.eval(new ThisScope(dataset));
+			return clause.eval(new ThisScope(repo, dataset));
 		else
 			return dataset.membership(componentName);
 	}
 	
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -71,7 +72,7 @@ public class BracketTransformation extends UnaryTransformation
 			throw new UnsupportedOperationException("Dataset expected as left operand of '[]' or '#' but found " + metadata);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope((DataSetMetadata) metadata));
+			return clause.getMetadata(new ThisScope(scheme.getRepository(), (DataSetMetadata) metadata));
 		else
 			return ((DataSetMetadata) metadata).membership(componentName);
 	}

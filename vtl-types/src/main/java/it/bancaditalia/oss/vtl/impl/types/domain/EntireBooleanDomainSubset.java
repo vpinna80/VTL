@@ -50,12 +50,6 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 		}
 
 		@Override
-		public Variable<EntireBooleanDomainSubset, BooleanDomain> getRenamed(String newName)
-		{
-			return new BooleanVariable(newName);
-		}
-
-		@Override
 		public String getName()
 		{
 			return name;

@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -113,9 +112,8 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 		return (DataStructureComponent<R, S, D>) components.get(role);
 	}
 
-	@Override
 	public Variable<S, D> getRenamed(String newName)
 	{
-		return ConfigurationManager.getDefault().getMetadataRepository().getVariable(newName, domain);
+		return new VariableImpl<>(newName, domain);
 	}
 }

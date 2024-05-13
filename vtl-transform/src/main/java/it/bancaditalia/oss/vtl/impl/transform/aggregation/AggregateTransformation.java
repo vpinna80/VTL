@@ -70,6 +70,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class AggregateTransformation extends UnaryTransformation
@@ -119,30 +120,21 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 	
 	@Override
-	protected VTLValue evalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return Stream.of(scalar).collect(aggregation.getReducer());
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(dataset.getMetadata().getMeasures());
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
-		DataStructureComponent<?, ?, ?> outputComponent;
-
-		if (aggregation == COUNT && name != null)
-			outputComponent = INTEGERDS.getDefaultVariable().getRenamed(name).as(Measure.class);
-		else if (aggregation == COUNT)
-			outputComponent = INTEGERDS.getDefaultVariable().as(Measure.class);
-		else if (name != null)
-			outputComponent = ((DataSetMetadata) metadata).getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset.getMetadata()));
-		else
-			outputComponent = dataset.getMetadata().getMeasures().iterator().next();
 
 		DataSet dataset2;
 		if (groupingClause != null && groupingClause.getFrequency() != null)
 		{
+			// aggregate the time-id
 			DataStructureComponent<Identifier, ?, ?> timeID = groupIDs.stream()
 					.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
 					.findAny()
@@ -164,7 +156,10 @@ public class AggregateTransformation extends UnaryTransformation
 			if (name == null)
 				builder = builder.addAll(dp);
 			else if (dp.size() == 1)
-				builder = builder.add(outputComponent, dp.values().iterator().next());
+			{
+				DataSetMetadata srcMeta = dataset.getMetadata();
+				builder = builder.add(getCompFor(srcMeta.getMeasures().iterator().next(), repo, srcMeta), dp.values().iterator().next());
+			}
 			else
 				throw new IllegalStateException();
 			return builder.build(dp.getLineage(), (DataSetMetadata) metadata);
@@ -173,10 +168,27 @@ public class AggregateTransformation extends UnaryTransformation
 		return aggr;
 	}
 
+	private DataStructureComponent<?, ?, ?> getCompFor(DataStructureComponent<?, ?, ?> src, MetadataRepository repo, DataSetMetadata metadata)
+	{
+		DataStructureComponent<?, ?, ?> dest;
+		if (aggregation == COUNT && name != null)
+			dest = repo.createTempVariable(name, INTEGERDS).as(Measure.class);
+		else if (aggregation == COUNT)
+			dest = INTEGERDS.getDefaultVariable().as(Measure.class);
+		else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
+			dest = INTEGERDS.isAssignableFrom(src.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : src;
+		else if (name != null)
+			dest = metadata.getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, metadata));
+		else
+			dest = src;
+		return dest;
+	}
+
 	@Override
 	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
-		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session) ;
+		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session);
+		MetadataRepository repo = session.getRepository();
 		
 		if (opmeta instanceof ScalarValueMetadata)
 			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))
@@ -198,7 +210,7 @@ public class AggregateTransformation extends UnaryTransformation
 					newMeasures = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newMeasures = newMeasures.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class).getRenamed(c.getVariable().getName()) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : c)
 						.collect(toSet());
 
 				if (operand != null)
@@ -229,19 +241,19 @@ public class AggregateTransformation extends UnaryTransformation
 				
 				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getMeasures();
 				if (aggregation == COUNT && name != null)
-					newComps = singleton(COUNT_MEASURE.getRenamed(name));
+					newComps = singleton(repo.createTempVariable(name, INTEGERDS).as(Measure.class));
 				else if (aggregation == COUNT)
 					newComps = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newComps = newComps.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().getRenamed(c.getVariable().getName()).as(Measure.class) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : c)
 						.collect(toSet());
 				
 				if (name != null)
 					if (measures.size() > 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, newComps);
 					else
-						newComps = singleton(measures.iterator().next().getVariable().getRenamed(name).as(role));
+						newComps = singleton(repo.createTempVariable(name, measures.iterator().next().getVariable().getDomain()).as(role));
 
 				return new DataStructureBuilder(groupComps).addComponents(newComps).build();
 			}
