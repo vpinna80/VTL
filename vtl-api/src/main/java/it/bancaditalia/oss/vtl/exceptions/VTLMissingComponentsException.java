@@ -54,7 +54,7 @@ public class VTLMissingComponentsException extends VTLException
 
 	public VTLMissingComponentsException(DataStructureComponent<?, ?, ?> missing, Collection<? extends DataStructureComponent<?, ?, ?>> operand)
 	{
-		super("Component " + missing.getVariable().getName() + " not found in " + operand);
+		super("Component " + missing + " not found in " + operand);
 	}
 
 	public VTLMissingComponentsException(Set<? extends DataStructureComponent<?, ?, ?>> missing, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint)

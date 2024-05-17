@@ -1,5 +1,0 @@
-$id1=String,m1=Boolean,#att1=String
-a,true,att_a
-b,true,att_b
-c,false,att_c
-d,,att_d

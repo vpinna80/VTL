@@ -76,10 +76,10 @@ public class FlowStockTransformation extends UnaryTransformation
 	public enum DatasetOperator implements SerBiFunction<DataSet, DataStructureComponent<Identifier, ?, ?>, Stream<DataPoint>>
 	{
 		STOCK_TO_FLOW("stock_to_flow", false, (b, a) -> bothIntegers(b, a) 
-				? DIFF.applyAsInt((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b) 
+				? DIFF.applyAsInteger((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b) 
 				: DIFF.applyAsNumber((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b)), 
 		FLOW_TO_STOCK("flow_to_stock", true, (acc, v) -> bothIntegers(acc, v) 
-				? SUM.applyAsInt((NumberValue<?, ?, ?, ?>) acc, (NumberValue<?, ?, ?, ?>) v) 
+				? SUM.applyAsInteger((NumberValue<?, ?, ?, ?>) acc, (NumberValue<?, ?, ?, ?>) v) 
 				: SUM.applyAsNumber((NumberValue<?, ?, ?, ?>) acc, (NumberValue<?, ?, ?, ?>) v)); 
 		
 		private final BinaryOperator<ScalarValue<?, ?, ?, ?>> op;

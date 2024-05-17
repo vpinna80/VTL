@@ -99,4 +99,17 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	{
 		return getDomain().cast(value);
 	}
+	
+	/**
+	 * A default implementation to initialize the hashCode
+	 * 
+	 * @return A default variable hashCode.
+	 */
+	public default int defaultHashCode()
+	{
+		int prime = 31;
+		int result = prime + getDomain().hashCode();
+		result = prime * result + getName().hashCode();
+		return result;
+	}
 }

@@ -1,0 +1,112 @@
+{
+  "datasets": [
+    {
+      "name": "match_characters_test",
+      "source": "csv:match_characters_test.csv",
+      "structure": "match_characters_test_str"
+    },
+    {
+      "name": "exists_in_1",
+      "source": "csv:exists_in_1.csv",
+      "structure": "exists_in_1_str"
+    },
+    {
+      "name": "exists_in_test2",
+      "source": "csv:exists_in_test2.csv",
+      "structure": "exists_in_test2_str"
+    },
+    {
+      "name": "expected",
+      "structure": "exists_in_3_str",
+      "source": "csv:exists_in_3.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "exists_in_3_str",
+      "components": [
+        {
+          "name": "bool_var",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "match_characters_test_str",
+      "components": [
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "exists_in_1_str",
+      "components": [
+        {
+          "name": "bool_var",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "exists_in_test2_str",
+      "components": [
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "text_1",
+      "domain": "string"
+    }
+  ]
+}

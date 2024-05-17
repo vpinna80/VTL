@@ -43,6 +43,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -132,8 +133,9 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
 		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
-					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components));
 					map.replaceAll((c, v) -> operator.apply(NUMBERDS.cast(v)));
+					map.putAll(dp.getValues(Attribute.class));
 					return map;
 				});
 	}
@@ -158,7 +160,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 			
 			nonnumeric.removeAll(dataset.getComponents(Measure.class, NUMBERDS));
 			if (nonnumeric.size() > 0) 
-				throw new UnsupportedOperationException("Expected only numeric measures but found1: " + nonnumeric);
+				throw new UnsupportedOperationException("Expected only numeric measures but found: " + nonnumeric);
 			
 			return dataset;
 		}

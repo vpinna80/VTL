@@ -1,0 +1,112 @@
+{
+  "datasets": [
+    {
+      "name": "trim_test",
+      "source": "csv:trim_test.csv",
+      "structure": "trim_test_str"
+    },
+    {
+      "name": "expected",
+      "structure": "case_conversion_1_str",
+      "source": "csv:case_conversion_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "trim_test_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_2",
+          "role": "Measure"
+        },
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "case_conversion_1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_2",
+          "role": "Measure"
+        },
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_low",
+          "role": "Measure"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_up",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "res2",
+      "domain": "boolean"
+    },
+    {
+      "name": "text_low",
+      "domain": "string"
+    },
+    {
+      "name": "id_3",
+      "domain": "string"
+    },
+    {
+      "name": "id_1",
+      "domain": "integer"
+    },
+    {
+      "name": "res1",
+      "domain": "boolean"
+    },
+    {
+      "name": "text_up",
+      "domain": "string"
+    },
+    {
+      "name": "text_1",
+      "domain": "string"
+    },
+    {
+      "name": "text_2",
+      "domain": "string"
+    }
+  ]
+}

@@ -385,14 +385,6 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean check);
 
 	/**
-	 * Creates a new dataset as containing all the datapoints of this dataset that don't have the same identifiers as the ones in the other dataset.
-	 * 
-	 * @param other the other dataset
-	 * @return the set difference between the two datasets.
-	 */
-	public DataSet setDiff(DataSet other);
-
-	/**
 	 * <b>NOTE</b>: The default implementation traverses this DataSet entirely.
 	 * 
 	 * @return The size of this DataSet.

@@ -199,12 +199,12 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param names The names of the component
 	 * @return map with the values for the chosen components
 	 */
-	public default Map<String, ScalarValue<?,?,?,?>> getValuesByNames(Collection<String> names)
+	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?,?,?,?>> getValuesByNames(Collection<String> names)
 	{
 		return Utils.getStream(keySet())
 				.map(c -> new SimpleEntry<>(c.getVariable().getName(), c))
 				.filter(entryByKey(names::contains))
-				.collect(Collectors.toMap(Entry::getKey, e -> get(e.getValue())));
+				.collect(Collectors.toMap(Entry::getValue, e -> get(e.getValue())));
 
 	}
 	/**

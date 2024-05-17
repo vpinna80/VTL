@@ -91,7 +91,7 @@ public class SerDoubleSumAvgCount implements SerDoubleConsumer
 
     public final OptionalDouble getSum()
     {
-    	if (getCount() < 0)
+    	if (count <= 0)
     		return OptionalDouble.empty();
     	
         return OptionalDouble.of(internalSum());

@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
@@ -182,7 +183,7 @@ public class CSVParseUtils
 			else
 				return BooleanValue.of(Boolean.parseBoolean(stringRepresentation));
 		else if (component.getVariable().getDomain() instanceof DateDomainSubset)
-			return DateValue.of(parseString(stringRepresentation, mask));
+			return DateValue.of(parseString(stringRepresentation, coalesce(mask, "YYYY-MM-DD")));
 	
 		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getVariable().getDomain());
 	}
@@ -199,6 +200,8 @@ public class CSVParseUtils
 			return new SimpleEntry<>(BOOLEANDS, "");
 		else if (typeName.matches(DATE_DOMAIN_PATTERN))
 			return new SimpleEntry<>(DATEDS, typeName.replaceAll(DATE_DOMAIN_PATTERN, "$1"));
+		else if ("DATE".equalsIgnoreCase(typeName))
+			return new SimpleEntry<>(DATEDS, "YYYY-MM-DD");
 		else if (repo != null && repo.isDomainDefined(typeName))
 			return new SimpleEntry<>(repo.getDomain(typeName), typeName);
 	
@@ -227,7 +230,7 @@ public class CSVParseUtils
 				typeName = "String";
 			}
 			
-			Entry<ValueDomainSubset<?, ?>, String> mappedType = CSVParseUtils.mapVarType(repo, typeName);
+			Entry<ValueDomainSubset<?, ?>, String> mappedType = mapVarType(repo, typeName);
 			ValueDomainSubset<?, ?> domain = mappedType.getKey();
 			DataStructureComponent<?, ?, ?> component;
 			Class<? extends Component> role;

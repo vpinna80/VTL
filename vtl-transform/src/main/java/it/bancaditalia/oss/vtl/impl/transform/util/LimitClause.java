@@ -30,30 +30,30 @@ import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 
 public class LimitClause implements LimitCriterion, Serializable
 {
-	public static final LimitClause UNBOUNDED_PRECEDING = new LimitClause(PRECEDING, Long.MAX_VALUE);
-	public static final LimitClause UNBOUNDED_FOLLOWING = new LimitClause(FOLLOWING, Long.MAX_VALUE);
+	public static final LimitClause UNBOUNDED_PRECEDING = new LimitClause(PRECEDING, Integer.MAX_VALUE);
+	public static final LimitClause UNBOUNDED_FOLLOWING = new LimitClause(FOLLOWING, Integer.MAX_VALUE);
 	public static final LimitClause CURRENT_DATA_POINT = new LimitClause(FOLLOWING, 0);
 	
 	private static final long serialVersionUID = 1L;
 	private final LimitDirection direction;
-	private final long count;
+	private final int count;
 	
-	public static final LimitClause following(long count)
+	public static final LimitClause following(int count)
 	{
 		return new LimitClause(FOLLOWING, count);
 	}
 	
-	public static final LimitClause preceding(long count)
+	public static final LimitClause preceding(int count)
 	{
 		return new LimitClause(PRECEDING, count);
 	}	
 	
 	public LimitClause(LimitDirection direction, IntegerValue<?, ?> limitCount)
 	{
-		this(direction, limitCount.get().longValue());
+		this(direction, limitCount.get().intValue());
 	}
 
-	public LimitClause(LimitDirection direction, long count)
+	public LimitClause(LimitDirection direction, int count)
 	{
 		if (count < 0)
 			throw new InvalidParameterException("In a window clause of an analytic invocation, limit count must be non-negative, but it is " + count);
@@ -69,7 +69,7 @@ public class LimitClause implements LimitCriterion, Serializable
 	}
 
 	@Override
-	public long getCount()
+	public int getCount()
 	{
 		return count;
 	}

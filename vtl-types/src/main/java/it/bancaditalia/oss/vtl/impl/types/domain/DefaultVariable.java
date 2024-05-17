@@ -60,8 +60,7 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + getEnclosingInstance().hashCode();
-			result = prime * result + ((role == null) ? 0 : role.hashCode());
-			return result;
+			return prime * result + ((role == null) ? 0 : role.hashCode());
 		}
 
 		@Override
@@ -121,8 +120,8 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + domain.hashCode();
+		result = prime * result + name.hashCode();
 		return result;
 	}
 

@@ -1,0 +1,96 @@
+{
+  "datasets": [
+    {
+      "name": "if_test1",
+      "source": "csv:if_test1.csv",
+      "structure": "if_test1_str"
+    },
+    {
+      "name": "expected",
+      "structure": "if_2_str",
+      "source": "csv:if-then-else_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "if_2_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_2",
+          "role": "Measure"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "if_test1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "id_3",
+      "domain": "string"
+    },
+    {
+      "name": "id_4",
+      "domain": "string"
+    },
+    {
+      "name": "id_1",
+      "domain": "integer"
+    },
+    {
+      "name": "me_2",
+      "domain": "number"
+    },
+    {
+      "name": "me_1",
+      "domain": "number"
+    }
+  ]
+}

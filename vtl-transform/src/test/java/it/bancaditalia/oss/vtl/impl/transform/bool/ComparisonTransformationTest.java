@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
-import static java.lang.Double.isNaN;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,12 +60,12 @@ public class ComparisonTransformationTest
 				{ true,  null, true,  null, true,  true  }, // LT
 				{ true,  null, true,  null, true,  true  }, // LE
 				// NUMBER {@see Double#compareTo(Double anotherDouble)}
-				{ 1.1 == 11.1, null, 3.3 == 13.3, null, 5.5 == 15.5, isNaN(16.6)             }, // EQ  
-				{ 1.1 != 11.1, null, 3.3 != 13.3, null, 5.5 != 15.5, !isNaN(16.6)            }, // NE
-				{ 1.1 >  11.1, null, 3.3 >  13.3, null, 5.5 >  15.5, true  /* NaN >  16.6 */ }, // GT
-				{ 1.1 >= 11.1, null, 3.3 >= 13.3, null, 5.5 >= 15.5, true  /* NaN >= 16.6 */ }, // GE  
-				{ 1.1 <  11.1, null, 3.3 <  13.3, null, 5.5 <  15.5, false /* NaN <  16.6 */ }, // LT  
-				{ 1.1 <= 11.1, null, 3.3 <= 13.3, null, 5.5 <= 15.5, false /* NaN <= 16.6 */ }, // LE  
+				{ 1.1 == 11.1, null, 3.3 == 13.3, null, 5.5 == 15.5, null }, // EQ  
+				{ 1.1 != 11.1, null, 3.3 != 13.3, null, 5.5 != 15.5, null }, // NE
+				{ 1.1 >  11.1, null, 3.3 >  13.3, null, 5.5 >  15.5, null }, // GT
+				{ 1.1 >= 11.1, null, 3.3 >= 13.3, null, 5.5 >= 15.5, null }, // GE  
+				{ 1.1 <  11.1, null, 3.3 <  13.3, null, 5.5 <  15.5, null }, // LT  
+				{ 1.1 <= 11.1, null, 3.3 <= 13.3, null, 5.5 <= 15.5, null }, // LE  
 				// STRING
 				{ 'H' == 'A', 'I' == 'C', 'J' == 'E', 'K' == 'G', 'L' == 'I', 'M' == 'K' }, // EQ
 				{ 'H' != 'A', 'I' != 'C', 'J' != 'E', 'K' != 'G', 'L' != 'I', 'M' != 'K' }, // NE

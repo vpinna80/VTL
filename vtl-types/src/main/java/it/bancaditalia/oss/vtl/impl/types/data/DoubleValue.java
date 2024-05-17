@@ -33,31 +33,20 @@ public class DoubleValue<S extends NumberDomainSubset<S, NumberDomain>> extends 
 	private static final long serialVersionUID = 1L;
 	private static final ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> NULLINSTANCE = NullValue.instance(NUMBERDS);
 
-	@SuppressWarnings("unchecked")
-	public static final DoubleValue<EntireNumberDomainSubset> ZERO = (DoubleValue<EntireNumberDomainSubset>) DoubleValue.of(0.0);
+	public static final DoubleValue<EntireNumberDomainSubset> ZERO = new DoubleValue<>(0.0, NUMBERDS);
 
-	DoubleValue(Double value, S domain)
+	private DoubleValue(Double value, S domain)
 	{
 		super(value, domain);
 	}
 	
-	static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(Double value)
+	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(Double value, S domain)
 	{
-		return value == null ? NULLINSTANCE : new DoubleValue<>(value, NUMBERDS);
+		return value != null && Double.isFinite(value.doubleValue()) ? new DoubleValue<>(value, domain) : NullValue.instance(domain);
 	}
 
 	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> of(OptionalDouble value)
 	{
-		return value != null && value.isPresent() ? new DoubleValue<>(value.getAsDouble(), NUMBERDS) : NULLINSTANCE;
-	}
-
-	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(Double value, S domain)
-	{
-		return value == null ? NullValue.instance(domain) : new DoubleValue<>(value, domain);
-	}
-
-	public static <S extends NumberDomainSubset<S, NumberDomain>> ScalarValue<?, ?, S, NumberDomain> of(OptionalDouble value, S domain)
-	{
-		return value != null && value.isPresent() ? new DoubleValue<>(value.getAsDouble(), domain) : NullValue.instance(domain);
+		return value != null && value.isPresent() ? of(value.getAsDouble(), NUMBERDS) : NULLINSTANCE;
 	}
 }

@@ -1,0 +1,74 @@
+{
+  "datasets": [
+    {
+      "name": "boolean_test2",
+      "source": "csv:boolean_test2.csv",
+      "structure": "boolean_test2_str"
+    },
+    {
+      "name": "boolean_test1",
+      "source": "csv:boolean_test1.csv",
+      "structure": "boolean_test1_str"
+    },
+    {
+      "name": "expected",
+      "structure": "boolean_and_1_str",
+      "source": "csv:boolean_and_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "boolean_test2_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "boolean_test1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "boolean_and_1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "m1",
+      "domain": "boolean"
+    }
+  ]
+}

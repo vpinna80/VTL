@@ -1,0 +1,76 @@
+{
+  "datasets": [
+    {
+      "name": "number_test7",
+      "source": "csv:number_test7.csv",
+      "structure": "number_test7_str"
+    },
+    {
+      "name": "expected",
+      "structure": "round_2_str",
+      "source": "csv:round_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "round_2_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "round_1",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_test7_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "num_2",
+      "domain": "number"
+    },
+    {
+      "name": "time_period",
+      "domain": "number"
+    },
+    {
+      "name": "round_1",
+      "domain": "number"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "num_1",
+      "domain": "number"
+    }
+  ]
+}

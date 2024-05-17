@@ -22,19 +22,25 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.UNION;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.stream.Collectors.joining;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -50,23 +56,21 @@ public class SetTransformation extends TransformationImpl
 
 	public enum SetOperator
 	{
-		UNION(null), // Particular support because of multi-argument possibility
-		INTERSECT(structure -> lineageOp -> (left, right) -> left.setDiff(left.setDiff(right))), 
-		SETDIFF(structure -> lineageOp -> (left, right) -> left.setDiff(right)), 
-		SYMDIFF(structure -> enricher -> (left, right) -> new BiFunctionDataSet<>(structure,  
-				(l, r) -> Stream.concat(l.setDiff(r).stream(), r.setDiff(l).stream())
-					.map(dp -> dp.enrichLineage(enricher)), left, right));
+		UNION(null), // Specific support because of multi-argument possibility
+		INTERSECT(linOp -> (left, right) -> setDiff(linOp, left, setDiff(identity(), left, right))), 
+		SETDIFF(linOp -> (left, right) -> setDiff(linOp, left, right)), 
+		SYMDIFF(linOp -> (left, right) -> concat(setDiff(linOp, left, right), setDiff(linOp, right, left)));
 
-		private final SerFunction<DataSetMetadata, SerFunction<SerUnaryOperator<Lineage>, SerBinaryOperator<DataSet>>> reducer;
+		private final SerFunction<SerUnaryOperator<Lineage>, SerBinaryOperator<DataSet>> reducer;
 
-		SetOperator(SerFunction<DataSetMetadata, SerFunction<SerUnaryOperator<Lineage>, SerBinaryOperator<DataSet>>> reducer)
+		SetOperator(SerFunction<SerUnaryOperator<Lineage>, SerBinaryOperator<DataSet>> reducer)
 		{
 			this.reducer = reducer;
 		}
 		
-		public SerFunction<SerUnaryOperator<Lineage>,SerBinaryOperator<DataSet>> getReducer(DataSetMetadata metadata)
+		public SerBinaryOperator<DataSet> getReducer(SerUnaryOperator<Lineage> linOp)
 		{
-			return reducer.apply(metadata);
+			return reducer.apply(linOp);
 		}
 		
 		@Override
@@ -92,8 +96,8 @@ public class SetTransformation extends TransformationImpl
 		{
 			DataSet left = (DataSet) operands.get(0).eval(scheme);
 			DataSet right = (DataSet) operands.get(1).eval(scheme);
-		
-			return setOperator.getReducer(left.getMetadata()).apply(l -> LineageNode.of(this, l)).apply(left, right);
+			
+			return setOperator.getReducer(lin -> LineageNode.of(this, lin)).apply(left, right);
 		}
 		// Special case for UNION as it has the largest memory requirements
 		else
@@ -141,5 +145,21 @@ public class SetTransformation extends TransformationImpl
 	public String toString()
 	{
 		return operands.stream().map(Object::toString).collect(joining(", ", setOperator + "(", ")"));
+	}
+	
+	private static DataSet setDiff(SerUnaryOperator<Lineage> linOp, DataSet left, DataSet right)
+	{
+		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
+		try (Stream<DataPoint> stream = right.stream())
+		{
+			index = stream.map(dp -> dp.getValues(Identifier.class)).collect(toSet());
+		}
+		
+		return left.filter(dp -> !index.contains(dp.getValues(Identifier.class)), linOp); 
+	}
+	
+	private static DataSet concat(DataSet left, DataSet right)
+	{
+		return new StreamWrapperDataSet(left.getMetadata(), () -> Stream.concat(left.stream(), right.stream()));
 	}
 }

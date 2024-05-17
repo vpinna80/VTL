@@ -87,20 +87,21 @@ class AssignStatement extends AbstractStatement implements DMLStatement, Transfo
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		DataSetMetadata registeredStructure = scheme.getRepository().getStructure(getAlias());
+		VTLValueMetadata structure = expression.getMetadata(scheme);
 		
-		try
-		{
-			final VTLValueMetadata structure = expression.getMetadata(scheme);
-			if (registeredStructure != null && !registeredStructure.equals(structure))
-				throw new VTLException("Dataset " + getAlias() + " having structure " + registeredStructure + " cannot be assigned an expression of type " + structure + "");
-			
-			return structure;
-		}
-		catch (VTLException e)
-		{
-			throw new VTLNestedException("Error evaluating statement '" + this + "'. Error: " + e.getMessage(), e);
-		}
+		if (persistent)
+			try
+			{
+				DataSetMetadata registeredStructure = scheme.getRepository().getStructure(getAlias());
+				if (registeredStructure != null && !registeredStructure.equals(structure))
+					throw new VTLException("Dataset " + getAlias() + " having structure " + registeredStructure + " cannot be assigned an expression of type " + structure + "");
+			}
+			catch (VTLException e)
+			{
+				throw new VTLNestedException("Error evaluating statement '" + this + "'. Error: " + e.getMessage(), e);
+			}
+		
+		return structure;
 	}
 
 	@Override

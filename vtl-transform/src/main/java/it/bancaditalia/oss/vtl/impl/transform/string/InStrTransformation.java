@@ -127,7 +127,7 @@ public class InStrTransformation extends TransformationImpl
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> instrScalar(ScalarValue<?, ?, ?, ?> scalar,
 			String pattern, int startPos, int nOcc)
 	{
-		if (pattern == null)
+		if (pattern == null || scalar instanceof NullValue)
 			return NullValue.instance(INTEGERDS);
 		else
 			return findOccurrence(STRINGDS.cast(scalar).get().toString(), pattern, startPos, nOcc);

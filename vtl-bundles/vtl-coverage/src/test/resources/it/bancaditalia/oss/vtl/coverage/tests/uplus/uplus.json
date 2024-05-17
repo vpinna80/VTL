@@ -1,0 +1,51 @@
+{
+  "datasets": [
+    {
+      "name": "number_test1",
+      "source": "csv:number_test1.csv",
+      "structure": "uplus_str"
+    },
+    {
+      "name": "expected",
+      "structure": "uplus_str",
+      "source": "csv:uplus.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "uplus_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        },
+        {
+          "name": "att1",
+          "role": "Attribute"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "m1",
+      "domain": "number"
+    },
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "att1",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    }
+  ]
+}

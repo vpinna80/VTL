@@ -1,0 +1,9 @@
+id_1,id_2,id_3,text_1
+2012,B,Total,"""    this is text"""
+2011,B,Total,"""sample """
+2012,G,Total,"""third example"""
+2011,G,Total,""" left space"""
+2012,S,Total,"""right space """
+2011,S,Total,"""                       """
+2012,F,Total,""" 12-12-2001     """
+2011,F,Total,"""F """

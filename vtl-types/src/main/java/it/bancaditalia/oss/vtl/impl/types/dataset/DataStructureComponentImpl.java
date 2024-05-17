@@ -38,7 +38,7 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 	{
 		this.role = role;
 		this.variable = variable;
-		this.hashCode = hashCodeInit();
+		this.hashCode = defaultHashCode();
 	}
 	
 	@Override
@@ -56,16 +56,7 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 	@Override
 	public int hashCode()
 	{
-		return hashCode == 0 ? hashCode = hashCodeInit() : hashCode;
-	}
-
-	public int hashCodeInit()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * variable.hashCode();
-		result = prime * result + role.hashCode();
-		return result;
+		return hashCode;
 	}
 
 	@Override

@@ -51,6 +51,14 @@ public interface MetadataRepository
 	public ValueDomainSubset<?, ?> getDomain(String name);
 
 	/**
+	 * Returns the source definition for the dataset with the specified name if it's defined.
+	 * 
+	 * @param name the name of the dataset
+	 * @return the source definition or null if it's not defined.
+	 */
+	public String getDatasetSource(String name);
+
+	/**
 	 * Returns a dataset structure with the specified name if it exists.
 	 * 
 	 * @param name the name of the structure

@@ -40,6 +40,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -124,13 +125,13 @@ public class SerCollectors
     	return collectingAndThen(summarizingDouble(mapper), SerDoubleSumAvgCount::getSum);
     }
 
-    public static <T> SerCollector<T, ?, Long> summingLong(SerToLongFunction<? super T> mapper)
+    public static <T> SerCollector<T, ?, OptionalLong> summingLong(SerToLongFunction<? super T> mapper)
     {
         return new SerCollector<>(
-                () -> new long[1],
-                (a, t) -> { a[0] += mapper.applyAsLong(t); },
-                (a, b) -> { a[0] += b[0]; return a; },
-                a -> a[0], EnumSet.of(CONCURRENT, UNORDERED));
+                () -> new long[2],
+                (a, t) -> { a[0] += mapper.applyAsLong(t); a[1]++; },
+                (a, b) -> { a[0] += b[0]; a[1] += b[1]; return a; },
+                a -> a[1] <= 0 ? OptionalLong.empty() : OptionalLong.of(a[0]), EnumSet.of(CONCURRENT, UNORDERED));
     }
 
     public static <T> SerCollector<T, ?, OptionalDouble> averagingDouble(SerToDoubleFunction<? super T> mapper) 
@@ -138,7 +139,7 @@ public class SerCollectors
     	return collectingAndThen(summarizingDouble(mapper), SerDoubleSumAvgCount::getAverage);
     }
     
-    public static <T> SerCollector<T, SerDoubleSumAvgCount, SerDoubleSumAvgCount> summarizingDouble(SerToDoubleFunction<? super T> mapper)
+    public static <T> SerCollector<T, ?, SerDoubleSumAvgCount> summarizingDouble(SerToDoubleFunction<? super T> mapper)
     {
         return SerCollector.of(
                 () -> new SerDoubleSumAvgCount(),

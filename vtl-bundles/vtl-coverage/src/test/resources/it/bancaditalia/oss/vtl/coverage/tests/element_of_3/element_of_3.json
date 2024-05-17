@@ -1,0 +1,76 @@
+{
+  "datasets": [
+    {
+      "name": "between_test",
+      "source": "csv:between_test.csv",
+      "structure": "between_test_str"
+    },
+    {
+      "name": "expected",
+      "structure": "element_of_3_str",
+      "source": "csv:element_of_3.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "between_test_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "year",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "element_of_3_str",
+      "components": [
+        {
+          "name": "isleap",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "year",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "isleap",
+      "domain": "boolean"
+    },
+    {
+      "name": "year",
+      "domain": "number"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "num_1",
+      "domain": "number"
+    }
+  ]
+}

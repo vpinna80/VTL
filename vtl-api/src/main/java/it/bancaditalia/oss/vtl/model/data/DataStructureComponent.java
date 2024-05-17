@@ -108,4 +108,12 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 	{
 		return ((Variable<S, D>) repo.createTempVariable(newName, getVariable().getDomain())).as(getRole());
 	}
+	
+	public default int defaultHashCode()
+	{
+		int prime = 31;
+		int result = prime + getVariable().hashCode();
+		result = prime * result + getRole().hashCode();
+		return result;
+	}
 }

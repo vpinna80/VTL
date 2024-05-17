@@ -29,17 +29,17 @@ public class VTLUnboundAliasException extends VTLException {
 
 	private static final long serialVersionUID = 1L;
 	
-	private final String name;
+	private final String alias;
 
 	public VTLUnboundAliasException(String alias) 
 	{
 		super("Alias '" + alias + "' is not bound to this transformation scheme.");
 	
-		this.name = alias;
+		this.alias = alias;
 	}
 
-	public String getName()
+	public String getAlias()
 	{
-		return name;
+		return alias;
 	}
 }

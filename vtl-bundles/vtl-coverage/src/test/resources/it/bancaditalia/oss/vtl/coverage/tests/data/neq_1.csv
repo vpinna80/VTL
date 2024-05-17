@@ -1,9 +1,0 @@
-$id_1=Number,$id_2=String,$id_3=String,$id_4=String,bool_var=Boolean
-2012,S,Total,F,TRUE
-2012,F,Total,F,TRUE
-2012,I,Total,F,
-2012,A,Total,M,FALSE
-2012,C,Total,M,FALSE
-2012,B,Total,M,TRUE
-2012,G,Total,F,TRUE
-2012,U,Total,M,TRUE

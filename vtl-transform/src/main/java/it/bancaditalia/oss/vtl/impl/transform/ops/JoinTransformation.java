@@ -247,9 +247,10 @@ public class JoinTransformation extends TransformationImpl
 
 	private DataSet joinForB2(DataSet lDs, DataSet rDs, DataSetMetadata resultMetadata)
 	{
-		Map<Map<String, ScalarValue<?, ?, ?, ?>>, DataPoint> index = rDs.stream().collect(toMapWithKeys(dp -> dp.getValuesByNames(usingNames)));
+		Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> index = rDs.stream().collect(toMapWithKeys(dp -> dp.getValuesByNames(usingNames)));
 		Set<String> lDsComponentNames = lDs.getMetadata().stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet());
 		DataSetMetadata stepMetadata = rDs.getMetadata().stream().filter(component -> !lDsComponentNames.contains(component.getVariable().getName())).collect(toDataStructure());
+		
 		DataSet stepResult = lDs.mapKeepingKeys(stepMetadata, DataPoint::getLineage, dp -> {
 			var key = dp.getValuesByNames(usingNames);
 			if (index.containsKey(key))
@@ -258,6 +259,7 @@ public class JoinTransformation extends TransformationImpl
 				return new DataPointBuilder(dp).addAll(resultMetadata.stream().filter(c -> !lDsComponentNames.contains(c.getVariable().getName())).collect(toMapWithValues(NullValue::instanceFrom)))
 						.build(dp.getLineage(), resultMetadata);
 		});
+		
 		return operator == LEFT_JOIN ? stepResult : stepResult.filter(dp -> index.containsKey(dp.getValuesByNames(usingNames)), identity());
 	}
 

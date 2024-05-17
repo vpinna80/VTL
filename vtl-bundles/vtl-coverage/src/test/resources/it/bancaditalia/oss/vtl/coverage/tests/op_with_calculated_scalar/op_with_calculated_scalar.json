@@ -1,0 +1,64 @@
+{
+  "datasets": [
+    {
+      "name": "number_test1",
+      "source": "csv:number_test1.csv",
+      "structure": "number_test1_str"
+    },
+    {
+      "name": "expected",
+      "structure": "op_with_calculated_scalar_str",
+      "source": "csv:op_with_calculated_scalar.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "op_with_calculated_scalar_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_test1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        },
+        {
+          "name": "att1",
+          "role": "Attribute"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "m1",
+      "domain": "number"
+    },
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "att1",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    }
+  ]
+}

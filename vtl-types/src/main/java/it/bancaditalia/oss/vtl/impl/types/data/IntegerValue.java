@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 
+import java.util.OptionalLong;
+
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -29,6 +31,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 public class IntegerValue<I extends IntegerValue<I, S>, S extends IntegerDomainSubset<S>> extends NumberValueImpl<I, Long, S, IntegerDomain>
 {
 	private static final long serialVersionUID = 1L;
+	private static final ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> NULLINSTANCE = NullValue.instance(INTEGERDS);
 
 	public IntegerValue(Long value, S domain)
 	{
@@ -37,13 +40,17 @@ public class IntegerValue<I extends IntegerValue<I, S>, S extends IntegerDomainS
 	
 	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(Long value)
 	{
-		return value == null || value == Integer.MIN_VALUE ? NullValue.instance(INTEGERDS) : new IntegerValue<>(value, INTEGERDS);
+		return of(value, INTEGERDS);
 	}
 
-	public static <S extends IntegerDomainSubset<S>> ScalarValue<?, ?, S, IntegerDomain> of(Long value, IntegerDomainSubset<? extends S> domain)
+	public static <S extends IntegerDomainSubset<S>> ScalarValue<?, ?, S, IntegerDomain> of(Long value, S domain)
 	{
-		@SuppressWarnings("unchecked") S casted = (S) domain;
-		return value == null ? NullValue.instance(casted) : new IntegerValue<>(value, casted);
+		return value == null || value.longValue() == Long.MIN_VALUE ? NullValue.instance(domain) : new IntegerValue<>(value, domain);
+	}
+	
+	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(OptionalLong value)
+	{
+		return value != null && value.isPresent() ? of(value.getAsLong(), INTEGERDS) : NULLINSTANCE;
 	}
 	
 	@Override

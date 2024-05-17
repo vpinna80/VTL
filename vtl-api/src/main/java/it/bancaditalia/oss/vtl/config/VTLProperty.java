@@ -87,6 +87,16 @@ public interface VTLProperty
 	}
 
 	/**
+	 * Change the value for this property
+	 * 
+	 * @param newValue The new value for this property
+	 */
+	public default void setValue(Class<?> newValue)
+	{
+		setValue(newValue.getName());
+	}
+	
+	/**
 	 * Change the values for this property. If the property is not multiple, behaviour is undefined
 	 * 
 	 * @param newValues The new values for this property

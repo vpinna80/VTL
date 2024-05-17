@@ -45,6 +45,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -64,10 +65,19 @@ public class StringUnaryTransformation extends UnaryTransformation
 		private final String name;
 		private final UnaryOperator<ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain>> function;
 
-		private StringOperator(String name, UnaryOperator<String> function)
+		private StringOperator(String name, UnaryOperator<String> stringOp)
 		{
 			this.name = name;
-			this.function = s -> s instanceof NullValue ? NullValue.instance(STRINGDS) : ((StringValue<?, ?>) s).map(function);
+			this.function = s -> extracted(stringOp, s);
+		}
+
+		private ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> extracted(UnaryOperator<String> stringOp, ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> s)
+		{
+			if (s instanceof NullValue)
+				return NullValue.instance(STRINGDS);
+			
+			String ret = stringOp.apply(((StringValue<?, ?>) s).get());
+			return ret.isEmpty() ? NullValue.instance(STRINGDS) : StringValue.of(ret);
 		}
 		
 		@Override
@@ -105,7 +115,11 @@ public class StringUnaryTransformation extends UnaryTransformation
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
-					map.replaceAll((c, v) -> c.getVariable().getDomain().cast(operator.apply(STRINGDS.cast(v))));
+					map.replaceAll((c, v) -> {
+						ValueDomainSubset<?, ?> domain = c.getVariable().getDomain();
+						ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> result = operator.apply(STRINGDS.cast(v));
+						return domain.cast(result);
+					});
 					return map;
 				});
 	}

@@ -1,0 +1,9 @@
+id_1,id_2,id_3,text_1
+2012,B,Total,"""abc def gh"""
+2011,B,Total,"""  comment!!"""
+2012,G,Total,"""abc """
+2011,G,Total,""""""
+2012,S,Total,
+2011,S,Total,"""nulls included above for testing """
+2012,F,Total,"""two spaces  in between"""
+2011,F,Total,"""123:) """

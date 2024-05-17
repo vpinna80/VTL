@@ -233,12 +233,6 @@ public enum SampleDataSets implements DataSet
 	}
 	
 	@Override
-	public DataSet setDiff(DataSet other)
-	{
-		return dataset.setDiff(other);
-	}
-	
-	@Override
 	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator,
 			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
 	{

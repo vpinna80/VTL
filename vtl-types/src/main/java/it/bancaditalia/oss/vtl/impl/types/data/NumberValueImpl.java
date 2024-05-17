@@ -45,7 +45,7 @@ public abstract class NumberValueImpl<V extends NumberValueImpl<V, R, S, D>, R e
 		if (isUseBigDecimal())
 			return new BigDecimalValue<>(n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.doubleValue()), domain);
 		else
-			return new DoubleValue<>(n instanceof Double ? (Double) n : n.doubleValue(), domain);
+			return DoubleValue.of(n instanceof Double ? (Double) n : n.doubleValue(), domain);
 	}
 	
 	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> createNumberValue(Number n)
@@ -58,7 +58,7 @@ public abstract class NumberValueImpl<V extends NumberValueImpl<V, R, S, D>, R e
 		if (isUseBigDecimal())
 			return BigDecimalValue.of(s != null ? new BigDecimal(s) : null);
 		else
-			return DoubleValue.of(s != null ? Double.parseDouble(s) : null);
+			return DoubleValue.of(s != null ? Double.parseDouble(s) : null, NUMBERDS);
 	}
 	
 	public NumberValueImpl(R value, S domain)

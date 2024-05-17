@@ -1,0 +1,80 @@
+{
+  "datasets": [
+    {
+      "name": "number_test7",
+      "source": "csv:power_2_in.csv",
+      "structure": "number_test7_str"
+    },
+    {
+      "name": "expected",
+      "structure": "power_2_str",
+      "source": "csv:power_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "power_2_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "pow_1",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        },
+        {
+          "name": "pow_2",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_test7_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "num_2",
+      "domain": "number"
+    },
+    {
+      "name": "time_period",
+      "domain": "integer"
+    },
+    {
+      "name": "pow_1",
+      "domain": "integer"
+    },
+    {
+      "name": "pow_2",
+      "domain": "number"
+    },
+    {
+      "name": "num_1",
+      "domain": "integer"
+    }
+  ]
+}

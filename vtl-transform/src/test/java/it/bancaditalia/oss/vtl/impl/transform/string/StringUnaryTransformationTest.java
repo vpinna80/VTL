@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransform
 import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator.TRIM;
 import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator.UCASE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +44,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
-import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -60,7 +60,7 @@ public class StringUnaryTransformationTest
 		// "Filled String", "    Leading spaces", "Trailing spaces    ", "    Leading and trailing     ", "\"Quoted\" 'String'", "\t\b \n\r\f"
 
 		return Stream.of(
-				Arguments.of(TRIM,  new String[] {"Filled String", "Leading spaces",     "Trailing spaces",     "Leading and trailing",          "\"Quoted\" 'String'", ""} ),
+				Arguments.of(TRIM,  new String[] {"Filled String", "Leading spaces",     "Trailing spaces",     "Leading and trailing",          "\"Quoted\" 'String'", "" } ),
 				Arguments.of(LTRIM, new String[] {"Filled String", "Leading spaces",     "Trailing spaces    ", "Leading and trailing     ",     "\"Quoted\" 'String'", "\b \n\r\f"} ),
 				Arguments.of(RTRIM, new String[] {"Filled String", "    Leading spaces", "Trailing spaces",     "    Leading and trailing",      "\"Quoted\" 'String'", "\t\b"} ),
 				Arguments.of(UCASE, new String[] {"FILLED STRING", "    LEADING SPACES", "TRAILING SPACES    ", "    LEADING AND TRAILING     ", "\"QUOTED\" 'STRING'", "\t\b \n\r\f"} ),
@@ -70,7 +70,7 @@ public class StringUnaryTransformationTest
 	
 	@ParameterizedTest(name = "{0}")
 	@MethodSource
-	public void test(StringOperator operator, String[] resultValues)
+	public void test(StringOperator operator, String[] expected)
 	{
 		VarIDOperand left = new VarIDOperand("left");
 		Map<String, DataSet> map = new HashMap<>();
@@ -87,10 +87,14 @@ public class StringUnaryTransformationTest
 		try (Stream<DataPoint> stream = ((DataSet) sut.eval(session)).stream())
 		{
 			ConcurrentMap<String, String> resultMap = stream
-				.map(dp -> new SimpleEntry<>(((StringValue<?, ?>) dp.get(id)).get(), ((StringValue<?, ?>) dp.get(measure.get())).get()))
+				.map(dp -> new SimpleEntry<>((String) dp.get(id).get(), coalesce((String) dp.get(measure.get()).get(), "")))
 				.collect(SerCollectors.entriesToMap());
 
-			for (int i = 0; i < resultValues.length; i++)
-				assertArrayEquals(resultValues[i].getBytes(), resultMap.get("" + (char) ('A' + i)).getBytes(), operator.toString() + "[" + i +  "]");
+			for (int i = 0; i < expected.length; i++)
+			{
+				String key = "" + (char) ('A' + i);
+				byte[] bytes = resultMap.get(key).getBytes();
+				assertArrayEquals(expected[i].getBytes(), bytes, operator.toString() + "[" + i +  "]");
+			}
 		}
 	}}

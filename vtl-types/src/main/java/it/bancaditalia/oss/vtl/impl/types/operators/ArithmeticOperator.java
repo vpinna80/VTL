@@ -49,7 +49,7 @@ public enum ArithmeticOperator
 	MULT(" * ", (l, r) -> l * r, (l, r) -> l.multiply(r, DECIMAL128), (l, r) -> l * r), 
 	DIV(" / ", (l, r) -> l / r, (l, r) -> l.divide(r, DECIMAL128), (l, r) -> l / r),
 	MOD("mod", (l, r) -> l % r, BigDecimal::remainder, (l, r) -> l % r),
-	POWER("power", Math::pow, (l, r) -> BigDecimal.valueOf(pow(l.doubleValue(), r.doubleValue())), (l, r) -> (long) pow(l, r)),
+	POWER("power", Math::pow, (l, r) -> BigDecimal.valueOf(pow(l.doubleValue(), r.doubleValue())), (l, r) -> longPower(l, r)),
 	LOG("log", (l, r) -> log(l) / log(r), (l, r) -> BigDecimal.valueOf(log(l.doubleValue()) / log(r.doubleValue())), (l, r) -> (long) (log(l) / log(r))),
 	ROUND("round", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).doubleValue(), (l, r) -> l.setScale(r.intValue(), HALF_UP), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).intValue()),
 	TRUNC("trunc", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue());
@@ -67,7 +67,7 @@ public enum ArithmeticOperator
 		this.opBigd = opBigd;
 	}
 
-	public ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> applyAsInt(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	public ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> applyAsInteger(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left instanceof NullValue || right instanceof NullValue)
 			return NullValue.instance(INTEGERDS);
@@ -115,5 +115,14 @@ public enum ArithmeticOperator
 	public boolean isInfix()
 	{
 		return this == SUM || this == DIFF || this == MULT || this == DIV;
+	}
+	
+	private static long longPower(long l, long r)
+	{
+		double pow = Math.pow(l, r);
+		if (!Double.isFinite(pow) || pow >= (double) Long.MAX_VALUE || pow <= (double) Long.MIN_VALUE)
+			return Long.MIN_VALUE;
+		else
+			return (long) pow;
 	}
 }

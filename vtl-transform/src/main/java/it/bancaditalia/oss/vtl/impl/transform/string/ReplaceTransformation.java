@@ -77,6 +77,8 @@ public class ReplaceTransformation extends TransformationImpl
 	private final Transformation exprOperand;
 	private final Transformation patternOperand;
 	private final Transformation replaceOperand;
+	
+	private transient Pattern storedPattern;
 
 	public ReplaceTransformation(Transformation expr, Transformation pattern, Transformation replace)
 	{
@@ -89,33 +91,36 @@ public class ReplaceTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue left = exprOperand.eval(session);
-		ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> pattern = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session));
 		ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> replace = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) replaceOperand.eval(session));
-		
+
+		if (storedPattern == null)
+		{
+			ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> pattern = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session));
+			storedPattern = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
+		}
+
 		if (left instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) left;
 			DataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getMetadata().getMeasures();
-			Pattern compiled = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
 			
-			String lineageString = "replace " + pattern + " with " + replace;
+			String lineageString = "replace " + storedPattern + " with " + replace;
 			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), 
 					dp -> measures.stream()
-						.map(measure -> new SimpleEntry<>(measure, (pattern == null || dp.get(measure) instanceof NullValue) 
+						.map(measure -> new SimpleEntry<>(measure, (storedPattern == null || dp.get(measure) instanceof NullValue) 
 							? STRINGDS.cast(NullValue.instance(STRINGDS))
-							: ((StringValue<?, ?>) dp.get(measure)).map(value -> compiled.matcher(value).replaceAll(replace.get().toString()))
+							: ((StringValue<?, ?>) dp.get(measure)).map(value -> storedPattern.matcher(value).replaceAll(replace.get().toString()))
 						)).collect(entriesToMap())
 			); 
 		}
 		else
 		{
 			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) left;
-			if (left instanceof NullValue || pattern instanceof NullValue)
+			if (left instanceof NullValue || storedPattern == null)
 				return NullValue.instance(STRINGDS);
 			
-			Pattern compiled = Pattern.compile(STRINGDS.cast(pattern).get().toString());
-			return StringValue.of(compiled.matcher(scalar.get().toString()).replaceAll(replace.get().toString()));
+			return StringValue.of(storedPattern.matcher(scalar.get().toString()).replaceAll(replace.get().toString()));
 		}
 	}
 

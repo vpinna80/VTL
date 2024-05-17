@@ -23,7 +23,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
@@ -40,10 +39,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -130,23 +127,22 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		
 		// sort each partition with the comparator and then perform the analytic computation on each partition
 		return new FunctionDataSet<>((DataSetMetadata) getMetadata(scheme), ds -> ds.streamByKeys(
-				partitionIDs, 
-				toCollection(() -> new ConcurrentSkipListSet<>(comparator)), 
-				(partition, keyValues) -> rankPartition(scheme, partition, keyValues)
+				partitionIDs, toList(), (partition, keyValues) -> rankPartition(scheme, partition, keyValues, comparator)
 			).collect(concatenating(Utils.ORDERED)), dataset);
 	}
 	
-	private Stream<DataPoint> rankPartition(TransformationScheme scheme, NavigableSet<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
+	private Stream<DataPoint> rankPartition(TransformationScheme scheme, List<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues, Comparator<DataPoint> comparator)
 	{
 		LOGGER.debug("Analytic invocation on partition {}", keyValues);
+		partition.sort(comparator);
 		long rank = 1, position = 1;
-		Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, measureValues = emptyMap();
+		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, measureValues = emptyMap();
 		List<DataPoint> result = new ArrayList<>(partition.size());
 		
 		for (DataPoint dp: partition)
 		{
 			oldValues = measureValues;
-			measureValues = dp.getValues(Measure.class);
+			measureValues = dp.getValuesByNames(orderByClause.stream().map(OrderByItem::getName).collect(toSet()));
 			
 			ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> rankResult;
 			if (measureValues.equals(oldValues))

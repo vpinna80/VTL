@@ -157,7 +157,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 
 			// fill_time_series over partition by ids order by timeID between current datapoint and 1 following
 			WindowClauseImpl windowClause = new WindowClauseImpl(ids, singletonList(new SortClause(timeID, ASC)), 
-					new WindowCriterionImpl(DATAPOINTS, CURRENT_DATA_POINT, following(1L)));
+					new WindowCriterionImpl(DATAPOINTS, CURRENT_DATA_POINT, following(1)));
 			
 			DataSetMetadata timeStructure = new DataStructureBuilder(structure.getIDs()).build();
 			// Remove all measures and attributes then left-join the time-filled dataset with the old one

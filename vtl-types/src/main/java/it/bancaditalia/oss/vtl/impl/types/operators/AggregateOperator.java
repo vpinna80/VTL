@@ -190,7 +190,7 @@ public enum AggregateOperator
 
 		// Create a collector for each measure
 		Map<DataStructureComponent<? extends Measure, ?, ?>, SerCollector<DataPoint, ?, ScalarValue<?, ?, ?, ?>>> collectors = measures.stream()
-			.collect(toMapWithValues(measure -> mapping(dp -> dp.get(measure), filtering(v -> !(v instanceof NullValue), reducer))));
+			.collect(toMapWithValues(m -> mapping(dp -> dp.get(m), filtering(v -> !(v instanceof NullValue), reducer))));
 		
 		// and-reduce the characteristics
 		EnumSet<Characteristics> characteristics = EnumSet.of(CONCURRENT, UNORDERED);

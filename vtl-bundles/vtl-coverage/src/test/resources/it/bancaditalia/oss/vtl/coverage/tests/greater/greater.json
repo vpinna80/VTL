@@ -1,0 +1,82 @@
+{
+  "datasets": [
+    {
+      "name": "number_test4",
+      "source": "csv:number_test4.csv",
+      "structure": "number_test4_str"
+    },
+    {
+      "name": "number_test1",
+      "source": "csv:number_test1.csv",
+      "structure": "number_test1_str"
+    },
+    {
+      "name": "expected",
+      "structure": "greater_str",
+      "source": "csv:greater.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "greater_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "bool_var",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_test4_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_test1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        },
+        {
+          "name": "att1",
+          "role": "Attribute"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "m1",
+      "domain": "number"
+    },
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "att1",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    }
+  ]
+}

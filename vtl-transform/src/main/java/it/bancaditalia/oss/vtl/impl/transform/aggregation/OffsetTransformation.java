@@ -50,8 +50,8 @@ public class OffsetTransformation extends SimpleAnalyticTransformation
 	{
 		super(FIRST_VALUE, operand, partitionBy, orderByClause, 
 				new WindowCriterionImpl(DATAPOINTS, 
-						new LimitClause(direction == LAG ? PRECEDING : FOLLOWING, Math.abs(offset.get())),
-						new LimitClause(direction == LAG ? PRECEDING : FOLLOWING, Math.abs(offset.get()))));
+						new LimitClause(direction == LAG ? PRECEDING : FOLLOWING, Math.abs(offset.get().intValue())),
+						new LimitClause(direction == LAG ? PRECEDING : FOLLOWING, Math.abs(offset.get().intValue()))));
 
 		this.defaultValue = defaultValue;
 	}

@@ -649,19 +649,6 @@ public class SparkDataSet extends AbstractDataSet
 		
 		return new SparkDataSet(session, encoder, result);
 	}
-	
-	@Override
-	public DataSet setDiff(DataSet other)
-	{
-		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other);
-		List<String> ids = getMetadata().getIDs().stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toList());
-		Dataset<Row> result = dataFrame.join(sparkOther.dataFrame, asScala((Iterable<String>) ids).toSeq(), "leftanti");
-
-		Column[] cols = getColumnsFromComponents(getMetadata()).toArray(new Column[getMetadata().size() + 1]);
-		cols[cols.length - 1] = result.col("$lineage$");
-		
-		return new SparkDataSet(session, encoder, result.select(cols));
-	}
 
 	private static <TT, A, T> MapGroupsFunction<Row, Row, Serializable[][]> groupMapper(SerCollector<DataPoint, A, TT> groupCollector,
 			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher,

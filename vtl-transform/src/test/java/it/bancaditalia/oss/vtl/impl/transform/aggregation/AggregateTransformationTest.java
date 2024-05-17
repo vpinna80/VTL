@@ -29,7 +29,6 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.MAX
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.MEDIAN;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.MIN;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.SUM;
-import static java.lang.Double.NaN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,11 +57,11 @@ public class AggregateTransformationTest
 		return Stream.of(
 				Arguments.of(SUM, SAMPLE5,  69L),
 				Arguments.of(SUM, SAMPLE6,  141L),
-				Arguments.of(SUM, SAMPLE16, NaN),
+				Arguments.of(SUM, SAMPLE16, 12.1),
 				Arguments.of(SUM, SAMPLE17, 70.9),
 				Arguments.of(AVG, SAMPLE5,  13.8),
 				Arguments.of(AVG, SAMPLE6,  23.5),
-				Arguments.of(AVG, SAMPLE16, NaN),
+				Arguments.of(AVG, SAMPLE16, 3.025),
 				Arguments.of(AVG, SAMPLE17, 14.18),
 				Arguments.of(MEDIAN, SAMPLE5,  14L),
 				Arguments.of(MEDIAN, SAMPLE6,  24L),
@@ -74,7 +73,7 @@ public class AggregateTransformationTest
 				Arguments.of(MIN, SAMPLE17, 11.1),
 				Arguments.of(MAX, SAMPLE5,  16L),
 				Arguments.of(MAX, SAMPLE6,  26L),
-				Arguments.of(MAX, SAMPLE16, NaN),
+				Arguments.of(MAX, SAMPLE16, 5.5),
 				Arguments.of(MAX, SAMPLE17, 16.6),
 				Arguments.of(COUNT, SAMPLE5,  6L),
 				Arguments.of(COUNT, SAMPLE6,  6L),

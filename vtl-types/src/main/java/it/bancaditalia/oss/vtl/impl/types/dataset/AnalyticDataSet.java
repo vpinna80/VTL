@@ -183,9 +183,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		Stream<DataPoint> result = original.collect(concatenating(ORDERED));
 		
 		if (LOGGER.isDebugEnabled())
-			result = result.peek(dp -> {
-				LOGGER.trace("Analytic invocation output datapoint {}", dp);
-			});
+			result = result.peek(dp -> LOGGER.trace("Analytic invocation output datapoint {}", dp));
 		
 		return result;
 	}

@@ -1,0 +1,5 @@
+id_1,year,me_1,me_2,id,obs_status,freq,currency,currency_denom,exr_type,exr_suffix,collection,unit,source_agency,decimals,title,unit_mult,time_format
+B,2004,1.243902317,4,EXR.A.USD.EUR.SP00.A,A,A,USD,EUR,SP00,A,A,USD,4F0,4,US dollar/Euro,0,P1Y
+C,2006,1.255598824,2,EXR.A.USD.EUR.SP00.A,A,A,USD,EUR,SP00,A,A,USD,4F0,4,US dollar/Euro,0,P1Y
+E,2012,1.284788672,44,EXR.A.USD.EUR.SP00.A,A,A,USD,EUR,SP00,A,A,USD,4F0,4,US dollar/Euro,0,P1Y
+F,2016,1.106903113,25,EXR.A.USD.EUR.SP00.A,A,A,USD,EUR,SP00,A,A,USD,4F0,4,US dollar/Euro,0,P1Y

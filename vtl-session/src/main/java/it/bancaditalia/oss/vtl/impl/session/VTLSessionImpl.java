@@ -123,7 +123,7 @@ public class VTLSessionImpl implements VTLSession
 	{
 		LOGGER.info("Retrieving value for {}", alias);
 
-		Optional<? extends Statement> rule = workspace.getRule(alias);
+		Optional<Statement> rule = workspace.getRule(alias);
 		if (rule.filter(DMLStatement.class::isInstance).isPresent())
 		{
 			DMLStatement statement = (DMLStatement) rule.get();
@@ -144,7 +144,7 @@ public class VTLSessionImpl implements VTLSession
 		if (definedStructure != null)
 			return definedStructure;
 		
-		Optional<? extends Statement> rule = workspace.getRule(alias);
+		Optional<Statement> rule = workspace.getRule(alias);
 		if (rule.filter(DMLStatement.class::isInstance).isPresent())
 		{
 			DMLStatement statement = (DMLStatement) rule.get();
@@ -216,7 +216,7 @@ public class VTLSessionImpl implements VTLSession
 		}
 	}
 
-	private <T> T cacheHelper(final String alias, Map<String, SoftReference<T>> cache, Function<? super String, ? extends T> mapper)
+	private <T> T cacheHelper(final String alias, Map<String, SoftReference<T>> cache, Function<String, T> mapper)
 	{
 		ReentrantLock lock = cacheLocks.computeIfAbsent(alias, a -> new ReentrantLock());
 		
@@ -254,8 +254,8 @@ public class VTLSessionImpl implements VTLSession
 				lock.unlock();
 		}
 	}
-
-	private <T> Optional<T> acquireValue(final String alias, BiFunction<? super Environment, ? super String, ? extends Optional<T>> mapper)
+	
+	private <T> Optional<T> acquireValue(String alias, BiFunction<Environment, String, Optional<T>> mapper)
 	{
 		LOGGER.info("Resolving value of {}", alias);
 

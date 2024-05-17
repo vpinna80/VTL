@@ -20,18 +20,20 @@
 package it.bancaditalia.oss.vtl.impl.meta.json;
 
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
+import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.InvalidParameterException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +46,6 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -53,8 +53,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.util.SerBiConsumer;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
 {
@@ -76,6 +75,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 
 	private final Map<String, Variable<?, ?>> variables = new HashMap<>(); 
 	private final Map<String, DataSetMetadata> structures = new HashMap<>(); 
+	private final Map<String, String> sources = new HashMap<>(); 
 	private final Map<String, String> datasets = new HashMap<>(); 
 	
 	public JsonMetadataRepository() throws IOException
@@ -84,22 +84,38 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		if (url == null || url.isEmpty())
 			throw new IllegalStateException("No url configured for json metadata repository.");
 
+		Map<String, Entry<String, String>> dsDefs;
+		Map<String, Map<String, Class<? extends Component>>> strDefs;
+		Map<String, String> varDefs;
+		Map<String, Object> domDefs;
+
 		try (InputStream source = new URL(url).openStream())
 		{
 			Map<?, ?> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
 			
-			iterate((List<?>) json.get("domains"), this::createDomain);
-			iterate((List<?>) json.get("variables"), this::createVariable);
-			iterate((List<?>) json.get("structures"), this::createStructure);
-			iterate((List<?>) json.get("datasets"), this::createDataset);
+			dsDefs = iterate((List<?>) json.get("datasets"), this::createDataset);
+			strDefs = iterate((List<?>) json.get("structures"), this::createStructure);
+			varDefs = iterate((List<?>) json.get("variables"), this::createVariable);
+			domDefs = iterate((List<?>) json.get("domains"), this::createDomain);
 		}
+
+		varDefs.forEach((n, d) -> variables.put(n, VariableImpl.of(n, getDomain(d))));
+		strDefs.forEach((n, l) -> structures.put(n, l.entrySet().stream().map(splitting((c, r) -> {
+			Objects.requireNonNull(variables.get(c));
+			return variables.get(c).as(r); 
+		})).collect(toDataStructure())));
+		dsDefs.forEach((n, e) -> {
+			Objects.requireNonNull(structures.get(e.getKey()), "Undefined structure: " + e.getKey());
+			datasets.put(n, e.getKey());
+			sources.put(n, e.getValue());
+		});
 	}
 	
 	@Override
 	public DataSetMetadata getStructure(String name)
 	{
-		String structureFor = datasets.get(name);
-		return structureFor != null ? structures.get(structureFor) : null;
+		String structureRef = datasets.get(name);
+		return structureRef != null ? structures.get(structureRef) : null;
 	}
 	
 	@Override
@@ -112,102 +128,87 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			return super.getVariable(alias);
 	}
 	
-	private void iterate(List<?> list, SerBiConsumer<String, Map<?, ?>> processor)
+	@Override
+	public String getDatasetSource(String name)
 	{
-		for (Object entry: list)
-		{
-			if (entry instanceof Map)
-			{
-				Map<?, ?> obj = (Map<?, ?>) entry;
-				if (!obj.containsKey("name"))
-					throw new IllegalStateException("missing name for object");
-				if (!(obj.get("name") instanceof String))
-					throw new IllegalStateException("object name is not a string");
-				
-				processor.accept((String) obj.get("name"), obj);
-			}
-			else
-				throw new InvalidParameterException("Expected JSON object but found " + entry.getClass());
-		}
+		String source = sources.get(name);
+		
+		return source != null ? source : super.getDatasetSource(name);
 	}
 	
-	private void createDomain(String name, Map<?, ?> domain)
+	private <T> Map<String, T> iterate(List<?> list, SerBiFunction<String, Map<?, ?>, T> processor)
 	{
-		Object parent = ((Map<?, ?>) domain).get("parent");
-		if (parent == null || !(parent instanceof String))
-			throw new InvalidParameterException("Parent domain invalid or not specified for " + name + ".");
+		Map<String, T> result = new HashMap<>();
 
-		LOGGER.debug("Found domain {}", name);
-		Object enumerated = domain.get("enumerated");
-		if (enumerated instanceof List)
-			if ("string".equals(parent))
+		if (list != null)
+			for (Object entry: list)
 			{
-				Set<String> codes = ((List<?>) enumerated).stream().map(String.class::cast).collect(toSet());
-				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
-				defineDomain(name, new StringCodeList(STRINGDS, name, codes));
+				if (entry instanceof Map)
+				{
+					Map<?, ?> obj = (Map<?, ?>) entry;
+					if (!obj.containsKey("name"))
+						throw new IllegalStateException("missing name for object");
+					if (!(obj.get("name") instanceof String))
+						throw new IllegalStateException("object name is not a string");
+					
+					String name = (String) obj.get("name");
+					if (result.containsKey(name))
+						throw new IllegalStateException("Metadata object " + name + " is defined more than once.");
+					result.put(name, processor.apply(name, obj));
+				}
+				else
+					throw new InvalidParameterException("Expected JSON object but found " + entry.getClass());
 			}
-			else
-				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
-		else if (enumerated != null)
-			throw new InvalidParameterException("Invalid enumerated domain definition for " + name + ".");
-		else
-			LOGGER.warn("Ignoring unsupported domain type {}[{}].", name, parent);
+		
+		return result;
 	}
 	
-	private void createVariable(String name, Map<?, ?> variable)
+	private Entry<String, String> createDataset(String name, Map<?, ?> dataset)
 	{
-		Object domainName = variable.get("domain");
-		if (domainName == null || !(domainName instanceof String))
-			throw new InvalidParameterException("Invalid domain for variable " + name);
+		String structureRef = (String) dataset.get("structure");
+		String source = (String) dataset.get("source");
 		
-		ValueDomainSubset<?, ?> domain = maybeGetDomain((String) domainName)
-				.orElseThrow(() -> new InvalidParameterException("Domain " + domainName + " not found for variable " + name));
-		
-		LOGGER.debug("Found variable {} with domain {}", name, domain);
-		variables.put(name, VariableImpl.of(name, domain));
+		LOGGER.debug("Found dataset {} with structure {}", name, structureRef);
+		return new SimpleEntry<>(structureRef, source);
+	}
+
+	private Map<String, Class<? extends Component>> createStructure(String name, Map<?, ?> jsonStructure)
+	{
+		LOGGER.info("Found structure {}", name);
+		return iterate((List<?>) jsonStructure.get("components"), this::createComponent);
+	}
+
+	private Class<? extends Component> createComponent(String name, Map<?, ?> jsonStructure)
+	{
+		return ROLES.get(jsonStructure.get("role"));
+	}
+
+	private String createVariable(String name, Map<?, ?> variable)
+	{
+		return (String) variable.get("domain");
 	}
 	
-	private void createStructure(String name, Map<?, ?> structure)
+	private Object createDomain(String name, Map<?, ?> domain)
 	{
-		DataStructureBuilder builder = new DataStructureBuilder();
-		
-		Object components = structure.get("components");
-		if (components == null || !(components instanceof List))
-			throw new InvalidParameterException("components list not found for structure " + name + ".");
-		
-		for (Object component: (List<?>) components)
-			if (component != null && component instanceof Map)
-			{
-				Object varName = ((Map<?,?>) component).get("name");
-				if (!(varName instanceof String))
-					throw new InvalidParameterException("Invalid component name in structure " + name);
-				if (!variables.containsKey(varName))
-					throw new InvalidParameterException("Undefined variable for component " + varName + " in structure " + name);
-				
-				Object role = ((Map<?,?>) component).get("role");
-				if (!(role instanceof String))
-					throw new InvalidParameterException("Invalid role for component " + varName + " in structure " + name);
-				if (!ROLES.containsKey(role))
-					throw new InvalidParameterException("Invalid role " + role + " for component " + varName + " in structure " + name);
-				
-				builder.addComponent(variables.get(varName).as(ROLES.get(role)));
-			}
-			else
-				throw new InvalidParameterException("Invalid or null component in structure " + name);
-
-		DataSetMetadata meta = builder.build();
-		LOGGER.info("Found structure {}: {}", name, meta);
-		structures.put(name, meta);
-	}
-
-	private void createDataset(String name, Map<?, ?> dataset)
-	{
-		Object structure = dataset.get("structure");
-		
-		if (structure == null || !(structure instanceof String) || !structures.containsKey(structure))
-			throw new InvalidParameterException("Found dataset without or with invalid structure for " + name + ".");
-		
-		LOGGER.debug("Found dataset {} with structure {}", name, structure);
-		datasets.put(name, (String) structure);
+		return null;
+//		Object parent = ((Map<?, ?>) domain).get("parent");
+//		if (parent == null || !(parent instanceof String))
+//			throw new InvalidParameterException("Parent domain invalid or not specified for " + name + ".");
+//
+//		LOGGER.debug("Found domain {}", name);
+//		Object enumerated = domain.get("enumerated");
+//		if (enumerated instanceof List)
+//			if ("string".equals(parent))
+//			{
+//				Set<String> codes = ((List<?>) enumerated).stream().map(String.class::cast).collect(toSet());
+//				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
+//				defineDomain(name, new StringCodeList(STRINGDS, name, codes));
+//			}
+//			else
+//				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
+//		else if (enumerated != null)
+//			throw new InvalidParameterException("Invalid enumerated domain definition for " + name + ".");
+//		else
+//			LOGGER.warn("Ignoring unsupported domain type {}[{}].", name, parent);
 	}
 }

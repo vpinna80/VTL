@@ -1,9 +1,0 @@
-$id_1=Number,$id_2=String,$id_3=String,text_1=String,text_2=String
-2012,B,Total,"""    THIS IS TEXT""","""ABC DEF GH"""
-2011,B,Total,"""SAMPLE ""","""  COMMENT!!"""
-2012,G,Total,"""THIRD EXAMPLE""","""ABC """
-2011,G,Total,""" LEFT SPACE""",""""""
-2012,S,Total,"""RIGHT SPACE """,
-2011,S,Total,"""                       ""","""NULLS INCLUDED ABOVE FOR TESTING """
-2012,F,Total,""" 12-12-2001     ""","""TWO SPACES  IN BETWEEN"""
-2011,F,Total,"""F ""","""123:) AA """

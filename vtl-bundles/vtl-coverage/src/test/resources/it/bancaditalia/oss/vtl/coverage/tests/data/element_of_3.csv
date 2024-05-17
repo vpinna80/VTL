@@ -1,7 +1,0 @@
-$id_1=String,$year=Number,isleap=Boolean
-A,1999,FALSE
-B,2000,TRUE
-A,2001,FALSE
-B,2002,FALSE
-A,2003,FALSE
-B,2004,TRUE

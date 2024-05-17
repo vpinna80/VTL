@@ -71,7 +71,6 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerConsumer;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -378,13 +377,11 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOperator)
+	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> linOp)
 	{
-		return new StreamWrapperDataSet(dataStructure, () -> 
-			stream()
+		return new StreamWrapperDataSet(dataStructure, () -> stream()
 			.filter(predicate)
-			.map(dp -> new DataPointBuilder(dp)
-					.build(lineageOperator.apply(dp.getLineage()), dataStructure)));
+			.map(dp -> new DataPointBuilder(dp).build(linOp.apply(dp.getLineage()), dataStructure)));
 	}
 	
 	@Override
@@ -424,39 +421,4 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	protected abstract Stream<DataPoint> streamDataPoints();
-
-	@Override
-	public DataSet setDiff(DataSet right)
-	{
-		return new FunctionDataSet<>(getMetadata(), r -> {
-			Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
-			try (Stream<DataPoint> stream = r.stream())
-			{
-				index = stream.map(dp -> dp.getValues(Identifier.class))
-						.collect(toConcurrentSet());
-			}
-			
-			return peekIfTrace(dp -> {
-					final Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keys = dp.getValues(Identifier.class);
-					LOGGER.trace("Setdiff: {} datapoint with keys {}.", index.contains(keys) ? "removed" : "passed", keys);
-				}).filter(dp -> !index.contains(dp.getValues(Identifier.class)), SerUnaryOperator.identity()).stream();
-		}, right);
-	}
-	
-	private AbstractDataSet peekIfTrace(SerConsumer<DataPoint> consumer)
-	{
-		if (!LOGGER.isTraceEnabled())
-			return this;
-		
-		return new AbstractDataSet(dataStructure) 
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected Stream<DataPoint> streamDataPoints()
-			{
-				return AbstractDataSet.this.stream().sequential().peek(consumer);
-			}
-		};
-	}
 }

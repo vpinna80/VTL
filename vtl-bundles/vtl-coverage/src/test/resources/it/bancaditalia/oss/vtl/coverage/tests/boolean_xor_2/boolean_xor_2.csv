@@ -1,0 +1,5 @@
+id1,m1,m2,m3
+a,true,true,false
+b,false,true,true
+c,true,false,true
+d,false,false,false

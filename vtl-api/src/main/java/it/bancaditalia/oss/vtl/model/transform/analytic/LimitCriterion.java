@@ -40,5 +40,5 @@ public interface LimitCriterion
 	/**
 	 * @return The distance of the bound from current data point
 	 */
-	public long getCount();
+	public int getCount();
 }

@@ -1,0 +1,102 @@
+{
+  "datasets": [
+    {
+      "name": "concat_test2",
+      "source": "csv:concat_test2.csv",
+      "structure": "concat_test2_str"
+    },
+    {
+      "name": "concat_test1",
+      "source": "csv:concat_test1.csv",
+      "structure": "concat_test1_str"
+    },
+    {
+      "name": "expected",
+      "structure": "self_defined_operator2_str",
+      "source": "csv:self_defined_operator2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "self_defined_operator2_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "concat_test2_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "concat_test1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "id_3",
+      "domain": "string"
+    },
+    {
+      "name": "id_1",
+      "domain": "integer"
+    },
+    {
+      "name": "text_1",
+      "domain": "string"
+    }
+  ]
+}

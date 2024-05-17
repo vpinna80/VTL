@@ -124,9 +124,10 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 		else
 			throw new VTLCastException(variable.getDomain(), domain);
 	}
-	
-	public void clearVariables()
+
+	@Override
+	public String getDatasetSource(String name)
 	{
-		vars.clear();
+		return name;
 	}
 }
