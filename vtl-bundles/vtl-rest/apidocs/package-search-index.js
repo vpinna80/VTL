@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"it.bancaditalia.oss.vtl.spring.rest"},{"l":"it.bancaditalia.oss.vtl.spring.rest.exception"},{"l":"it.bancaditalia.oss.vtl.spring.rest.result"}]

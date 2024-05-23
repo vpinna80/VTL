@@ -1,1 +1,0 @@
-memberSearchIndex = [{"p":"it.bancaditalia.oss.vtl.impl.cli","c":"VTLShell","l":"call()"},{"p":"it.bancaditalia.oss.vtl.impl.cli","c":"VTLShell","l":"main(String[])","url":"main(java.lang.String[])"},{"p":"it.bancaditalia.oss.vtl.impl.cli","c":"VTLShell","l":"VTLShell()","url":"%3Cinit%3E()"}]

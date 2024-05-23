@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"it.bancaditalia.oss.vtl.impl.environment"},{"l":"it.bancaditalia.oss.vtl.impl.environment.dataset"},{"l":"it.bancaditalia.oss.vtl.impl.environment.exceptions"},{"l":"it.bancaditalia.oss.vtl.impl.environment.spark"},{"l":"it.bancaditalia.oss.vtl.impl.environment.util"}]

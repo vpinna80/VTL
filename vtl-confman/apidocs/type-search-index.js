@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"it.bancaditalia.oss.vtl.impl.config","l":"ConfigurationManagerImpl"}]
