@@ -217,13 +217,10 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, 
-			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
-			WindowClause clause,
-			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
-			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
+	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
+			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
 	{
-		return dataset.analytic(DataPoint::getLineage, components, clause, collectors, finishers);
+		return dataset.analytic(lineageOp, sourceComp, destComp, clause, extractor, collector, finisher);
 	}
 	
 	@Override

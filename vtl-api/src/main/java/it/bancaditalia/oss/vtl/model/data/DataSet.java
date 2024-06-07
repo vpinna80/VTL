@@ -19,11 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonMap;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -217,63 +212,6 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher);
 	
 	/**
-	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
-	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
-	 * over each of the groups, and applying a final transformation.
-	 * 
-	 * The same as {@link #streamByKeys(Set, Map, SerCollector, SerBiFunction)} with an empty filter.
-	 * 
-	 * @param <T> the type of the result of the computation.
-	 * @param keys the {@link Identifier}s used to group the datapoints
-	 * @param groupCollector a {@link Collector} applied to each group to produce the result
-	 * @param finisher a {@link BiFunction} to apply to the group key and result to produce the final result
-	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
-	 */
-	public default <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			SerCollector<DataPoint, A, TT> groupCollector,
-			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
-	{
-		return streamByKeys(keys, emptyMap(), groupCollector, finisher);
-	}
-	
-	/**
-	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
-	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
-	 * over each of a chosen subset of the groups.
-	 * 
-	 * The same as {@link #streamByKeys(Set, Map, SerCollector, SerBiFunction)} with an identity finisher.
-	 *
-	 * @param <T> the type of the result of the computation.
-	 * @param keys the {@link Identifier}s used to group the datapoints
-	 * @param filter a {@code Map} of {@link Identifier}'s values used to exclude matching groups
-	 * @param groupCollector a {@link Collector} applied to each group to produce the result
-	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
-	 */
-	public default <A, T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-			SerCollector<DataPoint, A, T> groupCollector)
-	{
-		return streamByKeys(keys, filter, groupCollector, (a, b) -> a);
-	}
-	
-	/**
-	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
-	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
-	 * over each of the groups.
-	 * 
-	 * The same as {@link #streamByKeys(Set, Map, SerCollector, SerBiFunction)} with an empty filter and an identity finisher.
-	 *
-	 * @param <T> the type of the result of the computation.
-	 * @param keys the {@link Identifier}s used to group the datapoints
-	 * @param groupCollector a {@link Collector} applied to each group to produce the result
-	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
-	 */
-	public default <T> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector)
-	{
-		return streamByKeys(keys, emptyMap(), groupCollector);
-	}
-	
-	/**
 	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers 
 	 * 
 	 * @param structure the metadata of the structure produced
@@ -290,77 +228,43 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet.
 	 * Each application can produce one or more results that will be exploded into multiple datapoints. 
-	 * 
-	 * @param <TT> The intermediate result of a single analytic function on one window
 	 * @param components A map from source components to result components 
-	 * @param windowSpec The clause specifying the window 
+	 * @param clause The clause specifying the window 
+	 * @param extractors extractors that extract a value from a datapoint 
 	 * @param collectors Collectors that compute the intermediate results for each source component and window
 	 * @param finishers Finishers to transform intermediate results and partition keys into a collection of new values
-	 * 
-	 * @return The dataset result of the analytic invocation
-	 */
-	public <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components, 
-			WindowClause windowSpec, Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
-			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers);
-
-	/**
-	 * Creates a new DataSet by applying a window function over a single component of this DataSet. 
-	 * Each application can produce one or more results that will be exploded into multiple datapoints. 
-	 *  
-	 * @param <TT> The intermediate result of the analytic function on one window
-	 * @param component The source component 
-	 * @param windowSpec The clause specifying the window 
-	 * @param collector Collector that compute the intermediate result for each window
-	 * @param finisher Finisher to transform intermediate result and partition keys into a collection of new values
-	 * 
-	 * @return The dataset result of the analytic invocation
-	 */
-	public default <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> component, 
-			WindowClause windowSpec, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT> collector, 
-			SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
-	{
-		return analytic(lineageOp, singletonMap(component, component), windowSpec, singletonMap(component, collector), singletonMap(component, finisher));
-	}
-
-	/**
-	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet. 
-	 * Each application can produce one or more results that will be exploded into multiple datapoints. 
 	 * 
 	 * @param <TT> The intermediate result of a single analytic function on one window
-	 * @param components The set of source components. Result components will be the same. 
-	 * @param windowSpec The clause specifying the window 
-	 * @param collectors Collectors that compute the intermediate results for each source component and window
-	 * @param finishers Finishers to transform intermediate results and partition keys into a collection of new values
-	 * 
 	 * @return The dataset result of the analytic invocation
 	 */
-	public default <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, Set<? extends DataStructureComponent<?, ?, ?>> components,
-			WindowClause windowSpec, Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
-			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
-	{
-		return analytic(lineageOp, components.stream().collect(toMapWithValues(k -> k)), windowSpec, collectors, finishers);
-	}
-
+	
 	/**
-	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet.
-	 * Each window function will produce a single result value and the result will have the same cardinality as this dataset.
-	 * This is the standard VTL analytic invocation.
+	 * Creates a new DataSet by applying a window function over a component of this DataSet.
+	 * Each application can produce one or more values that will be exploded into multiple datapoints.
+	 * The result values are stored in the destination component of the resulting dataset.
 	 * 
-	 * @param components The set of source components. Result components will be the same. 
-	 * @param windowSpec The clause specifying the window 
-	 * @param collectors Collectors that compute the results for each source component and window
+	 * @param <T> The type of elements fed into the window
+	 * @param <TT> The type of the result produced by the window function
+	 * @param lineageOp A lineage definition for each result datapoint
+	 * @param sourceComp The source component
+	 * @param destComp The destination component
+	 * @param clause The window clause
+	 * @param extractor Extractor that feeds a value into the window. If null, the value fed 
+	 *        will be the value assumed by the source component in each datapoint
+	 * @param collector The collector to produce the results for each window
+	 * @param finisher A final mapping from the accumulated result into a collaction of values.
+	 *        If null, the collector result will be taken as-is, and it must be a collection of scalar values.
 	 * 
-	 * @return The dataset result of the analytic invocation
+	 * @return A new dataset resulting from the application of the specified window function.
 	 */
-	public default DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, Set<? extends DataStructureComponent<?, ?, ?>> components, WindowClause windowSpec,
-			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors)
+	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
+			DataStructureComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor,
+			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher);
+
+	public default DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> component, 
+			WindowClause clause, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> collector)
 	{
-		Map<? extends DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>> measures = components.stream()
-				.collect(toMapWithValues(measure -> measure));
-		Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = components.stream()
-				.collect(toMapWithValues(measure -> (value, originalValue) -> singleton(value)));
-		
-		return analytic(lineageOp, measures, windowSpec, collectors, finishers);
+		return analytic(lineageOp, component, component, clause, null, collector, null);
 	}
 
 	/**

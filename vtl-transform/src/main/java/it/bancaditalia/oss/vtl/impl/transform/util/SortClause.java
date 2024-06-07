@@ -34,6 +34,11 @@ public class SortClause implements SortCriterion, Serializable
 	private final DataStructureComponent<?, ?, ?> component;
 	private final SortingMethod method;
 
+	public SortClause(DataStructureComponent<?, ?, ?> component)
+	{
+		this(component, ASC);
+	}
+	
 	public SortClause(DataStructureComponent<?, ?, ?> component, SortingMethod method)
 	{
 		this.component = component;

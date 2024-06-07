@@ -1,0 +1,96 @@
+{
+  "datasets": [
+    {
+      "name": "rank_data",
+      "source": "spark:csv:rank.csv",
+      "structure": "rank_str"
+    },
+    {
+      "name": "expected",
+      "structure": "rank_1_str",
+      "source": "spark:csv:rank_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "rank_1_str",
+      "components": [
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_2",
+          "role": "Measure"
+        },
+        {
+          "name": "me_3",
+          "role": "Measure"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "rank_str",
+      "components": [
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_2",
+          "role": "Measure"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "id_3",
+      "domain": "date"
+    },
+    {
+      "name": "me_3",
+      "domain": "integer"
+    },
+    {
+      "name": "me_2",
+      "domain": "integer"
+    },
+    {
+      "name": "me_1",
+      "domain": "integer"
+    }
+  ]
+}

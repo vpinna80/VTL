@@ -23,8 +23,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.Collections.singletonMap;
 
-import java.util.function.Function;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +47,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public class ComparisonTransformation extends BinaryTransformation
 {
@@ -96,7 +95,7 @@ public class ComparisonTransformation extends BinaryTransformation
 		else
 			castedScalar = scalar;
 
-		Function<DataPoint, ScalarValue<?, ?, ?, ?>> extractor;
+		SerFunction<DataPoint, ScalarValue<?, ?, ?, ?>> extractor;
 		if (castToLeft) 
 			if (datasetIsLeftOp)
 				extractor = dp -> operator.apply(dp.get(measure), castedScalar);

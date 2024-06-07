@@ -154,4 +154,10 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	{
 		return new DefaultVariable<>(this);
 	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return INTEGERDS.getRepresentation();
+	}
 }

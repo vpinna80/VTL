@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import java.io.Serializable;
+
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
@@ -114,5 +116,11 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 		else if (!parent.equals(other.parent))
 			return false;
 		return true;
+	}
+	
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return parent.getRepresentation();
 	}
 }

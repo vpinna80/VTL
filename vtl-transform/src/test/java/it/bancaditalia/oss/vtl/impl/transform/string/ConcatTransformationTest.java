@@ -51,9 +51,9 @@ public class ConcatTransformationTest
 		// "Filled String", "    Leading spaces", "Trailing spaces    ", "    Leading and trailing     ", "\"Quoted\" 'String'", "\t\b \n\r\f"
 		return Stream.of(
 				Arguments.of(SAMPLE13, SAMPLE14, new String[] { "Filled StringA", "    Leading spacesC", "Trailing spaces    E", "    Leading and trailing     G", "\"Quoted\" 'String'I", "\t\b \n\r\fK" }),
-				Arguments.of(SAMPLE13, SAMPLE15, new String[] { "Filled StringK", "    Leading spacesC", "Trailing spaces    G", null, "\"Quoted\" 'String'A", "\t\b \n\r\fE" }),
-				Arguments.of(SAMPLE14, SAMPLE15, new String[] { "AK", "CC", "EG", null, "IA", "KE" })
-		);
+				Arguments.of(SAMPLE13, SAMPLE15, new String[] { "Filled StringK", "    Leading spacesC", "Trailing spaces    G", "    Leading and trailing     ", "\"Quoted\" 'String'A", "\t\b \n\r\fE" }),
+				Arguments.of(SAMPLE14, SAMPLE15, new String[] { "AK", "CC", "EG", "G", "IA", "KE" })
+		); 
 	}
 	
 	@ParameterizedTest(name = "{0} || {1}")

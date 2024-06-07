@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import java.io.Serializable;
+
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -106,5 +108,11 @@ public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends Va
 		else if (!subsetWithNull.equals(other.subsetWithNull))
 			return false;
 		return true;
+	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return subsetWithNull.getRepresentation();
 	}
 }

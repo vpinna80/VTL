@@ -19,9 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -67,5 +69,11 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 		}
 		else 
 			throw new VTLCastException(this, value);
+	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return isUseBigDecimal() ? BigDecimal.class : Double.class;
 	}
 }

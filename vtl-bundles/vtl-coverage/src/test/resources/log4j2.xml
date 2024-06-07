@@ -43,8 +43,8 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="it.bancaditalia.oss.vtl" level="off" />
-
+		<Logger name="it.bancaditalia.oss.vtl" level="warn" />
+		
 		<Root level="off">
 			<AppenderRef ref="STDERR1" />
 			<AppenderRef ref="STDERR2" />

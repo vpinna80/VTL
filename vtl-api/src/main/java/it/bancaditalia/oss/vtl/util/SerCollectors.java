@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.util;
 
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
@@ -44,6 +45,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collector.Characteristics;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -107,6 +109,14 @@ public class SerCollectors
                 (a, b) -> { a[0] = op.apply(a[0], b[0]); return a; },
                 a -> a[0], emptySet());
     }
+    
+    public static <T extends Serializable> SerCollector<T, ?, Optional<T>> reducing(SerBinaryOperator<T> op)
+    {
+        return new SerCollector<>(boxSupplier((T) null),
+                (a, t) -> { if (a[0] == null) a[0] = t; else a[0] = op.apply(a[0], t); },
+                (a, b) -> { if (a[0] == null) a[0] = b[0]; else a[0] = op.apply(a[0], coalesce(b[0], a[0])); return a; },
+                a -> Optional.ofNullable(a[0]), emptySet());
+    }
 
     public static <T, U, A, R> SerCollector<T, ?, R> mapping(SerFunction<? super T, ? extends U> mapper, SerCollector<? super U, A, R> downstream)
     {
@@ -149,12 +159,18 @@ public class SerCollectors
     
     public static <T> SerCollector<T, List<T>, List<T>> toList()
     {
-        return new SerCollector<>(ArrayList::new, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), emptySet());
+        return new SerCollector<>(ArrayList::new, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH, CONCURRENT));
+    }
+
+    public static <T> SerCollector<T, List<T>, List<T>> toList(SerSupplier<List<T>> supplier)
+    {
+        return new SerCollector<>(supplier::get, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH, CONCURRENT));
     }
 
     public static <T> SerCollector<T, ?, T[]> toArray(T[] result)
     {
-        return new SerCollector<>(() -> new ArrayHolder<T>(result), ArrayHolder::accumulate, ArrayHolder::merge, acc -> result, EnumSet.of(CONCURRENT));
+    	AtomicInteger index = new AtomicInteger(0);
+        return new SerCollector<>(() -> result, (a, v) -> a[index.getAndIncrement()] = v, (a, b) -> a, identity(), EnumSet.of(CONCURRENT));
     }
 
 	public static <T, A, R> SerCollector<T, A, R> filtering(SerPredicate<? super T> predicate, SerCollector<? super T, A, R> downstream)
@@ -277,13 +293,6 @@ public class SerCollectors
             return SerCollector.of(mangledFactory, accumulator, merger, finisher, EnumSet.of(UNORDERED));
         }
     }
-    
-    public static <T extends Serializable> SerCollector<T, OptionalBox<T>, Optional<T>> reducing(SerBinaryOperator<T> op)
-    {
-        return new SerCollector<>(() -> new OptionalBox<T>(op), OptionalBox::accept,
-                (a, b) -> { if (b.isPresent()) a.accept(b.get()); return a; },
-                a -> Optional.ofNullable(a.get()), emptySet());
-    }
 
     public static <T, R1, R2, R> SerCollector<T, ?, R> teeing(SerCollector<? super T, ?, R1> downstream1, 
     		SerCollector<? super T, ?, R2> downstream2, SerBiFunction<? super R1, ? super R2, R> merger) 
@@ -338,7 +347,7 @@ public class SerCollectors
 
     @SuppressWarnings("unchecked")
     private static <T> SerSupplier<T[]> boxSupplier(T identity) {
-        return () -> (T[]) new Object[] { identity };
+        return () -> (T[]) new Serializable[] { (Serializable) identity };
     }
 
     private static <K, V, M extends Map<K,V>> SerBinaryOperator<M> mapMerger(SerBinaryOperator<V> mergeFunction)
@@ -431,28 +440,5 @@ public class SerCollectors
 	public static <U, V, M extends Map<U, V> & Serializable> SerCollector<Entry<? extends U, ? extends V>, ?, M> entriesToMap(SerSupplier<M> mapSupplier, EnumSet<Characteristics> characteristics)
 	{
         return SerCollector.of(mapSupplier::get, throwingPutter(Entry::getKey, Entry::getValue), throwingMerger(), characteristics);
-	}
-
-	private static class ArrayHolder<T> implements Serializable
-	{
-		private static final long serialVersionUID = 1L;
-		
-		private final T[] result;
-		private transient volatile int index;
-		
-		public ArrayHolder(T[] result)
-		{
-			this.result = result;
-		}
-		
-		public void accumulate(T v)
-		{
-			result[index++] = v;
-		}
-
-		public ArrayHolder<T> merge(ArrayHolder<T> other)
-		{
-			throw new UnsupportedOperationException();
-		}
 	}
 }

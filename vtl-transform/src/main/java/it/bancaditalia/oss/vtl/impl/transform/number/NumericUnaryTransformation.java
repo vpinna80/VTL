@@ -130,14 +130,12 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
-		
 		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components));
-					map.replaceAll((c, v) -> operator.apply(NUMBERDS.cast(v)));
-					map.putAll(dp.getValues(Attribute.class));
-					return map;
-				});
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(Measure.class));
+				map.replaceAll((c, v) -> operator.apply(NUMBERDS.cast(v)));
+				map.putAll(dp.getValues(Attribute.class));
+				return map;
+			});
 	}
 
 	@Override

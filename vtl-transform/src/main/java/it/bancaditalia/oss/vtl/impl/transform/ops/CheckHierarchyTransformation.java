@@ -40,6 +40,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.lang.Double.NaN;
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
@@ -149,7 +150,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		DataSetMetadata newStructure = (DataSetMetadata) this.getMetadata(scheme);
 
 		var finisher = new Finisher(allRules, idComp, measure, newStructure);
-		List<DataPoint> results = dataset.streamByKeys(ids, toConcurrentMap(dp -> dp.get(idComp), dp -> dp.get(measure)), finisher::finisher)
+		List<DataPoint> results = dataset.streamByKeys(ids, emptyMap(), toConcurrentMap(dp -> dp.get(idComp), dp -> dp.get(measure)), finisher::finisher)
 				.map(Utils::getStream)
 				.collect(concatenating(false))
 				.collect(toList());

@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
@@ -28,12 +29,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static java.util.Objects.requireNonNull;
-import static org.apache.spark.sql.Encoders.BOOLEAN;
-import static org.apache.spark.sql.Encoders.DOUBLE;
-import static org.apache.spark.sql.Encoders.LOCALDATE;
-import static org.apache.spark.sql.Encoders.LONG;
-import static org.apache.spark.sql.Encoders.STRING;
+import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.types.DataTypes.BooleanType;
 import static org.apache.spark.sql.types.DataTypes.DateType;
@@ -41,12 +37,16 @@ import static org.apache.spark.sql.types.DataTypes.DoubleType;
 import static org.apache.spark.sql.types.DataTypes.LongType;
 import static org.apache.spark.sql.types.DataTypes.StringType;
 import static org.apache.spark.sql.types.DataTypes.createDecimalType;
+import static scala.collection.JavaConverters.asJava;
+import static scala.jdk.javaapi.CollectionConverters.asScala;
 
 import java.io.Serializable;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,15 +56,26 @@ import java.util.stream.Stream;
 
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Encoder;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.JavaTypeInference;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.IterableEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.MapEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ProductEncoder;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
+import it.bancaditalia.oss.vtl.impl.types.data.BaseScalarValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -72,36 +83,41 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.GenericTuple;
+import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
+import scala.Option;
+import scala.Tuple2;
+import scala.collection.JavaConverters;
+import scala.collection.immutable.Seq;
+import scala.reflect.ClassTag;
 
 public class SparkUtils
 {
-	private static final Map<ValueDomainSubset<?, ?>, Encoder<? extends Serializable>> DOMAIN_ENCODERS = new ConcurrentHashMap<>();
+	private static final Map<ValueDomainSubset<?, ?>, AgnosticEncoder<?>> DOMAIN_ENCODERS = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, DataType> DOMAIN_DATATYPES = new ConcurrentHashMap<>();
-	private static final Map<ValueDomainSubset<?, ?>, SerFunction<Object, ScalarValue<?, ?, ?, ?>>> DOMAIN_BUILDERS = new ConcurrentHashMap<>();
+	private static final Map<ValueDomainSubset<?, ?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> DOMAIN_BUILDERS = new ConcurrentHashMap<>();
+	static final Map<Class<?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> PRIM_BUILDERS = new ConcurrentHashMap<>();
 
 	static
 	{
-		DOMAIN_ENCODERS.put(BOOLEANDS, BOOLEAN());
-		DOMAIN_ENCODERS.put(STRINGDS, STRING());
-		DOMAIN_ENCODERS.put(INTEGERDS, LONG());
-		DOMAIN_ENCODERS.put(NUMBERDS, DOUBLE());
-		DOMAIN_ENCODERS.put(TIMEDS, LOCALDATE());
-		DOMAIN_ENCODERS.put(DATEDS, LOCALDATE());
+		DOMAIN_ENCODERS.put(BOOLEANDS, AgnosticEncoders.BoxedBooleanEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(STRINGDS, AgnosticEncoders.StringEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(INTEGERDS, AgnosticEncoders.BoxedLongEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(NUMBERDS, AgnosticEncoders.BoxedDoubleEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(TIMEDS, STRICT_LOCAL_DATE_ENCODER());
+		DOMAIN_ENCODERS.put(DATEDS, STRICT_LOCAL_DATE_ENCODER());
 
 		DOMAIN_DATATYPES.put(BOOLEANDS, BooleanType);
 		DOMAIN_DATATYPES.put(STRINGDS, StringType);
 		DOMAIN_DATATYPES.put(INTEGERDS, LongType);
-		
-		if (isUseBigDecimal())
-			DOMAIN_DATATYPES.put(NUMBERDS, createDecimalType());
-		else
-			DOMAIN_DATATYPES.put(NUMBERDS, DoubleType);
+		DOMAIN_DATATYPES.put(NUMBERDS, isUseBigDecimal() ? createDecimalType() : DoubleType);
 		DOMAIN_DATATYPES.put(TIMEDS, DateType);
 		DOMAIN_DATATYPES.put(DATEDS, DateType);
 
@@ -111,6 +127,12 @@ public class SparkUtils
 		DOMAIN_BUILDERS.put(NUMBERDS, v -> createNumberValue((Number) v));
 		DOMAIN_BUILDERS.put(TIMEDS, v -> DateValue.of((LocalDate) v));
 		DOMAIN_BUILDERS.put(DATEDS, v -> DateValue.of((LocalDate) v));
+
+		PRIM_BUILDERS.put(Boolean.class, v -> BooleanValue.of((Boolean) v));
+		PRIM_BUILDERS.put(String.class, v -> StringValue.of((String) v));
+		PRIM_BUILDERS.put(Long.class, v -> IntegerValue.of((Long) v));
+		PRIM_BUILDERS.put(Double.class, v -> createNumberValue((Number) v));
+		PRIM_BUILDERS.put(LocalDate.class, v -> DateValue.of((LocalDate) v));
 	}
 
 	public static Set<DataStructureComponent<?, ?, ?>> getComponentsFromStruct(MetadataRepository repo, StructType schema)
@@ -137,9 +159,9 @@ public class SparkUtils
 		return repo.getVariable(field.name()).as(role);
 	}
 
-	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Object serialized)
+	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Serializable serialized)
 	{
-		SerFunction<Object, ScalarValue<?, ?, ?, ?>> builder = null;
+		SerFunction<Serializable, ScalarValue<?, ?, ?, ?>> builder = null;
 		ValueDomainSubset<?, ?> domain;
 		for (domain = component.getVariable().getDomain(); domain != null && builder == null; domain = (ValueDomainSubset<?, ?>) domain.getParentDomain()) 
 			builder = DOMAIN_BUILDERS.get(domain);
@@ -180,9 +202,10 @@ public class SparkUtils
 		return new StructField(component.getVariable().getName(), type, component.is(NonIdentifier.class), metadata);
 	}
 
-	public static Encoder<? extends Serializable> getEncoderFor(DataStructureComponent<?, ?, ?> component)
+	public static EncoderField getEncoderFieldFor(DataStructureComponent<?, ?, ?> component)
 	{
-		return requireNonNull(DOMAIN_ENCODERS.get(component.getVariable().getDomain()), "Unsupported serialization for domain " + component.getVariable().getDomain());
+		return new EncoderField(component.getVariable().getName(), DOMAIN_ENCODERS.get(component.getVariable().getDomain()), 
+				true, getMetadataFor(component), Option.empty(), Option.empty());
 	}
 
 	public static DataType getDataTypeFor(DataStructureComponent<?, ?, ?> component)
@@ -201,10 +224,15 @@ public class SparkUtils
 		return structHelper(Arrays.stream(components), SparkUtils::getFieldFor);
 	}
 
+	public static List<EncoderField> createFieldFromComponents(DataStructureComponent<?, ?, ?>[] components)
+	{
+		return structHelper(Arrays.stream(components), SparkUtils::getEncoderFieldFor);
+	}
+
 	public static List<StructField> createStructFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
 		return structHelper(components.stream(), SparkUtils::getFieldFor);
-	}
+	}	
 
 	public static List<String> getNamesFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
@@ -222,6 +250,125 @@ public class SparkUtils
 			.sorted(DataStructureComponent::byNameAndRole)
 			.map(mapper)
 			.collect(toList());
+	}
+
+	public static Encoder<?> getEncoderFor(Serializable instance, ValueDomainSubset<?, ?> domain, DataSetMetadata structure)
+	{
+		AgnosticEncoder<?> resultEncoder; 
+		
+		String className = instance.getClass().getSimpleName();
+		if ("PartitionToRank".equals(className))
+		{
+			DataStructureComponent<?, ?, ?>[] components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
+			Arrays.sort(components, DataStructureComponent::byNameAndRole);
+			List<EncoderField> fields = new ArrayList<>(createFieldFromComponents(components));
+			fields.add(new EncoderField("$lineage$", new AgnosticEncoders.UDTEncoder<>(LineageSparkUDT, LineageSparkUDT.class), false, Metadata.empty(), Option.empty(), Option.empty()));
+			resultEncoder = new AgnosticEncoders.RowEncoder(asScala((Iterable<EncoderField>) fields).toSeq());
+		}
+		else if ("RankedPartition".equals(className))
+		{
+			try
+			{
+				Class<?>[] repr = (Class<?>[]) instance.getClass().getField("repr").get(instance);
+				List<EncoderField> fieldEncoders = new ArrayList<>(); 
+				for (int i = 0; i < repr.length; i++)
+					fieldEncoders.add(new EncoderField("get" + (i + 1), JavaTypeInference.encoderFor(repr[i]), 
+							true, new Metadata(), Option.apply("get" + (i + 1)), Option.apply("set" + (i + 1))));
+				
+				Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
+				ProductEncoder<GenericTuple> keyEncoder = new ProductEncoder<>(ClassTag.apply(GenericTuple.class), seq, Option.empty());
+				AgnosticEncoder<Long> longEncoder = JavaTypeInference.encoderFor(Long.class);
+				resultEncoder = new MapEncoder<>(ClassTag.apply(HashMap.class), keyEncoder, longEncoder, true);
+			}
+			catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e)
+			{
+				throw new IllegalStateException(e);
+			}
+		}
+		else if ("SerDoubleSumAvgCount".equals(className))
+		{
+			List<EncoderField> fieldEncoders = new ArrayList<>(); 
+			fieldEncoders.add(new EncoderField("getCount", JavaTypeInference.encoderFor(int.class), true, new Metadata(), Option.empty(), Option.empty()));
+			fieldEncoders.add(new EncoderField("getSums", JavaTypeInference.encoderFor(double[].class), true, new Metadata(), Option.empty(), Option.empty()));
+			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
+			resultEncoder = new ProductEncoder<>(ClassTag.apply(SerDoubleSumAvgCount.class), seq, Option.empty());
+		}
+		else if ("ListOfDateValues".equals(className))
+		{
+			List<EncoderField> fieldEncoders = new ArrayList<>();
+			fieldEncoders.add(new EncoderField("get", STRICT_LOCAL_DATE_ENCODER(), true, new Metadata(), Option.empty(), Option.empty()));
+			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
+			resultEncoder = new IterableEncoder<>(ClassTag.apply(ArrayList.class), new ProductEncoder<>(ClassTag.apply(DateValue.class), seq, Option.empty()), true, false);
+		}
+		else if ("Holder".equals(className))
+		{
+			try
+			{
+				List<EncoderField> fieldEncoders = new ArrayList<>();
+				AgnosticEncoder<?> vEncoder = JavaTypeInference.encoderFor((Class<?>) instance.getClass().getField("reprType").get(instance));
+				fieldEncoders.add(new EncoderField("get", vEncoder, true, new Metadata(), Option.empty(), Option.empty()));
+				Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
+				resultEncoder = new ProductEncoder<>(ClassTag.apply(SerDoubleSumAvgCount.class), seq, Option.empty());
+			}
+			catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e)
+			{
+				throw new IllegalStateException(e);
+			}
+		}
+		else if (instance instanceof BaseScalarValue)
+		{
+			resultEncoder = DOMAIN_ENCODERS.get(domain);
+			if (resultEncoder == null)
+				throw new UnsupportedOperationException(domain.toString());
+		}
+		else if (instance instanceof Object[])
+		{
+			resultEncoder = JavaTypeInference.encoderFor(instance.getClass());
+		}
+		else
+			throw new IllegalStateException(instance.getClass().getName());
+		
+		return ExpressionEncoder.apply(resultEncoder);
+	}
+
+	public static Serializable reinterpret(DataStructureComponent<?, ?, ?> comp, Serializable serAcc)
+	{
+		if (serAcc == null)
+		{
+			return NullValue.instanceFrom(comp);
+		}
+		else if (serAcc instanceof Row)
+		{
+			return serAcc;
+		}
+		else if (serAcc instanceof scala.collection.immutable.Map)
+		{
+			Map<GenericTuple, Long> rankedPartition = new HashMap<>();
+			scala.collection.Iterator<? extends Tuple2<?, ?>> iterator = ((scala.collection.immutable.Map<?, ?>) serAcc).iterator();
+			while (iterator.hasNext())
+			{
+				Tuple2<?, ?> entry = iterator.next();
+				
+				Serializable[] values = JavaConverters.asJava(((Row) entry._1).toSeq()).toArray(Serializable[]::new);
+				rankedPartition.put(new GenericTuple(values), (Long) entry._2);
+			}
+			
+			serAcc = (Serializable) rankedPartition;
+		}
+		else if (serAcc instanceof scala.collection.immutable.ArraySeq)
+		{
+			SerFunction<Serializable, ScalarValue<?, ?, ?, ?>> builder = DOMAIN_BUILDERS.getOrDefault(comp.getVariable().getDomain(), ScalarValue.class::cast);
+			ArrayList<Serializable> list = new ArrayList<>();
+			for (Serializable value: asJava((scala.collection.Iterable<Serializable>) serAcc))
+				list.add(builder.apply((Serializable) ((Row) value).get(0)));
+			serAcc = list;
+		}
+		else if (PRIM_BUILDERS.containsKey(serAcc.getClass()))
+		{
+			serAcc = PRIM_BUILDERS.get(serAcc.getClass()).apply(serAcc);
+		}
+		
+		return serAcc;
 	}
 
 	private SparkUtils()

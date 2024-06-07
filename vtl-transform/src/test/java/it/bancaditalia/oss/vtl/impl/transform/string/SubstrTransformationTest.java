@@ -53,8 +53,8 @@ public class SubstrTransformationTest
 		return Stream.of(
 				Arguments.of(SAMPLE13, null, null, new String[] { "Filled String", "    Leading spaces", "Trailing spaces    ", "    Leading and trailing     ", "\"Quoted\" 'String'", "\t\b \n\r\f" }),
 				Arguments.of(SAMPLE13, null,   5L, new String[] { "Fille",         "    L",              "Trail",               "    L",                         "\"Quot",              "\t\b \n\r" }),
-				Arguments.of(SAMPLE13,  13L, null, new String[] { "g",             "spaces",             "ces    ",             "and trailing     ",             "ring'",               "" }),
-				Arguments.of(SAMPLE13,  13L,   5L, new String[] { "g",             "space",              "ces  ",               "and t",                         "ring'",               "" })
+				Arguments.of(SAMPLE13,  13L, null, new String[] { "g",             "spaces",             "ces    ",             "and trailing     ",             "ring'",               null }),
+				Arguments.of(SAMPLE13,  13L,   5L, new String[] { "g",             "space",              "ces  ",               "and t",                         "ring'",               null })
 		);
 	}
 	

@@ -179,4 +179,11 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	{
 		return new DefaultVariable<>(this);
 	}
+
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return String.class;
+	}
 }

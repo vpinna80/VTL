@@ -75,4 +75,10 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 		else 
 			throw new VTLCastException(this, value);
 	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return Long.class;
+	}
 }

@@ -78,15 +78,20 @@ public class SerDoubleSumAvgCount implements SerDoubleConsumer
 
     private void sumWithCompensation(double value)
     {
-        double tmp = value - sums[1];
-        double velvel = sums[0] + tmp;
-        sums[1] = (velvel - sums[0]) - tmp;
-        sums[0] = velvel;
+        double tmp1 = value - sums[1];
+        double tmp2 = sums[0] + tmp1;
+        sums[1] = (tmp2 - sums[0]) - tmp1;
+        sums[0] = tmp2;
     }
 
     public final long getCount()
     {
         return count;
+    }
+    
+    public final double[] getSums()
+    {
+    	return sums;
     }
 
     public final OptionalDouble getSum()

@@ -58,7 +58,7 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	protected ScalarValue<?, ?, StrlenDomainSubset<S>, StringDomain> castCasted(StringValue<?, S> casted)
 	{
 		if (test(casted))
-			return new StringValue<>(casted.get(), this);
+			return StringValue.of(casted.get(), this);
 		else
 			throw new VTLCastException(this, casted); 
 	}

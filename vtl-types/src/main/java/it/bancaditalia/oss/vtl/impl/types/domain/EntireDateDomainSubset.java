@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -72,5 +73,11 @@ public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainS
 	public static EntireDateDomainSubset getInstance()
 	{
 		return INSTANCE;
+	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return LocalDate.class;
 	}
 }

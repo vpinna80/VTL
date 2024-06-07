@@ -73,10 +73,7 @@ public class TestUtils
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
-				return Arrays.stream(samples)
-						.map(DataSet::stream)
-						.reduce(Stream::concat)
-						.get();
+				return Arrays.stream(samples).flatMap(DataSet::stream);
 			}
 		};
 	}

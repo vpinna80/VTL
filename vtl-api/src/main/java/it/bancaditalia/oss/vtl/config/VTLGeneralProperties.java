@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.config;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
@@ -114,9 +115,9 @@ public enum VTLGeneralProperties implements VTLProperty
 	}
 
 	@Override
-	public void setValue(String newValue)
+	public void setValue(Object newValue)
 	{
-		value = newValue;
+		value = Objects.toString(newValue);
 	}
 
 	@Override

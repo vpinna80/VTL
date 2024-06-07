@@ -20,41 +20,41 @@
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
-import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
+import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -71,14 +71,35 @@ import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.Utils;
+import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
+import it.bancaditalia.oss.vtl.util.GenericTuple;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class RankTransformation extends TransformationImpl implements AnalyticTransformation, LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
-	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
+//	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
+	
+	public static final class RankedPartition extends HashMap<GenericTuple, Long>
+	{
+		private static final long serialVersionUID = 1L;
+		public final Class<?>[] repr;
 
+		public RankedPartition(Class<?>[] repr, int size)
+		{
+			super(size);
+			
+			this.repr = repr;
+		}
+	}
+	
+	private static final class PartitionToRank extends ArrayList<DataPoint>
+	{
+		private static final long serialVersionUID = 1L;
+	}
+	
 	private final List<String> partitionBy;
 	private final List<OrderByItem> orderByClause;
 	private final String lineageDescriptor;
@@ -95,16 +116,9 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	{
 		DataSet dataset = (DataSet) scheme.resolve(THIS); 
 				
-		Map<DataStructureComponent<?, ?, ?>, Boolean> ordering;
-		
-		if (orderByClause.isEmpty())
-			ordering = dataset.getMetadata().getIDs().stream().collect(toMapWithValues(c -> TRUE));
-		else
-		{
-			ordering = new LinkedHashMap<>();
-			for (OrderByItem orderByComponent: orderByClause)
-				ordering.put(dataset.getComponent(orderByComponent.getName()).get(), DESC != orderByComponent.getMethod());
-		}
+		List<SortCriterion> ordering = new ArrayList<>(orderByClause.size()); 
+		for (OrderByItem orderByComponent: orderByClause)
+			ordering.add(new SortClause(dataset.getComponent(orderByComponent.getName()).get(), orderByComponent.getMethod()));
 
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
 		if (partitionBy != null)
@@ -114,65 +128,64 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		else
-			partitionIDs = dataset.getMetadata().getIDs().stream()
-					.filter(partitionID -> !ordering.containsKey(partitionID))
-					.collect(toSet());
-		
-		for (DataStructureComponent<?, ?, ?> orderingComponent: ordering.keySet())
-			if (partitionIDs.contains(orderingComponent))
-				throw new VTLException("Cannot order by " + orderingComponent.getVariable().getName() + " because the component is used in partition by " + partitionBy);
-
-		// The ordering of the dataset
-		final Comparator<DataPoint> comparator = comparator(ordering);
-		
-		// sort each partition with the comparator and then perform the analytic computation on each partition
-		return new FunctionDataSet<>((DataSetMetadata) getMetadata(scheme), ds -> ds.streamByKeys(
-				partitionIDs, toList(), (partition, keyValues) -> rankPartition(scheme, partition, keyValues, comparator)
-			).collect(concatenating(Utils.ORDERED)), dataset);
-	}
-	
-	private Stream<DataPoint> rankPartition(TransformationScheme scheme, List<DataPoint> partition, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues, Comparator<DataPoint> comparator)
-	{
-		LOGGER.debug("Analytic invocation on partition {}", keyValues);
-		partition.sort(comparator);
-		long rank = 1, position = 1;
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, measureValues = emptyMap();
-		List<DataPoint> result = new ArrayList<>(partition.size());
-		
-		for (DataPoint dp: partition)
 		{
-			oldValues = measureValues;
-			measureValues = dp.getValuesByNames(orderByClause.stream().map(OrderByItem::getName).collect(toSet()));
-			
-			ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> rankResult;
-			if (measureValues.equals(oldValues))
-				rankResult = IntegerValue.of(rank);
-			else
-				// update rank if the new measures are different from the old
-				rankResult = IntegerValue.of(rank = position);
-			position++;
-				
-			result.add(new DataPointBuilder(dp.getValues(Identifier.class))
-				.add(RANK_MEASURE, rankResult)
-				.build(LineageNode.of(lineageDescriptor, dp.getLineage()), (DataSetMetadata) getMetadata(scheme)));
+			partitionIDs = new HashSet<>(dataset.getMetadata().getIDs());
+			for (SortCriterion clause: ordering)
+				partitionIDs.remove(clause.getComponent());
 		}
 		
-		return result.stream();
+		List<DataStructureComponent<Identifier, ?, ?>> ids = new ArrayList<>(dataset.getMetadata().getIDs());
+		WindowClause window = new WindowClauseImpl(partitionIDs, ordering, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		Class<?>[] repr = ids.stream().map(id -> id.getVariable().getDomain().getRepresentation())
+				.collect(toArray(new Class<?>[ids.size()]));
+		SerCollector<DataPoint, List<DataPoint>, Map<GenericTuple, Long>> collector = 
+				collectingAndThen(toList(PartitionToRank::new), l -> rankPartition(l, ids, repr));
+
+		return dataset.analytic(dp -> LineageNode.of(lineageDescriptor, dp.getLineage()), measure, 
+				INTEGERDS.getDefaultVariable().as(Measure.class), window, identity(), collector, (r, dp) -> finisher(r, ids, repr, dp))
+			.membership("integer_var");
 	}
 	
-	
-	private static Comparator<DataPoint> comparator(Map<DataStructureComponent<?, ?, ?>, Boolean> sortMethods)
+	private Collection<ScalarValue<?, ?, ?, ?>> finisher(Map<GenericTuple, Long> ranks, List<DataStructureComponent<Identifier, ?, ?>> ids, Class<?>[] repr, DataPoint dp)
 	{
-		return (dp1, dp2) -> {
-			for (Entry<DataStructureComponent<?, ?, ?>, Boolean> sortID: sortMethods.entrySet())
-			{
-				int res = dp1.get(sortID.getKey()).compareTo(dp2.get(sortID.getKey()));
-				if (res != 0)
-					return sortID.getValue() ? res : -res;
-			}
+		Serializable[] tuple = new Serializable[ids.size()];
+		for (int i = 0; i < tuple.length; i++)
+			tuple[i] = dp.get(ids.get(i)).get();
+		
+		return singleton(IntegerValue.of(ranks.get(new GenericTuple(tuple))));
+	}
 
-			return 0;
-		};
+	private RankedPartition rankPartition(List<DataPoint> partition, List<DataStructureComponent<Identifier, ?, ?>> ids,
+			Class<?>[] repr)
+	{
+		long rank = 1, position = 1;
+		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, orderByValues = emptyMap();
+		// Workaround to allow creating a spark encoder to correctly process the tuple
+		RankedPartition ranks = new RankedPartition(repr, partition.size());
+
+		// Cannot use streams (perhaps gatherers when java version becomes high enough)
+		for (DataPoint dp: partition)
+		{
+			oldValues = orderByValues;
+			orderByValues = dp.getValuesByNames(orderByClause.stream().map(OrderByItem::getName).collect(toSet()));
+			
+			long rankResult;
+			if (orderByValues.equals(oldValues))
+				rankResult = rank;
+			else
+				// update rank if the new measures in the order by clause are different from the old
+				rankResult = rank = position;
+			position++;
+
+			Serializable[] tuple = new Serializable[ids.size()];
+			for (int i = 0; i < tuple.length; i++)
+				tuple[i] = dp.get(ids.get(i)).get();
+
+			ranks.put(new GenericTuple(tuple), rankResult);
+		}
+		
+		return ranks;
 	}
 
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)

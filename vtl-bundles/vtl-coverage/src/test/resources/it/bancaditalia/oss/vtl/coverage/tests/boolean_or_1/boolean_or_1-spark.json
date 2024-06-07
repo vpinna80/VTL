@@ -1,0 +1,74 @@
+{
+  "datasets": [
+    {
+      "name": "boolean_test2",
+      "source": "spark:csv:boolean_test2.csv",
+      "structure": "boolean_test2_str"
+    },
+    {
+      "name": "boolean_test1",
+      "source": "spark:csv:boolean_test1.csv",
+      "structure": "boolean_test1_str"
+    },
+    {
+      "name": "expected",
+      "structure": "boolean_or_1_str",
+      "source": "spark:csv:boolean_or_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "boolean_test2_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "boolean_test1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "boolean_or_1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "m1",
+      "domain": "boolean"
+    }
+  ]
+}

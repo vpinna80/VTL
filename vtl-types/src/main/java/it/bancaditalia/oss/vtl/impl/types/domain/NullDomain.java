@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import java.io.Serializable;
+
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -71,6 +73,12 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 
 	@Override
 	public Variable<NullDomain, ValueDomain> getDefaultVariable()
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
 	{
 		throw new UnsupportedOperationException();
 	}

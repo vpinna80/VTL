@@ -160,6 +160,10 @@ public class DataStructureBuilder
 			this.byRole = components.stream()
 					.collect(groupingBy(DataStructureComponent::getRole, DataStructureBuilder::createEmptyStructure, toSet()));
 			this.byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
+			
+			int totalSize = byRole.values().stream().mapToInt(Collection::size).sum();
+			if (totalSize != components.size())
+				throw new IllegalStateException(totalSize  + " != " + components.size());
 		}
 		
 		@Override

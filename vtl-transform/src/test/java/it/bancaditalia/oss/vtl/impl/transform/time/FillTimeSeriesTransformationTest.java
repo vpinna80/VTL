@@ -31,6 +31,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
+import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -52,6 +53,7 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -91,13 +93,12 @@ public class FillTimeSeriesTransformationTest
 		session = TestUtils.mockSession(map);
 
 		FillTimeSeriesTransformation ftsTransformation = new FillTimeSeriesTransformation(new VarIDOperand("operand"), mode);
-		
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
-		assertEquals(expectedSize, computedResult.size(), "Dataset size");
-		
 		DataStructureComponent<Identifier, ?, ?> time_id = computedResult.getMetadata().getComponent("date_1", Identifier.class, DATEDS).get();
 		DataStructureComponent<Identifier, ?, ?> string_id = computedResult.getMetadata().getComponent("string_1", Identifier.class, STRINGDS).get();
-		
+
+		assertEquals(expectedSize, computedResult.size(), "Number of datapoints");
+
 		if (mode == SINGLE)
 		{
 			Collection<List<DataPoint>> splitResult = computedResult.stream().sequential()
@@ -128,8 +129,10 @@ public class FillTimeSeriesTransformationTest
 			long nSeries = results.values().stream().mapToLong(Long::longValue).max().getAsLong();
 			
 			ScalarValue<?, ?, ?, ?> min = Utils.getStream(results.keySet())
+					.filter(not(NullValue.class::isInstance))
 					.collect(collectingAndThen(minBy(ScalarValue::compareTo), Optional::get));
 			ScalarValue<?, ?, ?, ?> max = Utils.getStream(results.keySet())
+					.filter(not(NullValue.class::isInstance))
 					.collect(collectingAndThen(maxBy(ScalarValue::compareTo), Optional::get));
 			
 			DateValue<?> curr = (DateValue<?>) min;

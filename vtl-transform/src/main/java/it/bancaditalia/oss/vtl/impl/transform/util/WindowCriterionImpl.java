@@ -32,8 +32,8 @@ import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
 
 public class WindowCriterionImpl implements WindowCriterion, Serializable
 {
-	public static final WindowCriterion DATAPOINTS_UNBOUNDED_PRECEDING_TO_CURRENT = 
-			new WindowCriterionImpl(DATAPOINTS, UNBOUNDED_PRECEDING, CURRENT_DATA_POINT);
+	public static final WindowCriterion RANGE_UNBOUNDED_PRECEDING_TO_CURRENT = 
+			new WindowCriterionImpl(RANGE, UNBOUNDED_PRECEDING, CURRENT_DATA_POINT);
 	public static final WindowCriterion DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING = 
 			new WindowCriterionImpl(DATAPOINTS, UNBOUNDED_PRECEDING, UNBOUNDED_FOLLOWING);
 	

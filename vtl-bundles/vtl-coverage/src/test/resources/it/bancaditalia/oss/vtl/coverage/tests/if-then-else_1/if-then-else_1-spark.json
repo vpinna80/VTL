@@ -1,0 +1,152 @@
+{
+  "datasets": [
+    {
+      "name": "if_test1",
+      "source": "spark:csv:if_test1.csv",
+      "structure": "if_test1_str"
+    },
+    {
+      "name": "if_test2",
+      "source": "spark:csv:if_test2.csv",
+      "structure": "if_test2_str"
+    },
+    {
+      "name": "if_test3",
+      "source": "spark:csv:if_test3.csv",
+      "structure": "if_test3_str"
+    },
+    {
+      "name": "expected",
+      "structure": "if_1_str",
+      "source": "spark:csv:if-then-else_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "if_test1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "if_1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "if_test2_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "if_test3_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "id_3",
+      "domain": "string"
+    },
+    {
+      "name": "id_4",
+      "domain": "string"
+    },
+    {
+      "name": "id_1",
+      "domain": "number"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "me_1",
+      "domain": "number"
+    }
+  ]
+}

@@ -72,4 +72,11 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 	{
 		return other instanceof TimeDomain;
 	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+	}
 }

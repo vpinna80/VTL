@@ -48,4 +48,10 @@ public interface ValueDomain extends Serializable
 	 * @return true if the comparison is possible
 	 */
 	public boolean isComparableWith(ValueDomain other);
+	
+	/**
+	 * 
+	 * @return the representation type for this domain
+	 */
+	public Class<? extends Serializable> getRepresentation(); 
 }

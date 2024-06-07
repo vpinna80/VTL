@@ -1,0 +1,146 @@
+{
+  "datasets": [
+    {
+      "name": "intersection_test1",
+      "source": "spark:csv:intersection_test1.csv",
+      "structure": "intersection_test1_str"
+    },
+    {
+      "name": "intersection_test2",
+      "source": "spark:csv:intersection_test2.csv",
+      "structure": "intersection_test2_str"
+    },
+    {
+      "name": "expected",
+      "structure": "intersection_1_str",
+      "source": "spark:csv:intersection.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "intersection_1_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf2",
+          "role": "Measure"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        },
+        {
+          "name": "edf3",
+          "role": "Measure"
+        },
+        {
+          "name": "quality_status",
+          "role": "Attribute"
+        }
+      ]
+    },
+    {
+      "name": "intersection_test1_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf2",
+          "role": "Measure"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        },
+        {
+          "name": "edf3",
+          "role": "Measure"
+        },
+        {
+          "name": "quality_status",
+          "role": "Attribute"
+        }
+      ]
+    },
+    {
+      "name": "intersection_test2_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf2",
+          "role": "Measure"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        },
+        {
+          "name": "edf3",
+          "role": "Measure"
+        },
+        {
+          "name": "quality_status",
+          "role": "Attribute"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "res3",
+      "domain": "boolean"
+    },
+    {
+      "name": "res2",
+      "domain": "boolean"
+    },
+    {
+      "name": "quality_status",
+      "domain": "string"
+    },
+    {
+      "name": "edfdate",
+      "domain": "date"
+    },
+    {
+      "name": "edf2",
+      "domain": "number"
+    },
+    {
+      "name": "edf3",
+      "domain": "number"
+    },
+    {
+      "name": "edf1",
+      "domain": "number"
+    },
+    {
+      "name": "res1",
+      "domain": "boolean"
+    },
+    {
+      "name": "mkmvid",
+      "domain": "string"
+    }
+  ]
+}

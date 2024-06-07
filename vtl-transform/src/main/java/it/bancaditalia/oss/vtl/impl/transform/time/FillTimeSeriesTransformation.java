@@ -28,13 +28,17 @@ import static it.bancaditalia.oss.vtl.model.data.DataPoint.compareBy;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.DATAPOINTS;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toCollection;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -98,6 +102,11 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			return name;
 		}
 	}
+	
+	private static class ListOfDateValues extends ArrayList<DateValue<?>>
+	{
+		private static final long serialVersionUID = 1L;
+	}
 
 	private final FillMode mode;
 
@@ -130,7 +139,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 				return new FunctionDataSet<>(structure, dataset -> {
 					String alias = ds instanceof NamedDataSet ? ((NamedDataSet) ds).getAlias() : "Unnamed data set";
 					LOGGER.debug("Filling time series for {}", alias);
-					Stream<DataPoint> result = dataset.streamByKeys(ids, toCollection(() -> new ConcurrentSkipListSet<>(compareBy(timeID))), 
+					Stream<DataPoint> result = dataset.streamByKeys(ids, emptyMap(), toCollection(() -> new ConcurrentSkipListSet<>(compareBy(timeID))), 
 							seriesFiller(structure, timeID, nullFiller, min.get(), max.get()))
 						.map(Utils::getStream)
 						.collect(concatenating(Utils.ORDERED));
@@ -141,16 +150,16 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		else
 		{
 			// a function that fills holes between two dates (old is ignored)
-			final SerBiFunction<List<ScalarValue<?, ?, ?, ?>>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> timeFinisher = (pair, old) -> {
-				if (pair.size() == 1)
-					return pair;
+			final SerBiFunction<List<DateValue<?>>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> timeFinisher = (pair, old) -> {
+				if (pair.size() < 2)
+					return List.of(pair.get(0));
 				
 				List<ScalarValue<?, ?, ?, ?>> result = new ArrayList<>();
 				// TODO: Cast exception if not date
-				DateValue<?> end = (DateValue<?>) pair.get(1);
+				LocalDate end = pair.get(1).get();
 				// End-exclusive
-				for (DateValue<?> start = (DateValue<?>) pair.get(0); start.compareTo(end) < 0; start = start.increment(1))
-					result.add(start);
+				for (LocalDate start = pair.get(0).get(); start.compareTo(end) < 0; start = start.plus(1, DAYS))
+					result.add(DateValue.of(start));
 				
 				return result;
 			};
@@ -163,8 +172,9 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 			// Remove all measures and attributes then left-join the time-filled dataset with the old one
 			
 			return ds.mapKeepingKeys(timeStructure, DataPoint::getLineage, dp -> emptyMap())
-					.analytic(dp -> LineageNode.of(this, dp.getLineage()), timeID, windowClause, toList(), timeFinisher)
-					.mappedJoin(structure, ds, (a, b) -> Utils.coalesce(b, fill(a, structure)), true);
+					.analytic(dp -> LineageNode.of(this, dp.getLineage()), timeID, timeID, windowClause, null, 
+							mapping(v -> (DateValue<?>) v, toList(ListOfDateValues::new)), timeFinisher)
+					.mappedJoin(structure, ds, (a, b) -> coalesce(b, fill(a, structure)), true);
 		}
 	}
 

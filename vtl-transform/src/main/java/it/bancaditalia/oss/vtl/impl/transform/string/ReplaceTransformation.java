@@ -42,9 +42,11 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -55,7 +57,6 @@ import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -77,8 +78,6 @@ public class ReplaceTransformation extends TransformationImpl
 	private final Transformation exprOperand;
 	private final Transformation patternOperand;
 	private final Transformation replaceOperand;
-	
-	private transient Pattern storedPattern;
 
 	public ReplaceTransformation(Transformation expr, Transformation pattern, Transformation replace)
 	{
@@ -91,13 +90,10 @@ public class ReplaceTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme session)
 	{
 		VTLValue left = exprOperand.eval(session);
-		ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> replace = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) replaceOperand.eval(session));
-
-		if (storedPattern == null)
-		{
-			ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> pattern = STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session));
-			storedPattern = pattern instanceof NullValue ? null : Pattern.compile(STRINGDS.cast(pattern).get().toString());
-		}
+		
+		String replace = (String) coalesce(STRINGDS.cast((ScalarValue<?, ?, ?, ?>) replaceOperand.eval(session)).get(), "");
+		String pattern = (String) coalesce(STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session)).get(), "");
+		Pattern storedPattern = Pattern.compile(pattern);
 
 		if (left instanceof DataSet)
 		{
@@ -106,22 +102,29 @@ public class ReplaceTransformation extends TransformationImpl
 			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getMetadata().getMeasures();
 			
 			String lineageString = "replace " + storedPattern + " with " + replace;
-			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), 
-					dp -> measures.stream()
-						.map(measure -> new SimpleEntry<>(measure, (storedPattern == null || dp.get(measure) instanceof NullValue) 
-							? STRINGDS.cast(NullValue.instance(STRINGDS))
-							: ((StringValue<?, ?>) dp.get(measure)).map(value -> storedPattern.matcher(value).replaceAll(replace.get().toString()))
-						)).collect(entriesToMap())
+			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> measures.stream()
+					.map(measure -> new SimpleEntry<>(measure, replaceSingle(replace, storedPattern, dp.get(measure))))
+					.collect(entriesToMap())
 			); 
 		}
 		else
 		{
-			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) left;
-			if (left instanceof NullValue || storedPattern == null)
+			String scalar = (String) ((ScalarValue<?, ?, ?, ?>) left).get();
+			if (scalar == null || storedPattern == null)
 				return NullValue.instance(STRINGDS);
 			
-			return StringValue.of(storedPattern.matcher(scalar.get().toString()).replaceAll(replace.get().toString()));
+			return StringValue.of(storedPattern.matcher(scalar).replaceAll(replace));
 		}
+	}
+
+	private ScalarValue<?, ?, ?, ?> replaceSingle(String replace, Pattern storedPattern, ScalarValue<?, ?, ?, ?> scalar)
+	{
+		Optional<ScalarValue<?, ?, ?, ?>> replaced = Optional.ofNullable(scalar.get())
+				.map(Object::toString)
+				.map(s -> storedPattern.matcher(s).replaceAll(replace))
+				.map(StringValue::of);
+		
+		return replaced.orElseGet(() -> NullValue.instance(STRINGDS));
 	}
 
 	@Override

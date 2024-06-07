@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static java.util.Collections.emptyMap;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class FlowStockTransformation extends UnaryTransformation
 			Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getMetadata().getIDs());
 			ids.remove(timeid);
 
-			return ds.streamByKeys(ids, toConcurrentMap(i -> i, i -> true, (a, b) -> a, () -> new ConcurrentSkipListMap<>(DataPoint.compareBy(timeid))))
+			return ds.streamByKeys(ids, emptyMap(), toConcurrentMap(i -> i, i -> true, (a, b) -> a, () -> new ConcurrentSkipListMap<>(DataPoint.compareBy(timeid))), (a, b) -> a)
 				.map(Map::keySet)
 				.map(group -> {
 					Map<DataStructureComponent<? extends Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> acc = new ConcurrentHashMap<>();

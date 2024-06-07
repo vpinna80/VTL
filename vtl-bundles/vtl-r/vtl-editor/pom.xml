@@ -38,9 +38,9 @@
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-parser</artifactId>
-			<classifier>parser-js</classifier>
+			<artifactId>vtl-jsparser</artifactId>
 			<type>zip</type>
+			<classifier>grammar</classifier>
 		</dependency>
 	</dependencies>
 
@@ -52,14 +52,9 @@
 				<includes>
 					<include>index.ts</include>
 					<include>package.json</include>
-					<include>package-lock.json</include>
 					<include>tsconfig.json</include>
 					<include>test.html</include>
 				</includes>
-				<excludes>
-					<exclude>node_modules</exclude>
-					<exclude>Vtl*</exclude>
-				</excludes>
 			</resource>
 		</resources>
 		<plugins>
@@ -68,6 +63,7 @@
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 					<execution>
+						<id>unpack-grammar</id>
 						<phase>generate-resources</phase>
 						<goals>
 							<goal>unpack-dependencies</goal>
@@ -76,9 +72,7 @@
 				</executions>
 				<configuration>
 					<outputDirectory>${project.build.outputDirectory}</outputDirectory>
-					<includeArtifactIds>vtl-parser</includeArtifactIds>
-					<classifier>parser-js</classifier>
-					<type>zip</type>
+					<includeArtifactIds>vtl-jsparser</includeArtifactIds>
 				</configuration>
 			</plugin>
 			<plugin>

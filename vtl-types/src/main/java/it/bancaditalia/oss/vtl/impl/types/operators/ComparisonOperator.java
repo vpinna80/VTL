@@ -21,24 +21,23 @@ package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 
-import java.util.function.IntPredicate;
-
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerIntPredicate;
 
 public enum ComparisonOperator implements SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain>>
 {
 	EQ("=", c -> c == 0), NE("<>", c -> c != 0), GT(">", c -> c > 0), 
 	GE(">=", c -> c >= 0), LT("<", c -> c < 0), LE("<=", c -> c <= 0);
 	
-	private final IntPredicate lambda;
+	private final SerIntPredicate lambda;
 	private final String name;
 
-	private ComparisonOperator(String name, IntPredicate lambda)
+	private ComparisonOperator(String name, SerIntPredicate lambda)
 	{
 		this.lambda = lambda;
 		this.name = name;

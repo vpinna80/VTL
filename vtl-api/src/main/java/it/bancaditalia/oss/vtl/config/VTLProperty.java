@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This interface provides access to the configuration properties of the VTL Engine components.
@@ -46,11 +47,11 @@ public interface VTLProperty
 	public String getValue();
 
 	/**
-	 * Change the value for this property
+	 * Change the value for this property. {@link Objects#toString()} is used to determine the object representation.
 	 * 
-	 * @param newValue The new value for this property
+	 * @param newValue The new value for this property.
 	 */
-	public void setValue(String newValue);
+	public void setValue(Object newValue);
 
 	/**
 	 * @return A description of the property

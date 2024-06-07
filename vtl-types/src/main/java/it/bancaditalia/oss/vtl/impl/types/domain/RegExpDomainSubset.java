@@ -80,7 +80,7 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 		String str = (String) value.get();
 		
 		if (regexp.test(str))
-			return new StringValue<>(str, this);
+			return StringValue.of(str, this);
 		else
 			throw new VTLCastException(this, value); 
 	}
@@ -125,5 +125,11 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 	public Variable<RegExpDomainSubset, StringDomain> getDefaultVariable()
 	{
 		return new DefaultVariable<>(this);
+	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return parent.getRepresentation();
 	}
 }

@@ -1,0 +1,84 @@
+{
+  "datasets": [
+    {
+      "name": "number_test6",
+      "source": "spark:csv:number_test6.csv",
+      "structure": "number_test6_str"
+    },
+    {
+      "name": "expected",
+      "structure": "clauses_drop_1_str",
+      "source": "spark:csv:drop.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "number_test6_str",
+      "components": [
+        {
+          "name": "m2",
+          "role": "Measure"
+        },
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id2",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        },
+        {
+          "name": "att1",
+          "role": "Attribute"
+        }
+      ]
+    },
+    {
+      "name": "clauses_drop_1_str",
+      "components": [
+        {
+          "name": "m2",
+          "role": "Measure"
+        },
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id2",
+          "role": "Identifier"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "m1",
+      "domain": "number"
+    },
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "att1",
+      "domain": "string"
+    },
+    {
+      "name": "m2",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "id2",
+      "domain": "string"
+    }
+  ]
+}

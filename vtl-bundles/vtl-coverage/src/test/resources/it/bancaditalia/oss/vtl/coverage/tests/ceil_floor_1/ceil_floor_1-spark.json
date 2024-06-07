@@ -1,0 +1,88 @@
+{
+  "datasets": [
+    {
+      "name": "number_test7",
+      "source": "spark:csv:number_test7.csv",
+      "structure": "number_test7_str"
+    },
+    {
+      "name": "expected",
+      "structure": "ceil_floor_1_str",
+      "source": "spark:csv:ceil_floor_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "ceil_floor_1_str",
+      "components": [
+        {
+          "name": "num_ceil",
+          "role": "Measure"
+        },
+        {
+          "name": "num_floor",
+          "role": "Measure"
+        },
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_test7_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "num_2",
+      "domain": "number"
+    },
+    {
+      "name": "time_period",
+      "domain": "number"
+    },
+    {
+      "name": "res2",
+      "domain": "boolean"
+    },
+    {
+      "name": "num_ceil",
+      "domain": "number"
+    },
+    {
+      "name": "num_floor",
+      "domain": "number"
+    },
+    {
+      "name": "res1",
+      "domain": "boolean"
+    },
+    {
+      "name": "num_1",
+      "domain": "number"
+    }
+  ]
+}

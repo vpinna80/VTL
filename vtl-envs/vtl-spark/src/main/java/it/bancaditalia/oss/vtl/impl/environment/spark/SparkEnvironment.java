@@ -34,8 +34,13 @@ import static org.apache.spark.sql.SaveMode.Overwrite;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.to_date;
 import static org.apache.spark.sql.functions.udf;
+import static org.apache.spark.sql.types.DataTypes.BooleanType;
+import static org.apache.spark.sql.types.DataTypes.DoubleType;
 import static org.apache.spark.sql.types.DataTypes.LongType;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -82,6 +87,11 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SparkEnvironment implements Environment
@@ -96,12 +106,14 @@ public class SparkEnvironment implements Environment
 			new VTLPropertyImpl("vtl.spark.ui.port", "Indicates which port the Spark web UI should be listening to", "4040", EnumSet.of(REQUIRED), "4040");
 	public static final VTLProperty VTL_SPARK_PAGE_SIZE = 
 			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", EnumSet.of(REQUIRED), "1000");
+	public static final VTLProperty VTL_SPARK_SEARCH_PATH = 
+			new VTLPropertyImpl("vtl.spark.search.path", "Path to search for spark files", System.getenv("VTL_PATH"), EnumSet.of(REQUIRED), System.getenv("VTL_PATH"));
 
 	/* package */ static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
 	
 	static
 	{
-		registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE);
+		registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE, VTL_SPARK_SEARCH_PATH);
 		if (!UDTRegistration.exists(Lineage.class.getName()))
 		{
 			List<Class<? extends Lineage>> lClasses = List.of(LineageExternal.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
@@ -115,6 +127,7 @@ public class SparkEnvironment implements Environment
 		@Override
 		public void registerClasses(Kryo kryo)
 		{
+			com.esotericsoftware.minlog.Log.DEBUG();
 			LineageSerializer lineageSerializer = new LineageSerializer();
 			kryo.register(LineageExternal.class, lineageSerializer);
 			kryo.register(LineageCall.class, lineageSerializer);
@@ -128,6 +141,7 @@ public class SparkEnvironment implements Environment
 	private final SparkSession session;
 	private final Map<String, SparkDataSet> frames = new ConcurrentHashMap<>();
 	private final DataFrameReader reader;
+	private final List<String> paths;
 
 	public SparkEnvironment()
 	{
@@ -142,7 +156,11 @@ public class SparkEnvironment implements Environment
 			  .set("spark.sql.catalyst.dateType", "Instant")
 			  .set("spark.executor.instances", "4")
 			  .set("spark.executor.cores", "2")
-//			  .set("spark.sql.codegen.wholeStage", "false")
+			  /* enable for DEBUG
+			  .set("spark.sql.codegen.wholeStage", "false")
+			  .set("spark.sql.codegen", "false")
+			  .set("spark.sql.codegen.factoryMode", "NO_CODEGEN")
+			  //*/
 			  .set("spark.sql.windowExec.buffer.in.memory.threshold", "16384")
 			  .set("spark.sql.caseSensitive", "true")
 			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
@@ -151,6 +169,7 @@ public class SparkEnvironment implements Environment
 		
 		// Set SEQUENTIAL to avoid creating new threads while inside the executor
 		System.setProperty("vtl.sequential", "true");
+		paths = VTL_SPARK_SEARCH_PATH.getValues();
 		
 		session = SparkSession
 			  .builder()
@@ -163,6 +182,7 @@ public class SparkEnvironment implements Environment
 	
 	public SparkEnvironment(SparkContext sc)
 	{
+		paths = VTL_SPARK_SEARCH_PATH.getValues();
 		session = SparkSession
 			  .builder()
 			  .config(sc.getConf())
@@ -174,7 +194,6 @@ public class SparkEnvironment implements Environment
 	@Override
 	public boolean contains(String name)
 	{
-		name = name.matches("'.*'") ? name.replaceAll("'(.*)'", "$1") : name.toLowerCase();
 		if (!name.startsWith("spark:"))
 			return false;
 		name = name.substring(6);
@@ -190,25 +209,41 @@ public class SparkEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo, String name)
+	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
 	{
-		if (!contains(name))
+		if (frames.containsKey(alias))
+			return Optional.of(frames.get(alias));
+		
+		String source = repo.getDatasetSource(alias);
+		if (!contains(source))
 			return Optional.empty();
-
+		
 		SparkDataSet dataset = null;
-		String[] parts = name.split(":");
+		String[] parts = source.substring(6).split(":");
+		if (parts.length != 2)
+			throw new InvalidParameterException("Invalid source format: " + source);
+		
+		String file = paths.stream()
+				.map(path -> Paths.get(path, parts[1]))
+				.filter(Files::exists)
+				.limit(1)
+				.peek(path -> LOGGER.info("Found {} in {}", parts[1], path))
+				.findAny()
+				.orElseThrow(() -> new InvalidParameterException("Cannot find " + parts[0] + " file in Spark search path: " + parts[1]))
+				.toString();
+		
 		switch (parts[0])
 		{
 			case "csv":
-				dataset = inferSchema(repo, reader.format("csv").option("header", "true").load(parts[1]), name); 
+				dataset = inferSchema(repo, reader.format("csv").option("header", "true").load(file), alias); 
 				break;
 			default: 
-				dataset = inferSchema(repo, reader.format(parts[0]).load(parts[1]), name); 
+				dataset = inferSchema(repo, reader.format(parts[0]).load(file), source); 
 				break;
 		}
 		
-		frames.put(name, dataset);
-		return Optional.of(frames.get(name));
+		frames.put(alias, dataset);
+		return Optional.of(frames.get(alias));
 	}
 	
 	@Override
@@ -258,15 +293,37 @@ public class SparkEnvironment implements Environment
 	
 	private SparkDataSet inferSchema(MetadataRepository repo, Dataset<Row> sourceDataFrame, String alias)
 	{
+		Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 		StructType schema = sourceDataFrame.schema();
 		
-		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
+		if (repo.getStructure(alias) != null)
+		{
+			DataSetMetadata structure = repo.getStructure(alias);
+			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
+			
+			Dataset<Row> sourceDataFrame2 = sourceDataFrame;
+			for (DataStructureComponent<?, ?, ?> comp: structure)
+			{
+				ValueDomainSubset<?, ?> domain = comp.getVariable().getDomain();
+				String name = comp.getVariable().getName();
+				if (domain instanceof IntegerDomainSubset)
+					sourceDataFrame2 = sourceDataFrame2.withColumn(name, sourceDataFrame2.col(name).cast(LongType));
+				else if (domain instanceof NumberDomainSubset)
+					sourceDataFrame2 = sourceDataFrame2.withColumn(name, sourceDataFrame2.col(name).cast(DoubleType));
+				else if (domain instanceof BooleanDomainSubset)
+					sourceDataFrame2 = sourceDataFrame2.withColumn(name, sourceDataFrame2.col(name).cast(BooleanType));
+				else if (domain instanceof DateDomainSubset)
+					sourceDataFrame2 = sourceDataFrame2.withColumn(name, to_date(sourceDataFrame2.col(name)));
+			}
+			
+			return new SparkDataSet(session, structure, new DataPointEncoder(structure), sourceDataFrame2.select(names).withColumn("$lineage$", lineage));
+		}
+		else if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
 		{
 			// infer structure from the schema metadata
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, schema)).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
-			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
-			return new SparkDataSet(session, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
+			return new SparkDataSet(session, structure, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
 		}
 		else if (!schema.forall(field -> field.dataType() instanceof StringType))
 		{
@@ -282,9 +339,8 @@ public class SparkEnvironment implements Environment
 			
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, sourceDataFrame2.schema())).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
-			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
-			return new SparkDataSet(session, new DataPointEncoder(structure), enriched);
+			return new SparkDataSet(session, structure, new DataPointEncoder(structure), enriched);
 		}
 		else
 		{

@@ -1,0 +1,76 @@
+{
+  "datasets": [
+    {
+      "name": "number_test7",
+      "source": "spark:csv:number_test7.csv",
+      "structure": "number_test7_str"
+    },
+    {
+      "name": "expected",
+      "structure": "exp_2_str",
+      "source": "spark:csv:exp_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "exp_2_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "exp_3",
+          "role": "Measure"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_test7_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "num_2",
+      "domain": "number"
+    },
+    {
+      "name": "time_period",
+      "domain": "number"
+    },
+    {
+      "name": "exp_3",
+      "domain": "number"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "num_1",
+      "domain": "number"
+    }
+  ]
+}

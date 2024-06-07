@@ -82,4 +82,11 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	{
 		return obj != null && obj.getClass() == getClass();
 	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		// TODO
+		throw new UnsupportedOperationException();
+	}
 }

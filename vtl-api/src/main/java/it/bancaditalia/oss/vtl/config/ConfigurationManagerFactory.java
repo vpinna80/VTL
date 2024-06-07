@@ -68,7 +68,7 @@ public class ConfigurationManagerFactory
 	/**
 	 * @return an application-wide {@link ConfigurationManager} instance.
 	 */
-	public static ConfigurationManager getInstance() 
+	public static ConfigurationManager newManager() 
 	{
 		if (INSTANCE != null)
 			return INSTANCE;

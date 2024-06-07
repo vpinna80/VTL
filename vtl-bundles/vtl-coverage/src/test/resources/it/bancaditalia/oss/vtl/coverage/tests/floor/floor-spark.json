@@ -1,0 +1,56 @@
+{
+  "datasets": [
+    {
+      "name": "number_test3",
+      "source": "spark:csv:number_test3.csv",
+      "structure": "number_test3_str"
+    },
+    {
+      "name": "expected",
+      "structure": "number_floor_1_str",
+      "source": "spark:csv:floor.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "number_test3_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "number_floor_1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "m1",
+      "domain": "number"
+    },
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    }
+  ]
+}

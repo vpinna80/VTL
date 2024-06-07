@@ -23,27 +23,20 @@ import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.Li
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.util.Collections.singletonMap;
-import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -72,7 +65,7 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public final class AnalyticDataSet<TT> extends AbstractDataSet
+public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticDataSet.class);
@@ -82,28 +75,33 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 	private final DataSet source;
 	private final Set<DataStructureComponent<Identifier, ?, ?>> partitionIds;
 	private final Comparator<DataPoint> orderBy;
-	private final Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors;
-	private final Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers;
-	private final Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components;
 	private final int inf;
 	private final int sup;
 	private final SerFunction<DataPoint, Lineage> lineageOp;
-	
+	private final DataStructureComponent<?, ?, ?> srcComponent;
+	private final DataStructureComponent<?, ?, ?> destComponent;
+	private final SerFunction<DataPoint, T> extractor;
+	private final SerCollector<T, ?, TT> collector;
+	private final SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher;
+
 	private final transient WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>> cache;
 
-	public AnalyticDataSet(DataSet source, DataSetMetadata newStructure, SerFunction<DataPoint, Lineage> lineageOp, WindowClause clause,
-			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors, 
-			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers, 
-			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components)
+	public AnalyticDataSet(DataSet source, DataSetMetadata structure, SerFunction<DataPoint, Lineage> lineageOp, WindowClause clause,
+			DataStructureComponent<?, ?, ?> srcComponent, DataStructureComponent<?, ?, ?> destComponent,
+			SerFunction<DataPoint, T> extractor,
+			SerCollector<T, ?, TT> collector, 
+			SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
 	{
-		super(newStructure);
+		super(structure);
 		
 		this.source = source;
 		this.lineageOp = lineageOp;
+		this.srcComponent = srcComponent;
+		this.destComponent = destComponent;
+		this.extractor = coalesce(extractor, dp -> (T) dp.get(srcComponent));
+		this.collector = collector;
+		this.finisher = coalesce(finisher, (a, b) -> Set.of((ScalarValue<?, ?, ?, ?>) a));
 		this.partitionIds = clause.getPartitioningIds();
-		this.collectors = collectors;
-		this.finishers = finishers;
-		this.components = components;
 		
 		this.orderBy = (dp1, dp2) -> {
 				for (SortCriterion criterion: clause.getSortCriteria())
@@ -130,7 +128,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		}
 
 		this.cache = CACHES.computeIfAbsent(new SimpleEntry<>(partitionIds, clause.getSortCriteria()), c -> {
-			LOGGER.info("Creating cache for partitioning {}@{} with clause #{}", source.getClass().getSimpleName(), source.hashCode(), clause.hashCode());
+			LOGGER.info("Creating cache for partitioning {}{} with clause #{}", source.getClass().getSimpleName(), source.getMetadata(), clause.hashCode());
 			return new WeakHashMap<>();
 		});
 	}
@@ -201,107 +199,54 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 		return indexes.mapToObj(index -> applyToWindow(partition, index))
 			.map(splitting(AnalyticDataSet::explode))
 			.collect(concatenating(ORDERED))
-			.map(splitting((values, dp) -> new DataPointBuilder(dp)
-				.delete(components.keySet())
-				.addAll(values)
+			.map(splitting((value, dp) -> new DataPointBuilder(dp)
+				.delete(srcComponent)
+				.add(destComponent, value)
 				.build(lineageOp.apply(dp), getMetadata())));
 	}
 
 	// Explode the collections resulting from the application of the window function to single components
-	private static Stream<Entry<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint>> explode(
-			Map<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> colls, DataPoint original)
+	private static Stream<Entry<ScalarValue<?, ?, ?, ?>, DataPoint>> explode(
+			Collection<ScalarValue<?, ?, ?, ?>> collected, DataPoint original)
 	{
 		// Shortcut when analytic mapping 	is 1:1
-		if (Utils.getStream(colls.values()).allMatch(coll -> coll.size() == 1))
-		{
-			return Stream.of(new SimpleEntry<>(Utils.getStream(colls)
-					.map(Utils.keepingKey(coll -> coll.iterator().next()))
-					.collect(entriesToMap()), original));
-		}
-		
-		final Stream<Entry<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> stream = Utils.getStream(colls);
-		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> collected = stream.collect(
-				SerCollector.of(() -> (Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>) new HashSet<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>(),
-					(acc, cEntry) -> {
-						DataStructureComponent<?, ?, ?> comp = cEntry.getKey();
-						if (!acc.isEmpty())
-						{
-							Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> accBefore = new HashSet<>(acc);
-							acc.clear();
-							for (ScalarValue<?, ?, ?, ?> cVal: cEntry.getValue())
-								accBefore.forEach(map -> {
-									map = new HashMap<>(map);
-									map.put(cEntry.getKey(), cVal);
-									acc.add(map);
-								});
-						}
-						else
-							acc.addAll(cEntry.getValue().stream()
-									.<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>map(cVal -> singletonMap(comp, cVal))
-									.collect(toConcurrentSet()));
-					}, (accLeft, accRight) -> {
-						if (accLeft.isEmpty() && accRight.isEmpty())
-							return accLeft;
-						else if (accLeft.isEmpty())
-							return accRight;
-						else if (accRight.isEmpty())
-							return accLeft;
-						
-						// Merge each of the maps on the left with each of the maps on the right
-						return Utils.getStream(accLeft)
-							.map(mapLeft -> Utils.getStream(accRight)
-								.map(mapRight -> {
-									HashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(mapLeft);
-									result.putAll(mapRight);
-									return result;
-								})
-							).collect(concatenating(ORDERED))
-							.collect(toConcurrentSet());
-					}, EnumSet.of(UNORDERED)));
-		
-		if (LOGGER.isTraceEnabled())
-			LOGGER.trace("Analytic produced {} for datapoint {}:", collected, original);
+		if (collected.size() == 1)
+			return Stream.of(new SimpleEntry<>(collected.iterator().next(), original));
 		
 		return Utils.getStream(collected)
-			.map(toEntryWithValue(map -> original));
+				.map(v -> new SimpleEntry<>(v, original));
 	}
 
-	private Entry<Map<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>, DataPoint> applyToWindow(DataPoint[] partition, int index)
+	private Entry<Collection<ScalarValue<?, ?, ?, ?>>, DataPoint> applyToWindow(DataPoint[] partition, int index)
 	{
 		int safeInf = max(0, safeSum(index, inf));
 		int safeSup = 1 + min(partition.length - 1, safeSum(index, sup));
 		
-		Map<DataStructureComponent<?, ?, ?>, Stream<ScalarValue<?, ?, ?, ?>>> windows = new HashMap<>();
-		for (DataStructureComponent<?, ?, ?> component: components.keySet())
-		{
-			Stream<ScalarValue<?, ?, ?, ?>> stream = safeInf < safeSup ? Arrays.stream(partition, safeInf, safeSup).map(dp -> dp.get(component)) : Stream.empty();
-			if (!Utils.SEQUENTIAL)
-				stream = stream.parallel();
-			windows.put(component, stream);
-		}
+		Stream<DataPoint> window = safeInf < safeSup ? Arrays.stream(partition, safeInf, safeSup) : Stream.empty();
+		if (!Utils.SEQUENTIAL)
+			window = window.parallel();
 		
 		LOGGER.trace("\tAnalysis over {} datapoints for datapoint {}", safeSup - safeInf, partition[index]);
+		var processed = processSingleComponent(partition[index], extractor, collector, finisher, destComponent, window);
 		
-		final Map<DataStructureComponent<?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> atIndex = Utils.getStream(components)
-			.map(splitting((oldC, newC) -> {  
-				// get the array slice containing all the datapoints in current window
-				Stream<ScalarValue<?, ?, ?, ?>> window = windows.get(oldC);
-				
-				// Collector to compute the invocation over current range for the specified component
-				SerCollector<ScalarValue<?, ?, ?, ?>, ?, Collection<ScalarValue<?, ?, ?, ?>>> collector = collectingAndThen(collectors.get(oldC), 
-					v -> finishers.get(oldC).apply(v, partition[index].get(oldC)));
-				
-				if (LOGGER.isTraceEnabled())
-					collector = teeing(toList(), collector, (source, result) -> {
-						LOGGER.trace("Result on component {} with values {} yield {}", newC, source, result);
-						return result;
-					});
+		return new SimpleEntry<>(processed, partition[index]);
+	}
+	
+	private Collection<ScalarValue<?, ?, ?, ?>> processSingleComponent(DataPoint dp, SerFunction<DataPoint, T> extractor,
+			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher, DataStructureComponent<?, ?, ?> newC, Stream<DataPoint> window)
+	{
+		// Collector to compute the invocation over current range for the specified component
+		T extracted = extractor.apply(dp);
+		SerCollector<T, ?, Collection<ScalarValue<?, ?, ?, ?>>> withFinisher = collectingAndThen(collector, v -> finisher.apply(v, extracted));
+		
+		if (LOGGER.isTraceEnabled())
+			withFinisher = teeing(toList(), withFinisher, (source, result) -> {
+				LOGGER.trace("Result on component {} with values {} yield {}", newC, source, result);
+				return result;
+			});
 
-				// Pair the result with the new measure
-				return new SimpleEntry<>(newC, window.collect(collector));
-			})).collect(entriesToMap());
-		
-		return new SimpleEntry<>(atIndex, partition[index]);
+		// Pair the result with the new measure
+		return window.map(extractor).collect(withFinisher);
 	}
 
 	protected static int safeInc(int a)
@@ -310,7 +255,7 @@ public final class AnalyticDataSet<TT> extends AbstractDataSet
 	}
 
 	/*
-	 * Detects overf)lows in sum and caps it to Integer.MAX_VALUE 
+	 * Detects overflows in sum and caps it to Integer.MAX_VALUE 
 	 */
 	protected static int safeSum(int x, int y)
 	{

@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singletonMap;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -33,7 +34,6 @@ import java.util.stream.Stream;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -60,9 +60,12 @@ import it.bancaditalia.oss.vtl.util.SerFunction;
 public class ConcatTransformation extends BinaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final SerBinaryOperator<ScalarValue<?, ?, ?, ?>> CONCAT = (l, r) -> l instanceof NullValue || r instanceof NullValue 
-			? NullValue.instance(STRINGDS)
-			: StringValue.of(l.get().toString() + r.get().toString());
+	private static final SerBinaryOperator<ScalarValue<?, ?, ?, ?>> CONCAT = ConcatTransformation::concat;
+	
+	private static ScalarValue<?, ?, ?, ?> concat(ScalarValue<?, ?, ?, ?> l, ScalarValue<?, ?, ?, ?> r)
+	{
+		return StringValue.of(new StringBuilder().append(coalesce(l.get(), "")).append(coalesce(r.get(), "")).toString());
+	}
 
 	public ConcatTransformation(Transformation left, Transformation right)
 	{
@@ -72,7 +75,7 @@ public class ConcatTransformation extends BinaryTransformation
 	@Override
 	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		return CONCAT.apply(STRINGDS.cast(left), STRINGDS.cast(right));
+		return concat(STRINGDS.cast(left), STRINGDS.cast(right));
 	}
 
 	@Override

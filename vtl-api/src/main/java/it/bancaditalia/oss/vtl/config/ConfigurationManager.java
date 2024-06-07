@@ -37,7 +37,7 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
  * Interface for the service used by the application to load and provide implementations
  * for the various VTL Engine components.
  * 
- * Instances of this interface are provided by {@link ConfigurationManagerFactory#getInstance()}.
+ * Instances of this interface are provided by {@link ConfigurationManagerFactory#newManager()}.
  * 
  * @author Valentino Pinna
  */

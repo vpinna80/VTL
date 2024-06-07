@@ -19,160 +19,81 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
-import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.PRIM_BUILDERS;
 
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.spark.sql.Encoder;
-import org.apache.spark.sql.Encoders;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ArrayEncoder;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.BoxedDoubleEncoder$;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.BoxedLongEncoder$;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.PrimitiveDoubleEncoder$;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.StringEncoder$;
-import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.expressions.Aggregator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
-import it.bancaditalia.oss.vtl.util.OptionalBox;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 
-public class VTLSparkAggregator<A> extends Aggregator<Serializable, A, Serializable>
+public class VTLSparkAggregator<I, TT> extends Aggregator<I, Object, TT>
 {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSparkAggregator.class);
 
-	private final Encoder<A> accEncoder;
-	private final Encoder<?> resultEncoder;
-	private final SerCollector<ScalarValue<?, ?, ?, ?>, A, A> coll;
-	private final DataStructureComponent<?, ?, ?> oldComp;
-	private final Object[] array;
+	private final Encoder<Object> accEncoder;
+	private final Encoder<TT> resultEncoder;
+	private final SerCollector<I, Object, TT> collector;
 
 	@SuppressWarnings("unchecked")
-	public VTLSparkAggregator(DataStructureComponent<?, ?, ?> oldComp, DataStructureComponent<?, ?, ?> newComp,
-			SerCollector<ScalarValue<?, ?, ?, ?>, ?, A> collector, SparkSession session)
+	public VTLSparkAggregator(SerCollector<I, ?, TT> collector, Encoder<?> accEncoder, Encoder<TT> resultEncoder)
 	{
-		try
-		{
-			this.coll = (SerCollector<ScalarValue<?, ?, ?, ?>, A, A>) collector;
-			this.oldComp = oldComp;
-			
-			A zero = zero();
-			if (zero instanceof ArrayList)
-			{
-				accEncoder = (Encoder<A>) Encoders.kryo(ArrayList.class);
-				if (newComp.getVariable().getDomain() instanceof TimeDomainSubset)
-				{
-					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(STRICT_LOCAL_DATE_ENCODER(), false));
-					array = new LocalDate[0];
-				}
-				else if (newComp.getVariable().getDomain() instanceof IntegerDomainSubset)
-				{
-					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(BoxedLongEncoder$.MODULE$, false));
-					array = new Double[0];
-				}
-				else if (newComp.getVariable().getDomain() instanceof NumberDomainSubset)
-				{
-					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(BoxedDoubleEncoder$.MODULE$, false));
-					array = new Double[0];
-				}
-				else if (newComp.getVariable().getDomain() instanceof StringDomainSubset)
-				{
-					resultEncoder = ExpressionEncoder.apply(new ArrayEncoder<>(StringEncoder$.MODULE$, false));
-					array = new String[0];
-				}
-				else
-					throw new UnsupportedOperationException("Spark aggregation on domain " + newComp.getVariable().getDomain());
-			}
-			else 
-			{
-				array = null;
-
-				if (zero instanceof double[])
-				{
-					accEncoder = (Encoder<A>) session.implicits().newDoubleArrayEncoder();
-					resultEncoder = SparkUtils.getEncoderFor(oldComp);
-				}
-				else if (zero instanceof OptionalBox)
-				{
-					accEncoder = (Encoder<A>) Encoders.kryo(OptionalBox.class);
-					resultEncoder = SparkUtils.getEncoderFor(oldComp);
-				}
-				else if (zero instanceof SerDoubleSumAvgCount)
-				{
-					accEncoder = (Encoder<A>) Encoders.tuple(Encoders.LONG(), ExpressionEncoder.apply(new ArrayEncoder<>(PrimitiveDoubleEncoder$.MODULE$, false)));
-					resultEncoder = Encoders.DOUBLE();
-				}
-				else
-					throw new UnsupportedOperationException("Spark encoder not found for " + zero.getClass().getName());
-			}
-		}
-		catch (RuntimeException e) 
-		{
-			throw e;
-		}
+		this.collector =  (SerCollector<I, Object, TT>) collector;
+		this.resultEncoder = resultEncoder;
+		this.accEncoder = (Encoder<Object>) accEncoder;
 	}
 	
 	@Override
-	public A zero()
+	public Object zero()
 	{
-		return coll.supplier().get();
+		return collector.supplier().get();
 	}
 
 	@Override
-	public Encoder<A> bufferEncoder()
+	public Encoder<Object> bufferEncoder()
 	{
-		return (Encoder<A>) accEncoder;
+		return accEncoder;
 	}
 
 	@Override
-	public A reduce(A acc, Serializable value)
+	public Object reduce(Object acc, I value)
 	{
-		coll.accumulator().accept(acc, SparkUtils.getScalarFor(oldComp, value));
+		// For performance reasons scalars are encoded as boxed primitive types, and must be rebuilt
+		if (value != null && PRIM_BUILDERS.containsKey(value.getClass()))
+			value = (I) PRIM_BUILDERS.get(value.getClass()).apply((Serializable) value);
+		
+		collector.accumulator().accept(acc, value);
 		return acc;
 	}
 
 	@Override
-	public A merge(A acc1, A acc2)
+	public Object merge(Object acc1, Object acc2)
 	{
-		return coll.combiner().apply(acc1, acc2);
+		return collector.combiner().apply(acc1, acc2);
 	}
 
 	@Override
-	public Serializable finish(A reduction)
+	public TT finish(Object reduction)
 	{
-		final A result = coll.finisher().apply(reduction);
-		if (result instanceof ArrayList)
-			return ((ArrayList<?>) result).stream()
-				.map(ScalarValue.class::cast)
-				.map(ScalarValue::get)
-				.collect(toArray(Arrays.copyOf(array, ((ArrayList<?>) result).size())));
-		else if (result instanceof ScalarValue)
-			return ((ScalarValue<?, ?, ?, ?>) result).get();
-		else
-			throw new UnsupportedOperationException("Class not implemented as finished value in spark aggregator: " + result.getClass().getName());
+		Object apply = collector.finisher().apply(reduction);
+		if (apply instanceof ScalarValue)
+			apply = ((ScalarValue<?, ?, ?, ?>) apply).get();
+		
+		LOGGER.debug("Finished Spark aggregation: {} of {}", apply, apply == null ? null : apply.getClass());
+		
+		@SuppressWarnings("unchecked")
+		TT result = (TT) apply;
+		return result;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Encoder<Serializable> outputEncoder()
+	public Encoder<TT> outputEncoder()
 	{
-		return (Encoder<Serializable>) resultEncoder;
+		return resultEncoder;
 	}
-	
-	@Override
-	public String toString()
-	{
-		return "VTLSparkAggregator(" + oldComp + ")";
-	}
-};
+}

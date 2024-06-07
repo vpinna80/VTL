@@ -397,7 +397,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	public TransformationScheme getTransformationScheme(String alias)
 	{
 		return Optional.ofNullable(schemes.get(alias))
-			.map(ConfigurationManagerFactory.getInstance()::createSession)
+			.map(ConfigurationManagerFactory.newManager()::createSession)
 			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
 	}
 	

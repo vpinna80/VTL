@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 
+import java.io.Serializable;
+
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -131,5 +133,12 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 	public Variable<EntireBooleanDomainSubset, BooleanDomain> getDefaultVariable()
 	{
 		return new BooleanVariable("bool_var");
+	}
+
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return Boolean.class;
 	}
 }

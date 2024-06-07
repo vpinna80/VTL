@@ -23,7 +23,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.SUM;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -32,7 +31,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -46,9 +44,11 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -60,7 +60,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public class RatioToReportTransformation extends UnaryTransformation implements AnalyticTransformation
 {
@@ -87,22 +87,23 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
+		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
 		
+		SerFunction<DataPoint, Lineage> lineageOp = dp -> LineageNode.of(this, dp.getLineage());
 		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
+		SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> finisher = (newV, oldV) -> {
+			if (newV instanceof NullValue || oldV instanceof NullValue)
+				return singleton(newV instanceof NullValue ? newV : oldV);
+			else if (newV instanceof NumberValue && oldV instanceof NumberValue)
+				return singleton(createNumberValue(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
+			else
+				throw new UnsupportedOperationException();
+		};
+
+		for (DataStructureComponent<Measure, ?, ?> measure: measures)
+			dataset = dataset.analytic(lineageOp, measure, measure, clause, null, SUM.getReducer(measure), finisher);
 		
-		Map<DataStructureComponent<Measure, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = dataset.getMetadata().getMeasures().stream()
-			.collect(toMapWithValues(measure -> SUM.getReducer()));
-		Map<DataStructureComponent<Measure, ?, ?>, SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers = dataset.getMetadata().getMeasures().stream()
-			.collect(toMapWithValues(measure -> (newV, oldV) -> {
-				if (newV instanceof NullValue || oldV instanceof NullValue)
-					return singleton(newV instanceof NullValue ? newV : oldV);
-				else if (newV instanceof NumberValue && oldV instanceof NumberValue)
-					return singleton(createNumberValue(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
-				else
-					throw new UnsupportedOperationException();
-			}));
-		
-		return dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), dataset.getMetadata().getMeasures(), clause, collectors, finishers);	
+		return dataset;
 	}
 
 	@Override

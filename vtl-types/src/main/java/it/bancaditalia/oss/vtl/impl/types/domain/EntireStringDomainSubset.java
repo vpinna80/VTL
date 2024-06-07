@@ -66,4 +66,10 @@ public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDom
 		else 
 			throw new VTLCastException(this, value);
 	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		return String.class; 
+	}
 }

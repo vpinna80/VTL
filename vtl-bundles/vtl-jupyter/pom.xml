@@ -109,9 +109,9 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-parser</artifactId>
-			<classifier>parser-js</classifier>
+			<artifactId>vtl-jsparser</artifactId>
 			<type>zip</type>
+			<classifier>grammar</classifier>
 		</dependency>
 	</dependencies>
 

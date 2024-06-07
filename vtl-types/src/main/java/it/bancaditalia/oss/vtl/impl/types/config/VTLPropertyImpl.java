@@ -27,6 +27,7 @@ import static java.util.stream.Collectors.joining;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 
@@ -77,9 +78,9 @@ public class VTLPropertyImpl implements VTLProperty
 	}
 
 	@Override
-	public void setValue(String newValue)
+	public void setValue(Object newValue)
 	{
-		value = newValue;
+		value = Objects.toString(newValue);
 		hasValue = true;
 	}
 

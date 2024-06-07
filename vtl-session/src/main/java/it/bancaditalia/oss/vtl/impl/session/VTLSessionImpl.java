@@ -89,7 +89,7 @@ public class VTLSessionImpl implements VTLSession
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 
-	private final ConfigurationManager config = ConfigurationManagerFactory.getInstance();
+	private final ConfigurationManager config = ConfigurationManagerFactory.newManager();
 	private final Engine engine;
 	private final List<Environment> environments;
 	private final Workspace workspace;
@@ -134,9 +134,9 @@ public class VTLSessionImpl implements VTLSession
 		}
 		else
 			return cacheHelper(alias, cache, n -> acquireValue(alias, (e, a) -> e.getValue(repository, a))
-					.orElseThrow(() -> new VTLUnboundAliasException(alias)));
+					.orElseThrow(() -> buildUnboundException(alias, "resolve")));
 	}
-	
+
 	@Override
 	public VTLValueMetadata getMetadata(String alias)
 	{
@@ -155,9 +155,16 @@ public class VTLSessionImpl implements VTLSession
 		}
 		else
 			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getValueMetadata)
-					.orElseThrow(() -> new VTLUnboundAliasException(alias)));
+					.orElseThrow(() -> buildUnboundException(alias, "getMetadata")));
 	}
 
+	private VTLUnboundAliasException buildUnboundException(String alias, String op)
+	{
+		for (Environment env: environments)
+			LOGGER.warn("Environment {} reported empty value for operation {} with {}", env.getClass().getSimpleName(), op, alias);
+		return new VTLUnboundAliasException(alias);
+	}
+	
 	@Override
 	public boolean contains(String alias)
 	{

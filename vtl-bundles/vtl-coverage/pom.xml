@@ -36,47 +36,6 @@
 	<name>vtl-coverage</name>
 	<description>Coverage report aggregator</description>
 
-	<profiles>
-		<profile>
-			<id>with-spark</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-spark</artifactId>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>with-cli</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-cli</artifactId>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>with-jupyter</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-jupyter</artifactId>
-					<version>${project.version}</version>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>with-r</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-java2r</artifactId>
-					<version>${project.version}</version>
-				</dependency>
-			</dependencies>
-		</profile>
-	</profiles>
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -127,9 +86,18 @@
 			<artifactId>vtl-session</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-spark</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-sql_${scala.compat.version}</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

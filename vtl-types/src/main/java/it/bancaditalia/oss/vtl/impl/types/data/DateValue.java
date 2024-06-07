@@ -61,7 +61,7 @@ public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValu
 		if (o instanceof DateValue)
 			return get().compareTo(((DateValue<?>) o).get());
 		else
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("Cannot compare DATE to " + o.getClass());
 	}
 
 	@Override

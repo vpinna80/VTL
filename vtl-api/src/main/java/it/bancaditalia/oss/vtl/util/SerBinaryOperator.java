@@ -27,14 +27,14 @@ public interface SerBinaryOperator<T> extends BinaryOperator<T>, SerBiFunction<T
 {
     public static <T> SerBinaryOperator<T> minBy(Comparator<? super T> comparator)
     {
-    	SerIntBiFunction<T, T> op = comparator::compare;
-        return (a, b) -> op.apply(a, b) <= 0 ? a : b;
+    	SerToIntBiFunction<T, T> fn = comparator::compare;
+        return (a, b) -> fn.applyAsInt(a, b) <= 0 ? a : b;
     }
 
     public static <T> SerBinaryOperator<T> maxBy(Comparator<? super T> comparator)
     {
-    	SerIntBiFunction<T, T> op = comparator::compare;
-        return (a, b) -> op.apply(a, b) >= 0 ? a : b;
+    	SerToIntBiFunction<T, T> fn = comparator::compare;
+        return (a, b) -> fn.applyAsInt(a, b) >= 0 ? a : b;
     }
     
     public default SerBinaryOperator<T> reverseIf(boolean condition)

@@ -42,7 +42,7 @@ public interface ScalarValue<C extends ScalarValue<C, R, S, D>, R extends Compar
 	 * @return the {@link ValueDomainSubset} of this ScalarValue.
 	 */
 	public S getDomain();
-
+	
 	@Override
 	public ScalarValueMetadata<S, D> getMetadata();
 	

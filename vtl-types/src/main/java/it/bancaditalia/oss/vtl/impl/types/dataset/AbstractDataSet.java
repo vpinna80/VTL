@@ -302,21 +302,18 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, 
-			Map<? extends DataStructureComponent<?, ?, ?>, ? extends DataStructureComponent<?, ?, ?>> components,
-			WindowClause clause,
-			Map<? extends DataStructureComponent<?, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, TT>> collectors,
-			Map<? extends DataStructureComponent<?, ?, ?>, SerBiFunction<TT, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>>> finishers)
+	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
+			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
 
 		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
-				.removeComponents(components.keySet())
-				.addComponents(components.values())
+				.removeComponent(sourceComp)
+				.addComponents(destComp)
 				.build();
 		
-		return new AnalyticDataSet<>(this, newStructure, lineageOp, clause, collectors, finishers, components);
+		return new AnalyticDataSet<>(this, newStructure, lineageOp, clause, sourceComp, destComp, extractor, collector, finisher);
 	}
 	
 	@Override

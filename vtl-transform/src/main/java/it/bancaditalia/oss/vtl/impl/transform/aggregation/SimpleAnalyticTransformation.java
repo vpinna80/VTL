@@ -20,12 +20,12 @@
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
+import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.RANGE_UNBOUNDED_PRECEDING_TO_CURRENT;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.COUNT;
-import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
@@ -36,7 +36,6 @@ import static java.util.stream.Collectors.joining;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -52,7 +51,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -67,7 +65,6 @@ import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class SimpleAnalyticTransformation extends UnaryTransformation implements AnalyticTransformation
 {
@@ -101,7 +98,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		List<SortCriterion> ordering;
 		if (orderByClause.isEmpty())
 			ordering = dataset.getMetadata().getIDs().stream()
-				.map(c -> new SortClause(c, ASC))
+				.map(SortClause::new)
 				.collect(toList());
 		else
 			ordering = orderByClause.stream()
@@ -118,12 +115,14 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 			if (partitionIDs.contains(orderingComponent))
 				throw new VTLException("Cannot order by " + orderingComponent.getVariable().getName() + " because the component is used in partition by " + partitionBy);
 
-		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, windowCriterion);
-		Set<DataStructureComponent<NonIdentifier, ?, ?>> nonIDs = dataset.getMetadata().getComponents(NonIdentifier.class);
-		Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> collectors = nonIDs.stream()
-			.collect(toMapWithValues(k -> aggregation.getReducer()));
+		WindowCriterion criterion = windowCriterion != null ? windowCriterion : orderByClause.isEmpty() 
+				? RANGE_UNBOUNDED_PRECEDING_TO_CURRENT : DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
+		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, criterion);
 		
-		return dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), nonIDs, clause, collectors);
+		for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
+			dataset = dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), measure, clause, aggregation.getReducer(measure));
+
+		return dataset;
 	}
 
 	@Override

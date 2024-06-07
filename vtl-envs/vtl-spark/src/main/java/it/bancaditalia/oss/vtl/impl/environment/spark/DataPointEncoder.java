@@ -45,11 +45,9 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -60,14 +58,12 @@ public class DataPointEncoder implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	public final DataStructureComponent<?, ?, ?>[] components;
-	public final DataSetMetadata structure;
 	public final StructType schema;
 	public final Encoder<Row> rowEncoder;
 	public final Encoder<Row> rowEncoderNoLineage;
 	
-	public DataPointEncoder(Set<? extends DataStructureComponent<?, ?, ?>> dataStructure)
+	public DataPointEncoder(Set<? extends DataStructureComponent<?, ?, ?>> structure)
 	{
-		structure = dataStructure instanceof DataSetMetadata ? (DataSetMetadata) dataStructure : new DataStructureBuilder(dataStructure).build();
 		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
 		Arrays.sort(components, DataStructureComponent::byNameAndRole);
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(components));
@@ -103,7 +99,7 @@ public class DataPointEncoder implements Serializable
 	{
 		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length];
 		for (int i = 0; i < components.length; i++)
-			vals[i] = getScalarFor(components[i], row.get(i + start));
+			vals[i] = getScalarFor(components[i], (Serializable) row.get(i + start));
 		
 		Object lineage = row.get(components.length + start);
 		if (lineage instanceof byte[])
@@ -130,11 +126,6 @@ public class DataPointEncoder implements Serializable
 	public Encoder<Row> getRowEncoderNoLineage()
 	{
 		return rowEncoderNoLineage;
-	}
-
-	public DataSetMetadata getStructure()
-	{
-		return structure;
 	}
 	
 	public static class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable 

@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import java.io.Serializable;
+
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
@@ -69,5 +71,12 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 	public String toString()
 	{
 		return "time_period";
+	}
+
+	@Override
+	public Class<? extends Serializable> getRepresentation()
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
 	}
 }

@@ -188,7 +188,7 @@ public class MessageReplies
 		VTLSession oldSession = SESSIONS.get(sessionName);
 		VTLSession vtlSession = SESSIONS.compute(sessionName, (n, v) -> {
 			String mergedCode = v == null ? code : v.getOriginalCode() + "\n\n" + code;
-			return ConfigurationManagerFactory.getInstance().createSession(mergedCode);
+			return ConfigurationManagerFactory.newManager().createSession(mergedCode);
 		});
 		
 		Map<Statement, VTLValueMetadata> compiled = new HashMap<>(vtlSession.compile());
