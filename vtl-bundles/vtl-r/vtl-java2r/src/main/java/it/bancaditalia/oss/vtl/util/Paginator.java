@@ -24,7 +24,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -41,16 +41,18 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 public class Paginator
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Paginator.class);
+	private static final LocalDate R_EPOCH_DATE = LocalDate.of(1970, 1, 1);
 	private static final double R_DOUBLE_NA = Double.longBitsToDouble(0x7ff00000000007a2L);
 	private static final int R_INT_NA = Integer.MIN_VALUE;
 	
 	private final DataSetMetadata dataStructure;
-	private final Iterator<DataPoint> iterator;
+	private final ArrayBlockingQueue<DataPoint> queue;
 	private final DataStructureComponent<?, ?, ?>[] comps;
 	private final int[] types;
 	private final int size;
 	private final Object[] result;
-
+	
+	private boolean closed = false;
 	
 	public Paginator(DataSet dataset, int size)
 	{
@@ -59,6 +61,8 @@ public class Paginator
 		comps = dataStructure.stream().toArray(DataStructureComponent<?, ?, ?>[]::new);
 		result = new Object[comps.length];
 		types = new int[comps.length];
+		queue = new ArrayBlockingQueue<>(size);
+		
 		for (int i = 0; i < comps.length; i++)
 		{
 			if (comps[i].getVariable().getDomain() instanceof NumberDomain)
@@ -71,10 +75,28 @@ public class Paginator
 				types[i] = 4;
 		}
 
-		try (Stream<DataPoint> stream = dataset.stream())
-		{
-			iterator = stream.iterator();
-		}
+		Thread t = new Thread(() -> {
+			try (Stream<DataPoint> stream = dataset.stream().onClose(() -> closed = true))
+			{
+				stream.forEach(dp -> {
+					try
+					{
+						if (!closed)
+							queue.put(dp);
+					}
+					catch (InterruptedException e)
+					{
+						closed = true;
+					}
+				});
+			}
+			finally
+			{
+				closed = true;
+			}
+		}, "Paginator@" + hashCode());
+		t.setDaemon(true);
+		t.start();
 	}
 
 	public DataSetMetadata getDataStructure()
@@ -110,8 +132,19 @@ public class Paginator
 	public void prepareMore()
 	{
 		ArrayList<DataPoint> dps = new ArrayList<>(size);
-		for (int i = 0; i < size && iterator.hasNext(); i++)
-			dps.add(iterator.next());
+		queue.drainTo(dps);
+		while (!closed && dps.size() == 0)
+		{
+			try
+			{
+				Thread.sleep(500);
+				queue.drainTo(dps);
+			}
+			catch (InterruptedException e)
+			{
+				break;
+			}
+		}
 		
 		int newSize = dps.size();
 		
@@ -147,7 +180,7 @@ public class Paginator
 				{
 					case 1: ((double[]) array)[j] = value == null ? R_DOUBLE_NA : ((Number) value).doubleValue(); break;
 					case 2: ((int[]) array)[j] = value == null ? R_INT_NA : value == Boolean.TRUE ? 1 : 0; break;
-					case 3: ((int[]) array)[j] = value == null ? R_INT_NA : (int) DAYS.between(LocalDate.of(1970, 1, 1), (LocalDate) value); break;
+					case 3: ((int[]) array)[j] = value == null ? R_INT_NA : (int) DAYS.between(R_EPOCH_DATE, (LocalDate) value); break;
 					case 4: ((String[]) array)[j] = value == null ? null : value.toString(); break;
 				}
 			}		

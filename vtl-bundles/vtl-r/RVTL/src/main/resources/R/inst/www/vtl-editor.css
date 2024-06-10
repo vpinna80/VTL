@@ -67,12 +67,23 @@
   overflow-y: hidden;
 }
 
+#vtlwell {
+	flex-grow: 1;
+}
+
+.cm-editor {
+	height: 100%;
+}
+
 #vtl_output {
-  border-radius: 0;
-  padding: 0;
-  margin: 0;
-  flex-shrink: 1;
-  flex-grow: 1;
+border-radius: 0;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 1;
+    flex-grow: 0;
+    flex-basis: auto;
+    max-height: 30%;
+    overflow-y: auto;
 }
 
 #saveas {

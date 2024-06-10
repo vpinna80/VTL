@@ -49,7 +49,7 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             #' If an active SDMX metadata repository is active, also load Transformation schemes from it
             list = function() { 
             	ss <- ls(private$sessions)
-            	metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$getInstance()$getMetadataRepository()
+            	metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
             	if (metaRepo %instanceof% 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository') {
             		sdmxTs <- sapply(metaRepo$getAvailableSchemes(), .jstrVal)
             		ss <- unique(c(ss, sdmxTs))

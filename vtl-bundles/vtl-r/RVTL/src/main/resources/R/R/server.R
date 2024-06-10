@@ -157,7 +157,7 @@ vtlServer <- function(input, output, session) {
     propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
     writer = .jnew("java.io.FileWriter", propfile)
     tryCatch({
-      configManager$getInstance()$saveConfiguration(writer)
+      configManager$newManager()$saveConfiguration(writer)
     }, finally = {
       writer$close()
     })

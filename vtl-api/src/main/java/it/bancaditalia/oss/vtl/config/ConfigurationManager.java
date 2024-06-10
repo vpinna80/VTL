@@ -44,17 +44,18 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 public interface ConfigurationManager
 {
 	/**
-	 * @return The {@link MetadataRepository} instance
-	 */
-	public MetadataRepository getMetadataRepository();
-
-	/**
-	 * @return The {@link VTLSession} instance
+	 * Creates a VTL session from the passed VTL code. 
+	 * 
+	 * @param code The VTL code to base to this session on.
+	 * @return The {@link VTLSession} instance.
 	 */
 	public VTLSession createSession(String code);
 
 	/**
-	 * @return The {@link VTLSession} instance
+	 * Creates a VTL session from the passed VTL code.
+	 * 
+	 * @param reader the {@link Reader} instance to read the VTL code from. It will be closed when the script is read.
+	 * @return The {@link VTLSession} instance.
 	 */
 	public default VTLSession createSession(Reader reader) throws IOException
 	{
@@ -63,6 +64,11 @@ public interface ConfigurationManager
 			return createSession(br.lines().collect(joining(lineSeparator(), "", lineSeparator())));
 		}
 	}
+
+	/**
+	 * @return The {@link MetadataRepository} instance
+	 */
+	public MetadataRepository getMetadataRepository();
 
 	/**
 	 * @return The {@link Engine} instance
@@ -78,7 +84,8 @@ public interface ConfigurationManager
 	 * Saves the current configuration to the provided Writer as a list of Java properties.
 	 * 
 	 * @param output The stream to write the properties to.
-	 * @throws IOException
+	 * @throws IOException if a i/o problem arises while saving properties.
+	 * @throws UnsupportedOperationException in case the operation is not supported by this ConfigurationManager.
 	 */
 	public default void saveConfiguration(Writer output) throws IOException
 	{
