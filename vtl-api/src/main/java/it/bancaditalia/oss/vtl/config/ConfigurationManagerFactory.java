@@ -62,6 +62,14 @@ public class ConfigurationManagerFactory
 		props.forEach((k, v) -> {
 			if (k != null && v != null && k instanceof String && ((String) k).startsWith("vtl."))
 				System.setProperty(k.toString(), v.toString());
+			
+			if (List.of("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort").contains(k))
+			{
+				// Set proxy only if not already set (i.e. by command line parameters)
+				String proxyValue = System.getProperty(k.toString());
+				if (proxyValue == null)
+					System.setProperty(k.toString(), v.toString());
+			}
 		});
 	}
 

@@ -101,7 +101,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 
 		varDefs.forEach((n, d) -> variables.put(n, VariableImpl.of(n, getDomain(d))));
 		strDefs.forEach((n, l) -> structures.put(n, l.entrySet().stream().map(splitting((c, r) -> {
-			Objects.requireNonNull(variables.get(c));
+			Objects.requireNonNull(variables.get(c), "Undefined variable " + c);
 			return variables.get(c).as(r); 
 		})).collect(toDataStructure())));
 		dsDefs.forEach((n, e) -> {

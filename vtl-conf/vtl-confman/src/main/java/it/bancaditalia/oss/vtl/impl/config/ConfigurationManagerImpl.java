@@ -130,6 +130,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 		
 		for (VTLProperty prop: vtlProps)
 			props.setProperty(prop.getName(), prop.getValue());
+
+		for (String proxyProp: List.of("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort"))
+		{
+			String proxyValue = System.getProperty(proxyProp);
+			if (proxyValue != null)
+				props.put(proxyProp, proxyValue);
+		}
 		
 		props.store(output, null);
 	}

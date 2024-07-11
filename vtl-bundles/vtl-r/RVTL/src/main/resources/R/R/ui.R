@@ -154,8 +154,6 @@ shinydashboard::dashboardPage(title="VTL Studio!",
         shinydashboard::box(title = 'Network Proxy', status = 'primary', solidHeader = T, collapsible = T,
           textInput(inputId = 'proxyHost', label = 'Host:', value = defaultProxy()$host),
           textInput(inputId = 'proxyPort', label = 'Port:', value = defaultProxy()$port),
-          textInput(inputId = 'proxyUser', label = 'User:', value = defaultProxy()$user),
-          passwordInput(inputId = 'proxyPassword', label = 'Password:'),
           actionButton(inputId = 'setProxy', label = 'Save')
         ),
         shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,

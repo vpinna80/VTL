@@ -202,8 +202,17 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
 			{
-				ValueDomainSubset<?, ?> domain = dimBean.isTimeDimension() ? TIMEDS : getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation()));
+				ValueDomainSubset<?, ?> domain;
+
+				if (dimBean.isTimeDimension())
+					domain = TIMEDS;
+				else if (dimBean.hasCodedRepresentation())
+					domain = getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation()));
+				else
+					domain = sdmxRepr2VTLDomain(dimBean);
+
 				DataStructureComponent<Identifier, ?, ?> id = createComponent(dimBean, Identifier.class, domain);
+				LOGGER.debug("From dsd {} created identifier {}", dsdName, id);
 				builder.addComponent(id);
 				enumIds.put(dimBean.getPosition() - 1, id);
 			}
@@ -217,71 +226,11 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				if (attrBean.hasCodedRepresentation())
 					domain = getDomain(sdmxRef2VtlName(attrBean.getEnumeratedRepresentation()));
 				else
-				{
-					Optional<TextFormatBean> optFormat = Optional.of(attrBean)
-							.map(AttributeBean::getRepresentation)
-							.map(RepresentationBean::getTextFormat);
-					
-					TEXT_TYPE type = optFormat
-							.map(TextFormatBean::getTextType)
-							.orElse(STRING);
-					
-					boolean inclusive = true;
-					
-					switch (type)
-					{
-						case ALPHA: domain = VTL_ALPHA; break;
-						case ALPHA_NUMERIC: domain = VTL_ALPHA_NUMERIC; break;
-						case NUMERIC: domain = VTL_NUMERIC; break;
-						case BOOLEAN: domain = BOOLEANDS; break;
-						case STRING: case URI: domain = STRINGDS; break;
-						case INCLUSIVE_VALUE_RANGE: domain = NUMBERDS; break;
-						case EXCLUSIVE_VALUE_RANGE: domain = NUMBERDS; inclusive = false; break;
-						case FLOAT: case DOUBLE: case DECIMAL: case INCREMENTAL: domain = NUMBERDS; break;
-						case BIG_INTEGER: case COUNT: case LONG: case INTEGER: case SHORT: domain = INTEGERDS; break;
-						case DURATION: domain = DURATIONDS; break;
-						case OBSERVATIONAL_TIME_PERIOD: case STANDARD_TIME_PERIOD: case TIME_RANGE: domain = TIMEDS; break; 
-						case DATE_TIME: case BASIC_TIME_PERIOD: case GREGORIAN_TIME_PERIOD: case GREGORIAN_DAY: case GREGORIAN_YEAR: case GREGORIAN_YEAR_MONTH: domain = DATEDS; break;
-						case MONTH: case MONTH_DAY: case DAY: case TIME: domain = STRINGDS; break;
-						case REPORTING_DAY: case REPORTING_MONTH: case REPORTING_QUARTER: case REPORTING_SEMESTER:
-						case REPORTING_TIME_PERIOD: case REPORTING_TRIMESTER: case REPORTING_WEEK: case REPORTING_YEAR: domain = TIME_PERIODDS; break; 
-						case GEO: case XHTML: default: LOGGER.warn("Representation {} is not implemented, String will be used instead.", type); domain = STRINGDS; break;
-					}
-					
-					if (optFormat.isPresent())
-					{
-						TextFormatBean format = optFormat.get();
-						if (STRINGDS.isAssignableFrom(domain))
-						{
-							OptionalInt minLen = Stream.ofNullable(format.getMinLength()).mapToInt(BigInteger::intValueExact).findAny();
-							OptionalInt maxLen = Stream.ofNullable(format.getMaxLength()).mapToInt(BigInteger::intValueExact).findAny();
-							domain = new StrlenDomainSubset<>(STRINGDS, minLen, maxLen);
-						}
-						else if (INTEGERDS.isAssignableFrom(domain))
-						{
-							OptionalLong minLen = Stream.ofNullable(format.getMinValue()).mapToLong(BigDecimal::longValueExact).findAny();
-							OptionalLong maxLen = Stream.ofNullable(format.getMaxValue()).mapToLong(BigDecimal::longValueExact).findAny();
-							String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
-							domain = new RangeIntegerDomainSubset<>(name, INTEGERDS, minLen, maxLen, inclusive);
-						}
-						else if (NUMBERDS.isAssignableFrom(domain))
-						{
-							OptionalDouble minLen = Stream.ofNullable(format.getMinValue()).mapToDouble(BigDecimal::doubleValue).findAny();
-							OptionalDouble maxLen = Stream.ofNullable(format.getMaxValue()).mapToDouble(BigDecimal::doubleValue).findAny();
-							String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
-							domain = new RangeNumberDomainSubset<>(name, NUMBERDS, minLen, maxLen, inclusive);
-						}
-						
-						if (attrBean.isMandatory())
-						{
-							@SuppressWarnings({ "rawtypes", "unchecked" })
-							NonNullDomainSubset<?, ?> nonNullDomainSubset = new NonNullDomainSubset(domain);
-							domain = nonNullDomainSubset;
-						}
-					}
-				}
+					domain = sdmxRepr2VTLDomain(attrBean);
 				
-				builder.addComponent(createComponent(attrBean, Attribute.class, domain));
+				DataStructureComponent<Attribute, ?, ?> attr = createComponent(attrBean, Attribute.class, domain);
+				LOGGER.debug("From dsd {} created attribute {}", dsdName, attr);
+				builder.addComponent(attr);
 			}
 
 			structures.put(dsdName, new SimpleEntry<>(builder.build(), new ArrayList<>(enumIds.values())));
@@ -299,11 +248,82 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		// Load transformation schemes
 		for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
 		{
+			String tsName = sdmxRef2VtlName(scheme.asReference());
+			LOGGER.info("Loading transformation scheme {}", tsName);
 			String code = scheme.getItems().stream()
 				.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
 				.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
-			schemes.put(sdmxRef2VtlName(scheme.asReference()), code);
+			LOGGER.debug("Loaded transformation scheme {} with code:\n{}\n", tsName, code);
+			schemes.put(tsName, code);
 		}
+	}
+
+	private ValueDomainSubset<?, ?> sdmxRepr2VTLDomain(ComponentBean compBean)
+	{
+		Optional<TextFormatBean> optFormat = Optional.of(compBean)
+				.map(ComponentBean::getRepresentation)
+				.map(RepresentationBean::getTextFormat);
+		
+		TEXT_TYPE type = optFormat
+				.map(TextFormatBean::getTextType)
+				.orElse(STRING);
+		
+		ValueDomainSubset<?, ?> domain;
+		boolean inclusive = true;
+		
+		switch (type)
+		{
+			case ALPHA: domain = VTL_ALPHA; break;
+			case ALPHA_NUMERIC: domain = VTL_ALPHA_NUMERIC; break;
+			case NUMERIC: domain = VTL_NUMERIC; break;
+			case BOOLEAN: domain = BOOLEANDS; break;
+			case STRING: case URI: domain = STRINGDS; break;
+			case INCLUSIVE_VALUE_RANGE: domain = NUMBERDS; break;
+			case EXCLUSIVE_VALUE_RANGE: domain = NUMBERDS; inclusive = false; break;
+			case FLOAT: case DOUBLE: case DECIMAL: case INCREMENTAL: domain = NUMBERDS; break;
+			case BIG_INTEGER: case COUNT: case LONG: case INTEGER: case SHORT: domain = INTEGERDS; break;
+			case DURATION: domain = DURATIONDS; break;
+			case OBSERVATIONAL_TIME_PERIOD: case STANDARD_TIME_PERIOD: case TIME_RANGE: domain = TIMEDS; break; 
+			case DATE_TIME: case BASIC_TIME_PERIOD: case GREGORIAN_TIME_PERIOD: case GREGORIAN_DAY: case GREGORIAN_YEAR: case GREGORIAN_YEAR_MONTH: domain = DATEDS; break;
+			case MONTH: case MONTH_DAY: case DAY: case TIME: domain = STRINGDS; break;
+			case REPORTING_DAY: case REPORTING_MONTH: case REPORTING_QUARTER: case REPORTING_SEMESTER:
+			case REPORTING_TIME_PERIOD: case REPORTING_TRIMESTER: case REPORTING_WEEK: case REPORTING_YEAR: domain = TIME_PERIODDS; break; 
+			case GEO: case XHTML: default: LOGGER.warn("Representation {} is not implemented, String will be used instead.", type); domain = STRINGDS; break;
+		}
+		
+		if (optFormat.isPresent())
+		{
+			TextFormatBean format = optFormat.get();
+			if (STRINGDS.isAssignableFrom(domain))
+			{
+				OptionalInt minLen = Stream.ofNullable(format.getMinLength()).mapToInt(BigInteger::intValueExact).findAny();
+				OptionalInt maxLen = Stream.ofNullable(format.getMaxLength()).mapToInt(BigInteger::intValueExact).findAny();
+				domain = new StrlenDomainSubset<>(STRINGDS, minLen, maxLen);
+			}
+			else if (INTEGERDS.isAssignableFrom(domain))
+			{
+				OptionalLong minLen = Stream.ofNullable(format.getMinValue()).mapToLong(BigDecimal::longValueExact).findAny();
+				OptionalLong maxLen = Stream.ofNullable(format.getMaxValue()).mapToLong(BigDecimal::longValueExact).findAny();
+				String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
+				domain = new RangeIntegerDomainSubset<>(name, INTEGERDS, minLen, maxLen, inclusive);
+			}
+			else if (NUMBERDS.isAssignableFrom(domain))
+			{
+				OptionalDouble minLen = Stream.ofNullable(format.getMinValue()).mapToDouble(BigDecimal::doubleValue).findAny();
+				OptionalDouble maxLen = Stream.ofNullable(format.getMaxValue()).mapToDouble(BigDecimal::doubleValue).findAny();
+				String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
+				domain = new RangeNumberDomainSubset<>(name, NUMBERDS, minLen, maxLen, inclusive);
+			}
+			
+			if (compBean instanceof DimensionBean || compBean.isMandatory())
+			{
+				@SuppressWarnings({ "rawtypes", "unchecked" })
+				NonNullDomainSubset<?, ?> nonNullDomainSubset = new NonNullDomainSubset(domain);
+				domain = nonNullDomainSubset;
+			}
+		}
+		
+		return domain;
 	}
 	
 	private DataStructureComponent<Measure, ?, ?> createObsValue(PrimaryMeasureBean obs_value)

@@ -27,7 +27,6 @@ import static java.util.function.Predicate.not;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,6 +68,9 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 	@Option(names = { "--jupyter" }, description = "Location of Jupyter executable.", paramLabel = "jupyter", defaultValue = "jupyter")
 	Path jupyter;
 
+	@Option(names = { "-c", "--conf" }, description = "The configuration file to use. The file must be accessible both at installation and at run time", paramLabel = "conf")
+	Path conf;
+	
 	@ArgGroup(exclusive = true, multiplicity = "1")
 	Operation operation;
 
@@ -98,9 +100,15 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 		@SuppressWarnings("unchecked")
 		Map<String, Object> connInfo = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(operation.exec).readValueAs(Map.class);
 
-		ConfigurationManagerFactory.loadConfiguration(new FileReader(System.getProperty("user.home") + "/.vtlStudio.properties"));
+		if (conf == null)
+			conf = Paths.get(System.getProperty("user.home") + "/.vtlStudio.properties");
+		if (Files.exists(conf) && Files.isRegularFile(conf) && Files.isReadable(conf));
+			ConfigurationManagerFactory.loadConfiguration(Files.newBufferedReader(conf));
+
+		// Change the session implementation with the Jupyter specific one
 		SESSION_IMPLEMENTATION.setValue(VTLJupyterSession.class.getName());
 		
+		// Change the standard Workspace implementation class with the Jupyter specific one
 		ENVIRONMENT_IMPLEMENTATION.setValues(
 				Stream.concat(ENVIRONMENT_IMPLEMENTATION.getValues().stream()
 					.filter(not(cls -> {
@@ -145,11 +153,16 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 		Path copyJar = Files.copy(jar, kernelPath.resolve("vtl-jupyter.jar"), REPLACE_EXISTING);
 
 		Map<String, Object> kernelspec = new LinkedHashMap<>();
-		kernelspec.put("argv", List.of(java, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:28000", "-jar", copyJar.toString(), "--exec", "{connection_file}"));
+		kernelspec.put("argv", List.of(java, "-jar", copyJar.toString(), "--exec", "{connection_file}"));
 		kernelspec.put("display_name", "VTL E&E");
 		kernelspec.put("interrupt_mode", "message");
 		kernelspec.put("language", "VTL");
 
+		if (conf == null)
+			conf = Paths.get(System.getProperty("user.home") + "/.vtlStudio.properties");
+		if (!Files.exists(conf) || !Files.isRegularFile(conf) || !Files.isReadable(conf));
+			ConfigurationManagerFactory.loadConfiguration(Files.newBufferedReader(conf));
+		
 		try (FileWriter writer = new FileWriter(kernelPath.resolve("kernel.json").toFile()))
 		{
 			JsonFactory.builder().build().setCodec(new JsonMapper()).createGenerator(writer).useDefaultPrettyPrinter().writeObject(kernelspec);
