@@ -1,0 +1,68 @@
+{
+  "datasets": [
+    {
+      "name": "in_1",
+      "source": "spark:csv:in_1.csv",
+      "structure": "in_1_str"
+    },
+    {
+      "name": "ex_1",
+      "structure": "ex_1_str",
+      "source": "spark:csv:ex_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "ex_1_str",
+      "components": [
+        {
+          "name": "bool_var",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "year",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "in_1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "year",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "year",
+      "domain": "integer"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "num_1",
+      "domain": "integer"
+    }
+  ]
+}

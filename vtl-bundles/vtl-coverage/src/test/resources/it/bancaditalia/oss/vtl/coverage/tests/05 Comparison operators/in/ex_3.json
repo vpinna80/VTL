@@ -1,0 +1,76 @@
+{
+  "datasets": [
+    {
+      "name": "in_3",
+      "source": "csv:in_3.csv",
+      "structure": "in_3_str"
+    },
+    {
+      "name": "ex_3",
+      "structure": "ex_3_str",
+      "source": "csv:ex_3.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "in_3_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "year",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "ex_3_str",
+      "components": [
+        {
+          "name": "isleap",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "year",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "isleap",
+      "domain": "boolean"
+    },
+    {
+      "name": "year",
+      "domain": "number"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "num_1",
+      "domain": "number"
+    }
+  ]
+}

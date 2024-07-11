@@ -1,0 +1,72 @@
+{
+  "datasets": [
+    {
+      "name": "in_4",
+      "source": "spark:csv:in_4.csv",
+      "structure": "in_4_str"
+    },
+    {
+      "name": "ex_3",
+      "structure": "ex_3_str",
+      "source": "spark:csv:ex_3.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "in_4_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "ex_3_str",
+      "components": [
+        {
+          "name": "mod_1",
+          "role": "Measure"
+        },
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "num_2",
+      "domain": "integer"
+    },
+    {
+      "name": "time_period",
+      "domain": "integer"
+    },
+    {
+      "name": "mod_1",
+      "domain": "integer"
+    },
+    {
+      "name": "num_1",
+      "domain": "integer"
+    }
+  ]
+}

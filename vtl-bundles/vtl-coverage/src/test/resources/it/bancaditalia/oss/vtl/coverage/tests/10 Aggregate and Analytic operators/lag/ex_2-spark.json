@@ -1,0 +1,72 @@
+{
+  "datasets": [
+    {
+      "name": "in_2",
+      "source": "spark:csv:in_2.csv",
+      "structure": "in_2_str"
+    },
+    {
+      "name": "ex_2",
+      "structure": "ex_2_str",
+      "source": "spark:csv:ex_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "in_2_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "ex_2_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        },
+        {
+          "name": "previous",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "previous",
+      "domain": "number"
+    },
+    {
+      "name": "edfdate",
+      "domain": "date"
+    },
+    {
+      "name": "edf1",
+      "domain": "number"
+    },
+    {
+      "name": "mkmvid",
+      "domain": "string"
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "datasets": [
+    {
+      "name": "in_1",
+      "source": "csv:in_1.csv",
+      "structure": "in_1_str"
+    },
+    {
+      "name": "in_2",
+      "source": "csv:in_2.csv",
+      "structure": "in_2_str"
+    },
+    {
+      "name": "ex_1",
+      "structure": "ex_1_str",
+      "source": "csv:ex_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "ex_1_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf2",
+          "role": "Measure"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        },
+        {
+          "name": "edf3",
+          "role": "Measure"
+        },
+        {
+          "name": "quality_status",
+          "role": "Attribute"
+        }
+      ]
+    },
+    {
+      "name": "in_1_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf2",
+          "role": "Measure"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        },
+        {
+          "name": "edf3",
+          "role": "Measure"
+        },
+        {
+          "name": "quality_status",
+          "role": "Attribute"
+        }
+      ]
+    },
+    {
+      "name": "in_2_str",
+      "components": [
+        {
+          "name": "edfdate",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf2",
+          "role": "Measure"
+        },
+        {
+          "name": "mkmvid",
+          "role": "Identifier"
+        },
+        {
+          "name": "edf1",
+          "role": "Measure"
+        },
+        {
+          "name": "edf3",
+          "role": "Measure"
+        },
+        {
+          "name": "quality_status",
+          "role": "Attribute"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "res3",
+      "domain": "boolean"
+    },
+    {
+      "name": "res2",
+      "domain": "boolean"
+    },
+    {
+      "name": "quality_status",
+      "domain": "string"
+    },
+    {
+      "name": "edfdate",
+      "domain": "date"
+    },
+    {
+      "name": "edf2",
+      "domain": "number"
+    },
+    {
+      "name": "edf3",
+      "domain": "number"
+    },
+    {
+      "name": "edf1",
+      "domain": "number"
+    },
+    {
+      "name": "res1",
+      "domain": "boolean"
+    },
+    {
+      "name": "mkmvid",
+      "domain": "string"
+    }
+  ]
+}

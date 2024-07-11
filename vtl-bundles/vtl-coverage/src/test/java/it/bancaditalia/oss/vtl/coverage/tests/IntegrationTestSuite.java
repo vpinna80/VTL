@@ -40,6 +40,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
@@ -59,65 +61,91 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class IntegrationTestSuite
 {
-	static {
-		System.setProperty("vtl.sequential", "true");
+	private static final Path TEST_ROOT;
+	
+	static 
+	{
+		try
+		{
+			TEST_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../tests").toURI());
+		}
+		catch (URISyntaxException e)
+		{
+			throw new ExceptionInInitializerError(e);
+		}
 	}
-
-	private static Path root;
 	
 	public static Stream<Arguments> test() throws IOException, URISyntaxException
 	{
-		root = Paths.get(IntegrationTestSuite.class.getResource("../tests").toURI());
-
 		METADATA_REPOSITORY.setValue(JsonMetadataRepository.class);
 		
 		List<Arguments> tests = new ArrayList<>();
-		String testName;
+		String category = null;
+		String operator = null;
+		String test = null;
 		StringBuilder testCode = new StringBuilder();
 		
 		try (BufferedReader dirReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("../tests"), UTF_8)))
 		{
-			while ((testName = dirReader.readLine()) != null)
-				if (!testName.endsWith(".class"))
-				{
-					try (BufferedReader testReader = Files.newBufferedReader(root.resolve(testName).resolve(testName + ".vtl")))
+			while ((category = dirReader.readLine()) != null)
+				if (!category.endsWith(".class"))
+					try (BufferedReader catReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("../tests/" + category), UTF_8)))
 					{
-						String testLine;
-						int headerLines = 20;
-						while ((testLine = testReader.readLine()) != null)
-						{
-							if (--headerLines > 0)
-								continue;
-							testCode.append(testLine).append(System.lineSeparator());
-						}
+						while ((operator = catReader.readLine()) != null)
+							try (BufferedReader opReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("../tests/" + category + "/" + operator), UTF_8)))
+							{
+								while ((test = opReader.readLine()) != null)
+									if (test.endsWith(".vtl"))
+									{
+										Matcher matcher = Pattern.compile("([0-9])").matcher(test);
+										matcher.find();
+										String number = matcher.group(1);
+										try (BufferedReader testReader = Files.newBufferedReader(TEST_ROOT.resolve(category).resolve(operator).resolve("ex_" + number + ".vtl")))
+										{
+											String testLine;
+											int headerLines = 20;
+											while ((testLine = testReader.readLine()) != null)
+											{
+												if (--headerLines > 0)
+													continue;
+												testCode.append(testLine).append(System.lineSeparator());
+											}
+
+											tests.add(Arguments.of(category, operator, number, testCode.toString()));
+											testCode.setLength(0);
+										}
+									}
+							}
 					}
-					tests.add(Arguments.of(testName, testCode.toString()));
-					testCode.setLength(0);
-				}
+		}
+		catch (Exception e)
+		{
+			System.err.println(category + "/" + operator + "/" + test);
+			throw e;
 		}
 
-		return tests.stream();
+		return tests.parallelStream();
 	}
 
-	@ParameterizedTest(name = "{0}")
+	@ParameterizedTest(name = "{1}[{2}]")
 	@MethodSource
-	public synchronized void test(final String testName, final String testCode) throws IOException, URISyntaxException
+	public void test(String categ, String operator, String number, String testCode) throws IOException, URISyntaxException
 	{
 		System.out.println("------------------------------------------------------------------------------------------------");
-		System.out.println("                                        " + testName);
+		System.out.println("                                        " + operator + "[" + number + "]");
 		System.out.println("------------------------------------------------------------------------------------------------");
 		System.out.println();
 		System.out.println(testCode);
 		System.out.println("------------------------------------------------------------------------------------------------");
 
 		ENVIRONMENT_IMPLEMENTATION.setValues(CSVPathEnvironment.class, WorkspaceImpl.class);
-		VTL_CSV_ENVIRONMENT_SEARCH_PATH.setValues(root.resolve(testName).toString());
-		JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(testName + "/" + testName + ".json").toString());
+		VTL_CSV_ENVIRONMENT_SEARCH_PATH.setValues(TEST_ROOT.resolve(categ).resolve(operator).toString());
+		JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(categ + "/" + operator + "/ex_" + number + ".json").toString());
 		VTLSession session = ConfigurationManagerFactory.newManager().createSession(testCode);
 		
 		session.compile();
 		
-		DataSet expected = session.resolve("expected", DataSet.class);
+		DataSet expected = session.resolve("ex_" + number, DataSet.class);
 		DataSet result = session.resolve("test_result", DataSet.class);
 		
 		for (DataStructureComponent<?, ?, ?> comp: expected.getMetadata())
@@ -144,26 +172,26 @@ public class IntegrationTestSuite
 			assertThat(dp, anyOf(resDPs.stream().map(Matchers::equalTo).collect(toList())));
 	}
 
-	@ParameterizedTest(name = "{0} - Spark")
+	@ParameterizedTest(name = "{1}[{2}] - Spark")
 	@MethodSource("test")
-	public synchronized void testSpark(final String testName, final String testCode) throws IOException, URISyntaxException
+	public void testSpark(String categ, String operator, String number,  String testCode) throws IOException, URISyntaxException
 	{
 		System.out.println("------------------------------------------------------------------------------------------------");
-		System.out.println("                                        SPARK -- " + testName);
+		System.out.println("                                        SPARK -- " + operator + "[" + number + "]");
 		System.out.println("------------------------------------------------------------------------------------------------");
 		System.out.println();
 		System.out.println(testCode);
 		System.out.println("------------------------------------------------------------------------------------------------");
 
 		ENVIRONMENT_IMPLEMENTATION.setValues(SparkEnvironment.class, WorkspaceImpl.class);
-		VTL_SPARK_SEARCH_PATH.setValues(root.resolve(testName).toString());
+		VTL_SPARK_SEARCH_PATH.setValues(TEST_ROOT.resolve(categ).resolve(operator).toString());
 		VTL_SPARK_UI_ENABLED.setValue(false);
-		JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(testName + "/" + testName + "-spark.json").toString());
+		JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(categ + "/" + operator + "/ex_" + number + "-spark.json").toString());
 		VTLSession session = ConfigurationManagerFactory.newManager().createSession(testCode);
 		
 		session.compile();
 		
-		DataSet expected = session.resolve("expected", DataSet.class);
+		DataSet expected = session.resolve("ex_" + number, DataSet.class);
 		DataSet result = session.resolve("test_result", DataSet.class);
 		
 		for (DataStructureComponent<?, ?, ?> comp: expected.getMetadata())

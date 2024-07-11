@@ -1,0 +1,100 @@
+{
+  "datasets": [
+    {
+      "name": "in_1",
+      "source": "csv:in_1.csv",
+      "structure": "in_1_str"
+    },
+    {
+      "name": "ex_1",
+      "structure": "ex_1_str",
+      "source": "csv:ex_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "in_1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_2",
+          "role": "Measure"
+        },
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "ex_1_str",
+      "components": [
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "text_3",
+          "role": "Measure"
+        },
+        {
+          "name": "text_2",
+          "role": "Measure"
+        },
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "id_3",
+      "domain": "string"
+    },
+    {
+      "name": "id_1",
+      "domain": "number"
+    },
+    {
+      "name": "text_3",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "text_1",
+      "domain": "string"
+    },
+    {
+      "name": "text_2",
+      "domain": "string"
+    }
+  ]
+}

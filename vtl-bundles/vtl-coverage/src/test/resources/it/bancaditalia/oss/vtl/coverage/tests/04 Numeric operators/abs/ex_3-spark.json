@@ -1,0 +1,76 @@
+{
+  "datasets": [
+    {
+      "name": "in_3",
+      "source": "spark:csv:in_3.csv",
+      "structure": "in_3_str"
+    },
+    {
+      "name": "ex_3",
+      "structure": "ex_3_str",
+      "source": "spark:csv:ex_3.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "in_3_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "ex_3_str",
+      "components": [
+        {
+          "name": "time_period",
+          "role": "Identifier"
+        },
+        {
+          "name": "abs_3",
+          "role": "Measure"
+        },
+        {
+          "name": "num_2",
+          "role": "Measure"
+        },
+        {
+          "name": "num_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "num_2",
+      "domain": "number"
+    },
+    {
+      "name": "time_period",
+      "domain": "number"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "abs_3",
+      "domain": "number"
+    },
+    {
+      "name": "num_1",
+      "domain": "number"
+    }
+  ]
+}

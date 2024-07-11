@@ -1,0 +1,76 @@
+{
+  "datasets": [
+    {
+      "name": "in_2",
+      "source": "csv:in_2.csv",
+      "structure": "in_2_str"
+    },
+    {
+      "name": "ex_2",
+      "structure": "ex_2_str",
+      "source": "csv:ex_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "in_2_str",
+      "components": [
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "ex_2_str",
+      "components": [
+        {
+          "name": "text_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "is_isin",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "id_2",
+      "domain": "string"
+    },
+    {
+      "name": "is_isin",
+      "domain": "boolean"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    },
+    {
+      "name": "text_1",
+      "domain": "string"
+    }
+  ]
+}

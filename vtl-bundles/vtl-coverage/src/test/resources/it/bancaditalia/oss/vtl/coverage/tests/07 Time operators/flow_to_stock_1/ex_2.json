@@ -1,0 +1,92 @@
+{
+  "datasets": [
+    {
+      "name": "in_2",
+      "source": "csv:in_2.csv",
+      "structure": "in_2_str"
+    },
+    {
+      "name": "ex_2",
+      "structure": "ex_2_str",
+      "source": "csv:ex_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "ex_2_str",
+      "components": [
+        {
+          "name": "id_annual",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "in_2_str",
+      "components": [
+        {
+          "name": "id_annual",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "id_annual",
+      "domain": "date"
+    },
+    {
+      "name": "res4",
+      "domain": "boolean"
+    },
+    {
+      "name": "res3",
+      "domain": "boolean"
+    },
+    {
+      "name": "res2",
+      "domain": "boolean"
+    },
+    {
+      "name": "id_3",
+      "domain": "string"
+    },
+    {
+      "name": "res1",
+      "domain": "boolean"
+    },
+    {
+      "name": "me_1",
+      "domain": "number"
+    }
+  ]
+}

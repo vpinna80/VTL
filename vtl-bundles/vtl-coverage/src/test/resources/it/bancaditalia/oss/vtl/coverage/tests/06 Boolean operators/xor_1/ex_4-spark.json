@@ -1,0 +1,72 @@
+{
+  "datasets": [
+    {
+      "name": "in_6",
+      "source": "spark:csv:in_6.csv",
+      "structure": "in_6_str"
+    },
+    {
+      "name": "ex_4",
+      "structure": "ex_4_str",
+      "source": "spark:csv:ex_4.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "in_6_str",
+      "components": [
+        {
+          "name": "m2",
+          "role": "Measure"
+        },
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "ex_4_str",
+      "components": [
+        {
+          "name": "m2",
+          "role": "Measure"
+        },
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        },
+        {
+          "name": "m3",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "m3",
+      "domain": "boolean"
+    },
+    {
+      "name": "m2",
+      "domain": "boolean"
+    },
+    {
+      "name": "m1",
+      "domain": "boolean"
+    }
+  ]
+}

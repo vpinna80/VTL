@@ -1,0 +1,64 @@
+{
+  "datasets": [
+    {
+      "name": "in_1",
+      "source": "csv:in_1.csv",
+      "structure": "in_1_str"
+    },
+    {
+      "name": "ex_1",
+      "structure": "number_ex_1_1_str",
+      "source": "csv:ex_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "number_ex_1_1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "in_1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
+        },
+        {
+          "name": "att1",
+          "role": "Attribute"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "m1",
+      "domain": "number"
+    },
+    {
+      "name": "id1",
+      "domain": "string"
+    },
+    {
+      "name": "att1",
+      "domain": "string"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    }
+  ]
+}

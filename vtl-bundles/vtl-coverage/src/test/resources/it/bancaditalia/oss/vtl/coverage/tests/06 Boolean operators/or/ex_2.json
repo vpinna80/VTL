@@ -1,0 +1,112 @@
+{
+  "datasets": [
+    {
+      "name": "in_3",
+      "source": "csv:in_3.csv",
+      "structure": "in_3_str"
+    },
+    {
+      "name": "ex_2",
+      "structure": "ex_2_str",
+      "source": "csv:ex_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "ex_2_str",
+      "components": [
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "orf",
+          "role": "Measure"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "ort",
+          "role": "Measure"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        }
+      ]
+    },
+    {
+      "name": "in_3_str",
+      "components": [
+        {
+          "name": "id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_4",
+          "role": "Identifier"
+        },
+        {
+          "name": "me_1",
+          "role": "Measure"
+        },
+        {
+          "name": "id_3",
+          "role": "Identifier"
+        },
+        {
+          "name": "id_1",
+          "role": "Identifier"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "id_1",
+      "domain": "string"
+    },
+    {
+      "name": "ort",
+      "domain": "boolean"
+    },
+    {
+      "name": "res2",
+      "domain": "boolean"
+    },
+    {
+      "name": "id_3",
+      "domain": "string"
+    },
+    {
+      "name": "me_1",
+      "domain": "boolean"
+    },
+    {
+      "name": "id_2",
+      "domain": "number"
+    },
+    {
+      "name": "id_4",
+      "domain": "number"
+    },
+    {
+      "name": "res1",
+      "domain": "boolean"
+    },
+    {
+      "name": "orf",
+      "domain": "boolean"
+    }
+  ]
+}
