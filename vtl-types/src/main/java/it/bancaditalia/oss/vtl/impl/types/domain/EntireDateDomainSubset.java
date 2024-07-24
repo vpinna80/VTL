@@ -80,4 +80,10 @@ public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainS
 	{
 		return LocalDate.class;
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return DateValue.class;
+	}
 }

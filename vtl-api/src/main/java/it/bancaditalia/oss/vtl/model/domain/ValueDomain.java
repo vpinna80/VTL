@@ -53,5 +53,11 @@ public interface ValueDomain extends Serializable
 	 * 
 	 * @return the representation type for this domain
 	 */
-	public Class<? extends Serializable> getRepresentation(); 
+	public Class<? extends Serializable> getRepresentation();
+
+	
+	/**
+	 * @return the engine representation class for values belonging to this domain
+	 */
+	public Class<?> getValueClass();
 }

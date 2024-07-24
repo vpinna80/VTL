@@ -38,7 +38,7 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	private final EnumSet<Characteristics> characteristics;
 
 	public static <T, A, R> SerCollector<T, A, R> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, 
-			SerBinaryOperator<A> combiner, SerFunction<A, R> finisher, Set<Characteristics> characteristics)
+			SerBinaryOperator<A> combiner, SerFunction<A, R> finisher, EnumSet<Characteristics> characteristics)
 	{
 		return new SerCollector<>(supplier, accumulator, combiner, finisher, characteristics);
 	}
@@ -52,7 +52,7 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	}
 
 	protected SerCollector(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, SerBinaryOperator<A> combiner,
-			SerFunction<A, R> finisher, Set<Characteristics> characteristics)
+			SerFunction<A, R> finisher, EnumSet<Characteristics> characteristics)
 	{
 		this.supplier = supplier;
 		this.accumulator = accumulator;

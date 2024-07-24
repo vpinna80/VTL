@@ -81,4 +81,10 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 	{
 		return Long.class;
 	}
+	
+	@Override
+	public Class<?> getValueClass()
+	{
+		return IntegerValue.class;
+	}
 }

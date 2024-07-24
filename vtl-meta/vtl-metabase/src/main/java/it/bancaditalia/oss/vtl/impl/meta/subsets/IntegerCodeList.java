@@ -160,4 +160,10 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	{
 		return INTEGERDS.getRepresentation();
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return IntegerCodeItem.class;
+	}
 }

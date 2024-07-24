@@ -30,11 +30,18 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STD
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_SAMP;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
-import static java.util.stream.Collectors.toSet;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,11 +56,14 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -67,6 +77,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -128,7 +139,16 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
-		SerCollector<DataPoint, ?, DataPoint> reducer = aggregation.getReducer(dataset.getMetadata().getMeasures());
+		SerCollector<DataPoint, ?, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> combined = null;
+		if (aggregation == COUNT)
+			combined = collectingAndThen(counting(), v -> Map.of(COUNT_MEASURE, IntegerValue.of(v)));
+		else
+			for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
+				if (combined == null)
+					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(), v -> new HashMap<>(Map.of(measure, v)))));
+				else
+					combined = teeing(mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(), v -> new SimpleEntry<>(measure, v)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
+		
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 
 		DataSet dataset2;
@@ -149,23 +169,23 @@ public class AggregateTransformation extends UnaryTransformation
 		}
 		else
 			dataset2 = dataset;
-		
+
 		// dataset-level aggregation
-		DataSet aggr = dataset2.aggregate((DataSetMetadata) metadata, groupIDs, reducer, (dp, keyValues) -> {
-			DataPointBuilder builder = new DataPointBuilder(keyValues);
+		return dataset2.aggregate((DataSetMetadata) metadata, groupIDs, combined, (map, keyValues) -> {
+			DataPointBuilder builder = new DataPointBuilder(keyValues.getValue());
 			if (name == null)
-				builder = builder.addAll(dp);
-			else if (dp.size() == 1)
+				for (DataStructureComponent<?, ?, ?> measure: map.keySet())
+					builder = builder.add(getCompFor(measure, repo, (DataSetMetadata) metadata), map.get(measure));
+			else if (map.size() == 1)
 			{
-				DataSetMetadata srcMeta = dataset.getMetadata();
-				builder = builder.add(getCompFor(srcMeta.getMeasures().iterator().next(), repo, (DataSetMetadata) metadata), dp.values().iterator().next());
+				DataStructureComponent<Measure, ?, ?> srcComp = dataset.getMetadata().getMeasures().iterator().next();
+				builder = builder.add(getCompFor(srcComp, repo, (DataSetMetadata) metadata), map.values().iterator().next());
 			}
 			else
 				throw new IllegalStateException();
-			return builder.build(dp.getLineage(), (DataSetMetadata) metadata);
+			
+			return builder.build(LineageNode.of(THIS, keyValues.getKey()), (DataSetMetadata) metadata);
 		});
-		
-		return aggr;
 	}
 
 	private DataStructureComponent<?, ?, ?> getCompFor(DataStructureComponent<?, ?, ?> src, MetadataRepository repo, DataSetMetadata metadata)
@@ -209,9 +229,13 @@ public class AggregateTransformation extends UnaryTransformation
 				if (aggregation == COUNT)
 					newMeasures = singleton(COUNT_MEASURE);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
-					newMeasures = newMeasures.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : c)
-						.collect(toSet());
+					if (newMeasures.size() == 1)
+					{
+						DataStructureComponent<Measure, ?, ?> c = newMeasures.iterator().next();
+						newMeasures = Set.of(INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : c);
+					}
+					else if (newMeasures.stream().map(DataStructureComponent::getVariable).map(Variable::getDomain).anyMatch(INTEGERDS::isAssignableFrom))
+						throw new UnsupportedOperationException("Only number measures are allowed for " + this);
 
 				if (operand != null)
 					return new DataStructureBuilder(newMeasures).build();

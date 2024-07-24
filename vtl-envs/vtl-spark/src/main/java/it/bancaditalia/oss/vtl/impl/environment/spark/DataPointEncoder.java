@@ -40,6 +40,7 @@ import java.util.stream.IntStream;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
@@ -62,8 +63,12 @@ public class DataPointEncoder implements Serializable
 	public final Encoder<Row> rowEncoder;
 	public final Encoder<Row> rowEncoderNoLineage;
 	
-	public DataPointEncoder(Set<? extends DataStructureComponent<?, ?, ?>> structure)
+	public DataPointEncoder(SparkSession session, Set<? extends DataStructureComponent<?, ?, ?>> structure)
 	{
+		// Ensures that SQL configuration is correct between all threads
+		// Avoids ClassCastException LocalDate -> java.sql.Date
+		SparkEnvironment.ensureConf(session);
+		
 		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
 		Arrays.sort(components, DataStructureComponent::byNameAndRole);
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(components));
@@ -332,7 +337,7 @@ public class DataPointEncoder implements Serializable
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
 			for (int i = 0; i < comps.length; i++)
-				if (comps[i] != null && !components.contains(comps[i]))
+				if (comps[i] != null && components.contains(comps[i]))
 					result.put(comps[i], vals[i]);
 			
 			return result;

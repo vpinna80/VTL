@@ -19,19 +19,20 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.function.BinaryOperator;
 
 @FunctionalInterface
 public interface SerBinaryOperator<T> extends BinaryOperator<T>, SerBiFunction<T, T, T>
 {
-    public static <T> SerBinaryOperator<T> minBy(Comparator<? super T> comparator)
+    public static <T, C extends Comparator<? super T> & Serializable> SerBinaryOperator<T> minBy(C comparator)
     {
     	SerToIntBiFunction<T, T> fn = comparator::compare;
         return (a, b) -> fn.applyAsInt(a, b) <= 0 ? a : b;
     }
 
-    public static <T> SerBinaryOperator<T> maxBy(Comparator<? super T> comparator)
+    public static <T, C extends Comparator<? super T> & Serializable> SerBinaryOperator<T> maxBy(C comparator)
     {
     	SerToIntBiFunction<T, T> fn = comparator::compare;
         return (a, b) -> fn.applyAsInt(a, b) >= 0 ? a : b;

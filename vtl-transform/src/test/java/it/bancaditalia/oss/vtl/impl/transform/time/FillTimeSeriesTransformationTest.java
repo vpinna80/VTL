@@ -130,10 +130,10 @@ public class FillTimeSeriesTransformationTest
 			
 			ScalarValue<?, ?, ?, ?> min = Utils.getStream(results.keySet())
 					.filter(not(NullValue.class::isInstance))
-					.collect(collectingAndThen(minBy(ScalarValue::compareTo), Optional::get));
+					.collect(collectingAndThen(minBy(DateValue.class, ScalarValue::compareTo), Optional::get));
 			ScalarValue<?, ?, ?, ?> max = Utils.getStream(results.keySet())
 					.filter(not(NullValue.class::isInstance))
-					.collect(collectingAndThen(maxBy(ScalarValue::compareTo), Optional::get));
+					.collect(collectingAndThen(maxBy(DateValue.class, ScalarValue::compareTo), Optional::get));
 			
 			DateValue<?> curr = (DateValue<?>) min;
 			while (curr.compareTo(max) < 0)

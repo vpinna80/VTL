@@ -21,9 +21,13 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
@@ -33,6 +37,7 @@ import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -155,18 +160,17 @@ public abstract class AbstractDataSet implements DataSet
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class), toConcurrentSet()));
 		}
 		
-		return new AbstractDataSet(metadata)
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected Stream<DataPoint> streamDataPoints()
-			{
-				return AbstractDataSet.this.stream()
-						.map(dpThis -> flatMapDataPoint(predicate, mergeOp, commonIds, index, leftJoin, dpThis))
-						.collect(concatenating(ORDERED));
-			}
-		};
+		return new AbstractDataSet(metadata) {
+				private static final long serialVersionUID = 1L;
+	
+				@Override
+				protected Stream<DataPoint> streamDataPoints()
+				{
+					return AbstractDataSet.this.stream()
+							.map(dpThis -> flatMapDataPoint(predicate, mergeOp, commonIds, index, leftJoin, dpThis))
+							.collect(concatenating(ORDERED));
+				}
+			};
 	}
 
 	protected static Stream<DataPoint> flatMapDataPoint(BiPredicate<DataPoint, DataPoint> predicate,
@@ -237,7 +241,7 @@ public abstract class AbstractDataSet implements DataSet
 		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
 		
 		// Decorated collector that keeps track of grouping key values for the finisher
-		Set<Characteristics> characteristics = EnumSet.copyOf(groupCollector.characteristics());
+		EnumSet<Characteristics> characteristics = EnumSet.copyOf(groupCollector.characteristics());
 		characteristics.remove(IDENTITY_FINISH);
 		SerCollector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, A, T> decoratedCollector = SerCollector.of(
 				// supplier
@@ -273,18 +277,18 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerBiFunction<T, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher)
+			SerBiFunction<T, Entry<Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, DataPoint> finisher)
 	{
 		return new AbstractDataSet(structure) {
 			private static final long serialVersionUID = 1L;
-			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T>> cache = null;
+			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Entry<Lineage[], T>>> cache = null;
 			
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
 				createCache(keys, groupCollector);
 
-				return Utils.getStream(cache).map(splitting((k, v) -> finisher.apply(v, k)));
+				return Utils.getStream(cache).map(splitting((k, v) -> finisher.apply(v.getValue(), new SimpleEntry<>(v.getKey(), k))));
 			}
 
 			private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,
@@ -293,8 +297,10 @@ public abstract class AbstractDataSet implements DataSet
 				if (cache == null)
 					try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
 					{
+						SerCollector<DataPoint, ?, Entry<Lineage[], T>> collWithLineage = teeing(mapping(DataPoint::getLineage, collectingAndThen(toSet(), s -> s.toArray(Lineage[]::new))), groupCollector, SimpleEntry::new);
+
 						cache = stream
-								.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), groupCollector))
+								.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), collWithLineage))
 								.entrySet();
 					}
 			}

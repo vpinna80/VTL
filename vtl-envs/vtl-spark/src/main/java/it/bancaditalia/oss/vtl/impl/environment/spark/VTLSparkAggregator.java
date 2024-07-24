@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.PRIM_BUILDERS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 
 import java.io.Serializable;
 
@@ -28,6 +29,7 @@ import org.apache.spark.sql.expressions.Aggregator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
@@ -66,6 +68,8 @@ public class VTLSparkAggregator<I, TT> extends Aggregator<I, Object, TT>
 		// For performance reasons scalars are encoded as boxed primitive types, and must be rebuilt
 		if (value != null && PRIM_BUILDERS.containsKey(value.getClass()))
 			value = (I) PRIM_BUILDERS.get(value.getClass()).apply((Serializable) value);
+		else if (value == null)
+			value = (I) NullValue.instance(NULLDS);
 		
 		collector.accumulator().accept(acc, value);
 		return acc;

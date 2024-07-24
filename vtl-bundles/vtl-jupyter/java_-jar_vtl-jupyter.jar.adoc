@@ -1,0 +1,85 @@
+////
+  // Copyright © 2020 Banca D'Italia
+  //
+  // Licensed under the EUPL, Version 1.2 (the "License");
+  // You may not use this work except in compliance with the
+  // License.
+  // You may obtain a copy of the License at:
+  //
+  // https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+  //
+  // Unless required by applicable law or agreed to in
+  // writing, software distributed under the License is
+  // distributed on an "AS IS" basis,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+  // express or implied.
+  //
+  // See the License for the specific language governing
+  // permissions and limitations under the License.
+////
+
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 1.2.0-SNAPSHOT
+:manmanual: Java -jar vtl-jupyter.jar Manual
+:mansource: 1.2.0-SNAPSHOT
+:man-linkstyle: pass:[blue R < >]
+= java -jar vtl-jupyter.jar(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+java -jar vtl-jupyter.jar - Launches or installs the VTL jupyter kernel.
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*java -jar vtl-jupyter.jar* [*-hV*] [*--jupyter* _jupyter_] (*-i* | *-e* _<exec>_)
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+Launches or installs the VTL jupyter kernel.
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-e*, *--exec* _<exec>_::
+  Run the VTL E&E kernel. Should only be called by Jupyter.
+
+*-h*, *--help*::
+  Show this help message and exit.
+
+*-i*, *--install*::
+  Installs this kernel into the Jupyter data path.
+
+*--jupyter* _jupyter_::
+  Location of Jupyter executable.
+
+*-V*, *--version*::
+  Print version information and exit.
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

@@ -101,7 +101,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		};
 
 		for (DataStructureComponent<Measure, ?, ?> measure: measures)
-			dataset = dataset.analytic(lineageOp, measure, measure, clause, null, SUM.getReducer(measure), finisher);
+			dataset = dataset.analytic(lineageOp, measure, measure, clause, null, SUM.getReducer(measure.getVariable().getDomain()), finisher);
 		
 		return dataset;
 	}

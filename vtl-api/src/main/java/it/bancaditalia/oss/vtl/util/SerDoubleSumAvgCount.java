@@ -19,100 +19,89 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
-import java.util.Arrays;
-import java.util.OptionalDouble;
-import java.util.concurrent.locks.ReentrantLock;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static java.math.BigDecimal.ZERO;
 
-public class SerDoubleSumAvgCount implements SerDoubleConsumer
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.DoubleAdder;
+import java.util.concurrent.atomic.LongAdder;
+
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+
+public class SerDoubleSumAvgCount implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private volatile long count;
-	private final double[] sums;
-	private final ReentrantLock lock = new ReentrantLock();
+	private final AtomicInteger count = new AtomicInteger(0);
+	private final AtomicInteger countDouble = new AtomicInteger(0);
+	private final DoubleAdder doubleSum = new DoubleAdder();
+	private final LongAdder longSum = new LongAdder(); 
+	private final AtomicReference<BigDecimal> bigDecimalSum = new AtomicReference<>(ZERO);
 
-    public SerDoubleSumAvgCount()
-    { 
-    	this.sums = new double[3];
+    public void accumulate(Double d)
+    {
+		count.incrementAndGet();
+		countDouble.incrementAndGet();
+		doubleSum.add(d);
     }
 
-    public SerDoubleSumAvgCount(long count, double[] sums)
-	{
-    	this.count = count;
-		this.sums = Arrays.copyOf(sums, 3);
-	}
-
-	@Override
-    public void accept(double value)
+    public void accumulate(Long l)
     {
-		try
+		count.incrementAndGet();
+		longSum.add(l);
+    }
+
+    public void accumulate(ScalarValue<?, ?, ?, ?> scalar)
+    {
+    	if (scalar == null)
+    		return;
+		Number value = (Number) scalar.get();
+		if (value == null)
+			return;
+		
+		count.incrementAndGet();
+		if (value.getClass() == Long.class)
+			longSum.add(value.longValue());
+		else
 		{
-			lock.lock();
-			++count;
-	        sums[2] += value;
-	        sumWithCompensation(value);
-		}
-		finally 
-		{
-			lock.unlock();
+			countDouble.incrementAndGet();
+			if (isUseBigDecimal())
+				bigDecimalSum.accumulateAndGet((BigDecimal) value, BigDecimal::add);
+			else
+				doubleSum.add(value.doubleValue());
 		}
     }
 
     public SerDoubleSumAvgCount combine(SerDoubleSumAvgCount other)
     {
-		try
-		{
-			lock.lock();
-			count += other.count;
-			sums[2] += other.sums[2];
-			sumWithCompensation(other.sums[0]);
-			sumWithCompensation(-other.sums[1]);
-			
-			return this;
-		}
-		finally
-		{
-			lock.unlock();
-		}
+    	throw new UnsupportedOperationException("SerDoubleSumAvgCount::combine");
     }
 
-    private void sumWithCompensation(double value)
-    {
-        double tmp1 = value - sums[1];
-        double tmp2 = sums[0] + tmp1;
-        sums[1] = (tmp2 - sums[0]) - tmp1;
-        sums[0] = tmp2;
-    }
-
-    public final long getCount()
-    {
-        return count;
-    }
-    
-    public final double[] getSums()
-    {
-    	return sums;
-    }
-
-    public final OptionalDouble getSum()
-    {
-    	if (count <= 0)
-    		return OptionalDouble.empty();
-    	
-        return OptionalDouble.of(internalSum());
-    }
-
-	private double internalSum()
+	public int getCount()
 	{
-		double tmp =  sums[0] - sums[1];
-        if (Double.isNaN(tmp) && Double.isInfinite(sums[2]))
-            return sums[2];
-        else
-            return tmp;
+		return count.get();
 	}
 
-    public final OptionalDouble getAverage()
-    {
-        return getCount() > 0 ? OptionalDouble.of(internalSum() / getCount()) : OptionalDouble.empty();
-    }
+	public int getCountDouble()
+	{
+		return countDouble.get();
+	}
+
+	public Long getLongSum()
+	{
+		return longSum.sum();
+	}
+
+	public BigDecimal getBigDecimalSum()
+	{
+		return bigDecimalSum.get();
+	}
+
+	public double getDoubleSum()
+	{
+		return doubleSum.sum();
+	}
 }

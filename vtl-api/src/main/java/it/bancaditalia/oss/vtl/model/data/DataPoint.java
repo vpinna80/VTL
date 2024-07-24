@@ -29,6 +29,7 @@ import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -57,11 +58,10 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the component whose values are used for the ordering
 	 * @return the Comparator instance
 	 */
-	@SafeVarargs
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> SerComparator<DataPoint> compareBy(DataStructureComponent<Identifier, ?, ?>... components)
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> SerComparator<DataPoint> compareBy(List<DataStructureComponent<?, ?, ?>> components)
 	{
 		SerToIntBiFunction<DataPoint, DataPoint> comparator = null;
-		for (DataStructureComponent<Identifier, ?, ?> component: components)
+		for (DataStructureComponent<?, ?, ?> component: components)
 		{
 			@SuppressWarnings("unchecked")
 			DataStructureComponent<Identifier, S, D> c = (DataStructureComponent<Identifier, S, D>) component;
@@ -83,7 +83,12 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 		};
 		return comparator::applyAsInt;
 	}
-	
+
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> SerComparator<DataPoint> compareBy(DataStructureComponent<?, ?, ?> component)
+	{
+		return compareBy(List.of(component));
+	}
+
 	public static SerBinaryOperator<DataPoint> combiner(SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
 	{
 		return (dp1, dp2) -> dp1.combine(dp2, lineageCombiner);

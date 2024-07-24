@@ -40,12 +40,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -62,6 +63,9 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
 public class IntegrationTestSuite
 {
 	private static final Path TEST_ROOT;
+	private static final Set<Integer> CATEG_TO_DO = Set.of();
+	private static final Set<String> TESTS_TO_DO = Set.of();
+	private static final Semaphore LOCK = new Semaphore(1);
 	
 	static 
 	{
@@ -88,34 +92,35 @@ public class IntegrationTestSuite
 		try (BufferedReader dirReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("../tests"), UTF_8)))
 		{
 			while ((category = dirReader.readLine()) != null)
-				if (!category.endsWith(".class"))
+				if (!category.endsWith(".class") && (CATEG_TO_DO.isEmpty() || CATEG_TO_DO.contains(Integer.parseInt(category.substring(0, 2)))))
 					try (BufferedReader catReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("../tests/" + category), UTF_8)))
 					{
 						while ((operator = catReader.readLine()) != null)
-							try (BufferedReader opReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("../tests/" + category + "/" + operator), UTF_8)))
-							{
-								while ((test = opReader.readLine()) != null)
-									if (test.endsWith(".vtl"))
-									{
-										Matcher matcher = Pattern.compile("([0-9])").matcher(test);
-										matcher.find();
-										String number = matcher.group(1);
-										try (BufferedReader testReader = Files.newBufferedReader(TEST_ROOT.resolve(category).resolve(operator).resolve("ex_" + number + ".vtl")))
+							if (TESTS_TO_DO.isEmpty() || TESTS_TO_DO.contains(operator))
+								try (BufferedReader opReader = new BufferedReader(new InputStreamReader(IntegrationTestSuite.class.getResourceAsStream("../tests/" + category + "/" + operator), UTF_8)))
+								{
+									while ((test = opReader.readLine()) != null)
+										if (test.endsWith(".vtl"))
 										{
-											String testLine;
-											int headerLines = 20;
-											while ((testLine = testReader.readLine()) != null)
+											Matcher matcher = Pattern.compile("([0-9])").matcher(test);
+											matcher.find();
+											String number = matcher.group(1);
+											try (BufferedReader testReader = Files.newBufferedReader(TEST_ROOT.resolve(category).resolve(operator).resolve("ex_" + number + ".vtl")))
 											{
-												if (--headerLines > 0)
-													continue;
-												testCode.append(testLine).append(System.lineSeparator());
+												String testLine;
+												int headerLines = 20;
+												while ((testLine = testReader.readLine()) != null)
+												{
+													if (--headerLines > 0)
+														continue;
+													testCode.append(testLine).append(System.lineSeparator());
+												}
+	
+												tests.add(Arguments.of(category, operator, number, testCode.toString()));
+												testCode.setLength(0);
 											}
-
-											tests.add(Arguments.of(category, operator, number, testCode.toString()));
-											testCode.setLength(0);
 										}
-									}
-							}
+								}
 					}
 		}
 		catch (Exception e)
@@ -127,68 +132,51 @@ public class IntegrationTestSuite
 		return tests.parallelStream();
 	}
 
-	@ParameterizedTest(name = "{1}[{2}]")
-	@MethodSource
-	public void test(String categ, String operator, String number, String testCode) throws IOException, URISyntaxException
+	@RepeatedParameterizedTest(value = 5, name = "{1} test {2} rep {currentRepetition}/{totalRepetitions}")
+	@MethodSource("test")
+	public void test(String categ, String operator, String number, String testCode) throws IOException, URISyntaxException, InterruptedException
 	{
-		System.out.println("------------------------------------------------------------------------------------------------");
-		System.out.println("                                        " + operator + "[" + number + "]");
-		System.out.println("------------------------------------------------------------------------------------------------");
-		System.out.println();
-		System.out.println(testCode);
-		System.out.println("------------------------------------------------------------------------------------------------");
-
-		ENVIRONMENT_IMPLEMENTATION.setValues(CSVPathEnvironment.class, WorkspaceImpl.class);
-		VTL_CSV_ENVIRONMENT_SEARCH_PATH.setValues(TEST_ROOT.resolve(categ).resolve(operator).toString());
-		JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(categ + "/" + operator + "/ex_" + number + ".json").toString());
-		VTLSession session = ConfigurationManagerFactory.newManager().createSession(testCode);
-		
-		session.compile();
-		
-		DataSet expected = session.resolve("ex_" + number, DataSet.class);
-		DataSet result = session.resolve("test_result", DataSet.class);
-		
-		for (DataStructureComponent<?, ?, ?> comp: expected.getMetadata())
-			assertTrue(result.getMetadata().contains(comp), "Expected component " + comp + " is missing in " + result.getMetadata());
-		for (DataStructureComponent<?, ?, ?> comp: result.getMetadata())
-			assertTrue(expected.getMetadata().contains(comp), "Unexpected component " + comp + " in result.");
-		
-		List<DataPoint> resDPs;
-		List<DataPoint> expectedDPs;
-		try (Stream<DataPoint> resStream = result.stream(); Stream<DataPoint> expStream = expected.stream())
+		LOCK.acquire();
+		VTLSession session;
+		try 
 		{
-			resDPs = resStream.collect(toList());
-			expectedDPs = expStream.collect(toList());
+			ENVIRONMENT_IMPLEMENTATION.setValues(CSVPathEnvironment.class, WorkspaceImpl.class);
+			VTL_CSV_ENVIRONMENT_SEARCH_PATH.setValues(TEST_ROOT.resolve(categ).resolve(operator).toString());
+			JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(categ + "/" + operator + "/ex_" + number + ".json").toString());
+			session = ConfigurationManagerFactory.newManager().createSession(testCode);
+		}
+		finally
+		{
+			LOCK.release();
 		}
 		
-		System.out.println("Expected:");
-		expectedDPs.forEach(System.out::println);
-		System.out.println("Actual:");
-		resDPs.forEach(System.out::println);
-		
-		for (DataPoint dp: resDPs)
-			assertThat(dp, anyOf(expectedDPs.stream().map(Matchers::equalTo).collect(toList())));
-		for (DataPoint dp: expectedDPs)
-			assertThat(dp, anyOf(resDPs.stream().map(Matchers::equalTo).collect(toList())));
+		doTest(number, session);
 	}
 
-	@ParameterizedTest(name = "{1}[{2}] - Spark")
+	@RepeatedParameterizedTest(value = 5, name = "{1} test {2} rep {currentRepetition}/{totalRepetitions}")
 	@MethodSource("test")
-	public void testSpark(String categ, String operator, String number,  String testCode) throws IOException, URISyntaxException
+	public void testSpark(String categ, String operator, String number,  String testCode) throws IOException, URISyntaxException, InterruptedException
 	{
-		System.out.println("------------------------------------------------------------------------------------------------");
-		System.out.println("                                        SPARK -- " + operator + "[" + number + "]");
-		System.out.println("------------------------------------------------------------------------------------------------");
-		System.out.println();
-		System.out.println(testCode);
-		System.out.println("------------------------------------------------------------------------------------------------");
+		LOCK.acquire();
+		VTLSession session;
+		try 
+		{
+			ENVIRONMENT_IMPLEMENTATION.setValues(SparkEnvironment.class, WorkspaceImpl.class);
+			VTL_SPARK_SEARCH_PATH.setValues(TEST_ROOT.resolve(categ).resolve(operator).toString());
+			VTL_SPARK_UI_ENABLED.setValue(false);
+			JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(categ + "/" + operator + "/ex_" + number + "-spark.json").toString());
+			session = ConfigurationManagerFactory.newManager().createSession(testCode);
+		}
+		finally
+		{
+			LOCK.release();
+		}
 
-		ENVIRONMENT_IMPLEMENTATION.setValues(SparkEnvironment.class, WorkspaceImpl.class);
-		VTL_SPARK_SEARCH_PATH.setValues(TEST_ROOT.resolve(categ).resolve(operator).toString());
-		VTL_SPARK_UI_ENABLED.setValue(false);
-		JSON_METADATA_URL.setValue(IntegrationTestSuite.class.getResource(categ + "/" + operator + "/ex_" + number + "-spark.json").toString());
-		VTLSession session = ConfigurationManagerFactory.newManager().createSession(testCode);
-		
+		doTest(number, session);
+	}
+
+	private void doTest(String number, VTLSession session)
+	{
 		session.compile();
 		
 		DataSet expected = session.resolve("ex_" + number, DataSet.class);
@@ -206,11 +194,6 @@ public class IntegrationTestSuite
 			resDPs = resStream.collect(toList());
 			expectedDPs = expStream.collect(toList());
 		}
-		
-		System.out.println("Expected:");
-		expectedDPs.forEach(System.out::println);
-		System.out.println("Actual:");
-		resDPs.forEach(System.out::println);
 
 		for (DataPoint dp: resDPs)
 			assertThat(dp, anyOf(expectedDPs.stream().map(Matchers::equalTo).collect(toList())));

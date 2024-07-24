@@ -37,6 +37,7 @@ import static org.apache.spark.sql.functions.udf;
 import static org.apache.spark.sql.types.DataTypes.BooleanType;
 import static org.apache.spark.sql.types.DataTypes.DoubleType;
 import static org.apache.spark.sql.types.DataTypes.LongType;
+import static scala.collection.JavaConverters.asJava;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -49,10 +50,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.serializer.KryoRegistrator;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.DataFrameReader;
@@ -60,6 +61,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.expressions.Literal;
+import org.apache.spark.sql.internal.SQLConf;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.IntegerType;
@@ -110,6 +112,8 @@ public class SparkEnvironment implements Environment
 			new VTLPropertyImpl("vtl.spark.search.path", "Path to search for spark files", System.getenv("VTL_PATH"), EnumSet.of(REQUIRED), System.getenv("VTL_PATH"));
 
 	/* package */ static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
+	private static final AtomicReference<SQLConf> MASTER_CONF = new AtomicReference<>();
+	private static final ThreadLocal<Boolean> CONFS = new ThreadLocal<>();
 	
 	static
 	{
@@ -121,7 +125,12 @@ public class SparkEnvironment implements Environment
 				UDTRegistration.register(lineageClass.getName(), LineageSparkUDT.class.getName());
 		}
 	}
-	
+
+	public static void startContextCleaner()
+	{
+		
+	}
+
 	public static class VTLKryoRegistrator implements KryoRegistrator
 	{
 		@Override
@@ -168,7 +177,6 @@ public class SparkEnvironment implements Environment
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
 		
 		// Set SEQUENTIAL to avoid creating new threads while inside the executor
-		System.setProperty("vtl.sequential", "true");
 		paths = VTL_SPARK_SEARCH_PATH.getValues();
 		
 		session = SparkSession
@@ -177,20 +185,30 @@ public class SparkEnvironment implements Environment
 			  .master(master)
 			  .getOrCreate();
 		
-		reader = session.read();
-	}
-	
-	public SparkEnvironment(SparkContext sc)
-	{
-		paths = VTL_SPARK_SEARCH_PATH.getValues();
-		session = SparkSession
-			  .builder()
-			  .config(sc.getConf())
-			  .getOrCreate();
+		SQLConf sqlConf = session.sessionState().conf();
+		if (MASTER_CONF.compareAndSet(null, sqlConf))
+			CONFS.set(true);
 		
 		reader = session.read();
 	}
 	
+	
+	static void ensureConf(SparkSession session)
+	{
+		if (CONFS.get() != Boolean.TRUE)
+		{
+			CONFS.set(Boolean.TRUE);
+			
+			SQLConf master = MASTER_CONF.get();
+			SQLConf sqlConf = SQLConf.get();
+			Map<String, String> javaMasterConf = asJava(master.getAllConfs());
+			
+			if (!javaMasterConf.equals(asJava(sqlConf.getAllConfs())))
+				for (String k: javaMasterConf.keySet())
+					sqlConf.setConfString(k, master.getConfString(k));
+		}
+	}
+
 	@Override
 	public boolean contains(String name)
 	{
@@ -316,14 +334,14 @@ public class SparkEnvironment implements Environment
 					sourceDataFrame2 = sourceDataFrame2.withColumn(name, to_date(sourceDataFrame2.col(name)));
 			}
 			
-			return new SparkDataSet(session, structure, new DataPointEncoder(structure), sourceDataFrame2.select(names).withColumn("$lineage$", lineage));
+			return new SparkDataSet(session, structure, new DataPointEncoder(session, structure), sourceDataFrame2.select(names).withColumn("$lineage$", lineage));
 		}
 		else if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
 		{
 			// infer structure from the schema metadata
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, schema)).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
-			return new SparkDataSet(session, structure, new DataPointEncoder(structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
+			return new SparkDataSet(session, structure, new DataPointEncoder(session, structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
 		}
 		else if (!schema.forall(field -> field.dataType() instanceof StringType))
 		{
@@ -340,7 +358,7 @@ public class SparkEnvironment implements Environment
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, sourceDataFrame2.schema())).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
-			return new SparkDataSet(session, structure, new DataPointEncoder(structure), enriched);
+			return new SparkDataSet(session, structure, new DataPointEncoder(session, structure), enriched);
 		}
 		else
 		{

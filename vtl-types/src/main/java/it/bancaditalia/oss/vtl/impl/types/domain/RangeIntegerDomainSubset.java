@@ -101,4 +101,10 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 			return false;
 		return true;
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return super.getValueClass();
+	}
 }

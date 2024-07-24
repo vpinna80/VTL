@@ -82,4 +82,10 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	{
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		throw new UnsupportedOperationException();
+	}
 }

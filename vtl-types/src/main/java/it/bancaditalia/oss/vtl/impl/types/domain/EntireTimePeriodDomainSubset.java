@@ -79,4 +79,10 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return TimePeriodValue.class;
+	}
 }

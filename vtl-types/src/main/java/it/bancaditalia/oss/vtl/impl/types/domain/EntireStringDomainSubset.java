@@ -72,4 +72,10 @@ public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDom
 	{
 		return String.class; 
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return StringValue.class;
+	}
 }

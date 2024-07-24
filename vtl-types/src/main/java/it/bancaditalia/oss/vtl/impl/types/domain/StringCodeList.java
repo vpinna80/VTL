@@ -186,4 +186,10 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	{
 		return String.class;
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return StringCodeItem.class;
+	}
 }

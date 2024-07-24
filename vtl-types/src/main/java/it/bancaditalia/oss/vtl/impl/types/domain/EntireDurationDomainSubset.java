@@ -89,4 +89,10 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 		// TODO
 		throw new UnsupportedOperationException();
 	}
+	
+	@Override
+	public Class<?> getValueClass()
+	{
+		return DurationValue.class;
+	}
 }

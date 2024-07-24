@@ -123,4 +123,10 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 	{
 		return parent.getRepresentation();
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return parent.getValueClass();
+	}
 }

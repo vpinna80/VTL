@@ -26,6 +26,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
@@ -75,5 +77,11 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 	public Class<? extends Serializable> getRepresentation()
 	{
 		return isUseBigDecimal() ? BigDecimal.class : Double.class;
+	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return isUseBigDecimal() ? BigDecimalValue.class : DoubleValue.class;
 	}
 }

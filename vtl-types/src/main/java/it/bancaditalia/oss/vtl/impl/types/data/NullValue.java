@@ -43,11 +43,14 @@ public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain>
 	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instance(S domain)
 	{
 		@SuppressWarnings("unchecked")
-		NullValue<S, D> nullValue = (NullValue<S, D>) INSTANCES.get(domain);
-		if (nullValue != null)
-			return nullValue;
-		nullValue = new NullValue<>(domain);
-		INSTANCES.put(domain, nullValue);
+		NullValue<S, D> nullValue = (NullValue<S, D>) INSTANCES.computeIfAbsent(domain, n -> new NullValue<>(domain));
+		return nullValue;
+	}
+
+	public static NullValue<?, ?> unqualifiedInstance(ValueDomainSubset<?, ?> domain)
+	{
+		@SuppressWarnings("rawtypes")
+		NullValue<?, ?> nullValue = INSTANCES.computeIfAbsent(domain, n -> new NullValue<>((ValueDomainSubset) domain));
 		return nullValue;
 	}
 

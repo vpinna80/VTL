@@ -29,6 +29,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.DEFAULT_JAVA_DECIMAL_ENCODER;
 import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.types.DataTypes.BooleanType;
@@ -36,7 +37,6 @@ import static org.apache.spark.sql.types.DataTypes.DateType;
 import static org.apache.spark.sql.types.DataTypes.DoubleType;
 import static org.apache.spark.sql.types.DataTypes.LongType;
 import static org.apache.spark.sql.types.DataTypes.StringType;
-import static org.apache.spark.sql.types.DataTypes.createDecimalType;
 import static scala.collection.JavaConverters.asJava;
 import static scala.jdk.javaapi.CollectionConverters.asScala;
 
@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.apache.spark.sql.Column;
@@ -62,10 +63,12 @@ import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.IterableEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.LocalDateEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.MapEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ProductEncoder;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
@@ -94,7 +97,6 @@ import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import scala.Option;
 import scala.Tuple2;
-import scala.collection.JavaConverters;
 import scala.collection.immutable.Seq;
 import scala.reflect.ClassTag;
 
@@ -103,6 +105,7 @@ public class SparkUtils
 	private static final Map<ValueDomainSubset<?, ?>, AgnosticEncoder<?>> DOMAIN_ENCODERS = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, DataType> DOMAIN_DATATYPES = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> DOMAIN_BUILDERS = new ConcurrentHashMap<>();
+	private static final LocalDateEncoder LDENCODER = STRICT_LOCAL_DATE_ENCODER();
 	static final Map<Class<?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> PRIM_BUILDERS = new ConcurrentHashMap<>();
 
 	static
@@ -110,14 +113,14 @@ public class SparkUtils
 		DOMAIN_ENCODERS.put(BOOLEANDS, AgnosticEncoders.BoxedBooleanEncoder$.MODULE$);
 		DOMAIN_ENCODERS.put(STRINGDS, AgnosticEncoders.StringEncoder$.MODULE$);
 		DOMAIN_ENCODERS.put(INTEGERDS, AgnosticEncoders.BoxedLongEncoder$.MODULE$);
-		DOMAIN_ENCODERS.put(NUMBERDS, AgnosticEncoders.BoxedDoubleEncoder$.MODULE$);
-		DOMAIN_ENCODERS.put(TIMEDS, STRICT_LOCAL_DATE_ENCODER());
-		DOMAIN_ENCODERS.put(DATEDS, STRICT_LOCAL_DATE_ENCODER());
+		DOMAIN_ENCODERS.put(NUMBERDS, isUseBigDecimal() ? DEFAULT_JAVA_DECIMAL_ENCODER() : AgnosticEncoders.BoxedDoubleEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(TIMEDS, LDENCODER);
+		DOMAIN_ENCODERS.put(DATEDS, LDENCODER);
 
 		DOMAIN_DATATYPES.put(BOOLEANDS, BooleanType);
 		DOMAIN_DATATYPES.put(STRINGDS, StringType);
 		DOMAIN_DATATYPES.put(INTEGERDS, LongType);
-		DOMAIN_DATATYPES.put(NUMBERDS, isUseBigDecimal() ? createDecimalType() : DoubleType);
+		DOMAIN_DATATYPES.put(NUMBERDS, isUseBigDecimal() ? DecimalType.USER_DEFAULT() : DoubleType);
 		DOMAIN_DATATYPES.put(TIMEDS, DateType);
 		DOMAIN_DATATYPES.put(DATEDS, DateType);
 
@@ -173,10 +176,11 @@ public class SparkUtils
 		DOMAIN_BUILDERS.putIfAbsent(domain, builder);
 
 		if (serialized instanceof Date)
-			serialized = (((Date) serialized).toLocalDate());
+			throw new UnsupportedOperationException("Found java.sql.Date " + serialized + " for component " + component);
+		
 		return domain.cast(builder.apply(serialized));
 	}
-
+	
 	public static Metadata getMetadataFor(DataStructureComponent<?, ?, ?> component)
 	{
 		MetadataBuilder metadataBuilder = new MetadataBuilder();
@@ -305,7 +309,16 @@ public class SparkUtils
 			try
 			{
 				List<EncoderField> fieldEncoders = new ArrayList<>();
-				AgnosticEncoder<?> vEncoder = JavaTypeInference.encoderFor((Class<?>) instance.getClass().getField("reprType").get(instance));
+				Class<?> holdClass = (Class<?>) instance.getClass().getField("repr").get(instance);
+				AgnosticEncoder<?> vEncoder;
+				if (BaseScalarValue.class.isAssignableFrom(holdClass))
+				{
+					vEncoder = DOMAIN_ENCODERS.get(domain);
+					if (vEncoder == null)
+						throw new UnsupportedOperationException(domain.toString());
+				}
+				else
+					vEncoder = JavaTypeInference.encoderFor(holdClass);
 				fieldEncoders.add(new EncoderField("get", vEncoder, true, new Metadata(), Option.empty(), Option.empty()));
 				Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
 				resultEncoder = new ProductEncoder<>(ClassTag.apply(SerDoubleSumAvgCount.class), seq, Option.empty());
@@ -322,6 +335,10 @@ public class SparkUtils
 				throw new UnsupportedOperationException(domain.toString());
 		}
 		else if (instance instanceof Object[])
+		{
+			resultEncoder = JavaTypeInference.encoderFor(instance.getClass());
+		}
+		else if (instance instanceof AtomicReference)
 		{
 			resultEncoder = JavaTypeInference.encoderFor(instance.getClass());
 		}
@@ -349,7 +366,7 @@ public class SparkUtils
 			{
 				Tuple2<?, ?> entry = iterator.next();
 				
-				Serializable[] values = JavaConverters.asJava(((Row) entry._1).toSeq()).toArray(Serializable[]::new);
+				Serializable[] values = asJava(((Row) entry._1).toSeq()).toArray(Serializable[]::new);
 				rankedPartition.put(new GenericTuple(values), (Long) entry._2);
 			}
 			
@@ -359,7 +376,7 @@ public class SparkUtils
 		{
 			SerFunction<Serializable, ScalarValue<?, ?, ?, ?>> builder = DOMAIN_BUILDERS.getOrDefault(comp.getVariable().getDomain(), ScalarValue.class::cast);
 			ArrayList<Serializable> list = new ArrayList<>();
-			for (Serializable value: asJava((scala.collection.Iterable<Serializable>) serAcc))
+			for (Object value: asJava((scala.collection.Iterable<?>) serAcc))
 				list.add(builder.apply((Serializable) ((Row) value).get(0)));
 			serAcc = list;
 		}

@@ -115,4 +115,10 @@ public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends Va
 	{
 		return subsetWithNull.getRepresentation();
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return subsetWithNull.getValueClass();
+	}
 }

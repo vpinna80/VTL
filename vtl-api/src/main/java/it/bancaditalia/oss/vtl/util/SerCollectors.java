@@ -20,32 +20,30 @@
 package it.bancaditalia.oss.vtl.util;
 
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
-import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static java.lang.Boolean.TRUE;
-import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collector.Characteristics;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -53,23 +51,28 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 public class SerCollectors
 {
     public static <T, K, U> SerCollector<T, ?, ConcurrentMap<K, U>> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
-                                                        SerFunction<? super T, ? extends U> valueMapper)
-    {
-        return SerCollector.of(ConcurrentHashMap::new, throwingPutter(keyMapper, valueMapper), throwingMerger(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
-    }
+            SerFunction<? super T, ? extends U> valueMapper, SerBinaryOperator<U> mergeFunction)
+	{
+		return toConcurrentMap(keyMapper, valueMapper, mergeFunction, ConcurrentHashMap::new);
+	}
+
+	public static <T, K, U, M extends ConcurrentMap<K, U>> SerCollector<T, ?, M> toConcurrentMap(SerFunction<? super T, ? extends K> kMapper, SerFunction<? super T, ? extends U> vMapper,
+			SerBinaryOperator<U> mergeFun, SerSupplier<M> mapSupplier)
+	{
+		SerBiConsumer<M, T> acc = (map, e) -> map.merge(kMapper.apply(e), vMapper.apply(e), mergeFun);
+
+		return SerCollector.of(mapSupplier, acc, mapMerger(mergeFun), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
+	}
 
     public static <T, K, U> SerCollector<T, ?, ConcurrentMap<K, U>> toConcurrentMap(SerFunction<? super T, ? extends K> keyMapper,
-                    SerFunction<? super T, ? extends U> valueMapper, SerBinaryOperator<U> mergeFunction)
+                                                        SerFunction<? super T, ? extends U> valueMapper)
     {
-        return toConcurrentMap(keyMapper, valueMapper, mergeFunction, ConcurrentHashMap::new);
+        return SerCollector.of(ConcurrentHashMap::new, throwingPutter(keyMapper, valueMapper), (a, b) -> a, EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
     }
 
-    public static <T, K, U, M extends ConcurrentMap<K, U>> SerCollector<T, ?, M> toConcurrentMap(SerFunction<? super T, ? extends K> kMapper,
-    		SerFunction<? super T, ? extends U> vMapper, SerBinaryOperator<U> mergeFun, SerSupplier<M> mapSupplier)
+    public static <T, K, U> SerCollector<T, ?, Map<K, U>> toMap(SerFunction<? super T, ? extends K> kMapper, SerFunction<? super T, ? extends U> vMapper)
     {
-        SerBiConsumer<M, T> acc = (map, e) -> map.merge(kMapper.apply(e), vMapper.apply(e), mergeFun);
-                                              
-        return SerCollector.of(mapSupplier, acc, mapMerger(mergeFun), identity(), EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
+        return SerCollector.of(HashMap::new, throwingPutter(kMapper, vMapper), throwingMerger(), identity(), EnumSet.of(UNORDERED, IDENTITY_FINISH));
     }
 
     public static <T, K, U, M extends Map<K, U> & Serializable> SerCollector<T, ?, M> toMap(SerFunction<? super T, ? extends K> kMapper,
@@ -80,42 +83,24 @@ public class SerCollectors
 
     public static <T, A, R, RR> SerCollector<T, A, RR> collectingAndThen(SerCollector<T, A, ? extends R> downstream, SerFunction<? super R, RR> finisher)
 	{
-		Set<Characteristics> characteristics = EnumSet.copyOf(downstream.characteristics());
+		EnumSet<Characteristics> characteristics = EnumSet.copyOf(downstream.characteristics());
 		characteristics.remove(IDENTITY_FINISH);
-		return new SerCollector<>(downstream.supplier(), downstream.accumulator(), downstream.combiner(),
-				downstream.finisher().andThen(finisher), characteristics);
+		return new SerCollector<>(downstream.supplier(), downstream.accumulator(), downstream.combiner(), downstream.finisher().andThen(finisher), characteristics);
 	}
 	
     public static <T> SerCollector<T, ?, Set<T>> toSet()
     {
-        return new SerCollector<>(HashSet::new, Set::add, (left, right) -> { left.addAll(right); return left; }, 
-        		identity(), EnumSet.of(UNORDERED, IDENTITY_FINISH));
+        return new SerCollector<>(HashSet::new, Set::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(UNORDERED, IDENTITY_FINISH));
     }
 
     public static <T, C extends Collection<T>> SerCollector<T, C, C> toCollection(SerSupplier<C> collectionFactory)
     {
-        return SerCollector.of(collectionFactory, Collection::add, (r1, r2) -> { r1.addAll(r2); return r1; }, identity(), EnumSet.of(IDENTITY_FINISH));
+        return SerCollector.of(collectionFactory, Collection::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH));
     }
 
-    public static <T> SerCollector<T, Long[], Long> counting()
+    public static <T> SerCollector<T, ?, Long> counting()
     {
-        return reducing(0L, e -> 1L, Long::sum);
-    }
-
-    public static <T, U> SerCollector<T, U[], U> reducing(U identity, SerFunction<? super T, ? extends U> mapper, SerBinaryOperator<U> op)
-    {
-        return new SerCollector<>(boxSupplier(identity),
-                (a, t) -> { a[0] = op.apply(a[0], mapper.apply(t)); },
-                (a, b) -> { a[0] = op.apply(a[0], b[0]); return a; },
-                a -> a[0], emptySet());
-    }
-    
-    public static <T extends Serializable> SerCollector<T, ?, Optional<T>> reducing(SerBinaryOperator<T> op)
-    {
-        return new SerCollector<>(boxSupplier((T) null),
-                (a, t) -> { if (a[0] == null) a[0] = t; else a[0] = op.apply(a[0], t); },
-                (a, b) -> { if (a[0] == null) a[0] = b[0]; else a[0] = op.apply(a[0], coalesce(b[0], a[0])); return a; },
-                a -> Optional.ofNullable(a[0]), emptySet());
+        return SerCollector.of(AtomicLong::new, (l, v) -> l.incrementAndGet(), (l, r) -> l, AtomicLong::get, EnumSet.of(UNORDERED, CONCURRENT));
     }
 
     public static <T, U, A, R> SerCollector<T, ?, R> mapping(SerFunction<? super T, ? extends U> mapper, SerCollector<? super U, A, R> downstream)
@@ -125,52 +110,20 @@ public class SerCollectors
         		downstream.combiner(), downstream.finisher(), downstream.characteristics());
     }
 
-    public static <T> SerCollector<T, ?, BigDecimal> summingBigDecimal(SerFunction<? super T, BigDecimal> mapper)
-    {
-        return collectingAndThen(mapping(mapper::apply, reducing(BigDecimal::add)), opt -> (BigDecimal) opt.orElse(BigDecimal.valueOf(0)));
-    }
-
-    public static <T> SerCollector<T, ?, OptionalDouble> summingDouble(SerToDoubleFunction<? super T> mapper)
-    {
-    	return collectingAndThen(summarizingDouble(mapper), SerDoubleSumAvgCount::getSum);
-    }
-
-    public static <T> SerCollector<T, ?, OptionalLong> summingLong(SerToLongFunction<? super T> mapper)
-    {
-        return new SerCollector<>(
-                () -> new long[2],
-                (a, t) -> { a[0] += mapper.applyAsLong(t); a[1]++; },
-                (a, b) -> { a[0] += b[0]; a[1] += b[1]; return a; },
-                a -> a[1] <= 0 ? OptionalLong.empty() : OptionalLong.of(a[0]), EnumSet.of(CONCURRENT, UNORDERED));
-    }
-
-    public static <T> SerCollector<T, ?, OptionalDouble> averagingDouble(SerToDoubleFunction<? super T> mapper) 
-    {
-    	return collectingAndThen(summarizingDouble(mapper), SerDoubleSumAvgCount::getAverage);
-    }
-    
-    public static <T> SerCollector<T, ?, SerDoubleSumAvgCount> summarizingDouble(SerToDoubleFunction<? super T> mapper)
-    {
-        return SerCollector.of(
-                () -> new SerDoubleSumAvgCount(),
-                (r, t) -> r.accept(mapper.applyAsDouble(t)),
-                SerDoubleSumAvgCount::combine, EnumSet.of(CONCURRENT, UNORDERED, IDENTITY_FINISH));
-    }
-    
     public static <T> SerCollector<T, List<T>, List<T>> toList()
     {
-        return new SerCollector<>(ArrayList::new, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH, CONCURRENT));
+    	return toList(ArrayList::new);
     }
 
     public static <T> SerCollector<T, List<T>, List<T>> toList(SerSupplier<List<T>> supplier)
     {
-        return new SerCollector<>(supplier::get, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH, CONCURRENT));
+        return new SerCollector<>(supplier::get, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH));
     }
 
     public static <T> SerCollector<T, ?, T[]> toArray(T[] result)
     {
     	AtomicInteger index = new AtomicInteger(0);
-        return new SerCollector<>(() -> result, (a, v) -> a[index.getAndIncrement()] = v, (a, b) -> a, identity(), EnumSet.of(CONCURRENT));
+        return new SerCollector<>(() -> result, (a, v) -> a[index.getAndIncrement()] = v, (a, b) -> a, identity(), EnumSet.of(UNORDERED, CONCURRENT));
     }
 
 	public static <T, A, R> SerCollector<T, A, R> filtering(SerPredicate<? super T> predicate, SerCollector<? super T, A, R> downstream)
@@ -193,22 +146,37 @@ public class SerCollectors
 		return new SerCollector<>(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
 	}
 
-    public static <T extends Serializable, C extends Comparator<? super T> & Serializable> SerCollector<T, ?, Optional<T>> minBy(C comparator)
+    public static <T, C extends Comparator<? super T> & Serializable> SerCollector<T, ?, Optional<T>> minBy(Class<?> repr, C comparator)
     {
-        return reducing(SerBinaryOperator.minBy(comparator));
+        return reducing(repr, SerBinaryOperator.minBy(comparator));
     }
 
-    public static <T extends Serializable, C extends Comparator<? super T> & Serializable> SerCollector<T, ?, Optional<T>> maxBy(C comparator)
+    public static <T, C extends Comparator<? super T> & Serializable> SerCollector<T, ?, Optional<T>> maxBy(Class<?> repr, C comparator)
     {
-        return reducing(SerBinaryOperator.maxBy(comparator));
+        return reducing(repr, SerBinaryOperator.maxBy(comparator));
+    }
+    
+    public static <T> SerCollector<T, ?, Optional<T>> reducing(Class<?> repr, SerBinaryOperator<T> op)
+    {
+    	return SerCollector.of(() -> new Holder<T>(repr), (r, v) -> r.accumulateAndGet(v, (v1, v2) -> v1 == null ? v2 : op.apply(v1, v2)), (l, r) -> l, r -> Optional.ofNullable(r.get()), EnumSet.of(CONCURRENT, UNORDERED));
     }
 
+    public static <T> SerCollector<T, ?, Optional<T>> firstValue(Class<?> repr)
+    {
+    	return SerCollector.of(() -> new Holder<T>(repr), (r, v) -> r.compareAndSet(null, v), (a, b) -> a, r -> Optional.ofNullable(r.get()), EnumSet.of(CONCURRENT));
+    }
+    
+    public static <T> SerCollector<T, ?, Optional<T>> lastValue(Class<?> repr)
+    {
+    	return SerCollector.of(() -> new Holder<T>(repr), Holder::set, (a, b) -> b, r -> Optional.ofNullable(r.get()), EnumSet.of(CONCURRENT));
+    }
+    
     public static <T, K> SerCollector<T, ?, ConcurrentMap<K, List<T>>> groupingByConcurrent(SerFunction<? super T, ? extends K> classifier)
     {
         return groupingByConcurrent(classifier, ConcurrentHashMap::new, toList());
     }
 
-    public static <T, K, A, D> SerCollector<T, ?, ConcurrentMap<K, D>> groupingByConcurrent(SerFunction<? super T, ? extends K> classifier, SerCollector<? super T, A, D> downstream)
+    public static <T, K, D> SerCollector<T, ?, ConcurrentMap<K, D>> groupingByConcurrent(SerFunction<? super T, ? extends K> classifier, SerCollector<? super T, ?, D> downstream)
     {
         return groupingByConcurrent(classifier, ConcurrentHashMap::new, downstream);
     }
@@ -345,11 +313,6 @@ public class SerCollectors
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> SerSupplier<T[]> boxSupplier(T identity) {
-        return () -> (T[]) new Serializable[] { (Serializable) identity };
-    }
-
     private static <K, V, M extends Map<K,V>> SerBinaryOperator<M> mapMerger(SerBinaryOperator<V> mergeFunction)
     {
         return (m1, m2) -> {
@@ -379,13 +342,10 @@ public class SerCollectors
     private static <K, V, T extends Map<K, V>> SerBinaryOperator<T> throwingMerger()
     {
         return (u, v) -> {
-        	for (Entry<K, V> e: v.entrySet())
-        	{
-        		final K key = e.getKey();
-				final V value = e.getValue();
+        	v.entrySet().forEach(splittingConsumer((key, value) -> {
 				if (u.putIfAbsent(key, requireNonNull(value)) != null)
                 	throw new IllegalStateException(String.format("Duplicate key %s with values %s and %s", key, value, u.get(key)));
-        	}
+        	}));
     		return u;
         };
     }

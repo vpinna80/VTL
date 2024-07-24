@@ -1,19 +1,19 @@
 {
   "datasets": [
     {
-      "name": "median_data",
+      "name": "in_2",
       "source": "spark:csv:in_2.csv",
-      "structure": "median_str"
+      "structure": "in_2"
     },
     {
       "name": "ex_2",
-      "structure": "sum_str",
+      "structure": "ex_2_str",
       "source": "spark:csv:ex_2.csv"
     }
   ],
   "structures": [
     {
-      "name": "median_str",
+      "name": "in_2",
       "components": [
         {
           "name": "id_3",
@@ -38,7 +38,7 @@
       ]
     },
     {
-      "name": "sum_str",
+      "name": "ex_2_str",
       "components": [
         {
           "name": "me_2",
@@ -78,11 +78,11 @@
     },
     {
       "name": "me_2",
-      "domain": "number"
+      "domain": "integer"
     },
     {
       "name": "me_1",
-      "domain": "number"
+      "domain": "integer"
     }
   ]
 }

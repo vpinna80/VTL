@@ -141,4 +141,10 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 	{
 		return Boolean.class;
 	}
+	
+	@Override
+	public Class<?> getValueClass()
+	{
+		return BooleanValue.class;
+	}
 }

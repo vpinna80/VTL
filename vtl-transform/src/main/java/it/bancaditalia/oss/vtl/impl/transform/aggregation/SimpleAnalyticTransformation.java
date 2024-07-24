@@ -120,7 +120,8 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, criterion);
 		
 		for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
-			dataset = dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), measure, clause, aggregation.getReducer(measure));
+			dataset = dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), measure, measure, clause, 
+					null, aggregation.getReducer(measure.getVariable().getDomain()), null);
 
 		return dataset;
 	}

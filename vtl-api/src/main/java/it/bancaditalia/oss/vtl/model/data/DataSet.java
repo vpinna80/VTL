@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -223,20 +224,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerBiFunction<T, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> finisher);
-	
-	/**
-	 * Creates a new DataSet by applying a window function over multiple source components of this DataSet.
-	 * Each application can produce one or more results that will be exploded into multiple datapoints. 
-	 * @param components A map from source components to result components 
-	 * @param clause The clause specifying the window 
-	 * @param extractors extractors that extract a value from a datapoint 
-	 * @param collectors Collectors that compute the intermediate results for each source component and window
-	 * @param finishers Finishers to transform intermediate results and partition keys into a collection of new values
-	 * 
-	 * @param <TT> The intermediate result of a single analytic function on one window
-	 * @return The dataset result of the analytic invocation
-	 */
+			SerBiFunction<T, Entry<Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, DataPoint> finisher);
 	
 	/**
 	 * Creates a new DataSet by applying a window function over a component of this DataSet.
@@ -260,12 +248,6 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
 			DataStructureComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor,
 			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher);
-
-	public default DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> component, 
-			WindowClause clause, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> collector)
-	{
-		return analytic(lineageOp, component, component, clause, null, collector, null);
-	}
 
 	/**
 	 * Creates a new DataSet as the union of this and other datasets.

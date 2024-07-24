@@ -132,4 +132,10 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 	{
 		return parent.getRepresentation();
 	}
+
+	@Override
+	public Class<?> getValueClass()
+	{
+		return StringValue.class;
+	}
 }
