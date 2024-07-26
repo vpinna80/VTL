@@ -23,16 +23,18 @@ import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumb
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.getAveragingCollector;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.getSummingCollector;
+import static it.bancaditalia.oss.vtl.impl.types.operators.MedianCollector.medianCollector;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.firstValue;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.lastValue;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
+import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
-import java.util.Arrays;
 import java.util.EnumSet;
 
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
@@ -42,26 +44,17 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerFunction;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum AnalyticOperator  
 {
 	COUNT(domain -> collectingAndThen(counting(), IntegerValue::of)),
 	SUM(domain -> getSummingCollector()), 
 	AVG(domain -> getAveragingCollector()),
-	MEDIAN(domain -> collectingAndThen(SerCollectors.toSet(), s -> {
-				ScalarValue<?, ?, ?, ?>[] array = s.toArray(new ScalarValue<?, ?, ?, ?>[s.size()]);
-				if (Utils.SEQUENTIAL) 
-					Arrays.sort(array);
-				else
-					Arrays.parallelSort(array);
-				return array[array.length / 2];
-			})),
+	MEDIAN(domain -> collectingAndThen(filtering(not(NullValue.class::isInstance), medianCollector(domain.getValueClass())), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
 	MIN(domain -> collectingAndThen(minBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
 	MAX(domain -> collectingAndThen(maxBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
-	VAR_POP(domain -> collectingAndThen(SerCollectors.mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / (acu[0] + 1))), NumberValueImpl::createNumberValue)),
+	VAR_POP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / (acu[0] + 1))), NumberValueImpl::createNumberValue)),
 	VAR_SAMP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / acu[0])), NumberValueImpl::createNumberValue)),
 	STDDEV_POP(domain -> collectingAndThen(VAR_POP.getReducer(NUMBERDS), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP(domain -> collectingAndThen(VAR_SAMP.getReducer(domain), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),

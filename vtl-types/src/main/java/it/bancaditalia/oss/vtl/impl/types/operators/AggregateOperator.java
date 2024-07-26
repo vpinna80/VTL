@@ -25,14 +25,15 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
+import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.EnumSet;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
@@ -46,21 +47,13 @@ import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerSupplier;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public enum AggregateOperator  
 {
 	COUNT(() -> collectingAndThen(counting(), IntegerValue::of)),
 	SUM(() -> getSummingCollector()), 
 	AVG(() -> getAveragingCollector()),
-	MEDIAN(() -> collectingAndThen(SerCollectors.toSet(), s -> {
-				ScalarValue<?, ?, ?, ?>[] array = s.toArray(new ScalarValue<?, ?, ?, ?>[s.size()]);
-				if (Utils.SEQUENTIAL) 
-					Arrays.sort(array);
-				else
-					Arrays.parallelSort(array);
-				return array[array.length / 2];
-			})),
+	MEDIAN(() -> collectingAndThen(filtering(not(NullValue.class::isInstance), new MedianCollector(getSVClass())), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MIN(() -> collectingAndThen(minBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MAX(() -> collectingAndThen(maxBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	VAR_POP(() -> collectingAndThen(SerCollectors.mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / (acu[0] + 1))), NumberValueImpl::createNumberValue)),
