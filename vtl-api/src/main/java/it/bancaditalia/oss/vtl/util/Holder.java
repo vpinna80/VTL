@@ -48,7 +48,8 @@ public class Holder<V> implements Serializable
     }
 
     public final Class<?> repr;
-    private volatile V value;
+    @SuppressWarnings("unused") // used by the VarHandle
+	private V value;
 
     public Holder(Class<?> repr)
     {
@@ -57,12 +58,12 @@ public class Holder<V> implements Serializable
 
     public V get()
     {
-        return value;
+        return (V) VALUE.getVolatile(this);
     }
 
     public void set(V newValue)
     {
-        value = newValue;
+        VALUE.setVolatile(this, newValue);
     }
 
     public boolean compareAndSet(V expectedValue, V newValue)

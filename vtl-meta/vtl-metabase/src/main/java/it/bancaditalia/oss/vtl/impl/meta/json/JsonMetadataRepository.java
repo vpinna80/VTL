@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
@@ -91,7 +92,11 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 
 		try (InputStream source = new URL(url).openStream())
 		{
-			Map<?, ?> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source).readValueAs(Map.class);
+			Map<?, ?> json;
+			try (JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source))
+			{
+				json = parser.readValueAs(Map.class);
+			}
 			
 			dsDefs = iterate((List<?>) json.get("datasets"), this::createDataset);
 			strDefs = iterate((List<?>) json.get("structures"), this::createStructure);

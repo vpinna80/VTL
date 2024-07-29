@@ -140,9 +140,10 @@ public class JupyterMessage implements Serializable
 			for (Map<String, Object> dict: List.of(header, parentHeader, metadata, content))
 			{
 				StringWriter writer = new StringWriter();
-				JsonGenerator generator = FACTORY.createGenerator(writer);
-				generator.writeObject(dict);
-				generator.close();
+				try (JsonGenerator generator = FACTORY.createGenerator(writer))
+				{
+					generator.writeObject(dict);
+				}
 				byte[] frame = writer.toString().getBytes(ZMQ.CHARSET);
 				encoded.add(frame);
 				hmac.update(frame);
@@ -195,14 +196,15 @@ public class JupyterMessage implements Serializable
 		try
 		{
 			StringWriter writer = new StringWriter();
-			JsonGenerator generator = FACTORY.createGenerator(writer).useDefaultPrettyPrinter();
-			Map<String, Object> msg = new HashMap<>();
-			msg.put("header", header);
-			msg.put("parentHeader", parentHeader);
-			msg.put("metadata", metadata);
-			msg.put("content", content);
-			generator.writeObject(msg);
-			generator.close();
+			try (JsonGenerator generator = FACTORY.createGenerator(writer).useDefaultPrettyPrinter())
+			{
+				Map<String, Object> msg = new HashMap<>();
+				msg.put("header", header);
+				msg.put("parentHeader", parentHeader);
+				msg.put("metadata", metadata);
+				msg.put("content", content);
+				generator.writeObject(msg);
+			}
 			return writer.toString();
 		}
 		catch (IOException e)

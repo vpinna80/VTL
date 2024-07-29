@@ -43,6 +43,9 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
@@ -97,8 +100,11 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 
 	private void exec() throws IOException, InvalidKeyException, NoSuchAlgorithmException
 	{
-		@SuppressWarnings("unchecked")
-		Map<String, Object> connInfo = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(operation.exec).readValueAs(Map.class);
+		Map<String, Object> connInfo;
+		try (JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(operation.exec))
+		{
+			connInfo = parser.readValueAs(Map.class);
+		}
 
 		if (conf == null)
 			conf = Paths.get(System.getProperty("user.home") + "/.vtlStudio.properties");
@@ -163,9 +169,10 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 		if (!Files.exists(conf) || !Files.isRegularFile(conf) || !Files.isReadable(conf));
 			ConfigurationManagerFactory.loadConfiguration(Files.newBufferedReader(conf));
 		
-		try (FileWriter writer = new FileWriter(kernelPath.resolve("kernel.json").toFile()))
+		try (FileWriter writer = new FileWriter(kernelPath.resolve("kernel.json").toFile());
+				JsonGenerator generator = JsonFactory.builder().build().setCodec(new JsonMapper()).createGenerator(writer))
 		{
-			JsonFactory.builder().build().setCodec(new JsonMapper()).createGenerator(writer).useDefaultPrettyPrinter().writeObject(kernelspec);
+			generator.useDefaultPrettyPrinter().writeObject(kernelspec);
 		}
 		
 		System.out.println("VTL E&E Kernel has been installed in " + kernelPath.toString());

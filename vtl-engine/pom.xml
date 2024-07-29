@@ -97,7 +97,24 @@
 				</dependencies>
 				<executions>
 					<execution>
+						<id>build</id>
 						<phase>generate-sources</phase>
+						<goals>
+							<goal>xjc</goal>
+						</goals>
+						<configuration>
+							<packageName>
+								it.bancaditalia.oss.vtl.impl.engine.mapping.xml</packageName>
+							<locale>en</locale>
+							<arguments>
+								<argument>-Ximm</argument>
+								<argument>-Ximm-nofinalclasses</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>site</id>
+						<phase>pre-site</phase>
 						<goals>
 							<goal>xjc</goal>
 						</goals>
@@ -113,18 +130,14 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
+            <plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<configuration>
-					<excludePackageNames>
-						it.bancaditalia.oss.vtl.impl.engine.mapping.xml</excludePackageNames>
-				</configuration>
 			</plugin>
-		</plugins>
+       	</plugins>
 	</build>
 </project>

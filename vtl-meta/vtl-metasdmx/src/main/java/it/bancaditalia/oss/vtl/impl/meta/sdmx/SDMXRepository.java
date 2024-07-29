@@ -67,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import io.sdmx.api.exception.SdmxNoResultsException;
 import io.sdmx.api.sdmx.constants.TEXT_TYPE;
 import io.sdmx.api.sdmx.manager.structure.SdmxBeanRetrievalManager;
 import io.sdmx.api.sdmx.model.beans.base.ComponentBean;
@@ -246,15 +247,25 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		}
 		
 		// Load transformation schemes
-		for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
+		try
 		{
-			String tsName = sdmxRef2VtlName(scheme.asReference());
-			LOGGER.info("Loading transformation scheme {}", tsName);
-			String code = scheme.getItems().stream()
-				.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
-				.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
-			LOGGER.debug("Loaded transformation scheme {} with code:\n{}\n", tsName, code);
-			schemes.put(tsName, code);
+			for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
+			{
+				String tsName = sdmxRef2VtlName(scheme.asReference());
+				LOGGER.info("Loading transformation scheme {}", tsName);
+				String code = scheme.getItems().stream()
+					.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
+					.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
+				LOGGER.debug("Loaded transformation scheme {} with code:\n{}\n", tsName, code);
+				schemes.put(tsName, code);
+			}
+		}
+		catch (RuntimeException e)
+		{
+			if (e.getCause() instanceof SdmxNoResultsException)
+				LOGGER.warn("No transformation schemes found.");
+			else
+				throw e;
 		}
 	}
 

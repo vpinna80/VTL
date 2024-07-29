@@ -93,7 +93,6 @@ import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
@@ -267,6 +266,9 @@ public class SDMXEnvironment implements Environment, Serializable
 			this.structure = structure;
 			this.alias = alias;
 			this.dre = dre;
+			
+			if (structure.getMeasures().size() > 1)
+				throw new UnsupportedOperationException("Unsupported dataset with multiple measures.");
 
 			no = dre.moveNextDataset() && dre.moveNextKeyable() && dre.moveNextObservation();
 			if (no)
@@ -315,9 +317,10 @@ public class SDMXEnvironment implements Environment, Serializable
 			}
 			
 			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
-			builder.add(measure, obs.getMeasureValue(measure.getVariable().getName()) != null 
-					? NumberValueImpl.createNumberValue(obs.getMeasureValue(measure.getVariable().getName()))
-					: NullValue.instanceFrom(measure));
+			List<String> values = obs.getMeasureValues(measure.getVariable().getName());
+			if (values.size() > 1)
+				throw new UnsupportedOperationException("Unsupported measure with multiple values (found " + values.size() + " values).");
+			builder.add(measure, NumberValueImpl.createNumberValue(values.iterator().next()));
 
 			TemporalAccessor parsed; 
 			for (;;)

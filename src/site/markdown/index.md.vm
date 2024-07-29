@@ -22,7 +22,7 @@
 		<div class="header--subhead">
 			<div id="banner" class="header__banner">
 				<a href="." class="d-inline-block">
-					<img style="vertical-align: middle;" class="m-2" src="$resourcePath/images/logo.svg"
+					<img style="vertical-align: middle;" class="m-2" src="images/logo.svg"
 						alt="$esc.html($decoration.bannerLeft.alt)" width="$decoration.bannerLeft.width"
 						height="$$decoration.bannerLeft.height" />
 				</a>
@@ -30,7 +30,7 @@
 				<p class="lead">$config.slogan.getValue()</p>
 			</div>
 			<p>
-				<a href="$resourcePath/documentation.html#get-started"
+				<a href="documentation.html#get-started"
 					class="btn btn-lg mb-2 mr-2 ml-2">
 					<span class="btn__link-icon">
 						<!-- MACRO{snippet|file=src/site/svg/pentone.svg|verbatim=false|ignoreDownloadError=false} -->
@@ -78,7 +78,7 @@
 					such as databases, web servers, compilers or others.</p>
 				<p class="text-center">
 					<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
-						href="$resourcePath/structure.html">Read more »</a>
+						href="structure.html">Read more »</a>
 				</p>
 			</div>
 		</div>
@@ -124,14 +124,14 @@
 					<!-- MACRO{snippet|file=src/site/svg/contribute.svg|verbatim=false|ignoreDownloadError=false} -->
 				</div>
 				<div class="card-body">
-					<p>VTL E&amp;E is an <a href="${scm-url}">open source</a> project lead by Bank of Italy and built with
+					<p>VTL E&amp;E is an <a href="${scmUrl}">open source</a> project lead by Bank of Italy and built with
 						<a href="http://maven.apache.org" target="_blank" rel="noopener">Apache Maven</a>.</p>
-					<p>The project is licensed under the <a href="${license-url}" target="_blank" rel="noopener">European Public License 1.2.</a></p>
+					<p>The project is licensed under the <a href="${licenseUrl}" target="_blank" rel="noopener">European Public License 1.2.</a></p>
 					<p>Any contribution is welcome! Feel free to report any issue, suggest a new feature, or propose new code.</p>
 				</div>
 				<div class="card-footer border-0 bg-transparent text-center">
 					<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
-						href="$resourcePath/development-documentation.html#dev-contribute">Contribute »</a>
+						href="development-documentation.html#dev-contribute">Contribute »</a>
 				</div>
 			</div>
 		</div>

@@ -59,6 +59,7 @@ import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class VTLJupyterKernel
@@ -221,7 +222,10 @@ public class VTLJupyterKernel
 	@SuppressWarnings("unchecked")
 	private static Map<String, Object> frameToJson(byte[] frame) throws IOException
 	{
-		return FACTORY.createParser(new String(frame, ZMQ.CHARSET)).readValueAs(Map.class);
+		try (JsonParser parser = FACTORY.createParser(new String(frame, ZMQ.CHARSET)))
+		{
+			return parser.readValueAs(Map.class);
+		}
 	}
 
 	public void interrupt()

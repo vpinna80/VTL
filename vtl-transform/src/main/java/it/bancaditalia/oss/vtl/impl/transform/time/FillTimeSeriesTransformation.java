@@ -63,6 +63,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimeDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
@@ -73,6 +74,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -118,7 +120,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet ds, VTLValueMetadata metadata)
 	{
 		DataSetMetadata structure = ds.getMetadata();
-		DataStructureComponent<?, ?, ?> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
+		DataStructureComponent<Identifier, EntireTimeDomainSubset, TimeDomain> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getMetadata().getIDs());
 		ids.remove(timeID);
 		Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nullFiller = 
@@ -127,11 +129,11 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	
 		if (mode == ALL)
 		{
-			Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<ScalarValue<?, ?, ?, ?>>> index;
+			Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Set<? extends ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain>>> index;
 			try (Stream<DataPoint> stream = ds.stream())
 			{
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(ids), 
-						mapping(dp -> (ScalarValue<?, ?, ?, ?>) dp.get(timeID), toConcurrentSet())));
+						mapping(dp -> dp.getValue(timeID), toConcurrentSet())));
 			}
 
 			Entry<Optional<? extends ScalarValue<?, ?, ?, ?>>, Optional<? extends ScalarValue<?, ?, ?, ?>>> e = Utils.getStream(index.values())
