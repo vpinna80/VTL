@@ -37,6 +37,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.newSetFromMap;
@@ -129,14 +130,15 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	
 		if (mode == ALL)
 		{
-			Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Set<? extends ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain>>> index;
+			Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<ScalarValue<?, ?, ?, ?>>> index;
 			try (Stream<DataPoint> stream = ds.stream())
 			{
-				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(ids), 
-						mapping(dp -> dp.getValue(timeID), toConcurrentSet())));
+				index = stream
+						.map(toEntry(dp -> dp.getValues(ids), dp -> (ScalarValue<?, ?, ?, ?>) dp.getValue(timeID)))
+						.collect(groupingByConcurrent(Entry::getKey, mapping(Entry::getValue, toConcurrentSet())));
 			}
 
-			Entry<Optional<? extends ScalarValue<?, ?, ?, ?>>, Optional<? extends ScalarValue<?, ?, ?, ?>>> e = Utils.getStream(index.values())
+			Entry<Optional<ScalarValue<?, ?, ?, ?>>, Optional<ScalarValue<?, ?, ?, ?>>> e = Utils.getStream(index.values())
 					.map(Utils::getStream)
 					.collect(concatenating(true))
 					.collect(teeing(
@@ -198,8 +200,8 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 					new WindowCriterionImpl(DATAPOINTS, CURRENT_DATA_POINT, following(1)));
 			
 			DataSetMetadata timeStructure = new DataStructureBuilder(structure.getIDs()).build();
+
 			// Remove all measures and attributes then left-join the time-filled dataset with the old one
-			
 			return ds.mapKeepingKeys(timeStructure, DataPoint::getLineage, dp -> emptyMap())
 					.analytic(dp -> LineageNode.of(this, dp.getLineage()), timeID, timeID, windowClause, null, 
 							mapping(v -> (DateValue<?>) v, toList(ListOfDateValues::new)), timeFinisher)

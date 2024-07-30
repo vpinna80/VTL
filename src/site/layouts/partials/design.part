@@ -1,0 +1,20 @@
+<layout shortcode class="container highlight">
+	<row shortcode>
+		<column shortcode class="col-sm-5 d-none d-md-none d-lg-block text-left">
+			#include( "src/site/svg/layers.svg" )
+		</column>
+		<column shortcode class="text-right">
+			<h2>Minimalist design</h2>
+			<p>Just install the R package to feature a full-fledged VTL code editor with VTL syntax highlighting
+				and code suggestions.</p>
+			<p>Browse the results as you write, via just-in-time rule evaluation, and keep your model clean with a 
+				top-down view of dependencies between the rules.</p>
+			<p>Starting with the editor is as easy as installing the R package: no need for any other tool,
+				such as databases, web servers, compilers or others.</p>
+			<p>
+				<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
+					href="$resourcePath/structure.html">Read more »</a>
+			</p>
+		</column>
+	</row>
+</layout>

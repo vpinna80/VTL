@@ -1,62 +1,34 @@
-#*
- * Copyright © 2020 Banca D'Italia
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *#
-#set($h1 = '#')
-#set($h2 = '##')
-#set($h3 = '###')
-#set($h4 = '####')
-#set($h5 = '#####')
-#set($RCODE = '```R')
-#set($CSTART = '```R')
-#set($CEND = '```')
-
-$h1 Get Started
+# Get Started
 
 This section explains how to fast forward into productivity with vtlStudio, the embedded VTL editor for R.
 
-$h2 Installation
+## Installation
 
 A release to CRAN is planned. In the meantime, just open an R session and submit the following command:
 
-$RCODE
+```R
 install.packages(c('rJava', 'R6', 'RJSDMX', 'igraph', 'networkD3', 'DT',  
         'shiny', 'shinydashboard', 'shinyjs', 'sortable', 'jdx', 'xtable', 'dplyr'))
 install.packages('${scmUrl}/releases/download/v${project.version}/RVTL_${project.version}.tar.gz', repos = NULL)
-$CEND
+```
 
 R will download the package from GitHub and install it on your machine with all required dependencies.
 
-$h2 Startup
+## Startup
 
 To start the editor, from the R console, launch the commands:
 
-$RCODE
+```R
 > library(RVTL)
 > vtlStudio()
 
 Listening on http://127.0.0.1:4384
-$CEND
+```
 
 Then, your default browser will open a page to the vtlStudio web application.
 If vtlStudio does not automatically open, just paste the output link in the R console to start it up.
 
-$h2 Creating a session
+## Creating a session
 
 The first thing to do when opening vtlStudio is to create a session.
 On the sidebar, type a name of your choice into the New Session box, and click the Create button.
@@ -65,13 +37,13 @@ On the sidebar, type a name of your choice into the New Session box, and click t
 
 You will see the newly created session on the Session ID dropdown menu.
 
-$h2 Submitting code
+## Submitting code
 
 For a first run, enter the following VTL code in the editor:
 
-$CSTART
+```
 a := "Hello World!";
-$CEND
+```
 
 then submit the code by clicking the Compile and Submit button.
 
@@ -79,7 +51,7 @@ After a moment, you will see the following message in the gray output box:
 
 ![hello-world-compile](images/hello-world-compile.png)
 
-$h2 Browse results
+## Browse results
 
 The Dataset Explorer tab allows you to browse the computed values of any submitted rule.
 

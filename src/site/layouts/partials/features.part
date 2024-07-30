@@ -1,0 +1,52 @@
+<layout shortcode class="highlight highlight-general">
+    <layout shortcode class="container">
+    	<card-group shortcode>
+			<card webcomponent class="border-0 text-left">
+				<card-body>
+					<div class="text-center">
+						<h3>Modelize</h3>
+						#include( "src/site/svg/roller.svg" )
+					</div>
+					<ul>
+						<li>
+							<b>Digest external data sources</b>
+							- Use connectors to plug into your enterprise data sources.
+						</li>
+						<li>
+							<b>Model</b>
+							- Write as many rules as you want and test them on-the-fly.
+						</li>
+						<li>
+							<b>Immediate feedback</b>
+							- Get an immediate feedback if something is wrong with your rules.
+						</li>
+						<li>
+							<b>Dependecies under control</b>
+							- An interactive graph view of your model is always available.
+						</li>
+					</ul>
+				</card-body>
+				<card-footer class="border-0 bg-transparent">
+					<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
+						href="$resourcePath/vtldocs.html#vtldocs-get-started">Read more »</a>
+				</card-footer>
+			</card>
+			<card webcomponent class="border-0 text-right">
+				<card-body>
+					<div class="text-center">
+						<h3>Contribute</h3>
+						#include( "src/site/svg/contribute.svg" )
+					</div>
+					<p>VTL E&amp;E is an <a href="${scmUrl}">open source</a> project lead by Bank of Italy and built with
+						<a href="http://maven.apache.org" target="_blank" rel="noopener">Apache Maven</a>.</p>
+					<p>The project is licensed under the <a href="${licenseUrl}" target="_blank" rel="noopener">European Public License 1.2.</a></p>
+					<p>Any contribution is welcome! Feel free to report any issue, suggest a new feature, or propose new code.</p>
+				</card-body>
+				<card-footer class="border-0 bg-transparent">
+					<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
+						href="$resourcePath/vtldocs.html#vtldocs-dev-contribute">Contribute »</a>
+				</card-footer>
+			</card>
+		</card-group>
+	</layout>
+</layout>

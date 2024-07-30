@@ -1,42 +1,14 @@
-#*
- * Copyright © 2020 Banca D'Italia
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *#
-#set($h1 = '#')
-#set($h2 = '##')
-#set($h3 = '###')
-#set($h4 = '####')
-#set($h5 = '#####')
-#set($RSTART = '```R')
-#set($CSTART = '```R')
-#set($CEND = '```')
-
-$h1 VTL Examples
+# VTL Examples
 
 Those examples show how to use pre-existing data and some simple manipulations.
 
 After creating a session, paste the code snippets into the editor and use the Dataset Explorer to browse the results.
 
-$h2 Arithmetics on scalar values 
+## Arithmetics on scalar values 
 
 This example shows how to perform simple arithmetics manipulations on scalar data:
 
-$CSTART
+```
 a := 0.1;
 b := 3;
 c := abs(sqrt(14 + a));
@@ -45,42 +17,42 @@ e := c + d / a;
 f := e - d;
 g := -f;
 test := a * b + c / a;
-$CEND
+```
 
-$h2 Pulling data from R
+## Pulling data from R
 
 This example shows how to manipulate into the VTL engine an R data frame that is defined in the R global environment.
 
-$h3 R code
+### R code
 
 First prepare the data inside your R session:
 
-$RSTART
+```R
 # retrieve gbp and usd rates from the ECB SDMX web service
 rates <- getTimeSeriesTable('ECB', 'EXR.A.USD+GBP.EUR.SP00.A')
 # set needed metadata for VTL engine (identifiers and measures)
 attr(rates, 'measures') <- 'OBS_VALUE'
 attr(rates, 'identifiers') <- c('TIME_PERIOD', 'CURRENCY')
-$CEND
+```
 
 Note that if you access internet through a proxy server, you may need to configure it to replicate this example.
 
-$h3 VTL code
+### VTL code
 
 After your data is prepared, you may start vtlStudio, create a new session, and run the example:
 
-$CSTART
+```
 /* create dataset for USD rate */
 usd := rates[filter CURRENCY="USD"];
 /* create dataset for GBP rate */
 gbp := rates[filter CURRENCY="GBP"];
 /* filter on time period */ 
 usd_post_2000 := usd[filter TIME_PERIOD >  "2000"];
-$CEND
+```
 
 You may view the resulting `usd_post_2000` dataset in the explorer.
 
-$h2 Pulling data from web services
+## Pulling data from web services
 
 This example shows how to leverage the SDMX Connectors to directly pull data from a SDMX 2.1 compliant web service.
 
@@ -88,7 +60,7 @@ In the snippet the ECB SDMX web service is used as an example.
 
 Note that if you access internet through a proxy server, you may need to configure it to replicate this example.
 
-$CSTART
+```
 /* Retrieve food and beverages monthly component value */
 compOfBasket := 'ECB:ICP(1.0)/M.U2.N.010000.4.ANR'[keep OBS_VALUE]
 	[calc identifier YEAR := cast(time_agg("A", TIME_PERIOD), time, "")];
@@ -114,18 +86,18 @@ expected := 'ECB:ICP(1.0)/M.U2.N.010000.3.CTG'
 /* Join to compare and calculate percentual error for easy comparison */
 errors := inner_join(calculated, expected)
 	[calc errorPerc := abs((number_var - expected_value) / expected_value) * 100];
-$CEND
+```
 
-$h2 Loading CSV data from file system
+## Loading CSV data from file system
 
 This example shows how to load data from a CSV file with a modified header that complies with a predefined structure.
 
 Example files are available in the package installation directory: `<package_root>/vtlStudio2/test_data`.
 
-$CSTART
+```
 /* Load csv */ 
 usd := 'csv:<package_root>/vtlStudio2/test_data/ecbexrusd_vtl.csv';
 
 /* Filter on time period */ 
 usd_post_2000 := usd[filter TIME_PERIOD >  "2000"];
-$CEND
+```

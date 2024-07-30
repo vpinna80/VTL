@@ -1,38 +1,10 @@
-#*
- * Copyright © 2020 Banca D'Italia
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *#
-#set($h1 = '#')
-#set($h2 = '##')
-#set($h3 = '###')
-#set($h4 = '####')
-#set($h5 = '#####')
-#set($RCODE = '```R')
-#set($CSTART = '```R')
-#set($CEND = '```')
-
-$h1 Configuring VTL engine settings in VTL Editor
+# Configuring VTL engine settings in VTL Editor
 
 This section explains how to configure VTL engine settings in the editor.
 
 The settings tab is divided into four panels.
 
-$h2 VTL Engine
+## VTL Engine
 
 ![vtl-settings-engine](images/settings-engine.png)
 
@@ -40,7 +12,7 @@ The panel on the top left allows to select the VTL engine.
 
 At this moment there is only one available, so there's nothing to do here.
 
-$h2 Metadata Repository
+## Metadata Repository
 
 ![vtl-settings-repo](images/settings-repo.png)
 
@@ -56,7 +28,7 @@ There are three initializations available:
 The initialization method must be chosen before any VTL code is compiled.
 Changing the repository later would have no effect.
 
-$h2 Environments
+## Environments
 
 ![vtl-settings-envs](images/settings-envs.png)
 
@@ -68,7 +40,7 @@ again to the "Active" box. You may also sort the environments based on your pref
 
 However, in any circumstance, the In-Memory environment should never be disabled.
 
-$h2 Network Proxy
+## Network Proxy
 
 ![vtl-settings-proxy](images/settings-proxy.png)
 

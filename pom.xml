@@ -99,6 +99,43 @@
 			</modules>
 		</profile>
 		<profile>
+			<id>full-reporting</id>
+			<activation>
+				<property>
+					<name>parent.relativePath</name>
+				</property>
+			</activation>
+			<reporting>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-project-info-reports-plugin</artifactId>
+						<reportSets>
+							<reportSet>
+								<reports>
+									<report>summary</report>
+									<report>dependency-info</report>
+									<report>dependencies</report>
+									<report>modules</report>
+									<report>plugins</report>
+
+									<!-- parent specific reports -->
+									<report>dependency-management</report>
+									<report>plugin-management</report>
+									<report>ci-management</report>
+									<report>dependency-convergence</report>
+									<report>issue-management</report>
+									<report>licenses</report>
+									<report>scm</report>
+									<report>team</report>
+								</reports>
+							</reportSet>
+						</reportSets>
+					</plugin>
+				</plugins>
+			</reporting>
+		</profile>
+		<profile>
 			<id>with-r</id>
 		</profile>
 		<profile>
@@ -117,31 +154,37 @@
 
 	<properties>
 		<revision>1.2.0-SNAPSHOT</revision>
+
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
 
-		<flatten.version>1.6.0</flatten.version>
-		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
-		<compiler.version>3.12.1</compiler.version>
-		<resources.version>3.3.1</resources.version>
-		<dependency.version>3.6.1</dependency.version>
 		<exec.version>3.1.1</exec.version>
-		<javadoc.version>3.6.3</javadoc.version>
-		<sources.version>3.3.0</sources.version>
-		<sf-fs.version>3.2.5</sf-fs.version>
-		<assembly.version>3.6.0</assembly.version>
 		<frontend.version>1.15.0</frontend.version>
-		<jar.version>3.3.0</jar.version>
-		<war.version>3.4.0</war.version>
-		<shade.version>3.5.1</shade.version>
-		<gpg.version>3.1.0</gpg.version>
 
-		<site.version>3.12.1</site.version>
-		<docs-skin.version>2.3.2</docs-skin.version>
-		<doxia.markdown.version>1.11.1</doxia.markdown.version>
+		<site.version>4.0.0-M9</site.version>
+		<reflow.version>2.4.0-beta2</reflow.version>
+		<doxia.version>2.0.0-M7</doxia.version>
+		<doxiatools.version>2.0.0-M11</doxiatools.version>
+		<velocity.version>3.1</velocity.version>
+
+		<flatten.version>1.6.0</flatten.version>
+		<compiler.version>3.13.0</compiler.version>
+		<resources.version>3.3.1</resources.version>
+		<jar.version>3.4.2</jar.version>
+		<dependency.version>3.8.0</dependency.version>
+		<assembly.version>3.7.1</assembly.version>
+		<shade.version>3.6.0</shade.version>
+		<helper.version>3.6.0</helper.version>
+		<source.version>3.3.1</source.version>
+		<javadoc.version>3.10.0</javadoc.version>
+		<install.version>3.1.3</install.version>
+		<surefire.version>3.5.0</surefire.version>
+		<enforcer.version>3.4.0</enforcer.version>
+		<reporting.version>3.7.0</reporting.version>
+		<gpg.version>3.1.0</gpg.version>
 
 		<slf4j.version>2.0.12</slf4j.version>
 		<log4j.version>2.23.1</log4j.version>
@@ -173,7 +216,6 @@
 		<jacoco.version>0.8.11</jacoco.version>
 		<jacoco.ut.file>${project.build.directory}/jacoco-ut.exec</jacoco.ut.file>
 		<jacoco.it.file>${project.build.directory}/jacoco-it.exec</jacoco.it.file>
-		<jetty.version>10.0.18</jetty.version>
 
 		<scmUrl>https://github.com/vpinna80/VTL</scmUrl>
 		<siteUrl>https://vpinna80.github.io/VTL</siteUrl>
@@ -186,23 +228,16 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>3.1.0</version>
+				<version>${reporting.version}</version>
 				<reportSets>
 					<reportSet>
 						<reports>
-							<report>ci-management</report>
-							<report>dependencies</report>
-							<report>dependency-convergence</report>
-							<report>dependency-info</report>
-							<!-- report>dependency-management</!report -->
-							<report>issue-management</report>
-							<report>licenses</report>
-							<report>modules</report>
-							<report>plugin-management</report>
-							<report>plugins</report>
-							<report>scm</report>
+							<!-- common reports -->
 							<report>summary</report>
-							<report>team</report>
+							<report>dependency-info</report>
+							<report>dependencies</report>
+							<report>modules</report>
+							<report>plugins</report>
 						</reports>
 					</reportSet>
 				</reportSets>
@@ -210,7 +245,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>${javadoc.version}</version>
 				<reportSets>
 					<reportSet>
 						<id>aggregate</id>
@@ -560,6 +595,11 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>build-helper-maven-plugin</artifactId>
+					<version>${helper.version}</version>
+				</plugin>
+				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>${compiler.version}</version>
@@ -572,50 +612,44 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-assembly-plugin</artifactId>
-					<version>${assembly.version}</version>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>${resources.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-site-plugin</artifactId>
-					<version>${site.version}</version>
-					<dependencies>
-						<dependency>
-							<groupId>com.bernardomg.maven.skins</groupId>
-							<artifactId>docs-maven-skin</artifactId>
-							<version>${docs-skin.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jetty</groupId>
-							<artifactId>jetty-server</artifactId>
-							<version>${jetty.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jetty</groupId>
-							<artifactId>jetty-servlet</artifactId>
-							<version>${jetty.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jetty</groupId>
-							<artifactId>jetty-util</artifactId>
-							<version>${jetty.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jetty</groupId>
-							<artifactId>jetty-webapp</artifactId>
-							<version>${jetty.version}</version>
-						</dependency>
-					</dependencies>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>${source.version}</version>
+					<executions>
+						<execution>
+							<id>sources</id>
+							<goals>
+								<goal>jar-no-fork</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>test-sources</id>
+							<goals>
+								<goal>test-jar-no-fork</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-failsafe-plugin</artifactId>
-					<version>${sf-fs.version}</version>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>${javadoc.version}</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>jar</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>${sf-fs.version}</version>
+					<version>${surefire.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -624,13 +658,70 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-war-plugin</artifactId>
-					<version>${war.version}</version>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>${assembly.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>${dependency.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
 					<version>${shade.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-failsafe-plugin</artifactId>
+					<version>${surefire.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>${install.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-site-plugin</artifactId>
+					<version>${site.version}</version>
+					<dependencies>
+						<dependency>
+							<groupId>io.github.devacfr.maven.skins</groupId>
+							<artifactId>reflow-velocity-tools</artifactId>
+							<version>${reflow.version}</version>
+						</dependency>
+						<dependency>
+							<groupId>org.apache.maven.doxia</groupId>
+							<artifactId>doxia-module-markdown</artifactId>
+							<version>${doxia.version}</version>
+						</dependency>
+						<dependency>
+							<groupId>org.apache.maven.doxia</groupId>
+							<artifactId>doxia-core</artifactId>
+							<version>${doxia.version}</version>
+						</dependency>
+						<dependency>
+						    <groupId>org.apache.maven.doxia</groupId>
+						    <artifactId>doxia-integration-tools</artifactId>
+						    <version>${doxiatools.version}</version>
+						</dependency>
+						<dependency>
+						    <groupId>org.apache.maven.doxia</groupId>
+						    <artifactId>doxia-site-renderer</artifactId>
+						    <version>${doxiatools.version}</version>
+						</dependency>
+						<dependency>
+							<groupId>org.apache.maven.doxia</groupId>
+							<artifactId>doxia-core</artifactId>
+							<version>${doxia.version}</version>
+						</dependency>
+						<dependency>
+							<groupId>org.apache.velocity.tools</groupId>
+							<artifactId>velocity-tools-generic</artifactId>
+							<version>${velocity.version}</version>
+						</dependency>
+					</dependencies>
 				</plugin>
 				<plugin>
 					<groupId>com.github.eirslett</groupId>
@@ -640,17 +731,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-project-info-reports-plugin</artifactId>
-					<version>3.0.0</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-dependency-plugin</artifactId>
-					<version>${dependency.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-resources-plugin</artifactId>
-					<version>${resources.version}</version>
+					<version>${reporting.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.antlr</groupId>
@@ -700,37 +781,6 @@
 					</executions>
 				</plugin>
 				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-source-plugin</artifactId>
-					<version>${sources.version}</version>
-					<executions>
-						<execution>
-							<id>sources</id>
-							<goals>
-								<goal>jar-no-fork</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>test-sources</id>
-							<goals>
-								<goal>test-jar-no-fork</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>${javadoc.version}</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>jar</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
 					<version>${exec.version}</version>
@@ -771,11 +821,6 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>build-helper-maven-plugin</artifactId>
-					<version>${build-helper-maven-plugin.version}</version>
-				</plugin>
-				<plugin>
 					<groupId>org.sonatype.plugins</groupId>
 					<artifactId>nexus-staging-maven-plugin</artifactId>
 					<version>1.6.13</version>
@@ -806,16 +851,10 @@
 									<exclude>**/LICENSE*</exclude>
 									<exclude>**/NOTICE</exclude>
 									<exclude>**/DESCRIPTION</exclude>
-									<exclude>**/*.in</exclude>
-									<exclude>**/*.src</exclude>
 									<exclude>**/*.csv</exclude>
-									<exclude>**/*.FAIL</exclude>
-									<exclude>**/*.whl</exclude>
-									<exclude>**/*.war</exclude>
 									<exclude>**/*.g4</exclude>
+									<exclude>**/*.part</exclude>
 									<exclude>**/*.bin</exclude>
-									<exclude>**/.factorypath</exclude>
-									<exclude>init.properties</exclude>
 									<exclude>/R</exclude>
 								</excludes>
 							</licenseSet>
@@ -840,16 +879,9 @@
 				<artifactId>license-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>flatten-maven-plugin</artifactId>
-				<configuration>
-					<flattenMode>bom</flattenMode>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.4.0</version>
+				<version>${enforcer.version}</version>
 				<executions>
 					<execution>
 						<id>enforcerules</id>

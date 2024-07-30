@@ -1,0 +1,28 @@
+<layout shortcode class="container highlight">
+	<row shortcode>
+		<column shortcode>
+			<h2>
+				VTL <span class="color-highlight">E&amp;E</span>
+			</h2>
+			<p>is an interpreter engine and an editor for the 
+			   <a href="https://sdmx.org/?page_id=5096">Validation and Transformation Language</a>,
+			   a declarative, metadata-driven language with the goal of ensuring uniform data quality 
+			   across entities.</p>
+			<p>Developed by Bank of Italy within the SDMX Tools Task Force of the Statistics 
+			   Committee (STC), an organism of the Working Group on Statistical Information Management (WGSIM).</p>
+			<p>
+				<a class="btn btn-outline-primary btn-lg mb-2 mr-2 ml-2 pill-btn"
+					href="$resourcePath/vtldocs.html#vtldocs-get-started">
+					<span class="btn__link-icon">
+						#include( "src/site/svg/pentone.svg" )
+					</span>
+					<span class="btn__link-text">Get Started</span>
+				</a>
+			</p>
+		</column>
+		<column shortcode class="col-sm-offset-1 col-sm-5 d-none d-md-none d-lg-block text-right">
+			#include( "src/site/svg/cogs.svg" )
+		</div>
+	</div>
+</div>
+

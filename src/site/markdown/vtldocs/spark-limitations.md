@@ -1,37 +1,9 @@
-#*
- * Copyright © 2020 Banca D'Italia
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *#
-#set($h1 = '#')
-#set($h2 = '##')
-#set($h3 = '###')
-#set($h4 = '####')
-#set($h5 = '#####')
-#set($RCODE = '```R')
-#set($CSTART = '```')
-#set($CEND = '```')
-
-$h1 Limitations of the Spark VTL environment
+# Limitations of the Spark VTL environment
 
 The VTL Spark environment is still under development. As it is, it has several limitations
 to take into account when moving VTL computations inside Apache Spark™.
 
-$h2 Time series and time functions
+## Time series and time functions
 
 The Spark environment doesn't support any time-series manipulation inside Spark,
 as Spark does not provide an out-of-the-box API for manipulating time series.
@@ -39,7 +11,7 @@ as Spark does not provide an out-of-the-box API for manipulating time series.
 When invoking VTL time functions, such as `fill_time_series()`, the dataset will be 
 materialized in the client machine and the computation will proceed outside Spark.
 
-$h2 Dates
+## Dates
 
 The VTL Spark environment will map VTL dates using classes in the `java.time` package.
 Source data, such as parquet files, that contains serialized instances of the old 
@@ -52,19 +24,19 @@ only from Apache Spark™ 3.0.0 onwards.
 Please read about `spark.sql.datetime.java8API.enabled` configuration parameter on
 official [Apache Spark™ SQL documentation](https://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration). 
 
-$h2 Time periods, Durations and Times
+## Time periods, Durations and Times
 
 The VTL time period, duration and time domains have not been translated to work inside Spark 
 yet. Any dataset containing a component of those domains will cause the engine to crash.
 
 Please use VTL `cast` function to convert those components into some other supported domain.
 
-$h2 Codelists (enumerated subsets of string domain)
+## Codelists (enumerated subsets of string domain)
 
 Code lists may cause some issues when stored in a Spark dataset. Either they will be
 converted back to simple strings, or cause some other unexpected behaviour.
 
-$h2 Parallel computations
+## Parallel computations
 
 When processing VTL expressions inside Spark, you may want to disable parallelism, as
 Spark will parallelize the computation by itself, to reduce the memory consumption 

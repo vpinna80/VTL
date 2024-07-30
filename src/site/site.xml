@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <!--
 
     Copyright © 2020 Banca D'Italia
@@ -20,87 +20,122 @@
     permissions and limitations under the License.
 
 -->
-<project name="VTL E&amp;E by Bank of Italy" xmlns="http://maven.apache.org/DECORATION/1.8.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.1 http://maven.apache.org/xsd/decoration-1.8.1.xsd">
+<project name="VTL E&amp;E" xmlns="http://maven.apache.org/DECORATION/1.8.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.1 https://maven.apache.org/xsd/decoration-1.8.1.xsd">
 
 	<bannerLeft>
-		<name>
-			<![CDATA[VTL <span class="color-highlight">E&amp;E</span>]]>
-		</name>
-		<src>images/logo.svg</src>
+		<name>VTL E&amp;amp;E</name>
+		<src>images/logo.svg</src> 
 		<width>144</width>
-		<height>144</height>
-		<alt>VTL E&amp;E</alt>
-		<href>https://vpinna80.github.io/VTL/</href>
+		<height>144</height> 
+		<alt>VTL Engine &amp; Editor"</alt>
+		<href>${this.siteUrl}</href>
 	</bannerLeft>
-	
+
 	<publishDate position="none" />
 	<version position="bottom" />
 
 	<skin>
-		<groupId>com.bernardomg.maven.skins</groupId>
-		<artifactId>docs-maven-skin</artifactId>
-		<version>${this.docs-skin.version}</version>
+		<groupId>io.github.devacfr.maven.skins</groupId>
+		<artifactId>reflow-maven-skin</artifactId>
+		<version>${this.reflow.version}</version>
 	</skin>
 
 	<custom>
-		<skinConfig>
-			<topNav>
-				<menu>VTL E&amp;E Documentation</menu>
-				<menu>Project info</menu>
-			</topNav>
+		<reflowSkin>
+			<absoluteResourceURL>${this.siteUrl}</absoluteResourceURL>
+			<smoothScroll>true</smoothScroll>
+			<theme>default</theme>
+
+			<highlightJs>true</highlightJs>
+			<highlightJsTheme>github</highlightJsTheme>
+			<highlightJsVersion>9.15.7</highlightJsVersion>
+			<anchorJsVesrion>3.2.2</anchorJsVesrion>
+			<bootstrapVersion>4.4.1</bootstrapVersion>
+			<bootswatchVersion>4.4.1</bootswatchVersion>
+			<jqueryVersion>3.4.1</jqueryVersion>
+			<fontawesomeVersion>5.12.1</fontawesomeVersion>
+			<popperVersion>1.16.0</popperVersion>
+   
+   			<brand>
+				<name>
+					<![CDATA[<span class="color-highlight">VTL</span> E&amp;E]]>
+				</name>
+				<href>${this.siteUrl}</href>
+			</brand>
+
+			<slogan>The prototypal engine and editor for the Validation and Transformation Language</slogan>
+
+			<navbar filterMenu="Documentation|Maven documentation" theme="light" background="light" cssClass="border-bottom" center="true" alignMenu="left">
+				<image src="$resourcePath/images/logo.svg" />
+				<additionalMenu><![CDATA[
+					<ul class="navbar-nav navbar-additional ml-md-auto">
+						<li class="nav-item" data-toggle="tooltip" title="GitHub Project">
+							<a href="https://github.com/vpinna80/VTL" class="p-1 text-secondary" target="_blank"><i class="fab fa-lg fa-github"></i></a>
+						</li>
+					</ul>
+				]]></additionalMenu>
+			</navbar>
+			<navside-menu theme="light" background="light" />
+			<footer theme="dark" background="dark" cssClass="py-5" />
+
 			<bottomNav>
-				<menu>Code</menu>
-				<menu>Maven Reports</menu>
+				<column>Main|Contribute</column>
+				<column>Documentation|reports</column>
 			</bottomNav>
-		</skinConfig>
+			<!-- >bottomDescription quote="false"></bottomDescription -->
+			<markPageHeader>false</markPageHeader>
+
+			<pages>
+				<index type="body" project="VTL E&amp;E"></index>
+
+				<vtldocs type="doc">
+					<menu name="VTL Engine &amp; Editor" selectFirstOnExpand="true">
+						<item name="Get Started" href="vtldocs/get-started.html" />
+						<item name="Configuring the Editor" href="vtldocs/editor-config.html" />
+						<item name="Examples" href="vtldocs/examples.html" />
+						<item name="Handling dates" href="vtldocs/datetime-handling.html" />
+						<item name="Working with CSV" selectFirstOnExpand="true">
+							<item name="Reading CSV files" href="vtldocs/reading-csv.html" />
+							<item name="Writing CSV files" href="vtldocs/writing-csv.html" />
+						</item>
+						<item name="Spark Environment" selectFirstOnExpand="true">
+							<item name="Usage" href="vtldocs/spark-usage.html" />
+							<item name="Setup" href="vtldocs/spark-setup.html" />
+							<item name="Limitations" href="vtldocs/spark-limitations.html" />
+						</item>
+						<item name="Jupyter extension" selectFirstOnExpand="true">
+							<item name="Usage" href="vtldocs/jupyter-usage.html" />
+						</item>
+						<item name="Command-line interface" selectFirstOnExpand="true">
+							<item name="Usage" href="vtldocs/cli-usage.html" />
+						</item>
+					</menu>
+				</vtldocs>
+
+				<vtldocs-get-started>
+					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+				</vtldocs-get-started>
+			</pages>
+		</reflowSkin>
 	</custom>
 
 	<body>
-		<menu name="Project info" inherit="top">
+		<head><![CDATA[
+			<link rel="icon" type="image/svg+xml" href="images/logo.svg" sizes="any">
+		]]></head>
+		
+		<menu name="Main" inherit="top">
 			<item name="Home" href="./" />
 			<item name="GitHub project" href="${this.scm.url}" />
-			<item name="Release notes" href="#" />
-			<item name="Licenses" href="licenses.html" />
 		</menu>
-
-		<menu name="VTL E&amp;E Documentation" inherit="top">
-			<item name="VTL Editor">
-				<item name="Getting Started" href="get-started.html" />
-				<item name="Configuration" href="editor-config.html" />
-			</item>
-			<item name="VTL Language usage">
-				<item name="Importing data from CSV" href="reading-csv.html" />
-				<item name="Usage of temporal data" href="datetime-handling.html" />
-				<item name="VTL examples" href="examples.html" />
-			</item>
-			<item name="Leveraging Spark in VTL">
-				<item name="Setting up Apache Spark™" href="spark-setup.html" />
-				<item name="Using the Spark Environment" href="spark-usage.html" />
-				<item name="Limitations" href="spark-limitations.html" />
-			</item>
-			<item name="VTL command line interface" href="cli-usage.html" />
-			<item name="VTL Engine web services">
-				<item name="Setup" href="rest-setup.html" />
-				<item name="/compile" href="compile.html" />
-				<item name="/metadata" href="metadata.html" />
-				<item name="/resolve" href="resolve.html" />
-			</item>
+		<menu name="Contribute" inherit="bottom">
+			<item name="Issues" href="${this.issueManagement.url}" />
+			<item name="Fork on GitHub" href="${this.scm.url}" />
 		</menu>
-
-		<menu name="Code" inherit="bottom">
-			<item name="SCM" href="${this.scm.url}">
-				<description>GitHub</description>
-			</item>
-			<item name="Issues" href="${this.issueManagement.url}">
-				<description>${this.issueManagement.system}</description>
-			</item>
+		<menu name="Documentation" inherit="bottom">
+			<item name="Get Started" href="vtldocs.html#vtldocs-get-started" />
 		</menu>
-
-		<menu name="Maven Reports" inherit="bottom">
-			<item name="Info" href="info.html" />
-			<item name="Reports" href="reports.html" />
-		</menu>
+		<menu name="Maven documentation" ref="reports" inherit="bottom" />
 	</body>
 </project>
-

@@ -1,34 +1,6 @@
-#*
- * Copyright © 2020 Banca D'Italia
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *#
-#set($h1 = '#')
-#set($h2 = '##')
-#set($h3 = '###')
-#set($h4 = '####')
-#set($h5 = '#####')
-#set($RCODE = '```R')
-#set($CSTART = '```')
-#set($CEND = '```')
+# Using the VTL Spark environment
 
-$h1 Using the VTL Spark environment
-
-$h2 Loading data inside Apache Spark™
+## Loading data inside Apache Spark™
 
 The Spark environment can create a dataset wrapping data that is available from your 
 Spark installation. Available formats are CSV, plain text, parquet and json files.
@@ -38,22 +10,22 @@ characters not allowed in VTL aliases, you must always surround the alias with s
 
 For example the following aliases:
 
-$CSTART
+```
 'spark:parquet:/home/myname/data.parquet'
 'spark:csv:/home/myname/data.csv'
-$CEND
+```
 
 will reference two VTL datasets wrapping a Spark SQL DataFrame obtained from reading the input 
 parquet and CSV files respectively.
 
-$h2 Setting component domains and roles
+## Setting component domains and roles
 
 As for non-spark VTL CSV files, all spark sources must have properly formatted field names
 to enable VTL to distinguish between components of different VTL domains or roles.
 
 Please read the section on using CSV files for more information on how to format field names.
 
-$h2 Processing data inside Spark
+## Processing data inside Spark
 
 For VTL unary expressions, such as negation, if the operand dataset was loaded from Spark or 
 is the result of a Spark action, the VTL Spark environment will try to transform the VTL 

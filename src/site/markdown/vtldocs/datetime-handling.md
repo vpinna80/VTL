@@ -1,44 +1,16 @@
-#*
- * Copyright © 2020 Banca D'Italia
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *#
-#set($h1 = '#')
-#set($h2 = '##')
-#set($h3 = '###')
-#set($h4 = '####')
-#set($h5 = '#####')
-#set($RCODE = '```R')
-#set($CSTART = '```R')
-#set($CEND = '```')
-
-$h1 Handling Date and Time Period values
+# Handling Date and Time Period values
 
 The VTL engine can read, process, and output any value from the Date and Time Period 
 standard VTL domains. At the moment the Time Domain itself is instead not supported.
 
-$h2 Reading Dates from sources
+## Reading Dates from sources
 
 The CSV environment and SDMX environment can read Date and Time Periods from the 
 source data. For SDMX, the TIME_PERIOD time identifier will be a date or a time period
 depending on the frequency of the time series. For CSV, the user can choose which of 
 the two to use in the CSV header.
 
-$h2 Processing Date and Time Periods
+## Processing Date and Time Periods
 
 VTL functions that operate on time series will recognize and process date and time 
 period values as they are defined in the dataset metadata, according to each 
@@ -66,7 +38,7 @@ The mask accepts the following characters:
 *  Any spaces, dashes or forward slashes will be put in the output.
 *  Other characters will cause an error.
 
-$h2 Outputting date and time periods
+## Outputting date and time periods
 
 Date and time periods will be output always in their canonical representation as
 provided by the engine. If you want to output in a different format, you have to 

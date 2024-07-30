@@ -41,7 +41,7 @@
 		<profile>
 			<id>with-sdmx</id>
 			<modules>
-			<module>vtl-metasdmx</module>
+				<module>vtl-metasdmx</module>
 			</modules>
 		</profile>
 	</profiles>
