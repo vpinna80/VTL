@@ -222,5 +222,6 @@ VTLSession <- R6Class("VTLSession",
     )
   )
 
+#' @export
 as.character.VTLSession <- function(x, ...) { return(x$name) }
 

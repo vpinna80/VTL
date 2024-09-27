@@ -74,12 +74,13 @@ let mapperInverter = function(mapper: Object) {
 	return inverted
 }
 
-let ctxProp = new NodeProp<antlr4.tree.ParseTree>({ perNode: true })
+// Props added to nodes containing additional info for the editor renderer
+let ctxProp = new NodeProp<antlr4.tree.ParseTree>({ perNode: true }) // The RuleContext or TerminalNode
 let idsProp = new NodeProp({ perNode: true })
-let dsNameProp = new NodeProp<string>({ perNode: true })
-let expectedProp = new NodeProp({ perNode: true })
-let missingAfterProp = new NodeProp({ perNode: true })
-let offendingTokenProp = new NodeProp({ perNode: true })
+let dsNameProp = new NodeProp<string>({ perNode: true }) // The dataset name when using # or []
+let expectedProp = new NodeProp({ perNode: true }) // Error: tokens expected but not encountered
+let missingAfterProp = new NodeProp({ perNode: true }) // Error: Missing token after another token
+let offendingTokenProp = new NodeProp({ perNode: true }) // Error: Unexpected token encountered
 
 let completer = (src: CompletionContext) => { 
 	let range = src.state.wordAt(src.pos)
@@ -91,7 +92,7 @@ let completer = (src: CompletionContext) => {
 		if (ctx.getSymbol().type == VTLLexer.IDENTIFIER) {
 			return {
 				from: from,
-				options: [...(topNode.prop(idsProp) as Object)[node.prop(dsNameProp) as string]].map((c: string) => { return { label: c }}),
+				options: [...((topNode.prop(idsProp) as Object)[node.prop(dsNameProp) as string] || [])].map((c: string) => { return { label: c }}),
 				validFor: /'[^']+'|[a-zA-Z0-9_]+/
 			}
 		}
@@ -157,13 +158,17 @@ let createTree = function(text: string, ctxName: string = 'start') {
 					let offToken = ctx.exception.offendingToken
 					let expected = ctx.exception.getExpectedTokens()
 					let tokens = Array(expected.intervals.at(-1).stop).keys().filter(i => expected.contains(i)).map(i => VTLLexer.literalNames[i] || VTLLexer.symbolicNames[i]).filter(e => !!e).toArray()
-					let mismatched =  new Tree(nodeset.types[errorTokens.VTL_TOKEN_MISMATCH], [], [], offToken.stop - offToken.start + 1, [[expectedProp, tokens]])
+					let mismatched = new Tree(nodeset.types[errorTokens.VTL_TOKEN_MISMATCH], [], [], offToken.stop - offToken.start + 1, [[expectedProp, tokens]])
 					let children: [number, Tree, boolean][] = ctx.children && ctx.children.map((c: antlr4.tree.ParseTree) => treeToArray(c, dsName)) || []
 					if (!children.some(c => c[2])) {
 						children = [...children, [offToken.start, mismatched, true]]
 					}
 					let tchildren: [number[], Tree[]] = [children.map(r => r[0] - start), children.map(r => r[1])]
 					return [start, new Tree(nodeset.types[ctx.ruleIndex + rulesStartIndex], tchildren[1], tchildren[0], ctx.start.stop - start + 1, [[ctxProp, ctx]]), true]
+				} else if (ctx.exception instanceof antlr4.error.NoViableAltException) {
+					let noviable = new Tree(nodeset.types[errorTokens.VTL_EXTRANEOUS_TOKEN], [], [], 1, [[offendingTokenProp, "tokens"]])
+					lastToken = ctx.start
+					return [start, noviable, true];
 				} else {
 					throw ctx.exception
 				}
@@ -198,7 +203,7 @@ let createTree = function(text: string, ctxName: string = 'start') {
 			if (ctx.isErrorNode && ctx.isErrorNode()) {
 				if (token.tokenIndex == -1) { // missing token
 					let missing = token.text.substring(9, token.text.length - 1)
-					return [lastToken.start, new Tree(nodeset.types[errorTokens.VTL_MISSING_TOKEN], [], [], lastToken.stop - lastToken.start + 1, [[ctxProp, ctx], [missingAfterProp, lastToken.text], [expectedProp, missing]]), true]
+					return [lastToken && lastToken.start || 0, new Tree(nodeset.types[errorTokens.VTL_MISSING_TOKEN], [], [], lastToken.stop - lastToken.start + 1, [[ctxProp, ctx], [missingAfterProp, lastToken.text], [expectedProp, missing]]), true]
 				}
 				lastToken = token
 				return [token.start, new Tree(nodeset.types[errorTokens.VTL_EXTRANEOUS_TOKEN], [], [], token.stop - token.start + 1, [[dsNameProp, dsName], [ctxProp, ctx], [offendingTokenProp, token.text]]), true]
@@ -212,7 +217,7 @@ let createTree = function(text: string, ctxName: string = 'start') {
 	}
 	
 	let tree = treeToArray(parser[ctxName.charAt(0).toLowerCase() + ctxName.slice(1)].bind(parser)())[1]
-	return tree;
+	return tree
 }
 
 let VTLLang = new Language(facet, new class extends LezerParser {

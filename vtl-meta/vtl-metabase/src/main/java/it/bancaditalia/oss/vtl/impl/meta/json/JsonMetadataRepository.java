@@ -21,7 +21,9 @@ package it.bancaditalia.oss.vtl.impl.meta.json;
 
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +50,7 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -54,6 +58,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
@@ -88,7 +93,6 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		Map<String, Entry<String, String>> dsDefs;
 		Map<String, Map<String, Class<? extends Component>>> strDefs;
 		Map<String, String> varDefs;
-		Map<String, Object> domDefs;
 
 		try (InputStream source = new URL(url).openStream())
 		{
@@ -101,7 +105,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			dsDefs = iterate((List<?>) json.get("datasets"), this::createDataset);
 			strDefs = iterate((List<?>) json.get("structures"), this::createStructure);
 			varDefs = iterate((List<?>) json.get("variables"), this::createVariable);
-			domDefs = iterate((List<?>) json.get("domains"), this::createDomain);
+			iterate((List<?>) json.get("domains"), this::createDomain);
 		}
 
 		varDefs.forEach((n, d) -> variables.put(n, VariableImpl.of(n, getDomain(d))));
@@ -147,7 +151,6 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 
 		if (list != null)
 			for (Object entry: list)
-			{
 				if (entry instanceof Map)
 				{
 					Map<?, ?> obj = (Map<?, ?>) entry;
@@ -159,11 +162,12 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 					String name = (String) obj.get("name");
 					if (result.containsKey(name))
 						throw new IllegalStateException("Metadata object " + name + " is defined more than once.");
-					result.put(name, processor.apply(name, obj));
+					T processed = processor.apply(name, obj);
+					if (processed != null)
+						result.put(name, processed);
 				}
 				else
 					throw new InvalidParameterException("Expected JSON object but found " + entry.getClass());
-			}
 		
 		return result;
 	}
@@ -193,27 +197,30 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return (String) variable.get("domain");
 	}
 	
-	private Object createDomain(String name, Map<?, ?> domain)
+	private ValueDomainSubset<?, ?> createDomain(String name, Map<?, ?> domainDef)
 	{
+		Object parent = ((Map<?, ?>) domainDef).get("parent");
+		if (parent == null || !(parent instanceof String))
+			throw new InvalidParameterException("Parent domain invalid or not specified for " + name + ".");
+
+		LOGGER.debug("Found domain {}", name);
+		Object enumerated = domainDef.get("enumerated");
+		if (enumerated instanceof List)
+			if ("string".equals(parent))
+			{
+				Set<String> codes = ((List<?>) enumerated).stream().map(String.class::cast).collect(toSet());
+				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
+				StringCodeList domain = new StringCodeList(STRINGDS, name, codes);
+				defineDomain(name, domain);
+				return domain;
+			}
+			else
+				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
+		else if (enumerated != null)
+			throw new InvalidParameterException("Invalid enumerated domain definition for " + name + ".");
+		else
+			LOGGER.warn("Ignoring unsupported domain type {}[{}].", name, parent);
+		
 		return null;
-//		Object parent = ((Map<?, ?>) domain).get("parent");
-//		if (parent == null || !(parent instanceof String))
-//			throw new InvalidParameterException("Parent domain invalid or not specified for " + name + ".");
-//
-//		LOGGER.debug("Found domain {}", name);
-//		Object enumerated = domain.get("enumerated");
-//		if (enumerated instanceof List)
-//			if ("string".equals(parent))
-//			{
-//				Set<String> codes = ((List<?>) enumerated).stream().map(String.class::cast).collect(toSet());
-//				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
-//				defineDomain(name, new StringCodeList(STRINGDS, name, codes));
-//			}
-//			else
-//				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
-//		else if (enumerated != null)
-//			throw new InvalidParameterException("Invalid enumerated domain definition for " + name + ".");
-//		else
-//			LOGGER.warn("Ignoring unsupported domain type {}[{}].", name, parent);
 	}
 }
