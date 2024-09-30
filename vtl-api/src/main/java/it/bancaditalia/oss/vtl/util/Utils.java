@@ -22,15 +22,12 @@ package it.bancaditalia.oss.vtl.util;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -155,7 +152,7 @@ public final class Utils
 		return e -> entryPredicate.test(e.getKey(), e.getValue());
 	}
 
-	public static <K, V, R> SerFunction<Entry<K, V>, R> splitting(SerBiFunction<? super K, ? super V, R> biFunction)
+	public static <K, V, R> SerFunction<Entry<K, V>, R> splitting(SerBiFunction<K, V, R> biFunction)
 	{
 		return e -> biFunction.apply(e.getKey(), e.getValue());
 	}
@@ -226,20 +223,6 @@ public final class Utils
 		return ORDERED ? stream : stream.unordered();
 	}
 
-	public static <A1 extends Serializable, A2 extends Serializable, B extends Serializable, C extends Serializable> SerFunction<Triple<A1, B, C>, Triple<A2, B, C>> changingFirst(SerFunction<? super A1, ? extends A2> mapper)
-	{
-		return t -> new Triple<>(mapper.apply(t.getFirst()), t.getSecond(), t.getThird());
-	}
-	
-	public static <T> SerUnaryOperator<Set<T>> retainer(Set<? extends T> toRetain)
-	{
-		return oldSet -> {
-			Set<T> newSet = new HashSet<>(oldSet);
-			newSet.retainAll(toRetain);
-			return newSet;
-		};
-	}
-
 	public static int[] catArrays(int[] a, int[] b) 
 	{
 	    int[] c = new int[a.length + b.length];
@@ -255,28 +238,20 @@ public final class Utils
 		return classifierMap;
 	}
 	
-	public static <T, C extends Collection<T>> C coalesce(C value, C defaultValue)
-	{
-		return value != null ? value : defaultValue;
-	}
-	
 	public static <T> T coalesce(T value, T defaultValue)
 	{
 		return value != null ? value : defaultValue;
 	}
 
-	public static <T> T coalesceSwapped(T defaultValue, T value)
+	// added so that Eclipse won't complain
+	public static <T, C extends Collection<T>> C coalesce(C value, C defaultValue)
 	{
 		return value != null ? value : defaultValue;
 	}
 	
-	@SafeVarargs
-	public static <T> Set<? extends T> setOf(T... elements)
+	public static <T> T coalesceSwapped(T defaultValue, T value)
 	{
-		Set<T> result = new HashSet<>();
-		for (T elem: elements)
-			result.add(elem);
-		return Collections.unmodifiableSet(result);
+		return value != null ? value : defaultValue;
 	}
 	
 	public static <T> void tryWith(SerSupplier<? extends Stream<T>> supplier, SerConsumer<? super Stream<T>> consumer)
@@ -293,5 +268,10 @@ public final class Utils
 		{
 			return consumer.apply(stream);
 		}
+	}
+	
+	public static <T, R> R ifNonNull(T operand, SerFunction<T, R> operator)
+	{
+		return operand == null ? (R) null : operator.apply(operand);
 	}
 }

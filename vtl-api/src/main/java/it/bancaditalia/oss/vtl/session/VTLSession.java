@@ -56,5 +56,9 @@ public interface VTLSession extends TransformationScheme, Serializable
 	 */
 	public Map<DMLStatement, VTLValueMetadata> compile();
 	
+	/**
+	 * 
+	 * @return The original code submitted when the session was created.
+	 */
 	public String getOriginalCode();
 }

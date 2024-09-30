@@ -104,7 +104,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	}
 
 	/**
-	 * Creates a new DataSet by filtering this DataSet with a given {@link Predicate} on each of its {@link DataPoint}.
+	 * Creates a new DataSet by retaining only the datapoints in this DataSet which match a given {@link Predicate}.
 	 * 
 	 * @param predicate The {@link Predicate} to be applied.
 	 * @return A new filtered DataSet. 

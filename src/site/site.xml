@@ -25,9 +25,9 @@
 
 	<bannerLeft>
 		<name>VTL E&amp;amp;E</name>
-		<src>images/logo.svg</src> 
+		<src>images/logo.svg</src>
 		<width>144</width>
-		<height>144</height> 
+		<height>144</height>
 		<alt>VTL Engine &amp; Editor"</alt>
 		<href>${this.siteUrl}</href>
 	</bannerLeft>
@@ -56,8 +56,8 @@
 			<jqueryVersion>3.4.1</jqueryVersion>
 			<fontawesomeVersion>5.12.1</fontawesomeVersion>
 			<popperVersion>1.16.0</popperVersion>
-   
-   			<brand>
+
+			<brand>
 				<name>
 					<![CDATA[<span class="color-highlight">VTL</span> E&amp;E]]>
 				</name>
@@ -92,13 +92,24 @@
 				<vtldocs type="doc">
 					<menu name="VTL Engine &amp; Editor" selectFirstOnExpand="true">
 						<item name="Get Started" href="vtldocs/get-started.html" />
-						<item name="Configuring the Editor" href="vtldocs/editor-config.html" />
-						<item name="Examples" href="vtldocs/examples.html" />
-						<item name="Handling dates" href="vtldocs/datetime-handling.html" />
-						<item name="Working with CSV" selectFirstOnExpand="true">
+						<item name="Working with the editor" selectFirstOnExpand="true">
+							<item name="Using the Editor" href="vtldocs/using-the-editor.html" />
+							<item name="Setting Up the Editor" href="vtldocs/editor-config.html" />
+							<item name="Examples" href="vtldocs/examples.html" />
+						</item>
+						<item name="Working with Metadata" selectFirstOnExpand="true">
+							<item name="Metadata Repository" href="vtldocs/metadata-repository.html" />
+							<item name="Linking with SDMX Registry" href="vtldocs/sdmx-registry.html" />
+							<item name="Enriching the model with local data" href="vtldocs/local-data.html" />
+						</item>
+						<item name="What's an Environment" href="vtldocs/environments.html" />
+						<item name="CSV Environments" selectFirstOnExpand="true">
 							<item name="Reading CSV files" href="vtldocs/reading-csv.html" />
 							<item name="Writing CSV files" href="vtldocs/writing-csv.html" />
+							<item name="Handling dates" href="vtldocs/datetime-handling.html" />
 						</item>
+						<item name="R Environment" href="vtldocs/r-env.html" />
+						<item name="SDMX Environment" href="vtldocs/sdmx-env.html" />
 						<item name="Spark Environment" selectFirstOnExpand="true">
 							<item name="Usage" href="vtldocs/spark-usage.html" />
 							<item name="Setup" href="vtldocs/spark-setup.html" />
@@ -114,7 +125,7 @@
 				</vtldocs>
 
 				<vtldocs-get-started>
-					<toc level="2" autoExpandable="false" expanded="true">sidebar</toc>
+					<toc level="3" autoExpandable="false" expanded="true">sidebar</toc>
 				</vtldocs-get-started>
 			</pages>
 		</reflowSkin>
@@ -124,7 +135,7 @@
 		<head><![CDATA[
 			<link rel="icon" type="image/svg+xml" href="images/logo.svg" sizes="any">
 		]]></head>
-		
+
 		<menu name="Main" inherit="top">
 			<item name="Home" href="./" />
 			<item name="GitHub project" href="${this.scm.url}" />
