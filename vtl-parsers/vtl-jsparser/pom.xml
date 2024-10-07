@@ -46,7 +46,7 @@
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr4-maven-plugin</artifactId>
 				<!-- IMPORTANT: keep this version until the main version reaches it -->
-				<version>4.13.1</version>
+				<version>4.13.1</version><!--$NO-MVN-MAN-VER$-->
 				<executions>
 					<execution>
 						<phase>generate-sources</phase>

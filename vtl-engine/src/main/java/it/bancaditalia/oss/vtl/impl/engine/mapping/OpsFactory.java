@@ -635,26 +635,26 @@ public class OpsFactory implements Serializable
 		}
 	}
 
-	private <T> T getFieldOrMethod(Nonnullparam param, RuleContext entry, Class<T> resultClass, int level)
+	private <T> T getFieldOrMethod(Nonnullparam param, RuleContext ctx, Class<T> resultClass, int level)
 	{
 		try
 		{
 			String tabs = "";
 			for (int i = 0; i <= level; i++)
 				tabs += "    ";
-			Class<? extends RuleContext> ctxClass = entry.getClass();
-			Object result = entry;
+			Class<? extends RuleContext> ctxClass = ctx.getClass();
+			Object result = ctx;
 			if (param.getName() != null)
 			{
 				LOGGER.trace("|{}>> Looking up subrule '{}' as a {}", tabs, param.getName(), param.getClass().getSimpleName());
 				Optional<Field> field = Arrays.stream(ctxClass.getFields()).filter(f -> f.getName().equals(param.getName())).findFirst();
 				if (field.isPresent())
-					result = field.get().get(entry);
+					result = field.get().get(ctx);
 				else
-					result = ctxClass.getMethod(param.getName()).invoke(entry);
+					result = ctxClass.getMethod(param.getName()).invoke(ctx);
 			}
 			else
-				LOGGER.trace("|{}>> Looking up context {}", tabs, entry.getClass().getSimpleName());
+				LOGGER.trace("|{}>> Looking up context {}", tabs, ctx.getClass().getSimpleName());
 	
 			if (param.getOrdinal() != null)
 				result = ((List<?>) result).get(param.getOrdinal().intValue());

@@ -1,7 +1,6 @@
 lexer grammar VtlTokens;
 
-
-    LPAREN:'(';
+   LPAREN:'(';
     RPAREN:')';
 
     QLPAREN: '[';
@@ -22,17 +21,28 @@ lexer grammar VtlTokens;
     DIV: '/';
     COMMA     : ',';
     POINTER : '->';
+    COLON             : ':';
 
   ASSIGN            : ':=';
-  MEMBERSHIP        : '#';
-  COLON             : ':';
+  MEMBERSHIP		: '#';
   EVAL              : 'eval';
   IF                : 'if';
+  CASE              : 'case';
   THEN              : 'then';
   ELSE              : 'else';
   USING             : 'using';
   WITH              : 'with';
   CURRENT_DATE      : 'current_date';
+  DATEDIFF          : 'datediff';
+  DATEADD           : 'dateadd';
+  YEAR_OP           : 'year';
+  MONTH_OP          : 'month';
+  DAYOFMONTH        : 'dayofmonth';
+  DAYOFYEAR         : 'dayofyear';
+  DAYTOYEAR         : 'daytoyear';
+  DAYTOMONTH        : 'daytomonth';
+  YEARTODAY         : 'yeartoday';
+  MONTHTODAY        : 'monthtoday';
   ON                : 'on';
   DROP              : 'drop';
   KEEP              : 'keep';
@@ -54,6 +64,7 @@ lexer grammar VtlTokens;
   DIFF              : 'diff';
   SYMDIFF           : 'symdiff';
   INTERSECT         : 'intersect';
+  RANDOM            : 'random';
   KEYS              : 'keys';
   INTYEAR           : 'intyear';
   INTMONTH          : 'intmonth';
@@ -235,6 +246,7 @@ lexer grammar VtlTokens;
   SET						  : 'set';
   LANGUAGE					  : 'language';
 
+
 fragment
 LETTER:
     [a-zA-Z]
@@ -252,7 +264,8 @@ INTEGER_CONSTANT
 
 NUMBER_CONSTANT
   :
-  MINUS?INTEGER_CONSTANT '.' INTEGER_CONSTANT
+  INTEGER_CONSTANT '.' INTEGER_CONSTANT* /*FLOATEXP?
+  | INTEGER_CONSTANT+ FLOATEXP*/
   ;
 
 BOOLEAN_CONSTANT
@@ -261,27 +274,109 @@ BOOLEAN_CONSTANT
   | 'false'
   ;
 
-STRING_CONSTANT
-  :
-  '"' (~'"')* '"'
-  ;
-
 TIME_UNIT
-  :
+    :
     'A'
     |'S'
-    |'Q'
     |'M'
+    |'Q'
     |'W'
     |'D'
     |'T'
     ;
 
+STRING_CONSTANT
+  :
+  '"' (~'"')* '"'
+  ;
+
 IDENTIFIER
   :
   LETTER ([A-Za-z0-9_.])*
+  | DIGITS0_9 ([A-Za-z0-9_.])+
   | '\'' (.)*? '\''
   ;
+
+/*
+  MONTH
+    :
+    '0' DIGITS0_9
+    | '1' '0'|'1'|'2'
+    ;
+
+  DAY
+    :
+    ('0'|'1'|'2' DIGITS0_9)
+    | '3' ('0'|'1')
+    ;
+
+  YEAR
+    :
+    DIGITS0_9 DIGITS0_9 DIGITS0_9 DIGITS0_9
+    ;
+
+   WEEK
+    :
+    ('0'|'1'|'2'|'3'|'4' DIGITS0_9)
+    | '5' ('0'|'1'|'2'|'3')
+    ;
+
+  HOURS
+    :
+    ('0'|'1' DIGITS0_9)
+    | '2' ('0'|'1'|'2'|'3'|'4')
+    ;
+
+  MINUTES
+    :
+    ('0'|'1'|'2'|'3'|'4'|'5' DIGITS0_9)
+    | '6' '0'
+    ;
+
+  SECONDS
+    :
+    ('0'|'1'|'2'|'3'|'4'|'5' DIGITS0_9)
+    | ('6' '0')
+    ;
+*/
+/*  DATE_FORMAT
+    :
+    YEAR
+    | (YEAR 'S' '1'|'2')
+    | (YEAR 'Q' '1'|'2'|'3'|'4')
+    | (YEAR 'M' MONTH)
+    | (YEAR 'D' MONTH DAY)
+    | (YEAR 'A')
+    | (YEAR MINUS 'Q' '1'|'2'|'3'|'4')
+    | (YEAR MINUS MONTH)
+    | (YEAR MINUS MONTH MINUS DAY)
+    | (YEAR)
+    ;*/
+/*
+   TIME_FORMAT
+    :
+    YEAR ('A')?
+    | (YEAR (MINUS)? 'S' '1'|'2')
+    | (YEAR (MINUS)? 'Q' '1'|'2'|'3'|'4')
+    | (YEAR 'M'|MINUS MONTH)
+    | (YEAR 'W' WEEK)
+    | (YEAR 'M' MONTH 'D' DAY)
+    | (YEAR MINUS MONTH MINUS DAY)
+    | (DAY MINUS MONTH MINUS YEAR)
+    | (MONTH MINUS DAY MINUS YEAR)
+    ;*/
+
+ /* old
+    TIME
+    :
+    YEAR MINUS MONTH MINUS DAY ('T' HOURS ':' MINUTES ':' SECONDS 'Z')?
+    ; */
+/*
+ TIME
+  :
+  (YEAR MINUS MONTH MINUS DAY)'/'(YEAR MINUS MONTH MINUS DAY)
+  ;
+*/
 
 WS:
     [ \t\r\n\u000C]+ ->channel(1)
@@ -298,3 +393,15 @@ ML_COMMENT
 SL_COMMENT
   :
   ('//' (.)*? '\n') ->channel(2);
+
+/*
+
+FREQUENCY
+  :
+  'A'
+  | 'S'
+  | 'Q'
+  | 'M'
+  | 'W'
+  | 'D'
+  ;*/

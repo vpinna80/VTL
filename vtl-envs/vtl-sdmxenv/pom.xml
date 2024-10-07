@@ -48,7 +48,6 @@
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-metasdmx</artifactId>
-			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>

@@ -140,7 +140,7 @@ public class StatementFactory implements Serializable
 					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
 
 					CodeItemRelationContext relation = rule.codeItemRelation();
-					leftOps.add(relation.codeItemRef.getText());
+					leftOps.add(relation.codetemRef.getText());
 					switch (relation.comparisonOperand().getStart().getType())
 					{
 						case Vtl.EQ: compOps.add(RuleType.EQ); break;

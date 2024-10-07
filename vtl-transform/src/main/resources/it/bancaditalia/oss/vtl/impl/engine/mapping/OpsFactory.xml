@@ -263,7 +263,7 @@
 	
 	<mapping from="ValidateHRrulesetContext" to="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation">
 		<params>
-			<exprparam name="expr" />
+			<exprparam name="op" />
 			<stringparam name="hrName" />
 			<nestedparam name="conditionClause">
 				<listparam name="componentID">
@@ -329,7 +329,7 @@
 			<tokensetparam name="op" tokenset="OffsetDirection" />
 			<exprparam name="expr" />
 			<valueparam name="signedInteger" />
-			<valueparam name="constant" />
+			<valueparam name="defaultValue" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
 					<stringparam />
@@ -351,7 +351,7 @@
 			<tokensetparam name="op" tokenset="OffsetDirection" />
 			<exprparam name="exprComponent" />
 			<valueparam name="signedInteger" />
-			<valueparam name="constant" />
+			<valueparam name="defaultValue" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
 					<stringparam />
@@ -1176,46 +1176,28 @@
 	</mapping>
 
 	<mapping from="InNotInExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
-		<context name="right" context="SetExprContext" />
 		<params>
 			<tokensetparam name="op" tokenset="InOperator" />
 			<exprparam name="left" />
-			<nestedparam name="right">
-				<listparam name="constant">
+			<nestedparam name="lists">
+				<listparam name="scalarItem">
 					<valueparam />
 				</listparam>
 			</nestedparam>
-		</params>
-	</mapping>
-
-	<mapping from="InNotInExprContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
-		<context name="right" context="ValueDomainExprContext" />
-		<params>
-			<tokensetparam name="op" tokenset="InOperator" />
-			<exprparam name="left" />
-			<stringparam name="right" />
+			<stringparam name="valueDomainID"/>
 		</params>
 	</mapping>
 
 	<mapping from="InNotInExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
-		<context name="right" context="SetExprContext" />
 		<params>
 			<tokensetparam name="op" tokenset="InOperator" />
 			<exprparam name="left" />
-			<nestedparam name="right">
-				<listparam name="constant">
+			<nestedparam name="lists">
+				<listparam name="scalarItem">
 					<valueparam />
 				</listparam>
 			</nestedparam>
-		</params>
-	</mapping>
-
-	<mapping from="InNotInExprCompContext" to="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation">
-		<context name="right" context="ValueDomainExprContext" />
-		<params>
-			<tokensetparam name="op" tokenset="InOperator" />
-			<exprparam name="left" />
-			<stringparam name="right" />
+			<stringparam name="valueDomainID"/>
 		</params>
 	</mapping>
 
