@@ -173,7 +173,7 @@
 		<jacoco.version>0.8.11</jacoco.version>
 		<jacoco.ut.file>${project.build.directory}/jacoco-ut.exec</jacoco.ut.file>
 		<jacoco.it.file>${project.build.directory}/jacoco-it.exec</jacoco.it.file>
-		<jetty.version>10.0.18</jetty.version>
+		<jetty.version>10.0.24</jetty.version>
 
 		<scmUrl>https://github.com/vpinna80/VTL</scmUrl>
 		<siteUrl>https://vpinna80.github.io/VTL</siteUrl>
