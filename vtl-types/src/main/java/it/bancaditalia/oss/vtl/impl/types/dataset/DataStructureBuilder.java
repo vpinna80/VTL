@@ -154,14 +154,14 @@ public class DataStructureBuilder
 
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
-			this.byName = components.stream()
+			byName = components.stream()
 				.sorted(DataStructureComponent::byNameAndRole)
 				.collect(toMap(c -> c.getVariable().getName(), identity(), LinkedHashMap::new));
-			this.byRole = components.stream()
+			byRole = components.stream()
 					.collect(groupingBy(DataStructureComponent::getRole, DataStructureBuilder::createEmptyStructure, toSet()));
-			this.byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
+			byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
 			
-			int totalSize = byRole.values().stream().mapToInt(Collection::size).sum();
+			int totalSize = byRole.values().stream().mapToInt(Collection::size).sum() - byRole.get(ViralAttribute.class).size();
 			if (totalSize != components.size())
 				throw new IllegalStateException(totalSize  + " != " + components.size());
 		}

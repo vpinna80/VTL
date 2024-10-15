@@ -31,6 +31,7 @@ import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -56,7 +57,7 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 		result = prime * result + name.hashCode();
 		hashCode = result;
 		
-		for (Class<? extends Component> role: Set.of(Identifier.class, Measure.class, Attribute.class))
+		for (Class<? extends Component> role: Set.of(Identifier.class, Measure.class, Attribute.class, ViralAttribute.class))
 			components.put(role, new DataStructureComponentImpl<>(role, this));
 	}
 	
@@ -109,7 +110,7 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	@Override
 	public <R extends Component> DataStructureComponent<R, S, D> as(Class<R> role)
 	{
-		return (DataStructureComponent<R, S, D>) components.get(role);
+		return requireNonNull((DataStructureComponent<R, S, D>) components.get(role), "Unknown role: " + role.getSimpleName());
 	}
 
 	public Variable<S, D> getRenamed(String newName)
