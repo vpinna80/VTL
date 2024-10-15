@@ -19,9 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_EXCEPT;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
@@ -45,7 +48,7 @@ public class GroupingClause implements Serializable
 
 	public enum GroupingMode
 	{
-		GROUP_BY("group by"), GROUP_EXCEPT("group except");
+		GROUP_BY("group by"), GROUP_EXCEPT("group except"), GROUP_ALL("group all");
 
 		private final String repr;
 
@@ -68,8 +71,11 @@ public class GroupingClause implements Serializable
 	public GroupingClause(GroupingMode mode, List<String> fields, Duration frequency)
 	{
 		this.mode = mode;
-		this.fields = fields.stream().map(Variable::normalizeAlias).collect(toArray(new String[fields.size()]));
+		this.fields = coalesce(fields, emptyList()).stream().map(Variable::normalizeAlias).collect(toArray(new String[fields.size()]));
 		this.frequency = frequency;
+		
+		if (mode == GROUP_ALL)
+			throw new UnsupportedOperationException("group all not implemented");
 	}
 
 	public GroupingMode getMode()
