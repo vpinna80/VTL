@@ -76,8 +76,7 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 	@Override
 	public Class<? extends Serializable> getRepresentation()
 	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("time_period does not have a single default representation.");
 	}
 
 	@Override

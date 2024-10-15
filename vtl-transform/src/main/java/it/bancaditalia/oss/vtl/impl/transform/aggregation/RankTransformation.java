@@ -55,6 +55,7 @@ import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -69,6 +70,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
@@ -195,6 +197,10 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
 		
 		DataSetMetadata dataset = (DataSetMetadata) opmeta;
+		
+		for (DataStructureComponent<Identifier, ?, ?> id: dataset.getIDs())
+			if (id.getVariable().getDomain() instanceof TimePeriodDomainSubset)
+				throw new UnsupportedOperationException("Rank of dataset with time_period identifiers not implemented.");
 		
 		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)

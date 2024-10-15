@@ -76,7 +76,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 		}
 		catch (InvocationTargetException e)
 		{
-			VTLNestedException wrapped = new VTLNestedException("Error parsing code", e.getCause());
+			VTLNestedException wrapped = new VTLNestedException("Error initializing VTL session", e.getCause());
 			LOGGER.error("Error while parsing the following VTL code: {}", code.lines().map(s -> s + "        ").collect(joining(System.lineSeparator())), e.getCause());
 			throw wrapped;
 		}

@@ -20,25 +20,13 @@
 package it.bancaditalia.oss.vtl.exceptions;
 
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class VTLCastException extends VTLException
+public class VTLMissingValueException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLCastException(ValueDomainSubset<?, ?> domain, ScalarValue<?, ?, ?, ?> value)
+	public VTLMissingValueException(DataStructureComponent<?, ?, ?> component, String where)
 	{
-		super("Cannot cast " + value + "[" + value.getDomain() + "] to type " + domain + ".");
-	}
-
-	public VTLCastException(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
-	{
-		super("Component " + component + " cannot accept a value of " + value + "[" + value.getDomain() + "]");
-	}
-
-	public VTLCastException(ValueDomainSubset<?, ?> accepting, ValueDomainSubset<?, ?> providing)
-	{
-		super("Domain " + providing + " is different from " + accepting);
+		super("Component " + component + " is missing a value in " + where);
 	}
 }

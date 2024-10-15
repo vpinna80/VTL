@@ -123,6 +123,10 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				.collect(toList());
 		this.groupingClause = groupingClause;
 		this.having = having;
+		
+		if (this.having != null)
+			throw new UnsupportedOperationException("aggr with having clause not implemented");
+
 	}
 
 	@Override
