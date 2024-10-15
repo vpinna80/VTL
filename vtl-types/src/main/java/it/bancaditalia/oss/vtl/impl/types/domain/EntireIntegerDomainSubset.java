@@ -45,7 +45,7 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 	@Override
 	public String toString()
 	{
-		return "integer";
+		return "int";
 	}
 	
 	@Override
