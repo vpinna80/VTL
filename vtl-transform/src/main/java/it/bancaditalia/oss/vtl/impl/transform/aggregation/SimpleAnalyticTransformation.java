@@ -143,6 +143,8 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		}
 
 		Set<DataStructureComponent<Identifier,?,?>> partitionComponents = dataset.matchIdComponents(partitionBy, "partition by");
+		if (partitionBy.isEmpty())
+			partitionComponents.removeAll(ordering.keySet());
 		partitionComponents.retainAll(ordering.keySet());
 		if (!partitionComponents.isEmpty())
 			throw new VTLException("Partitioning components " + partitionComponents + " cannot be used in order by");
