@@ -305,6 +305,11 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-sdmxenv</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-envbase</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -316,9 +321,9 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-rest</artifactId>
-				<type>war</type>
+				<artifactId>vtl-bundle-deps</artifactId>
 				<version>${project.version}</version>
+				<type>pom</type>
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -883,6 +888,7 @@
 									<exclude>**/*.part</exclude>
 									<exclude>**/*.bin</exclude>
 									<exclude>/R</exclude>
+									<exclude>**/.externalToolBuilders/**</exclude>
 								</excludes>
 							</licenseSet>
 						</licenseSets>
