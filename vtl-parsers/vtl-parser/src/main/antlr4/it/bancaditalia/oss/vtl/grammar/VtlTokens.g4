@@ -274,7 +274,7 @@ BOOLEAN_CONSTANT
   | 'false'
   ;
 
-TIME_UNIT
+/*TIME_UNIT
     :
     'A'
     |'S'
@@ -283,7 +283,7 @@ TIME_UNIT
     |'W'
     |'D'
     |'T'
-    ;
+    ;*/
 
 STRING_CONSTANT
   :

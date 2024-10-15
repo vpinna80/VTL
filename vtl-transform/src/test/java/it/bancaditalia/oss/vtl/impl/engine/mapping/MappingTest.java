@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.engine.mapping;
 
 import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -41,7 +42,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -166,8 +166,7 @@ public class MappingTest
 			Class<?> fromClass = Class.forName("it.bancaditalia.oss.vtl.grammar.Vtl$" + from, true, Thread.currentThread().getContextClassLoader());
 			Class<?> toClass = Class.forName(mapping.getTo(), true, Thread.currentThread().getContextClassLoader());
 			
-			Objects.requireNonNull(fromClass, "from class missing in mapping: " + from);
-			
+			requireNonNull(fromClass, "from class missing in mapping: " + from);
 			System.out.println("Checking mapping from " + fromClass.getSimpleName() + " to " + toClass.getSimpleName());
 			checkParams(0, fromClass, tokensets, mapping.getParams().getNullparamOrStringparamOrExprparam());
 		}
@@ -219,7 +218,7 @@ public class MappingTest
 			
 			System.out.println(": is " + innerClass.getSimpleName());
 			assertNotNull(innerClass);
-			checkParams(level, innerClass, tokensets, nParam.getStringparamOrExprparamOrValueparam());
+			checkParams(level, innerClass, tokensets, nParam.getNullparamOrStringparamOrExprparam());
 		}
 		else if (param instanceof Customparam)
 		{

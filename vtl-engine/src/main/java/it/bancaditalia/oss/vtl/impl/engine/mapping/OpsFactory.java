@@ -472,10 +472,10 @@ public class OpsFactory implements Serializable
 		// get the nested context by looking up the name attribute of nestedparam in current context
 		ParserRuleContext nestedCtx = getFieldOrMethod(nestedParam, ctx, ParserRuleContext.class, level);
 		// iteratively resolve any parameters inside the nested context 
-		List<Nonnullparam> innerParams = nestedParam.getStringparamOrExprparamOrValueparam();
+		List<Param> innerParams = nestedParam.getNullparamOrStringparamOrExprparam();
 		// map each parameter to a constructed mapped object and collect the results into a list
 		List<Object> resultList = new ArrayList<>(innerParams.size());
-		for (Nonnullparam child : innerParams)
+		for (Param child : innerParams)
 			resultList.add(nestedCtx == null ? null : createParam(nestedCtx, child, level + 1));
 		result = resultList;
 		return result;

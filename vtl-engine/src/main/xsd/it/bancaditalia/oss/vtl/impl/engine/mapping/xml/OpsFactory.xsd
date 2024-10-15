@@ -237,6 +237,7 @@
 		<xs:complexContent>
 			<xs:extension base="nonnullparam">
 				<xs:choice minOccurs="1" maxOccurs="unbounded">
+					<xs:element name="nullparam" type="nullparam" />
 					<xs:element name="stringparam" type="stringparam" />
 					<xs:element name="exprparam" type="exprparam" />
 					<xs:element name="valueparam" type="valueparam" />

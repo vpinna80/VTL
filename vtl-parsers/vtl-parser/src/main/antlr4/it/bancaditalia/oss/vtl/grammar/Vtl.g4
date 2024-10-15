@@ -26,7 +26,7 @@ expr:
     | left=expr op=AND right=expr                                           # booleanExpr
     | left=expr op=(OR|XOR) right=expr							            # booleanExpr
     | IF  conditionalExpr=expr  THEN thenExpr=expr ELSE elseExpr=expr       # ifExpr
-    | CASE WHEN expr THEN expr (WHEN expr THEN expr)* ELSE expr             # caseExpr
+    | CASE (WHEN condExpr+=expr THEN thenExpr+=expr)+ ELSE elseExpr=expr    # caseExpr
     | constant														        # constantExpr
     | varID															        # varIdExpr
 
@@ -45,6 +45,7 @@ exprComponent:
     | left=exprComponent op=AND right=exprComponent                                                         # booleanExprComp
     | left=exprComponent op=(OR|XOR) right=exprComponent                                                    # booleanExprComp
     | IF  conditionalExpr=exprComponent  THEN thenExpr=exprComponent ELSE elseExpr=exprComponent            # ifExprComp
+    | CASE (WHEN condExpr+=exprComponent THEN thenExpr+=exprComponent)+ ELSE elseExpr=exprComponent         # caseExprComp
     | constant                                                                                              # constantExprComp
     | componentID                                                                                           # compId
 ;
@@ -232,16 +233,16 @@ timeOperatorsComponent:
     | TIMESHIFT LPAREN exprComponent COMMA signedInteger RPAREN                                                                                 # timeShiftAtomComponent
     | TIME_AGG LPAREN periodIndTo=STRING_CONSTANT (COMMA periodIndFrom=(STRING_CONSTANT| OPTIONAL ))? (COMMA op=optionalExprComponent)? (COMMA delim=(FIRST|LAST))? RPAREN    # timeAggAtomComponent
     | CURRENT_DATE LPAREN RPAREN                                                                                                               # currentDateAtomComponent
-    | DATEDIFF LPAREN dateFrom=expr COMMA dateTo=expr RPAREN                    # dateDiffAtomComponent
-    | DATEADD LPAREN op=expr COMMA shiftNumber=expr COMMA periodInd=expr RPAREN # dateAddAtomComponent
-    | YEAR_OP LPAREN expr RPAREN                                                # yearAtomComponent
-    | MONTH_OP LPAREN expr RPAREN                                               # monthAtomComponent
-    | DAYOFMONTH LPAREN expr RPAREN                                             # dayOfMonthAtomComponent
-    | DAYOFYEAR LPAREN expr RPAREN                                              # datOfYearAtomComponent
-    | DAYTOYEAR LPAREN expr RPAREN                                              # dayToYearAtomComponent
-    | DAYTOMONTH LPAREN expr RPAREN                                             # dayToMonthAtomComponent
-    | YEARTODAY LPAREN expr RPAREN                                              # yearTodayAtomComponent
-    | MONTHTODAY LPAREN expr RPAREN                                             # monthTodayAtomComponent
+    | DATEDIFF LPAREN dateFrom=exprComponent COMMA dateTo=exprComponent RPAREN                    # dateDiffAtomComponent
+    | DATEADD LPAREN op=exprComponent COMMA shiftNumber=exprComponent COMMA periodInd=exprComponent RPAREN # dateAddAtomComponent
+    | YEAR_OP LPAREN exprComponent RPAREN                                                # yearAtomComponent
+    | MONTH_OP LPAREN exprComponent RPAREN                                               # monthAtomComponent
+    | DAYOFMONTH LPAREN exprComponent RPAREN                                             # dayOfMonthAtomComponent
+    | DAYOFYEAR LPAREN exprComponent RPAREN                                              # dayOfYearAtomComponent
+    | DAYTOYEAR LPAREN exprComponent RPAREN                                              # dayToYearAtomComponent
+    | DAYTOMONTH LPAREN exprComponent RPAREN                                             # dayToMonthAtomComponent
+    | YEARTODAY LPAREN exprComponent RPAREN                                              # yearTodayAtomComponent
+    | MONTHTODAY LPAREN exprComponent RPAREN                                             # monthTodayAtomComponent
 ;
 
 setOperators:
@@ -431,8 +432,8 @@ limitClauseItem:
 /*--------------------------------------------END ANALYTIC CLAUSE -----------------------------------------------*/
 /* ------------------------------------------------------------ GROUPING CLAUSE ------------------------------------*/
 groupingClause:
-    GROUP op=(BY | EXCEPT) componentID (COMMA componentID)* ( TIME_AGG LPAREN TIME_UNIT (COMMA delim=(FIRST|LAST))? RPAREN )?     # groupByOrExcept
-    | GROUP ALL exprComponent ( TIME_AGG LPAREN TIME_UNIT RPAREN )?                                   # groupAll
+    GROUP op=(BY | EXCEPT) componentID (COMMA componentID)* ( TIME_AGG LPAREN STRING_CONSTANT (COMMA delim=(FIRST|LAST))? RPAREN )?     # groupByOrExcept
+    | GROUP ALL ( TIME_AGG LPAREN STRING_CONSTANT RPAREN )?                                   # groupAll
   ;
 
 havingClause:
