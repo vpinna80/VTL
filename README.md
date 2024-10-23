@@ -81,10 +81,10 @@ into your local maven repository. It can be done with the following command:
 
 ```
 Un*x:
-mvn install:install-file -DgroupId=org.rosuda.JRI -DartifactId=Rengine -Dversion=$R_VERSION file=$R_LIBRARY/java/jri/REngine.jar
+mvn install:install-file -DgroupId=org.rosuda.JRI -DartifactId=Rengine -Dversion=$R_VERSION -Dfile=$R_LIBRARY/java/jri/REngine.jar -Dpackaging=jar
 
 Windows
-mvn install:install-file -DgroupId=org.rosuda.JRI -DartifactId=Rengine -Dversion=%R_VERSION% file=%R_LIBRARY%/java/jri/REngine.jar
+mvn install:install-file -DgroupId=org.rosuda.JRI -DartifactId=Rengine -Dversion=%R_VERSION% -Dfile=%R_LIBRARY%/java/jri/REngine.jar -Dpackaging=jar
 ```
 
 Please set the environment variables `R_VERSION` and `R_LIBRARY` accordingly
@@ -92,12 +92,6 @@ to your environment settings, or directly replace them in the command above.
 The R package, ready for installation in R (with install.packages), 
 will be located there. Moreover, each bundle created while this profile is
 active will contain support for the R environment.
-
-### Web API for VTL Engine
-
-If you want to build the RESTful web services for VTL along with the engine, activate the
-`with-rest` maven profile. A WAR file ready to be deployed in your application server
-will be packaged during the `package` maven lifecycle phase in your build.
 
 ### Command-line interface for VTL Engine
 
