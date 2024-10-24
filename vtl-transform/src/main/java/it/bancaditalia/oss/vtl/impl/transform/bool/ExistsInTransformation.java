@@ -20,6 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation.ExistsInMode.ALL;
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Collections.singletonMap;
@@ -58,11 +60,11 @@ public class ExistsInTransformation extends BinaryTransformation
 	
 	private final ExistsInMode mode;
 
-	public ExistsInTransformation(ExistsInMode mode, Transformation left, Transformation right)
+	public ExistsInTransformation(Transformation left, Transformation right, String mode)
 	{
 		super(left, right);
 		
-		this.mode = mode == null ? ALL : mode;
+		this.mode = mode == null ? ALL : ExistsInMode.valueOf(mode.toUpperCase());
 	}
 
 	@Override
@@ -93,8 +95,8 @@ public class ExistsInTransformation extends BinaryTransformation
 		switch (mode)
 		{
 			case ALL: return unfiltered;
-			case FALSE: return unfiltered.filter(dp -> (BooleanValue<?>) dp.get(boolMeasure) == BooleanValue.FALSE, identity());
-			case TRUE: return unfiltered.filter(dp -> (BooleanValue<?>) dp.get(boolMeasure) == BooleanValue.TRUE, identity());
+			case FALSE: return unfiltered.filter(dp -> dp.get(boolMeasure) == FALSE, identity());
+			case TRUE: return unfiltered.filter(dp -> dp.get(boolMeasure) == TRUE, identity());
 			default: throw new IllegalStateException("unreachable");
 		}
 	}
