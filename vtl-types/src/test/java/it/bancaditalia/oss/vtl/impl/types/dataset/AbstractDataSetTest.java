@@ -24,7 +24,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
-import static it.bancaditalia.oss.vtl.util.Utils.setOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -76,7 +76,7 @@ public class AbstractDataSetTest
 	private static final DataStructureComponent<Identifier, EntireIntegerDomainSubset, IntegerDomain> INT_ID = new ComponentMock<>("int_id", Identifier.class, INTEGERDS);
 	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_ME = new ComponentMock<>("int_me", Measure.class, INTEGERDS);
 	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOL_ME = new ComponentMock<>("bol_me", Measure.class, BOOLEANDS);
-	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(setOf(STR_ID, INT_ID, INT_ME, BOL_ME)).build();
+	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(Set.of(STR_ID, INT_ID, INT_ME, BOL_ME)).build();
 	private static final String STR_ID_VAL[] = { "A", "A", "B", "B", "C" }; 
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 
 	private static final Long INT_ME_VAL[] = { 5L, 7L, null, 8L, 4L }; 

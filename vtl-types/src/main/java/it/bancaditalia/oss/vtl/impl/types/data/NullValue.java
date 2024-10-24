@@ -29,8 +29,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
-		extends BaseScalarValue<NullValue<S, D>, String, S, D>
+public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends BaseScalarValue<NullValue<S, D>, String, S, D>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Map<ValueDomainSubset<? extends ValueDomainSubset<?, ?>, ? extends ValueDomain>, NullValue<?, ?>> INSTANCES = new ConcurrentHashMap<>();
@@ -62,7 +61,7 @@ public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain>
 	@Override
 	public String toString()
 	{
-		return "#NULL#";
+		return String.format("#NULL#[%s]", getDomain());
 	}
 
 	@Override

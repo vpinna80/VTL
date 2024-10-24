@@ -207,11 +207,17 @@ public class DataStructureBuilder
 				throw new VTLMissingComponentsException(alias, byName.values());
 
 			if (component.is(Measure.class))
-				return new DataStructureBuilder().addComponents(component).addComponents(getIDs()).build();
+				return new DataStructureBuilder()
+						.addComponent(component)
+						.addComponents(getIDs())
+						.addComponents(getComponents(ViralAttribute.class))
+						.build();
 			else
 				return new DataStructureBuilder()
 						.addComponent(component.getVariable().getDomain().getDefaultVariable().as(Measure.class))
-						.addComponents(getIDs()).build();
+						.addComponents(getIDs())
+						.addComponents(getComponents(ViralAttribute.class))
+						.build();
 		}
 
 		@Override

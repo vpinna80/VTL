@@ -88,7 +88,7 @@ public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R e
 	@Override
 	public String toString()
 	{
-		return value.toString();
+		return String.format("%s[%s]", value, domain);
 	}
 
 	@Override

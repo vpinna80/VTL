@@ -31,7 +31,6 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static java.util.Collections.singletonMap;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 
@@ -65,6 +64,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -103,8 +103,12 @@ public abstract class AbstractDataSet implements DataSet
 				.orElseThrow((Supplier<? extends RuntimeException> & Serializable) () -> new VTLMissingComponentsException(alias, dataStructure));
 		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getMeasures().iterator().next();
 
-		SerFunction<DataPoint, Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = 
-				dp -> singletonMap(membershipMeasure, dp.get(sourceComponent));
+		SerFunction<DataPoint, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = dp -> {
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(); 
+				map.put(membershipMeasure, dp.get(sourceComponent));
+				map.putAll(dp.getValues(membershipStructure.getComponents(ViralAttribute.class)));
+				return map;
+			};
 		
 		return mapKeepingKeys(membershipStructure, dp -> LineageNode.of("#" + alias, dp.getLineage()), operator);
 	}

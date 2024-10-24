@@ -126,6 +126,18 @@ public enum CommonComponents
 		{
 			return defaultHashCode();
 		}
+		
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (obj instanceof Variable)
+			{
+				Variable<?, ?> other = (Variable<?, ?>) obj;
+				return name.equals(other.getName()) && domain.equals(other.getDomain());
+			}
+			
+			return false;
+		}
 	}
 
 	private String vname;

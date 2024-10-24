@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
 import java.io.Serializable;
@@ -29,7 +30,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
@@ -65,7 +65,7 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 			if (value instanceof NullValue)
 				return NullValue.instance(this);
 			else if (value instanceof NumberValue)
-				return NumberValueImpl.createNumberValue((Number) value.get());
+				return createNumberValue((Number) value.get());
 			else 
 				throw new UnsupportedOperationException("Cast to double from " + value.getClass());
 		}
