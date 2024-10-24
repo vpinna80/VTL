@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
@@ -178,7 +179,6 @@ public class REnvironment implements Environment
 	{
 		LOGGER.info("Searching for {} in R global environment...");
 		if (reval("exists('???')", name).asBool().isTRUE())
-		{
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE()) 
 			{
 				LOGGER.info("Found a data.frame, constructing VTL metadata...");
@@ -187,13 +187,14 @@ public class REnvironment implements Environment
 
 				// manage measure and identifier attributes
 				List<String> measures = new ArrayList<>();
-				REXP measureAttrs = data.getAttribute("measures");
-				if(measureAttrs != null) 
-					measures = Arrays.asList(measureAttrs.asStringArray());
+				REXP attributeMeas = data.getAttribute("measures");
+				if(attributeMeas != null) 
+					measures = Arrays.asList(attributeMeas.asStringArray());
 				
 				List<String> identifiers = new ArrayList<>();
 				REXP idAttr = data.getAttribute("identifiers");
-				if(idAttr != null) {
+				if(idAttr != null)
+				{
 					if (reval("any(duplicated(`???`[, attr(`???`, 'identifiers')]))", name).asBool().isTRUE())
 						throw new IllegalStateException("Found duplicated rows in data frame " + name);
 					identifiers = Arrays.asList(idAttr.asStringArray());
@@ -213,18 +214,19 @@ public class REnvironment implements Environment
 						role = Attribute.class;
 
 					ValueDomainSubset<?, ?> domain;
+					Optional<String[]> classes = Optional.ofNullable(columnData.getAttribute("class")).map(REXP::asStringArray);
 					switch (columnData.getType())
 					{
-						case XT_DOUBLE: case XT_ARRAY_DOUBLE:                     domain = NUMBERDS; break;
+						case XT_DOUBLE: case XT_ARRAY_DOUBLE:                     
+							domain = classes.isPresent() && Arrays.asList(classes.get()).contains("Date") ? DATEDS : NUMBERDS; break;
 						case XT_INT: case XT_ARRAY_INT:                           domain = INTEGERDS; break;
 						case XT_STR: case XT_ARRAY_STR:                           domain = STRINGDS; break;
 						case XT_BOOL: case XT_ARRAY_BOOL: case XT_ARRAY_BOOL_INT: domain = BOOLEANDS; break;
-						default:
-							throw new UnsupportedOperationException(
-									"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
+						default: throw new UnsupportedOperationException(
+							"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
 					}
-					
-					builder.addComponent(new RVar<>(name, domain).as(role));
+ 					
+					builder.addComponent(new RVar<>(key, domain).as(role));
 				}
 				
 				LOGGER.info("VTL metadata for {} completed.", name);
@@ -245,7 +247,6 @@ public class REnvironment implements Environment
 						throw new UnsupportedOperationException("Unrecognized scalar value " + name + ": " + REXP.xtName(data.getType()) + ")");
 				}
 			}
-		}
 
 		return Optional.empty();
 	}
@@ -254,24 +255,23 @@ public class REnvironment implements Environment
 	public Optional<VTLValue> getValue(MetadataRepository repo, String name)
 	{
 		if (reval("exists('???')", name).asBool().isTRUE())
-		{
-			VTLValue result;
-
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE())
 			{
-				DataSetMetadata metadata = repo.getStructure(name);
-				if (metadata == null)
-					metadata = (DataSetMetadata) getValueMetadata(name).get();
-				result = parseDataFrame(metadata, name);
-				return Optional.of(result);
+				Optional<VTLValueMetadata> maybeMeta = getValueMetadata(name).or(() -> repo.getStructure(name));
+				if (maybeMeta.isEmpty())
+					return Optional.empty();
+				
+				DataSetMetadata metadata = (DataSetMetadata) maybeMeta.get();
+				return Optional.of(parseDataFrame(metadata, name));
 			}
 			else if (reval("is.integer(`???`) || is.numeric(`???`) || is.character(`???`)", name).asBool().isTRUE())
 			{
 				REXP data = reval("`???`", name);
+				VTLValue result;
 				switch (data.getType())
 				{
 					case XT_STR: result = StringValue.of(data.asString()); break;
-					case XT_ARRAY_DOUBLE: result = NumberValueImpl.createNumberValue(data.asDoubleArray()[0]); break;
+					case XT_ARRAY_DOUBLE: result = createNumberValue(data.asDoubleArray()[0]); break;
 					case XT_ARRAY_INT: result = IntegerValue.of((long) data.asIntArray()[0]); break;
 					case XT_ARRAY_BOOL: result = BooleanValue.of(data.asBool().isTRUE()); break;
 					case XT_ARRAY_BOOL_INT: result = BooleanValue.of(data.asBool().isTRUE()); break;
@@ -280,7 +280,6 @@ public class REnvironment implements Environment
 				}
 				return Optional.of(result);
 			}
-		}
 
 		return Optional.empty();
 	}
@@ -373,6 +372,10 @@ public class REnvironment implements Environment
 		return value -> {
 			if (value instanceof NullValue)
 				return NullValue.instanceFrom(comp);
+			else if (value instanceof DateValue)
+			{
+				return value;
+			}
 			else if (value instanceof NumberValue)
 			{
 				int year = ((Number) value.get()).intValue();

@@ -50,9 +50,10 @@ convertDF <- function(pager, nc) {
     part <- lapply(0:(nc - 1), function(i) {
     	switch (pager$getType(i),
     	  pager$getDoubleColumn(i),  
-    	  lapply(pager$getIntColumn(i), as.logical),
-    	  lapply(pager$getIntColumn(i), as.Date, as.Date("1970-01-01")),
-    	  sapply(pager$getStringColumn(i), .jstrVal)
+    	  sapply(pager$getIntColumn(i), as.logical),
+    	  as.Date(pager$getIntColumn(i)),
+    	  sapply(pager$getStringColumn(i), .jstrVal),
+    	  sapply(pager$getLongColumn(i))
     	)  
     })
     names(part) <- sapply(0:(nc - 1), function(i) .jstrVal(pager$getName(i)))
