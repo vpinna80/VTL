@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
@@ -51,7 +52,6 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -72,8 +72,8 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 
 	public PivotClauseTransformation(String identifierName, String measureName)
 	{
-		this.identifierName = Variable.normalizeAlias(identifierName);
-		this.measureName = Variable.normalizeAlias(measureName);
+		this.identifierName = normalizeAlias(identifierName);
+		this.measureName = normalizeAlias(measureName);
 		
 		LOGGER.debug("Pivoting " + measureName + " over " + identifierName);
 	}

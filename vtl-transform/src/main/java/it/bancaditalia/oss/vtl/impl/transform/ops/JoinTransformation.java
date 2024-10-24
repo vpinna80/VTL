@@ -38,6 +38,7 @@ import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
+import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static it.bancaditalia.oss.vtl.util.Utils.onlyIf;
@@ -125,7 +126,7 @@ public class JoinTransformation extends TransformationImpl
 		public JoinOperand(Transformation operand, String id)
 		{
 			this.operand = operand;
-			this.id = id == null ? null : Variable.normalizeAlias(id);
+			this.id = ifNonNull(id, Variable::normalizeAlias);
 		}
 
 		public Transformation getOperand()

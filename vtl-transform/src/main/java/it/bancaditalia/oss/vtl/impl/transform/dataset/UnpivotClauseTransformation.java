@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
@@ -61,8 +62,8 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 
 	public UnpivotClauseTransformation(String identifierName, String measureName)
 	{
-		this.identifierName = Variable.normalizeAlias(identifierName);
-		this.measureName = Variable.normalizeAlias(measureName);
+		this.identifierName = normalizeAlias(identifierName);
+		this.measureName = normalizeAlias(measureName);
 	}
 
 	@Override

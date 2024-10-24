@@ -22,7 +22,9 @@ package it.bancaditalia.oss.vtl.impl.meta.json;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
@@ -35,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -47,6 +49,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
+import it.bancaditalia.oss.vtl.exceptions.VTLDuplicatedObjectException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
@@ -86,15 +90,19 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	public JsonMetadataRepository() throws IOException
 	{
-		String url = JSON_METADATA_URL.getValue();
-		if (url == null || url.isEmpty())
+		this(JSON_METADATA_URL.getValue());
+	}
+	
+	public JsonMetadataRepository(String jsonURL) throws IOException
+	{
+		if (jsonURL == null || jsonURL.isEmpty())
 			throw new IllegalStateException("No url configured for json metadata repository.");
 
 		Map<String, Entry<String, String>> dsDefs;
 		Map<String, Map<String, Class<? extends Component>>> strDefs;
 		Map<String, String> varDefs;
 
-		try (InputStream source = new URL(url).openStream())
+		try (InputStream source = new URL(jsonURL).openStream())
 		{
 			Map<?, ?> json;
 			try (JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source))
@@ -102,29 +110,30 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				json = parser.readValueAs(Map.class);
 			}
 			
-			dsDefs = iterate((List<?>) json.get("datasets"), this::createDataset);
-			strDefs = iterate((List<?>) json.get("structures"), this::createStructure);
-			varDefs = iterate((List<?>) json.get("variables"), this::createVariable);
-			iterate((List<?>) json.get("domains"), this::createDomain);
+			dsDefs = iterate(json, "dataset", this::createDataset);
+			strDefs = iterate(json, "structure", this::createStructure);
+			varDefs = iterate(json, "variable", this::createVariable);
+			iterate(json, "domain", this::createDomain);
 		}
 
 		varDefs.forEach((n, d) -> variables.put(n, VariableImpl.of(n, getDomain(d))));
 		strDefs.forEach((n, l) -> structures.put(n, l.entrySet().stream().map(splitting((c, r) -> {
-			Objects.requireNonNull(variables.get(c), "Undefined variable " + c);
+			requireNonNull(variables.get(c), "Undefined variable " + c);
 			return variables.get(c).as(r); 
 		})).collect(toDataStructure())));
 		dsDefs.forEach((n, e) -> {
-			Objects.requireNonNull(structures.get(e.getKey()), "Undefined structure: " + e.getKey());
-			datasets.put(n, e.getKey());
+			String strName = normalizeAlias(e.getKey());
+			if (!structures.containsKey(strName))
+				throw new VTLUndefinedObjectException("Structure", strName);
+			datasets.put(n, strName);
 			sources.put(n, e.getValue());
 		});
 	}
 	
 	@Override
-	public DataSetMetadata getStructure(String name)
+	public Optional<DataSetMetadata> getStructure(String name)
 	{
-		String structureRef = datasets.get(name);
-		return structureRef != null ? structures.get(structureRef) : null;
+		return Optional.ofNullable(datasets.get(name)).map(structures::get);
 	}
 	
 	@Override
@@ -145,10 +154,11 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return source != null ? source : super.getDatasetSource(name);
 	}
 	
-	private <T> Map<String, T> iterate(List<?> list, SerBiFunction<String, Map<?, ?>, T> processor)
+	private <T> Map<String, T> iterate(Map<?, ?> json, String element, SerBiFunction<String, Map<?, ?>, T> processor)
 	{
 		Map<String, T> result = new HashMap<>();
-
+		List<?> list = (List<?>) json.get(element + "s");
+		
 		if (list != null)
 			for (Object entry: list)
 				if (entry instanceof Map)
@@ -159,9 +169,9 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 					if (!(obj.get("name") instanceof String))
 						throw new IllegalStateException("object name is not a string");
 					
-					String name = (String) obj.get("name");
+					String name = normalizeAlias((String) obj.get("name"));
 					if (result.containsKey(name))
-						throw new IllegalStateException("Metadata object " + name + " is defined more than once.");
+						throw new VTLDuplicatedObjectException(element, name);
 					T processed = processor.apply(name, obj);
 					if (processed != null)
 						result.put(name, processed);
@@ -184,7 +194,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	private Map<String, Class<? extends Component>> createStructure(String name, Map<?, ?> jsonStructure)
 	{
 		LOGGER.info("Found structure {}", name);
-		return iterate((List<?>) jsonStructure.get("components"), this::createComponent);
+		return iterate(jsonStructure, "component", this::createComponent);
 	}
 
 	private Class<? extends Component> createComponent(String name, Map<?, ?> jsonStructure)

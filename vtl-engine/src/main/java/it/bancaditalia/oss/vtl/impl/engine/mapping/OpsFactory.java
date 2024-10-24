@@ -20,6 +20,9 @@
 package it.bancaditalia.oss.vtl.impl.engine.mapping;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
+import static java.util.Arrays.asList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -28,7 +31,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,7 +43,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -121,11 +122,11 @@ public class OpsFactory implements Serializable
 	private final Map<Class<? extends ParserRuleContext>, List<Mapping>> mappings = new HashMap<>();
 	private final Map<String, Tokenset> tokensets = new HashMap<>();
 	private final Set<Class<? extends ParserRuleContext>> recursivecontexts = new HashSet<>();
-//	private final Map<Transformation, Transformation> transformationCache = new HashMap<>();
+	private final String packageName;
 
 	public OpsFactory() throws JAXBException, ClassNotFoundException, IOException
 	{
-		paramMappers.put(Tokensetparam.class, (b, c, d) -> parseMapParam(b, c, (Tokensetparam) d));
+		paramMappers.put(Tokensetparam.class, (b, c, d) -> parseTokensetParam(b, c, (Tokensetparam) d));
 		paramMappers.put(Valueparam.class, (b, c, d) -> parseValueParam(b, c, (Valueparam) d));
 		paramMappers.put(Roleparam.class, (b, c, d) -> parseRoleParam(b, c, (Roleparam) d));
 		paramMappers.put(Stringparam.class, (b, c, d) -> parseStringParam(b, c, (Stringparam) d));
@@ -166,15 +167,19 @@ public class OpsFactory implements Serializable
 
 		StreamSource xmlConfig = new StreamSource(file.openStream());
 		Parserconfig config = jc.createUnmarshaller().unmarshal(xmlConfig, Parserconfig.class).getValue();
-
+		packageName = config.getPackage();
+		LOGGER.debug("Implementation package: {}", packageName);
+		
 		LOGGER.debug("Loading mappings");
 		for (Mapping mapping : config.getMapping())
-		{
-			Class<? extends ParserRuleContext> from = Class.forName(Vtl.class.getName() + "$" + mapping.getFrom()).asSubclass(ParserRuleContext.class);
-			mappings.putIfAbsent(from, new ArrayList<>());
-			mappings.get(from).add(mapping);
-			LOGGER.trace("Loaded mapping {} for context '{}'.", from, mapping.getTo());
-		}
+			for (String ctxFrom: mapping.getFrom())
+			{
+				String ctxClassName = Vtl.class.getName() + "$" + ctxFrom + "Context";
+				Class<? extends ParserRuleContext> classFrom = Class.forName(ctxClassName).asSubclass(ParserRuleContext.class);
+				mappings.putIfAbsent(classFrom, new ArrayList<>());
+				mappings.get(classFrom).add(mapping);
+				LOGGER.trace("Loaded mapping {} for context '{}'.", ctxFrom, mapping.getTo());
+			}
 
 		LOGGER.debug("Loading tokensets");
 		for (Tokenset tokenset : config.getTokenset())
@@ -218,7 +223,7 @@ public class OpsFactory implements Serializable
 			try
 			{
 				boolean found = checkMapping(mapping.getTokensOrContextOrNested(), ctx);
-				Class<?> target = Class.forName(mapping.getTo());
+				Class<?> target = Class.forName(packageName + "." + mapping.getTo());
 
 				if (found)
 				{
@@ -374,34 +379,41 @@ public class OpsFactory implements Serializable
 	{
 		String tabs = new String(new char[level]).replace("\0", "    ");
 		
-		Objects.requireNonNull(ctx, "Parsing context is null");
+		String ctxClass = requireNonNull(ctx, "Parsing context is null").getClass().getSimpleName();
+		
+		if (recursivecontexts.contains(ctx.getClass()))
+		{
+			LOGGER.trace("|{}++ {}: recursive context", tabs, ctxClass);
+			return createParam(ctx.getChild(ParserRuleContext.class, 0), maybeNullParam, level);
+		}
 		
 		if (maybeNullParam instanceof Nullparam)
 		{
-			LOGGER.trace("|{}>> {}: Null", tabs, ctx.getClass().getSimpleName());
-			LOGGER.trace("|{}<< {}: Null", tabs, ctx.getClass().getSimpleName());
+			LOGGER.trace("|{}>> {}: Null", tabs, ctxClass);
+			LOGGER.trace("|{}<< {}: Null", tabs, ctxClass);
 			return null;
 		}
 		else
 		{
 			Nonnullparam param = (Nonnullparam) maybeNullParam;
-			Class<? extends Param> paramClass = param.getClass();
+			
+			String paramClass = param.getClass().getSimpleName();
 			Object result;
 			if (param.getName() != null)
-				LOGGER.trace("|{}>> {}: {} from subrule '{}'", tabs, ctx.getClass().getSimpleName(), paramClass.getSimpleName(), param.getName());
+				LOGGER.trace("|{}>> {}: {} from subrule '{}'", tabs, ctxClass, paramClass, param.getName());
 			else
-				LOGGER.trace("|{}>> {}: {} from same context", tabs, ctx.getClass().getSimpleName(), paramClass.getSimpleName());
+				LOGGER.trace("|{}>> {}: {} from same context", tabs, ctxClass, paramClass);
 
 			TriFunction<ParserRuleContext, Integer, Nonnullparam, Object> contextParser = paramMappers.get(param.getClass());
 			if (contextParser == null)
-				throw new IllegalStateException("Not implemented: " + param.getClass().getName());
+				throw new IllegalStateException("Not implemented: " + paramClass);
 				
 			result = contextParser.apply(ctx, level, param);
 
 			if (param.getName() != null)
-				LOGGER.trace("|{}<< {}: {} from subrule '{}' yield {}", tabs, ctx.getClass().getSimpleName(), paramClass.getSimpleName(), param.getName(), result);
+				LOGGER.trace("|{}<< {}: {} from subrule '{}' yield {}", tabs, ctxClass, paramClass, param.getName(), result);
 			else
-				LOGGER.trace("|{}<< {}: {} from same context yield {}", tabs, ctx.getClass().getSimpleName(), paramClass.getSimpleName(), result);
+				LOGGER.trace("|{}<< {}: {} from same context yield {}", tabs, ctxClass, paramClass, result);
 
 			return result;
 		}
@@ -418,7 +430,7 @@ public class OpsFactory implements Serializable
 	private Object parseCustomParam(ParserRuleContext ctx, int level, Customparam customParam)
 	{
 		ParserRuleContext customCtx = null;
-		List<Nonnullparam> innerParams = null;
+		List<Param> innerParams = null;
 		List<Object> resultList = null;
 		Class<?> customClass = null;
 		try
@@ -432,7 +444,7 @@ public class OpsFactory implements Serializable
 			innerParams = customParam.getStringparamOrExprparamOrValueparam();
 
 			resultList = new ArrayList<>(innerParams.size());
-			for (Nonnullparam child : innerParams)
+			for (Param child : innerParams)
 				resultList.add(createParam(customCtx, child, level + 1));
 			
 			customClass = Class.forName(customParam.getClazz());
@@ -575,7 +587,9 @@ public class OpsFactory implements Serializable
 		if (element == null)
 			return null;
 		
-		Token token = (Token) element.getChild(TerminalNode.class, 0).getPayload();
+		element = resolveRecursiveContext(element);
+		
+		Token token = (Token) requireNonNull(element.getChild(TerminalNode.class, 0), "No terminal node in " + element.getClass().getSimpleName() + ": '" + element.getText() + "'").getPayload();
 		int tokenType = token.getType();
 		String text = token.getText();
 		switch (tokenType)
@@ -592,13 +606,21 @@ public class OpsFactory implements Serializable
 		}
 	}
 
-	private Enum<?> parseMapParam(ParserRuleContext ctx, int level, Tokensetparam tokensetParam)
+	private ParserRuleContext resolveRecursiveContext(ParserRuleContext ctx)
+	{
+		while (recursivecontexts.contains(ctx.getClass()) && !isNull(ctx.getChild(ParserRuleContext.class, 0)))
+			ctx = ctx.getChild(ParserRuleContext.class, 0);
+		
+		return ctx;
+	}
+
+	private Enum<?> parseTokensetParam(ParserRuleContext ctx, int level, Tokensetparam tokensetParam)
 	{
 		try
 		{
 			Enum<?> result;
 			// get the tokenset
-			Tokenset tokenset = Objects.requireNonNull(tokensets.get(tokensetParam.getTokenset()),
+			Tokenset tokenset = requireNonNull(tokensets.get(tokensetParam.getTokenset()),
 					"Tokenset " + tokensetParam.getTokenset() + " not found in mapping");
 			// lookup actual token
 			Object rule = getFieldOrMethod(tokensetParam, ctx, Object.class, level);
@@ -637,56 +659,77 @@ public class OpsFactory implements Serializable
 
 	private <T> T getFieldOrMethod(Nonnullparam param, RuleContext ctx, Class<T> resultClass, int level)
 	{
-		try
+		String tabs = "";
+		for (int i = 0; i <= level; i++)
+			tabs += "    ";
+		Class<? extends RuleContext> ctxClass = ctx.getClass();
+		
+		Object result = ctx;
+		if (param.getName() != null)
 		{
-			String tabs = "";
-			for (int i = 0; i <= level; i++)
-				tabs += "    ";
-			Class<? extends RuleContext> ctxClass = ctx.getClass();
-			Object result = ctx;
-			if (param.getName() != null)
+			List<Exception> suppressed = new ArrayList<>();
+			List<String> names = asList(param.getName().split("\\|"));
+			boolean found = false;
+			for (String name: names)
+				try
+				{
+					LOGGER.trace("|{}>> Looking up subrule '{}' as a {}", tabs, name, param.getClass().getSimpleName());
+					result = ctxClass.getField(name).get(ctx);
+					found = true;
+					break;
+				}
+				catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e)
+				{
+					try
+					{
+						result = ctxClass.getMethod(name).invoke(ctx);
+						found = true;
+						break;
+					}
+					catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e1)
+					{
+						suppressed.add(e);
+						suppressed.add(e1);
+					}
+				}
+			
+			if (!found)
 			{
-				LOGGER.trace("|{}>> Looking up subrule '{}' as a {}", tabs, param.getName(), param.getClass().getSimpleName());
-				Optional<Field> field = Arrays.stream(ctxClass.getFields()).filter(f -> f.getName().equals(param.getName())).findFirst();
-				if (field.isPresent())
-					result = field.get().get(ctx);
-				else
-					result = ctxClass.getMethod(param.getName()).invoke(ctx);
+				IllegalStateException e = new IllegalStateException("No field or method with names in " + names);
+				for (Exception e1: suppressed)
+					e.addSuppressed(e1);
+				throw e;
 			}
-			else
-				LOGGER.trace("|{}>> Looking up context {}", tabs, ctx.getClass().getSimpleName());
-	
-			if (param.getOrdinal() != null)
-				result = ((List<?>) result).get(param.getOrdinal().intValue());
-	
-			if (result instanceof ParserRuleContext)
-			{
-				ParserRuleContext resultCtx = (ParserRuleContext) result;
-				String ctxText = resultCtx.start.getInputStream().getText(new Interval(resultCtx.start.getStartIndex(), resultCtx.stop.getStopIndex()));
-				LOGGER.trace("|{}<< Found child context {} with value '{}'", tabs, result.getClass().getSimpleName(), ctxText);
-			}
-			else if (result instanceof Token)
-			{
-				Token token = (Token) result;
-				String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(token.getType());
-				LOGGER.trace("|{}<< Found token {} with value '{}'", tabs, sourceToken, token.getText());
-			}
-			else if (result instanceof TerminalNode)
-			{
-				Token token = (Token) ((TerminalNode) result).getPayload();
-				String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(token.getType());
-				LOGGER.trace("|{}<< Found token {} with value '{}'", tabs, sourceToken, token.getText());
-			}
-			else if (result != null)
-				LOGGER.trace("|{}<< Found result {} with value {}", tabs, result.getClass(), result);
-			else
-				LOGGER.trace("|{}<< Found null result", tabs);
-	
-			return resultClass.cast(result);
 		}
-		catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SecurityException e)
+		else
+			LOGGER.trace("|{}>> Looking up context {}", tabs, ctx.getClass().getSimpleName());
+		
+		if (param.getOrdinal() != null)
+			result = ((List<?>) result).get(param.getOrdinal().intValue());
+
+		if (result instanceof ParserRuleContext)
 		{
-			throw new VTLNestedException("Error parsing expression", e);
+			ParserRuleContext resultCtx = (ParserRuleContext) result;
+			String ctxText = resultCtx.start.getInputStream().getText(new Interval(resultCtx.start.getStartIndex(), resultCtx.stop.getStopIndex()));
+			LOGGER.trace("|{}<< Found child context {} with value '{}'", tabs, result.getClass().getSimpleName(), ctxText);
 		}
+		else if (result instanceof Token)
+		{
+			Token token = (Token) result;
+			String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(token.getType());
+			LOGGER.trace("|{}<< Found token {} with value '{}'", tabs, sourceToken, token.getText());
+		}
+		else if (result instanceof TerminalNode)
+		{
+			Token token = (Token) ((TerminalNode) result).getPayload();
+			String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(token.getType());
+			LOGGER.trace("|{}<< Found token {} with value '{}'", tabs, sourceToken, token.getText());
+		}
+		else if (result != null)
+			LOGGER.trace("|{}<< Found result {} with value {}", tabs, result.getClass(), result);
+		else
+			LOGGER.trace("|{}<< Found null result", tabs);
+
+		return resultClass.cast(result);
 	}
 }

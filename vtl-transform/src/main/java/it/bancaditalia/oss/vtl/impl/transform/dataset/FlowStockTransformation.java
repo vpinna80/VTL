@@ -53,7 +53,6 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -76,12 +75,8 @@ public class FlowStockTransformation extends UnaryTransformation
 
 	public enum DatasetOperator implements SerBiFunction<DataSet, DataStructureComponent<Identifier, ?, ?>, Stream<DataPoint>>
 	{
-		STOCK_TO_FLOW("stock_to_flow", false, (b, a) -> bothIntegers(b, a) 
-				? DIFF.applyAsInteger((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b) 
-				: DIFF.applyAsNumber((NumberValue<?, ?, ?, ?>) a, (NumberValue<?, ?, ?, ?>) b)), 
-		FLOW_TO_STOCK("flow_to_stock", true, (acc, v) -> bothIntegers(acc, v) 
-				? SUM.applyAsInteger((NumberValue<?, ?, ?, ?>) acc, (NumberValue<?, ?, ?, ?>) v) 
-				: SUM.applyAsNumber((NumberValue<?, ?, ?, ?>) acc, (NumberValue<?, ?, ?, ?>) v)); 
+		STOCK_TO_FLOW("stock_to_flow", false, (b, a) -> bothIntegers(b, a) ? DIFF.applyAsInteger(a, b) : DIFF.applyAsNumber(a, b)), 
+		FLOW_TO_STOCK("flow_to_stock", true, (acc, v) -> bothIntegers(acc, v) ? SUM.applyAsInteger(acc, v) : SUM.applyAsNumber(acc, v)); 
 		
 		private final BinaryOperator<ScalarValue<?, ?, ?, ?>> op;
 		private final String text;
