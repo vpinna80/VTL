@@ -19,15 +19,23 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_POP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_SAMP;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
-import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -35,6 +43,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleParametersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
@@ -55,7 +64,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -72,27 +81,20 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	{
 		private static final long serialVersionUID = 1L;
 		
-		private final String name;
+		private final String component;
 		private final AggregateTransformation operand;
 		private final Class<? extends Component> role;
 
-		public AggrClauseItem(Class<? extends Component> role, String name, AggregateTransformation operand)
+		public AggrClauseItem(AggrClauseItem other, GroupingClause groupingClause, Transformation havingExpr)
 		{
-			this.name = Variable.normalizeAlias(name);
-			this.operand = operand;
-			this.role = coalesce(role, Measure.class);
-		}
-
-		public AggrClauseItem(AggrClauseItem other, GroupingClause groupingClause)
-		{
-			this.name = other.name;
+			this.component = other.component;
 			this.role = other.role;
-			this.operand = new AggregateTransformation(other.operand, groupingClause, role, name);
+			this.operand = new AggregateTransformation(other.operand, groupingClause, havingExpr, role, component);
 		}
 
-		public String getComponent()
+		public String getName()
 		{
-			return name;
+			return component;
 		}
 
 		public AggregateTransformation getOperand()
@@ -108,7 +110,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		@Override
 		public String toString()
 		{
-			return (role != null ? role.getSimpleName().toUpperCase() + " " : "") + name + " := " + operand;
+			return (role != null ? role.getSimpleName().toUpperCase() + " " : "") + component + " := " + operand;
 		}
 	}
 
@@ -119,14 +121,10 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	public AggrClauseTransformation(List<AggrClauseItem> aggrItems, GroupingClause groupingClause, Transformation having)
 	{
 		this.aggrItems = aggrItems.stream()
-				.map(item -> new AggrClauseItem(item, groupingClause))
+				.map(item -> new AggrClauseItem(item, groupingClause, having))
 				.collect(toList());
 		this.groupingClause = groupingClause;
 		this.having = having;
-		
-		if (this.having != null)
-			throw new UnsupportedOperationException("aggr with having clause not implemented");
-
 	}
 
 	@Override
@@ -181,7 +179,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			if (groupingClause != null)
 				identifiers = groupingClause.getGroupingComponents(operand);
 
-			DataStructureBuilder builder = new DataStructureBuilder().addComponents(identifiers);
+			DataStructureBuilder builder = new DataStructureBuilder(identifiers);
 
 			for (AggrClauseItem clause : aggrItems)
 			{
@@ -199,7 +197,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				if (!(clauseMeta instanceof ScalarValueMetadata) || !NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
 					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, ((ScalarValueMetadata<?, ?>) clauseMeta).getDomain());
 
-				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getComponent());
+				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getName());
 				Class<? extends Component> requestedRole = clause.getRole() == null ? Measure.class : clause.getRole();
 				if (maybeExistingComponent.isPresent())
 				{
@@ -209,25 +207,37 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else
-						builder = builder.addComponent(repo.createTempVariable(clause.getComponent(), NUMBERDS).as(requestedRole));
+						builder = builder.addComponent(repo.createTempVariable(clause.getName(), NUMBERDS).as(requestedRole));
 				}
 				else
-					builder = builder.addComponent(repo.createTempVariable(clause.getComponent(), NUMBERDS).as(requestedRole));
+				{
+					ValueDomainSubset<?, ?> targetDomain;
+					if (clause.getOperand().getAggregation() == COUNT)
+						targetDomain = INTEGERDS; 
+					else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(clause.getOperand().getAggregation()))
+						targetDomain = NUMBERDS; 
+					else
+					{
+						VTLValueMetadata metadata = clause.getOperand().getMetadata(scheme);
+						targetDomain = metadata instanceof ScalarValueMetadata 
+								? ((ScalarValueMetadata<?, ?>) metadata).getDomain() 
+								: ((DataSetMetadata) metadata).getSingleton(Measure.class).getVariable().getDomain();
+					}
+					
+					builder = builder.addComponent(repo.createTempVariable(clause.getName(), targetDomain).as(requestedRole));
+				}
 			}
 
+			DataSetMetadata beforeHaving = builder.build();
+			
 			if (having != null)
 			{
-				throw new UnsupportedOperationException("HAVING not implemented.");
-//				VTLValueMetadata vHaving = having.getMetadata(new ThisMetaEnvironment(metadata, session).getWrapperSession());
-//				if (!(vHaving instanceof DataSetMetadata))
-//					throw new VTLSyntaxException("Having clause must return a dataset.");
-//
-//				DataSetMetadata havingDS = (DataSetMetadata) vHaving;
-//				if (havingDS.getComponents(Measure.class, Domains.BOOLEANDS).size() != 1)
-//					throw new VTLExpectedComponentException(Measure.class, Domains.BOOLEANDS, havingDS.getMeasures());
+				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, beforeHaving));
+				if (!BOOLEAN.equals(havingMeta))
+					throw new VTLIncompatibleParametersException("having", BOOLEAN, havingMeta);
 			}
 
-			return builder.build();
+			return beforeHaving;
 		}
 		else
 			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
