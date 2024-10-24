@@ -22,14 +22,15 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.MAX_ONE;
 import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.ONE;
 import static it.bancaditalia.oss.vtl.model.data.Component.Role.COMPONENT;
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
 
 import java.io.Serializable;
 import java.util.List;
 
 import it.bancaditalia.oss.vtl.model.data.Component.Role;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class DataSetComponentConstraint implements Serializable
@@ -60,9 +61,9 @@ public class DataSetComponentConstraint implements Serializable
 	
 	public DataSetComponentConstraint(String name, Role role, String domainName, QuantifierConstraints quantifier)
 	{
-		this.name = name != null ? normalizeAlias(name) : null;
+		this.name = ifNonNull(name, Variable::normalizeAlias);
 		this.role = coalesce(role, COMPONENT);
-		this.domainName = domainName != null ? normalizeAlias(domainName) : null;;
+		this.domainName = ifNonNull(domainName, Variable::normalizeAlias);
 		this.quantifier = coalesce(quantifier, ONE);
 	}
 

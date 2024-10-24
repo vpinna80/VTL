@@ -22,10 +22,14 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.ALL_MEASURES;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output.INVALID;
+import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCODE;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
-import static java.lang.Boolean.FALSE;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +44,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -55,6 +58,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet.DataPointRule;
@@ -78,7 +82,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 		this.operand = operand;
 		this.rulesetID = rulesetID;
 		this.components = components;
-		this.output = output;
+		this.output = coalesce(output, INVALID);
 	}
 	
 	@Override
@@ -99,61 +103,62 @@ public class CheckDataPointTransformation extends TransformationImpl
 		DataSet dataset = (DataSet) operand.eval(scheme);
 		DataSetMetadata structure = (DataSetMetadata) getMetadata(scheme);
 		final MetadataRepository repo = scheme.getRepository();
-		DataPointRuleSet ruleset = repo.getDataPointRuleset(rulesetID);
+		DataPointRuleSet ruleset = scheme.findDatapointRuleset(rulesetID);
 		RuleSetType type = ruleset.getType();
 		List<DataPointRule> rules = ruleset.getRules();
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var = BOOLEANDS.getDefaultVariable().as(Measure.class);
-		DataStructureComponent<Measure, ?, ?> errorcode = repo.getVariable("errorcode").as(Measure.class);
-		DataStructureComponent<Measure, ?, ?> errorlevel = repo.getVariable("errorlevel").as(Measure.class);
 		DataStructureComponent<Identifier, ?, ?> ruleid = repo.getVariable("ruleid").as(Identifier.class);
 		
-		dataset = dataset.flatmapKeepingKeys(structure, DataPoint::getLineage, dp -> rules.stream()
-			.map(r -> {
-				if (type != VARIABLE)
-					throw new UnsupportedOperationException("check_datapoint on valuedomain ruleset not implemented");
+		return dataset.flatmapKeepingKeys(structure, DataPoint::getLineage, dp -> rules.stream()
+			.map(rule -> evalRule(new DatapointScope(scheme.getRepository(), dp, dataset.getMetadata(), null), type, bool_var, ruleid, dp, rule))
+			.filter(Objects::nonNull));
+	}
 
-				DatapointScope scope = new DatapointScope(scheme.getRepository(), dp, structure, null);
-				
-				Boolean res = r.eval(dp, scope);
-				if (output == INVALID && res != FALSE)
-					return null;
-
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>();
-				map.put(ruleid, StringValue.of(r.getRuleId()));
-				map.put(errorcode, res == FALSE ? r.getErrorCode() : NullValue.instance(STRINGDS));
-				map.put(errorlevel, res == FALSE ? r.getErrorLevel() : NullValue.instance(STRINGDS));
-				
-				if (output == INVALID || output == ALL_MEASURES)
-					map.putAll(dp.getValues(Measure.class));
-				if (output == ALL || output == ALL_MEASURES)
-					map.put(bool_var, BooleanValue.of(res));
-				
-				return map;
-			}).filter(Objects::nonNull));
+	private Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> evalRule(TransformationScheme scope, RuleSetType type,
+			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var, 
+			DataStructureComponent<Identifier, ?, ?> ruleid, DataPoint dp, DataPointRule rule)
+	{
+		if (type != VARIABLE)
+			throw new UnsupportedOperationException("check_datapoint on valuedomain ruleset not implemented");
 		
-		return dataset;
+		ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> res = rule.eval(dp, scope);
+		if (output == INVALID && res != FALSE)
+			return null;
+
+		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>();
+		map.put(ruleid, StringValue.of(rule.getRuleId()));
+		map.put(ERRORCODE.get(), res == FALSE ? rule.getErrorCode() : NullValue.instance(STRINGDS));
+		map.put(ERRORLEVEL.get(), res == FALSE ? rule.getErrorLevel() : NullValue.instance(INTEGERDS));
+		
+		if (output == INVALID || output == ALL_MEASURES)
+			map.putAll(dp.getValues(Measure.class));
+		if (output == ALL || output == ALL_MEASURES)
+			map.put(bool_var, res);
+		
+		return map;
 	}
 
 	@Override
 	protected DataSetMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata meta = operand.getMetadata(scheme);
-		DataPointRuleSet ruleset = scheme.getRepository().getDataPointRuleset(rulesetID);
+		DataPointRuleSet ruleset = scheme.findDatapointRuleset(rulesetID);
 		MetadataRepository repo = scheme.getRepository();
 		
 		if (meta instanceof DataSetMetadata)
 		{
 			DataSetMetadata structure = (DataSetMetadata) meta;
-			DataStructureBuilder builder = new DataStructureBuilder(structure.getIDs());
-			builder.addComponents(structure.getComponents(Attribute.class));
-			
+			DataStructureBuilder builder = new DataStructureBuilder()
+					.addComponents(structure.getComponents(Identifier.class))
+					.addComponents(structure.getComponents(Attribute.class));
+
 			List<Entry<String, String>> vars = ruleset.getVars();
 			if (ruleset.getType() == VARIABLE)
 				for (int i = 0; i < vars.size(); i++)
 				{
-					String var = vars.get(i).getKey();
-					if (structure.getComponent(var).filter(c -> c.getVariable().equals(repo.getVariable(var))).isEmpty())
-						throw new VTLMissingComponentsException(var, structure);
+					String varName = vars.get(i).getKey();
+					if (structure.getComponent(varName).filter(c -> c.getVariable().equals(repo.getVariable(varName))).isEmpty())
+						throw new VTLMissingComponentsException(varName, structure);
 				}
 			else
 				for (int i = 0; i < vars.size(); i++)
@@ -167,13 +172,13 @@ public class CheckDataPointTransformation extends TransformationImpl
 				}
 			
 			if (output == ALL || output == ALL_MEASURES)
-				builder.addComponent(BOOLEANDS.getDefaultVariable().as(Measure.class));
+				builder = builder.addComponent(BOOLEANDS.getDefaultVariable().as(Measure.class));
 			if (output == INVALID || output == ALL_MEASURES)
-				builder.addComponents(structure.getMeasures());
+				builder = builder.addComponents(structure.getMeasures());
 			
 			return builder
-					.addComponent(repo.getVariable("errorcode").as(Measure.class))
-					.addComponent(repo.getVariable("errorlevel").as(Measure.class))
+					.addComponent(ERRORCODE.get())
+					.addComponent(ERRORLEVEL.get())
 					.addComponent(repo.getVariable("ruleid").as(Identifier.class))
 					.build();
 		}

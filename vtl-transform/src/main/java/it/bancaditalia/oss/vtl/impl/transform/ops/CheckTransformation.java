@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCO
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.IMBALANCE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
@@ -106,14 +107,17 @@ public class CheckTransformation extends TransformationImpl
 		else
 		{
 			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(scheme);
+			DataStructureComponent<Measure, ?, ?> imbalanceMeasure = imbalanceDataset.getMetadata().getSingleton(Measure.class);
 			
-			dataset = dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> new DataPointBuilder()
-				.addAll(dp1.getValues(Identifier.class))
-				.add(BOOL_VAR, function.apply(BOOLEANDS.cast(dp1.get(BOOL_VAR))))
-				.add(IMBALANCE, dp2.getValues(Measure.class).values().iterator().next())
-				.add(ERRORCODE, NullValue.instance(STRINGDS))
-				.add(ERRORLEVEL, NullValue.instance(NUMBERDS))
-				.build(LineageNode.of("check " + operand, dp1.getLineage()), metadata), false);
+			dataset = dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> {
+				return new DataPointBuilder()
+					.addAll(dp1.getValues(Identifier.class))
+					.add(BOOL_VAR, function.apply(BOOLEANDS.cast(dp1.get(BOOL_VAR))))
+					.add(IMBALANCE, NUMBERDS.cast(dp2.get(imbalanceMeasure)))
+					.add(ERRORCODE, NullValue.instance(STRINGDS))
+					.add(ERRORLEVEL, NullValue.instance(INTEGERDS))
+					.build(LineageNode.of("check " + operand, dp1.getLineage()), metadata);
+			}, false);
 		}
 		
 		return output == ALL ? dataset : dataset.filter(dp -> dp.getValue(BOOL_VAR) != TRUE, identity());

@@ -33,6 +33,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.IMBALAN
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.RULEID;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
@@ -111,10 +112,10 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	public CheckHierarchyTransformation(Transformation operand, String rulesetID, List<String> conditions, String id, HierarchyMode mode, Input input, Output output)
 	{
 		this.operand = operand;
-		this.rulesetID = Variable.normalizeAlias(requireNonNull(rulesetID));
+		this.rulesetID = normalizeAlias(requireNonNull(rulesetID));
 		this.conditions = coalesce(conditions, new ArrayList<>()).stream().map(Variable::normalizeAlias).collect(toList());
 		
-		this.id = id != null ? Variable.normalizeAlias(id) : null;
+		this.id = id != null ? normalizeAlias(id) : null;
 		this.mode = coalesce(mode, NON_NULL);
 		this.input = coalesce(input, DATASET);
 		this.output = coalesce(output, INVALID);

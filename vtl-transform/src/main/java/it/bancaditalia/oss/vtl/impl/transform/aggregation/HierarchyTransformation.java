@@ -28,11 +28,13 @@ import static it.bancaditalia.oss.vtl.impl.types.data.DoubleValue.ZERO;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
 import static java.lang.Double.NaN;
 import static java.util.Objects.requireNonNull;
 
@@ -104,10 +106,10 @@ public class HierarchyTransformation extends TransformationImpl
 	public HierarchyTransformation(Transformation operand, String rulesetID, List<String> conditions, String id, HierarchyMode mode, HierarchyInput input, HierarchyOutput output)
 	{
 		this.operand = operand;
-		this.rulesetID = Variable.normalizeAlias(requireNonNull(rulesetID));
+		this.rulesetID = normalizeAlias(requireNonNull(rulesetID));
 		this.conditions = coalesce(conditions, new ArrayList<>()).stream().map(Variable::normalizeAlias).collect(toList());
 		
-		this.id = id != null ? Variable.normalizeAlias(id) : null;
+		this.id = ifNonNull(id, Variable::normalizeAlias);
 		this.mode = coalesce(mode, NON_NULL);
 		this.input = coalesce(input, RULE);
 		this.output = coalesce(output, COMPUTED);

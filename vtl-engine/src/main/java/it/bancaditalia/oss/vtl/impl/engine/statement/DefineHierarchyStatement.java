@@ -19,9 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
+import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.List;
@@ -63,9 +65,9 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 		super(alias);
 		
 		this.rulesetType = rulesetType;
-		this.ruleID = ruleID != null ? Variable.normalizeAlias(ruleID) : null;
+		this.ruleID = ifNonNull(ruleID, Variable::normalizeAlias);
 		this.names = names.toArray(String[]::new);
-		this.leftOps = leftOps.stream().map(n -> n != null ? Variable.normalizeAlias(n) : null).toArray(String[]::new);
+		this.leftOps = leftOps.stream().map(n -> ifNonNull(n, Variable::normalizeAlias)).toArray(String[]::new);
 		this.compOps = compOps.toArray(RuleType[]::new);
 		this.rightOps = rightOps;
 		this.ercodes = ercodes.stream().map(StringValue::of).toArray(ScalarValue<?, ?, ?, ?>[]::new);
