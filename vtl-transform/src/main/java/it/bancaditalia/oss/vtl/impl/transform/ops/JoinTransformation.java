@@ -197,7 +197,9 @@ public class JoinTransformation extends TransformationImpl
 		DataSet result;
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 
-		if (usingNames.isEmpty())
+		if (operator == CROSS_JOIN)
+			result = doCrossJoin(repo, metadata, values);
+		else if (usingNames.isEmpty())
 			result = joinCaseA(repo, values);
 		else
 		{
@@ -217,33 +219,106 @@ public class JoinTransformation extends TransformationImpl
 
 		if (filter != null)
 			result = (DataSet) filter.eval(new ThisScope(scheme.getRepository(), result));
+
 		if (apply != null)
 			result = applyClause(metadata, scheme, result);
 		else if (calc != null)
 			result = (DataSet) calc.eval(new ThisScope(scheme.getRepository(), result));
 		else if (aggr != null)
 			result = (DataSet) aggr.eval(new ThisScope(scheme.getRepository(), result));
+		
 		if (keepOrDrop != null)
 			result = (DataSet) keepOrDrop.eval(new ThisScope(scheme.getRepository(), result));
+		
 		if (rename != null)
-		{
 			result = (DataSet) rename.eval(new ThisScope(scheme.getRepository(), result));
 
-			// unalias all remaining components that have not been already unaliased
-			Set<DataStructureComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
-			remaining.removeAll(metadata);
+		Set<DataStructureComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
+		remaining.removeAll(metadata);
 
-			DataSet finalResult = result;
-			result = new StreamWrapperDataSet(metadata, () -> finalResult.stream().map(dp -> { 
-						return dp.entrySet().stream()
-								.map(keepingValue(onlyIf(
-										comp -> comp.getVariable().getName().contains("#"), 
-										comp -> comp.getRenamed(repo, comp.getVariable().getName().split("#", 2)[1])
-								))).collect(toDataPoint(LineageNode.of(rename, dp.getLineage()), metadata));
-					}));
+		DataSet finalResult = result;
+		return new StreamWrapperDataSet(metadata, () -> finalResult.stream().map(dp -> { 
+				return dp.entrySet().stream()
+						.map(keepingValue(onlyIf(
+								comp -> comp.getVariable().getName().contains("#"), 
+								comp -> comp.getRenamed(repo, comp.getVariable().getName().split("#", 2)[1])
+						))).collect(toDataPoint(LineageNode.of("dealias", dp.getLineage()), metadata));
+			}));
+	}
+
+	private DataSet doCrossJoin(MetadataRepository repo, DataSetMetadata metadata, Map<JoinOperand, DataSet> values)
+	{
+		DataSet result = null;
+		DataStructureBuilder joinedBuilder = new DataStructureBuilder();
+		
+		boolean first = true;
+		for (int i = 0; i < operands.size(); i++)
+		{
+			JoinOperand op = operands.get(i);
+			DataSet toJoin = allRenamedDS(repo, op, values.get(op));
+			joinedBuilder = joinedBuilder.addComponents(toJoin.getMetadata());
+			
+			if (first)
+			{
+				first = false;
+				result = toJoin;
+			}
+			else
+			{
+				result = result.flatmapKeepingKeys(joinedBuilder.build(), DataPoint::getLineage, dp -> {
+					Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> template = dp.getValues(NonIdentifier.class);
+					return toJoin.stream()
+						.map(dpj -> {
+							Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(template);
+							map.putAll(dpj);
+							return map;
+						});
+				});
+			}
 		}
 
-		return result;
+		Map<String, List<String>> unaliasedNames = joinedBuilder.build().stream().map(c -> c.getVariable().getName())
+				.filter(name -> name.contains("#"))
+				.map(name -> name.split("#", 2))
+				.collect(groupingByConcurrent(name -> name[1], mapping(name -> name[0], toList())));
+		
+		DataStructureBuilder dealiased = new DataStructureBuilder(joinedBuilder.build());
+		for (String cName: unaliasedNames.keySet())
+		{
+			List<String> sources = unaliasedNames.get(cName);
+			if (sources.size() == 1)
+			{
+				DataStructureComponent<?, ?, ?> comp = result.getComponent(sources.get(0) + "#" + cName).get();
+				dealiased = dealiased.removeComponent(comp).addComponent(comp.getRenamed(repo, cName));
+			}
+		}
+		
+		DataSet finalResult = result;
+		DataSetMetadata dealiasedStructure = dealiased.build();
+		
+		return new StreamWrapperDataSet(dealiasedStructure, () -> finalResult.stream().map(dp -> { 
+				return dp.entrySet().stream()
+						.map(keepingValue(onlyIf(
+								comp -> comp.getVariable().getName().contains("#"), 
+								comp -> comp.getRenamed(repo, comp.getVariable().getName().split("#", 2)[1])
+						))).collect(toDataPoint(LineageNode.of("dealias", dp.getLineage()), dealiasedStructure));
+			}));
+	}
+
+	private DataSet allRenamedDS(MetadataRepository repo, JoinOperand op, DataSet toJoin)
+	{
+		DataSetMetadata renamedStructure = toJoin.getMetadata().stream()
+			.map(c -> c.getRenamed(repo, op.getId() + "#" + c.getVariable().getName()))
+			.collect(toDataStructure());
+		
+		return new FunctionDataSet<>(renamedStructure, ds -> ds.stream()
+			.map(dp -> new DataPointBuilder(dp)
+				.delete(dp.keySet())
+				.addAll(dp.entrySet().stream()
+					.map(keepingValue(c -> c.getRenamed(repo, op.getId() + "#" + c.getVariable().getName())))
+					.collect(entriesToMap())
+				).build(LineageNode.of("rename-before-cross", dp.getLineage()), renamedStructure)
+			), toJoin);
 	}
 
 	private DataSet joinForB2(DataSet lDs, DataSet rDs, DataSetMetadata resultMetadata)
@@ -261,7 +336,12 @@ public class JoinTransformation extends TransformationImpl
 						.build(dp.getLineage(), resultMetadata);
 		});
 		
-		return operator == LEFT_JOIN ? stepResult : stepResult.filter(dp -> index.containsKey(dp.getValuesByNames(usingNames)), identity());
+		switch (operator)
+		{
+			case INNER_JOIN: return stepResult.filter(dp -> index.containsKey(dp.getValuesByNames(usingNames)), identity());
+			case LEFT_JOIN: return stepResult;
+			default: throw new UnsupportedOperationException("Case B2 incompatible with " + operator.toString().toLowerCase());
+		}
 	}
 
 	private DataSet joinCaseB2(MetadataRepository repo, final Map<JoinOperand, DataSet> inputDatasets)
@@ -459,15 +539,26 @@ public class JoinTransformation extends TransformationImpl
 
 		MetadataRepository repo = scheme.getRepository();
 		Map<JoinOperand, DataSetMetadata> datasetsMeta = new HashMap<>();
-		for (JoinOperand op : operands)
+		for (JoinOperand op: operands)
 			datasetsMeta.put(op, (DataSetMetadata) op.getOperand().getMetadata(scheme));
 
-		Entry<JoinOperand, Boolean> caseAorB1 = isCaseAorB1(datasetsMeta);
-		refOperand = caseAorB1.getKey();
-		DataSetMetadata result = virtualStructure(scheme.getRepository(), datasetsMeta, datasetsMeta.get(refOperand), caseAorB1.getValue());
-
-		LOGGER.info("Joining {} to ({}: {})", operands.stream().filter(op -> op != refOperand).collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)), refOperand.getId(),
-				datasetsMeta.get(refOperand));
+		DataSetMetadata result;
+		if (operator == CROSS_JOIN)
+		{
+			result = virtualStructure(scheme.getRepository(), datasetsMeta, datasetsMeta.get(refOperand), false);
+			LOGGER.info("Cross joining {}", operands.stream().collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)));
+		}
+		else if (operator == FULL_JOIN)
+			throw new UnsupportedOperationException("full_join not implemented");
+		else
+		{
+			Entry<JoinOperand, Boolean> caseAorB1 = isCaseAorB1(datasetsMeta);
+			refOperand = caseAorB1.getKey();
+			result = virtualStructure(scheme.getRepository(), datasetsMeta, datasetsMeta.get(refOperand), caseAorB1.getValue());
+			LOGGER.info("Joining {} to ({}: {})", 
+						operands.stream().filter(op -> op != refOperand).collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)), 
+						refOperand.getId(), datasetsMeta.get(refOperand));
+		}
 
 		// modify the result structure as needed
 		if (filter != null)
@@ -491,29 +582,26 @@ public class JoinTransformation extends TransformationImpl
 		if (keepOrDrop != null)
 			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(scheme.getRepository(), result));
 		if (rename != null)
-		{
 			result = (DataSetMetadata) rename.getMetadata(new ThisScope(scheme.getRepository(), result));
-			// check if rename has made some components unambiguous
-			Map<String, List<String>> sameUnaliasedName = result.stream().map(DataStructureComponent::getVariable).map(Variable::getName).filter(name -> name.contains("#")).map(name -> name.split("#", 2))
-					.collect(groupingByConcurrent(name -> name[1], mapping(name -> name[0], toList())));
-			// unalias the unambiguous components and add them to the renaming list
-			result = result.stream()
-					.map(comp -> {
-						if (comp.getVariable().getName().contains("#") && sameUnaliasedName.get(comp.getVariable().getName().split("#", 2)[1]).size() <= 1)
-							return comp.getRenamed(repo, comp.getVariable().getName().split("#", 2)[1]);
-						else
-							return comp;
-					}).collect(toDataStructure());
+
+		// check if keep - drop - rename has made some components unambiguous
+		Map<String, List<String>> unaliasedNames = result.stream().map(c -> c.getVariable().getName())
+				.filter(name -> name.contains("#"))
+				.map(name -> name.split("#", 2))
+				.collect(groupingByConcurrent(name -> name[1], mapping(name -> name[0], toList())));
+
+		DataStructureBuilder dealiased = new DataStructureBuilder(result);
+		for (String cName: unaliasedNames.keySet())
+		{
+			List<String> sources = unaliasedNames.get(cName);
+			if (sources.size() != 1)
+				new VTLAmbiguousComponentException(cName, sources.stream().map(s -> s + "#" + cName).map(result::getComponent).map(Optional::get).collect(toSet()));
+			DataStructureComponent<?, ?, ?> comp = result.getComponent(sources.get(0) + "#" + cName).get();
+			dealiased = dealiased.removeComponent(comp)
+					.addComponent(comp.getRenamed(repo, cName));
 		}
 
-		// find components with the same name from different aliases
-		DataSetMetadata finalResult = result;
-		result.stream().map(DataStructureComponent::getVariable).map(Variable::getName).filter(name -> name.contains("#")).findAny().map(name -> name.replaceAll("^.*#", "")).ifPresent(ambiguousComponent -> {
-			final Set<DataStructureComponent<?, ?, ?>> sameUnaliasedName = finalResult.stream().filter(c -> c.getVariable().getName().endsWith("#" + ambiguousComponent)).collect(toSet());
-			throw new VTLAmbiguousComponentException(ambiguousComponent, sameUnaliasedName);
-		});
-
-		return result;
+		return dealiased.build();
 	}
 
 	private Entry<JoinOperand, Boolean> isCaseAorB1(Map<JoinOperand, DataSetMetadata> datasetsMeta)
@@ -624,16 +712,41 @@ public class JoinTransformation extends TransformationImpl
 	{
 		Set<DataStructureComponent<?, ?, ?>> usingComponents = getUsingComponents(refDataSet, datasetsMeta.values());
 
-		if (isCaseAorB1)
+		if (operator == CROSS_JOIN)
+		{
+			// rename all homonymous components
+			ConcurrentMap<DataStructureComponent<?, ?, ?>, Boolean> unique = new ConcurrentHashMap<>();
+			Set<DataStructureComponent<?, ?, ?>> toBeRenamed = datasetsMeta.values().stream()
+					.flatMap(Collection::stream)
+					.filter(c -> unique.putIfAbsent(c, TRUE) != null)
+					.collect(toSet());
+
+			LOGGER.debug("Cross join renames: {}", toBeRenamed);
+			
+			// Do the renaming
+			DataStructureBuilder builder = new DataStructureBuilder();
+			for (Entry<JoinOperand, DataSetMetadata> e : datasetsMeta.entrySet())
+				for (DataStructureComponent<?, ?, ?> c : e.getValue())
+					if (toBeRenamed.contains(c))
+						builder.addComponent(c.getRenamed(repo, e.getKey().getId() + "#" + c.getVariable().getName()));
+					else
+						builder.addComponent(c);
+
+			return builder.build();
+		}
+		else if (isCaseAorB1)
 		{
 			// Case A: rename all measures and attributes with the same name
-			// Case B1: rename all components with the same name except those in the using
-			// clause
+			// Case B1: rename all components with the same name except those 
+			// in the using clause
 			ConcurrentMap<DataStructureComponent<?, ?, ?>, Boolean> unique = new ConcurrentHashMap<>();
-			Set<DataStructureComponent<?, ?, ?>> toBeRenamed = datasetsMeta.values().stream().flatMap(Collection::stream).filter(c -> unique.putIfAbsent(c, TRUE) != null)
-					.filter(c -> /* A */ usingComponents.isEmpty() && c.is(NonIdentifier.class) || /* B1 */ !usingComponents.isEmpty() && !usingComponents.contains(c)).collect(toSet());
+			Set<DataStructureComponent<?, ?, ?>> toBeRenamed = datasetsMeta.values().stream()
+					.flatMap(Collection::stream)
+					.filter(c -> unique.putIfAbsent(c, TRUE) != null)
+					.filter(c -> /* A */ usingComponents.isEmpty() && c.is(NonIdentifier.class) || /* B1 */ !usingComponents.isEmpty() && !usingComponents.contains(c))
+					.collect(toSet());
 
-			LOGGER.debug("Inner join renames: {}", toBeRenamed);
+			LOGGER.debug("Left/Inner join renames: {}", toBeRenamed);
 
 			// Do the renaming
 			DataStructureBuilder builder = new DataStructureBuilder();
