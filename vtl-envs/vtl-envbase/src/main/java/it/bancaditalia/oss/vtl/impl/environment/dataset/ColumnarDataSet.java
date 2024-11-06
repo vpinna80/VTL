@@ -34,6 +34,7 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ColumnarDataSet extends AbstractDataSet
@@ -44,9 +45,9 @@ public class ColumnarDataSet extends AbstractDataSet
 	
 	private final Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns;
 	private final int nRows;
-	private final String alias;
+	private final VTLAlias alias;
 
-	public ColumnarDataSet(String alias, Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns)
+	public ColumnarDataSet(VTLAlias alias, Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns)
 	{
 		super(new DataStructureBuilder(columns.keySet()).build());
 		this.alias = alias;
@@ -70,7 +71,7 @@ public class ColumnarDataSet extends AbstractDataSet
 				.collect(toDataPoint(LineageExternal.of("REnv(" + alias + ")"), getMetadata()));
 	}
 
-	public String getAlias()
+	public VTLAlias getAlias()
 	{
 		return alias;
 	}

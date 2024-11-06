@@ -75,7 +75,9 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.TemporaryAssignmentContext;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Role;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType;
 import it.bancaditalia.oss.vtl.model.transform.Parameter;
@@ -98,12 +100,12 @@ public class StatementFactory implements Serializable
 		if (ctx instanceof TemporaryAssignmentContext)
 		{
 			TemporaryAssignmentContext asc = (TemporaryAssignmentContext) ctx;
-			return new AssignStatement(asc.varID().getText(), buildExpr(asc.expr()), false);
+			return new AssignStatement(VTLAliasImpl.of(asc.varID().getText()), buildExpr(asc.expr()), false);
 		}
 		else if (ctx instanceof PersistAssignmentContext)
 		{
 			PersistAssignmentContext asc = (PersistAssignmentContext) ctx;
-			return new AssignStatement(asc.varID().getText(), buildExpr(asc.expr()), true);
+			return new AssignStatement(VTLAliasImpl.of(asc.varID().getText()), buildExpr(asc.expr()), true);
 		}
 		else if (ctx instanceof DefineExpressionContext)
 		{
@@ -116,16 +118,16 @@ public class StatementFactory implements Serializable
 						.collect(toList());
 				BaseParameter outputType = buildResultType(defineOp.outputParameterType());
 				
-				return new DefineOperatorStatement(defineOp.operatorID().getText(), params, outputType, buildExpr(defineOp.expr()));
+				return new DefineOperatorStatement(VTLAliasImpl.of(defineOp.operatorID().getText()), params, outputType, buildExpr(defineOp.expr()));
 			}
 			else if (defineContext instanceof DefHierarchicalContext)
 			{
 				DefHierarchicalContext defineHier = (DefHierarchicalContext) defineContext;
-				String alias = defineHier.rulesetID().getText();
+				VTLAlias alias = VTLAliasImpl.of(defineHier.rulesetID().getText());
 				RuleSetType rulesetType = defineHier.hierRuleSignature().VALUE_DOMAIN() != null ? VALUE_DOMAIN : VARIABLE;
-				String ruleID = defineHier.hierRuleSignature().IDENTIFIER() != null ? defineHier.hierRuleSignature().IDENTIFIER().getText() : null;
+				VTLAlias ruleID = defineHier.hierRuleSignature().IDENTIFIER() != null ? VTLAliasImpl.of(defineHier.hierRuleSignature().IDENTIFIER().getText()) : null;
 				
-				List<String> names = new ArrayList<>();
+				List<VTLAlias> names = new ArrayList<>();
 				List<String> leftOps = new ArrayList<>();
 				List<RuleType> compOps = new ArrayList<>();
 				List<Map<String, Boolean>> rightOps = new ArrayList<>();
@@ -135,7 +137,7 @@ public class StatementFactory implements Serializable
 				for (int i = 0; defineHier.ruleClauseHierarchical().ruleItemHierarchical(i) != null; i++)
 				{
 					RuleItemHierarchicalContext rule = defineHier.ruleClauseHierarchical().ruleItemHierarchical(i);
-					names.add(rule.ruleName != null ? rule.ruleName.getText() : null);
+					names.add(rule.ruleName != null ? VTLAliasImpl.of(rule.ruleName.getText()) : null);
 					ercodes.add(rule.erCode() != null ? rule.erCode().constant().getText() : null);
 					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
 
@@ -160,13 +162,13 @@ public class StatementFactory implements Serializable
 			{
 				DefDatapointRulesetContext defineDatapoint = (DefDatapointRulesetContext) defineContext;
 
-				String alias = defineDatapoint.rulesetID().getText();
+				VTLAlias alias = VTLAliasImpl.of(defineDatapoint.rulesetID().getText());
 				RuleSetType rulesetType = defineDatapoint.rulesetSignature().VALUE_DOMAIN() != null ? VALUE_DOMAIN : VARIABLE;
-				List<Entry<String, String>> vars = defineDatapoint.rulesetSignature().signature().stream()
-						.map(s -> new SimpleEntry<>(s.varID().getText(), s.alias() != null ? s.alias().getText() : null))
+				List<Entry<VTLAlias, VTLAlias>> vars = defineDatapoint.rulesetSignature().signature().stream()
+						.map(s -> new SimpleEntry<VTLAlias, VTLAlias>(VTLAliasImpl.of(s.varID().getText()), s.alias() != null ? VTLAliasImpl.of(s.alias().getText()) : null))
 						.collect(toList());
 				
-				List<String> ruleIDs = new ArrayList<>();
+				List<VTLAlias> ruleIDs = new ArrayList<>();
 				List<Transformation> conds = new ArrayList<>();
 				List<Transformation> exprs = new ArrayList<>();
 				List<String> ercodes = new ArrayList<>();
@@ -174,7 +176,7 @@ public class StatementFactory implements Serializable
 
 				for (RuleItemDatapointContext rule: defineDatapoint.ruleClauseDatapoint().ruleItemDatapoint())
 				{
-					ruleIDs.add(rule.ruleName != null ? rule.ruleName.getText() : null);
+					ruleIDs.add(rule.ruleName != null ? VTLAliasImpl.of(rule.ruleName.getText()) : null);
 					conds.add(rule.antecedentContiditon != null ? buildExpr(rule.antecedentContiditon) : null);
 					exprs.add(buildExpr(rule.consequentCondition));
 					ercodes.add(rule.erCode() != null ? rule.erCode().constant().getText() : null);
@@ -221,7 +223,7 @@ public class StatementFactory implements Serializable
 		return buildType(type, name, scalarType, compType, datasetType);
 	}
 
-	private static String generateDomainName(ScalarTypeContext scalarType)
+	private static VTLAlias generateDomainName(ScalarTypeContext scalarType)
 	{
 		ParserRuleContext scalarTypeName = coalesce(scalarType.basicScalarType(), scalarType.valueDomainName());
 		if (scalarType.scalarTypeConstraint() != null)
@@ -229,12 +231,12 @@ public class StatementFactory implements Serializable
 		if (scalarType.NULL_CONSTANT() != null)
 			throw new UnsupportedOperationException("NULL/NOT NULL constraint not implemented.");
 		final String domainName = scalarTypeName.getText();
-		return domainName;
+		return VTLAliasImpl.of(domainName);
 	}
 
 	private static DataSetComponentConstraint generateComponentConstraint(CompConstraintContext constraint)
 	{
-		final Entry<Role, String> metadata = generateComponentMetadata(constraint.componentType());
+		final Entry<Role, VTLAlias> metadata = generateComponentMetadata(constraint.componentType());
 		
 		ComponentIDContext id = constraint.componentID();
 		return new DataSetComponentConstraint(id != null ? id.getText() : null, metadata.getKey(), metadata.getValue(), generateMultConstraint(constraint.multModifier()));
@@ -254,10 +256,10 @@ public class StatementFactory implements Serializable
 			return null;
 	}
 
-	private static Entry<Role, String> generateComponentMetadata(ComponentTypeContext compType)
+	private static Entry<Role, VTLAlias> generateComponentMetadata(ComponentTypeContext compType)
 	{
 		ScalarTypeContext scalarType;
-		String domain = null;
+		VTLAlias domain = null;
 		scalarType = compType.scalarType();
 		if (scalarType != null)
 			domain = generateDomainName(scalarType);
@@ -313,14 +315,14 @@ public class StatementFactory implements Serializable
 	{
 		// check kind of each parameter used in the operator definition and generate constraints
 		if (scalarType != null)
-			return new ScalarParameter(name, generateDomainName(scalarType));
+			return new ScalarParameter(VTLAliasImpl.of(name), generateDomainName(scalarType));
 		else if (compType != null)
 		{
-			Entry<Role, String> metadata = generateComponentMetadata(compType);
-			return new ComponentParameter<>(name, metadata.getValue(), metadata.getKey());
+			Entry<Role, VTLAlias> metadata = generateComponentMetadata(compType);
+			return new ComponentParameter<>(VTLAliasImpl.of(name), metadata.getValue(), metadata.getKey());
 		}
 		else if (datasetType != null)
-			return new DataSetParameter(name, datasetType.compConstraint().stream()
+			return new DataSetParameter(VTLAliasImpl.of(name), datasetType.compConstraint().stream()
 					.map(StatementFactory::generateComponentConstraint)
 					.collect(toList()));
 		else

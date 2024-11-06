@@ -19,11 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+
 public class VTLUniqueAliasException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLUniqueAliasException(String operation, String alias)
+	public VTLUniqueAliasException(String operation, VTLAlias alias)
 	{
 		super("In " + operation + ", alias " + alias + " is not unique.");
 	}

@@ -20,18 +20,14 @@
 package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
-import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 
 import java.io.Serializable;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map.Entry;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -46,17 +42,17 @@ public class DataPointRuleSetImpl implements DataPointRuleSet, Serializable
 	
 	private final RuleSetType type;
 	private final List<DataPointRule> rules;
-	private final List<Entry<String, String>> vars;
+	private final List<Entry<VTLAlias, VTLAlias>> vars;
 	
 	public static class DataPointRuleImpl implements DataPointRule, Serializable
 	{
-		private final String ruleId;
+		private final VTLAlias ruleId;
 		private final Transformation when;
 		private final Transformation then;
 		private final ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> errorcode;
 		private final ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> errorlevel;
 
-		public DataPointRuleImpl(String ruleId, Transformation when, Transformation then, 
+		public DataPointRuleImpl(VTLAlias ruleId, Transformation when, Transformation then, 
 				ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> errorcode, 
 				ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> errorlevel)
 		{
@@ -78,7 +74,7 @@ public class DataPointRuleSetImpl implements DataPointRuleSet, Serializable
 		}
 
 		@Override
-		public String getRuleId()
+		public VTLAlias getRuleId()
 		{
 			return ruleId;
 		}
@@ -102,12 +98,10 @@ public class DataPointRuleSetImpl implements DataPointRuleSet, Serializable
 		}
 	}
 	
-	public DataPointRuleSetImpl(RuleSetType type, List<Entry<String, String>> vars, List<DataPointRule> rules)
+	public DataPointRuleSetImpl(RuleSetType type, List<Entry<VTLAlias, VTLAlias>> vars, List<DataPointRule> rules)
 	{
 		this.type = type;
-		this.vars = vars.stream().map(splitting((k, v) -> 
-				new SimpleEntry<String, String>(ifNonNull(k, Variable::normalizeAlias), ifNonNull(v, Variable::normalizeAlias))
-			)).collect(toList());
+		this.vars = vars;
 		this.rules = rules;
 	}
 
@@ -118,7 +112,7 @@ public class DataPointRuleSetImpl implements DataPointRuleSet, Serializable
 	}
 
 	@Override
-	public List<Entry<String, String>> getVars()
+	public List<Entry<VTLAlias, VTLAlias>> getVars()
 	{
 		return vars;
 	}

@@ -188,6 +188,8 @@
 
 		<slf4j.version>2.0.12</slf4j.version>
 		<log4j.version>2.23.1</log4j.version>
+		
+		<threeten.version>1.8.0</threeten.version>
 
 		<scala.version>2.13.13</scala.version>
 		<scala.compat.version>2.13</scala.compat.version>
@@ -397,6 +399,11 @@
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr4-runtime</artifactId>
 				<version>${antlr4.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.threeten</groupId>
+				<artifactId>threeten-extra</artifactId>
+				<version>${threeten.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>jakarta.xml.bind</groupId>

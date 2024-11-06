@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.meta.json;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
@@ -55,12 +54,14 @@ import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
@@ -83,10 +84,10 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		ROLES.put("Viral Attribute", ViralAttribute.class);
 	}
 
-	private final Map<String, Variable<?, ?>> variables = new HashMap<>(); 
-	private final Map<String, DataSetMetadata> structures = new HashMap<>(); 
-	private final Map<String, String> sources = new HashMap<>(); 
-	private final Map<String, String> datasets = new HashMap<>(); 
+	private final Map<VTLAlias, Variable<?, ?>> variables = new HashMap<>(); 
+	private final Map<VTLAlias, DataSetMetadata> structures = new HashMap<>(); 
+	private final Map<VTLAlias, String> sources = new HashMap<>(); 
+	private final Map<VTLAlias, VTLAlias> datasets = new HashMap<>(); 
 	
 	public JsonMetadataRepository() throws IOException
 	{
@@ -98,9 +99,9 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		if (jsonURL == null || jsonURL.isEmpty())
 			throw new IllegalStateException("No url configured for json metadata repository.");
 
-		Map<String, Entry<String, String>> dsDefs;
-		Map<String, Map<String, Class<? extends Component>>> strDefs;
-		Map<String, String> varDefs;
+		Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
+		Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
+		Map<VTLAlias, VTLAlias> varDefs;
 
 		try (InputStream source = new URL(jsonURL).openStream())
 		{
@@ -122,7 +123,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			return variables.get(c).as(r); 
 		})).collect(toDataStructure())));
 		dsDefs.forEach((n, e) -> {
-			String strName = normalizeAlias(e.getKey());
+			VTLAlias strName = e.getKey();
 			if (!structures.containsKey(strName))
 				throw new VTLUndefinedObjectException("Structure", strName);
 			datasets.put(n, strName);
@@ -131,13 +132,13 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public Optional<DataSetMetadata> getStructure(String name)
+	public Optional<DataSetMetadata> getStructure(VTLAlias name)
 	{
 		return Optional.ofNullable(datasets.get(name)).map(structures::get);
 	}
 	
 	@Override
-	public Variable<?, ?> getVariable(String alias)
+	public Variable<?, ?> getVariable(VTLAlias alias)
 	{
 		Variable<?, ?> variable = variables.get(alias);
 		if (variable != null)
@@ -147,16 +148,16 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public String getDatasetSource(String name)
+	public String getDatasetSource(VTLAlias name)
 	{
 		String source = sources.get(name);
 		
 		return source != null ? source : super.getDatasetSource(name);
 	}
 	
-	private <T> Map<String, T> iterate(Map<?, ?> json, String element, SerBiFunction<String, Map<?, ?>, T> processor)
+	private <T> Map<VTLAlias, T> iterate(Map<?, ?> json, String element, SerBiFunction<VTLAlias, Map<?, ?>, T> processor)
 	{
-		Map<String, T> result = new HashMap<>();
+		Map<VTLAlias, T> result = new HashMap<>();
 		List<?> list = (List<?>) json.get(element + "s");
 		
 		if (list != null)
@@ -169,7 +170,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 					if (!(obj.get("name") instanceof String))
 						throw new IllegalStateException("object name is not a string");
 					
-					String name = normalizeAlias((String) obj.get("name"));
+					VTLAlias name = VTLAliasImpl.of((String) obj.get("name"));
 					if (result.containsKey(name))
 						throw new VTLDuplicatedObjectException(element, name);
 					T processed = processor.apply(name, obj);
@@ -182,32 +183,32 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return result;
 	}
 	
-	private Entry<String, String> createDataset(String name, Map<?, ?> dataset)
+	private Entry<VTLAlias, String> createDataset(VTLAlias name, Map<?, ?> dataset)
 	{
-		String structureRef = (String) dataset.get("structure");
+		VTLAlias structureRef = VTLAliasImpl.of((String) dataset.get("structure"));
 		String source = (String) dataset.get("source");
 		
 		LOGGER.debug("Found dataset {} with structure {}", name, structureRef);
 		return new SimpleEntry<>(structureRef, source);
 	}
 
-	private Map<String, Class<? extends Component>> createStructure(String name, Map<?, ?> jsonStructure)
+	private Map<VTLAlias, Class<? extends Component>> createStructure(VTLAlias name, Map<?, ?> jsonStructure)
 	{
 		LOGGER.info("Found structure {}", name);
 		return iterate(jsonStructure, "component", this::createComponent);
 	}
 
-	private Class<? extends Component> createComponent(String name, Map<?, ?> jsonStructure)
+	private Class<? extends Component> createComponent(VTLAlias name, Map<?, ?> jsonStructure)
 	{
 		return ROLES.get(jsonStructure.get("role"));
 	}
 
-	private String createVariable(String name, Map<?, ?> variable)
+	private VTLAlias createVariable(VTLAlias name, Map<?, ?> variable)
 	{
-		return (String) variable.get("domain");
+		return VTLAliasImpl.of((String) variable.get("domain"));
 	}
 	
-	private ValueDomainSubset<?, ?> createDomain(String name, Map<?, ?> domainDef)
+	private ValueDomainSubset<?, ?> createDomain(VTLAlias name, Map<?, ?> domainDef)
 	{
 		Object parent = ((Map<?, ?>) domainDef).get("parent");
 		if (parent == null || !(parent instanceof String))

@@ -31,6 +31,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -40,26 +41,37 @@ public class JoinApplyScope extends AbstractScope
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Map<String, ScalarValue<?, ?, ?, ?>> joinValues;
-	private final Map<String, ScalarValueMetadata<?, ?>> joinMeta;
+	private final Map<VTLAlias, ScalarValue<?, ?, ?, ?>> joinValues;
+	private final Map<VTLAlias, ScalarValueMetadata<?, ?>> joinMeta;
 	private final TransformationScheme parent;
 
-	public JoinApplyScope(TransformationScheme parent, String measureName, DataPoint joinedDataPoint)
+	public JoinApplyScope(TransformationScheme parent, VTLAlias measureName, DataPoint joinedDataPoint)
 	{
 		this.parent = parent;
 		this.joinValues = joinedDataPoint.entrySet().stream()
-				.filter(entryByKey(c -> measureName.equals(c.getVariable().getName().replaceAll("^.*#", ""))))
-				.collect(toConcurrentMap(e -> e.getKey().getVariable().getName().replaceAll("#.*", ""), Entry::getValue));
+				.filter(entryByKey(c -> {
+					VTLAlias cAlias = c.getVariable().getAlias();
+					return measureName.equals(cAlias.isComposed() ? cAlias.split().getValue() : cAlias);
+				})).collect(toConcurrentMap(e -> {
+					VTLAlias alias = e.getKey().getVariable().getAlias();
+					return alias.isComposed() ? alias.split().getKey() : null;
+				}, Entry::getValue));
 		this.joinMeta = null;
 	}
 
-	public JoinApplyScope(TransformationScheme parent, String measureName, Set<DataStructureComponent<?, ?, ?>> joinedComponents)
+	public JoinApplyScope(TransformationScheme parent, VTLAlias measureName, Set<DataStructureComponent<?, ?, ?>> joinedComponents)
 	{
 		this.parent = parent;
 		this.joinValues = null;
 		this.joinMeta = joinedComponents.stream()
-				.filter(c -> measureName.equals(c.getVariable().getName().replaceAll("^.*#", "")))
-				.collect(toConcurrentMap(c -> c.getVariable().getName().replaceAll("#.*", ""), DataStructureComponent::getVariable));
+				.filter(c -> {
+					VTLAlias cAlias = c.getVariable().getAlias();
+					return measureName.equals(cAlias.isComposed() ? cAlias.split().getValue() : cAlias);
+				})
+				.collect(toConcurrentMap(c -> {
+					VTLAlias alias = c.getVariable().getAlias();
+					return alias.isComposed() ? alias.split().getKey() : null;
+				}, DataStructureComponent::getVariable));
 	}
 
 	@Override
@@ -69,7 +81,7 @@ public class JoinApplyScope extends AbstractScope
 	}
 
 	@Override
-	public VTLValue resolve(String node)
+	public VTLValue resolve(VTLAlias node)
 	{
 		if (joinValues != null && joinValues.containsKey(node))
 			return joinValues.get(node);
@@ -78,7 +90,7 @@ public class JoinApplyScope extends AbstractScope
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(String node)
+	public VTLValueMetadata getMetadata(VTLAlias node)
 	{
 		if (joinValues != null && joinValues.containsKey(node))
 			return joinValues.get(node).getMetadata();
@@ -89,13 +101,13 @@ public class JoinApplyScope extends AbstractScope
 	}
 
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public Statement getRule(String node)
+	public Statement getRule(VTLAlias node)
 	{
 		return parent.getRule(node);
 	}

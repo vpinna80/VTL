@@ -19,16 +19,29 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
-public class VTLIncompatibleRolesException extends VTLException
-{
+/**
+ * Base Class for all VTL-related exceptions
+ * 
+ * @author Attilio Mattiocco
+ *
+ */
+public class VTLUndefinedObjectException extends VTLException {
+
 	private static final long serialVersionUID = 1L;
+	
+	private final VTLAlias alias;
 
-	public VTLIncompatibleRolesException(String operation, DataStructureComponent<?, ?, ?> component, Class<? extends Component> expectedRole)
+	public VTLUndefinedObjectException(String what, VTLAlias alias) 
 	{
-		super("In " + operation + ", component " + component.getVariable().getAlias() + " is a " + component.getRole().getSimpleName() 
-				+ ", but it should be " + expectedRole.getSimpleName() + ".");
+		super(what + " '" + alias + "' is not defined in metadata.");
+	
+		this.alias = alias;
+	}
+
+	public VTLAlias getAlias()
+	{
+		return alias;
 	}
 }

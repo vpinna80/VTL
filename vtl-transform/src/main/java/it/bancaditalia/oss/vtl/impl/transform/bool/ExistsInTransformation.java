@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -60,11 +61,11 @@ public class ExistsInTransformation extends BinaryTransformation
 	
 	private final ExistsInMode mode;
 
-	public ExistsInTransformation(Transformation left, Transformation right, String mode)
+	public ExistsInTransformation(Transformation left, Transformation right, ExistsInMode mode)
 	{
 		super(left, right);
 		
-		this.mode = mode == null ? ALL : ExistsInMode.valueOf(mode.toUpperCase());
+		this.mode = coalesce(mode, ALL);
 	}
 
 	@Override

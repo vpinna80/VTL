@@ -77,6 +77,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -89,6 +90,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.Variable.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -103,20 +105,20 @@ public class REnvironment implements Environment
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final String name;
+		private final VTLAlias name;
 		private final S domain;
 		
 		private transient int hashCode;
 
 		@SuppressWarnings("unchecked")
-		public RVar(String name, ValueDomainSubset<?, ?> domain)
+		public RVar(VTLAlias name, ValueDomainSubset<?, ?> domain)
 		{
 			this.name = name;
 			this.domain = (S) domain;
 		}
 		
 		@Override
-		public String getName()
+		public VTLAlias getAlias()
 		{
 			return name;
 		}
@@ -160,7 +162,7 @@ public class REnvironment implements Environment
 			if (obj instanceof Variable)
 			{
 				Variable<?, ?> var = (Variable<?, ?>) obj;
-				return name.equals(var.getName()) && domain.equals(var.getDomain());
+				return name.equals(var.getAlias()) && domain.equals(var.getDomain());
 			}
 			
 			return false;
@@ -175,7 +177,7 @@ public class REnvironment implements Environment
 	}
 	
 	@Override
-	public Optional<VTLValueMetadata> getValueMetadata(String name)
+	public Optional<VTLValueMetadata> getValueMetadata(VTLAlias name)
 	{
 		LOGGER.info("Searching for {} in R global environment...");
 		if (reval("exists('???')", name).asBool().isTRUE())
@@ -226,7 +228,7 @@ public class REnvironment implements Environment
 							"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
 					}
  					
-					builder.addComponent(new RVar<>(key, domain).as(role));
+					builder.addComponent(new RVar<>(VTLAliasImpl.of(true, key), domain).as(role));
 				}
 				
 				LOGGER.info("VTL metadata for {} completed.", name);
@@ -252,7 +254,7 @@ public class REnvironment implements Environment
 	}
 	
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo, String name)
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias name)
 	{
 		if (reval("exists('???')", name).asBool().isTRUE())
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE())
@@ -284,7 +286,7 @@ public class REnvironment implements Environment
 		return Optional.empty();
 	}
 
-	private DataSet parseDataFrame(DataSetMetadata metadata, String name)
+	private DataSet parseDataFrame(DataSetMetadata metadata, VTLAlias name)
 	{
 		List<String> dateColumns = new ArrayList<>();
  
@@ -329,7 +331,7 @@ public class REnvironment implements Environment
 							"In node: " + name + " there is a column (" + key + ") of type " + REXP.xtName(columnData.getType()) + ". This is not supported.");
 			}
 			
-			DataStructureComponent<?, ?, ?> comp = metadata.getComponent(key).orElse(null);
+			DataStructureComponent<?, ?, ?> comp = metadata.getComponent(VTLAliasImpl.of(true, key)).orElse(null);
 			if (comp == null)
 				continue;
 			if (comp.getVariable().getDomain() instanceof TimeDomainSubset)
@@ -357,14 +359,14 @@ public class REnvironment implements Environment
 	}
 
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		return reval("exists('???')", alias).asBool().isTRUE();
 	}
 	
-	private REXP reval(String format, String name) 
+	private REXP reval(String format, VTLAlias name) 
 	{
-		return getEngine().eval(format.replace("???", name));
+		return getEngine().eval(format.replace("???", name.getName()));
 	}
 
 	private static UnaryOperator<ScalarValue<?, ?, ?, ?>> toTime(DataStructureComponent<?, ?, ?> comp)

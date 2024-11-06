@@ -84,10 +84,12 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
@@ -148,7 +150,7 @@ public class SparkEnvironment implements Environment
 	}
 
 	private final SparkSession session;
-	private final Map<String, SparkDataSet> frames = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, SparkDataSet> frames = new ConcurrentHashMap<>();
 	private final DataFrameReader reader;
 	private final List<String> paths;
 
@@ -210,16 +212,15 @@ public class SparkEnvironment implements Environment
 	}
 
 	@Override
-	public boolean contains(String name)
+	public boolean contains(VTLAlias alias)
 	{
-		if (!name.startsWith("spark:"))
+		if (!alias.getName().startsWith("spark:"))
 			return false;
-		name = name.substring(6);
 		
-		if (frames.containsKey(name))
+		if (frames.containsKey(alias))
 			return true;
 		
-		String[] parts = name.split(":");
+		String[] parts = alias.getName().substring(6).split(":");
 		if (parts.length != 2)
 			return false;
 		
@@ -227,17 +228,17 @@ public class SparkEnvironment implements Environment
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		if (frames.containsKey(alias))
 			return Optional.of(frames.get(alias));
 		
-		String source = repo.getDatasetSource(alias);
+		VTLAlias source = VTLAliasImpl.of(repo.getDatasetSource(alias));
 		if (!contains(source))
 			return Optional.empty();
 		
 		SparkDataSet dataset = null;
-		String[] parts = source.substring(6).split(":");
+		String[] parts = source.getName().substring(6).split(":");
 		if (parts.length != 2)
 			throw new InvalidParameterException("Invalid source format: " + source);
 		
@@ -265,14 +266,12 @@ public class SparkEnvironment implements Environment
 	}
 	
 	@Override
-	public boolean store(VTLValue value, String alias)
+	public boolean store(VTLValue value, VTLAlias alias)
 	{
-		alias = alias.matches("'.*'") ? alias.replaceAll("'(.*)'", "$1") : alias.toLowerCase();
-		if (!(value instanceof DataSet) || !alias.startsWith("spark:"))
+		if (!(value instanceof DataSet) || !alias.getName().startsWith("spark:"))
 			return false;
 		
-		alias = alias.substring(6);
-		String[] parts = alias.split(":", 2);
+		String[] parts = alias.getName().substring(6).split(":", 2);
 		if (parts.length != 2)
 			return false;
 		
@@ -287,7 +286,7 @@ public class SparkEnvironment implements Environment
 			// Add metadata in case it was lost
 			for (String name: dataFrame.columns())
 			{
-				final Optional<DataStructureComponent<?, ?, ?>> component = metadata.getComponent(name);
+				final Optional<DataStructureComponent<?, ?, ?>> component = metadata.getComponent(VTLAliasImpl.of(name));
 				if (component.isPresent())
 					dataFrame = dataFrame.withColumn(name, dataFrame.col(name).as(name, getMetadataFor(component.get())));
 			}
@@ -309,7 +308,7 @@ public class SparkEnvironment implements Environment
 		}
 	}
 	
-	private SparkDataSet inferSchema(MetadataRepository repo, Dataset<Row> sourceDataFrame, String alias)
+	private SparkDataSet inferSchema(MetadataRepository repo, Dataset<Row> sourceDataFrame, VTLAlias alias)
 	{
 		Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 		StructType schema = sourceDataFrame.schema();
@@ -323,7 +322,7 @@ public class SparkEnvironment implements Environment
 			for (DataStructureComponent<?, ?, ?> comp: structure)
 			{
 				ValueDomainSubset<?, ?> domain = comp.getVariable().getDomain();
-				String name = comp.getVariable().getName();
+				String name = comp.getVariable().getAlias().getName();
 				if (domain instanceof IntegerDomainSubset)
 					sourceDataFrame2 = sourceDataFrame2.withColumn(name, sourceDataFrame2.col(name).cast(LongType));
 				else if (domain instanceof NumberDomainSubset)
@@ -373,10 +372,10 @@ public class SparkEnvironment implements Environment
 			Map<DataStructureComponent<?, ?, ?>, String> masks = metaInfo.getValue();
 			
 			// normalized column names in alphabetical order
-			Map<String, String> newToOldNames = IntStream.range(0, fieldNames.length)
-					.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getVariable().getName(), fieldNames[i]))
+			Map<VTLAlias, String> newToOldNames = IntStream.range(0, fieldNames.length)
+					.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getVariable().getAlias(), fieldNames[i]))
 					.collect(entriesToMap());
-			String[] normalizedNames = newToOldNames.keySet().toArray(new String[newToOldNames.size()]);
+			VTLAlias[] normalizedNames = newToOldNames.keySet().toArray(new VTLAlias[newToOldNames.size()]);
 			Arrays.sort(normalizedNames, 0, normalizedNames.length);
 			
 			// Array of parsers for CSV fields (strings) into scalars
@@ -387,8 +386,8 @@ public class SparkEnvironment implements Environment
 					.map(Optional::get)
 					.sorted(DataStructureComponent::byNameAndRole)
 					.map(c -> udf(repr -> mapValue(c, repr.toString(), masks.get(c)).get(), types.get(c))
-							.apply(sourceDataFrame.col(newToOldNames.get(c.getVariable().getName())))
-							.as(c.getVariable().getName(), getMetadataFor(c)))
+							.apply(sourceDataFrame.col(newToOldNames.get(c.getVariable().getAlias())))
+							.as(c.getVariable().getAlias().getName(), getMetadataFor(c)))
 					.collect(toList())
 					.toArray(new Column[normalizedNames.length + 1]);
 			

@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -47,13 +48,13 @@ public abstract class AbstractScope implements TransformationScheme, Serializabl
 	}
 	
 	@Override
-	public DataPointRuleSet findDatapointRuleset(String alias)
+	public DataPointRuleSet findDatapointRuleset(VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(String alias)
+	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}

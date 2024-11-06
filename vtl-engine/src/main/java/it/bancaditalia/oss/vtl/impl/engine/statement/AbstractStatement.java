@@ -19,24 +19,26 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 abstract class AbstractStatement implements Serializable, Statement
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final String alias;
+	private final VTLAlias alias;
 	
-	public AbstractStatement(String alias)
+	public AbstractStatement(VTLAlias alias)
 	{
-		this.alias = Variable.normalizeAlias(alias);
+		this.alias = requireNonNull(alias);
 	}
 
 	@Override
-	public final String getAlias()
+	public final VTLAlias getAlias()
 	{
 		return alias;
 	}

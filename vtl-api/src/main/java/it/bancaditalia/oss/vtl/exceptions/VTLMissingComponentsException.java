@@ -28,7 +28,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 public class VTLMissingComponentsException extends VTLException
 {
@@ -39,17 +39,22 @@ public class VTLMissingComponentsException extends VTLException
 
 	public VTLMissingComponentsException(String missing, Collection<? extends DataStructureComponent<?, ?, ?>> structure)
 	{
+		super(missing + " not found in " + structure);
+	}
+
+	public VTLMissingComponentsException(VTLAlias missing, Collection<? extends DataStructureComponent<?, ?, ?>> structure)
+	{
 		super("Component " + missing + " not found in " + structure);
 	}
 
-	public VTLMissingComponentsException(Collection<? extends DataStructureComponent<?, ?, ?>> operand, String... names)
+	public VTLMissingComponentsException(Collection<? extends DataStructureComponent<?, ?, ?>> operand, VTLAlias... names)
 	{
 		super("Components " + Arrays.toString(names) + " not found in " + operand);
 	}
 
 	public VTLMissingComponentsException(Set<? extends DataStructureComponent<?, ?, ?>> missing, Set<? extends DataStructureComponent<?, ?, ?>> operand)
 	{
-		super("Components " + missing.stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(joining(", ", "[", "]")) + " not found in " + operand);
+		super("Components " + missing.stream().map(c -> c.getVariable().toString()).collect(joining(", ", "[", "]")) + " not found in " + operand);
 	}
 
 	public VTLMissingComponentsException(DataStructureComponent<?, ?, ?> missing, Collection<? extends DataStructureComponent<?, ?, ?>> operand)

@@ -33,10 +33,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -84,7 +82,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 					.get();
 
 			return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), dp -> LineageNode.of(this, dp.getLineage()), 
-					dp -> singletonMap(DURATION_MEASURE, this.evalScalar(dp.get(component))));
+					dp -> singletonMap(DURATION_MEASURE, evalScalar(dp.get(component))));
 		}
 	}
 
@@ -92,10 +90,8 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	{
 		if (value instanceof NullValue)
 			return NullValue.instance(TIMEDS);
-		else if (value instanceof DateValue)
-			return Duration.D.get();
-		else
-			return ((TimePeriodValue<?>) value).getPeriodIndicator();
+		else 
+			return ((TimeValue<?, ?, ?, ?>) value).getFrequency();
 	}
 
 	@Override

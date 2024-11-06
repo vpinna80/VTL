@@ -19,16 +19,17 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
-public class VTLIncompatibleRolesException extends VTLException
+public class VTLDuplicatedObjectException extends VTLException
 {
+	/**
+	 * 
+	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLIncompatibleRolesException(String operation, DataStructureComponent<?, ?, ?> component, Class<? extends Component> expectedRole)
+	public VTLDuplicatedObjectException(String type, VTLAlias name)
 	{
-		super("In " + operation + ", component " + component.getVariable().getAlias() + " is a " + component.getRole().getSimpleName() 
-				+ ", but it should be " + expectedRole.getSimpleName() + ".");
+		super(type + " " + name + " is defined more than once.");
 	}
 }

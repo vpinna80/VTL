@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.transform.testutils;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.RETURNS_SMART_NULLS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,31 +33,32 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class TestUtils
 {
-	public static TransformationScheme mockSession(Map<String, ? extends VTLValue> map) 
+	public static TransformationScheme mockSession(Map<VTLAlias, ? extends VTLValue> map) 
 	{
 		TransformationScheme session = mock(TransformationScheme.class, RETURNS_SMART_NULLS);
 		
 		// Mock getMetadata(alias)
-		when(session.getMetadata(anyString())).thenAnswer(p -> {
-			String name = p.getArgument(0);
+		when(session.getMetadata(any(VTLAlias.class))).thenAnswer(p -> {
+			VTLAlias name = p.getArgument(0);
 			return Optional.ofNullable(map.get(name)).map(VTLValue::getMetadata).orElseThrow(() -> new VTLUnboundAliasException(name));
 		});
 
 		// Mock resolve(alias)
-		when(session.resolve(anyString())).thenAnswer(p -> {
-			String name = p.getArgument(0);
+		when(session.resolve(any(VTLAlias.class))).thenAnswer(p -> {
+			VTLAlias name = p.getArgument(0);
 			return Optional.ofNullable(map.get(name)).orElseThrow(() -> new VTLUnboundAliasException(name));
 		});
 		
 		when(session.getRepository()).then(p -> {
 			MetadataRepository mock = mock(MetadataRepository.class, RETURNS_SMART_NULLS);
-			when(mock.createTempVariable(anyString(), any())).then(i -> new TestComponent<>(i.getArgument(0), null, i.getArgument(1)).getVariable());
+			when(mock.createTempVariable(any(VTLAlias.class), any())).then(i -> new TestComponent<>(i.getArgument(0), null, i.getArgument(1)).getVariable());
 			return mock;
 		});
 		

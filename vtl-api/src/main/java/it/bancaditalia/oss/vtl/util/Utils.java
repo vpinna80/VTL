@@ -54,6 +54,7 @@ public final class Utils
 {
 	public static final boolean SEQUENTIAL = "true".equalsIgnoreCase(System.getProperty("vtl.sequential"));
 	public static final boolean ORDERED = "true".equalsIgnoreCase(System.getProperty("vtl.ordered"));
+	public static final int ULPS = Integer.parseInt(System.getProperty("vtl.double.ulps.epsilon", "1000"));
 	
 	private Utils() {}
 
@@ -72,7 +73,7 @@ public final class Utils
 		return e -> valueMapper.accept(e.getValue());
 	}
 
-	public static <R> SerUnaryOperator<R> onlyIf(SerPredicate<? super R> condition, SerUnaryOperator<R> mapper)
+	public static <R> SerUnaryOperator<R> applyIf(SerPredicate<? super R> condition, SerUnaryOperator<R> mapper)
 	{
 		return v -> condition.test(v) ? mapper.apply(v) : v;
 	}

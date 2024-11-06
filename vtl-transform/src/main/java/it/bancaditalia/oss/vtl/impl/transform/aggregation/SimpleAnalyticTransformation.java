@@ -56,9 +56,9 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
@@ -71,17 +71,17 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	private static final long serialVersionUID = 1L;
 
 	protected final AnalyticOperator aggregation;
-	protected final List<String> partitionBy;
+	protected final List<VTLAlias> partitionBy;
 	protected final List<OrderByItem> orderByClause;
 	protected final WindowCriterion windowCriterion;
 
-	public SimpleAnalyticTransformation(AnalyticOperator aggregation, Transformation operand, List<String> partitionBy, 
+	public SimpleAnalyticTransformation(AnalyticOperator aggregation, Transformation operand, List<VTLAlias> partitionBy, 
 				List<OrderByItem> orderByClause, WindowCriterion windowCriterion)
 	{
 		super(operand);
 		
 		this.aggregation = aggregation;
-		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(Variable::normalizeAlias).collect(toList());
+		this.partitionBy = coalesce(partitionBy, emptyList());
 		this.orderByClause = coalesce(orderByClause, emptyList());
 		this.windowCriterion = windowCriterion;
 	}
@@ -102,7 +102,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.collect(toList());
 		else
 			ordering = orderByClause.stream()
-				.map(toEntry(OrderByItem::getName, OrderByItem::getMethod))
+				.map(toEntry(OrderByItem::getAlias, OrderByItem::getMethod))
 				.map(keepingValue(dataset::getComponent))
 				.map(keepingValue(Optional::get))
 				.map(splitting(SortClause::new))
@@ -113,7 +113,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		
 		for (DataStructureComponent<?, ?, ?> orderingComponent: ordering.stream().map(SortCriterion::getComponent).collect(toSet()))
 			if (partitionIDs.contains(orderingComponent))
-				throw new VTLException("Cannot order by " + orderingComponent.getVariable().getName() + " because the component is used in partition by " + partitionBy);
+				throw new VTLException("Cannot order by " + orderingComponent.getVariable().getAlias() + " because the component is used in partition by " + partitionBy);
 
 		WindowCriterion criterion = windowCriterion != null ? windowCriterion : orderByClause.isEmpty() 
 				? RANGE_UNBOUNDED_PRECEDING_TO_CURRENT : DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
@@ -138,7 +138,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)
 		{
-			DataStructureComponent<?, ?, ?> component = dataset.getComponent(orderByComponent.getName()).orElseThrow(() -> new VTLMissingComponentsException(orderByComponent.getName(), dataset));
+			DataStructureComponent<?, ?, ?> component = dataset.getComponent(orderByComponent.getAlias()).orElseThrow(() -> new VTLMissingComponentsException(orderByComponent.getAlias(), dataset));
 			ordering.put(component, DESC != orderByComponent.getMethod());
 		}
 
@@ -164,7 +164,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	public String toString()
 	{
 		return aggregation + "(" + operand + " over (" 
-				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().collect(joining(", ", " partition by ", " ")))
+				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().map(VTLAlias::toString).collect(joining(", ", " partition by ", " ")))
 				+ (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")))
 				+ windowCriterion + ")";
 	}

@@ -25,6 +25,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
@@ -38,7 +39,7 @@ public interface HierarchicalRuleSet<I extends Rule<S, D>, S extends EnumeratedD
 {
 	public interface Rule<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain>
 	{
-		public String getName();
+		public VTLAlias getAlias();
 		
 		public CodeItem<?, ?, S, D> getLeftCodeItem();
 
@@ -57,9 +58,9 @@ public interface HierarchicalRuleSet<I extends Rule<S, D>, S extends EnumeratedD
 	
 	public List<I> getRulesFor(CodeItem<?, ?, ?, ?> code);
 	
-	public String getName();
+	public VTLAlias getAlias();
 
-	public String getRuleId();
+	public VTLAlias getRuleId();
 
 	public List<I> getRules();
 	

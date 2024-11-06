@@ -25,6 +25,7 @@ import java.util.Optional;
 import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 /**
  * An environment that is capable of storing and retrieving VTL rules.
@@ -43,7 +44,7 @@ public interface Workspace extends Environment
 	 * @param name The name of requested rule.
 	 * @return An Optional with a reference to the requested object or {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<Statement> getRule(String name);
+	public Optional<Statement> getRule(VTLAlias name);
 
 	/**
 	 * Add a new rule to this workspace.

@@ -46,6 +46,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -70,7 +71,7 @@ public class ColumnarDataSetTest
 		values.put(INT_ID.get(), Arrays.stream(INT_ID_VAL).map(IntegerValue::of).collect(toList()).toArray(new IntegerValue[0]));
 		values.put(INT_ME.get(), Arrays.stream(INT_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(INTEGERDS) : IntegerValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));
 		values.put(BOL_ME.get(), Arrays.stream(BOL_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(BOOLEANDS) : BooleanValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));
-		INSTANCE = new ColumnarDataSet("test", values);
+		INSTANCE = new ColumnarDataSet(VTLAliasImpl.of("test"), values);
 		for (int i = 0; i < 5; i++)
 			DATAPOINTS[i] = new DataPointBuilder()
 				.add(STR_ID.get(), values.get(STR_ID.get())[i])

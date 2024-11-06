@@ -24,22 +24,25 @@ import java.util.Map.Entry;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public interface DataPointRuleSet extends RuleSet
 {
 	public interface DataPointRule
 	{
-		public Boolean eval(DataPoint dp, TransformationScheme scheme);
+		public ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> eval(DataPoint dp, TransformationScheme scheme);
 
-		public String getRuleId();
+		public VTLAlias getRuleId();
 
 		public ScalarValue<?, ?, ?, ?> getErrorCode();
 
 		public ScalarValue<?, ?, ?, ?> getErrorLevel();
 	}
 	
-	public List<Entry<String, String>> getVars();
+	public List<Entry<VTLAlias, VTLAlias>> getVars();
 
 	public List<DataPointRule> getRules();
 }

@@ -23,7 +23,9 @@ import java.util.OptionalDouble;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
@@ -37,9 +39,9 @@ public class RangeNumberDomainSubset<S extends NumberDomainSubset<S, NumberDomai
 	private final OptionalDouble max;
 	private final boolean inclusive;
 	
- 	public RangeNumberDomainSubset(String name, S parent, OptionalDouble min, OptionalDouble max, boolean inclusive)
+ 	public RangeNumberDomainSubset(VTLAlias name, S parent, OptionalDouble min, OptionalDouble max, boolean inclusive)
 	{
- 		super(parent.getName() + (min.isPresent() ? ">=" + min.getAsDouble() : "") + (max.isPresent() ? (inclusive ? "<=" : "<") + max.getAsDouble() : ""), parent);
+ 		super(VTLAliasImpl.of(parent.getAlias() + (min.isPresent() ? ">=" + min.getAsDouble() : "") + (max.isPresent() ? (inclusive ? "<=" : "<") + max.getAsDouble() : "")), parent);
 
  		this.min = min;
 		this.max = max;

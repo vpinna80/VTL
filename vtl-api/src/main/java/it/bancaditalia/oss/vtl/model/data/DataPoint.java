@@ -187,10 +187,10 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param names collection of names
 	 * @return a map with the values for all the components having the specified role and matching one of the specified names.
 	 */
-	public default <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role, Collection<String> names)
+	public default <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role, Collection<VTLAlias> names)
 	{
 		return Utils.getStream(keySet())
-				.map(c -> new SimpleEntry<>(c, c.getVariable().getName()))
+				.map(c -> new SimpleEntry<>(c, c.getVariable().getAlias()))
 				.filter(entryByValue(names::contains))
 				.map(Entry::getKey)
 				.filter(c -> c.is(role))
@@ -204,10 +204,10 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param names The names of the component
 	 * @return map with the values for the chosen components
 	 */
-	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?,?,?,?>> getValuesByNames(Collection<String> names)
+	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?,?,?,?>> getValuesByNames(Collection<VTLAlias> names)
 	{
 		return Utils.getStream(keySet())
-				.map(c -> new SimpleEntry<>(c.getVariable().getName(), c))
+				.map(c -> new SimpleEntry<>(c.getVariable().getAlias(), c))
 				.filter(entryByKey(names::contains))
 				.collect(Collectors.toMap(Entry::getValue, e -> get(e.getValue())));
 

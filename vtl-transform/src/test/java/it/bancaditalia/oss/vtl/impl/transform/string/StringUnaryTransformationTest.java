@@ -44,12 +44,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 
@@ -72,16 +74,16 @@ public class StringUnaryTransformationTest
 	@MethodSource
 	public void test(StringOperator operator, String[] expected)
 	{
-		VarIDOperand left = new VarIDOperand("left");
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", SAMPLE13);
+		VarIDOperand left = new VarIDOperand(VTLAliasImpl.of("left"));
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), SAMPLE13);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		StringUnaryTransformation sut = new StringUnaryTransformation(operator, left);
 		DataSetMetadata structure = (DataSetMetadata) sut.getMetadata(session);
 		
 		DataStructureComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, ?, ?>> measure = structure.getComponent("string_2", Measure.class, STRINGDS);
+		Optional<DataStructureComponent<Measure, ?, ?>> measure = structure.getComponent(VTLAliasImpl.of("string_2"), Measure.class, STRINGDS);
 		assertTrue(measure.isPresent(), "measure present in " + structure);
 		
 		try (Stream<DataPoint> stream = ((DataSet) sut.eval(session)).stream())

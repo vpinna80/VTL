@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
@@ -42,20 +41,20 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class DropClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String[] names;
+	private final VTLAlias[] names;
 	
-	public DropClauseTransformation(List<String> names)
+	public DropClauseTransformation(List<VTLAlias> names)
 	{
-		this.names = names.stream().map(Variable::normalizeAlias).collect(toArray(new String[names.size()]));
+		this.names = names.toArray(new VTLAlias[names.size()]);
 	}
 
 	@Override
@@ -85,7 +84,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata dataset = (DataSetMetadata) operand;
 		DataStructureBuilder builder = new DataStructureBuilder((DataSetMetadata) operand);
 
-		for (String name: names)
+		for (VTLAlias name: names)
 		{
 			DataStructureComponent<?, ?, ?> c = dataset.getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset));
 			if (c.is(Identifier.class))
@@ -99,6 +98,6 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public String toString()
 	{
-		return Arrays.stream(names).collect(joining(", ", "drop ", ""));
+		return Arrays.stream(names).map(VTLAlias::toString).collect(joining(", ", "drop ", ""));
 	}
 }

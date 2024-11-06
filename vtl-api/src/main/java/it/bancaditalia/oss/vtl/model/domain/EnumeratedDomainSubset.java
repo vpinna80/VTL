@@ -23,6 +23,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 /**
  * The representation of an enumerated domain subset (finite enumeration).
@@ -32,13 +33,12 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * @param <S> the enumerated domain subset
  * @param <D> the base domain
  */
-public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> 
-	extends ValueDomainSubset<S, D>
+public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
 {
 	/**
 	 * @return the domain name.
 	 */
-	public String getName();
+	public VTLAlias getAlias();
 	
 	/**
 	 * The returned set should not be altered in any way.

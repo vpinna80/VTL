@@ -65,6 +65,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
@@ -78,10 +79,12 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -95,7 +98,7 @@ public class AggregateTransformation extends UnaryTransformation
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
 	private final Transformation having;
-	private final String targetName; // target component name, used by aggr clause 
+	private final VTLAlias targetName; // target component name, used by aggr clause 
 	private final Class<? extends Component> targetRole; // target component role, used by aggr clause
 	
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, GroupingClause groupingClause, Transformation having)
@@ -116,7 +119,7 @@ public class AggregateTransformation extends UnaryTransformation
 	}
 	
 	// constructor for AGGR clause
-	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, Transformation having, Class<? extends Component> targetRole, String targetName)
+	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, Transformation having, Class<? extends Component> targetRole, VTLAlias targetName)
 	{
 		super(other.operand);
 		
@@ -181,7 +184,7 @@ public class AggregateTransformation extends UnaryTransformation
 			else
 				throw new IllegalStateException();
 			
-			return builder.build(LineageNode.of(THIS, keyValues.getKey()), (DataSetMetadata) metadata);
+			return builder.build(LineageNode.of(THIS.toString(), keyValues.getKey()), (DataSetMetadata) metadata);
 		});
 	}
 
@@ -282,8 +285,22 @@ public class AggregateTransformation extends UnaryTransformation
 				{
 					DataSetMetadata beforeHaving = new DataStructureBuilder(dataset).removeComponents(groupComps).build();
 					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, beforeHaving));
-					if (!BOOLEAN.equals(havingMeta))
-						throw new VTLIncompatibleParametersException(targetName, BOOLEAN, havingMeta);
+					ValueDomainSubset<?, ?> domain = null;
+					if (havingMeta instanceof ScalarValueMetadata)
+						domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
+					else
+					{
+						DataSetMetadata havingStructure = (DataSetMetadata) havingMeta;
+						if (havingStructure.size() == 1)
+						{
+							DataStructureComponent<?, ?, ?> singleton = havingStructure.iterator().next();
+							if (singleton.is(Measure.class))
+								domain = singleton.getVariable().getDomain();
+						}
+					}
+					
+					if (!Domains.BOOLEANDS.isAssignableFrom(domain))
+						throw new VTLIncompatibleParametersException(targetName.toString(), BOOLEAN, havingMeta);
 				}
 				
 				return structure;

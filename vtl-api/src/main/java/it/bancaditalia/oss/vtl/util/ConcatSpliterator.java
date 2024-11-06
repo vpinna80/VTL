@@ -19,18 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.Utils.SEQUENTIAL;
 import static java.lang.Long.MAX_VALUE;
 
 import java.util.Collection;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Avoids StackOverflowError when concatenating long chains of multiple streams 
@@ -57,12 +53,16 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 	 */
 	public static <T> SerCollector<Stream<T>, ?, Stream<T>> concatenating(boolean keepOrder)
 	{
-		SerCollector<Stream<T>, ?, ? extends Collection<Stream<T>>> collector1 = keepOrder ? toList() : toConcurrentSet();
-		SerCollector<Spliterator<T>, ?, ? extends Collection<Spliterator<T>>> collector2 = keepOrder ? toList() : toConcurrentSet();
-
-		return teeing(collector1, mapping(Stream::spliterator, collector2), 
-				(str, spl) -> StreamSupport.stream(new ConcatSpliterator<>(spl), !SEQUENTIAL)
-						.onClose(() -> Utils.getStream(str).forEach(Stream::close)));
+		return collectingAndThen(toList(), streams -> {
+			Stream<T> result = null;
+			for (Stream<T> stream: streams)
+				if (result == null)
+					result = stream;
+				else
+					result = Stream.concat(result, stream);
+			
+			return result;
+		});
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -75,7 +75,7 @@ public class ConcatSpliterator<T> implements Spliterator<T>
 			long estimatedSize = array[i].estimateSize();
 			if (estimatedSize == MAX_VALUE)
 				estimateSize = MAX_VALUE;
-			else
+			else if (estimateSize < MAX_VALUE)
 			{
 				estimateSize += estimatedSize;
 				if (estimateSize < 0)

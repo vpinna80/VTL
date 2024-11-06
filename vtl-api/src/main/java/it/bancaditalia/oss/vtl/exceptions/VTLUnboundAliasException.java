@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+
 /**
  * Base Class for all VTL-related exceptions
  * 
@@ -29,16 +31,16 @@ public class VTLUnboundAliasException extends VTLException {
 
 	private static final long serialVersionUID = 1L;
 	
-	private final String alias;
+	private final VTLAlias alias;
 
-	public VTLUnboundAliasException(String alias) 
+	public VTLUnboundAliasException(VTLAlias alias) 
 	{
 		super("Alias '" + alias + "' is not bound to this transformation scheme.");
 	
 		this.alias = alias;
 	}
 
-	public String getAlias()
+	public VTLAlias getAlias()
 	{
 		return alias;
 	}

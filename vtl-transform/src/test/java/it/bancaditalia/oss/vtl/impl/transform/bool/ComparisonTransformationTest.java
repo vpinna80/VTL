@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +39,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -45,6 +47,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ComparisonTransformationTest
@@ -86,21 +89,23 @@ public class ComparisonTransformationTest
 	@MethodSource
 	public synchronized void test(ComparisonOperator operator, String measureDomain, Boolean result[])
 	{
-		VarIDOperand left = new VarIDOperand("left"), right = new VarIDOperand("right");
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 2 : 1));
-		map.put("right", SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 3 : 2));
+		VarIDOperand left = new VarIDOperand(VTLAliasImpl.of("left"));
+		VarIDOperand right = new VarIDOperand(VTLAliasImpl.of("right"));
+		
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 2 : 1));
+		map.put(VTLAliasImpl.of("right"), SampleDataSets.getCustomSample(measureDomain, "STRING".equals(measureDomain) ? 3 : 2));
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		ComparisonTransformation coTransformation = new ComparisonTransformation(operator, left, right);
 		
 		DataSetMetadata metadata = (DataSetMetadata) coTransformation.getMetadata(session);
-		assertTrue(metadata.contains("bool_var"));
+		assertTrue(metadata.contains(BOOLEANDS.getDefaultVariable().getAlias()), metadata.toString());
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent("string_1").get();		
-		DataStructureComponent<?, ?, ?> bool_var = metadata.getComponent("bool_var").get();		
+		DataStructureComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();		
+		DataStructureComponent<?, ?, ?> bool_var = metadata.getComponent(BOOLEANDS.getDefaultVariable().getAlias()).get();		
 		
 		DataSet leftD = (DataSet) left.eval(session), 
 				rightD = (DataSet) right.eval(session);

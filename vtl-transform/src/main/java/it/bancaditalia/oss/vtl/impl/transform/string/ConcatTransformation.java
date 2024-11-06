@@ -123,8 +123,8 @@ public class ConcatTransformation extends BinaryTransformation
 			// Scan the dataset with less identifiers and find the matches
 			return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
 						.map(rm -> new SimpleEntry<>(rm, finalOperator
-								.apply(STRINGDS.cast(dpi.get(indexed.getComponent(rm.getVariable().getName()).get())), 
-										STRINGDS.cast(dps.get(streamed.getComponent(rm.getVariable().getName()).get())))))
+								.apply(STRINGDS.cast(dpi.get(indexed.getComponent(rm.getVariable().getAlias()).get())), 
+										STRINGDS.cast(dps.get(streamed.getComponent(rm.getVariable().getAlias()).get())))))
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))

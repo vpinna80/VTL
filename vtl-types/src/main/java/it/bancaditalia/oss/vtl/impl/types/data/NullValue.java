@@ -61,7 +61,7 @@ public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain>
 	@Override
 	public String toString()
 	{
-		return String.format("#NULL#[%s]", getDomain());
+		return "#NULL#";
 	}
 
 	@Override

@@ -27,7 +27,6 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
 import java.util.List;
@@ -52,9 +51,9 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
@@ -68,13 +67,13 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(RatioToReportTransformation.class);
 
-	private final List<String> partitionBy;
+	private final List<VTLAlias> partitionBy;
 
-	public RatioToReportTransformation(Transformation operand, List<String> partitionBy)
+	public RatioToReportTransformation(Transformation operand, List<VTLAlias> partitionBy)
 	{
 		super(operand);
 
-		this.partitionBy = coalesce(partitionBy, emptyList()).stream().map(Variable::normalizeAlias).collect(toList());
+		this.partitionBy = coalesce(partitionBy, emptyList());
 	}
 
 	@Override
@@ -127,7 +126,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	public String toString()
 	{
 		return "ratio_to_report(" + operand + " over (" 
-				+ (partitionBy != null ? partitionBy.stream().collect(joining(", ", " partition by ", " ")) : "")
+				+ (partitionBy != null ? partitionBy.stream().map(VTLAlias::toString).collect(joining(", ", " partition by ", " ")) : "")
 				+ "))";
 	}
 }

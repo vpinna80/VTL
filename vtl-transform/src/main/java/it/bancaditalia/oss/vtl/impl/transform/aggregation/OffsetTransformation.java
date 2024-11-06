@@ -33,6 +33,7 @@ import it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class OffsetTransformation extends SimpleAnalyticTransformation
@@ -46,7 +47,7 @@ public class OffsetTransformation extends SimpleAnalyticTransformation
 	
 	private final ScalarValue<?, ?, ?, ?> defaultValue;
 
-	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue<?, ?> offset, ScalarValue<?, ?, ?, ?> defaultValue, List<String> partitionBy, List<OrderByItem> orderByClause)
+	public OffsetTransformation(OffsetDirection direction, Transformation operand, IntegerValue<?, ?> offset, ScalarValue<?, ?, ?, ?> defaultValue, List<VTLAlias> partitionBy, List<OrderByItem> orderByClause)
 	{
 		super(FIRST_VALUE, operand, partitionBy, orderByClause, 
 				new WindowCriterionImpl(DATAPOINTS, 
@@ -64,7 +65,7 @@ public class OffsetTransformation extends SimpleAnalyticTransformation
 		return operator + "(" + operand + ", " + offset + 
 				(defaultValue == null || defaultValue instanceof NullValue ? "" : ", " + defaultValue)
 				+ " over (" 
-				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().collect(joining(", ", " partition by ", " ")))
+				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().map(VTLAlias::getName).collect(joining(", ", " partition by ", " ")))
 				+ (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")))
 				+ "))";
 	}

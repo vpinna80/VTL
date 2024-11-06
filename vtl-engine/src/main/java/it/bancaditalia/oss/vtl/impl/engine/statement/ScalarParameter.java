@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -29,15 +30,15 @@ class ScalarParameter extends BaseParameter
 {
 	private static final long serialVersionUID = 1L;
 	
-	protected final String domainName;
+	protected final VTLAlias domainName;
 
-	public ScalarParameter(String name, String domainName)
+	public ScalarParameter(VTLAlias name, VTLAlias domainName)
 	{
 		super(name);
 		this.domainName = domainName;
 	}
 
-	public String getDomain()
+	public VTLAlias getDomain()
 	{
 		return domainName;
 	}
@@ -58,6 +59,6 @@ class ScalarParameter extends BaseParameter
 	@Override
 	public String getDefinitionString()
 	{
-		return domainName;
+		return domainName.toString();
 	}
 }

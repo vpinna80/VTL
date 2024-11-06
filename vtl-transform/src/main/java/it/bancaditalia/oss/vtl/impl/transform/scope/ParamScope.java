@@ -28,6 +28,7 @@ import java.util.Optional;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -40,11 +41,11 @@ public class ParamScope extends AbstractScope
 	private static final long serialVersionUID = 1L;
 	
 	private final TransformationScheme parent;
-	private final Map<String, Transformation> params;
+	private final Map<VTLAlias, Transformation> params;
 
-	private final Map<String, VTLValueMetadata> parametersMeta;
+	private final Map<VTLAlias, VTLValueMetadata> parametersMeta;
 
-	public ParamScope(TransformationScheme parent, Map<String, Transformation> params)
+	public ParamScope(TransformationScheme parent, Map<VTLAlias, Transformation> params)
 	{
 		this.parent = parent;
 		this.params = params;
@@ -54,7 +55,7 @@ public class ParamScope extends AbstractScope
 	}
 
 	@Override
-	public VTLValue resolve(String node)
+	public VTLValue resolve(VTLAlias node)
 	{
 		if (params.containsKey(node))
 			return params.get(node).eval(getParent());
@@ -63,7 +64,7 @@ public class ParamScope extends AbstractScope
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(String alias)
+	public VTLValueMetadata getMetadata(VTLAlias alias)
 	{
 		if (parametersMeta.containsKey(alias))
 			return parametersMeta.get(alias);
@@ -81,7 +82,7 @@ public class ParamScope extends AbstractScope
 	}
 
 	@Override
-	public Statement getRule(String node)
+	public Statement getRule(VTLAlias node)
 	{
 		return getParent().getRule(node);
 	}
@@ -98,7 +99,7 @@ public class ParamScope extends AbstractScope
 	}
 
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		return parametersMeta.containsKey(alias);
 	}

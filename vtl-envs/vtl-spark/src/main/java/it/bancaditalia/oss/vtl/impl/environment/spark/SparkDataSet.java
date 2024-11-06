@@ -118,7 +118,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
@@ -146,8 +146,8 @@ public class SparkDataSet extends AbstractDataSet
 		
 		for (DataStructureComponent<?, ?, ?> component: encoder.components)
 		{
-			String name = component.getVariable().getName();
-			dataFrame = dataFrame.withColumn(name, dataFrame.col(name), getMetadataFor(component));
+			VTLAlias name = component.getVariable().getAlias();
+			dataFrame = dataFrame.withColumn(name.getName(), dataFrame.col(name.getName()), getMetadataFor(component));
 		}
 		dataFrame = dataFrame.withColumn("$lineage$", dataFrame.col("$lineage$"), Metadata.empty());
 
@@ -203,7 +203,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet membership(String alias)
+	public DataSet membership(VTLAlias alias)
 	{
 		DataSetMetadata membershipStructure = getMetadata().membership(alias);
 		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, getMetadata(), membershipStructure);
@@ -212,8 +212,8 @@ public class SparkDataSet extends AbstractDataSet
 		Optional<DataStructureComponent<?, ?, ?>> idMembership = getMetadata().getComponent(alias).filter(d -> d.is(Identifier.class));
 		if (idMembership.isPresent())
 		{
-			String defaultName = idMembership.get().getVariable().getDomain().getDefaultVariable().getName();
-			newDF = dataFrame.withColumn(defaultName, dataFrame.col(alias));
+			VTLAlias defaultName = idMembership.get().getVariable().getDomain().getDefaultVariable().getAlias();
+			newDF = dataFrame.withColumn(defaultName.getName(), dataFrame.col(alias.getName()));
 		}
 		
 		Column[] columns = getColumnsFromComponents(membershipStructure).toArray(new Column[membershipStructure.size()]);
@@ -260,7 +260,7 @@ public class SparkDataSet extends AbstractDataSet
 		Dataset<Row> newDf = dataFrame;
 		for (Entry<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> e: keyValues.entrySet())
 		{
-			Column col = newDf.col(e.getKey().getVariable().getName());
+			Column col = newDf.col(e.getKey().getVariable().getAlias().getName());
 			newDf = newDf.filter(col.equalTo(lit(e.getValue().get()))).drop(col);
 		}
 		
@@ -313,7 +313,7 @@ public class SparkDataSet extends AbstractDataSet
 		
 		// the columns to keep
 		String[] ids = originalIDs.stream()
-				.map(DataStructureComponent::getVariable).map(Variable::getName)
+				.map(c -> c.getVariable().getAlias().getName())
 				.collect(toArray(new String[originalIDs.size()]));
 
 		// apply the transformation to the data frame and unwrap the result
@@ -370,7 +370,7 @@ public class SparkDataSet extends AbstractDataSet
 
 		List<String> commonIDs = getMetadata().getIDs().stream()
 				.filter(other.getMetadata()::contains)
-				.map(DataStructureComponent::getVariable).map(Variable::getName)
+				.map(c -> c.getVariable().getAlias().getName())
 				.collect(toList());
 
 		Dataset<Row> leftDataframe = dataFrame.as("a");
@@ -430,13 +430,13 @@ public class SparkDataSet extends AbstractDataSet
 		WindowSpec windowSpec = null;
 		if (!clause.getPartitioningIds().isEmpty())
 			windowSpec = Window.partitionBy(clause.getPartitioningIds().stream()
-					.map(DataStructureComponent::getVariable).map(Variable::getName)
+					.map(c -> c.getVariable().getAlias().getName())
 					.map(dataFrame::col)
 					.collect(toArray(new Column[clause.getPartitioningIds().size()])));
 
 		Column[] orderBy = clause.getSortCriteria().stream()
 				.map(item -> {
-					Column col = dataFrame.col(item.getComponent().getVariable().getName());
+					Column col = dataFrame.col(item.getComponent().getVariable().getAlias().getName());
 					return item.getMethod() == ASC ? col.asc() : col.desc();
 				}).collect(toArray(new Column[clause.getSortCriteria().size()]));
 
@@ -485,10 +485,10 @@ public class SparkDataSet extends AbstractDataSet
 		{
 			Encoder<T> inputEncoder = (Encoder<T>) getEncoderFor(NullValue.instance(NULLDS), domain, structure);
 			udaf = udaf(new VTLSparkAggregator<>(collector2, accEncoder, ttEncoder), inputEncoder)
-					.apply(dataFrame.col(sourceComp.getVariable().getName()))
+					.apply(dataFrame.col(sourceComp.getVariable().getAlias().getName()))
 					.over(finalWindowSpec);
 			udf = nonExtractingUDF(sourceComp, finisher);
-			input = dataFrame.col(sourceComp.getVariable().getName());
+			input = dataFrame.col(sourceComp.getVariable().getAlias().getName());
 		}
 		else
 		{
@@ -499,7 +499,7 @@ public class SparkDataSet extends AbstractDataSet
 			input = struct(columns);
 		}
 		
-		String destName = destComp.getVariable().getName();
+		String destName = destComp.getVariable().getAlias().getName();
 		ArrayType arrayType = createArrayType(getDataTypeFor(sourceComp));
 		Dataset<Row> analyticResult = dataFrame.withColumn(destName, udf(udf, arrayType).apply(udaf, input));
 		Dataset<Row> exploded = analyticResult.withColumn(destName, explode(analyticResult.col(destName)));
@@ -578,12 +578,12 @@ public class SparkDataSet extends AbstractDataSet
 			DataPointEncoder keyEncoder = new DataPointEncoder(session, keys);
 			Column[] keyNames = new Column[keys.size()];
 			for (int i = 0; i < keyNames.length; i++)
-				keyNames[i] = dataFrame.col(keyEncoder.components[i].getVariable().getName());
+				keyNames[i] = dataFrame.col(keyEncoder.components[i].getVariable().getAlias().getName());
 			
 			MapGroupsFunction<Row, Row, Row> aggregator = (keyRow, s) -> {
 					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = new HashMap<>();
 					for (DataStructureComponent<Identifier, ?, ?> key: keys)
-						keyValues.put(key, getScalarFor(key, keyRow.getAs(key.getVariable().getName())));
+						keyValues.put(key, getScalarFor(key, keyRow.getAs(key.getVariable().getAlias().getName())));
 					
 					return StreamSupport.stream(new SparkSpliterator(s, bufferSize), !Utils.SEQUENTIAL).map(encoder::decode)
 							.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> 
@@ -611,7 +611,7 @@ public class SparkDataSet extends AbstractDataSet
 				
 		Column[] groupingCols = keys.stream()
 				.sorted(DataStructureComponent::byName)
-				.map(DataStructureComponent::getVariable).map(Variable::getName)
+				.map(c -> c.getVariable().getAlias().getName())
 				.map(functions::col)
 				.collect(toArray(new Column[keys.size()]));
 		

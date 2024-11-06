@@ -34,6 +34,7 @@ import it.bancaditalia.oss.vtl.engine.UserOperatorStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLParameterMismatchException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ParamScope;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -44,10 +45,10 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class CallTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private final String operator;
+	private final VTLAlias operator;
 	private final List<Transformation> args;
 
-	public CallTransformation(String operator, List<Transformation> args)
+	public CallTransformation(VTLAlias operator, List<Transformation> args)
 	{
 		this.operator = operator;
 		this.args = args;
@@ -73,7 +74,7 @@ public class CallTransformation extends TransformationImpl
 		{
 			UserOperatorStatement op = (UserOperatorStatement) statement;
 			List<Parameter> parNames = op.getParameters();
-			Map<String, Transformation> paramValues = IntStream.range(0, args.size()).boxed()
+			Map<VTLAlias, Transformation> paramValues = IntStream.range(0, args.size()).boxed()
 				.collect(toMap(i -> parNames.get(i).getAlias(), i -> args.get(i)));
 			return op.getExpression().eval(new ParamScope(scheme, paramValues));
 		}
@@ -93,7 +94,7 @@ public class CallTransformation extends TransformationImpl
 			if (args.size() != params.size())
 				throw new UnsupportedOperationException(operator + " requires " + params.size() + " parameters but " + args.size() + " were provided.");
 			
-			Map<String, Transformation> argValues = new HashMap<>();
+			Map<VTLAlias, Transformation> argValues = new HashMap<>();
 			for (int i = 0; i < args.size(); i++)
 			{
 				Parameter param = params.get(i);

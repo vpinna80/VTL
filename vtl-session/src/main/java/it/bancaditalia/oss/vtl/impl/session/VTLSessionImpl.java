@@ -74,6 +74,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
@@ -88,23 +89,29 @@ public class VTLSessionImpl implements VTLSession
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
+	
+	private static transient ConfigurationManager c;
 
-	private final ConfigurationManager config = ConfigurationManagerFactory.newManager();
 	private final Engine engine;
 	private final List<Environment> environments;
 	private final Workspace workspace;
-	private final Map<String, SoftReference<VTLValue>> cache = new ConcurrentHashMap<>();
-	private final Map<String, SoftReference<VTLValueMetadata>> metacache = new ConcurrentHashMap<>();
-	private final Map<String, ReentrantLock> cacheLocks = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, SoftReference<VTLValue>> cache = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, SoftReference<VTLValueMetadata>> metacache = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, ReentrantLock> cacheLocks = new ConcurrentHashMap<>();
 	private final MetadataRepository repository;
 	private final Map<Class<?>, Map<Transformation, ?>> holders = new ConcurrentHashMap<>();
 	private final String code;
 
 	public VTLSessionImpl(String code)
 	{
-		this.repository = config.getMetadataRepository();
-		this.engine = config.getEngine();
-		this.environments = config.getEnvironments();
+		this(code, (c = ConfigurationManagerFactory.newManager()).getMetadataRepository(), c.getEngine(), c.getEnvironments());
+	}
+
+	public VTLSessionImpl(String code, MetadataRepository repository, Engine engine, List<Environment> environments)
+	{
+		this.repository = repository;
+		this.engine = engine;
+		this.environments = environments;
 
 		Workspace selectedWorkspace = null;
 		for (Environment env: environments)
@@ -119,7 +126,7 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public VTLValue resolve(String alias)
+	public VTLValue resolve(VTLAlias alias)
 	{
 		LOGGER.info("Retrieving value for {}", alias);
 
@@ -138,9 +145,9 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public VTLValueMetadata getMetadata(String alias)
+	public VTLValueMetadata getMetadata(VTLAlias alias)
 	{
-		VTLValueMetadata definedStructure = cacheHelper(alias, metacache, n -> repository.getStructure(alias));
+		VTLValueMetadata definedStructure = cacheHelper(alias, metacache, n -> repository.getStructure(alias).orElse(null));
 		if (definedStructure != null)
 			return definedStructure;
 		
@@ -158,7 +165,7 @@ public class VTLSessionImpl implements VTLSession
 					.orElseThrow(() -> buildUnboundException(alias, "getMetadata")));
 	}
 
-	private VTLUnboundAliasException buildUnboundException(String alias, String op)
+	private VTLUnboundAliasException buildUnboundException(VTLAlias alias, String op)
 	{
 		for (Environment env: environments)
 			LOGGER.warn("Environment {} reported empty value for operation {} with {}", env.getClass().getSimpleName(), op, alias);
@@ -166,7 +173,7 @@ public class VTLSessionImpl implements VTLSession
 	}
 	
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		Optional<? extends Statement> rule = workspace.getRule(alias);
 		if (rule.isPresent())
@@ -180,7 +187,7 @@ public class VTLSessionImpl implements VTLSession
 		return code;
 	}
 	
-	private <T> T findRuleset(String alias, Class<T> c)
+	private <T> T findRuleset(VTLAlias alias, Class<T> c)
 	{
 		return workspace.getRule(alias)
 				.filter(RulesetStatement.class::isInstance)
@@ -192,19 +199,19 @@ public class VTLSessionImpl implements VTLSession
 	}
 	
 	@Override
-	public DataPointRuleSet findDatapointRuleset(String alias)
+	public DataPointRuleSet findDatapointRuleset(VTLAlias alias)
 	{
 		return findRuleset(alias, DataPointRuleSet.class);
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(String alias)
+	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
 	{
 		return findRuleset(alias, HierarchicalRuleSet.class);
 	}
 	
 	@Override
-	public void persist(VTLValue value, String alias)
+	public void persist(VTLValue value, VTLAlias alias)
 	{
 		try
 		{
@@ -223,7 +230,7 @@ public class VTLSessionImpl implements VTLSession
 		}
 	}
 
-	private <T> T cacheHelper(final String alias, Map<String, SoftReference<T>> cache, Function<String, T> mapper)
+	private <T> T cacheHelper(VTLAlias alias, Map<VTLAlias, SoftReference<T>> cache, Function<VTLAlias, T> mapper)
 	{
 		ReentrantLock lock = cacheLocks.computeIfAbsent(alias, a -> new ReentrantLock());
 		
@@ -232,7 +239,9 @@ public class VTLSessionImpl implements VTLSession
 			String cycleNames = Utils.getStream(cacheLocks.entrySet())
 				.filter(entryByValue(ReentrantLock::isHeldByCurrentThread))
 				.map(Entry::getKey)
+				.map(VTLAlias::toString)
 				.collect(joining(", "));
+			
 			throw new IllegalStateException("Found a cycle between rules " + cycleNames);
 		}
 		
@@ -262,7 +271,7 @@ public class VTLSessionImpl implements VTLSession
 		}
 	}
 	
-	private <T> Optional<T> acquireValue(String alias, BiFunction<Environment, String, Optional<T>> mapper)
+	private <T> Optional<T> acquireValue(VTLAlias alias, BiFunction<Environment, VTLAlias, Optional<T>> mapper)
 	{
 		LOGGER.info("Resolving value of {}", alias);
 
@@ -289,7 +298,7 @@ public class VTLSessionImpl implements VTLSession
 		return maybeResult;
 	}
 
-	private VTLValue acquireResult(DMLStatement statement, String alias)
+	private VTLValue acquireResult(DMLStatement statement, VTLAlias alias)
 	{
 		LOGGER.info("Applying {}", statement);
 
@@ -319,7 +328,7 @@ public class VTLSessionImpl implements VTLSession
 		return statements;
 	}
 
-	public Map<String, String> getStatements()
+	public Map<VTLAlias, String> getStatements()
 	{
 		return workspace.getRules().stream()
 				.collect(toMap(Statement::getAlias, Statement::toString, (a, b) -> {
@@ -332,7 +341,7 @@ public class VTLSessionImpl implements VTLSession
 		return workspace.getRules().stream()
 				.filter(DMLStatement.class::isInstance)
 				.map(DMLStatement.class::cast)
-				.flatMap(statement -> Stream.concat(Stream.of(statement.getAlias()), statement.getTerminals().stream().map(LeafTransformation::getText)))
+				.flatMap(statement -> Stream.concat(Stream.of(statement.getAlias().toString()), statement.getTerminals().stream().map(LeafTransformation::getText)))
 				.distinct()
 				.collect(toList());
 	}
@@ -350,7 +359,7 @@ public class VTLSessionImpl implements VTLSession
 				.forEach(entry -> {
 					synchronized (result)
 					{
-						result.get(0).add(0, entry.getKey());
+						result.get(0).add(0, entry.getKey().toString());
 						result.get(1).add(0, entry.getValue());
 					}
 				});
@@ -359,7 +368,7 @@ public class VTLSessionImpl implements VTLSession
 	}
 
 	@Override
-	public Statement getRule(String alias)
+	public Statement getRule(VTLAlias alias)
 	{
 		return workspace.getRule(alias).orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}

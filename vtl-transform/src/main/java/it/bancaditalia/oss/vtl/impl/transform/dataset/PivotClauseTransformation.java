@@ -19,12 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
+import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
@@ -41,6 +41,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -50,6 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -64,16 +66,16 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(PivotClauseTransformation.class);
-	private final String identifierName;
-	private final String measureName;
+	private final VTLAlias identifierName;
+	private final VTLAlias measureName;
 
 	private transient DataStructureComponent<Measure, ?, ?> measure;
 	private transient DataStructureComponent<Identifier, ?, ?> identifier;
 
-	public PivotClauseTransformation(String identifierName, String measureName)
+	public PivotClauseTransformation(VTLAlias identifierName, VTLAlias measureName)
 	{
-		this.identifierName = normalizeAlias(identifierName);
-		this.measureName = normalizeAlias(measureName);
+		this.identifierName = requireNonNull(identifierName);
+		this.measureName = requireNonNull(measureName);
 		
 		LOGGER.debug("Pivoting " + measureName + " over " + identifierName);
 	}
@@ -106,7 +108,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		ValueDomainSubset<?, ?> measureDomain = measure.getVariable().getDomain();
 
 		for (CodeItem<?, ?, ?, StringDomain> codeItem: ((StringEnumeratedDomainSubset<?, ?>) identifier.getVariable().getDomain()).getCodeItems())
-			builder.addComponent(repo.createTempVariable(codeItem.get().toString(), measureDomain).as(Measure.class));
+			builder.addComponent(repo.createTempVariable(VTLAliasImpl.of(codeItem.get().toString()), measureDomain).as(Measure.class));
 		
 		return builder.addComponents(ids)
 				.removeComponent(identifier)
@@ -120,7 +122,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata structure = createPivotStructure(dataset.getMetadata().getIDs(), session);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(structure.getIDs());
 		Map<Object, DataStructureComponent<Measure, ?, ?>>measureMap = structure.getMeasures().stream()
-				.collect(toConcurrentMap(c -> c.getVariable().getName(), identity()));
+				.collect(toConcurrentMap(c -> c.getVariable().getAlias(), identity()));
 		
 		String lineageString = toString();
 		

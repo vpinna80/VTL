@@ -48,6 +48,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -56,6 +57,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
@@ -73,11 +75,11 @@ public class CheckDataPointTransformation extends TransformationImpl
 	private static final long serialVersionUID = 1L;
 	
 	private final Transformation operand;
-	private final String rulesetID;
-	private final List<String> components;
+	private final VTLAlias rulesetID;
+	private final List<VTLAlias> components;
 	private final Output output;
 
-	public CheckDataPointTransformation(Transformation operand, String rulesetID, List<String> components, Output output)
+	public CheckDataPointTransformation(Transformation operand, VTLAlias rulesetID, List<VTLAlias> components, Output output)
 	{
 		this.operand = operand;
 		this.rulesetID = rulesetID;
@@ -107,7 +109,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 		RuleSetType type = ruleset.getType();
 		List<DataPointRule> rules = ruleset.getRules();
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var = BOOLEANDS.getDefaultVariable().as(Measure.class);
-		DataStructureComponent<Identifier, ?, ?> ruleid = repo.getVariable("ruleid").as(Identifier.class);
+		DataStructureComponent<Identifier, ?, ?> ruleid = repo.getVariable(VTLAliasImpl.of("ruleid")).as(Identifier.class);
 		
 		return dataset.flatmapKeepingKeys(structure, DataPoint::getLineage, dp -> rules.stream()
 			.map(rule -> evalRule(new DatapointScope(scheme.getRepository(), dp, dataset.getMetadata(), null), type, bool_var, ruleid, dp, rule))
@@ -126,7 +128,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 			return null;
 
 		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>();
-		map.put(ruleid, StringValue.of(rule.getRuleId()));
+		map.put(ruleid, StringValue.of(rule.getRuleId().getName()));
 		map.put(ERRORCODE.get(), res == FALSE ? rule.getErrorCode() : NullValue.instance(STRINGDS));
 		map.put(ERRORLEVEL.get(), res == FALSE ? rule.getErrorLevel() : NullValue.instance(INTEGERDS));
 		
@@ -152,11 +154,11 @@ public class CheckDataPointTransformation extends TransformationImpl
 					.addComponents(structure.getComponents(Identifier.class))
 					.addComponents(structure.getComponents(Attribute.class));
 
-			List<Entry<String, String>> vars = ruleset.getVars();
+			List<Entry<VTLAlias, VTLAlias>> vars = ruleset.getVars();
 			if (ruleset.getType() == VARIABLE)
 				for (int i = 0; i < vars.size(); i++)
 				{
-					String varName = vars.get(i).getKey();
+					VTLAlias varName = vars.get(i).getKey();
 					if (structure.getComponent(varName).filter(c -> c.getVariable().equals(repo.getVariable(varName))).isEmpty())
 						throw new VTLMissingComponentsException(varName, structure);
 				}
@@ -164,7 +166,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 				for (int i = 0; i < vars.size(); i++)
 				{
 					ValueDomainSubset<?, ?> domain = repo.getDomain(vars.get(i).getKey());
-					String compName = components.get(i);
+					VTLAlias compName = components.get(i);
 					DataStructureComponent<?, ?, ?> component = structure.getComponent(compName).orElseThrow(() -> new VTLMissingComponentsException(compName, structure));
 					
 					if (!component.getVariable().getDomain().equals(domain))
@@ -179,7 +181,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 			return builder
 					.addComponent(ERRORCODE.get())
 					.addComponent(ERRORLEVEL.get())
-					.addComponent(repo.getVariable("ruleid").as(Identifier.class))
+					.addComponent(repo.getVariable(VTLAliasImpl.of("ruleid")).as(Identifier.class))
 					.build();
 		}
 		else

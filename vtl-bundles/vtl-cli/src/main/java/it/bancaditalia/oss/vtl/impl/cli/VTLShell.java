@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.cli;
 
-import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
@@ -37,7 +36,9 @@ import java.util.concurrent.Callable;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import picocli.CommandLine;
@@ -86,8 +87,13 @@ public class VTLShell implements Callable<Void>
 			session.compile();
 		}
 			
-		List<String> outNames = coalesce(Arrays.asList(names), session.getWorkspace().getRules().stream().map(Statement::getAlias).collect(toList())); 
-		for (String name: outNames)
+		List<VTLAlias> outNames;
+		if (names != null)
+			outNames = Arrays.stream(names).map(VTLAliasImpl::of).collect(toList());
+		else
+			outNames = session.getWorkspace().getRules().stream().map(Statement::getAlias).collect(toList());
+			
+		for (VTLAlias name: outNames)
 		{
 			final VTLValue result = session.resolve(name);
 			System.out.println(result + " := {");

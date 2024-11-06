@@ -34,6 +34,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -58,12 +59,14 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -108,13 +111,13 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 	}
 
 	@Override
-	public DataSetMetadata getStructure(String name)
+	public Optional<DataSetMetadata> getStructure(VTLAlias name)
 	{
 		LOGGER.debug("Reading structure for {}", name);
 		try (Connection conn = pool.get();
 			PreparedStatement stat1 = conn.prepareStatement("SELECT VARIABLEID, ROLE, DOMAINID, SETID FROM STRUCTUREITEM WHERE CUBEID = ?"))
 		{
-			stat1.setString(1, name);
+			stat1.setString(1, name.toString());
 			ResultSet rs = stat1.executeQuery();
 			
 			DataStructureBuilder builder = null;
@@ -124,13 +127,13 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 					builder = new DataStructureBuilder();
 				
 				// get variable attribute
-				String varName = rs.getString(1);
+				VTLAlias varName = VTLAliasImpl.of(rs.getString(1));
 				Class<? extends Component> role = parseRole(rs.getString(2));
 				
 				ValueDomainSubset<?, ?> domain;
-				String domainName = rs.getString(3);
-				String setId = rs.getString(4);
-				if (setId != null && !setId.isEmpty() && isDomainDefined(setId))
+				VTLAlias domainName = VTLAliasImpl.of(rs.getString(3));
+				VTLAlias setId = VTLAliasImpl.of(rs.getString(4));
+				if (setId != null && isDomainDefined(setId))
 				{
 					domain = getDomain(setId);
 					LOGGER.trace("Set {} already defined as {}", setId, domain);
@@ -146,7 +149,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 						LOGGER.trace("Domain {} already defined as {}", domainName, domain);
 					}
 					
-					if (setId != null && !setId.isEmpty())
+					if (setId != null)
 					{
 						domain = parseSubset(conn, domain, setId);
 						defineDomain(setId, domain);
@@ -160,12 +163,12 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 			
 			DataSetMetadata metadata = builder == null ? null : builder.build();
 			LOGGER.debug("Structure for {} is {}", name, metadata);
-			return metadata;
+			return Optional.of(metadata);
 		}
 		catch (SQLException | IOException | NumberFormatException e)
 		{
 			LOGGER.error("Error while querying metadata for " + name, e);
-			return null;
+			return Optional.empty();
 		}
 	}
 
@@ -182,9 +185,9 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 		return role;
 	}
 
-	private ValueDomainSubset<?, ?> parseDomain(String domainName)
+	private ValueDomainSubset<?, ?> parseDomain(VTLAlias domainName)
 	{
-		Matcher matcher = sizePattern.matcher(domainName);
+		Matcher matcher = sizePattern.matcher(domainName.toString());
 		boolean sized = matcher.find();
 		int l;
 		int d;
@@ -203,7 +206,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 		}
 		
 		ValueDomainSubset<?, ?> domain;
-		if (domainName.toLowerCase().contains("number"))
+		if (domainName.getName().toLowerCase().contains("number"))
 			if (sized)
 			{
 				long pow = 1;
@@ -226,11 +229,11 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 		return domain;
 	}
 	
-	private ValueDomainSubset<?, ?> parseSubset(Connection conn, ValueDomainSubset<?, ?> domain, String setId) throws SQLException, IOException
+	private ValueDomainSubset<?, ?> parseSubset(Connection conn, ValueDomainSubset<?, ?> domain, VTLAlias setId) throws SQLException, IOException
 	{
 		try (PreparedStatement stat = conn.prepareStatement("SELECT CRITERIONPARAM FROM DOMAINSET WHERE SETID = ?"))
 		{
-			stat.setString(1, setId);
+			stat.setString(1, setId.toString());
 			ResultSet rs = stat.executeQuery();
 			if (rs.next())
 			{

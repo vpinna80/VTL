@@ -32,6 +32,12 @@
 		<tokenmapping name="D" value="D" />
 	</tokenset>
 
+	<tokenset name="ExistsInMode" class="it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation$ExistsInMode">
+		<tokenmapping name="ALL" value="ALL" />
+		<tokenmapping name="TRUE" value="TRUE" />
+		<tokenmapping name="FALSE" value="FALSE" />
+	</tokenset>
+	
 	<tokenset name="HierarchyMode" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyMode">
 		<tokenmapping name="NON_NULL" value="NON_NULL" />
 		<tokenmapping name="NON_ZERO" value="NON_ZERO" />
@@ -265,13 +271,13 @@
 		<from>ValidateHRruleset</from>
 		<params>
 			<exprparam name="op" />
-			<stringparam name="hrName" />
+			<aliasparam name="hrName" />
 			<nestedparam name="conditionClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
-			<stringparam name="componentID" />
+			<aliasparam name="componentID" />
 			<tokensetparam name="validationMode" tokenset="HierarchyMode" />
 			<tokensetparam name="inputMode" tokenset="ValidationInput" />
 			<tokensetparam name="validationOutput" tokenset="ValidationOutput" />
@@ -282,9 +288,9 @@
 		<from>ValidateDPruleset</from>
 		<params>
 			<exprparam name="op" />
-			<stringparam name="dpName" />
+			<aliasparam name="dpName" />
 			<listparam name="componentID">
-				<stringparam />
+				<aliasparam />
 			</listparam>
 			<tokensetparam name="validationOutput" tokenset="ValidationOutput" />
 		</params>
@@ -294,13 +300,13 @@
 		<from>HierarchyOperators</from>
 		<params>
 			<exprparam name="expr" />
-			<stringparam name="hrName" />
+			<aliasparam name="hrName" />
 			<nestedparam name="conditionClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
-			<stringparam name="ruleComponent" />
+			<aliasparam name="ruleComponent" />
 			<tokensetparam name="validationMode" tokenset="HierarchyMode" />
 			<tokensetparam name="inputModeHierarchy" tokenset="HierarchyInput" />
 			<tokensetparam name="outputModeHierarchy" tokenset="HierarchyOutput" />
@@ -314,13 +320,13 @@
 			<exprparam name="expr" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 			<nestedparam name="orderByClause">
 				<listparam name="orderByItem">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
-						<stringparam name="componentID" />
+						<aliasparam name="componentID" />
 						<tokensetparam tokenset="OrderingMethod" />
 					</customparam>
 				</listparam>
@@ -348,13 +354,13 @@
 			<valueparam name="defaultValue" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 			<nestedparam name="orderByClause">
 				<listparam name="orderByItem">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
-						<stringparam name="componentID" />
+						<aliasparam name="componentID" />
 						<tokensetparam tokenset="OrderingMethod" />
 					</customparam>
 				</listparam>
@@ -371,13 +377,13 @@
 			<valueparam name="defaultValue" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 			<nestedparam name="orderByClause">
 				<listparam name="orderByItem">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
-						<stringparam name="componentID" />
+						<aliasparam name="componentID" />
 						<tokensetparam tokenset="OrderingMethod" />
 					</customparam>
 				</listparam>
@@ -391,7 +397,7 @@
 			<exprparam name="expr" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 		</params>
@@ -403,7 +409,7 @@
 			<exprparam name="exprComponent" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 		</params>
@@ -416,13 +422,13 @@
 			<exprparam name="exprComponent" />
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 			<nestedparam name="orderByClause">
 				<listparam name="orderByItem">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
-						<stringparam name="componentID" />
+						<aliasparam name="componentID" />
 						<tokensetparam tokenset="OrderingMethod" />
 					</customparam>
 				</listparam>
@@ -446,13 +452,13 @@
 		<params>
 			<nestedparam name="partitionByClause">
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 			<nestedparam name="orderByClause">
 				<listparam name="orderByItem">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation$OrderByItem">
-						<stringparam name="componentID" />
+						<aliasparam name="componentID" />
 						<tokensetparam tokenset="OrderingMethod" />
 					</customparam>
 				</listparam>
@@ -469,9 +475,9 @@
 				<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause">
 					<tokensetparam name="op" tokenset="GroupingMode" />
 					<listparam name="componentID">
-						<stringparam />
+						<aliasparam />
 					</listparam>
-					<stringparam name="STRING_CONSTANT" />
+					<aliasparam name="STRING_CONSTANT" />
 				</customparam>
 			</nestedparam>
 			<exprparam name="havingClause" />
@@ -518,7 +524,7 @@
 				<listparam name="aggrFunctionClause">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.dataset.AggrClauseTransformation$AggrClauseItem">
 						<roleparam name="componentRole" />
-						<stringparam name="componentID" />
+						<aliasparam name="componentID" />
 						<exprparam name="aggrOperators" />
 					</customparam>
 				</listparam>
@@ -527,7 +533,7 @@
 				<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause">
 					<tokensetparam name="op" tokenset="GroupingMode" />
 					<listparam name="componentID">
-						<stringparam />
+						<aliasparam />
 					</listparam>
 					<stringparam name="STRING_CONSTANT" />
 				</customparam>
@@ -546,7 +552,7 @@
 				<listparam name="aggrFunctionClause">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.dataset.AggrClauseTransformation$AggrClauseItem">
 						<roleparam name="componentRole" />
-						<stringparam name="componentID" />
+						<aliasparam name="componentID" />
 						<exprparam name="aggrOperators" />
 					</customparam>
 				</listparam>
@@ -569,7 +575,7 @@
 		</tokens>
 		<params>
 			<listparam name="componentID">
-				<stringparam />
+				<aliasparam />
 			</listparam>
 		</params>
 	</mapping>
@@ -581,7 +587,7 @@
 		</tokens>
 		<params>
 			<listparam name="componentID">
-				<stringparam />
+				<aliasparam />
 			</listparam>
 		</params>
 	</mapping>
@@ -599,7 +605,7 @@
 		<from>CalcClauseItem</from>
 		<params>
 			<roleparam name="componentRole" />
-			<stringparam name="componentID" />
+			<aliasparam name="componentID" />
 			<exprparam name="exprComponent" />
 		</params>
 	</mapping>
@@ -616,11 +622,11 @@
 				<listparam name="joinClauseItem">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation$JoinOperand">
 						<exprparam name="expr" />
-						<stringparam name="alias" />
+						<aliasparam name="alias" />
 					</customparam>
 				</listparam>
 				<listparam name="componentID">
-					<stringparam />
+					<aliasparam />
 				</listparam>
 			</nestedparam>
 			<nestedparam name="joinBody">
@@ -646,11 +652,8 @@
 				<listparam name="joinClauseItem">
 					<customparam class="it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation$JoinOperand">
 						<exprparam name="expr" />
-						<stringparam name="alias" />
+						<aliasparam name="alias" />
 					</customparam>
-				</listparam>
-				<listparam name="componentID">
-					<stringparam />
 				</listparam>
 				<nullparam />
 			</nestedparam>
@@ -699,7 +702,7 @@
 		<from>JoinClauseItem</from>
 		<params>
 			<exprparam name="expr" />
-			<stringparam name="alias" />
+			<aliasparam name="alias" />
 		</params>
 	</mapping>
 
@@ -788,7 +791,7 @@
 		<params>
 			<exprparam name="expr" />
 			<nullparam />
-			<stringparam name="simpleComponentId" />
+			<aliasparam name="simpleComponentId" />
 		</params>
 	</mapping>
 
@@ -796,7 +799,7 @@
 		<from>SubspaceClause</from>
 		<params>
 			<mapparam name="subspaceClauseItem">
-				<stringparam name="componentID" />
+				<aliasparam name="componentID" />
 				<valueparam name="scalarItem" />
 			</mapparam>
 		</params>
@@ -806,8 +809,8 @@
 		<from>RenameClause</from>
 		<params>
 			<mapparam name="renameClauseItem">
-				<stringparam name="fromName" />
-				<stringparam name="toName" />
+				<aliasparam name="fromName" />
+				<aliasparam name="toName" />
 			</mapparam>
 		</params>
 	</mapping>
@@ -822,7 +825,7 @@
 	<mapping to="ops.CallTransformation">
 		<from>CallComponent</from>
 		<params>
-			<stringparam name="operatorID" />
+			<aliasparam name="operatorID" />
 			<listparam name="parameterComponent">
 				<exprparam />
 			</listparam>
@@ -832,7 +835,7 @@
 	<mapping to="ops.CallTransformation">
 		<from>CallDataset</from>
 		<params>
-			<stringparam name="operatorID" />
+			<aliasparam name="operatorID" />
 			<listparam name="parameter">
 				<exprparam />
 			</listparam>
@@ -871,7 +874,7 @@
 		<params>
 			<exprparam name="left" />
 			<exprparam name="right" />
-			<stringparam name="retainType" />
+			<tokensetparam tokenset="ExistsInMode" name="retainType"/>
 		</params>
 	</mapping>
 
@@ -914,7 +917,7 @@
 		<from>CastExprDataset</from>
 		<params>
 			<exprparam name="expr" />
-			<stringparam name="valueDomainName" />
+			<aliasparam name="valueDomainName" />
 			<stringparam name="STRING_CONSTANT" />
 		</params>
 	</mapping>
@@ -943,7 +946,7 @@
 		<from>CastExprComponent</from>
 		<params>
 			<exprparam name="exprComponent" />
-			<stringparam name="valueDomainName" />
+			<aliasparam name="valueDomainName" />
 			<stringparam name="STRING_CONSTANT" />
 		</params>
 	</mapping>
@@ -1146,21 +1149,21 @@
 					<valueparam />
 				</listparam>
 			</nestedparam>
-			<stringparam name="valueDomainID" />
+			<aliasparam name="valueDomainID" />
 		</params>
 	</mapping>
 
 	<mapping to="VarIDOperand">
 		<from>VarID</from>
 		<params>
-			<stringparam />
+			<aliasparam />
 		</params>
 	</mapping>
 
 	<mapping to="VarIDOperand">
 		<from>ComponentID</from>
 		<params>
-			<stringparam name="IDENTIFIER" ordinal="0" />
+			<aliasparam name="IDENTIFIER" ordinal="0" />
 		</params>
 	</mapping>
 
@@ -1187,8 +1190,8 @@
 			<value>PIVOT</value>
 		</tokens>
 		<params>
-			<stringparam name="id_" />
-			<stringparam name="mea" />
+			<aliasparam name="id_" />
+			<aliasparam name="mea" />
 		</params>
 	</mapping>
 
@@ -1198,8 +1201,8 @@
 			<value>UNPIVOT</value>
 		</tokens>
 		<params>
-			<stringparam name="id_" />
-			<stringparam name="mea" />
+			<aliasparam name="id_" />
+			<aliasparam name="mea" />
 		</params>
 	</mapping>
 

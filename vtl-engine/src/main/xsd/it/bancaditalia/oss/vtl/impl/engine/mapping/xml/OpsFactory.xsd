@@ -116,6 +116,7 @@
 			<xs:extension base="param">
 				<xs:choice xml:id="paramtypes" minOccurs="0" maxOccurs="unbounded">
 					<xs:element name="nullparam" type="nullparam" />
+					<xs:element name="aliasparam" type="aliasparam" />
 					<xs:element name="stringparam" type="stringparam" />
 					<xs:element name="exprparam" type="exprparam" />
 					<xs:element name="valueparam" type="valueparam" />
@@ -146,6 +147,12 @@
 	</xs:complexType>
 
 	<xs:complexType name="stringparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="aliasparam">
 		<xs:complexContent>
 			<xs:extension base="nonnullparam" />
 		</xs:complexContent>
@@ -182,6 +189,7 @@
 			<xs:extension base="nonnullparam">
 				<xs:choice minOccurs="2" maxOccurs="2">
 					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="aliasparam" type="aliasparam" />
 					<xs:element name="exprparam" type="exprparam" />
 					<xs:element name="valueparam" type="valueparam" />
 					<xs:element name="roleparam" type="roleparam" />
@@ -200,6 +208,7 @@
 			<xs:extension base="nonnullparam">
 				<xs:choice>
 					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="aliasparam" type="aliasparam" />
 					<xs:element name="exprparam" type="exprparam" />
 					<xs:element name="valueparam" type="valueparam" />
 					<xs:element name="roleparam" type="roleparam" />
@@ -218,6 +227,7 @@
 			<xs:extension base="nonnullparam">
 				<xs:choice minOccurs="1" maxOccurs="unbounded">
 					<xs:element name="stringparam" type="stringparam" />
+					<xs:element name="aliasparam" type="aliasparam" />
 					<xs:element name="exprparam" type="exprparam" />
 					<xs:element name="valueparam" type="valueparam" />
 					<xs:element name="roleparam" type="roleparam" />
@@ -238,6 +248,7 @@
 			<xs:extension base="nonnullparam">
 				<xs:choice minOccurs="1" maxOccurs="unbounded">
 					<xs:element name="nullparam" type="nullparam" />
+					<xs:element name="aliasparam" type="aliasparam" />
 					<xs:element name="stringparam" type="stringparam" />
 					<xs:element name="exprparam" type="exprparam" />
 					<xs:element name="valueparam" type="valueparam" />

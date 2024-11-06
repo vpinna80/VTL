@@ -28,6 +28,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
@@ -38,12 +39,12 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final String name;
+	private final VTLAlias name;
 	private final String regexpstr;
 	private final StringDomainSubset<?> parent;
 	private final SerPredicate<String> regexp;
 	
-	public RegExpDomainSubset(String name, String regexp, StringDomainSubset<?> parent)
+	public RegExpDomainSubset(VTLAlias name, String regexp, StringDomainSubset<?> parent)
 	{
 		this.name = requireNonNull(name);
 		this.regexpstr = requireNonNull(regexp);
@@ -64,7 +65,7 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 	}
 
 	@Override
-	public String getName()
+	public VTLAlias getAlias()
 	{
 		return name;
 	}

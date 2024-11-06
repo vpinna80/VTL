@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -41,7 +42,7 @@ public class DataSetParameter extends BaseParameter
 	
 	private final List<DataSetComponentConstraint> constraints;
 	
-	public DataSetParameter(String name, List<DataSetComponentConstraint> constraints)
+	public DataSetParameter(VTLAlias name, List<DataSetComponentConstraint> constraints)
 	{
 		super(name);
 		

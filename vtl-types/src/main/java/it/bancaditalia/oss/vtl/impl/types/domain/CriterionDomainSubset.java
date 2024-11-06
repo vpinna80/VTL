@@ -23,6 +23,7 @@ import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -31,12 +32,12 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String name;
+	private final VTLAlias alias;
 	private final S parent;
 	
- 	public CriterionDomainSubset(String name, S parent)
+ 	public CriterionDomainSubset(VTLAlias alias, S parent)
 	{
-		this.name = name;
+		this.alias = alias;
 		this.parent = parent;
 	}
 
@@ -72,15 +73,15 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 	}
 	
 	@Override
-	public String getName()
+	public VTLAlias getAlias()
 	{
-		return name;
+		return alias;
 	}
 	
 	@Override
 	public String toString()
 	{
-		return name;
+		return alias.toString();
 	}
 
 	@Override
@@ -88,7 +89,7 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((alias == null) ? 0 : alias.hashCode());
 		result = prime * result + ((parent == null) ? 0 : parent.hashCode());
 		return result;
 	}
@@ -101,12 +102,12 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 		if (!(obj instanceof CriterionDomainSubset))
 			return false;
 		CriterionDomainSubset<?, ?, ?, ?> other = (CriterionDomainSubset<?, ?, ?, ?>) obj;
-		if (name == null)
+		if (alias == null)
 		{
-			if (other.name != null)
+			if (other.alias != null)
 				return false;
 		}
-		else if (!name.equals(other.name))
+		else if (!alias.equals(other.alias))
 			return false;
 		if (parent == null)
 		{

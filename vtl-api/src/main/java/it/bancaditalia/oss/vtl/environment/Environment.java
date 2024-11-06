@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.environment;
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -39,7 +40,7 @@ public interface Environment
 	 * @param alias The name of requested object.
 	 * @return true if this environment provides the specified object.
 	 */
-	public default boolean contains(String alias)
+	public default boolean contains(VTLAlias alias)
 	{
 		return getValueMetadata(alias).isPresent();
 	}
@@ -51,7 +52,7 @@ public interface Environment
 	 * @param repo TODO
 	 * @return An Optional with a reference to the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<VTLValue> getValue(MetadataRepository repo, String alias);
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias);
 
 	/**
 	 * Persistently store the given value in this environment for later use
@@ -60,7 +61,7 @@ public interface Environment
 	 * @param alias The alias under which the value must be stored
 	 * @return true if this environment was able to store the value.
 	 */
-	public default boolean store(VTLValue value, String alias)
+	public default boolean store(VTLValue value, VTLAlias alias)
 	{
 		return false;
 	}
@@ -71,7 +72,7 @@ public interface Environment
 	 * @param alias The name of requested object
 	 * @return An Optional with a reference to the metadata of the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public default Optional<VTLValueMetadata> getValueMetadata(String alias)
+	public default Optional<VTLValueMetadata> getValueMetadata(VTLAlias alias)
 	{
 		return getValue(null, alias).map(DataSet.class::cast).map(DataSet::getMetadata);
 	}

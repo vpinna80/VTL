@@ -31,6 +31,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
+import static java.util.EnumSet.copyOf;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 
@@ -71,6 +72,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -78,6 +80,7 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
+import it.bancaditalia.oss.vtl.util.SerSupplier;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -92,9 +95,22 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		this.dataStructure = dataStructure;
 	}
-	
+
+	private static AbstractDataSet ofLambda(DataSetMetadata metadata, SerSupplier<Stream<DataPoint>> supplier)
+	{
+		return new AbstractDataSet(metadata) {
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return supplier.get();
+			}
+		};
+	}
+
 	@Override
-	public DataSet membership(String alias)
+	public DataSet membership(VTLAlias alias)
 	{
 		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
@@ -118,24 +134,15 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		DataSetMetadata newMetadata = new DataStructureBuilder(dataStructure).removeComponents(keyValues.keySet()).build();
 		
-		return new AbstractDataSet(newMetadata)
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected Stream<DataPoint> streamDataPoints()
-			{
-				return AbstractDataSet.this.stream()
-						.filter(dp -> dp.matches(keyValues))
-						.map(dp -> new DataPointBuilder(dp)
-								.delete(keyValues.keySet())
-								.build(lineageOperator.apply(dp), newMetadata));
-			}
-		};
+		return ofLambda(newMetadata, () -> stream()
+			.filter(dp -> dp.matches(keyValues))
+			.map(dp -> new DataPointBuilder(dp)
+					.delete(keyValues.keySet())
+					.build(lineageOperator.apply(dp), newMetadata)));
 	}
 
 	@Override
-	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name)
+	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias name)
 	{
 		return dataStructure.getComponent(name);
 	}
@@ -164,17 +171,9 @@ public abstract class AbstractDataSet implements DataSet
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(commonIds, Identifier.class), toConcurrentSet()));
 		}
 		
-		return new AbstractDataSet(metadata) {
-				private static final long serialVersionUID = 1L;
-	
-				@Override
-				protected Stream<DataPoint> streamDataPoints()
-				{
-					return AbstractDataSet.this.stream()
-							.map(dpThis -> flatMapDataPoint(predicate, mergeOp, commonIds, index, leftJoin, dpThis))
-							.collect(concatenating(ORDERED));
-				}
-			};
+		return ofLambda(metadata, () -> stream()
+				.map(dpThis -> flatMapDataPoint(predicate, mergeOp, commonIds, index, leftJoin, dpThis))
+				.collect(concatenating(ORDERED)));
 	}
 
 	protected static Stream<DataPoint> flatMapDataPoint(BiPredicate<DataPoint, DataPoint> predicate,
@@ -208,7 +207,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator,
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOp,
 			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
@@ -217,22 +216,13 @@ public abstract class AbstractDataSet implements DataSet
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
-		return new AbstractDataSet(metadata) {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected Stream<DataPoint> streamDataPoints()
-			{
-				return AbstractDataSet.this.stream()
-						.map(dp -> {
-							Lineage lineage = lineageOperator.apply(dp);
-							return operator.apply(dp)
-								.map(map -> new DataPointBuilder(dp.getValues(Identifier.class))
-										.addAll(map)
-										.build(lineage, metadata));
-						}).collect(concatenating(ORDERED));
-			}
-		};
+		// TODO: check why map/reduce doesn't work and flatmap is mandatory
+		return ofLambda(metadata, () -> stream()
+			.flatMap(dp -> {
+				Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIDValues = dp.getValues(Identifier.class);
+				return operator.apply(dp)
+					.map(map -> new DataPointBuilder(nonIDValues).addAll(map).build(lineageOp.apply(dp), metadata));
+			}));
 	}
 	
 	@Override
@@ -245,7 +235,7 @@ public abstract class AbstractDataSet implements DataSet
 		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
 		
 		// Decorated collector that keeps track of grouping key values for the finisher
-		EnumSet<Characteristics> characteristics = EnumSet.copyOf(groupCollector.characteristics());
+		EnumSet<Characteristics> characteristics = copyOf(groupCollector.characteristics());
 		characteristics.remove(IDENTITY_FINISH);
 		SerCollector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, A, T> decoratedCollector = SerCollector.of(
 				// supplier
@@ -331,15 +321,9 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		// Fast track when the functional aspect is preserved
 		if (!check)
-			return new AbstractDataSet(dataStructure) {
-				private static final long serialVersionUID = 1L;
-
-				@Override
-				protected Stream<DataPoint> streamDataPoints()
-				{
-					return Stream.concat(Stream.of(AbstractDataSet.this), others.stream()).map(DataSet::stream).collect(concatenating(ORDERED));
-				}
-			};
+			return ofLambda(dataStructure, () -> Stream.concat(Stream.of(AbstractDataSet.this), others.stream())
+					.map(DataSet::stream)
+					.collect(concatenating(ORDERED)));
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getIDs();
 		for (DataSet other: others)
@@ -403,7 +387,7 @@ public abstract class AbstractDataSet implements DataSet
 		LOGGER.debug("Requested streaming of {}", this);
 		
 		Stream<DataPoint> stream = streamDataPoints();
-		if (LOGGER.isTraceEnabled() && (!(this instanceof NamedDataSet) || !((NamedDataSet) this).getAlias().startsWith("csv:")))
+		if (LOGGER.isTraceEnabled() && (!(this instanceof NamedDataSet) || !((NamedDataSet) this).getAlias().getName().startsWith("csv:")))
 		{
 			AtomicBoolean dontpeek = new AtomicBoolean(false);
 			Map<Map<?, ?>, Integer> seen = new HashMap<>();

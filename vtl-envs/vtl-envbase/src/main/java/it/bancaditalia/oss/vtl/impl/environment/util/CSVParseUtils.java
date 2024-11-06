@@ -20,6 +20,10 @@
 package it.bancaditalia.oss.vtl.impl.environment.util;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.MONTH_PERIOD_FORMATTER;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.QUARTER_PERIOD_FORMATTER;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
+import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.YEAR_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
@@ -29,6 +33,9 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.io.Serializable;
+import java.time.DateTimeException;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,26 +47,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
+import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -71,25 +93,34 @@ public class CSVParseUtils
 	public static final String PERIOD_DOMAIN_PATTERN = "^[Tt][Ii][Mm][Ee]_[Pp][Ee][Rr][Ii][Oo][Dd]\\[(.*)\\]$";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVParseUtils.class);
+	private static final Map<DateTimeFormatter, TemporalQuery<? extends PeriodHolder<?>>> FORMATTERS = new HashMap<>();
+
+	static
+	{
+		FORMATTERS.put(MONTH_PERIOD_FORMATTER.get(), MonthPeriodHolder::new);
+		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), QuarterPeriodHolder::new);
+		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodHolder::new);
+		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodHolder::new);
+	}
 
 	private static class CSVVar<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>, Serializable
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final String name;
+		private final VTLAlias name;
 		private final S domain;
 		
 		private transient int hashCode;
 
 		@SuppressWarnings("unchecked")
-		public CSVVar(String name, ValueDomainSubset<?, ?> domain)
+		public CSVVar(VTLAlias name, ValueDomainSubset<?, ?> domain)
 		{
 			this.name = name;
 			this.domain = (S) domain;
 		}
 
 		@Override
-		public String getName()
+		public VTLAlias getAlias()
 		{
 			return name;
 		}
@@ -131,7 +162,7 @@ public class CSVParseUtils
 			if (obj instanceof Variable)
 			{
 				Variable<?, ?> var = (Variable<?, ?>) obj;
-				return name.equals(var.getName()) && domain.equals(var.getDomain());
+				return name.equals(var.getAlias()) && domain.equals(var.getDomain());
 			}
 			
 			return false;
@@ -151,6 +182,8 @@ public class CSVParseUtils
 			return NullValue.instanceFrom(component);
 		else if (component.getVariable().getDomain() instanceof StringDomainSubset)
 			return component.getVariable().getDomain().cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
+		else if (component.getVariable().getDomain() instanceof DurationDomainSubset)
+			return Frequency.valueOf(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation).get();
 		else if (component.getVariable().getDomain() instanceof IntegerDomainSubset)
 			try
 			{
@@ -184,7 +217,58 @@ public class CSVParseUtils
 				return BooleanValue.of(Boolean.parseBoolean(stringRepresentation));
 		else if (component.getVariable().getDomain() instanceof DateDomainSubset)
 			return DateValue.of(parseString(stringRepresentation, coalesce(mask, "YYYY-MM-DD")));
+		else if (component.getVariable().getDomain() instanceof TimePeriodDomainSubset)
+		{
+			if (mask != null)
+				throw new UnsupportedOperationException("A mask for time_period in a CSV file is not supported");
+			DateTimeException last = null;
+			for (DateTimeFormatter formatter : FORMATTERS.keySet())
+				try
+				{
+					formatter.parse(stringRepresentation, FORMATTERS.get(formatter));
+					return TimePeriodValue.of(FORMATTERS.get(formatter).queryFrom(formatter.parse(stringRepresentation)));
+				}
+				catch (DateTimeException e)
+				{
+					last = e;
+				}
+
+			throw new VTLNestedException("While parsing a time_period value for " + component, last);
+		}
+		else if (component.getVariable().getDomain() instanceof TimeDomainSubset)
+		{
+			if (mask != null)
+				throw new UnsupportedOperationException("A mask for time in a CSV file is not supported");
+			
+			String[] items = stringRepresentation.split("/", 2);
+			ScalarValue<?, ?, ?, ?>[] limits = new TimeValue<?, ?, ?, ?>[2];
+			
+			for (int i = 0; i < 2; i++)
+				try
+				{
+					limits[i] = DateValue.of(parseString(items[i], "YYYY-MM-DD"));
+				}
+				catch (RuntimeException e)
+				{
+					DateTimeException last = null;
+					for (DateTimeFormatter formatter : FORMATTERS.keySet())
+						try
+						{
+							limits[i] = TimePeriodValue.of(formatter.parse(items[i], FORMATTERS.get(formatter)));
+							break;
+						}
+						catch (DateTimeException e1)
+						{
+							last = e1;
+						}
 	
+					if (limits[i] == null)
+						throw last;
+				}
+			
+			return GenericTimeValue.of((TimeValue<?, ?, ?, ?>) limits[0], (TimeValue<?, ?, ?, ?>) limits[1]);
+		}
+		
 		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getVariable().getDomain());
 	}
 
@@ -202,8 +286,8 @@ public class CSVParseUtils
 			return new SimpleEntry<>(DATEDS, typeName.replaceAll(DATE_DOMAIN_PATTERN, "$1"));
 		else if ("DATE".equalsIgnoreCase(typeName))
 			return new SimpleEntry<>(DATEDS, "YYYY-MM-DD");
-		else if (repo != null && repo.isDomainDefined(typeName))
-			return new SimpleEntry<>(repo.getDomain(typeName), typeName);
+		else if (repo != null && repo.isDomainDefined(VTLAliasImpl.of(typeName)))
+			return new SimpleEntry<>(repo.getDomain(VTLAliasImpl.of(typeName)), typeName);
 	
 		throw new VTLException("Unsupported type: " + typeName);
 	}
@@ -243,9 +327,9 @@ public class CSVParseUtils
 
 			String compName = cname.replaceAll("^[$#]", "");
 			if (repo != null)
-				component = repo.createTempVariable(compName, domain).as(role);
+				component = repo.createTempVariable(VTLAliasImpl.of(compName), domain).as(role);
 			else
-				component = new CSVVar<>(compName, domain).as(role);
+				component = new CSVVar<>(VTLAliasImpl.of(compName), domain).as(role);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)

@@ -67,6 +67,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -79,9 +80,9 @@ public class CachedDataSet extends NamedDataSet
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedDataSet.class);
-	private static final WeakHashMap<VTLSession, Map<String, CacheWaiter>> SESSION_CACHES = new WeakHashMap<>(); 
+	private static final WeakHashMap<VTLSession, Map<VTLAlias, CacheWaiter>> SESSION_CACHES = new WeakHashMap<>(); 
 	private static final ReferenceQueue<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> REF_QUEUE = new ReferenceQueue<>();
-	private static final Map<Reference<?>, Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
+	private static final Map<Reference<?>, Entry<VTLAlias, Set<DataStructureComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
 
 	private final transient CacheWaiter waiter;
 	private transient volatile SoftReference<Set<DataPoint>> unindexed = new SoftReference<>(null);
@@ -103,7 +104,7 @@ public class CachedDataSet extends NamedDataSet
 						Reference<? extends Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> ref;
 						while ((ref = REF_QUEUE.poll()) != null)
 						{
-							Entry<String, Set<DataStructureComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(ref);
+							Entry<VTLAlias, Set<DataStructureComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(ref);
 							if (data != null)
 								LOGGER.warn("Cleaned an index of {} over {}", data.getKey(), data.getValue());
 						}
@@ -130,10 +131,10 @@ public class CachedDataSet extends NamedDataSet
 		private final Semaphore semaphore = new Semaphore(1);
 		private final Map<Set<DataStructureComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>> cache = new ConcurrentHashMap<>();
 		
-		private final transient String alias;
+		private final transient VTLAlias alias;
 		private transient AtomicReference<Thread> lockingRef = new AtomicReference<>();
 
-		public CacheWaiter(String alias, Set<DataStructureComponent<Identifier, ?, ?>> ids)
+		public CacheWaiter(VTLAlias alias, Set<DataStructureComponent<Identifier, ?, ?>> ids)
 		{
 			List<Set<DataStructureComponent<Identifier, ?, ?>>> accumulator = new ArrayList<>();
 			this.alias = alias;
@@ -204,13 +205,13 @@ public class CachedDataSet extends NamedDataSet
 		}
 	}
 
-	public CachedDataSet(VTLSessionImpl session, String alias, DataSet delegate)
+	public CachedDataSet(VTLSessionImpl session, VTLAlias alias, DataSet delegate)
 	{
 		super(alias, delegate);
 		
 		synchronized (SESSION_CACHES)
 		{
-			Map<String, CacheWaiter> waitersMap = SESSION_CACHES.get(session);
+			Map<VTLAlias, CacheWaiter> waitersMap = SESSION_CACHES.get(session);
 			if (waitersMap == null)
 			{
 				waitersMap = new ConcurrentHashMap<>();
@@ -331,7 +332,7 @@ public class CachedDataSet extends NamedDataSet
 
 	protected Stream<DataPoint> getUnindexedCache(boolean unlockWhenComplete)
 	{
-		String alias = getAlias();
+		VTLAlias alias = getAlias();
 
 		LOGGER.debug("Cache miss for {}, start caching.", alias);
 		Set<DataPoint> cache = unindexed.get();
@@ -366,7 +367,7 @@ public class CachedDataSet extends NamedDataSet
 
 	protected Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys)
 	{
-		String alias = getAlias();
+		VTLAlias alias = getAlias();
 		LOGGER.debug("Index miss for {}, start indexing on {}.", alias, keys);
 
 		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;

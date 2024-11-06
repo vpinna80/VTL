@@ -54,6 +54,7 @@ import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -62,6 +63,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -81,18 +83,25 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	{
 		private static final long serialVersionUID = 1L;
 		
-		private final String component;
-		private final AggregateTransformation operand;
 		private final Class<? extends Component> role;
+		private final VTLAlias component;
+		private final AggregateTransformation operand;
+
+		public AggrClauseItem(Class<? extends Component> role, VTLAlias component, AggregateTransformation operand)
+		{
+			this.role = role;
+			this.component = component;
+			this.operand = operand;
+		}
 
 		public AggrClauseItem(AggrClauseItem other, GroupingClause groupingClause, Transformation havingExpr)
 		{
-			this.component = other.component;
 			this.role = other.role;
+			this.component = other.component;
 			this.operand = new AggregateTransformation(other.operand, groupingClause, havingExpr, role, component);
 		}
 
-		public String getName()
+		public VTLAlias getName()
 		{
 			return component;
 		}
@@ -233,9 +242,17 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			if (having != null)
 			{
 				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, beforeHaving));
-				if (!BOOLEAN.equals(havingMeta))
+				ValueDomainSubset<?, ?> domain;
+				if (havingMeta instanceof ScalarValueMetadata<?, ?>)
+					domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
+				else if (havingMeta instanceof DataSetMetadata)
+					domain = ((DataSetMetadata) havingMeta).getSingleton(Measure.class).getVariable().getDomain();
+				else
+					domain = null;
+					
+				if (domain != null && !Domains.BOOLEANDS.isAssignableFrom(domain))
 					throw new VTLIncompatibleParametersException("having", BOOLEAN, havingMeta);
-			}
+			} 
 
 			return beforeHaving;
 		}

@@ -31,6 +31,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -90,7 +91,7 @@ public class NotTransformation extends UnaryTransformation
 			
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 			if (measures.size() == 0)
-				throw new VTLMissingComponentsException("measure", dataset);
+				throw new VTLMissingComponentsException(VTLAliasImpl.of("a measure"), dataset);
 			
 			measures.stream().forEach(m -> {
 				if (!BOOLEANDS.isAssignableFrom(m.getVariable().getDomain()))

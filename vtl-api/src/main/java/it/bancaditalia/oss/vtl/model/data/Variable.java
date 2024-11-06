@@ -44,7 +44,7 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	 */
 	public static int byName(Variable<?, ?> v1, Variable<?, ?> v2)
 	{
-		String n1 = v1.getName(), n2 = v2.getName();
+		String n1 = v1.getAlias().getName(), n2 = v2.getAlias().getName();
 		Pattern pattern = Pattern.compile("^(.+?)(\\d+)$");
 		Matcher m1 = pattern.matcher(n1), m2 = pattern.matcher(n2);
 		if (m1.find() && m2.find() && m1.group(1).equals(m2.group(1)))
@@ -54,23 +54,9 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	}
 
 	/**
-	 * Normalize a VTL alias to lowercase unless it is single-quoted.
-	 * 
-	 * @param alias the alias to normalize
-	 * @return the normalized alias
+	 * @return the {@link VTLAlias} of this {@link Variable}.
 	 */
-	public static String normalizeAlias(String alias)
-	{
-		if (alias.matches("'.*'"))
-			return alias.replaceAll("'(.*)'", "$1");
-		else
-			return alias.toLowerCase();
-	}
-
-	/**
-	 * @return the name of this {@link Variable}.
-	 */
-	public String getName();
+	public VTLAlias getAlias();
 
 	/**
 	 * Returns a {@link DataStructureComponent} referring this variable with the specified {@link Component} role.
@@ -109,7 +95,7 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	{
 		int prime = 31;
 		int result = prime + getDomain().hashCode();
-		result = prime * result + getName().hashCode();
+		result = prime * result + getAlias().hashCode();
 		return result;
 	}
 }

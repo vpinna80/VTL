@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.model.transform;
 
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+
 /**
  * Definition of Parameter for a custom VTL operator.
  * 
@@ -30,7 +32,7 @@ public interface Parameter
 	/**
 	 * @return the alias used for this parameter
 	 */
-	public String getAlias();
+	public VTLAlias getAlias();
 	
 	/**
 	 * Checks if the provided metadata argument matches this Parameter definition

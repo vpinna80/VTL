@@ -25,11 +25,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -44,13 +46,13 @@ public enum TestComponents
 	ATTRIBUTE("ATTRIBUTE", Attribute.class, STRINGDS),
 	QUOTED("QUOTED", Attribute.class, STRINGDS);
 	
-	private String vname;
+	private VTLAlias vname;
 	private Class<? extends Component> role;
 	private ValueDomainSubset<?, ?> domain;
 
 	private TestComponents(String vname, Class<? extends Component> role, ValueDomainSubset<?, ?> domain)
 	{
-		this.vname = vname;
+		this.vname = VTLAliasImpl.of(vname);
 		this.role = role;
 		this.domain = domain;
 	}

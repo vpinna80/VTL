@@ -101,7 +101,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param name the name of the desired component
 	 * @return true if this {@link DataSetMetadata} contains a component with the specified name.
 	 */
-	public boolean contains(String name);
+	public boolean contains(VTLAlias name);
 
 	/**
 	 * Queries this {@link DataSetMetadata} for a component with the specified name.
@@ -109,7 +109,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param name the name of the desired component
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name);
+	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias name);
 
 	/**
 	 * Queries this {@link DataSetMetadata} for a component with the specified name and value domain.
@@ -118,7 +118,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default Optional<DataStructureComponent<?, ?, ?>> getComponent(String name, ValueDomainSubset<?, ?> domain)
+	public default Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias name, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()));
@@ -132,7 +132,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param role the role to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role)
+	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(VTLAlias name, Class<R> role)
 	{
 		return getComponent(name)
 				.filter(c -> c.is(role))
@@ -148,7 +148,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param domain the domain to query
 	 * @return an {@link Optional} containing the component if one exists.
 	 */
-	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(String name, Class<R> role, ValueDomainSubset<?, ?> domain)
+	public default <R extends Component> Optional<DataStructureComponent<R, ?, ?>> getComponent(VTLAlias name, Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
 		return getComponent(name)
 				.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()))
@@ -170,7 +170,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param name the name of the component on which the membership operation is performed
 	 * @return The new structure.
 	 */
-	public DataSetMetadata membership(String name);
+	public DataSetMetadata membership(VTLAlias name);
 
 	/**
 	 * Creates a new structure by joining this and another {@link DataSetMetadata}.
@@ -215,7 +215,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 		return set.iterator().next();
 	}
 	
-	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends String> names, String operation)
+	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends VTLAlias> names, String operation)
 	{
 		if (names == null || names.isEmpty())
 			return getIDs();

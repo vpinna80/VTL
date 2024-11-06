@@ -30,7 +30,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
@@ -58,13 +58,13 @@ public class TimeAggTransformation extends UnaryTransformation
 		FIRST, LAST
 	}
 
-	private final Duration frequency;
+	private final Frequency frequency;
 	private final PeriodDelimiter delimiter;
 
 	public TimeAggTransformation(Transformation operand, String periodTo, String periodFrom, PeriodDelimiter delimiter)
 	{
 		super(operand);
-		frequency = Duration.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
+		frequency = Frequency.valueOf(periodTo.replaceAll("^\"(.*)\"$", "$1"));
 		this.delimiter = Utils.coalesce(delimiter, LAST);
 	}
 
@@ -77,7 +77,7 @@ public class TimeAggTransformation extends UnaryTransformation
 		{
 			TimePeriodValue<?> period = frequency.wrap((TimeValue<?, ?, ?, ?>) scalar);
 			if (scalar instanceof DateValue)
-				return delimiter == FIRST ? period.get().startDate() : period.get().endDate();
+				return DateValue.of(delimiter == FIRST ? period.get().startDate() : period.get().endDate());
 			else if (scalar instanceof TimePeriodValue)
 				return period;
 			else

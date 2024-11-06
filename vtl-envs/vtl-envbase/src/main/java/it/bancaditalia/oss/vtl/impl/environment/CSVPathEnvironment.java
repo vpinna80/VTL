@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.environment;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
@@ -61,11 +60,13 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -96,24 +97,24 @@ public class CSVPathEnvironment implements Environment
 	}
 	
 	@Override
-	public boolean contains(String name)
+	public boolean contains(VTLAlias name)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Optional<VTLValueMetadata> getValueMetadata(String alias)
+	public Optional<VTLValueMetadata> getValueMetadata(VTLAlias alias)
 	{
-		throw new UnsupportedOperationException(alias);
+		throw new UnsupportedOperationException(alias.toString());
 	}
 	
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		String source = repo.getDatasetSource(alias);
 		String fileName;
 		
-		fileName = source.startsWith("csv:") ? source.substring(4) : source == alias ? source + ".csv" : source;
+		fileName = source.startsWith("csv:") ? source.substring(4) : source == alias.toString() ? source + ".csv" : source;
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
 		return paths.stream()
@@ -155,12 +156,10 @@ public class CSVPathEnvironment implements Environment
 		{
 			// match each column header to a component 
 			String[] fields = reader.readLine().split(",");
-			for (int i = 0; i < fields.length; i++)
-				fields[i] = normalizeAlias(fields[i]);
-			
 			metadata = new ArrayList<>();
+			
 			for (String field: fields)
-				metadata.add(structure.getComponent(field).orElseThrow(() -> new IllegalStateException("Unknown CSV field " + field + " for structure " + structure)));
+				metadata.add(structure.getComponent(VTLAliasImpl.of(field)).orElseThrow(() -> new IllegalStateException("Unknown CSV field " + field + " for structure " + structure)));
 			for (DataStructureComponent<?, ?, ?> comp: structure)
 				if (!metadata.contains(comp))
 					throw new VTLMissingComponentsException(comp, metadata);

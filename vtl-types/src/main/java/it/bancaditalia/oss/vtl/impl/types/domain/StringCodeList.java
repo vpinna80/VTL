@@ -34,6 +34,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -69,33 +70,33 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	}
 
 	protected final StringDomainSubset<?> parent;
-	protected final String name; 
+	protected final VTLAlias alias; 
 	protected final Set<CodeItem<?, ?, StringCodeList, StringDomain>> items = new HashSet<>();
 	
 	protected int hashCode;
 
-	public StringCodeList(StringDomainSubset<?> parent, String name, Set<? extends String> items)
+	public StringCodeList(StringDomainSubset<?> parent, VTLAlias alias, Set<? extends String> items)
 	{
-		this.name = name;
+		this.alias = alias;
 		this.parent = parent;
+		
 		for (String item: items)
 			this.items.add(new StringCodeItem(item, this));
-
-		hashCode = 31 + name.hashCode() + this.items.hashCode();
+		hashCode = 31 + alias.hashCode() + this.items.hashCode();
 	}
 	
 
-	public StringCodeList(StringDomainSubset<?> parent, String name)
+	public StringCodeList(StringDomainSubset<?> parent, VTLAlias alias)
 	{
-		this.name = name;
+		this.alias = alias;
 		this.parent = parent;
 	}
 
 
 	@Override
-	public final String getName()
+	public VTLAlias getAlias()
 	{
-		return name;
+		return alias;
 	}
 
 	@Override
@@ -124,7 +125,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 		if (!(obj instanceof StringEnumeratedDomainSubset))
 			return false;
 		StringEnumeratedDomainSubset<?, ?> other = (StringEnumeratedDomainSubset<?, ?>) obj;
-		if (!name.equals(other.getName()))
+		if (!alias.equals(other.getAlias()))
 			return false;
 
 		return getCodeItems().equals(other.getCodeItems());
@@ -149,7 +150,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 			if (getCodeItems().contains(value))
 				return new StringCodeItem((String) value.get(), this);
 
-			LOGGER.warn("Code {} was not found on codelist {} = {}", value.get(), name, new TreeSet<>(getCodeItems()));
+			LOGGER.warn("Code {} was not found on codelist {} = {}", value.get(), alias, new TreeSet<>(getCodeItems()));
 		}
 
 		throw new VTLCastException(this, value);
@@ -158,7 +159,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	@Override
 	public String toString()
 	{
-		return name + ":" + parent;
+		return alias + ":" + parent;
 	}
 
 	@Override
@@ -170,7 +171,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof StringCodeList && name.equals(((StringCodeList) other).name);
+		return other instanceof StringCodeList && alias.equals(((StringCodeList) other).alias);
 	}
 
 

@@ -35,6 +35,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -58,7 +59,7 @@ public class DatapointScope extends AbstractScope
 	}
 
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
 			return true;
@@ -67,7 +68,7 @@ public class DatapointScope extends AbstractScope
 	}
 
 	@Override
-	public VTLValue resolve(String alias) 
+	public VTLValue resolve(VTLAlias alias) 
 	{
 		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
 			return new StreamWrapperDataSet(structure, Collections.singleton(dp)::stream);
@@ -77,7 +78,7 @@ public class DatapointScope extends AbstractScope
 	}
 	
 	@Override
-	public VTLValueMetadata getMetadata(String alias)
+	public VTLValueMetadata getMetadata(VTLAlias alias)
 	{
 		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
 			return structure;
@@ -87,7 +88,7 @@ public class DatapointScope extends AbstractScope
 	}
 
 	@Override
-	public DMLStatement getRule(String node)
+	public DMLStatement getRule(VTLAlias node)
 	{
 		return null;
 	}

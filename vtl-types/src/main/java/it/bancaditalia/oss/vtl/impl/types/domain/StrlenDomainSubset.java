@@ -26,6 +26,7 @@ import java.util.OptionalInt;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
@@ -42,7 +43,7 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	
 	public StrlenDomainSubset(S parent, OptionalInt minLenInclusive, OptionalInt maxLenInclusive)
 	{
-		super(parent.getName() + (minLenInclusive.isPresent() ? ">=" + minLenInclusive.getAsInt() : "") + (maxLenInclusive.isPresent() ? "<=" + maxLenInclusive.getAsInt() : ""), parent);
+		super(VTLAliasImpl.of(parent.getAlias() + (minLenInclusive.isPresent() ? ">=" + minLenInclusive.getAsInt() : "") + (maxLenInclusive.isPresent() ? "<=" + maxLenInclusive.getAsInt() : "")), parent);
 		
 		this.minLenInclusive = requireNonNull(minLenInclusive);
 		this.maxLenInclusive = requireNonNull(maxLenInclusive);

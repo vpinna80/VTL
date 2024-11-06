@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.model.domain;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+
 /**
  * A standard unrestricted VTL valuedomain as defined in VTL specification. 
  * 
@@ -39,7 +41,7 @@ public interface ValueDomain extends Serializable
 	/**
 	 * @return the name of this subset
 	 */
-	public String getName();
+	public VTLAlias getAlias();
 	
 	/**
 	 * Check if a value of a given ValueDomain can be compared to a value of this ValueDomain

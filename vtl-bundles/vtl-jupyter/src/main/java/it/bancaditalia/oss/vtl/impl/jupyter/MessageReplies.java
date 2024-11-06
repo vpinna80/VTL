@@ -47,6 +47,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.impl.jupyter.VTLJupyterKernel.MessageChannel;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Role;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -155,7 +156,7 @@ public class MessageReplies
 			
 			Map<String, VTLValue> values = new HashMap<>();
 			for (int i = start.get(); i < tokens.length; i++)
-				values.put(tokens[i], vtlSession.resolve(tokens[i]));
+				values.put(tokens[i], vtlSession.resolve(VTLAliasImpl.of(tokens[i])));
 			
 			Map<Boolean, List<Entry<String, VTLValue>>> partitioned = values.entrySet().stream().collect(partitioningBy(entryByValue(ScalarValue.class::isInstance)));
 			JupyterMessage results = createReplyMessage("execute_result", request);

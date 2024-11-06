@@ -37,11 +37,13 @@ import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -62,21 +64,21 @@ public class SubstrTransformationTest
 	@MethodSource
 	public void test(DataSet dataset, Long startV, Long lengthV, String[] expected)
 	{
-		VarIDOperand ds = new VarIDOperand("left");
+		VarIDOperand ds = new VarIDOperand(VTLAliasImpl.of("left"));
 		ConstantOperand start = new ConstantOperand(IntegerValue.of(startV));
 		ConstantOperand length = new ConstantOperand(IntegerValue.of(lengthV));
-		Map<String, VTLValue> map = new HashMap<>();
-		map.put("left", dataset);
+		Map<VTLAlias, VTLValue> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), dataset);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		SubstrTransformation substrTransformation = new SubstrTransformation(ds, start, length);
 		
 		DataSetMetadata metadata = (DataSetMetadata) substrTransformation.getMetadata(session);
-		assertTrue(metadata.contains("string_2"));
+		assertTrue(metadata.contains(VTLAliasImpl.of("string_2")));
 		
 		DataSet computedResult = (DataSet) substrTransformation.eval(session);
-		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
-		Optional<DataStructureComponent<Measure, ?, ?>> oMeasure = metadata.getComponent("string_2", Measure.class, STRINGDS);
+		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS);		
+		Optional<DataStructureComponent<Measure, ?, ?>> oMeasure = metadata.getComponent(VTLAliasImpl.of("string_2"), Measure.class, STRINGDS);
 		
 		assertTrue(oId.isPresent(), "String id present");
 		assertTrue(oMeasure.isPresent(), "String measure is present");

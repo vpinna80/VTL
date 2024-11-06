@@ -19,8 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -30,7 +32,7 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 	private static final long serialVersionUID = 1L;
 	
 	private final Class<R> role;
-	private final String name;
+	private final VTLAlias alias;
 	private final S domain;
 	
 	private class VarImpl implements Variable<S, D>
@@ -38,11 +40,11 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public String getName()
+		public VTLAlias getAlias()
 		{
-			return name;
+			return alias;
 		}
-
+		
 		@Override
 		public S getDomain()
 		{
@@ -52,7 +54,7 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 		@Override
 		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
 		{
-			return new ComponentMock<>(name, role, domain);
+			return new ComponentMock<>(alias, role, domain);
 		}
 
 		@Override
@@ -61,7 +63,7 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + domain.hashCode();
-			result = prime * result + name.hashCode();
+			result = prime * result + alias.hashCode();
 			return result;
 		}
 
@@ -73,7 +75,7 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 			if (obj instanceof Variable)
 			{
 				Variable<?, ?> other = (Variable<?, ?>) obj;
-				return name.equals(other.getName()) && domain.equals(other.getDomain());
+				return alias.equals(other.getAlias()) && domain.equals(other.getDomain());
 			}
 			
 			return false;
@@ -88,7 +90,14 @@ public class ComponentMock<R extends Component, S extends ValueDomainSubset<S, D
 	public ComponentMock(String name, Class<R> role, S domain)
 	{
 		this.role = role;
-		this.name = name;
+		this.alias = VTLAliasImpl.of(name);
+		this.domain = domain;
+	}
+	
+	public ComponentMock(VTLAlias name, Class<R> role, S domain)
+	{
+		this.role = role;
+		this.alias = name;
 		this.domain = domain;
 	}
 	

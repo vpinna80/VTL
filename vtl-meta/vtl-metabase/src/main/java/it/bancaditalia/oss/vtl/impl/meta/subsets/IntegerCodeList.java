@@ -30,6 +30,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.DefaultVariable;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
@@ -40,7 +41,7 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String name; 
+	private final VTLAlias alias; 
 	private final IntegerDomainSubset<?> parent;
 	private final Set<CodeItem<?, ?, IntegerCodeList, IntegerDomain>> items = new HashSet<>();
 	private final int hashCode;
@@ -67,9 +68,9 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 		}
 	}
 	
-	public IntegerCodeList(String name, IntegerDomainSubset<?> parent, Set<? extends Long> items)
+	public IntegerCodeList(VTLAlias name, IntegerDomainSubset<?> parent, Set<? extends Long> items)
 	{
-		this.name = name;
+		this.alias = name;
 		this.parent = parent;
 		this.hashCode = 31 + name.hashCode();
 		for (Long item: items)
@@ -77,9 +78,9 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	}
 	
 	@Override
-	public String getName()
+	public VTLAlias getAlias()
 	{
-		return name;
+		return alias;
 	}
 
 	@Override
@@ -104,7 +105,7 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof IntegerCodeList && name.equals(((IntegerCodeList) other).name);
+		return other instanceof IntegerCodeList && alias.equals(((IntegerCodeList) other).alias);
 	}
 
 	@Override
@@ -122,7 +123,7 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	@Override
 	public String toString()
 	{
-		return name + ":" + parent;
+		return alias + ":" + parent;
 	}
 
 	@Override
@@ -141,7 +142,7 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 		if (getClass() != obj.getClass())
 			return false;
 		IntegerCodeList other = (IntegerCodeList) obj;
-		if (!name.equals(other.name))
+		if (!alias.equals(other.alias))
 			return false;
 		if (!items.equals(other.items))
 			return false;

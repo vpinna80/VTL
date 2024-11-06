@@ -23,6 +23,8 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.util.SerBiPredicate.not;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.joining;
 
@@ -42,6 +44,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -87,21 +90,13 @@ public class InclusionTransformation extends UnaryTransformation
 
 	private final InOperator operator;
 	private final Set<ScalarValue<?, ?, ?, ?>> set;
-	private final String domainName;
+	private final VTLAlias domainName;
 
-	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?, ?>> list)
+	public InclusionTransformation(InOperator operator, Transformation operand, List<ScalarValue<?, ?, ?, ?>> list, VTLAlias domainName)
 	{
 		super(operand);
 		this.operator = operator;
-		this.set = new HashSet<>(list);
-		domainName = null;
-	}
-
-	public InclusionTransformation(InOperator operator, Transformation operand, String domainName) throws ClassNotFoundException
-	{
-		super(operand);
-		this.operator = operator;
-		this.set = new HashSet<>();
+		this.set = new HashSet<>(coalesce(list, emptyList()));
 		this.domainName = domainName;
 	}
 

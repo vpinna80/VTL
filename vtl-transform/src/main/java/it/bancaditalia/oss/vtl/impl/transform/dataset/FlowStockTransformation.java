@@ -47,6 +47,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -157,9 +158,9 @@ public class FlowStockTransformation extends UnaryTransformation
 					.collect(toSet());
 			
 			if (ids.size() == 0)
-				throw new VTLMissingComponentsException("Time identifier", ids);
+				throw new VTLMissingComponentsException(VTLAliasImpl.of("Time identifier"), ids);
 			
-			main = dsmeta.contains("TIME_PERIOD") ? dsmeta.getComponent("TIME_PERIOD", Identifier.class).get() : ids.iterator().next(); 
+			main = dsmeta.contains(VTLAliasImpl.of("TIME_PERIOD")) ? dsmeta.getComponent(VTLAliasImpl.of("TIME_PERIOD"), Identifier.class).get() : ids.iterator().next(); 
 			if (ids.size() > 1)
 			{
 				LOGGER.warn("Expected only one identifier, but found: " + ids);
@@ -169,7 +170,7 @@ public class FlowStockTransformation extends UnaryTransformation
 			
 			Set<? extends DataStructureComponent<Measure, ?, ?>> measures = dsmeta.getMeasures();
 			if (measures.size() == 0)
-				throw new VTLMissingComponentsException("At least one numeric measure", dsmeta);
+				throw new VTLMissingComponentsException(VTLAliasImpl.of("At least one numeric measure"), dsmeta);
 			
 			for (DataStructureComponent<Measure, ?, ?> measure: measures)
 				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))

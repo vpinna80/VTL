@@ -33,7 +33,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.IMBALAN
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.RULEID;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
@@ -75,9 +74,9 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
@@ -102,20 +101,20 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	}
 
 	private final Transformation operand;
-	private final String rulesetID;
-	private final List<String> conditions;
-	private final String id;
+	private final VTLAlias rulesetID;
+	private final List<VTLAlias> conditions;
+	private final VTLAlias id;
 	private final HierarchyMode mode;
 	private final Input input;
 	private final Output output;
 
-	public CheckHierarchyTransformation(Transformation operand, String rulesetID, List<String> conditions, String id, HierarchyMode mode, Input input, Output output)
+	public CheckHierarchyTransformation(Transformation operand, VTLAlias rulesetID, List<VTLAlias> conditions, VTLAlias id, HierarchyMode mode, Input input, Output output)
 	{
 		this.operand = operand;
-		this.rulesetID = normalizeAlias(requireNonNull(rulesetID));
-		this.conditions = coalesce(conditions, new ArrayList<>()).stream().map(Variable::normalizeAlias).collect(toList());
+		this.rulesetID = requireNonNull(rulesetID);
+		this.conditions = coalesce(conditions, new ArrayList<>()).stream().collect(toList());
 		
-		this.id = id != null ? normalizeAlias(id) : null;
+		this.id = id;
 		this.mode = coalesce(mode, NON_NULL);
 		this.input = coalesce(input, DATASET);
 		this.output = coalesce(output, INVALID);
@@ -142,12 +141,12 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			idComp = dataset.getComponent(id).orElseThrow(() -> new VTLMissingComponentsException(id, ids));
 		else
 		{
-			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleset.getRuleId());
-			idComp = dataset.getComponent(variable.getName()).orElseThrow(() -> new VTLMissingComponentsException(variable.getName(), ids));
+			VTLAlias variableName = scheme.getRepository().getVariable(ruleset.getRuleId()).getAlias();
+			idComp = dataset.getComponent(variableName).orElseThrow(() -> new VTLMissingComponentsException(variableName, ids));
 		}
 		
 		ids.remove(idComp);
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getSingleton(Measure.class);
 		DataSetMetadata newStructure = (DataSetMetadata) this.getMetadata(scheme);
 
 		var finisher = new Finisher(allRules, idComp, measure, newStructure);
@@ -209,7 +208,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return "check_hierarchy(" + operand + ", " + rulesetID + (conditions.isEmpty() ? "" : " condition " + String.join(", ", conditions)) + (id == null ? "" : " rule " + id) + " "
+		return "check_hierarchy(" + operand + ", " + rulesetID + (conditions.isEmpty() ? "" : " condition " + String.join(", ", conditions.toString())) + (id == null ? "" : " rule " + id) + " "
 				+ mode.toString().toLowerCase() + " " + input.toString().toLowerCase() + " " + output.toString().toLowerCase() + "\")";
 	}
 
@@ -272,7 +271,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 						builder = builder.add(BOOL_VAR, BooleanValue.of(sat));
 
 					result.add(builder.add(idComp, rule.getLeftCodeItem())
-							.add(RULEID, StringValue.of(rule.getName()))
+							.add(RULEID, StringValue.of(rule.getAlias().toString()))
 							.add(IMBALANCE, createNumberValue(imbalance))
 							.add(ERRORCODE, rule.getErrorCode())
 							.add(ERRORLEVEL, rule.getErrorLevel())

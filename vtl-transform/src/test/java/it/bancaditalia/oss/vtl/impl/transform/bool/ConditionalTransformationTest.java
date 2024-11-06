@@ -34,9 +34,11 @@ import org.junit.jupiter.api.Test;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ConditionalTransformationTest
@@ -52,13 +54,13 @@ public class ConditionalTransformationTest
 	@BeforeEach
 	public void before()
 	{
-		cond = new VarIDOperand("cond");
-		left = new VarIDOperand("left");
-		right = new VarIDOperand("right");
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("cond", SAMPLE3);
-		map.put("left", SAMPLE5);
-		map.put("right", SAMPLE6);
+		cond = new VarIDOperand(VTLAliasImpl.of("cond"));
+		left = new VarIDOperand(VTLAliasImpl.of("left"));
+		right = new VarIDOperand(VTLAliasImpl.of("right"));
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("cond"), SAMPLE3);
+		map.put(VTLAliasImpl.of("left"), SAMPLE5);
+		map.put(VTLAliasImpl.of("right"), SAMPLE6);
 		session = TestUtils.mockSession(map);
 	}
 	
@@ -68,15 +70,15 @@ public class ConditionalTransformationTest
 		ConditionalTransformation arTransformation = new ConditionalTransformation(cond, left, right);
 		
 		DataSetMetadata metadata = (DataSetMetadata) arTransformation.getMetadata(session);
-		assertTrue(metadata.contains("integer_1"));
+		assertTrue(metadata.contains(VTLAliasImpl.of("integer_1")));
 		
 		DataSet computedResult = (DataSet) arTransformation.eval(session);
 		
 		assertEquals(INTEGER_RESULTS.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent("string_1").get();
-		DataStructureComponent<?, ?, ?> measure = metadata.getComponent("integer_1").get();
+		DataStructureComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();
+		DataStructureComponent<?, ?, ?> measure = metadata.getComponent(VTLAliasImpl.of("integer_1")).get();
 		
 		computedResult.stream()
 			.map(dp -> new SimpleEntry<>(dp.get(id).get().toString().charAt(0) - 'A', dp.get(measure).get()))

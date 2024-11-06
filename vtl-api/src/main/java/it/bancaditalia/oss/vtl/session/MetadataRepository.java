@@ -19,9 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.session;
 
+import java.util.Optional;
+
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
@@ -40,7 +43,7 @@ public interface MetadataRepository
 	 * @param name the name of the domain to check
 	 * @return true if a domain exists.
 	 */
-	public boolean isDomainDefined(String name);
+	public boolean isDomainDefined(VTLAlias name);
 	
 	/**
 	 * Returns a domain with the specified name if it exists.
@@ -48,7 +51,7 @@ public interface MetadataRepository
 	 * @param name the name of the domain
 	 * @return the domain or null if none exists.
 	 */
-	public ValueDomainSubset<?, ?> getDomain(String name);
+	public ValueDomainSubset<?, ?> getDomain(VTLAlias name);
 
 	/**
 	 * Returns the source definition for the dataset with the specified name if it's defined.
@@ -56,7 +59,7 @@ public interface MetadataRepository
 	 * @param name the name of the dataset
 	 * @return the source definition or null if it's not defined.
 	 */
-	public String getDatasetSource(String name);
+	public String getDatasetSource(VTLAlias name);
 
 	/**
 	 * Returns a dataset structure with the specified name if it exists.
@@ -64,7 +67,7 @@ public interface MetadataRepository
 	 * @param name the name of the structure
 	 * @return the structure or null if none exists.
 	 */
-	public DataSetMetadata getStructure(String name);
+	public Optional<DataSetMetadata> getStructure(VTLAlias name);
 
 	/**
 	 * Returns a data point ruleset with the specified name if it exists.
@@ -72,7 +75,7 @@ public interface MetadataRepository
 	 * @param name the name of the ruleset
 	 * @return the ruleset or null if none exists.
 	 */
-	public DataPointRuleSet getDataPointRuleset(String name);
+	public DataPointRuleSet getDataPointRuleset(VTLAlias name);
 
 	/**
 	 * Returns a hierarchical ruleset with the specified name if it exists.
@@ -80,7 +83,7 @@ public interface MetadataRepository
 	 * @param name the name of the ruleset
 	 * @return the ruleset or null if none exists.
 	 */
-	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(String name);
+	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(VTLAlias name);
 
 	/**
 	 * Registers a new domain instance inside this repository if it is not.
@@ -90,7 +93,7 @@ public interface MetadataRepository
 	 * 
 	 * @throws VTLCastException if the domain already exists and it's not the same.
 	 */
-	public void defineDomain(String name, ValueDomainSubset<?, ?> domain);
+	public void defineDomain(VTLAlias name, ValueDomainSubset<?, ?> domain);
 	
 	/**
 	 * Returns a {@link Variable} referred by an alias defined in this TransformationScheme.
@@ -99,7 +102,7 @@ public interface MetadataRepository
 	 * @return a {@link Variable} instance.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public Variable<?, ?> getVariable(String alias);
+	public Variable<?, ?> getVariable(VTLAlias alias);
 
 	/**
 	 * Creates a temporary variable with provided alias and domain. An error is raised if a persistent variable with a different domain is already defined in metadata.
@@ -108,5 +111,5 @@ public interface MetadataRepository
 	 * @param alias the domain of the variable
 	 * @return a {@link Variable} instance.
 	 */
-	public Variable<?, ?> createTempVariable(String alias, ValueDomainSubset<?, ?> domain);
+	public Variable<?, ?> createTempVariable(VTLAlias alias, ValueDomainSubset<?, ?> domain);
 }

@@ -106,12 +106,14 @@ import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RegExpDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -121,9 +123,9 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXRepository.class);
 	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
-	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset("ALPHA", "(?U)^\\p{Alpha}*$", STRINGDS);
-	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset("ALPHA_NUMERIC", "(?U)^\\p{Alnum}*$", STRINGDS);
-	private static final RegExpDomainSubset VTL_NUMERIC = new RegExpDomainSubset("NUMERIC", "(?U)^\\p{Digit}*$", STRINGDS);
+	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset(VTLAliasImpl.of("'ALPHA'"), "(?U)^\\p{Alpha}*$", STRINGDS);
+	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of("'ALPHA_NUMERIC'"), "(?U)^\\p{Alnum}*$", STRINGDS);
+	private static final RegExpDomainSubset VTL_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of("'NUMERIC'"), "(?U)^\\p{Digit}*$", STRINGDS);
 
 	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(REQUIRED));
 	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(REQUIRED), "1.5.0");
@@ -142,9 +144,9 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 
 	private final String url = SDMX_REGISTRY_ENDPOINT.getValue();
-	private final Map<String, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
-	private final Map<String, Map<String, Variable<?, ?>>> variables = new HashMap<>();
-	private final Map<String, String> schemes = new HashMap<>();
+	private final Map<VTLAlias, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
+	private final Map<VTLAlias, Map<String, Variable<?, ?>>> variables = new HashMap<>();
+	private final Map<VTLAlias, String> schemes = new HashMap<>();
 	private final SdmxRestToBeanRetrievalManager rbrm;
 
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
@@ -183,21 +185,21 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		// Load codelists
 		for (CodelistBean codelist: rbrm.getMaintainableBeans(CodelistBean.class, new MaintainableRefBeanImpl(null, null, "*")))
 		{
-			final String clName = sdmxRef2VtlName(codelist.asReference());
+			VTLAlias clName = sdmxRef2VtlName(codelist.asReference());
 			LOGGER.info("Loading codelist " + clName);
 			defineDomain(clName, new SdmxCodeList(codelist));
 		}
 
 		// Define ALPHA and ALPHA_NUMERIC domains
-		defineDomain("ALPHA", VTL_ALPHA);
-		defineDomain("ALPHA_NUMERIC", VTL_ALPHA_NUMERIC);
+		defineDomain(VTLAliasImpl.of("'ALPHA'"), VTL_ALPHA);
+		defineDomain(VTLAliasImpl.of("'ALPHA_NUMERIC'"), VTL_ALPHA_NUMERIC);
 		
 		// Load structures
-		Map<String, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> structures = new HashMap<>();
+		Map<VTLAlias, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> structures = new HashMap<>();
 		for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
 		{
 			DataStructureBuilder builder = new DataStructureBuilder();
-			String dsdName = sdmxRef2VtlName(dsd.asReference());
+			VTLAlias dsdName = sdmxRef2VtlName(dsd.asReference());
 			LOGGER.info("Loading structure {}", dsdName);
 			Map<Integer, DataStructureComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
 			
@@ -240,8 +242,8 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		// Load dataflows
 		for (DataflowBean dataflow: rbrm.getIdentifiables(DataflowBean.class))
 		{
-			String dataflowName = sdmxRef2VtlName(dataflow.asReference());
-			String dsdName = sdmxRef2VtlName(dataflow.getDataStructureRef());
+			VTLAlias dataflowName = sdmxRef2VtlName(dataflow.asReference());
+			VTLAlias dsdName = sdmxRef2VtlName(dataflow.getDataStructureRef());
 			LOGGER.info("Loading dataflow {} with structure {}", dataflowName, dsdName);
 			dataflows.put(dataflowName, structures.get(dsdName));
 		}
@@ -251,7 +253,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		{
 			for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
 			{
-				String tsName = sdmxRef2VtlName(scheme.asReference());
+				VTLAlias tsName = sdmxRef2VtlName(scheme.asReference());
 				LOGGER.info("Loading transformation scheme {}", tsName);
 				String code = scheme.getItems().stream()
 					.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
@@ -315,14 +317,14 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			{
 				OptionalLong minLen = Stream.ofNullable(format.getMinValue()).mapToLong(BigDecimal::longValueExact).findAny();
 				OptionalLong maxLen = Stream.ofNullable(format.getMaxValue()).mapToLong(BigDecimal::longValueExact).findAny();
-				String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
+				VTLAlias name = VTLAliasImpl.of("'" + domain.getAlias() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE) + "'");
 				domain = new RangeIntegerDomainSubset<>(name, INTEGERDS, minLen, maxLen, inclusive);
 			}
 			else if (NUMBERDS.isAssignableFrom(domain))
 			{
 				OptionalDouble minLen = Stream.ofNullable(format.getMinValue()).mapToDouble(BigDecimal::doubleValue).findAny();
 				OptionalDouble maxLen = Stream.ofNullable(format.getMaxValue()).mapToDouble(BigDecimal::doubleValue).findAny();
-				String name = domain.getName() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE);
+				VTLAlias name = VTLAliasImpl.of(domain.getAlias() + ">=" + minLen.orElse(Long.MIN_VALUE) + "<" + maxLen.orElse(Long.MAX_VALUE));
 				domain = new RangeNumberDomainSubset<>(name, NUMBERDS, minLen, maxLen, inclusive);
 			}
 			
@@ -339,15 +341,15 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	
 	private DataStructureComponent<Measure, ?, ?> createObsValue(PrimaryMeasureBean obs_value)
 	{
-		String alias = obs_value.getId();
-		return variables.computeIfAbsent(obs_value.getId(), id -> new HashMap<>())
+		VTLAlias alias = VTLAliasImpl.of("'" + obs_value.getId() + "'");
+		return variables.computeIfAbsent(alias, id -> new HashMap<>())
 			.computeIfAbsent(obs_value.getMaintainableParent().getAgencyId(), ag -> VariableImpl.of(alias, NUMBERDS))
 			.as(Measure.class);
 	}
 
 	private <R extends Component> DataStructureComponent<R, ?, ?> createComponent(ComponentBean bean, Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
-		String name = bean.getId();
+		VTLAlias name = VTLAliasImpl.of("'" + bean.getId() + "'");
 		
 		variables.putIfAbsent(name, new HashMap<>());
 		Variable<?, ?> variable = variables.get(name).compute(bean.getConceptRef().getAgencyId(), (ag, v) -> VariableImpl.of(name, domain));
@@ -361,7 +363,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public StringHierarchicalRuleSet getHierarchyRuleset(String alias)
+	public StringHierarchicalRuleSet getHierarchyRuleset(VTLAlias alias)
 	{
 		return maybeGetDomain(alias)
 				.filter(SdmxCodeList.class::isInstance)
@@ -371,12 +373,12 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public DataSetMetadata getStructure(String alias)
+	public Optional<DataSetMetadata> getStructure(VTLAlias alias)
 	{
-		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias);
-		if (matcher.matches() && dataflows.containsKey(matcher.group(1)))
+		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
+		if (matcher.matches() && dataflows.containsKey(VTLAliasImpl.of(matcher.group(1))))
 		{
-			Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>> entry = dataflows.get(matcher.group(1));
+			Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>> entry = dataflows.get(VTLAliasImpl.of(matcher.group(1)));
 			DataSetMetadata structure = entry.getKey();
 			// drop identifiers in the query part of the id
 			if (matcher.group(2) != null)
@@ -391,21 +393,21 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				structure = builder.build();
 			}
 			
-			return structure;
+			return Optional.of(structure);
 		}
 		else
 			return super.getStructure(alias);
 	}
 	
-	private static String sdmxRef2VtlName(StructureReferenceBean ref)
+	private static VTLAlias sdmxRef2VtlName(StructureReferenceBean ref)
 	{
-		return ref.getAgencyId() + ":" + ref.getMaintainableId() + "(" + ref.getVersion() + ")";
+		return VTLAliasImpl.of("'" + ref.getAgencyId() + ":" + ref.getMaintainableId() + "(" + ref.getVersion() + ")" + "'");
 	}
 	
 	@Override
-	public Variable<?, ?> getVariable(String alias)
+	public Variable<?, ?> getVariable(VTLAlias alias)
 	{
-		String agency = alias.indexOf(":") >= 0 ? alias.split(":", 2)[0] : null;
+		String agency = alias.toString().indexOf(":") >= 0 ? alias.toString().split(":", 2)[0] : null;
 		
 		Variable<?, ?> variable = null;
 		Map<String, Variable<?, ?>> varsOfConcept = variables.get(alias);
@@ -425,14 +427,14 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		return rbrm;
 	}
 	
-	public TransformationScheme getTransformationScheme(String alias)
+	public TransformationScheme getTransformationScheme(VTLAlias alias)
 	{
 		return Optional.ofNullable(schemes.get(alias))
 			.map(ConfigurationManagerFactory.newManager()::createSession)
 			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
 	}
 	
-	public Set<String> getAvailableSchemes()
+	public Set<VTLAlias> getAvailableSchemes()
 	{
 		return schemes.keySet();
 	}

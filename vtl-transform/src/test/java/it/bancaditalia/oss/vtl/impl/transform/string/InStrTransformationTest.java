@@ -39,11 +39,13 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -64,28 +66,27 @@ public class InStrTransformationTest
 	@MethodSource
 	public void test(DataSet leftDS, String rightV, Long startV, Long occurrenceV, Long[] expected)
 	{
-		VarIDOperand left = new VarIDOperand("left");
+		VarIDOperand left = new VarIDOperand(VTLAliasImpl.of("left"));
 		ConstantOperand right = new ConstantOperand(StringValue.of(rightV));
 		ConstantOperand start = new ConstantOperand(IntegerValue.of(startV));
 		ConstantOperand occurrence = new ConstantOperand(IntegerValue.of(occurrenceV));
-		Map<String, VTLValue> map = new HashMap<>();
-		map.put("left", leftDS);
+		Map<VTLAlias, VTLValue> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), leftDS);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		InStrTransformation instrTransformation = new InStrTransformation(left, right, start, occurrence);
 		
 		DataSetMetadata metadata = (DataSetMetadata) instrTransformation.getMetadata(session);
-		assertTrue(metadata.contains("integer_var"));
+		Optional<DataStructureComponent<Measure, ?, ?>> int_var = metadata.getComponent(INTEGERDS.getDefaultVariable().getAlias(), Measure.class);
+		assertTrue(int_var.isPresent());
+		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS);		
+		assertTrue(oId.isPresent(), "String id present");
 		
 		DataSet computedResult = (DataSet) instrTransformation.eval(session);
-		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent("string_1", Identifier.class, STRINGDS);		
-		Optional<DataStructureComponent<Measure, ?, ?>> oMeasure = metadata.getComponent("integer_var", Measure.class, INTEGERDS);
-		
-		assertTrue(oId.isPresent(), "String id present");
-		assertTrue(oMeasure.isPresent(), "Integer measure is present");
+		assertEquals(metadata, computedResult.getMetadata()); 
 		
 		DataStructureComponent<Identifier, ?, ?> id = oId.get();
-		DataStructureComponent<Measure, ?, ?> resultMeasure = oMeasure.get();
+		DataStructureComponent<Measure, ?, ?> resultMeasure = int_var.get();
 		
 		computedResult.stream()
 			.forEach(dp -> assertEquals(expected[dp.get(id).get().toString().charAt(0) - 'A'], dp.get(resultMeasure).get(), 

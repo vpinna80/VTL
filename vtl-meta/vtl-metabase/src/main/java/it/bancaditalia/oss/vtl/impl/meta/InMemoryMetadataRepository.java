@@ -32,9 +32,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
@@ -45,40 +48,40 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Map<String, ValueDomainSubset<?, ?>> domains = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new ConcurrentHashMap<>();
 	private final Map<ValueDomainSubset<?, ?>, Variable<?, ?>> defaultVars = new HashMap<>();
-	private final Map<String, Variable<?, ?>> vars = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, Variable<?, ?>> vars = new ConcurrentHashMap<>();
 	
 	public InMemoryMetadataRepository() 
 	{
 		for (Domains domain: EnumSet.allOf(Domains.class))
 		{
 			ValueDomainSubset<?, ?> d = domain.getDomain();
-			domains.put(domain.name().toLowerCase(), d);
+			domains.put(VTLAliasImpl.of(domain.name()), d);
 			if (domain != NULL)
-				defaultVars.put(d, VariableImpl.of(d.getName() + "_var", d));
+				defaultVars.put(d, VariableImpl.of(VTLAliasImpl.of(d.getAlias() + "_var"), d));
 		}
 	}
 	
 	@Override
-	public boolean isDomainDefined(String domain) 
+	public boolean isDomainDefined(VTLAlias domain) 
 	{
 		return domains.containsKey(domain); 
 	}
 
-	protected Optional<ValueDomainSubset<?, ?>> maybeGetDomain(String alias)
+	protected Optional<ValueDomainSubset<?, ?>> maybeGetDomain(VTLAlias alias)
 	{
 		return Optional.ofNullable(domains.get(alias));
 	}
 
 	@Override
-	public ValueDomainSubset<?, ?> getDomain(String alias) 
+	public ValueDomainSubset<?, ?> getDomain(VTLAlias alias) 
 	{
-		return maybeGetDomain(alias).orElseThrow(() -> new VTLException("Domain " + alias + " is undefined in the metadata."));
+		return maybeGetDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
 	}
 	
 	@Override
-	public void defineDomain(String alias, ValueDomainSubset<?, ?> domain)
+	public void defineDomain(VTLAlias alias, ValueDomainSubset<?, ?> domain)
 	{
 		ValueDomainSubset<?, ?> prev = domains.putIfAbsent(requireNonNull(alias, "alias"), requireNonNull(domain, "domain"));
 		if (prev != null && !prev.equals(domain))
@@ -86,25 +89,25 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 	
 	@Override
-	public DataSetMetadata getStructure(String name)
+	public Optional<DataSetMetadata> getStructure(VTLAlias name)
 	{
-		return null;
+		return Optional.empty();
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(String alias)
+	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(VTLAlias alias)
 	{
 		throw new VTLException("Hierarchical ruleset " + alias + " not found.");
 	}
 	
 	@Override
-	public DataPointRuleSet getDataPointRuleset(String alias)
+	public DataPointRuleSet getDataPointRuleset(VTLAlias alias)
 	{
 		throw new VTLException("Data point ruleset " + alias + " not found.");
 	}
 
 	@Override
-	public Variable<?, ?> getVariable(String alias)
+	public Variable<?, ?> getVariable(VTLAlias alias)
 	{
 		Variable<?, ?> instance = vars.get(alias);
 		if (instance == null)
@@ -114,7 +117,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 	
 	@Override
-	public Variable<?, ?> createTempVariable(String alias, ValueDomainSubset<?, ?> domain)
+	public Variable<?, ?> createTempVariable(VTLAlias alias, ValueDomainSubset<?, ?> domain)
 	{
 		Variable<?, ?> variable = vars.get(alias);
 		if (variable == null)
@@ -126,8 +129,8 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 
 	@Override
-	public String getDatasetSource(String name)
+	public String getDatasetSource(VTLAlias name)
 	{
-		return name;
+		return name.getName();
 	}
 }

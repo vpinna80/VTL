@@ -19,11 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
-import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.List;
@@ -39,11 +37,12 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet;
+import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -52,22 +51,22 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 	private static final long serialVersionUID = 1L;
 
 	private final RuleSetType rulesetType;
-	private final String ruleID;
-	private final String names[];
+	private final VTLAlias ruleID;
+	private final VTLAlias names[];
 	private final String leftOps[];
 	private final RuleType[] compOps;
 	private final List<Map<String, Boolean>> rightOps;
 	private final ScalarValue<?, ?, ?, ?>[] ercodes;
 	private final ScalarValue<?, ?, ?, ?>[] erlevels;
 	
-	public DefineHierarchyStatement(String alias, RuleSetType rulesetType, String ruleID, List<String> names, List<String> leftOps, List<RuleType> compOps, List<Map<String,Boolean>> rightOps, List<String> ercodes, List<Long> erlevels)
+	public DefineHierarchyStatement(VTLAlias alias, RuleSetType rulesetType, VTLAlias ruleID, List<VTLAlias> names, List<String> leftOps, List<RuleType> compOps, List<Map<String,Boolean>> rightOps, List<String> ercodes, List<Long> erlevels)
 	{
 		super(alias);
 		
 		this.rulesetType = rulesetType;
-		this.ruleID = ifNonNull(ruleID, Variable::normalizeAlias);
-		this.names = names.toArray(String[]::new);
-		this.leftOps = leftOps.stream().map(n -> ifNonNull(n, Variable::normalizeAlias)).toArray(String[]::new);
+		this.ruleID = ruleID;
+		this.names = names.toArray(VTLAlias[]::new);
+		this.leftOps = leftOps.toArray(String[]::new);
 		this.compOps = compOps.toArray(RuleType[]::new);
 		this.rightOps = rightOps;
 		this.ercodes = ercodes.stream().map(StringValue::of).toArray(ScalarValue<?, ?, ?, ?>[]::new);
@@ -97,7 +96,6 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 						StringCodeItem leftOp = (StringCodeItem) codelist.cast(StringValue.of(leftOps[i]));
 						Map<String, Boolean> right = rightOps.get(i);
 						Map<StringCodeItem, Boolean> codes = right.keySet().stream()
-							.map(Variable::normalizeAlias)
 							.collect(toMap(codelist::getCodeItem, c -> coalesce(right.get(c), true)));
 						return new StringRule(names[i], leftOp, compOps[i], codes, ercodes[i], erlevels[i]);
 					}).collect(toList());

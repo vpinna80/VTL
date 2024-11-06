@@ -24,11 +24,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -92,20 +94,20 @@ public enum CommonComponents
 			@Override
 			public String toString()
 			{
-				return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";
+				return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";
 			}
 		}
 
-		private final String name;
+		private final VTLAlias name;
 		private final S domain;
 		
-		public CommonVariable(String name, S domain)
+		public CommonVariable(VTLAlias name, S domain)
 		{
 			this.name = name;
 			this.domain = domain;
 		}
 		
-		public String getName()
+		public VTLAlias getAlias()
 		{
 			return name;
 		}
@@ -133,18 +135,25 @@ public enum CommonComponents
 			if (obj instanceof Variable)
 			{
 				Variable<?, ?> other = (Variable<?, ?>) obj;
-				return name.equals(other.getName()) && domain.equals(other.getDomain());
+				return name.equals(other.getAlias()) && domain.equals(other.getDomain());
 			}
 			
 			return false;
 		}
 	}
 
-	private String vname;
+	private VTLAlias vname;
 	private Class<? extends Component> role;
 	private ValueDomainSubset<?, ?> domain;
 
 	private CommonComponents(String vname, Class<? extends Component> role, ValueDomainSubset<?, ?> domain)
+	{
+		this.vname = VTLAliasImpl.of(vname);
+		this.role = role;
+		this.domain = domain;
+	}
+	
+	private CommonComponents(VTLAlias vname, Class<? extends Component> role, ValueDomainSubset<?, ?> domain)
 	{
 		this.vname = vname;
 		this.role = role;

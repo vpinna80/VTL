@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.transform;
 
 import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_EXCEPT;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
@@ -36,11 +35,11 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 public class GroupingClause implements Serializable
 {
@@ -65,13 +64,13 @@ public class GroupingClause implements Serializable
 	}
 
 	private final GroupingMode mode;
-	private final String[] fields;
-	private final Duration frequency;
+	private final VTLAlias[] fields;
+	private final Frequency frequency;
 
-	public GroupingClause(GroupingMode mode, List<String> fields, Duration frequency)
+	public GroupingClause(GroupingMode mode, List<VTLAlias> fields, Frequency frequency)
 	{
 		this.mode = mode;
-		this.fields = coalesce(fields, emptyList()).stream().map(Variable::normalizeAlias).collect(toArray(new String[fields.size()]));
+		this.fields = coalesce(fields, emptyList()).toArray(VTLAlias[]::new);
 		this.frequency = frequency;
 		
 		if (mode == GROUP_ALL)
@@ -83,12 +82,12 @@ public class GroupingClause implements Serializable
 		return mode;
 	}
 
-	public String[] getFields()
+	public VTLAlias[] getFields()
 	{
 		return fields;
 	}
 	
-	public Duration getFrequency()
+	public Frequency getFrequency()
 	{
 		return frequency;
 	}
@@ -116,6 +115,6 @@ public class GroupingClause implements Serializable
 	@Override
 	public String toString()
 	{
-		return Arrays.stream(fields).collect(joining(", ", mode + " ", frequency != null ? " time_agg( " + frequency + " )" : ""));
+		return Arrays.stream(fields).map(VTLAlias::toString).collect(joining(", ", mode + " ", frequency != null ? " time_agg( " + frequency + " )" : ""));
 	}
 }

@@ -105,6 +105,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -112,6 +113,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -182,7 +184,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	}
 	
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo2, String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo2, VTLAlias alias)
 	{
 		SDMXRepository repo;
 		if (repo2 instanceof SDMXRepository)
@@ -195,7 +197,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		if (structure == null)
 			return Optional.empty();
 		
-		String[] query = alias.split("/", 2);
+		String[] query = alias.getName().split("/", 2);
 		String dataflow = query[0].replace(':', ',').replace('(', ',').replaceAll("\\)(?=/|$)", "");
 		String resource = query.length > 1 ? "/" + query[1] : "";
 		String[] dims = query.length > 1 ? query[1].split("\\.") : new String[] {};
@@ -244,7 +246,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	}
 
 	@Override
-	public Optional<VTLValueMetadata> getValueMetadata(String alias)
+	public Optional<VTLValueMetadata> getValueMetadata(VTLAlias alias)
 	{
 		throw new IllegalStateException("SDMXEnvironment.getValueMetadata should never be called.");
 	}
@@ -253,14 +255,14 @@ public class SDMXEnvironment implements Environment, Serializable
 	{
 		private final String[] dims;
 		private final DataSetMetadata structure;
-		private final String alias;
+		private final VTLAlias alias;
 		private final DataReaderEngine dre;
 
 		private boolean no;
 		private Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dmap = new HashMap<>();
 		private Entry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> parser;
 
-		public ObsIterator(String alias, DataReaderEngine dre, DataSetMetadata structure, String[] dims)
+		public ObsIterator(VTLAlias alias, DataReaderEngine dre, DataSetMetadata structure, String[] dims)
 		{
 			this.dims = dims;
 			this.structure = structure;
@@ -283,13 +285,13 @@ public class SDMXEnvironment implements Environment, Serializable
 				if (i >= dims.length || dims[i].isEmpty() || dims[i].indexOf('+') >= 0)
 				{
 					KeyValue k = keys.get(i);
-					DataStructureComponent<Identifier, ?, ?> dim = structure.getComponent(k.getConcept(), Identifier.class)
+					DataStructureComponent<Identifier, ?, ?> dim = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Identifier.class)
 							.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
 						dmap.put(dim, dim.getVariable().getDomain().cast(StringValue.of(k.getCode())));
 				}
 			for (KeyValue k: dre.getCurrentKey().getAttributes())
 			{
-				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(k.getConcept(), Attribute.class)
+				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Attribute.class)
 						.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
 					dmap.put(attr, attr.getVariable().getDomain().cast(StringValue.of(k.getCode())));
 			}
@@ -312,12 +314,12 @@ public class SDMXEnvironment implements Environment, Serializable
 			
 			for (KeyValue a: obs.getAttributes())
 			{
-				DataStructureComponent<?, ?, ?> c = structure.getComponent(a.getConcept()).get();
+				DataStructureComponent<?, ?, ?> c = structure.getComponent(VTLAliasImpl.of(true, a.getConcept())).get();
 				builder.add(c, c.getVariable().getDomain().cast(StringValue.of(a.getCode())));
 			}
 			
 			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
-			List<String> values = obs.getMeasureValues(measure.getVariable().getName());
+			List<String> values = obs.getMeasureValues(measure.getVariable().getAlias().getName());
 			if (values.size() > 1)
 				throw new UnsupportedOperationException("Unsupported measure with multiple values (found " + values.size() + " values).");
 			builder.add(measure, NumberValueImpl.createNumberValue(values.iterator().next()));
@@ -356,7 +358,7 @@ public class SDMXEnvironment implements Environment, Serializable
 					setDims(dre, structure);
 			}
 
-			return builder.build(LineageExternal.of(alias), structure);
+			return builder.build(LineageExternal.of(alias.toString()), structure);
 		}
 	}
 

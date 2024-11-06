@@ -22,8 +22,10 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -31,7 +33,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class ThisScope extends AbstractScope
 {
 	private static final long serialVersionUID = 1L;
-	public static final String THIS = "$$THIS";
+	public static final VTLAlias THIS = VTLAliasImpl.of("$$THIS");
 	
 	private final DataSet thisValue;
 	private final DataSetMetadata thisMetadata;
@@ -52,13 +54,13 @@ public class ThisScope extends AbstractScope
 	}
 
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public VTLValueMetadata getMetadata(String alias)
+	public VTLValueMetadata getMetadata(VTLAlias alias)
 	{
 		if (THIS.equals(alias))
 			return thisMetadata;
@@ -72,7 +74,7 @@ public class ThisScope extends AbstractScope
 	}
 
 	@Override
-	public VTLValue resolve(String alias)
+	public VTLValue resolve(VTLAlias alias)
 	{
 		if (THIS.equals(alias))
 			return thisValue;
@@ -86,7 +88,7 @@ public class ThisScope extends AbstractScope
 	}
 
 	@Override
-	public DMLStatement getRule(String node)
+	public DMLStatement getRule(VTLAlias node)
 	{
 		throw new VTLUnboundAliasException(node);
 	}

@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Role;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 class ComponentParameter<T extends Component> extends ScalarParameter
 {
@@ -28,7 +29,7 @@ class ComponentParameter<T extends Component> extends ScalarParameter
 
 	private final Role role;
 
-	public ComponentParameter(String name, String domainName, Role role)
+	public ComponentParameter(VTLAlias name, VTLAlias domainName, Role role)
 	{
 		super(name, domainName);
 		this.role = role;

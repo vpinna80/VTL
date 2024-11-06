@@ -23,14 +23,13 @@ import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentCons
 import static it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints.ONE;
 import static it.bancaditalia.oss.vtl.model.data.Component.Role.COMPONENT;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
-import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
 
 import java.io.Serializable;
 import java.util.List;
 
 import it.bancaditalia.oss.vtl.model.data.Component.Role;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class DataSetComponentConstraint implements Serializable
@@ -39,7 +38,7 @@ public class DataSetComponentConstraint implements Serializable
 	
 	private final String name;
 	private final Role role;
-	private final String domainName;
+	private final VTLAlias domainName;
 	private final QuantifierConstraints quantifier;
 	
 	public enum QuantifierConstraints 
@@ -59,11 +58,11 @@ public class DataSetComponentConstraint implements Serializable
 		}
 	}
 	
-	public DataSetComponentConstraint(String name, Role role, String domainName, QuantifierConstraints quantifier)
+	public DataSetComponentConstraint(String name, Role role, VTLAlias domainName, QuantifierConstraints quantifier)
 	{
-		this.name = ifNonNull(name, Variable::normalizeAlias);
+		this.name = name;
 		this.role = coalesce(role, COMPONENT);
-		this.domainName = ifNonNull(domainName, Variable::normalizeAlias);
+		this.domainName = domainName;
 		this.quantifier = coalesce(quantifier, ONE);
 	}
 
@@ -78,7 +77,7 @@ public class DataSetComponentConstraint implements Serializable
 			return false;
 		else if ((quantifier == null || quantifier == MAX_ONE) && partialMatch.contains(this))
 			return false;
-		else if (name != null && !name.equals(component.getVariable().getName()))
+		else if (name != null && !name.equals(component.getVariable().getAlias()))
 			return false;
 		else if (domainName != null && !scheme.getRepository().getDomain(domainName).isAssignableFrom(component.getVariable().getDomain()))
 			return false;

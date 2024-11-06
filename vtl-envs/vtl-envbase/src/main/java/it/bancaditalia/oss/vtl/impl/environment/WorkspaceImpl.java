@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
@@ -37,8 +38,8 @@ public class WorkspaceImpl implements Workspace
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(WorkspaceImpl.class);
 
-	private final Map<String, VTLValue> values = new ConcurrentHashMap<>();
-	private final Map<String, Statement> rules = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, VTLValue> values = new ConcurrentHashMap<>();
+	private final Map<VTLAlias, Statement> rules = new ConcurrentHashMap<>();
 	
 	@Override
 	public synchronized void addRule(Statement statement)
@@ -55,19 +56,19 @@ public class WorkspaceImpl implements Workspace
 	}
 	
 	@Override
-	public synchronized boolean contains(String alias)
+	public synchronized boolean contains(VTLAlias alias)
 	{
 		return values.containsKey(alias) || rules.containsKey(alias);
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		return Optional.ofNullable(values.get(alias));
 	}
 	
 	@Override
-	public Optional<Statement> getRule(String alias)
+	public Optional<Statement> getRule(VTLAlias alias)
 	{
 		return Optional.ofNullable(rules.get(alias));
 	}

@@ -209,7 +209,7 @@ public class BooleanTransformation extends BinaryTransformation
 				.addComponents(left.getIDs())
 				.addComponents(right.getIDs());
 		
-		if (leftMeasure.getVariable().getName().equals(rightMeasure.getVariable().getName()))
+		if (leftMeasure.getVariable().getAlias().equals(rightMeasure.getVariable().getAlias()))
 			builder.addComponent(leftMeasure);
 		else
 			builder.addComponent(BOOLEANDS.getDefaultVariable().as(Measure.class));

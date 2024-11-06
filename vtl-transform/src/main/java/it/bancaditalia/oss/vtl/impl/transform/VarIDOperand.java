@@ -19,9 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import static java.util.Objects.requireNonNull;
+
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -29,11 +31,11 @@ public class VarIDOperand implements LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String alias;
+	private final VTLAlias alias;
 	
-	public VarIDOperand(String name)
+	public VarIDOperand(VTLAlias name)
 	{
-		this.alias = Variable.normalizeAlias(name);
+		this.alias = requireNonNull(name);
 	}
 	
 	@Override
@@ -45,7 +47,7 @@ public class VarIDOperand implements LeafTransformation
 	@Override
 	public String getText()
 	{
-		return alias;
+		return alias.toString();
 	}
 
 	@Override
@@ -57,6 +59,6 @@ public class VarIDOperand implements LeafTransformation
 	@Override
 	public String toString()
 	{
-		return alias;
+		return alias.toString();
 	}
 }

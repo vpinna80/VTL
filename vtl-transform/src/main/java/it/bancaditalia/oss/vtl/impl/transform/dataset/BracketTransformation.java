@@ -27,6 +27,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -37,13 +38,13 @@ public class BracketTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 	private final DatasetClauseTransformation clause;
-	private final String componentName;
+	private final VTLAlias componentName;
 	
-	public BracketTransformation(Transformation operand, DatasetClauseTransformation clause, String componentName)
+	public BracketTransformation(Transformation operand, DatasetClauseTransformation clause, VTLAlias componentName)
 	{
 		super(operand);
 		this.clause = clause;
-		this.componentName = componentName == null ? null : componentName.matches("'.*'") ? componentName.replaceAll("'(.*)'", "$1") : componentName.toLowerCase();
+		this.componentName = componentName;
 	}
 
 	@Override

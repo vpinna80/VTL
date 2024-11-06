@@ -79,6 +79,6 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 	@Override
 	public String toString()
 	{
-		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";	
+		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";	
 	}
 }

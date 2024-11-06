@@ -33,6 +33,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -41,14 +42,14 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final String name;
+	private final VTLAlias alias;
 	private final S domain;
 	private final int hashCode;
 	private final Map<Class<? extends Component>, DataStructureComponent<?, ?, ?>> components = new HashMap<>();
 	
-	public VariableImpl(String name, S domain)
+	public VariableImpl(VTLAlias name, S domain)
 	{
-		this.name = requireNonNull(name);
+		this.alias = requireNonNull(name);
 		this.domain = requireNonNull(domain);
 
 		int prime = 31;
@@ -62,15 +63,15 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> of(String name, ValueDomainSubset<? super S, ? super D> domain)
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> Variable<S, D> of(VTLAlias name, ValueDomainSubset<? super S, ? super D> domain)
 	{
 		return new VariableImpl<>(name, (S) domain);
 	}
 
 	@Override
-	public String getName()
+	public VTLAlias getAlias()
 	{
-		return name;
+		return alias;
 	}
 	
 	@Override
@@ -94,7 +95,7 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 			return false;
 		
 		Variable<?, ?> other = (Variable<?, ?>) obj;
-		if (!name.equals(other.getName()) || !domain.equals(other.getDomain()))
+		if (!alias.equals(other.getAlias()) || !domain.equals(other.getDomain()))
 			return false;
 		
 		return true;
@@ -103,7 +104,7 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	@Override
 	public String toString()
 	{
-		return name + "[" + domain + "]";
+		return alias + "[" + domain + "]";
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -113,7 +114,7 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 		return requireNonNull((DataStructureComponent<R, S, D>) components.get(role), "Unknown role: " + role.getSimpleName());
 	}
 
-	public Variable<S, D> getRenamed(String newName)
+	public Variable<S, D> getRenamed(VTLAlias newName)
 	{
 		return new VariableImpl<>(newName, domain);
 	}

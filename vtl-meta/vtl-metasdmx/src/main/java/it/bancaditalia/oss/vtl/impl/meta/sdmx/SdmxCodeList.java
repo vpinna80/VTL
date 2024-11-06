@@ -37,6 +37,8 @@ import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringRule;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 public class SdmxCodeList extends StringCodeList implements Serializable
 {
@@ -47,12 +49,12 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 	
 	public SdmxCodeList(CodelistBean codelist)
 	{
-		super(STRINGDS, codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")");
+		super(STRINGDS, VTLAliasImpl.of(codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")"));
 		
 		this.agency = codelist.getAgencyId();
 		
 		// retrieve codelist 
-		String clAlias = codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")";
+		VTLAlias clAlias = VTLAliasImpl.of("'" + codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")" + "'");
 
 		// build hierarchy if present
 		Map<StringCodeItem, List<StringCodeItem>> hierarchy = new HashMap<>();
@@ -61,7 +63,7 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 
 		List<StringRule> rules = new ArrayList<>(); 
 		for (StringCodeItem ruleComp: hierarchy.keySet())
-			rules.add(new StringRule(ruleComp.get(), ruleComp, EQ, hierarchy.get(ruleComp).stream().collect(toMap(identity(), k -> TRUE)), null, null));
+			rules.add(new StringRule(VTLAliasImpl.of(ruleComp.get()), ruleComp, EQ, hierarchy.get(ruleComp).stream().collect(toMap(identity(), k -> TRUE)), null, null));
 		
 		defaultRuleSet = rules.isEmpty() ? null : new StringHierarchicalRuleSet(clAlias, clAlias, this, VALUE_DOMAIN, rules);
 

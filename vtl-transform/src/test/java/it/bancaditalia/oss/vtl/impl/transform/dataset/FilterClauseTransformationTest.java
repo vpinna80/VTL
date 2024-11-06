@@ -41,10 +41,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class FilterClauseTransformationTest
@@ -71,8 +73,8 @@ public class FilterClauseTransformationTest
 	@BeforeEach
 	public void before()
 	{
-		condition = new VarIDOperand("boolean_1");
-		Map<String, DataSet> map = new HashMap<>();
+		condition = new VarIDOperand(VTLAliasImpl.of("boolean_1"));
+		Map<VTLAlias, DataSet> map = new HashMap<>();
 		session = TestUtils.mockSession(map);
 	}
 	
@@ -84,14 +86,14 @@ public class FilterClauseTransformationTest
 		FilterClauseTransformation fct = new FilterClauseTransformation(condition);
 		
 		DataSetMetadata metadata = (DataSetMetadata) fct.getMetadata(session);
-		assertTrue(metadata.contains("boolean_1"));
+		assertTrue(metadata.contains(VTLAliasImpl.of("boolean_1")));
 		
 		DataSet computedResult = (DataSet) fct.eval(session);
 		
 		assertEquals(expectedResult.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 
-		DataStructureComponent<Identifier, ?, ?> id = metadata.getComponent("string_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS).get();
 		
 		String[] arrayResult = computedResult.stream()
 			.map(dp -> dp.get(id).get())

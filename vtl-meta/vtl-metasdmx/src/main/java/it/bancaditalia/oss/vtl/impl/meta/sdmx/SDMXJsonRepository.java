@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
+import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.getSupportedProperties;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -33,6 +35,7 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 /**
@@ -46,7 +49,7 @@ public class SDMXJsonRepository extends SDMXRepository
 	
 	static
 	{
-		Set<VTLProperty> props = new HashSet<>(ConfigurationManagerFactory.getSupportedProperties(SDMXRepository.class));
+		Set<VTLProperty> props = new HashSet<>(getSupportedProperties(SDMXRepository.class));
 		props.addAll(ConfigurationManagerFactory.getSupportedProperties(JsonMetadataRepository.class));
 		
 		ConfigurationManagerFactory.registerSupportedProperties(SDMXJsonRepository.class, props.toArray(VTLProperty[]::new));
@@ -60,19 +63,19 @@ public class SDMXJsonRepository extends SDMXRepository
 	}
 	
 	@Override
-	public DataSetMetadata getStructure(String alias)
+	public Optional<DataSetMetadata> getStructure(VTLAlias alias)
 	{
-		return Optional.ofNullable(super.getStructure(alias)).orElseGet(() -> jsonRepo.getStructure(alias));
+		return super.getStructure(alias).or(() -> jsonRepo.getStructure(alias));
 	}
 	
 	@Override
-	public ValueDomainSubset<?, ?> getDomain(String alias)
+	public ValueDomainSubset<?, ?> getDomain(VTLAlias alias)
 	{
 		return maybeGetDomain(alias).orElseGet(() -> jsonRepo.getDomain(alias));
 	}
 	
 	@Override
-	public boolean isDomainDefined(String domain)
+	public boolean isDomainDefined(VTLAlias domain)
 	{
 		return super.isDomainDefined(domain) || jsonRepo.isDomainDefined(domain);
 	}

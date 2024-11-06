@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singleton;
@@ -40,19 +39,19 @@ import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class KeepClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final String names[];
+	private final VTLAlias names[];
 	
-	public KeepClauseTransformation(List<String> names)
+	public KeepClauseTransformation(List<VTLAlias> names)
 	{
-		this.names = names.stream().map(Variable::normalizeAlias).collect(toArray(new String[names.size()]));
+		this.names = names.toArray(new VTLAlias[names.size()]);
 	}
 
 	@Override
@@ -78,7 +77,9 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		
 		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
 				.map(toEntryWithValue(dataset::getComponent))
-				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
+				.map(e -> e.getValue().orElseThrow(() -> { 
+					return new VTLMissingComponentsException(e.getKey(), dataset); 
+				} ))
 				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("keep", singleton(c.asRole(Identifier.class))); })
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
@@ -91,6 +92,6 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public String toString()
 	{
-		return Arrays.stream(names).collect(joining(", ", "keep ", ""));
+		return Arrays.stream(names).map(VTLAlias::toString).collect(joining(", ", "keep ", ""));
 	}
 }

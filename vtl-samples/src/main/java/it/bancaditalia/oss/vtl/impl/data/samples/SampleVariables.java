@@ -25,11 +25,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public enum SampleVariables
@@ -74,13 +76,13 @@ public enum SampleVariables
 			case "DATE": domain = DATEDS; break;
 		}
 
-		component = new SampleComponent(elem[1].toLowerCase() + "_" + elem[2], role, domain);
+		component = new SampleComponent(VTLAliasImpl.of(elem[1].toLowerCase() + "_" + elem[2]), role, domain);
 	}
 	
 	public DataStructureComponent<?, ?, ?> getComponent(int level)
 	{
-		String name = component.getVariable().getName();
-		return component.getRenamed(name.split("_")[0].toLowerCase() + "_" + level);
+		VTLAlias name = component.getVariable().getAlias();
+		return component.getRenamed(VTLAliasImpl.of(name.getName().split("_")[0].toLowerCase() + "_" + level));
 	}
 	
 	public String getType()

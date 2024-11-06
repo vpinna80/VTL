@@ -42,10 +42,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -86,9 +88,9 @@ public class AggregateTransformationTest
 	@MethodSource
 	public void test(AggregateOperator operator, DataSet sample, Number result)
 	{
-		VarIDOperand operand = new VarIDOperand("operand");
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("operand", sample);
+		VarIDOperand operand = new VarIDOperand(VTLAliasImpl.of("operand"));
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("operand"), sample);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		AggregateTransformation at = new AggregateTransformation(operator, operand, null, null);

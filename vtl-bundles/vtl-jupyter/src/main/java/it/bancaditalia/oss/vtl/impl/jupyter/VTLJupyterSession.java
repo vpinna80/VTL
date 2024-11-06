@@ -38,6 +38,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.impl.session.CachedDataSet;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
@@ -52,7 +53,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 	}
 	
 	@Override
-	public VTLValue resolve(String alias)
+	public VTLValue resolve(VTLAlias alias)
 	{
 		LOGGER.info("Retrieving value for {}", alias);
 
@@ -65,7 +66,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 	}
 	
 	@Override
-	public VTLValueMetadata getMetadata(String alias)
+	public VTLValueMetadata getMetadata(VTLAlias alias)
 	{
 		Optional<DMLStatement> rule = getWorkspace().getRule(alias).map(DMLStatement.class::cast);
 		if (rule.isPresent())
@@ -76,7 +77,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 	}
 
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		Optional<? extends Statement> rule = getWorkspace().getRule(alias);
 		if (rule.isPresent())
@@ -85,7 +86,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 			return acquireValue(alias, Environment::getValueMetadata).isPresent();
 	}
 
-	private <T> Optional<T> acquireValue(final String alias, BiFunction<? super Environment, ? super String, ? extends Optional<T>> mapper)
+	private <T> Optional<T> acquireValue(VTLAlias alias, BiFunction<? super Environment, ? super VTLAlias, ? extends Optional<T>> mapper)
 	{
 		LOGGER.info("Resolving value of {}", alias);
 
@@ -112,7 +113,7 @@ public class VTLJupyterSession extends VTLSessionImpl
 		return maybeResult;
 	}
 	
-	private VTLValue acquireResult(DMLStatement statement, String alias)
+	private VTLValue acquireResult(DMLStatement statement, VTLAlias alias)
 	{
 		LOGGER.info("Applying {}", statement);
 

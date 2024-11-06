@@ -67,6 +67,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -168,12 +169,12 @@ public enum SampleDataSets implements DataSet
 		return dataset.getMetadata();
 	}
 
-	public DataSet membership(String component)
+	public DataSet membership(VTLAlias component)
 	{
 		return dataset.membership(component);
 	}
 
-	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name)
+	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias name)
 	{
 		return dataset.getComponent(name);
 	}

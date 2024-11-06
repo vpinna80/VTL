@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.engine.statement;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.Parameter;
 
 /**
@@ -32,14 +33,14 @@ public abstract class BaseParameter implements Parameter, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final String name;
+	private final VTLAlias name;
 
-	public BaseParameter(String name)
+	public BaseParameter(VTLAlias name)
 	{
 		this.name = name;
 	}
 	
-	public String getAlias()
+	public VTLAlias getAlias()
 	{
 		return name;
 	}

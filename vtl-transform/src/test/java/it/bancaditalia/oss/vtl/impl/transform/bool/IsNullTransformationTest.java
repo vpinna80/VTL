@@ -33,10 +33,12 @@ import org.junit.jupiter.api.Test;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class IsNullTransformationTest
@@ -44,16 +46,16 @@ public class IsNullTransformationTest
 	@Test
 	void test() throws Exception
 	{
-		VarIDOperand left = new VarIDOperand("left");
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", SAMPLE5);
+		VarIDOperand left = new VarIDOperand(VTLAliasImpl.of("left"));
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), SAMPLE5);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		IsNullTransformation isnt = new IsNullTransformation(left);
 		DataSetMetadata structure = (DataSetMetadata) isnt.getMetadata(session);
 		
-		Optional<DataStructureComponent<Measure, ?, ?>> component = structure.getComponent("bool_var", Measure.class, BOOLEANDS);
-		assertTrue(component.isPresent(), "bool_var result");
+		Optional<DataStructureComponent<?, ?, ?>> component = structure.getComponent(BOOLEANDS.getDefaultVariable().getAlias());
+		assertTrue(component.isPresent() && component.get().is(Measure.class), "bool_var result");
 		
 		long nullCount = ((DataSet) isnt.eval(session)).stream()
 			.filter(dp -> ((BooleanValue<?>) dp.get(component.get())).get())

@@ -22,8 +22,8 @@ package it.bancaditalia.oss.vtl.impl.engine.mapping;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.net.URL;
 import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
@@ -54,6 +55,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.grammar.Vtl;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Aliasparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Check;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Context;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Customparam;
@@ -113,6 +115,7 @@ public class MappingTest
 
 		StreamSource xmlConfig = new StreamSource(file.openStream());
 		Parserconfig config = jc.createUnmarshaller().unmarshal(xmlConfig, Parserconfig.class).getValue();
+		String packageName = config.getPackage();
 
 		Set<Class<?>> recursive = new HashSet<>();
 		for (Context context : config.getRecursivecontexts().getContext())
@@ -133,43 +136,43 @@ public class MappingTest
 
 		Map<String, Set<String>> mappings = new HashMap<>();
 		for (Mapping mapping : config.getMapping())
-		{
-			String from = mapping.getFrom();
-			HashSet<String> tokens = new HashSet<>();
-			
-			Check check = mapping.getTokensOrContextOrNested();
-			if (check instanceof Tokenscheck)
-				tokens.addAll(((Tokenscheck) check).getValue());
-			else if (check != null)
-				throw new UnsupportedOperationException(check.getClass().getSimpleName() + " in " + from);
-			
-			if (mappings.containsKey(from))
-				if (mappings.get(from).isEmpty())
-				{
-					assertNotNull(check, "Duplicated mapping " + from);
-					mappings.put(from, emptySet());
-				}
-				else
-				{
-					Set<String> usedTokens = mappings.get(from);
-					for (String token: tokens)
+			for (String from: mapping.getFrom())
+			{
+				HashSet<String> tokens = new HashSet<>();
+				
+				Check check = mapping.getTokensOrContextOrNested();
+				if (check instanceof Tokenscheck)
+					tokens.addAll(((Tokenscheck) check).getValue());
+				else if (check != null)
+					throw new UnsupportedOperationException(check.getClass().getSimpleName() + " in " + from);
+				
+				if (mappings.containsKey(from))
+					if (mappings.get(from).isEmpty())
 					{
-						assertFalse(usedTokens.contains(token), "Duplicate check token for mapping " + from);
-						usedTokens.add(token);
+						assertNotNull(check, "Duplicated mapping " + from);
+						mappings.put(from, emptySet());
 					}
-				}
-			else if (check == null)
-				mappings.put(from, emptySet());
-			else
-				mappings.put(from, tokens);
-			
-			Class<?> fromClass = Class.forName("it.bancaditalia.oss.vtl.grammar.Vtl$" + from, true, Thread.currentThread().getContextClassLoader());
-			Class<?> toClass = Class.forName(mapping.getTo(), true, Thread.currentThread().getContextClassLoader());
-			
-			requireNonNull(fromClass, "from class missing in mapping: " + from);
-			System.out.println("Checking mapping from " + fromClass.getSimpleName() + " to " + toClass.getSimpleName());
-			checkParams(0, fromClass, tokensets, mapping.getParams().getNullparamOrStringparamOrExprparam());
-		}
+					else
+					{
+						Set<String> usedTokens = mappings.get(from);
+						for (String token: tokens)
+						{
+							assertFalse(usedTokens.contains(token), "Duplicate check token for mapping " + from);
+							usedTokens.add(token);
+						}
+					}
+				else if (check == null)
+					mappings.put(from, emptySet());
+				else
+					mappings.put(from, tokens);
+				
+				Class<?> fromClass = Class.forName("it.bancaditalia.oss.vtl.grammar.Vtl$" + from + "Context", true, Thread.currentThread().getContextClassLoader());
+				Class<?> toClass = Class.forName(packageName + "." + mapping.getTo(), true, Thread.currentThread().getContextClassLoader());
+				
+				requireNonNull(fromClass, "from class missing in mapping: " + from);
+				System.out.println("Checking mapping from " + fromClass.getSimpleName() + " to " + toClass.getSimpleName());
+				checkParams(0, fromClass, tokensets, mapping.getParams().getNullparamOrAliasparamOrStringparam());
+			}
 	}
 
 	private void checkParams(int level, Class<?> fromClass, Map<String, Entry<Class<?>, Map<String, String>>> tokensets, List<? extends Param> params) throws ClassNotFoundException, NoSuchMethodException, SecurityException
@@ -200,11 +203,21 @@ public class MappingTest
 			System.out.println(tabs + "Checking listParam " + lName + inClass);
 
 			Member member = checkMember(lParam, fromClass);
-			assertInstanceOf(Method.class, member, "List<?> " + lName + "() not found");
-			Class<?> itemClass = member.getDeclaringClass().getMethod(lName, int.class).getReturnType();
-			
-			Nonnullparam itemParam = lParam.getStringparamOrExprparamOrValueparam();
-			checkParam(level + 1, index, itemParam, itemClass, tokensets);
+			Class<?> innerClass = null;
+			if (member instanceof Method)
+			{
+				assertEquals(List.class, ((Method) member).getReturnType(), "List<?> " + lName + "() not found");
+				innerClass = member.getDeclaringClass().getMethod(member.getName(), int.class).getReturnType();
+			}
+			else
+			{
+				ParameterizedType genericType = (ParameterizedType) ((Field) member).getGenericType();
+				assertEquals(List.class, genericType.getRawType(), "List<?> " + lName + "() not found");
+				innerClass = (Class<?>) genericType.getActualTypeArguments()[0];
+			}
+
+			Nonnullparam itemParam = lParam.getStringparamOrAliasparamOrExprparam();
+			checkParam(level + 1, index, itemParam, innerClass, tokensets);
 		}
 		else if (param instanceof Nestedparam)
 		{
@@ -218,7 +231,7 @@ public class MappingTest
 			
 			System.out.println(": is " + innerClass.getSimpleName());
 			assertNotNull(innerClass);
-			checkParams(level, innerClass, tokensets, nParam.getNullparamOrStringparamOrExprparam());
+			checkParams(level, innerClass, tokensets, nParam.getNullparamOrAliasparamOrStringparam());
 		}
 		else if (param instanceof Customparam)
 		{
@@ -233,7 +246,7 @@ public class MappingTest
 
 			System.out.println(": is " + innerClass.getSimpleName());
 			assertNotNull(innerClass);
-			checkParams(level, innerClass, tokensets, cParam.getStringparamOrExprparamOrValueparam());
+			checkParams(level, innerClass, tokensets, cParam.getStringparamOrAliasparamOrExprparam());
 		}
 		else if (param instanceof Exprparam)
 		{
@@ -262,49 +275,57 @@ public class MappingTest
 		boolean hasOrdinal = param.getOrdinal() != null;
 		Predicate<Method> checkParams = m -> hasOrdinal ? Arrays.equals(new Class<?>[] { int.class }, m.getParameterTypes()) : m.getParameterCount() == 0;
 		
+		Optional<? extends Member> member = Optional.empty();
+		
 		if (param.getName() != null)
-		{
-			Optional<? extends Member> member = Arrays.stream(fromClass.getFields())
-					.filter(f -> f.getName().equals(param.getName()))
-					.findAny();
-			
-			if (member.isEmpty())
-				member = Arrays.stream(fromClass.getMethods())
-						.filter(checkParams)
-						.filter(m -> m.getName().equals(param.getName()))
+			for (String name: param.getName().split("\\|"))
+			{
+				member = Arrays.stream(fromClass.getFields())
+						.filter(f -> f.getName().equals(name))
 						.findAny();
 				
-			if (member.isEmpty() && Arrays.stream(Vtl.class.getDeclaredClasses()).anyMatch(c -> fromClass == c))
-			{
-				List<Class<?>> candidates = Arrays.stream(Vtl.class.getDeclaredClasses())
-						.filter(fromClass::isAssignableFrom)
-						.collect(toList());
-				
-				for (Class<?> candidate: candidates)
-				{
-					member = Arrays.stream(candidate.getFields())
-							.filter(f -> f.getName().equals(param.getName()))
-							.findAny();
-					if (member.isEmpty())
-						member = Arrays.stream(candidate.getMethods())
+				if (member.isEmpty())
+					member = Arrays.stream(fromClass.getMethods())
 							.filter(checkParams)
-							.filter(m -> m.getName().equals(param.getName()))
+							.filter(m -> m.getName().equals(name))
 							.findAny();
 					
-					if (member.isPresent())
-						return member.get();
+				if (member.isEmpty() && Arrays.stream(Vtl.class.getDeclaredClasses()).anyMatch(c -> fromClass == c))
+				{
+					List<Class<?>> candidates = Arrays.stream(Vtl.class.getDeclaredClasses())
+							.filter(fromClass::isAssignableFrom)
+							.collect(toList());
+					
+					for (Class<?> candidate: candidates)
+					{
+						member = Arrays.stream(candidate.getFields())
+								.filter(f -> f.getName().equals(name))
+								.findAny();
+						if (member.isEmpty())
+							member = Arrays.stream(candidate.getMethods())
+								.filter(checkParams)
+								.filter(m -> m.getName().equals(name))
+								.findAny();
+						
+						if (member.isPresent())
+							return member.get();
+					}
 				}
+				
+				if (member.isPresent())
+					return member.get();
 			}
-			
-			assertTrue(member.isPresent(), "No field or method called " + param.getName() + " for class " + fromClass.getSimpleName());
-			return member.get();
-		}
+		
+		if (param.getName() != null && !member.isPresent())
+			assertTrue(param.getName() == null || member.isPresent(), "No field or method called " + param.getName().replaceAll("\\|", " or ") + " for class " + fromClass.getSimpleName());
 		
 		if (param instanceof Stringparam)
 			return null;
 		else if (param instanceof Customparam)
 			return null;
 		else if (param instanceof Valueparam)
+			return null;
+		else if (param instanceof Aliasparam)
 			return null;
 		else
 			throw new InvalidParameterException(param.getClass().getSimpleName() + " from " + fromClass.getSimpleName());

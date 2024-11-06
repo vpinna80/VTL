@@ -19,8 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -84,23 +86,23 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 		@Override
 		public String toString()
 		{
-			return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";	
+			return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";	
 		}
 	}
 
-	private final String name;
+	private final VTLAlias alias;
 	private final S domain;
 	
 	public DefaultVariable(S domain)
 	{
-		this.name = domain + "_var";
+		this.alias = VTLAliasImpl.of(domain + "_var");
 		this.domain = domain;
 	}
 
 	@Override
-	public String getName()
+	public VTLAlias getAlias()
 	{
-		return name;
+		return alias;
 	}
 
 	@Override
@@ -121,7 +123,7 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + domain.hashCode();
-		result = prime * result + name.hashCode();
+		result = prime * result + alias.hashCode();
 		return result;
 	}
 
@@ -135,7 +137,7 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 		if (obj instanceof Variable)
 		{
 			Variable<?, ?> inst = (Variable<?, ?>) obj;
-			return name.equals(inst.getName()) && domain.equals(inst.getDomain());
+			return alias.equals(inst.getAlias()) && domain.equals(inst.getDomain());
 		}
 		else 
 			return false;

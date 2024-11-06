@@ -35,10 +35,12 @@ import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class NvlTransformationTest
@@ -46,16 +48,16 @@ public class NvlTransformationTest
 	@Test
 	public void test()
 	{
-		VarIDOperand left = new VarIDOperand("left");
+		VarIDOperand left = new VarIDOperand(VTLAliasImpl.of("left"));
 		ConstantOperand right = new ConstantOperand(IntegerValue.of(MAX_VALUE));
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", SAMPLE5);
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), SAMPLE5);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		NvlTransformation isnt = new NvlTransformation(left, right);
 		DataSetMetadata structure = (DataSetMetadata) isnt.getMetadata(session);
 		
-		Optional<DataStructureComponent<Measure, ?, ?>> component = structure.getComponent("integer_1", Measure.class, INTEGERDS);
+		Optional<DataStructureComponent<Measure, ?, ?>> component = structure.getComponent(VTLAliasImpl.of("integer_1"), Measure.class, INTEGERDS);
 		assertTrue(component.isPresent(), "integer_var measure present");
 		
 		long nullCount = ((DataSet) isnt.eval(session)).stream()

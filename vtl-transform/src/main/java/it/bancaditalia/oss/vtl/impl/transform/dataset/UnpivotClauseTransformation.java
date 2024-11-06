@@ -20,9 +20,9 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.Collections.singleton;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.HashMap;
@@ -45,6 +45,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -57,13 +58,13 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	private static final long serialVersionUID = 1L;
 	@SuppressWarnings("unused")
 	private static final Logger LOGGER = LoggerFactory.getLogger(UnpivotClauseTransformation.class);
-	private final String identifierName;
-	private final String measureName;
+	private final VTLAlias identifierName;
+	private final VTLAlias measureName;
 
-	public UnpivotClauseTransformation(String identifierName, String measureName)
+	public UnpivotClauseTransformation(VTLAlias identifierName, VTLAlias measureName)
 	{
-		this.identifierName = normalizeAlias(identifierName);
-		this.measureName = normalizeAlias(measureName);
+		this.identifierName = requireNonNull(identifierName);
+		this.measureName = requireNonNull(measureName);
 	}
 
 	@Override
@@ -81,7 +82,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 			return measureVals.entrySet().stream()
 				.map(splitting((m, v) -> {
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> res = new HashMap<>();
-					res.put(newID, StringValue.of(m.getVariable().getName()));
+					res.put(newID, StringValue.of(m.getVariable().getAlias().toString()));
 					res.put(newMeasure, v);
 					return res;
 				}));

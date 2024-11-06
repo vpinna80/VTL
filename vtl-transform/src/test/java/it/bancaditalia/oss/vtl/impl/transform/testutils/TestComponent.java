@@ -23,6 +23,7 @@ import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -31,7 +32,7 @@ public class TestComponent<R extends Component, S extends ValueDomainSubset<S, D
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String name;
+	private final VTLAlias alias;
 	private final Class<R> role;
 	private final S domain;
 
@@ -40,15 +41,15 @@ public class TestComponent<R extends Component, S extends ValueDomainSubset<S, D
 		private static final long serialVersionUID = 1L;
 		
 		@Override
-		public String getName()
+		public VTLAlias getAlias()
 		{
-			return name;
+			return alias;
 		}
 
 		@Override
 		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
 		{
-			return new TestComponent<>(name, role, domain);
+			return new TestComponent<>(alias, role, domain);
 		}
 
 		@Override
@@ -66,13 +67,13 @@ public class TestComponent<R extends Component, S extends ValueDomainSubset<S, D
 		@Override
 		public boolean equals(Object obj)
 		{
-			return obj instanceof Variable ? name.equals(((Variable<?, ?>) obj).getName()) && domain.equals(((Variable<?, ?>) obj).getDomain()) : false;
+			return obj instanceof Variable ? alias.equals(((Variable<?, ?>) obj).getAlias()) && domain.equals(((Variable<?, ?>) obj).getDomain()) : false;
 		}
 	}
 
-	public TestComponent(String name, Class<R> role, S domain)
+	public TestComponent(VTLAlias alias, Class<R> role, S domain)
 	{
-		this.name = name;
+		this.alias = alias;
 		this.role = role;
 		this.domain = domain;
 	}
@@ -94,7 +95,7 @@ public class TestComponent<R extends Component, S extends ValueDomainSubset<S, D
 		int prime = 31;
 		int result = 1;
 		result = prime * result + domain.hashCode();
-		result = prime * result + name.hashCode();
+		result = prime * result + alias.hashCode();
 		return result;
 	}
 	
@@ -117,15 +118,15 @@ public class TestComponent<R extends Component, S extends ValueDomainSubset<S, D
 		if (obj instanceof TestComponent)
 		{
 			TestComponent<?, ?, ?> other = (TestComponent<?, ?, ?>) obj;
-			return role == other.role && name.equals(other.name) && domain.equals(other.domain);
+			return role == other.role && alias.equals(other.alias) && domain.equals(other.domain);
 		}
 		else if (obj instanceof DataStructureComponent)
 		{
 			DataStructureComponent<?, ?, ?> other = (DataStructureComponent<?, ?, ?>) obj;
-			return role == other.getRole() && name.equals(other.getVariable().getName()) && domain.equals(other.getVariable().getDomain());
+			return role == other.getRole() && alias.equals(other.getVariable().getAlias()) && domain.equals(other.getVariable().getDomain());
 		}
 		else if (obj instanceof Variable)
-			return name.equals(((Variable<?, ?>) obj).getName()) && domain.equals(((Variable<?, ?>) obj).getDomain());
+			return alias.equals(((Variable<?, ?>) obj).getAlias()) && domain.equals(((Variable<?, ?>) obj).getDomain());
 
 		return false;
 	}
@@ -133,6 +134,6 @@ public class TestComponent<R extends Component, S extends ValueDomainSubset<S, D
 	@Override
 	public String toString()
 	{
-		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";	
+		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";	
 	}
 }

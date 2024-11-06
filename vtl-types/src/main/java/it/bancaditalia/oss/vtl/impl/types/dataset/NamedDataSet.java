@@ -27,15 +27,16 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 public class NamedDataSet extends AbstractDataSet
 {
 	private static final long serialVersionUID = 1L;
 
 	private final DataSet delegate;
-	private final String alias;
+	private final VTLAlias alias;
 
-	public NamedDataSet(String alias, DataSet delegate)
+	public NamedDataSet(VTLAlias alias, DataSet delegate)
 	{
 		super(delegate.getMetadata());
 		
@@ -50,7 +51,7 @@ public class NamedDataSet extends AbstractDataSet
 		this.delegate = delegate;
 	}
 
-	public String getAlias()
+	public VTLAlias getAlias()
 	{
 		return alias;
 	}
@@ -75,6 +76,6 @@ public class NamedDataSet extends AbstractDataSet
 	@Override
 	public String toString()
 	{
-		return alias + getMetadata();
+		return "" + alias + getMetadata();
 	}
 }

@@ -26,11 +26,13 @@ import java.util.OptionalInt;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.NonNullDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -120,20 +122,20 @@ public enum TestComponents
 			@Override
 			public String toString()
 			{
-				return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getName() + "[" + getVariable().getDomain() + "]";
+				return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";
 			}
 		}
 
-		private final String name;
+		private final VTLAlias name;
 		private final S domain;
 		
-		public TestVariable(String name, S domain)
+		public TestVariable(VTLAlias name, S domain)
 		{
 			this.name = name;
 			this.domain = domain;
 		}
 		
-		public String getName()
+		public VTLAlias getAlias()
 		{
 			return name;
 		}
@@ -158,7 +160,7 @@ public enum TestComponents
 
 	private final Class<? extends Component> role;
 	private final ValueDomainSubset<?, ?> domain;
-	private final String domainStr;
+	private final VTLAlias domainStr;
 
 	private TestComponents(Class<? extends Component> role, ValueDomainSubset<?, ?> domain)
 	{
@@ -170,13 +172,13 @@ public enum TestComponents
 	private TestComponents(Class<? extends Component> role, String domainStr)
 	{
 		this.role = role;
-		this.domainStr = domainStr;
+		this.domainStr = VTLAliasImpl.of(domainStr);
 		this.domain = null;
 	}
 	
 	@SuppressWarnings("unchecked")
 	public <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureComponent<R, S, D> get(MetadataRepository repo)
 	{
-		return (domain != null ? new TestVariable<>(name(), (S) domain) : new TestVariable<>(name(), (S) repo.getDomain(domainStr))).as((Class<R>) role);
+		return (domain != null ? new TestVariable<>(VTLAliasImpl.of(name()), (S) domain) : new TestVariable<>(VTLAliasImpl.of(name()), (S) repo.getDomain(domainStr))).as((Class<R>) role);
 	}
 }

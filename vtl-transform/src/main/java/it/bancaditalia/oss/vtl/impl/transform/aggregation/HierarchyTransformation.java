@@ -28,17 +28,14 @@ import static it.bancaditalia.oss.vtl.impl.types.data.DoubleValue.ZERO;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
-import static it.bancaditalia.oss.vtl.util.Utils.ifNonNull;
 import static java.lang.Double.NaN;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,9 +63,9 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
@@ -81,9 +78,9 @@ public class HierarchyTransformation extends TransformationImpl
 	private static final long serialVersionUID = 1L;
 
 	private final Transformation operand;
-	private final String rulesetID;
-	private final List<String> conditions;
-	private final String id;
+	private final VTLAlias rulesetID;
+	private final List<VTLAlias> conditions;
+	private final VTLAlias id;
 	private final HierarchyMode mode;
 	private final HierarchyInput input;
 	private final HierarchyOutput output;
@@ -103,13 +100,13 @@ public class HierarchyTransformation extends TransformationImpl
 		COMPUTED, ALL;
 	}
 
-	public HierarchyTransformation(Transformation operand, String rulesetID, List<String> conditions, String id, HierarchyMode mode, HierarchyInput input, HierarchyOutput output)
+	public HierarchyTransformation(Transformation operand, VTLAlias rulesetID, List<VTLAlias> conditions, VTLAlias id, HierarchyMode mode, HierarchyInput input, HierarchyOutput output)
 	{
 		this.operand = operand;
-		this.rulesetID = normalizeAlias(requireNonNull(rulesetID));
-		this.conditions = coalesce(conditions, new ArrayList<>()).stream().map(Variable::normalizeAlias).collect(toList());
+		this.rulesetID = requireNonNull(rulesetID);
+		this.conditions = coalesce(conditions, emptyList());
 		
-		this.id = ifNonNull(id, Variable::normalizeAlias);
+		this.id = id;
 		this.mode = coalesce(mode, NON_NULL);
 		this.input = coalesce(input, RULE);
 		this.output = coalesce(output, COMPUTED);
@@ -270,7 +267,7 @@ public class HierarchyTransformation extends TransformationImpl
 	@Override
 	public String toString()
 	{
-		return 	"hierarchy(" + operand + ", " + rulesetID + (conditions.isEmpty() ? "" : " condition " + String.join(", ", conditions)) + (id == null ? "" : " rule " + id)
+		return 	"hierarchy(" + operand + ", " + rulesetID + (conditions.isEmpty() ? "" : " condition " + String.join(", ", conditions.toString())) + (id == null ? "" : " rule " + id)
 				+ " " + mode.toString().toLowerCase() + " " + input.toString().toLowerCase() + " " + output.toString().toLowerCase() + "\")";
 	}
 

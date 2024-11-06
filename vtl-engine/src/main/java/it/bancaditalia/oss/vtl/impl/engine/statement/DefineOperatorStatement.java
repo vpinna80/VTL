@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import it.bancaditalia.oss.vtl.engine.UserOperatorStatement;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.Parameter;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
@@ -32,12 +33,12 @@ class DefineOperatorStatement implements UserOperatorStatement, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final String alias;
+	private final VTLAlias alias;
 	private final Transformation expression;
 	private final List<Parameter> params;
 	private final Parameter resultType;
 
-	public DefineOperatorStatement(String alias, List<Parameter> params, Parameter resultType, Transformation expression)
+	public DefineOperatorStatement(VTLAlias alias, List<Parameter> params, Parameter resultType, Transformation expression)
 	{
 		this.alias = alias;
 		this.expression = expression;
@@ -71,7 +72,7 @@ class DefineOperatorStatement implements UserOperatorStatement, Serializable
 	}
 
 	@Override
-	public String getAlias()
+	public VTLAlias getAlias()
 	{
 		return alias;
 	}

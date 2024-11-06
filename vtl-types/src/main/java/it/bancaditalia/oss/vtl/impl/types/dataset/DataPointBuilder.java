@@ -58,6 +58,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
@@ -101,7 +102,8 @@ public class DataPointBuilder implements Serializable
 	}
 
 	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
-			Lineage lineage, DataSetMetadata structure, Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
+			Lineage lineage, DataSetMetadata structure, 
+			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
 	{
 		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(lineage, structure), EnumSet.of(CONCURRENT, UNORDERED));
 	}
@@ -156,10 +158,10 @@ public class DataPointBuilder implements Serializable
 		return checkState();
 	}
 
-	public DataPointBuilder delete(String... names)
+	public DataPointBuilder delete(VTLAlias... names)
 	{
-		Set<String> nameSet = Utils.getStream(names).collect(toSet());
-		Set<DataStructureComponent<?, ?, ?>> toDelete = Utils.getStream(delegate.keySet()).filter(c -> nameSet.contains(c.getVariable().getName())).collect(toSet());
+		Set<VTLAlias> nameSet = Utils.getStream(names).collect(toSet());
+		Set<DataStructureComponent<?, ?, ?>> toDelete = Utils.getStream(delegate.keySet()).filter(c -> nameSet.contains(c.getVariable().getAlias())).collect(toSet());
 		delegate.keySet().removeAll(toDelete);
 		return checkState();
 	}
@@ -270,9 +272,9 @@ public class DataPointBuilder implements Serializable
 		{
 			Objects.requireNonNull(other);
 
-			Set<String> thisComponentNames = keySet().stream().map(DataStructureComponent::getVariable).map(Variable::getName).collect(toSet());
+			Set<VTLAlias> thisComponentNames = keySet().stream().map(DataStructureComponent::getVariable).map(Variable::getAlias).collect(toSet());
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream()
-					.filter(c -> !thisComponentNames.contains(c.getVariable().getName()))
+					.filter(c -> !thisComponentNames.contains(c.getVariable().getAlias()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
 			DataSetMetadata newStructure = new DataStructureBuilder(finalMap.keySet()).build();
 

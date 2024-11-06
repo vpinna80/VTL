@@ -41,8 +41,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class SetTransformationTest
@@ -63,11 +65,11 @@ public class SetTransformationTest
 	@BeforeEach
 	public void before()
 	{
-		left = new VarIDOperand("left");
-		right = new VarIDOperand("right");
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", SAMPLE5);
-		map.put("right", SAMPLE10);
+		left = new VarIDOperand(VTLAliasImpl.of("left"));
+		right = new VarIDOperand(VTLAliasImpl.of("right"));
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), SAMPLE5);
+		map.put(VTLAliasImpl.of("right"), SAMPLE10);
 		session = TestUtils.mockSession(map);
 	}
 	
@@ -78,8 +80,8 @@ public class SetTransformationTest
 		SetTransformation setTransformation = new SetTransformation(operator, asList(left, right));
 		
 		DataSetMetadata metadata = (DataSetMetadata) setTransformation.getMetadata(session);
-		assertTrue(metadata.contains("integer_1"));
-		assertTrue(metadata.contains("string_1"));
+		assertTrue(metadata.contains(VTLAliasImpl.of("integer_1")));
+		assertTrue(metadata.contains(VTLAliasImpl.of("string_1")));
 		
 		DataSet result = setTransformation.eval(session);
 		

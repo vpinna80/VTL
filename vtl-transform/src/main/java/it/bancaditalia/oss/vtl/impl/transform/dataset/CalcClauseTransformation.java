@@ -21,12 +21,12 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singleton;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 
@@ -65,6 +65,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -84,20 +85,20 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final String name;
+		private final VTLAlias alias;
 		private final Class<? extends Component> role;
 		private final Transformation calcClause;
 
-		public CalcClauseItem(Class<? extends Component> role, String name, Transformation calcClause)
+		public CalcClauseItem(Class<? extends Component> role, VTLAlias alias, Transformation calcClause)
 		{
-			this.name = normalizeAlias(name);
+			this.alias = requireNonNull(alias);
 			this.calcClause = calcClause;
 			this.role = role;
 		}
 
-		public String getName()
+		public VTLAlias getAlias()
 		{
-			return name;
+			return alias;
 		}
 
 		public Class<? extends Component> getRole()
@@ -108,7 +109,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		@Override
 		public String toString()
 		{
-			return (role != null ? role.getSimpleName().toLowerCase() + " " : "") + name + " := " + calcClause;
+			return (role != null ? role.getSimpleName().toLowerCase() + " " : "") + alias + " := " + calcClause;
 		}
 
 		@Override
@@ -188,10 +189,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		final List<CalcClauseItem> analyticClauses = partitionedClauses.get(true);
 		
 		DataSetMetadata nonAnalyticResultMetadata = new DataStructureBuilder(metadata)
-				.removeComponents(analyticClauses.stream().map(CalcClauseItem::getName).collect(toSet()))
+				.removeComponents(analyticClauses.stream().map(CalcClauseItem::getAlias).collect(toSet()))
 				.build();
 		
-		String lineageString = calcClauses.stream().map(CalcClauseItem::getName).collect(joining(", ", "calc ", ""));
+		String lineageString = calcClauses.stream().map(CalcClauseItem::getAlias).map(VTLAlias::toString).collect(joining(", ", "calc ", ""));
 		
 		DataStructureComponent<Identifier, ?, ?> timeId = metadata.getIDs().stream()
 					.map(c -> c.asRole(Identifier.class))
@@ -208,7 +209,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
 						nonAnalyticClauses.stream()
 							.collect(toConcurrentMap(
-								clause -> nonAnalyticResultMetadata.getComponent(clause.getName()).get(),
+								clause -> nonAnalyticResultMetadata.getComponent(clause.getAlias()).get(),
 								clause -> clause.eval(dpSession))
 							);
 					
@@ -233,7 +234,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			DataSet clauseValue = (DataSet) clause.calcClause.eval(scheme);
 			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getMetadata().getMeasures().iterator().next();
 	
-			String newName = coalesce(clause.getName(), measure.getVariable().getName());
+			VTLAlias newName = coalesce(clause.getAlias(), measure.getVariable().getAlias());
 			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
 			
 			DataSetMetadata newStructure = new DataStructureBuilder(clauseValue.getMetadata())
@@ -294,7 +295,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else
 				domain = ((ScalarValueMetadata<?, ?>) itemMeta).getDomain();
 
-			Optional<DataStructureComponent<?, ?, ?>> maybePresent = metadata.getComponent(item.getName());
+			Optional<DataStructureComponent<?, ?, ?>> maybePresent = metadata.getComponent(item.getAlias());
 			
 			if (maybePresent.isPresent())
 			{
@@ -312,7 +313,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					{
 						// switch role (from a non-id to any)
 						builder.removeComponent(definedComponent);
-						DataStructureComponent<?, ?, ?> newComponent = repo.createTempVariable(item.getName(), domain).as(item.getRole());
+						DataStructureComponent<?, ?, ?> newComponent = repo.createTempVariable(item.getAlias(), domain).as(item.getRole());
 						builder.addComponent(newComponent);
 					}
 				}
@@ -321,7 +322,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// new component
 				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
-				builder = builder.addComponent(repo.createTempVariable(item.getName(), domain).as(newComponent));
+				builder = builder.addComponent(repo.createTempVariable(item.getAlias(), domain).as(newComponent));
 			}
 		}
 

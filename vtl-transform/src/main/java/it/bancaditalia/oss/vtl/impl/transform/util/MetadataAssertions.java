@@ -35,6 +35,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -125,7 +126,7 @@ public class MetadataAssertions<R extends Component, S extends ValueDomainSubset
 	{
 		return new MetadataAssertions<>(name, names.stream()
 				.flatMap(name -> components.stream()
-						.filter(c -> name.equals(c.getVariable().getName()))
+						.filter(c -> name.equals(c.getVariable().getAlias().getName()))
 						.findAny()
 						.map(Stream::of)
 						.orElse(Stream.empty()))
@@ -139,7 +140,7 @@ public class MetadataAssertions<R extends Component, S extends ValueDomainSubset
 		if (filtered.get().size() != this.components.size())
 		{
 			this.components.removeAll(filtered.get());
-			throw new VTLMissingComponentsException(components, names.toArray(new String[0]));
+			throw new VTLMissingComponentsException(components, names.toArray(VTLAlias[]::new));
 		}
 		
 		return filtered;

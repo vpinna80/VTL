@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
@@ -32,15 +33,15 @@ public class SamplesEnvironment implements Environment
 {
 	private static final Pattern SAMPLE_PATTERN = Pattern.compile("sample(1[0-7]|[1-9])");
 	@Override
-	public boolean contains(String alias)
+	public boolean contains(VTLAlias alias)
 	{
 		return getValue(null, alias).isPresent();
 	}
 
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo, String alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
-		Matcher matcher = SAMPLE_PATTERN.matcher(alias);
+		Matcher matcher = SAMPLE_PATTERN.matcher(alias.toString());
 		return matcher.matches() ? Optional.of(SampleDataSets.valueOf("SAMPLE" + matcher.group(1))) : Optional.empty();
 	}
 }

@@ -40,11 +40,13 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 
@@ -59,17 +61,17 @@ public class StrlenTransformationTest
 	@MethodSource
 	public void test(String testName, DataSet operand, String[] resultKeys, long[] resultValues)
 	{
-		VarIDOperand left = new VarIDOperand("left");
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("left", operand);
+		VarIDOperand left = new VarIDOperand(VTLAliasImpl.of("left"));
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("left"), operand);
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		StrlenTransformation st = new StrlenTransformation(left);
 		DataSetMetadata structure = (DataSetMetadata) st.getMetadata(session);
 		
 		DataStructureComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, ?, ?>> measure = structure.getComponent("integer_var", Measure.class, INTEGERDS);
-		assertTrue(measure.isPresent(), "integer_var result");
+		Optional<DataStructureComponent<?, ?, ?>> measure = structure.getComponent(INTEGERDS.getDefaultVariable().getAlias());
+		assertTrue(measure.isPresent() && measure.get().is(Measure.class), "integer_var result");
 		
 		DataSet ds = (DataSet) st.eval(session);
 

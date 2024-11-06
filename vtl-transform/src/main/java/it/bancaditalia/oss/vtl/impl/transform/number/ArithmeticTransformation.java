@@ -62,6 +62,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -105,9 +106,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		DataSetMetadata dsMeta = (DataSetMetadata) metadata;
-		Set<String> measureNames = dataset.getMetadata().getComponents(Measure.class, NUMBERDS).stream()
+		Set<VTLAlias> measureNames = dataset.getMetadata().getComponents(Measure.class, NUMBERDS).stream()
 				.map(DataStructureComponent::getVariable)
-				.map(Variable::getName)
+				.map(Variable::getAlias)
 				.collect(toSet());
 		
 		// check if both a measure and the scalar are integers
@@ -122,7 +123,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		String lineageDescriptor = datasetIsLeftOp ? "x" + operator.toString() + scalar : scalar + operator.toString() + "x"; 
 		return dataset.mapKeepingKeys(dsMeta, dp -> LineageNode.of(lineageDescriptor, dp.getLineage()), dp -> { 
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp.getValues(Attribute.class));
-				for (String name: measureNames)
+				for (VTLAlias name: measureNames)
 				{
 					DataStructureComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
 							.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())).asRole(Measure.class);
@@ -189,8 +190,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, 
 					(dpl, dpr) -> new DataPointBuilder(resultMeasures.stream()
 							.map(toEntryWithValue(compToCalc -> compute(swap, INTEGERDS.isAssignableFrom(compToCalc.getVariable().getDomain()), 
-									dpl.get(streamed.getComponent(compToCalc.getVariable().getName()).get()), 
-									dpr.get(indexed.getComponent(compToCalc.getVariable().getName()).get()))
+									dpl.get(streamed.getComponent(compToCalc.getVariable().getAlias()).get()), 
+									dpr.get(indexed.getComponent(compToCalc.getVariable().getAlias()).get()))
 							)).collect(entriesToMap()))		
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
@@ -282,8 +283,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 		}
 		else
 		{
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getName()));
-			Map<String, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = rightMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getName()));
+			Map<VTLAlias, ? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getAlias()));
+			Map<VTLAlias, ? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasuresMap = rightMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getAlias()));
 			
 			resultMeasures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
 				.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))

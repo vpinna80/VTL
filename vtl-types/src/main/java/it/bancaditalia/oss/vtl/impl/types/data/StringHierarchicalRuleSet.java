@@ -40,6 +40,7 @@ import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
@@ -52,14 +53,14 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 	
 	public static class StringRule implements Rule<StringCodeList, StringDomain>
 	{
-		private final String name;
+		private final VTLAlias name;
 		private final StringCodeItem leftCodeItem;
-		private final RuleSet.RuleType ruleType;
+		private final RuleType ruleType;
 		private final Map<StringCodeItem, Boolean> sign;
 		private final ScalarValue<?, ?, ?, ?> errorCode;
 		private final ScalarValue<?, ?, ?, ?> errorLevel;
 		
-		public StringRule(String name, StringCodeItem leftCodeItem, RuleSet.RuleType ruleType, Map<StringCodeItem, Boolean> sign, ScalarValue<?, ?, ?, ?> errorCode, ScalarValue<?, ?, ?, ?> errorLevel)
+		public StringRule(VTLAlias name, StringCodeItem leftCodeItem, RuleType ruleType, Map<StringCodeItem, Boolean> sign, ScalarValue<?, ?, ?, ?> errorCode, ScalarValue<?, ?, ?, ?> errorLevel)
 		{
 			this.name = name;
 			this.leftCodeItem = leftCodeItem;
@@ -70,7 +71,7 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 		}
 
 		@Override
-		public String getName()
+		public VTLAlias getAlias()
 		{
 			return name;
 		}
@@ -116,15 +117,15 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 		}
 	}
 	
-	private final String name;
-	private final String ruleComp;
+	private final VTLAlias name;
+	private final VTLAlias ruleComp;
 	private final Map<StringCodeItem, List<StringRule>> rules;
 	private final Map<StringCodeItem, Set<StringRule>> depends;
 	private final RuleSetType type;
 	private final StringCodeList domain;
 	private final Set<CodeItem<?, ?, StringCodeList, StringDomain>> leaves;
 
-	public StringHierarchicalRuleSet(String name, String ruleComp, StringCodeList domain, RuleSetType type, List<StringRule> rules)
+	public StringHierarchicalRuleSet(VTLAlias name, VTLAlias ruleComp, StringCodeList domain, RuleSetType type, List<StringRule> rules)
 	{
 		this.name = name; 
 		this.ruleComp = requireNonNull(ruleComp);
@@ -168,13 +169,13 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 	}
 
 	@Override
-	public String getName()
+	public VTLAlias getAlias()
 	{
 		return name;
 	}
 	
 	@Override
-	public String getRuleId()
+	public VTLAlias getRuleId()
 	{
 		return ruleComp;
 	}

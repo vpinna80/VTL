@@ -24,6 +24,7 @@ import java.util.Map;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
@@ -50,7 +51,15 @@ public interface TransformationScheme
 	 * @return The {@link VTLValue} if the alias is found.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public VTLValue resolve(String alias);
+	public VTLValue resolve(VTLAlias alias);
+
+	/**
+	 * The same as {@code expected.cast(resolve(alias))} 
+	 */
+	public default <T extends VTLValue> T resolve(VTLAlias alias, Class<T> expected)
+	{
+		return expected.cast(resolve(alias));
+	}
 
 	/**
 	 * Attempts to compute a given {@link Transformation}, binding references to aliases defined in this TransformationScheme.
@@ -71,7 +80,7 @@ public interface TransformationScheme
 	 * @return the {@link VTLValueMetadata metadata} of the value if the alias is found.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public VTLValueMetadata getMetadata(String alias);
+	public VTLValueMetadata getMetadata(VTLAlias alias);
 
 	/**
 	 * Returns a {@link Statement structure} a rule referred by an alias defined in this TransformationScheme.
@@ -80,7 +89,7 @@ public interface TransformationScheme
 	 * @return a {@link Statement} instance describing the rule if found.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public Statement getRule(String alias);
+	public Statement getRule(VTLAlias alias);
 
 	/**
 	 * Determine if an alias is defined in this TransformationScheme.
@@ -88,15 +97,7 @@ public interface TransformationScheme
 	 * @param alias the alias whose value is to be retrieved.
 	 * @return whether the alias is defined or not.
 	 */
-	public boolean contains(String alias);
-
-	/**
-	 * The same as {@code expected.cast(resolve(alias))} 
-	 */
-	public default <T extends VTLValue> T resolve(String alias, Class<T> expected)
-	{
-		return expected.cast(resolve(alias));
-	}
+	public boolean contains(VTLAlias alias);
 	
 	/**
 	 * Returns a holder map for computed values of type T
@@ -114,7 +115,7 @@ public interface TransformationScheme
 	 * @return a {@link HierarchicalRuleSet} instance describing the rule if found.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(String alias);
+	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(VTLAlias alias);
 
 	/**
 	 * Returns a {@link DataPointRuleSet} referred by an alias defined in this TransformationScheme.
@@ -123,7 +124,7 @@ public interface TransformationScheme
 	 * @return a {@link DataPointRuleSet} instance describing the rule if found.
 	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public DataPointRuleSet findDatapointRuleset(String alias);
+	public DataPointRuleSet findDatapointRuleset(VTLAlias alias);
 
 	/**
 	 * Tries to persist a value in one of the environments managed by this scheme
@@ -131,7 +132,7 @@ public interface TransformationScheme
 	 * @param value The value to persist
 	 * @param alias The alias under which the value must be persisted
 	 */
-	public default void persist(VTLValue value, String alias) throws VTLException
+	public default void persist(VTLValue value, VTLAlias alias) throws VTLException
 	{
 		throw new UnsupportedOperationException();
 	}

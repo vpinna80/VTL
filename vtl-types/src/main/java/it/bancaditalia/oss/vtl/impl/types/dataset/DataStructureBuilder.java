@@ -50,6 +50,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class DataStructureBuilder
@@ -126,10 +127,10 @@ public class DataStructureBuilder
 		return this;
 	}
 
-	public DataStructureBuilder removeComponents(Set<String> componentNames)
+	public DataStructureBuilder removeComponents(Set<VTLAlias> componentNames)
 	{
 		this.components.stream()
-			.filter(c -> componentNames.contains(c.getVariable().getName()))
+			.filter(c -> componentNames.contains(c.getVariable().getAlias()))
 			.forEach(this.components::remove);
 		return this;
 	}
@@ -149,14 +150,14 @@ public class DataStructureBuilder
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final Map<String, DataStructureComponent<?, ?, ?>> byName;
+		private final Map<VTLAlias, DataStructureComponent<?, ?, ?>> byName;
 		private final Map<Class<? extends Component>, Set<DataStructureComponent<?, ?, ?>>> byRole;
 
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
 			byName = components.stream()
 				.sorted(DataStructureComponent::byNameAndRole)
-				.collect(toMap(c -> c.getVariable().getName(), identity(), LinkedHashMap::new));
+				.collect(toMap(c -> c.getVariable().getAlias(), identity(), LinkedHashMap::new));
 			byRole = components.stream()
 					.collect(groupingBy(DataStructureComponent::getRole, DataStructureBuilder::createEmptyStructure, toSet()));
 			byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
@@ -193,13 +194,13 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public Optional<DataStructureComponent<?, ?, ?>> getComponent(String alias)
+		public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias alias)
 		{
 			return Optional.ofNullable(byName.get(alias));
 		}
 
 		@Override
-		public DataSetMetadata membership(String alias)
+		public DataSetMetadata membership(VTLAlias alias)
 		{
 			DataStructureComponent<?, ?, ?> component = byName.get(alias);
 
@@ -251,7 +252,7 @@ public class DataStructureBuilder
 		}
 
 		@Override
-		public boolean contains(String alias)
+		public boolean contains(VTLAlias alias)
 		{
 			return byName.containsKey(alias);
 		}

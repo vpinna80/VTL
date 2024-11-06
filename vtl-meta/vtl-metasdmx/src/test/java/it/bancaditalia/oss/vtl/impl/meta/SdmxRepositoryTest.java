@@ -50,6 +50,7 @@ import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -85,7 +86,7 @@ public class SdmxRepositoryTest
 	public void testGetCodes(MockServerClient client) throws IOException
 	{
 		assertTrue(repo instanceof SDMXRepository);
-		ValueDomainSubset<?, ?> domain = repo.getDomain("ECB:CL_CURRENCY(1.0)");
+		ValueDomainSubset<?, ?> domain = repo.getDomain(VTLAliasImpl.of(true, "ECB:CL_CURRENCY(1.0)"));
 		assertTrue(domain instanceof SdmxCodeList);
 		Set<CodeItem<?, ?, StringCodeList, StringDomain>> codes = ((SdmxCodeList) domain).getCodeItems();
 		assertEquals(369, codes.size());
@@ -94,7 +95,7 @@ public class SdmxRepositoryTest
 	@Test
 	public void testGetStructure(MockServerClient client) throws IOException
 	{
-		DataSetMetadata actual = repo.getStructure("ECB:EXR(1.0)");
+		DataSetMetadata actual = repo.getStructure(VTLAliasImpl.of(true, "ECB:EXR(1.0)")).orElseThrow(() -> new NullPointerException());
 		DataSetMetadata expected = new DataStructureBuilder()
 				.addComponents(TIME_PERIOD)
 				.addComponents(allOf(TestComponents.class).stream().map(c -> c.get(repo)).collect(toList()))

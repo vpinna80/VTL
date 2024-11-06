@@ -22,8 +22,8 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,25 +38,26 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class SubspaceClauseTransformation extends DatasetClauseTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private final Map<String, ScalarValue<?, ?, ?, ?>> subspace;
+	private final Map<VTLAlias, ScalarValue<?, ?, ?, ?>> subspace;
 	
-	public SubspaceClauseTransformation(Map<String, ScalarValue<?, ?, ?, ?>> subspace)
+	public SubspaceClauseTransformation(Map<VTLAlias, ScalarValue<?, ?, ?, ?>> subspace)
 	{
-		this.subspace = subspace.keySet().stream().collect(toMap(Variable::normalizeAlias, subspace::get));
+		this.subspace = requireNonNull(subspace);
 	}
 
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		String lineageString = subspace.keySet().stream()
+				.map(VTLAlias::toString)
 				.collect(joining(", ", "sub ", ""));
 		
 		DataSet operand = (DataSet) getThisValue(scheme);
@@ -77,12 +78,12 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		
 		DataSetMetadata dataset = (DataSetMetadata) operand;
 		
-		Set<String> missing = subspace.keySet().stream()
+		Set<VTLAlias> missing = subspace.keySet().stream()
 				.filter(name -> !dataset.getComponent(name, Identifier.class).isPresent())
 				.collect(toSet());
 		
 		if (missing.size() > 0)
-			throw new VTLMissingComponentsException(dataset.getIDs(), missing.toArray(String[]::new));
+			throw new VTLMissingComponentsException(dataset.getIDs(), missing.toArray(VTLAlias[]::new));
 
 		Set<DataStructureComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "sub");
 		

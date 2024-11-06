@@ -19,10 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
-import static it.bancaditalia.oss.vtl.model.data.Variable.normalizeAlias;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod;
 
 public interface AnalyticTransformation
@@ -30,18 +31,18 @@ public interface AnalyticTransformation
 	public static class OrderByItem implements Serializable
 	{
 		private static final long serialVersionUID = 1L;
-		private final String name;
+		private final VTLAlias alias;
 		private final SortingMethod method;
 
-		public OrderByItem(String name, SortingMethod method)
+		public OrderByItem(VTLAlias alias, SortingMethod method)
 		{
-			this.name = normalizeAlias(name);
+			this.alias = requireNonNull(alias);
 			this.method = method;
 		}
 
-		public String getName()
+		public VTLAlias getAlias()
 		{
-			return name;
+			return alias;
 		}
 
 		public SortingMethod getMethod()
@@ -52,7 +53,7 @@ public interface AnalyticTransformation
 		@Override
 		public String toString()
 		{
-			return (method != null ? method + " " : "") + name;
+			return (method != null ? method + " " : "") + alias;
 		}
 	}
 }

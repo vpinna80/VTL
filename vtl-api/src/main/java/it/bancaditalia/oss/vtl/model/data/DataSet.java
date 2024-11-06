@@ -81,7 +81,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param component The component to retain.
 	 * @return The projected dataset
 	 */
-	public DataSet membership(String component);
+	public DataSet membership(VTLAlias alias);
 
 	/**
 	 * Finds a component with given name
@@ -89,7 +89,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param name The requested component's name.
 	 * @return an {@link Optional} eventually containing the requested {@link DataStructureComponent} if one was found.
 	 */
-	public Optional<DataStructureComponent<?, ?, ?>> getComponent(String name);
+	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias alias);
 
 	/**
 	 * Create a new DataSet by filtering this DataSet's {@link DataPoint}s matching the specified values for some identifiers.

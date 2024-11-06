@@ -114,7 +114,7 @@ public class Paginator
 
 	public String getName(int i)
 	{
-		return comps[i].getVariable().getName();
+		return comps[i].getVariable().getAlias().getName();
 	}
 
 	public int[] getIntColumn(int i)

@@ -104,7 +104,7 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 	 * @return the renamed component
 	 */
 	@SuppressWarnings("unchecked")
-	public default DataStructureComponent<R, S, D> getRenamed(MetadataRepository repo, String newName)
+	public default DataStructureComponent<R, S, D> getRenamed(MetadataRepository repo, VTLAlias newName)
 	{
 		return ((Variable<S, D>) repo.createTempVariable(newName, getVariable().getDomain())).as(getRole());
 	}

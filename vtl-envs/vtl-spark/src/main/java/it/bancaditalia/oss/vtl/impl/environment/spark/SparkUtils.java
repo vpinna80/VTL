@@ -80,6 +80,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -159,7 +160,7 @@ public class SparkUtils
 			default: throw new UnsupportedOperationException("No VTL role corresponding to metadata.");
 		}
 		
-		return repo.getVariable(field.name()).as(role);
+		return repo.getVariable(VTLAliasImpl.of(field.name())).as(role);
 	}
 
 	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Serializable serialized)
@@ -195,7 +196,7 @@ public class SparkUtils
 		else
 			throw new IllegalStateException("Unqualified role class: " + component.getRole());
 		
-		return metadataBuilder.putString("Domain", component.getVariable().getDomain().getName()).build();
+		return metadataBuilder.putString("Domain", component.getVariable().getDomain().getAlias().getName()).build();
 	}
 
 	public static StructField getFieldFor(DataStructureComponent<?, ?, ?> component)
@@ -203,12 +204,12 @@ public class SparkUtils
 		DataType type = getDataTypeFor(component);
 		Metadata metadata = getMetadataFor(component);
 		
-		return new StructField(component.getVariable().getName(), type, component.is(NonIdentifier.class), metadata);
+		return new StructField(component.getVariable().getAlias().getName(), type, component.is(NonIdentifier.class), metadata);
 	}
 
 	public static EncoderField getEncoderFieldFor(DataStructureComponent<?, ?, ?> component)
 	{
-		return new EncoderField(component.getVariable().getName(), DOMAIN_ENCODERS.get(component.getVariable().getDomain()), 
+		return new EncoderField(component.getVariable().getAlias().getName(), DOMAIN_ENCODERS.get(component.getVariable().getDomain()), 
 				true, getMetadataFor(component), Option.empty(), Option.empty());
 	}
 
@@ -240,12 +241,12 @@ public class SparkUtils
 
 	public static List<String> getNamesFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		return structHelper(components.stream(), c -> c.getVariable().getName());
+		return structHelper(components.stream(), c -> c.getVariable().getAlias().getName());
 	}
 
 	public static List<Column> getColumnsFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
-		return structHelper(components.stream(), c -> col(c.getVariable().getName()));
+		return structHelper(components.stream(), c -> col(c.getVariable().getAlias().getName()));
 	}
 
 	public static <F> List<F> structHelper(Stream<? extends DataStructureComponent<?, ?, ?>> stream, SerFunction<? super DataStructureComponent<?, ?, ?>, F> mapper)

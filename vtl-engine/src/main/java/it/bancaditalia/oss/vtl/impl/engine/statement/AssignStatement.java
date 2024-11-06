@@ -25,6 +25,7 @@ import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -39,7 +40,7 @@ class AssignStatement extends AbstractStatement implements DMLStatement, Transfo
 	private final Transformation expression;
 	private final boolean persistent;
 
-	public AssignStatement(String alias, Transformation expression, boolean persistent)
+	public AssignStatement(VTLAlias alias, Transformation expression, boolean persistent)
 	{
 		super(alias);
 		this.expression = expression;
