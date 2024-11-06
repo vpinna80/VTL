@@ -19,12 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.Frequency.D;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAmount;
 
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDateDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
@@ -65,8 +69,43 @@ public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValu
 	}
 
 	@Override
-	public DateValue<S> increment(long amount)
+	public DateValue<S> add(long amount)
 	{
 		return new DateValue<>(get().plus(amount, DAYS), getDomain());
+	}
+	
+	@Override
+	public DateValue<S> add(TemporalAmount length)
+	{
+		return new DateValue<>(get().plus(length), getDomain());
+	}
+	
+	@Override
+	public Period until(TimeValue<?, ?, ?, ?> end)
+	{
+		if (end instanceof DateValue)
+			return get().until((LocalDate) end.get());
+		else if (end instanceof TimePeriodValue)
+			return get().until(((PeriodHolder<?>) end.get()).endDate());
+		else
+			throw new UnsupportedOperationException(get() + " until " + end);
+	}
+	
+	@Override
+	public DurationValue getFrequency()
+	{
+		return D.get();
+	}
+
+	@Override
+	public DateValue<?> getStartDate()
+	{
+		return this;
+	}
+
+	@Override
+	public DateValue<?> getEndDate()
+	{
+		return this;
 	}
 }

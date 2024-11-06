@@ -54,11 +54,13 @@ import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation.FillMode;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -88,14 +90,14 @@ public class FillTimeSeriesTransformationTest
 	@MethodSource
 	public void test(String name, DataSet sample, FillMode mode, int expectedSize)
 	{
-		Map<String, DataSet> map = new HashMap<>();
-		map.put("operand", sample);
+		Map<VTLAlias, DataSet> map = new HashMap<>();
+		map.put(VTLAliasImpl.of("operand"), sample);
 		session = TestUtils.mockSession(map);
 
-		FillTimeSeriesTransformation ftsTransformation = new FillTimeSeriesTransformation(new VarIDOperand("operand"), mode);
+		FillTimeSeriesTransformation ftsTransformation = new FillTimeSeriesTransformation(new VarIDOperand(VTLAliasImpl.of("operand")), mode);
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
-		DataStructureComponent<Identifier, ?, ?> time_id = computedResult.getMetadata().getComponent("date_1", Identifier.class, DATEDS).get();
-		DataStructureComponent<Identifier, ?, ?> string_id = computedResult.getMetadata().getComponent("string_1", Identifier.class, STRINGDS).get();
+		DataStructureComponent<Identifier, ?, ?> time_id = computedResult.getMetadata().getComponent(VTLAliasImpl.of("date_1"), Identifier.class, DATEDS).get();
+		DataStructureComponent<Identifier, ?, ?> string_id = computedResult.getMetadata().getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS).get();
 
 		assertEquals(expectedSize, computedResult.size(), "Number of datapoints");
 
@@ -117,7 +119,7 @@ public class FillTimeSeriesTransformationTest
 					else
 						prev = curr;
 					
-					prev = prev.increment(1);
+					prev = prev.add(1);
 				}
 			}
 		}
@@ -140,7 +142,7 @@ public class FillTimeSeriesTransformationTest
 			{
 				assertNotNull(results.get(curr), "Found hole: " + curr);
 				assertEquals(nSeries, results.get(curr), "Found hole: " + curr);
-				curr = curr.increment(1);
+				curr = curr.add(1);
 			}
 		}
 	}

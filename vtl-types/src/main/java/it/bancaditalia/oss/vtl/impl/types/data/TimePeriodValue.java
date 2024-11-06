@@ -21,11 +21,9 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalQuery;
-import java.time.temporal.ValueRange;
+import java.time.temporal.TemporalAmount;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
@@ -40,7 +38,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 
-public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeValue<TimePeriodValue<S>, PeriodHolder<?>, S, TimePeriodDomain> implements TemporalAccessor
+public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeValue<TimePeriodValue<S>, PeriodHolder<?>, S, TimePeriodDomain>
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -72,54 +70,38 @@ public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeVa
 	}
 
 	@Override
-	public TimePeriodValue<S> increment(long amount)
+	public TimePeriodValue<S> add(long amount)
 	{
 		return new TimePeriodValue<>(get().incrementSmallest(amount), getDomain());
 	}
 	
-	public static String getQualifier(Class<? extends PeriodHolder<?>> holder)
+	@Override
+	public TimePeriodValue<S> add(TemporalAmount period)
 	{
-		if (WeekPeriodHolder.class.isAssignableFrom(holder))
-			return "P1W";
-		if (MonthPeriodHolder.class.isAssignableFrom(holder))
-			return "P1M";
-		if (QuarterPeriodHolder.class.isAssignableFrom(holder))
-			return "P1Q";
-		if (SemesterPeriodHolder.class.isAssignableFrom(holder))
-			return "P1S";
-		if (YearPeriodHolder.class.isAssignableFrom(holder))
-			return "P1Y";
-		throw new UnsupportedOperationException("Unknown class " + holder);
+		return new TimePeriodValue<>(get().increment(period), getDomain());
+	}
+
+	@Override
+	public Period until(TimeValue<?, ?, ?, ?> end)
+	{
+		return get().until(end);
 	}
 	
-	public DurationValue getPeriodIndicator()
+	@Override
+	public DurationValue getFrequency()
 	{
-		return get().getPeriodIndicator();
+		return get().getPeriodIndicator().get();
 	}
 
-	public boolean isSupported(TemporalField field)
+	@Override
+	public DateValue<?> getStartDate()
 	{
-		return get().isSupported(field);
+		return (DateValue<?>) DateValue.of(get().startDate());
 	}
 
-	public ValueRange range(TemporalField field)
+	@Override
+	public DateValue<?> getEndDate()
 	{
-		return get().range(field);
+		return (DateValue<?>) DateValue.of(get().endDate());
 	}
-
-	public int get(TemporalField field)
-	{
-		return get().get(field);
-	}
-
-	public long getLong(TemporalField field)
-	{
-		return get().getLong(field);
-	}
-
-	public <Q> Q query(TemporalQuery<Q> query)
-	{
-		return get().query(query);
-	}
-	
 }

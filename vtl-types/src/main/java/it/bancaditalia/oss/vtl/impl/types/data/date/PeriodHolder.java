@@ -19,29 +19,31 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
-import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.format.SignStyle.NOT_NEGATIVE;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
+import static org.threeten.extra.TemporalFields.HALF_OF_YEAR;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.Period;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAmount;
 import java.util.function.Supplier;
 
+import org.threeten.extra.YearHalf;
 import org.threeten.extra.YearQuarter;
 import org.threeten.extra.YearWeek;
 
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeHolder;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.DateDomain;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 
 public abstract class PeriodHolder<I extends PeriodHolder<I>> implements TemporalAccessor, Comparable<PeriodHolder<?>>, Serializable, TimeHolder
 {
@@ -53,26 +55,25 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 				.appendValue(YEAR, 4)),
 		SEMESTER_PERIOD_FORMATTER(new DateTimeFormatterBuilder()
 				.appendValue(YEAR, 4)
-				.appendLiteral("-S")
-				.appendValue(SEMESTER_OF_YEAR, 1)),
+				.optionalStart()
+				.appendLiteral("-")
+				.optionalEnd()
+				.appendLiteral("S")
+				.appendValue(HALF_OF_YEAR, 1)),
 		QUARTER_PERIOD_FORMATTER(new DateTimeFormatterBuilder()
 				.appendValue(YEAR, 4)
-				.appendLiteral("-Q")
+				.optionalStart()
+				.appendLiteral("-")
+				.optionalEnd()
+				.appendLiteral("Q")
 				.appendValue(QUARTER_OF_YEAR, 1)),
 		MONTH_PERIOD_FORMATTER(new DateTimeFormatterBuilder()
 				.appendValue(YEAR, 4)
+				.optionalStart()
 				.appendLiteral("-")
-				.appendValue(MONTH_OF_YEAR, 2)),
-		WEEK_PERIOD_FORMATTER(new DateTimeFormatterBuilder()
-				.appendValue(YEAR, 4)
-				.appendLiteral("-")
-				.appendValue(ALIGNED_WEEK_OF_YEAR, 2)),
-		DAY_OF_MONTH_PERIOD_FORMATTER(new DateTimeFormatterBuilder()
-				.appendValue(YEAR, 4)
-				.appendLiteral("-")
-				.appendValue(MONTH_OF_YEAR, 2)
-				.appendLiteral("-")
-				.appendValue(DAY_OF_MONTH, 2));
+				.optionalEnd()
+				.appendLiteral("M")
+				.appendValue(MONTH_OF_YEAR, 1, 2, NOT_NEGATIVE));
 
 		private final DateTimeFormatter formatter;
 
@@ -103,11 +104,7 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 		if (this instanceof YearPeriodHolder)
 			return new YearPeriodHolder(Year.from(this).plusYears(amount));
 		else if (this instanceof SemesterPeriodHolder)
-		{
-			int sem = (int)(this.get(SEMESTER_OF_YEAR) + amount) % 2; 
-			int year = (int) ((int) this.get(YEAR) + (amount + this.get(SEMESTER_OF_YEAR)) / 2); 
-			return new SemesterPeriodHolder(Year.of(year), sem);
-		}
+			return new SemesterPeriodHolder(YearHalf.from(this).plusHalves(amount));
 		else if (this instanceof QuarterPeriodHolder)
 			return new QuarterPeriodHolder(YearQuarter.from(this).plusQuarters(amount));
 		else if (this instanceof MonthPeriodHolder)
@@ -118,9 +115,30 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 			throw new UnsupportedOperationException("Invalid PeriodHolder: " + this); 
 	}
 
-	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate();
+	public PeriodHolder<?> increment(TemporalAmount period)
+	{
+		if (this instanceof YearPeriodHolder)
+			return new YearPeriodHolder(Year.from(this).plus(period));
+		else if (this instanceof SemesterPeriodHolder)
+			return new SemesterPeriodHolder(YearHalf.from(this).plus(period));
+		else if (this instanceof QuarterPeriodHolder)
+			return new QuarterPeriodHolder(YearQuarter.from(this).plus(period));
+		else if (this instanceof MonthPeriodHolder)
+			return new MonthPeriodHolder(YearMonth.from(this).plus(period));
+		else if (this instanceof WeekPeriodHolder)
+			return new WeekPeriodHolder(YearWeek.from(this).plus(period));
+		else
+			throw new UnsupportedOperationException("Invalid PeriodHolder: " + this); 
+	}
 
-	public abstract ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate();
+	public Period until(TimeValue<?, ?, ?, ?> end)
+	{
+		return Period.between(startDate(), ((TimePeriodValue<?>) end).get().startDate());
+	}
 
-	public abstract DurationValue getPeriodIndicator();
+	public abstract LocalDate startDate();
+
+	public abstract LocalDate endDate();
+
+	public abstract Frequency getPeriodIndicator();
 }

@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
 import static java.time.format.SignStyle.NOT_NEGATIVE;
 import static java.time.format.TextStyle.FULL;
 import static java.time.format.TextStyle.NARROW;
@@ -30,6 +29,7 @@ import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
+import static org.threeten.extra.TemporalFields.HALF_OF_YEAR;
 
 import java.security.InvalidParameterException;
 import java.time.format.DateTimeFormatter;
@@ -54,7 +54,7 @@ public class VTLTimePatterns
 		PATTERNS.put(Pattern.compile("^(YYYY)(.*)$"), dtf -> dtf.appendValue(YEAR, 4));
 		PATTERNS.put(Pattern.compile("^(YYY)(?!Y)(.*)$"), dtf -> dtf.appendValue(YEAR, 3));
 		PATTERNS.put(Pattern.compile("^(YY)(?!Y)(.*)$"), dtf -> dtf.appendValue(YEAR, 2));
-		PATTERNS.put(Pattern.compile("^(S)(.*)$"), dtf -> dtf.appendValue(SEMESTER_OF_YEAR, 1));
+		PATTERNS.put(Pattern.compile("^(S)(.*)$"), dtf -> dtf.appendValue(HALF_OF_YEAR, 1));
 		PATTERNS.put(Pattern.compile("^(Q)(.*)$"), dtf -> dtf.appendValue(QUARTER_OF_YEAR, 1));
 		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]3)(.*)$"), dtf -> dtf.appendText(MONTH_OF_YEAR, SHORT));
 		PATTERNS.put(Pattern.compile("^(M[Oo][Nn][Tt][Hh]1)(.*)$"), dtf -> dtf.appendText(MONTH_OF_YEAR, NARROW));

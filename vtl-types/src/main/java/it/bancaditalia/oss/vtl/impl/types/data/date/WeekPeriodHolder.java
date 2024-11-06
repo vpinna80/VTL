@@ -19,8 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.WEEK_PERIOD_FORMATTER;
+import static it.bancaditalia.oss.vtl.impl.types.data.Frequency.W;
 
+import java.time.LocalDate;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
@@ -28,11 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.YearWeek;
 
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.DateDomain;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 
 public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 {
@@ -98,26 +95,24 @@ public class WeekPeriodHolder extends PeriodHolder<WeekPeriodHolder>
 	@Override
 	public String toString()
 	{
-		return WEEK_PERIOD_FORMATTER.get().format(this);
+		throw new UnsupportedOperationException("WeekPeriodHolder.toString() not implemented");
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
+	public LocalDate startDate()
 	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("WeekPeriodHolder.startDate() not implemented");
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	public LocalDate endDate()
 	{
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("WeekPeriodHolder.endDate() not implemented");
 	}
 	
 	@Override
-	public DurationValue getPeriodIndicator()
+	public Frequency getPeriodIndicator()
 	{
-		return Duration.W.get();
+		return W;
 	}
 }

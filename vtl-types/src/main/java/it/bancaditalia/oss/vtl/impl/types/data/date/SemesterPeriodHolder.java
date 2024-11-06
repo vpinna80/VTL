@@ -19,75 +19,56 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLChronoField.SEMESTER_OF_YEAR;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
+import static it.bancaditalia.oss.vtl.impl.types.data.Frequency.S;
 
 import java.time.LocalDate;
-import java.time.Year;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.util.Objects;
 
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.DateDomain;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import org.threeten.extra.YearHalf;
+
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 
 public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final int semester;
-	private final Year year;
+	private final YearHalf yearHalf;
 
 	public SemesterPeriodHolder(TemporalAccessor other)
 	{
-		this.year = Year.from(other);
-		this.semester = other.get(SEMESTER_OF_YEAR);
-	}
-
-	public SemesterPeriodHolder(Year year, int semester)
-	{
-		this.year = year;
-		this.semester = semester;
+		this.yearHalf = YearHalf.from(other);
 	}
 
 	@Override
 	public long getLong(TemporalField field)
 	{
-		return SEMESTER_OF_YEAR.equals(field) ? semester : year.getLong(field);
+		return yearHalf.getLong(field);
 	}
 
 	@Override
 	public boolean isSupported(TemporalField field)
 	{
-		return SEMESTER_OF_YEAR.equals(field) || year.isSupported(field);
+		return yearHalf.isSupported(field);
 	}
 
 	@Override
 	public int compareTo(PeriodHolder<?> other)
 	{
-		int c = year.compareTo(Year.from(other));
-		return c != 0 ? c : Long.compare(semester, ((SemesterPeriodHolder) other).semester);
+		return yearHalf.compareTo(YearHalf.from(other));
 	}
 
 	@Override
 	public String toString()
 	{
-		return year.toString() + "-S" + semester;
+		return yearHalf.toString();
 	}
 
 	@Override
 	public int hashCode()
 	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + semester;
-		result = prime * result + ((year == null) ? 0 : year.hashCode());
-		return result;
+		return yearHalf.hashCode();
 	}
 
 	@Override
@@ -100,33 +81,24 @@ public class SemesterPeriodHolder extends PeriodHolder<SemesterPeriodHolder>
 		if (getClass() != obj.getClass())
 			return false;
 		SemesterPeriodHolder other = (SemesterPeriodHolder) obj;
-		if (semester != other.semester)
-			return false;
-		if (year == null)
-		{
-			if (other.year != null)
-				return false;
-		}
-		else if (!year.equals(other.year))
-			return false;
-		return true;
+		return Objects.equals(yearHalf, other.yearHalf);
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
+	public LocalDate startDate()
 	{
-		return DateValue.of(LocalDate.from(year.with(MONTH_OF_YEAR, 1 + semester * 6).with(firstDayOfMonth())));
+		return yearHalf.atDay(1);
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	public LocalDate endDate()
 	{
-		return DateValue.of(LocalDate.from(year.with(MONTH_OF_YEAR, 6 + semester * 6).with(lastDayOfMonth())));
+		return yearHalf.atEndOfHalf();
 	}
 	
 	@Override
-	public DurationValue getPeriodIndicator()
+	public Frequency getPeriodIndicator()
 	{
-		return Duration.S.get();
+		return S;
 	}
 }

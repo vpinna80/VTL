@@ -19,18 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.Frequency.Q;
+
 import java.time.LocalDate;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
 import org.threeten.extra.YearQuarter;
 
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DurationValue.Duration;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.DateDomain;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 
 public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 {
@@ -97,20 +94,20 @@ public class QuarterPeriodHolder extends PeriodHolder<QuarterPeriodHolder>
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> startDate()
+	public LocalDate startDate()
 	{
-		return DateValue.of(LocalDate.from(yearQtr.atDay(1)));
+		return yearQtr.atDay(1);
 	}
 
 	@Override
-	public ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> endDate()
+	public LocalDate endDate()
 	{
-		return DateValue.of(LocalDate.from(yearQtr.atEndOfQuarter()));
+		return yearQtr.atEndOfQuarter();
 	}
 
 	@Override
-	public DurationValue getPeriodIndicator()
+	public Frequency getPeriodIndicator()
 	{
-		return Duration.Q.get();
+		return Q;
 	}
 }

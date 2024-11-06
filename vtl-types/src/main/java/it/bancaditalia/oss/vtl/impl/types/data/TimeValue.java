@@ -20,7 +20,10 @@
 package it.bancaditalia.oss.vtl.impl.types.data;
 
 import java.io.Serializable;
+import java.security.InvalidParameterException;
+import java.time.Period;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAmount;
 
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
@@ -35,5 +38,47 @@ public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Compa
 		super(value, domain);
 	}
 
-	public abstract TimeValue<?, ?, ?, ?> increment(long amount);
+	/**
+	 * @return The first date included in this TimeValue
+	 */
+	public abstract DateValue<?> getStartDate();
+	
+	/**
+	 * 
+	 * @return The last date included in this TimeValue
+	 */
+	public abstract DateValue<?> getEndDate();
+	
+	/**
+	 * Determines the extent of this time value expressed as a DurationValue
+	 * 
+	 * @return
+	 */
+	public abstract DurationValue getFrequency();
+
+	/**
+	 * Create a new TimeValue by adding a given number of the smallest periods to this TimeValue.
+	 * 
+	 * @param periods The numbers of periods to increment 
+	 * @return a new incremented TimeValue
+	 */
+	public abstract I add(long periods);
+
+	/**
+	 * Create a new TimeValue by adding a given period to this TimeValue.
+	 * If the period isn't aligned with this TimeValue, an exception is thrown. 
+	 * 
+	 * @param amount The TemporalAmount to increment this TimeVale of
+	 * @return a new incremented TimeValue
+	 * @throws InvalidParameterException if the period is not aligned with this TimeValue intrinsic period.
+	 */
+	public abstract I add(TemporalAmount length);
+
+	/**
+	 * Determines the period lasting from the beginning of this TimeValue until the beginning of given TimeValue (excluded).
+	 * 
+	 * @param end
+	 * @return a {@link Period}
+	 */
+	public abstract Period until(TimeValue<?, ?, ?, ?> end);
 }
