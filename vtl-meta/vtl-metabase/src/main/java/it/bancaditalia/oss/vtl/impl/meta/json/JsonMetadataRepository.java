@@ -91,19 +91,16 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	public JsonMetadataRepository() throws IOException
 	{
-		this(JSON_METADATA_URL.getValue());
+		this(new URL(JSON_METADATA_URL.getValue()));
 	}
 	
-	public JsonMetadataRepository(String jsonURL) throws IOException
+	public JsonMetadataRepository(URL jsonURL) throws IOException
 	{
-		if (jsonURL == null || jsonURL.isEmpty())
-			throw new IllegalStateException("No url configured for json metadata repository.");
-
 		Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
 		Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
 		Map<VTLAlias, VTLAlias> varDefs;
 
-		try (InputStream source = new URL(jsonURL).openStream())
+		try (InputStream source = jsonURL.openStream())
 		{
 			Map<?, ?> json;
 			try (JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source))

@@ -2,6 +2,7 @@ package it.bancaditalia.oss.vtl.impl.types.names;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
@@ -9,8 +10,10 @@ import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
-public class MembershipAlias implements VTLAlias
+public class MembershipAlias implements VTLAlias, Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	private final VTLAlias member;
 	private final VTLAlias dsName;
 	private final int hash;

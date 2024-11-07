@@ -44,7 +44,6 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
@@ -100,11 +99,13 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 
 	private void exec() throws IOException, InvalidKeyException, NoSuchAlgorithmException
 	{
-		Map<String, Object> connInfo;
+		Map<?, ?> parsed;
 		try (JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(operation.exec))
 		{
-			connInfo = parser.readValueAs(Map.class);
+			parsed = parser.readValueAs(Map.class);
 		}
+		@SuppressWarnings("unchecked")
+		Map<String, Object> connInfo = (Map<String, Object>) parsed;
 
 		if (conf == null)
 			conf = Paths.get(System.getProperty("user.home") + "/.vtlStudio.properties");

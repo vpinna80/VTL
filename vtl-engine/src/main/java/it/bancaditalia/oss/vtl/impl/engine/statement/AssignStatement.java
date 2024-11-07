@@ -19,6 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
+import static java.util.function.Predicate.not;
+
+import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
@@ -93,8 +96,8 @@ class AssignStatement extends AbstractStatement implements DMLStatement, Transfo
 		if (persistent)
 			try
 			{
-				DataSetMetadata registeredStructure = scheme.getRepository().getStructure(getAlias());
-				if (registeredStructure != null && !registeredStructure.equals(structure))
+				Optional<DataSetMetadata> registeredStructure = scheme.getRepository().getStructure(getAlias());
+				if (registeredStructure.filter(not(structure::equals)).isPresent())
 					throw new VTLException("Dataset " + getAlias() + " having structure " + registeredStructure + " cannot be assigned an expression of type " + structure + "");
 			}
 			catch (VTLException e)

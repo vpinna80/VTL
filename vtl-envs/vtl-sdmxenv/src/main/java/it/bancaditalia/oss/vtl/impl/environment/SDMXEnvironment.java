@@ -192,10 +192,10 @@ public class SDMXEnvironment implements Environment, Serializable
 		else
 			throw new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository.");
 
-		DataSetMetadata structure = repo2.getStructure(alias);
-		
-		if (structure == null)
+		Optional<DataSetMetadata> maybeStructure = repo.getStructure(alias);
+		if (maybeStructure.isEmpty())
 			return Optional.empty();
+		DataSetMetadata structure = maybeStructure.get();
 		
 		String[] query = alias.getName().split("/", 2);
 		String dataflow = query[0].replace(':', ',').replace('(', ',').replaceAll("\\)(?=/|$)", "");

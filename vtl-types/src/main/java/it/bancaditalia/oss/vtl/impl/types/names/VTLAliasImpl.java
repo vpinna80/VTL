@@ -2,6 +2,7 @@ package it.bancaditalia.oss.vtl.impl.types.names;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.Serializable;
 import java.security.InvalidParameterException;
 
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -10,8 +11,10 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
  * A class to describe a VTL alias with respect to quoting and
  * case-insensitiveness behavior
  */
-public class VTLAliasImpl implements VTLAlias
+public class VTLAliasImpl implements VTLAlias, Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	private final String name;
 	private final String quotedName;
 	private final int hash;
