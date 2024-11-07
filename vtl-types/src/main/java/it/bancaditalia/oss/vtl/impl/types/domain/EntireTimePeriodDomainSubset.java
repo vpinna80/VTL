@@ -56,7 +56,7 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 		if (value instanceof NullValue)
 			return NullValue.instance(this);
 		else if (value instanceof TimePeriodValue)
-			return new TimePeriodValue<>((PeriodHolder<?>) value.get(), this);
+			return TimePeriodValue.of((PeriodHolder<?>) value.get(), this);
 		else
 			throw new VTLCastException(this, value);
 	}
@@ -76,7 +76,8 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 	@Override
 	public Class<? extends Serializable> getRepresentation()
 	{
-		throw new UnsupportedOperationException("time_period does not have a single default representation.");
+//		throw new UnsupportedOperationException("time_period does not have a single default representation.");
+		return PeriodHolder.class; 
 	}
 
 	@Override
