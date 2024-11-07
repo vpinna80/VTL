@@ -19,19 +19,36 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
+import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>
 {
 	private static final long serialVersionUID = 1L;
+	
+	private static final Map<ValueDomainSubset<?, ?>, String> DOMAIN_TO_VAR = new HashMap<>();
+	
+	static
+	{
+		DOMAIN_TO_VAR.put(INTEGERDS, "int_var");
+		DOMAIN_TO_VAR.put(NUMBERDS, "num_var");
+		DOMAIN_TO_VAR.put(BOOLEANDS, "bool_var");
+		DOMAIN_TO_VAR.put(Domains.TIME_PERIODDS, "period_var");
+	}
 
 	private class DefaultVariableComponent<R extends Component> implements DataStructureComponent<R, S, D>
 	{
@@ -95,7 +112,7 @@ public class DefaultVariable<S extends ValueDomainSubset<S, D>, D extends ValueD
 	
 	public DefaultVariable(S domain)
 	{
-		this.alias = VTLAliasImpl.of(domain + "_var");
+		this.alias = VTLAliasImpl.of(DOMAIN_TO_VAR.getOrDefault(domain, domain + "_var"));
 		this.domain = domain;
 	}
 
