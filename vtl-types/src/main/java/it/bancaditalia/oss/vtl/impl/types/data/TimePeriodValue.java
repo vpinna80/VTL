@@ -41,12 +41,18 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeValue<TimePeriodValue<S>, PeriodHolder<?>, S, TimePeriodDomain>
 {
 	private static final long serialVersionUID = 1L;
-	
+
 	public static TimePeriodValue<EntireTimePeriodDomainSubset> of(PeriodHolder<?> holder)
 	{
-		return new TimePeriodValue<>(holder, TIME_PERIODDS);
+		return of(holder, TIME_PERIODDS);
 	}
 	
+	@SuppressWarnings("unchecked")
+	public static <S extends TimePeriodDomainSubset<S>> TimePeriodValue<S> of(PeriodHolder<?> holder, TimePeriodDomainSubset<S> domain)
+	{
+		return new TimePeriodValue<>(holder, (S) domain);
+	}
+
 	public static TimePeriodValue<?> of(String string, String mask)
 	{
 		DateTimeFormatter formatter = VTLTimePatterns.getFormatter(mask);
@@ -55,7 +61,7 @@ public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeVa
 		return of(holder);
 	}
 
-	public TimePeriodValue(PeriodHolder<?> value, S domain)
+	private TimePeriodValue(PeriodHolder<?> value, S domain)
 	{
 		super(value, domain);
 	}

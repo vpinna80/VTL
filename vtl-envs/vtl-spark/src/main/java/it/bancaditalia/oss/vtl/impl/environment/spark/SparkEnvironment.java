@@ -40,6 +40,7 @@ import static org.apache.spark.sql.types.DataTypes.LongType;
 import static scala.collection.JavaConverters.asJava;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
@@ -138,7 +139,6 @@ public class SparkEnvironment implements Environment
 		@Override
 		public void registerClasses(Kryo kryo)
 		{
-			com.esotericsoftware.minlog.Log.DEBUG();
 			LineageSerializer lineageSerializer = new LineageSerializer();
 			kryo.register(LineageExternal.class, lineageSerializer);
 			kryo.register(LineageCall.class, lineageSerializer);
@@ -152,7 +152,7 @@ public class SparkEnvironment implements Environment
 	private final SparkSession session;
 	private final Map<VTLAlias, SparkDataSet> frames = new ConcurrentHashMap<>();
 	private final DataFrameReader reader;
-	private final List<String> paths;
+	private final List<Path> paths;
 
 	public SparkEnvironment()
 	{
@@ -179,7 +179,7 @@ public class SparkEnvironment implements Environment
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
 		
 		// Set SEQUENTIAL to avoid creating new threads while inside the executor
-		paths = VTL_SPARK_SEARCH_PATH.getValues();
+		paths = VTL_SPARK_SEARCH_PATH.getValues().stream().map(Paths::get).collect(toList());
 		
 		session = SparkSession
 			  .builder()
@@ -194,6 +194,36 @@ public class SparkEnvironment implements Environment
 		reader = session.read();
 	}
 	
+	public SparkEnvironment(List<Path> paths)
+	{
+		LOGGER.info("Connecting to Spark master {}", "local[4]");
+		SparkConf conf = new SparkConf()
+			  .setMaster("local[4]")
+			  .setAppName("Spark SQL Environment for VTL Engine [" + hashCode() + "]")
+			  .set("spark.executor.processTreeMetrics.enabled", "false")
+			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
+			  .set("spark.sql.datetime.java8API.enabled", "true")
+			  .set("spark.sql.catalyst.dateType", "Instant")
+			  .set("spark.sql.windowExec.buffer.in.memory.threshold", "16384")
+			  .set("spark.sql.caseSensitive", "true")
+			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
+			  .set("spark.ui.enabled", "false");
+		
+		// Set SEQUENTIAL to avoid creating new threads while inside the executor
+		this.paths = paths;
+		
+		session = SparkSession
+			  .builder()
+			  .config(conf)
+			  .master("local[4]")
+			  .getOrCreate();
+		
+		SQLConf sqlConf = session.sessionState().conf();
+		if (MASTER_CONF.compareAndSet(null, sqlConf))
+			CONFS.set(true);
+		
+		reader = session.read();
+	}
 	
 	static void ensureConf(SparkSession session)
 	{
@@ -212,55 +242,35 @@ public class SparkEnvironment implements Environment
 	}
 
 	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		if (!alias.getName().startsWith("spark:"))
-			return false;
-		
-		if (frames.containsKey(alias))
-			return true;
-		
-		String[] parts = alias.getName().substring(6).split(":");
-		if (parts.length != 2)
-			return false;
-		
-		return true;
-	}
-
-	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		if (frames.containsKey(alias))
 			return Optional.of(frames.get(alias));
 		
-		VTLAlias source = VTLAliasImpl.of(repo.getDatasetSource(alias));
-		if (!contains(source))
+		String source = repo.getDatasetSource(alias);
+		if (!source.startsWith("spark:") || source.substring(6).indexOf(':') == -1)
 			return Optional.empty();
+		Path sourcePath = Paths.get(source.substring(6).split(":", 2)[1]);
+		String type = source.substring(6).split(":", 2)[0];
 		
 		SparkDataSet dataset = null;
-		String[] parts = source.getName().substring(6).split(":");
-		if (parts.length != 2)
-			throw new InvalidParameterException("Invalid source format: " + source);
 		
-		String file = paths.stream()
-				.map(path -> Paths.get(path, parts[1]))
+		Path file = paths.stream()
+				.map(path -> path.resolve(sourcePath))
 				.filter(Files::exists)
 				.limit(1)
-				.peek(path -> LOGGER.info("Found {} in {}", parts[1], path))
+				.peek(path -> LOGGER.info("Found {} in {}", sourcePath, path))
 				.findAny()
-				.orElseThrow(() -> new InvalidParameterException("Cannot find " + parts[0] + " file in Spark search path: " + parts[1]))
-				.toString();
+				.orElseThrow(() -> new InvalidParameterException("Cannot find " + type + " file in Spark search path: " + sourcePath));
 		
-		switch (parts[0])
-		{
-			case "csv":
-				dataset = inferSchema(repo, reader.format("csv").option("header", "true").load(file), alias); 
-				break;
-			default: 
-				dataset = inferSchema(repo, reader.format(parts[0]).load(file), source); 
-				break;
-		}
+		if (!Files.isRegularFile(file) || !Files.isReadable(file))
+			throw new InvalidParameterException("File is not a readable: " + file);
 		
+		DataFrameReader formatted = reader.format(type);
+		if ("csv".equals(type))
+			formatted = formatted.option("header", "true");
+		
+		dataset = inferSchema(repo, formatted.load(file.toString()), alias); 
 		frames.put(alias, dataset);
 		return Optional.of(frames.get(alias));
 	}

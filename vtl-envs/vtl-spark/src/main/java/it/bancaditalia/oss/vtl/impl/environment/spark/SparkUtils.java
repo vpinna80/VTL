@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.LineageSparkUDT;
+import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.stringToTime;
+import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.stringToTimePeriod;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
@@ -28,6 +30,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.DEFAULT_JAVA_DECIMAL_ENCODER;
 import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
@@ -63,7 +66,6 @@ import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.IterableEncoder;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.LocalDateEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.MapEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ProductEncoder;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
@@ -106,7 +108,6 @@ public class SparkUtils
 	private static final Map<ValueDomainSubset<?, ?>, AgnosticEncoder<?>> DOMAIN_ENCODERS = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, DataType> DOMAIN_DATATYPES = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> DOMAIN_BUILDERS = new ConcurrentHashMap<>();
-	private static final LocalDateEncoder LDENCODER = STRICT_LOCAL_DATE_ENCODER();
 	static final Map<Class<?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> PRIM_BUILDERS = new ConcurrentHashMap<>();
 
 	static
@@ -115,14 +116,16 @@ public class SparkUtils
 		DOMAIN_ENCODERS.put(STRINGDS, AgnosticEncoders.StringEncoder$.MODULE$);
 		DOMAIN_ENCODERS.put(INTEGERDS, AgnosticEncoders.BoxedLongEncoder$.MODULE$);
 		DOMAIN_ENCODERS.put(NUMBERDS, isUseBigDecimal() ? DEFAULT_JAVA_DECIMAL_ENCODER() : AgnosticEncoders.BoxedDoubleEncoder$.MODULE$);
-		DOMAIN_ENCODERS.put(TIMEDS, LDENCODER);
-		DOMAIN_ENCODERS.put(DATEDS, LDENCODER);
+		DOMAIN_ENCODERS.put(TIMEDS, AgnosticEncoders.StringEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(TIME_PERIODDS, AgnosticEncoders.StringEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(DATEDS, STRICT_LOCAL_DATE_ENCODER());
 
 		DOMAIN_DATATYPES.put(BOOLEANDS, BooleanType);
 		DOMAIN_DATATYPES.put(STRINGDS, StringType);
 		DOMAIN_DATATYPES.put(INTEGERDS, LongType);
 		DOMAIN_DATATYPES.put(NUMBERDS, isUseBigDecimal() ? DecimalType.USER_DEFAULT() : DoubleType);
-		DOMAIN_DATATYPES.put(TIMEDS, DateType);
+		DOMAIN_DATATYPES.put(TIMEDS, StringType);
+		DOMAIN_DATATYPES.put(TIME_PERIODDS, StringType);
 		DOMAIN_DATATYPES.put(DATEDS, DateType);
 
 		DOMAIN_BUILDERS.put(BOOLEANDS, v -> BooleanValue.of((Boolean) v));
@@ -130,6 +133,8 @@ public class SparkUtils
 		DOMAIN_BUILDERS.put(INTEGERDS, v -> IntegerValue.of((Long) v));
 		DOMAIN_BUILDERS.put(NUMBERDS, v -> createNumberValue((Number) v));
 		DOMAIN_BUILDERS.put(TIMEDS, v -> DateValue.of((LocalDate) v));
+		DOMAIN_BUILDERS.put(TIMEDS, v -> stringToTime((String) v));
+		DOMAIN_BUILDERS.put(TIME_PERIODDS, v -> stringToTimePeriod((String) v));
 		DOMAIN_BUILDERS.put(DATEDS, v -> DateValue.of((LocalDate) v));
 
 		PRIM_BUILDERS.put(Boolean.class, v -> BooleanValue.of((Boolean) v));

@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.environment;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
@@ -37,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -84,14 +86,14 @@ public class CSVPathEnvironment implements Environment
 		ConfigurationManagerFactory.registerSupportedProperties(CSVPathEnvironment.class, VTL_CSV_ENVIRONMENT_SEARCH_PATH);
 	}
 	
-	private List<String> paths;
+	private List<Path> paths;
 	
 	public CSVPathEnvironment()
 	{
-		this(VTL_CSV_ENVIRONMENT_SEARCH_PATH.getValues());
+		this(VTL_CSV_ENVIRONMENT_SEARCH_PATH.getValues().stream().map(Paths::get).collect(toList()));
 	}
 	
-	public CSVPathEnvironment(List<String> paths)
+	public CSVPathEnvironment(List<Path> paths)
 	{
 		this.paths = paths;
 	}
@@ -118,7 +120,7 @@ public class CSVPathEnvironment implements Environment
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
 		return paths.stream()
-				.map(path -> Paths.get(path, fileName))
+				.map(path -> path.resolve(fileName))
 				.filter(Files::exists)
 				.limit(1)
 				.peek(path -> LOGGER.info("Found {} in {}", fileName, path))
@@ -132,7 +134,7 @@ public class CSVPathEnvironment implements Environment
 					if (isNull(structure))
 						try (BufferedReader reader = Files.newBufferedReader(path))
 						{
-							var metadata = extractMetadata(repo, reader.readLine().split(","));
+							Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metadata = extractMetadata(repo, reader.readLine().split(","));
 							structure = new DataStructureBuilder(metadata.getKey()).build();
 							masks.putAll(metadata.getValue());
 						}

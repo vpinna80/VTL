@@ -221,55 +221,65 @@ public class CSVParseUtils
 		{
 			if (mask != null)
 				throw new UnsupportedOperationException("A mask for time_period in a CSV file is not supported");
-			DateTimeException last = null;
-			for (DateTimeFormatter formatter : FORMATTERS.keySet())
-				try
-				{
-					formatter.parse(stringRepresentation, FORMATTERS.get(formatter));
-					return TimePeriodValue.of(FORMATTERS.get(formatter).queryFrom(formatter.parse(stringRepresentation)));
-				}
-				catch (DateTimeException e)
-				{
-					last = e;
-				}
-
-			throw new VTLNestedException("While parsing a time_period value for " + component, last);
+			return stringToTimePeriod(stringRepresentation);
 		}
 		else if (component.getVariable().getDomain() instanceof TimeDomainSubset)
 		{
 			if (mask != null)
 				throw new UnsupportedOperationException("A mask for time in a CSV file is not supported");
 			
-			String[] items = stringRepresentation.split("/", 2);
-			ScalarValue<?, ?, ?, ?>[] limits = new TimeValue<?, ?, ?, ?>[2];
-			
-			for (int i = 0; i < 2; i++)
-				try
-				{
-					limits[i] = DateValue.of(parseString(items[i], "YYYY-MM-DD"));
-				}
-				catch (RuntimeException e)
-				{
-					DateTimeException last = null;
-					for (DateTimeFormatter formatter : FORMATTERS.keySet())
-						try
-						{
-							limits[i] = TimePeriodValue.of(formatter.parse(items[i], FORMATTERS.get(formatter)));
-							break;
-						}
-						catch (DateTimeException e1)
-						{
-							last = e1;
-						}
-	
-					if (limits[i] == null)
-						throw last;
-				}
-			
-			return GenericTimeValue.of((TimeValue<?, ?, ?, ?>) limits[0], (TimeValue<?, ?, ?, ?>) limits[1]);
+			return stringToTime(stringRepresentation);
 		}
 		
 		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getVariable().getDomain());
+	}
+
+	public static ScalarValue<?, ?, ?, ?> stringToTime(final String stringRepresentation)
+	{
+		String[] items = stringRepresentation.split("/", 2);
+		ScalarValue<?, ?, ?, ?>[] limits = new TimeValue<?, ?, ?, ?>[2];
+		
+		for (int i = 0; i < 2; i++)
+			try
+			{
+				limits[i] = DateValue.of(parseString(items[i], "YYYY-MM-DD"));
+			}
+			catch (RuntimeException e)
+			{
+				DateTimeException last = null;
+				for (DateTimeFormatter formatter : FORMATTERS.keySet())
+					try
+					{
+						limits[i] = TimePeriodValue.of(formatter.parse(items[i], FORMATTERS.get(formatter)));
+						break;
+					}
+					catch (DateTimeException e1)
+					{
+						last = e1;
+					}
+
+				if (limits[i] == null)
+					throw last;
+			}
+		
+		return GenericTimeValue.of((TimeValue<?, ?, ?, ?>) limits[0], (TimeValue<?, ?, ?, ?>) limits[1]);
+	}
+
+	public static ScalarValue<?, ?, ?, ?> stringToTimePeriod(final String stringRepresentation)
+	{
+		DateTimeException last = null;
+		for (DateTimeFormatter formatter : FORMATTERS.keySet())
+			try
+			{
+				formatter.parse(stringRepresentation, FORMATTERS.get(formatter));
+				return TimePeriodValue.of(FORMATTERS.get(formatter).queryFrom(formatter.parse(stringRepresentation)));
+			}
+			catch (DateTimeException e)
+			{
+				last = e;
+			}
+
+		throw new VTLNestedException("While parsing time_period " + stringRepresentation, last);
 	}
 
 	public static Entry<ValueDomainSubset<?, ?>, String> mapVarType(MetadataRepository repo, String typeName)
