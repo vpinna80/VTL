@@ -661,7 +661,7 @@ public class OpsFactory implements Serializable
 					String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(((Token) rule).getType());
 					// find corresponding enum value
 					Set<Tokenmapping> matchingTokens = tokenset.getTokenmapping().stream()
-							.filter(t -> t.getName().equals(sourceToken) || t.getName().equals(ruleText))
+							.filter(t -> t.getName().equals(sourceToken) || t.getName().equalsIgnoreCase(ruleText))
 							.collect(toSet());
 					if (matchingTokens.size() != 1)
 						throw new VTLUnmappedTokenException(sourceToken, tokenset);
