@@ -199,11 +199,12 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
 					.collect(collectingAndThen(toSet(), s -> s.isEmpty() || s.size() > 1 ? null : s.iterator().next()));
 		
+		MetadataRepository repo = scheme.getRepository();
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
 			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> {
-					DatapointScope dpSession = new DatapointScope(scheme.getRepository(), dp, nonAnalyticResultMetadata, timeId);
+					DatapointScope dpSession = new DatapointScope(repo, dp, operand.getMetadata(), timeId);
 					
 					// place calculated components (eventually overriding existing ones) 
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 

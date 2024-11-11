@@ -104,7 +104,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 	{
 		DataSet dataset = (DataSet) operand.eval(scheme);
 		DataSetMetadata structure = (DataSetMetadata) getMetadata(scheme);
-		final MetadataRepository repo = scheme.getRepository();
+		MetadataRepository repo = scheme.getRepository();
 		DataPointRuleSet ruleset = scheme.findDatapointRuleset(rulesetID);
 		RuleSetType type = ruleset.getType();
 		List<DataPointRule> rules = ruleset.getRules();
@@ -112,7 +112,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 		DataStructureComponent<Identifier, ?, ?> ruleid = repo.getVariable(VTLAliasImpl.of("ruleid")).as(Identifier.class);
 		
 		return dataset.flatmapKeepingKeys(structure, DataPoint::getLineage, dp -> rules.stream()
-			.map(rule -> evalRule(new DatapointScope(scheme.getRepository(), dp, dataset.getMetadata(), null), type, bool_var, ruleid, dp, rule))
+			.map(rule -> evalRule(new DatapointScope(repo, dp, dataset.getMetadata(), null), type, bool_var, ruleid, dp, rule))
 			.filter(Objects::nonNull));
 	}
 

@@ -90,12 +90,12 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	private static final long serialVersionUID = 1L;
 	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().as(Measure.class);
 
-	public enum Input
+	public enum Input implements Serializable
 	{
 		DATASET, DATASET_PRIORITY;
 	}
 
-	public enum Output
+	public enum Output implements Serializable
 	{
 		INVALID, ALL, ALL_MEASURES;
 	}

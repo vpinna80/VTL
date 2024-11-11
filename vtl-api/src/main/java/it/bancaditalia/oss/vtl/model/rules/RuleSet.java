@@ -19,14 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.model.rules;
 
-public interface RuleSet
+import java.io.Serializable;
+
+public interface RuleSet extends Serializable
 {
 	public enum RuleSetType
 	{
 		VARIABLE, VALUE_DOMAIN;
 	}
 	
-	enum RuleType
+	public enum RuleType
 	{
 		EQ("="), LT("<"), LE("<="), GT(">"), GE(">=");
 		

@@ -170,8 +170,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			}, false);
 		}
 
+		MetadataRepository repo = scheme.getRepository();
 		if (having != null)
-			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(scheme.getRepository(), dp, metadata, null)) == BooleanValue.of(true), lineage -> LineageNode.of(having, lineage));
+			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(repo, dp, metadata, null)) == BooleanValue.of(true), lineage -> LineageNode.of(having, lineage));
 
 		return result.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), identity());
 	}

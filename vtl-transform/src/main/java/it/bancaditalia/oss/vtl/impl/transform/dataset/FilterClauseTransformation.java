@@ -40,6 +40,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class FilterClauseTransformation extends DatasetClauseTransformation
 {
@@ -67,8 +68,9 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		DataSet operand = (DataSet) getThisValue(scheme);
 		final DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 
+		MetadataRepository repo = scheme.getRepository();
 		return operand.filter(dp -> {
-			final DatapointScope dpScope = new DatapointScope(scheme.getRepository(), dp, metadata, null);
+			final DatapointScope dpScope = new DatapointScope(repo, dp, metadata, null);
 			final ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
 			return (TRUE.equals(BOOLEANDS.cast(filterValue)));
 		}, lineage -> LineageNode.of(this, lineage));

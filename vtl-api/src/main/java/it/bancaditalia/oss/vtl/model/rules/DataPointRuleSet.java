@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.rules;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -31,7 +32,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public interface DataPointRuleSet extends RuleSet
 {
-	public interface DataPointRule
+	public interface DataPointRule extends Serializable
 	{
 		public ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> eval(DataPoint dp, TransformationScheme scheme);
 
