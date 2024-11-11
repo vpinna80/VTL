@@ -5,14 +5,16 @@ import static java.time.temporal.ChronoUnit.YEARS;
 import static java.time.temporal.IsoFields.QUARTER_YEARS;
 import static org.threeten.extra.TemporalFields.HALF_YEARS;
 
+import java.io.Serializable;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.List;
 
-public class OneHalf implements TemporalAmount
+public class OneHalf implements TemporalAmount, Serializable
 {
+	private static final long serialVersionUID = 1L;
 	private static final OneHalf INSTANCE = new OneHalf();
 	
 	private OneHalf() {}

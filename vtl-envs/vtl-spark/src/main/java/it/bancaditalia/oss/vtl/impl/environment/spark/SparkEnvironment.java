@@ -34,8 +34,6 @@ import static org.apache.spark.sql.SaveMode.Overwrite;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.to_date;
 import static org.apache.spark.sql.functions.udf;
-import static org.apache.spark.sql.types.DataTypes.BooleanType;
-import static org.apache.spark.sql.types.DataTypes.DoubleType;
 import static org.apache.spark.sql.types.DataTypes.LongType;
 import static scala.collection.JavaConverters.asJava;
 
@@ -79,6 +77,13 @@ import com.esotericsoftware.kryo.Kryo;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.TimeRangeHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -92,11 +97,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SparkEnvironment implements Environment
@@ -123,9 +123,14 @@ public class SparkEnvironment implements Environment
 		registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE, VTL_SPARK_SEARCH_PATH);
 		if (!UDTRegistration.exists(Lineage.class.getName()))
 		{
-			List<Class<? extends Lineage>> lClasses = List.of(LineageExternal.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
+			List<Class<?>> lClasses = List.of(LineageExternal.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
 			for (Class<?> lineageClass: lClasses)
 				UDTRegistration.register(lineageClass.getName(), LineageSparkUDT.class.getName());
+			UDTRegistration.register(Frequency.class.getName(), FrequencySparkUDT.class.getName());
+			UDTRegistration.register(TimeRangeHolder.class.getName(), TimeRangeSparkUDT.class.getName());
+			List<Class<?>> pClasses = List.of(YearPeriodHolder.class, SemesterPeriodHolder.class, QuarterPeriodHolder.class, MonthPeriodHolder.class, PeriodHolder.class);
+			for (Class<?> periodClass: pClasses)
+				UDTRegistration.register(periodClass.getName(), TimePeriodSparkUDT.class.getName());
 		}
 	}
 
@@ -270,9 +275,18 @@ public class SparkEnvironment implements Environment
 		if ("csv".equals(type))
 			formatted = formatted.option("header", "true");
 		
-		dataset = inferSchema(repo, formatted.load(file.toString()), alias); 
+		Optional<DataSetMetadata> maybeStructure = repo.getStructure(alias);
+		if (maybeStructure.isPresent())
+		{
+			DataSetMetadata structure = maybeStructure.get();
+			Dataset<Row> applied = SparkUtils.applyStructure(structure, formatted.load(file.toString()));
+			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
+			dataset = new SparkDataSet(session, structure, new DataPointEncoder(session, structure), applied.withColumn("$lineage$", lineage));
+		}
+		else
+			dataset = inferSchema(repo, formatted.load(file.toString()), alias); 
 		frames.put(alias, dataset);
-		return Optional.of(frames.get(alias));
+		return Optional.of(dataset);
 	}
 	
 	@Override
@@ -323,29 +337,7 @@ public class SparkEnvironment implements Environment
 		Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
 		StructType schema = sourceDataFrame.schema();
 		
-		if (repo.getStructure(alias) != null)
-		{
-			DataSetMetadata structure = repo.getStructure(alias);
-			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
-			
-			Dataset<Row> sourceDataFrame2 = sourceDataFrame;
-			for (DataStructureComponent<?, ?, ?> comp: structure)
-			{
-				ValueDomainSubset<?, ?> domain = comp.getVariable().getDomain();
-				String name = comp.getVariable().getAlias().getName();
-				if (domain instanceof IntegerDomainSubset)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(name, sourceDataFrame2.col(name).cast(LongType));
-				else if (domain instanceof NumberDomainSubset)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(name, sourceDataFrame2.col(name).cast(DoubleType));
-				else if (domain instanceof BooleanDomainSubset)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(name, sourceDataFrame2.col(name).cast(BooleanType));
-				else if (domain instanceof DateDomainSubset)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(name, to_date(sourceDataFrame2.col(name)));
-			}
-			
-			return new SparkDataSet(session, structure, new DataPointEncoder(session, structure), sourceDataFrame2.select(names).withColumn("$lineage$", lineage));
-		}
-		else if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
+		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
 		{
 			// infer structure from the schema metadata
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, schema)).build();

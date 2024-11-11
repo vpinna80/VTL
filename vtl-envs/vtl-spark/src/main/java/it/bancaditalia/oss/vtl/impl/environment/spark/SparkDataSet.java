@@ -161,11 +161,15 @@ public class SparkDataSet extends AbstractDataSet
 	public SparkDataSet(SparkSession session, DataSetMetadata structure, Dataset<Row> dataFrame)
 	{
 		this(session, structure, new DataPointEncoder(session, structure), dataFrame);
+
+		logInfo(toString());
 	}
 
 	public SparkDataSet(SparkSession session, DataSetMetadata dataStructure, DataSet toWrap)
 	{
 		this(session, dataStructure, loadIntoSpark(session, toWrap).cache());
+
+		logInfo(toString());
 	}
 
 	private static Dataset<Row> loadIntoSpark(SparkSession session, DataSet toWrap)

@@ -39,7 +39,8 @@ public class LineageSerializer extends Serializer<Lineage>
 {
 	private static final Map<Class<? extends Lineage>, Integer> SERIALIZER_TAGS = new HashMap<>();
 	
-	static {
+	static
+	{
 		SERIALIZER_TAGS.put(LineageExternal.class, 1);
 		SERIALIZER_TAGS.put(LineageCall.class, 2);
 		SERIALIZER_TAGS.put(LineageNode.class, 4);

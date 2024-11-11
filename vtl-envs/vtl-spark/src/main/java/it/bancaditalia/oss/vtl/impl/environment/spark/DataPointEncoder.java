@@ -46,8 +46,6 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.DateRangeHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -91,24 +89,13 @@ public class DataPointEncoder implements Serializable
 			int k = 0;
 			for (int i = 0; i < dpi.comps.length; i++)
 				if (dpi.comps[i] != null)
-				{
-					Serializable temp = dpi.vals[i].get();
-					if (temp instanceof PeriodHolder || temp instanceof DateRangeHolder)
-						temp = temp.toString();
-					vals[k++] = temp;
-				}
+					vals[k++] = dpi.vals[i].get();
 		}
 		else
 			for (int i = 0; i < components.length; i++)
-			{
-				Serializable temp = dp.get(components[i]).get();
-				if (temp instanceof PeriodHolder || temp instanceof DateRangeHolder)
-					temp = temp.toString();
-				vals[i] = temp;
-			}
+				vals[i] = dp.get(components[i]).get();
 		
 		vals[components.length] = dp.getLineage();
-
 		return new GenericRowWithSchema(vals, schema);
 	}
 

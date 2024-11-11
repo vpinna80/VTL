@@ -26,7 +26,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 
-public class DateRangeHolder implements Serializable, Comparable<DateRangeHolder>, TemporalAccessor
+public class TimeRangeHolder implements Serializable, Comparable<TimeRangeHolder>, TemporalAccessor
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -37,7 +37,7 @@ public class DateRangeHolder implements Serializable, Comparable<DateRangeHolder
 	
 	private transient DurationValue frequency;
 
-	public DateRangeHolder(TimeValue<?, ?, ?, ?> start, TimeValue<?, ?, ?, ?> end)
+	public TimeRangeHolder(TimeValue<?, ?, ?, ?> start, TimeValue<?, ?, ?, ?> end)
 	{
 		if (start instanceof GenericTimeValue || end instanceof GenericTimeValue)
 			throw new InvalidParameterException("GenericTimeValue cannot be nested.");
@@ -77,23 +77,23 @@ public class DateRangeHolder implements Serializable, Comparable<DateRangeHolder
 	}
 
 	@Override
-	public int compareTo(DateRangeHolder o)
+	public int compareTo(TimeRangeHolder o)
 	{
 		int c = start.compareTo(o.start);
 		return c != 0 ? c : end.compareTo(o.end);
 	}
 
-	public DateRangeHolder incrementSmallest(long amount)
+	public TimeRangeHolder incrementSmallest(long amount)
 	{
 		TimeValue<?, ?, ?, ?> newStart = end.add(1);
 		TimeValue<?, ?, ?, ?> newEnd = newStart.add(length).add(-1);
 		
-		return new DateRangeHolder(newStart, newEnd);
+		return new TimeRangeHolder(newStart, newEnd);
 	}
 
-	public DateRangeHolder increment(TemporalAmount period)
+	public TimeRangeHolder increment(TemporalAmount period)
 	{
-		return new DateRangeHolder(start.add(period), end.add(period));
+		return new TimeRangeHolder(start.add(period), end.add(period));
 	}
 	
 	@Override
@@ -118,7 +118,7 @@ public class DateRangeHolder implements Serializable, Comparable<DateRangeHolder
 		if (getClass() != obj.getClass())
 			return false;
 		
-		DateRangeHolder o = (DateRangeHolder) obj;
+		TimeRangeHolder o = (TimeRangeHolder) obj;
 		
 		if (length.equals(o.length))
 		{
@@ -133,7 +133,7 @@ public class DateRangeHolder implements Serializable, Comparable<DateRangeHolder
 
 	public Period until(TimeValue<?, ?, ?, ?> end)
 	{
-		return start.until(((DateRangeHolder) end.get()).start);
+		return start.until(((TimeRangeHolder) end.get()).start);
 	}
 
 	public DurationValue getFrequency()
@@ -160,5 +160,15 @@ public class DateRangeHolder implements Serializable, Comparable<DateRangeHolder
 	public DateValue<?> getEndDate()
 	{
 		return end.getEndDate();
+	}
+
+	public TimeValue<?, ?, ?, ?> getStartTime()
+	{
+		return start;
+	}
+
+	public TimeValue<?, ?, ?, ?> getEndTime()
+	{
+		return end;
 	}
 }

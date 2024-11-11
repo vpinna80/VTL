@@ -5,27 +5,27 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import java.time.Period;
 import java.time.temporal.TemporalAmount;
 
-import it.bancaditalia.oss.vtl.impl.types.data.date.DateRangeHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.TimeRangeHolder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public class GenericTimeValue<S extends TimeDomainSubset<S, TimeDomain>> extends TimeValue<GenericTimeValue<S>, DateRangeHolder, S, TimeDomain>
+public class GenericTimeValue<S extends TimeDomainSubset<S, TimeDomain>> extends TimeValue<GenericTimeValue<S>, TimeRangeHolder, S, TimeDomain>
 {
-	private GenericTimeValue(DateRangeHolder value, S domain)
+	private GenericTimeValue(TimeRangeHolder value, S domain)
 	{
 		super(value, domain);
 	}
 
-	public static ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> of(DateRangeHolder value)
+	public static ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> of(TimeRangeHolder value)
 	{
 		return value == null ? NullValue.instance(TIMEDS) : new GenericTimeValue<>(value, TIMEDS);
 	}
 	
 	public static ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> of(TimeValue<?, ?, ?, ?> start, TimeValue<?, ?, ?, ?> endInclusive)
 	{
-		return start == null || endInclusive == null ? NullValue.instance(TIMEDS) : new GenericTimeValue<>(new DateRangeHolder(start, endInclusive), TIMEDS);
+		return start == null || endInclusive == null ? NullValue.instance(TIMEDS) : new GenericTimeValue<>(new TimeRangeHolder(start, endInclusive), TIMEDS);
 	}
 	
 	private static final long serialVersionUID = 1L;

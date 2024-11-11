@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.string
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -35,6 +36,8 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.DEFAULT_JAVA_DECIMAL_ENCODER;
 import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
 import static org.apache.spark.sql.functions.col;
+import static org.apache.spark.sql.functions.to_date;
+import static org.apache.spark.sql.functions.udf;
 import static org.apache.spark.sql.types.DataTypes.BooleanType;
 import static org.apache.spark.sql.types.DataTypes.DateType;
 import static org.apache.spark.sql.types.DataTypes.DoubleType;
@@ -59,6 +62,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.apache.spark.sql.Column;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.JavaTypeInference;
@@ -79,9 +83,14 @@ import org.apache.spark.sql.types.StructType;
 import it.bancaditalia.oss.vtl.impl.types.data.BaseScalarValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
+import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.TimeRangeHolder;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -92,7 +101,15 @@ import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.GenericTuple;
@@ -108,6 +125,7 @@ public class SparkUtils
 	private static final Map<ValueDomainSubset<?, ?>, AgnosticEncoder<?>> DOMAIN_ENCODERS = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, DataType> DOMAIN_DATATYPES = new ConcurrentHashMap<>();
 	private static final Map<ValueDomainSubset<?, ?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> DOMAIN_BUILDERS = new ConcurrentHashMap<>();
+	
 	static final Map<Class<?>, SerFunction<Serializable, ScalarValue<?, ?, ?, ?>>> PRIM_BUILDERS = new ConcurrentHashMap<>();
 
 	static
@@ -116,25 +134,27 @@ public class SparkUtils
 		DOMAIN_ENCODERS.put(STRINGDS, AgnosticEncoders.StringEncoder$.MODULE$);
 		DOMAIN_ENCODERS.put(INTEGERDS, AgnosticEncoders.BoxedLongEncoder$.MODULE$);
 		DOMAIN_ENCODERS.put(NUMBERDS, isUseBigDecimal() ? DEFAULT_JAVA_DECIMAL_ENCODER() : AgnosticEncoders.BoxedDoubleEncoder$.MODULE$);
-		DOMAIN_ENCODERS.put(TIMEDS, AgnosticEncoders.StringEncoder$.MODULE$);
-		DOMAIN_ENCODERS.put(TIME_PERIODDS, AgnosticEncoders.StringEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(DURATIONDS, AgnosticEncoders.BoxedIntEncoder$.MODULE$);
+		DOMAIN_ENCODERS.put(TIMEDS, TimeRangeSparkUDT.getEncoder());
+		DOMAIN_ENCODERS.put(TIME_PERIODDS, TimePeriodSparkUDT.getEncoder());
 		DOMAIN_ENCODERS.put(DATEDS, STRICT_LOCAL_DATE_ENCODER());
 
 		DOMAIN_DATATYPES.put(BOOLEANDS, BooleanType);
 		DOMAIN_DATATYPES.put(STRINGDS, StringType);
 		DOMAIN_DATATYPES.put(INTEGERDS, LongType);
 		DOMAIN_DATATYPES.put(NUMBERDS, isUseBigDecimal() ? DecimalType.USER_DEFAULT() : DoubleType);
-		DOMAIN_DATATYPES.put(TIMEDS, StringType);
-		DOMAIN_DATATYPES.put(TIME_PERIODDS, StringType);
+		DOMAIN_DATATYPES.put(DURATIONDS, new FrequencySparkUDT());
+		DOMAIN_DATATYPES.put(TIMEDS, new TimeRangeSparkUDT());
+		DOMAIN_DATATYPES.put(TIME_PERIODDS, new TimePeriodSparkUDT());
 		DOMAIN_DATATYPES.put(DATEDS, DateType);
 
 		DOMAIN_BUILDERS.put(BOOLEANDS, v -> BooleanValue.of((Boolean) v));
 		DOMAIN_BUILDERS.put(STRINGDS, v -> StringValue.of((String) v));
 		DOMAIN_BUILDERS.put(INTEGERDS, v -> IntegerValue.of((Long) v));
 		DOMAIN_BUILDERS.put(NUMBERDS, v -> createNumberValue((Number) v));
-		DOMAIN_BUILDERS.put(TIMEDS, v -> DateValue.of((LocalDate) v));
-		DOMAIN_BUILDERS.put(TIMEDS, v -> stringToTime((String) v));
-		DOMAIN_BUILDERS.put(TIME_PERIODDS, v -> stringToTimePeriod((String) v));
+		DOMAIN_BUILDERS.put(DURATIONDS, v -> v == null ? NullValue.instance(DURATIONDS) : ((Frequency) v).get());
+		DOMAIN_BUILDERS.put(TIMEDS, v -> GenericTimeValue.of((TimeRangeHolder) v));
+		DOMAIN_BUILDERS.put(TIME_PERIODDS, v -> TimePeriodValue.of((PeriodHolder<?>) v));
 		DOMAIN_BUILDERS.put(DATEDS, v -> DateValue.of((LocalDate) v));
 
 		PRIM_BUILDERS.put(Boolean.class, v -> BooleanValue.of((Boolean) v));
@@ -168,6 +188,40 @@ public class SparkUtils
 		return repo.getVariable(VTLAliasImpl.of(field.name())).as(role);
 	}
 
+	public static Dataset<Row> applyStructure(DataSetMetadata structure, Dataset<Row> sourceDataFrame)
+	{
+		Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
+		
+		for (DataStructureComponent<?, ?, ?> comp: structure)
+		{
+			ValueDomainSubset<?, ?> domain = comp.getVariable().getDomain();
+			String name = comp.getVariable().getAlias().getName();
+			if (domain instanceof IntegerDomainSubset)
+				sourceDataFrame = sourceDataFrame.withColumn(name, sourceDataFrame.col(name).cast(LongType));
+			else if (domain instanceof NumberDomainSubset)
+				sourceDataFrame = sourceDataFrame.withColumn(name, sourceDataFrame.col(name).cast(DoubleType));
+			else if (domain instanceof BooleanDomainSubset)
+				sourceDataFrame = sourceDataFrame.withColumn(name, sourceDataFrame.col(name).cast(BooleanType));
+			else if (domain instanceof StringDomainSubset)
+				; // nothing
+			else if (domain instanceof DateDomainSubset)
+				sourceDataFrame = sourceDataFrame.withColumn(name, to_date(sourceDataFrame.col(name)));
+			else if (domain instanceof TimePeriodDomainSubset)
+				sourceDataFrame = sourceDataFrame.withColumn(name, 
+						udf(s -> stringToTimePeriod((String) s).get(), new TimePeriodSparkUDT()).apply(sourceDataFrame.col(name)));
+			else if (domain instanceof TimeDomainSubset)
+				sourceDataFrame = sourceDataFrame.withColumn(name, 
+						udf(s -> stringToTime((String) s).get(), new TimeRangeSparkUDT()).apply(sourceDataFrame.col(name)));
+			else if (domain instanceof DurationDomainSubset)
+				sourceDataFrame = sourceDataFrame.withColumn(name, 
+						udf(s -> Frequency.valueOf((String) s), new FrequencySparkUDT()).apply(sourceDataFrame.col(name)));
+			else
+				throw new UnsupportedOperationException("Unsupported domain " + domain);
+		}
+		
+		return sourceDataFrame.select(names);
+	}
+	
 	public static ScalarValue<?, ?, ?, ?> getScalarFor(DataStructureComponent<?, ?, ?> component, Serializable serialized)
 	{
 		SerFunction<Serializable, ScalarValue<?, ?, ?, ?>> builder = null;
