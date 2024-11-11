@@ -23,10 +23,11 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATION;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
 
-import java.util.Collections;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
@@ -153,6 +154,12 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	@Override
 	public Set<LeafTransformation> getTerminals()
 	{
-		return operand == null ? Collections.emptySet() : operand.getTerminals();
+		return operand == null ? emptySet() : operand.getTerminals();
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "period_indicator(" + coalesce(operand, "") + ")"; 
 	}
 }
