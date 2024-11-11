@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.SUM;
@@ -44,8 +45,11 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -57,6 +61,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -93,10 +98,17 @@ public class FlowStockTransformation extends UnaryTransformation
 		@Override
 		public Stream<DataPoint> apply(DataSet ds, DataStructureComponent<Identifier, ?, ?> timeid)
 		{
-			final DataSetMetadata metadata = ds.getMetadata();
+			DataSetMetadata metadata = ds.getMetadata();
+			DataStructureComponent<Identifier, EntireDurationDomainSubset, DurationDomain> freq = DURATIONDS.getDefaultVariable().as(Identifier.class);
 			Set<DataStructureComponent<Measure, ?, ?>> measures = new HashSet<>(ds.getMetadata().getMeasures());
 			Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(ds.getMetadata().getIDs());
 			ids.remove(timeid);
+			ids.add(freq);
+			
+			DataSetMetadata metaWithFreq = new DataStructureBuilder(metadata).addComponent(freq).build(); 
+			ds = ds.mapKeepingKeys(metaWithFreq, DataPoint::getLineage, dp -> new DataPointBuilder(dp)
+					.add(freq, ((TimeValue<?, ?, ?, ?>) dp.getValue(timeid)).getFrequency())
+					.build(dp.getLineage(), metaWithFreq));
 
 			return ds.streamByKeys(ids, emptyMap(), toConcurrentMap(i -> i, i -> true, (a, b) -> a, () -> new ConcurrentSkipListMap<>(DataPoint.compareBy(timeid))), (a, b) -> a)
 				.map(Map::keySet)
@@ -109,6 +121,7 @@ public class FlowStockTransformation extends UnaryTransformation
 									acc.put(m, dp.get(m));
 								return v; 
 							}))).addAll(dp.getValues(Identifier.class))
+							.delete(freq)
 							.build(LineageNode.of(toString().toLowerCase(), dp.getLineage()), metadata));
 				}).collect(concatenating(Utils.ORDERED));
 		}
