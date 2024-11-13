@@ -174,7 +174,7 @@
 		<tokenmapping name="SYMDIFF" value="SYMDIFF" />
 	</tokenset>
 
-	<tokenset name="DatasetOperator" class="it.bancaditalia.oss.vtl.impl.transform.dataset.FlowStockTransformation$DatasetOperator">
+	<tokenset name="DatasetOperator" class="it.bancaditalia.oss.vtl.impl.transform.time.FlowStockTransformation$DatasetOperator">
 		<tokenmapping name="FLOW_TO_STOCK" value="FLOW_TO_STOCK" />
 		<tokenmapping name="STOCK_TO_FLOW" value="STOCK_TO_FLOW" />
 	</tokenset>
@@ -1130,7 +1130,7 @@
 		</params>
 	</mapping>
 
-	<mapping to="dataset.FlowStockTransformation">
+	<mapping to="time.FlowStockTransformation">
 		<from>FlowAtom</from>
 		<params>
 			<tokensetparam name="op" tokenset="DatasetOperator" />

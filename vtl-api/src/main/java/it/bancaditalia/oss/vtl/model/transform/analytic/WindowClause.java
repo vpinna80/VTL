@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.model.transform.analytic;
 import java.util.List;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 
 public interface WindowClause
@@ -30,7 +29,7 @@ public interface WindowClause
 	/**
 	 * @return The set of Identifier components used to partitioning the dataset.
 	 */
-	public Set<DataStructureComponent<Identifier, ?, ?>> getPartitioningIds();
+	public Set<? extends DataStructureComponent<?, ?, ?>> getPartitioningComponents();
 
 	/**
 	 * @return The criteria used to sort the data points before computing the analytic function 

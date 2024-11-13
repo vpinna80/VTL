@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
@@ -26,31 +27,29 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class WindowClauseImpl implements WindowClause, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Set<DataStructureComponent<Identifier, ?, ?>> partitioningIds;
+	private final Set<? extends DataStructureComponent<?, ?, ?>> partitioningIds;
 	private final List<SortCriterion> sortCriteria;
 	private final WindowCriterion windowCriterion;
 	
-	public WindowClauseImpl(Set<DataStructureComponent<Identifier, ?, ?>> partitioningIds, List<SortCriterion> sortCriteria, WindowCriterion windowCriterion)
+	public WindowClauseImpl(Set<? extends DataStructureComponent<?, ?, ?>> partitioningIds, List<SortCriterion> sortCriteria, WindowCriterion windowCriterion)
 	{
-		this.partitioningIds = Utils.coalesce(partitioningIds, emptySet());
-		this.sortCriteria = Utils.coalesce(sortCriteria, emptyList());
+		this.partitioningIds = coalesce(partitioningIds, emptySet());
+		this.sortCriteria = coalesce(sortCriteria, emptyList());
 		this.windowCriterion = windowCriterion;
 	}
 
 
 	@Override
-	public Set<DataStructureComponent<Identifier, ?, ?>> getPartitioningIds()
+	public Set<? extends DataStructureComponent<?, ?, ?>> getPartitioningComponents()
 	{
 		return partitioningIds;
 	}
