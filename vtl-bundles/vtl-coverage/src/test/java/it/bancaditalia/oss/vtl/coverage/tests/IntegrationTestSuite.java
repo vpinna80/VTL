@@ -201,7 +201,7 @@ public class IntegrationTestSuite
 		}
 		
 		checkDPs(resDPs, expectedDPs, "Unexpected datapoint found");
-		checkDPs(expectedDPs, resDPs, "Expected datapoint found");
+		checkDPs(expectedDPs, resDPs, "Expected datapoint not found");
 	}
 	
 	private static void checkDPs(List<DataPoint> toCheck, List<DataPoint> against, String prefix)

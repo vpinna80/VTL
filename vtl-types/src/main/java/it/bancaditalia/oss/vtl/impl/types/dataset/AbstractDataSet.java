@@ -303,7 +303,7 @@ public abstract class AbstractDataSet implements DataSet
 
 	@Override
 	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
-			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
+			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");

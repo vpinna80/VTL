@@ -90,7 +90,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		
 		SerFunction<DataPoint, Lineage> lineageOp = dp -> LineageNode.of(this, dp.getLineage());
 		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
-		SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<ScalarValue<?, ?, ?, ?>>> finisher = (newV, oldV) -> {
+		SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher = (newV, oldV) -> {
 			if (newV instanceof NullValue || oldV instanceof NullValue)
 				return singleton(newV instanceof NullValue ? newV : oldV);
 			else if (newV instanceof NumberValue && oldV instanceof NumberValue)
