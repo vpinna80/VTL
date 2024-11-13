@@ -228,8 +228,8 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	
 	/**
 	 * Creates a new DataSet by applying a window function over a component of this DataSet.
-	 * Each application can produce one or more values that will be exploded into multiple datapoints.
-	 * The result values are stored in the destination component of the resulting dataset.
+	 * Each application can produce one or more values, in which case they will be exploded into multiple datapoints.
+	 * The result values of the window function are stored in the destination component of the resulting dataset.
 	 * 
 	 * @param <T> The type of elements fed into the window
 	 * @param <TT> The type of the result produced by the window function
@@ -239,15 +239,15 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param clause The window clause
 	 * @param extractor Extractor that feeds a value into the window. If null, the value fed 
 	 *        will be the value assumed by the source component in each datapoint
-	 * @param collector The collector to produce the results for each window
-	 * @param finisher A final mapping from the accumulated result into a collaction of values.
+	 * @param collector The collector that will give all the datafoints originating from each datapoint in a given window
+	 * @param finisher A final mapping from the accumulated result into a collection of values.
 	 *        If null, the collector result will be taken as-is, and it must be a collection of scalar values.
 	 * 
 	 * @return A new dataset resulting from the application of the specified window function.
 	 */
 	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
 			DataStructureComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor,
-			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher);
+			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher);
 
 	/**
 	 * Creates a new DataSet as the union of this and other datasets.
