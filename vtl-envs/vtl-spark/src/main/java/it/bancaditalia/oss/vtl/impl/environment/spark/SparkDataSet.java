@@ -28,6 +28,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getEncod
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getNamesFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getScalarFor;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.reinterpret;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
@@ -96,7 +97,7 @@ import org.apache.spark.sql.execution.ExplainMode;
 import org.apache.spark.sql.expressions.Window;
 import org.apache.spark.sql.expressions.Window$;
 import org.apache.spark.sql.expressions.WindowSpec;
-import org.apache.spark.sql.types.ArrayType;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -121,6 +122,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
+import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -428,27 +430,30 @@ public class SparkDataSet extends AbstractDataSet
 	@Override
 	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
 			DataStructureComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor, 
-			SerCollector<T, ?, TT> collector2, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
+			SerCollector<T, ?, TT> collector2, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		// Convert a VTL window clause to a Spark Window Specification
-		WindowSpec windowSpec = null;
-		if (!clause.getPartitioningIds().isEmpty())
-			windowSpec = Window.partitionBy(clause.getPartitioningIds().stream()
+		WindowSpec windowSpec = Window$.MODULE$.spec();
+		if (!clause.getPartitioningComponents().isEmpty())
+			windowSpec = Window.partitionBy(clause.getPartitioningComponents().stream()
 					.map(c -> c.getVariable().getAlias().getName())
 					.map(dataFrame::col)
-					.collect(toArray(new Column[clause.getPartitioningIds().size()])));
+					.collect(toArray(new Column[clause.getPartitioningComponents().size()])));
 
-		Column[] orderBy = clause.getSortCriteria().stream()
-				.map(item -> {
-					Column col = dataFrame.col(item.getComponent().getVariable().getAlias().getName());
-					return item.getMethod() == ASC ? col.asc() : col.desc();
-				}).collect(toArray(new Column[clause.getSortCriteria().size()]));
-
-		if (!clause.getSortCriteria().isEmpty())
-			windowSpec = windowSpec == null ? Window.orderBy(orderBy) : windowSpec.orderBy(orderBy);
+		Column[] orderBy = new Column[clause.getSortCriteria().size()];
+		for (int i = 0; i < orderBy.length; i++)
+		{
+			SortCriterion item = clause.getSortCriteria().get(i);
+			Column col = dataFrame.col(item.getComponent().getVariable().getAlias().getName());
+			orderBy[i] = item.getMethod() == ASC ? col.asc() : col.desc();
+		}
 		
-		LimitCriterion infBound = clause.getWindowCriterion().getInfBound(),
-				supBound = clause.getWindowCriterion().getSupBound();
+		if (orderBy.length > 0)
+			windowSpec = windowSpec.orderBy(orderBy);
+		
+		LimitCriterion infBound = clause.getWindowCriterion().getInfBound();
+		LimitCriterion supBound = clause.getWindowCriterion().getSupBound();
+		
 		long inf = infBound.getCount();  
 		long sup = supBound.getCount();
 		if (infBound.getDirection() == PRECEDING)
@@ -456,11 +461,9 @@ public class SparkDataSet extends AbstractDataSet
 		if (supBound.getDirection() == PRECEDING)
 			sup = sup == Long.MAX_VALUE ? Long.MIN_VALUE : -sup;
 			
-		if (clause.getWindowCriterion().getType() == RANGE)
-			windowSpec = windowSpec == null ? Window.rangeBetween(inf, sup) : windowSpec.rangeBetween(inf, sup);
-		else
-			windowSpec = windowSpec == null ? Window.rowsBetween(inf, sup) : windowSpec.rowsBetween(inf, sup);
-		WindowSpec finalWindowSpec = windowSpec == null ? Window$.MODULE$.spec() : windowSpec;
+		WindowSpec finalWindowSpec = clause.getWindowCriterion().getType() == RANGE 
+				? windowSpec.rangeBetween(inf, sup)
+				: windowSpec.rowsBetween(inf, sup);
 
 		SerCollector<Row, ?, TT> collector;
 		if (extractor == null)
@@ -476,7 +479,7 @@ public class SparkDataSet extends AbstractDataSet
 		ValueDomainSubset<?, ?> domain = sourceComp.getVariable().getDomain();
 		Encoder<?> accEncoder = SparkUtils.getEncoderFor(accum, domain, structure);
 		@SuppressWarnings("unchecked")
-		Encoder<TT> ttEncoder = (Encoder<TT>) SparkUtils.getEncoderFor(tag, domain, structure);
+		Encoder<TT> ttEncoder = (Encoder<TT>) getEncoderFor(tag, domain, structure);
 		
 		Column[] columns = new Column[getMetadata().size() + 1];
 		int l = 0;
@@ -484,14 +487,13 @@ public class SparkDataSet extends AbstractDataSet
 			columns[l++] = dataFrame.col(col);
 		
 		Column udaf, input;
-		UDF2<Serializable, ? extends Serializable, Serializable[]> udf;
+		UDF2<Serializable, ? extends Serializable, Serializable> udf = rowToScalarUDF(sourceComp, extractor, finisher);
 		if (extractor == null) // then T is ScalarValue<?, ?, ?, ?>
 		{
-			Encoder<T> inputEncoder = (Encoder<T>) getEncoderFor(NullValue.instance(NULLDS), domain, structure);
+			Encoder<T> inputEncoder = getEncoderFor(NullValue.instance(NULLDS), domain, structure);
 			udaf = udaf(new VTLSparkAggregator<>(collector2, accEncoder, ttEncoder), inputEncoder)
 					.apply(dataFrame.col(sourceComp.getVariable().getAlias().getName()))
 					.over(finalWindowSpec);
-			udf = nonExtractingUDF(sourceComp, finisher);
 			input = dataFrame.col(sourceComp.getVariable().getAlias().getName());
 		}
 		else
@@ -499,14 +501,22 @@ public class SparkDataSet extends AbstractDataSet
 			udaf = udaf(new VTLSparkAggregator<>(collector, accEncoder, ttEncoder), encoder.rowEncoder)
 					.apply(columns)
 					.over(finalWindowSpec);
-			udf = extractorUDF(sourceComp, extractor, finisher);
 			input = struct(columns);
 		}
 		
+		// Shortcut if singleton result avoiding large amount of de/serialization
+		DataType anResType = finisher != null ? createArrayType(getDataTypeFor(sourceComp)) : getDataTypeFor(sourceComp);
+		Column appliedUDF;
+		if (finisher != null)
+			appliedUDF = udf(udf, anResType).apply(udaf, input);
+		else
+			appliedUDF = udf(serAcc -> ((ScalarValue<?, ?, ?, ?>) reinterpret(sourceComp, (Serializable) serAcc)).get(), anResType).apply(udaf);
+
 		String destName = destComp.getVariable().getAlias().getName();
-		ArrayType arrayType = createArrayType(getDataTypeFor(sourceComp));
-		Dataset<Row> analyticResult = dataFrame.withColumn(destName, udf(udf, arrayType).apply(udaf, input));
-		Dataset<Row> exploded = analyticResult.withColumn(destName, explode(analyticResult.col(destName)));
+		// Shortcut if singleton result omitting explode
+		Dataset<Row> analyticResult = dataFrame.withColumn(destName, appliedUDF);
+		if (finisher != null)
+			analyticResult = analyticResult.withColumn(destName, explode(analyticResult.col(destName)));
 		
 		// Structure of the result
 		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
@@ -516,44 +526,31 @@ public class SparkDataSet extends AbstractDataSet
 		
 		DataPointEncoder resultEncoder = new DataPointEncoder(session, newStructure);
 		Column[] cols = getColumnsFromComponents(newStructure).toArray(new Column[newStructure.size() + 1]);
-		cols[cols.length - 1] = exploded.col("$lineage$");
+		cols[cols.length - 1] = analyticResult.col("$lineage$");
 
-		return new SparkDataSet(session, newStructure, resultEncoder, exploded.select(cols));
+		return new SparkDataSet(session, newStructure, resultEncoder, analyticResult.select(cols));
 	}
 
-	private <TT, T> UDF2<Serializable, Row, Serializable[]> extractorUDF(DataStructureComponent<?, ?, ?> comp, SerFunction<DataPoint, T> extractor, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
+	@SuppressWarnings("unchecked")
+	private <I extends Serializable, T> SerFunction<I, T> extractWith(SerFunction<DataPoint, T> extractor)
 	{
-		return (serAcc, input) -> {
-			serAcc = SparkUtils.reinterpret(comp, serAcc);
-			
-			Collection<ScalarValue<?, ?, ?, ?>> finished;
-			if (finisher != null)
-				finished = finisher.apply((TT) serAcc, extractor.apply(encoder.decode(input)));
-			else
-				finished = List.of((ScalarValue<?, ?, ?, ?>) serAcc);
-			
-			return finished.stream()
-					.map(ScalarValue::get)
-					.collect(toArray(new Serializable[finished.size()]));
-		};
+		if (extractor != null)
+			return input -> extractor.apply(encoder.decode((Row) input));
+		else
+			return input -> (T) input;  
 	}
-
-	private <TT, T> UDF2<Serializable, Serializable, Serializable[]> nonExtractingUDF(DataStructureComponent<?, ?, ?> comp, SerBiFunction<TT, T, Collection<ScalarValue<?, ?, ?, ?>>> finisher)
+	
+	// convert the results of the analytic function to an array of values, or to a single one if finisher is null
+	private <T, I extends Serializable, TT> UDF2<Serializable, I, Serializable> rowToScalarUDF(DataStructureComponent<?, ?, ?> comp, 
+			SerFunction<DataPoint, T> extractor, SerBiFunction<TT, T, ? extends Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
+		SerFunction<I, T> process = extractWith(extractor);
 		return (serAcc, input) -> {
-			serAcc = SparkUtils.reinterpret(comp, serAcc);
-			input = SparkUtils.reinterpret(comp, input);
-			
-			Collection<ScalarValue<?, ?, ?, ?>> finished;
-			if (finisher != null)
-				finished = finisher.apply((TT) serAcc, (T) input);
-			else
-				finished = List.of((ScalarValue<?, ?, ?, ?>) serAcc);
-			
-			return finished.stream()
+				Collection<? extends ScalarValue<?, ?, ?, ?>> finished = finisher.apply(reinterpret(comp, serAcc), reinterpret(comp, (Serializable) process.apply(input)));
+				return finished.stream()
 					.map(ScalarValue::get)
 					.collect(toArray(new Serializable[finished.size()]));
-		};
+			};
 	}
 
 	@Override

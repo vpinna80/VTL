@@ -316,7 +316,7 @@ public class SparkUtils
 			.collect(toList());
 	}
 
-	public static Encoder<?> getEncoderFor(Serializable instance, ValueDomainSubset<?, ?> domain, DataSetMetadata structure)
+	public static <T> Encoder<T> getEncoderFor(Serializable instance, ValueDomainSubset<?, ?> domain, DataSetMetadata structure)
 	{
 		AgnosticEncoder<?> resultEncoder; 
 		
@@ -405,19 +405,20 @@ public class SparkUtils
 		else
 			throw new IllegalStateException(instance.getClass().getName());
 		
-		return ExpressionEncoder.apply(resultEncoder);
+		@SuppressWarnings("unchecked")
+		Encoder<T> encoder = (Encoder<T>) ExpressionEncoder.apply(resultEncoder);
+		return encoder;
 	}
 
-	public static Serializable reinterpret(DataStructureComponent<?, ?, ?> comp, Serializable serAcc)
+	@SuppressWarnings("unchecked")
+	public static <TT extends Serializable> TT reinterpret(DataStructureComponent<?, ?, ?> comp, Serializable serAcc)
 	{
 		if (serAcc == null)
-		{
-			return NullValue.instanceFrom(comp);
-		}
+			return (TT) NullValue.instanceFrom(comp);
 		else if (serAcc instanceof Row)
-		{
-			return serAcc;
-		}
+			return (TT) serAcc;
+		else if (PRIM_BUILDERS.containsKey(serAcc.getClass()))
+			return (TT) PRIM_BUILDERS.get(serAcc.getClass()).apply(serAcc);
 		else if (serAcc instanceof scala.collection.immutable.Map)
 		{
 			Map<GenericTuple, Long> rankedPartition = new HashMap<>();
@@ -430,7 +431,7 @@ public class SparkUtils
 				rankedPartition.put(new GenericTuple(values), (Long) entry._2);
 			}
 			
-			serAcc = (Serializable) rankedPartition;
+			return (TT) rankedPartition;
 		}
 		else if (serAcc instanceof scala.collection.immutable.ArraySeq)
 		{
@@ -438,14 +439,10 @@ public class SparkUtils
 			ArrayList<Serializable> list = new ArrayList<>();
 			for (Object value: asJava((scala.collection.Iterable<?>) serAcc))
 				list.add(builder.apply((Serializable) ((Row) value).get(0)));
-			serAcc = list;
+			return (TT) list;
 		}
-		else if (PRIM_BUILDERS.containsKey(serAcc.getClass()))
-		{
-			serAcc = PRIM_BUILDERS.get(serAcc.getClass()).apply(serAcc);
-		}
-		
-		return serAcc;
+		else		
+			return (TT) serAcc;
 	}
 
 	private SparkUtils()

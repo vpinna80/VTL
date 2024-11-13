@@ -159,27 +159,29 @@ public class SparkEnvironment implements Environment
 	private final DataFrameReader reader;
 	private final List<Path> paths;
 
+	private static SparkConf getConf()
+	{
+		return new SparkConf()
+		  .setAppName("Spark SQL Environment for VTL Engine")
+		  .set("spark.executor.processTreeMetrics.enabled", "false")
+		  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
+		  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
+		  /* enable for DEBUG
+		  .set("spark.sql.codegen.wholeStage", "false")
+		  .set("spark.sql.codegen", "false")
+		  .set("spark.sql.codegen.factoryMode", "NO_CODEGEN")
+		  //*/
+		  .set("spark.sql.windowExec.buffer.in.memory.threshold", "16384")
+		  .set("spark.sql.datetime.java8API.enabled", "true")
+		  .set("spark.sql.catalyst.dateType", "Instant");
+	}
+	
 	public SparkEnvironment()
 	{
 		String master = VTL_SPARK_MASTER_CONNECTION.getValue();
 		LOGGER.info("Connecting to Spark master {}", master);
-		SparkConf conf = new SparkConf()
+		SparkConf conf = getConf()
 			  .setMaster(master)
-			  .setAppName("Spark SQL Environment for VTL Engine [" + hashCode() + "]")
-			  .set("spark.executor.processTreeMetrics.enabled", "false")
-			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
-			  .set("spark.sql.datetime.java8API.enabled", "true")
-			  .set("spark.sql.catalyst.dateType", "Instant")
-			  .set("spark.executor.instances", "4")
-			  .set("spark.executor.cores", "2")
-			  /* enable for DEBUG
-			  .set("spark.sql.codegen.wholeStage", "false")
-			  .set("spark.sql.codegen", "false")
-			  .set("spark.sql.codegen.factoryMode", "NO_CODEGEN")
-			  //*/
-			  .set("spark.sql.windowExec.buffer.in.memory.threshold", "16384")
-			  .set("spark.sql.caseSensitive", "true")
-			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
 			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
 			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
 		
@@ -201,18 +203,10 @@ public class SparkEnvironment implements Environment
 	
 	public SparkEnvironment(List<Path> paths)
 	{
-		LOGGER.info("Connecting to Spark master {}", "local[4]");
-		SparkConf conf = new SparkConf()
-			  .setMaster("local[4]")
-			  .setAppName("Spark SQL Environment for VTL Engine [" + hashCode() + "]")
-			  .set("spark.executor.processTreeMetrics.enabled", "false")
-			  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
-			  .set("spark.sql.datetime.java8API.enabled", "true")
-			  .set("spark.sql.catalyst.dateType", "Instant")
-			  .set("spark.sql.windowExec.buffer.in.memory.threshold", "16384")
-			  .set("spark.sql.caseSensitive", "true")
-			  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
-			  .set("spark.ui.enabled", "false");
+		LOGGER.info("Connecting to Spark master {}", "local[*]");
+		SparkConf conf = getConf()
+			  .setMaster("local[*]")
+			  .set("spark.ui.enabled", "true");
 		
 		// Set SEQUENTIAL to avoid creating new threads while inside the executor
 		this.paths = paths;
