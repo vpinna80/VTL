@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singletonMap;
@@ -32,15 +33,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -88,9 +90,13 @@ public class ExistsInTransformation extends BinaryTransformation
 		Set<DataStructureComponent<Identifier, ?, ?>> commonIDs = new HashSet<>(left.getMetadata().getIDs());
 		commonIDs.retainAll(right.getMetadata().getIDs());
 		
-		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> rightIDValues = right.stream().map(dp -> dp.getValues(commonIDs)).collect(toSet());
-			
-		DataSet unfiltered = left.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
+		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> rightIDValues;
+		try (Stream<DataPoint> stream = right.stream())
+		{
+			rightIDValues = stream.map(dp -> dp.getValues(commonIDs)).collect(toSet());
+		}
+				
+		DataSet unfiltered = left.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
 				dp -> singletonMap(boolMeasure, BooleanValue.of(rightIDValues.contains(dp.getValues(commonIDs)))));
 		
 		switch (mode)
