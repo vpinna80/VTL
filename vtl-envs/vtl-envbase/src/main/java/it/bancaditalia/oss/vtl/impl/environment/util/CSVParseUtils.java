@@ -185,18 +185,22 @@ public class CSVParseUtils
 		else if (component.getVariable().getDomain() instanceof DurationDomainSubset)
 			return Frequency.valueOf(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation).get();
 		else if (component.getVariable().getDomain() instanceof IntegerDomainSubset)
-			try
-			{
-				if (stringRepresentation.trim().isEmpty())
-					return NullValue.instance(INTEGERDS);
-				else
-					return IntegerValue.of(Long.parseLong(stringRepresentation));
-			}
-			catch (NumberFormatException e)
-			{
-				LOGGER.error("An Integer was expected but found: " + stringRepresentation);
+			if (stringRepresentation.trim().isEmpty())
 				return NullValue.instance(INTEGERDS);
-			}
+			else
+				try
+				{
+					return IntegerValue.of(Long.parseLong(stringRepresentation));
+				}
+				catch (NumberFormatException e)
+				{
+					double number = (long) Double.parseDouble(stringRepresentation);
+					if (((long) number) == number)
+						return IntegerValue.of((long) number);
+					
+					LOGGER.error("An Integer was expected but found: " + stringRepresentation);
+					return NullValue.instance(INTEGERDS);
+				}
 		else if (component.getVariable().getDomain() instanceof NumberDomainSubset)
 			try
 			{
