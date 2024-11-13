@@ -129,15 +129,15 @@ public class SerCollectors
     public static <T> SerCollector<T, ?, T[]> toArray(T[] result)
     {
     	AtomicInteger index = new AtomicInteger(0);
-        return new SerCollector<>(() -> result, (a, v) -> a[index.getAndIncrement()] = v, (a, b) -> a, identity(), EnumSet.of(UNORDERED, CONCURRENT));
+        return new SerCollector<>(() -> result, (a, v) -> a[index.getAndIncrement()] = v, (a, b) -> a, identity(), EnumSet.of(CONCURRENT, IDENTITY_FINISH));
     }
 
 	public static <T, A, R> SerCollector<T, A, R> filtering(SerPredicate<? super T> predicate, SerCollector<? super T, A, R> downstream)
 	{
-		final SerBiConsumer<A, T> biConsumer = (r, t) -> {
-			if (predicate.test(t))
-				downstream.accumulator().accept(r, t);
-		};
+		SerBiConsumer<A, T> biConsumer = (r, t) -> {
+				if (predicate.test(t))
+					downstream.accumulator().accept(r, t);
+			};
 		
 		return new SerCollector<>(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
 	}
@@ -164,7 +164,7 @@ public class SerCollectors
     
     public static <T> SerCollector<T, ?, Optional<T>> reducing(Class<?> repr, SerBinaryOperator<T> op)
     {
-    	return SerCollector.of(() -> new Holder<T>(repr), (r, v) -> r.accumulateAndGet(v, (v1, v2) -> v1 == null ? v2 : op.apply(v1, v2)), (l, r) -> l, r -> Optional.ofNullable(r.get()), EnumSet.of(CONCURRENT, UNORDERED));
+    	return SerCollector.of(() -> new Holder<T>(repr), (r, v) -> r.accumulateAndGet(v, (v1, v2) -> v1 == null ? v2 : op.apply(v1, v2)), (l, r) -> l, r -> Optional.ofNullable(r.get()), EnumSet.of(CONCURRENT));
     }
 
     public static <T> SerCollector<T, ?, Optional<T>> firstValue(Class<?> repr)
