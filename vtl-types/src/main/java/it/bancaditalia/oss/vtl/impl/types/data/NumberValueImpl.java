@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static java.util.Objects.requireNonNull;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
@@ -53,12 +54,14 @@ public abstract class NumberValueImpl<V extends NumberValueImpl<V, R, S, D>, R e
 		return createNumberValue(n, NUMBERDS);
 	}
 	
+	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> createNumberValue(Optional<? extends Number> n)
+	{
+		return createNumberValue(n.orElse(null), NUMBERDS);
+	}
+	
 	public static ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> createNumberValue(String s)
 	{
-		if (isUseBigDecimal())
-			return BigDecimalValue.of(s != null ? new BigDecimal(s) : null);
-		else
-			return DoubleValue.of(s != null ? Double.parseDouble(s) : null, NUMBERDS);
+		return createNumberValue(s == null ? null : isUseBigDecimal() ? new BigDecimal(s) : Double.parseDouble(s), NUMBERDS);
 	}
 	
 	public NumberValueImpl(R value, S domain)

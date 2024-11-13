@@ -39,10 +39,10 @@ public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain>
 		super(null, domain);
 	}
 	
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instance(S domain)
+	@SuppressWarnings("unchecked")
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instance(ValueDomainSubset<S, D> domain)
 	{
-		@SuppressWarnings("unchecked")
-		NullValue<S, D> nullValue = (NullValue<S, D>) INSTANCES.computeIfAbsent(domain, n -> new NullValue<>(domain));
+		NullValue<S, D> nullValue = (NullValue<S, D>) INSTANCES.computeIfAbsent(domain, n -> new NullValue<>((S) domain));
 		return nullValue;
 	}
 

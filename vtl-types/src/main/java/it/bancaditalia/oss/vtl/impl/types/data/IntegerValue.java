@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.data;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 
+import java.util.Optional;
 import java.util.OptionalLong;
 
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
@@ -51,6 +52,11 @@ public class IntegerValue<I extends IntegerValue<I, S>, S extends IntegerDomainS
 	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(OptionalLong value)
 	{
 		return value != null && value.isPresent() ? of(value.getAsLong(), INTEGERDS) : NULLINSTANCE;
+	}
+	
+	public static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> of(Optional<Number> value)
+	{
+		return value != null && value.isPresent() ? of(value.get().longValue(), INTEGERDS) : NULLINSTANCE;
 	}
 	
 	@Override
