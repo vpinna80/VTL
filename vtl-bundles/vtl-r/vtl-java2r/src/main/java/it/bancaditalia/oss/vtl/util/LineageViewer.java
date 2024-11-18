@@ -51,7 +51,7 @@ public class LineageViewer
 		this.dataset = dataset;
 	}
 	
-	public Triple<String[],String[],Long[]> generateAdiacenceMatrix(TransformationScheme scheme)
+	public Triple<String[], String[], Long[]> generateAdiacenceMatrix(TransformationScheme scheme)
 	{
 		Map<Entry<String, String>, Long> adiacences = new HashMap<>();
 		Queue<Entry<Lineage, Long>> sources = new LinkedList<>();

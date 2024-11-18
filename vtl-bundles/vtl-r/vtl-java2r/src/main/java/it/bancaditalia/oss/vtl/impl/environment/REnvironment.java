@@ -29,7 +29,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL;
 import static org.rosuda.JRI.REXP.XT_ARRAY_BOOL_INT;
@@ -87,10 +86,10 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.data.Variable.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -381,13 +380,13 @@ public class REnvironment implements Environment
 			else if (value instanceof NumberValue)
 			{
 				int year = ((Number) value.get()).intValue();
-				return new TimePeriodValue<>(new YearPeriodHolder(Year.of(year)), TIME_PERIODDS);
+				return TimePeriodValue.of(new YearPeriodHolder(Year.of(year)));
 			}
 			else if (value instanceof StringValue)
 			{
 				String dt = value.get().toString(); 
 				if (dt.matches("^\\d{4}-\\d{2}$"))
-					return new TimePeriodValue<>(new MonthPeriodHolder(YearMonth.parse(dt)), TIME_PERIODDS);
+					return TimePeriodValue.of(new MonthPeriodHolder(YearMonth.parse(dt)));
 				else if (dt.matches("^\\d{4}-\\d{2}-\\d{2}$"))
 					return new DateValue<>(LocalDate.parse(dt), DATEDS);
 				else
