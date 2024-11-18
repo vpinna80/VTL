@@ -64,7 +64,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -140,6 +140,8 @@ public class AggregateTransformation extends UnaryTransformation
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		SerCollector<DataPoint, ?, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> combined = null;
+		DataSetMetadata origStructure = dataset.getMetadata();
+
 		if (aggregation == COUNT)
 			combined = collectingAndThen(counting(), v -> Map.of(COUNT_MEASURE, IntegerValue.of(v)));
 		else
@@ -151,34 +153,30 @@ public class AggregateTransformation extends UnaryTransformation
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 
-		DataSet dataset2;
 		if (groupingClause != null && groupingClause.getFrequency() != null)
 		{
 			// aggregate the time-id
 			DataStructureComponent<Identifier, ?, ?> timeID = groupIDs.stream()
 					.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
 					.findAny()
-					.orElse(null);
+					.orElseThrow(() -> new VTLMissingComponentsException("A time identifier", groupIDs));
 			
-			DataSetMetadata origStructure = dataset.getMetadata();
-			dataset2 = new StreamWrapperDataSet(origStructure, () -> dataset.stream().map(dp -> {
+			dataset = new FunctionDataSet<>(origStructure, ds -> ds.stream().map(dp -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> c = new HashMap<>(dp);
 				c.compute(timeID, (k, v) -> groupingClause.getFrequency().wrap((TimeValue<?, ?, ?, ?>) v));
 				return new DataPointBuilder(c).build(dp.getLineage(), origStructure);
-			}));
+			}), dataset);
 		}
-		else
-			dataset2 = dataset;
 
 		// dataset-level aggregation
-		return dataset2.aggregate((DataSetMetadata) metadata, groupIDs, combined, (map, keyValues) -> {
+		return dataset.aggregate((DataSetMetadata) metadata, groupIDs, combined, (map, keyValues) -> {
 			DataPointBuilder builder = new DataPointBuilder(keyValues.getValue());
 			if (targetName == null)
 				for (DataStructureComponent<?, ?, ?> measure: map.keySet())
 					builder = builder.add(getCompFor(measure, repo, (DataSetMetadata) metadata), map.get(measure));
 			else if (map.size() == 1)
 			{
-				DataStructureComponent<Measure, ?, ?> srcComp = dataset.getMetadata().getMeasures().iterator().next();
+				DataStructureComponent<Measure, ?, ?> srcComp = origStructure.getMeasures().iterator().next();
 				builder = builder.add(getCompFor(srcComp, repo, (DataSetMetadata) metadata), map.values().iterator().next());
 			}
 			else
