@@ -41,23 +41,10 @@
 		<asciidoctor.version>1.6.0</asciidoctor.version>
 	</properties>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-bundle-deps</artifactId>
-				<version>${project.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-bundle-deps</artifactId>
-			<type>pom</type>
 		</dependency>
 		<dependency>
 			<groupId>info.picocli</groupId>

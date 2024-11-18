@@ -40,22 +40,10 @@
 		<r.runtime.version>4.3.2</r.runtime.version>
 	</properties>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-bundle-deps</artifactId>
-				<version>${project.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-envbase</artifactId>
+			<artifactId>vtl-bundle-deps</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.rosuda.JRI</groupId>

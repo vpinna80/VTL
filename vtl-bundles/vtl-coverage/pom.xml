@@ -36,54 +36,10 @@
 	<name>vtl-coverage</name>
 	<description>Coverage report aggregator</description>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-bundle-deps</artifactId>
-				<version>${project.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-	
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-types</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-engine</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-parser</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-confman</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-transform</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-envbase</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-metabase</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-session</artifactId>
+			<artifactId>vtl-bundle-deps</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
