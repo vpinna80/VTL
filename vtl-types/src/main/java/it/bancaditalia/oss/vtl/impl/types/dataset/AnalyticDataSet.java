@@ -19,17 +19,18 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -101,7 +102,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		this.extractor = coalesce(extractor, dp -> (T) dp.get(srcComponent));
 		this.collector = collector;
 		this.partitionIds = clause.getPartitioningComponents();
-		this.finisher = Utils.coalesce(finisher, (a, b) -> (Collection<? extends ScalarValue<?, ?, ?, ?>>) Set.of((ScalarValue<?, ?, ?, ?>) a));
+		this.finisher = finisher;
 		
 		this.orderBy = (dp1, dp2) -> {
 				for (SortCriterion criterion: clause.getSortCriteria())
@@ -140,7 +141,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		Stream<Stream<DataPoint>> original;
 		
 		// when partition by all, each window has a single data point in it (though the result can have any number) 
-		if (partitionIds.equals(getMetadata().getIDs()))
+		if (partitionIds.equals(source.getMetadata().getIDs()))
 			original = source.stream()
 					.map(v -> new DataPoint[] { v })
 					.map(this::applyToPartition);
@@ -196,28 +197,31 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		if (!Utils.SEQUENTIAL)
 			indexes = indexes.parallel();
 		
-		return indexes.mapToObj(index -> applyToWindow(partition, index))
-			.map(splitting(AnalyticDataSet::explode))
-			.collect(concatenating(ORDERED))
-			.map(splitting((value, dp) -> new DataPointBuilder(dp)
-				.delete(srcComponent)
+		// performance shortcut for single-valued analytic functions 
+		Stream<Entry<TT, DataPoint>> exploded = indexes.mapToObj(index -> applyToWindow(partition, index));
+		Stream<? extends Entry<?, DataPoint>> finished = exploded;
+		if (finisher != null)
+			finished = exploded.map(splitting(this::explode))
+				.collect(concatenating(ORDERED));
+		
+		return finished.map(e -> new SimpleEntry<>((ScalarValue<?, ?, ?, ?>) e.getKey(), e.getValue()))
+			.map(splitting((value, dp) -> new DataPointBuilder(dp, DONT_SYNC)
+				.delete(destComponent)
 				.add(destComponent, value)
 				.build(lineageOp.apply(dp), getMetadata())));
 	}
 
 	// Explode the collections resulting from the application of the window function to single components
-	private static Stream<Entry<ScalarValue<?, ?, ?, ?>, DataPoint>> explode(
-			Collection<? extends ScalarValue<?, ?, ?, ?>> collected, DataPoint original)
+	private Stream<Entry<ScalarValue<?, ?, ?, ?>, DataPoint>> explode(TT collected, DataPoint original)
 	{
-		// Shortcut when analytic mapping is 1:1
-		if (collected.size() == 1)
-			return Stream.of(new SimpleEntry<>(collected.iterator().next(), original));
-		else
-			return Utils.getStream(collected).map(toEntryWithValue(k -> original));
+		return Utils.getStream((Collection<?>) collected).map(ScalarValue.class::cast).map(k -> {
+			Entry<ScalarValue<?, ?, ?, ?>, DataPoint> entry = new SimpleEntry<>(k, original);
+			return entry;
+		});
 	}
 
 	// computes the result(s) for a component in a given row of the window
-	private Entry<Collection<? extends ScalarValue<?, ?, ?, ?>>, DataPoint> applyToWindow(DataPoint[] partition, int index)
+	private Entry<TT, DataPoint> applyToWindow(DataPoint[] partition, int index)
 	{
 		int safeInf = max(0, safeSum(index, inf));
 		int safeSup = 1 + min(partition.length - 1, safeSum(index, sup));
@@ -225,28 +229,27 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		Stream<DataPoint> window = safeInf < safeSup ? Arrays.stream(partition, safeInf, safeSup) : Stream.empty();
 		
 		LOGGER.trace("\tAnalysis over {} datapoints for datapoint {}", safeSup - safeInf, partition[index]);
-		var processed = processSingleComponent(partition[index], extractor, collector, finisher, destComponent, window);
+		var processed = processSingleComponent(partition[index], window);
 		
 		return new SimpleEntry<>(processed, partition[index]);
 	}
 	
-	private Collection<? extends ScalarValue<?, ?, ?, ?>> processSingleComponent(DataPoint dp, 
-			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, 
-			SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher, 
-			DataStructureComponent<?, ?, ?> newC, Stream<DataPoint> window)
+	private TT processSingleComponent(DataPoint dp, Stream<DataPoint> window)
 	{
 		// Collector to compute the invocation over current range for the specified component
 		T extracted = extractor.apply(dp);
-		SerCollector<T, ?, Collection<? extends ScalarValue<?, ?, ?, ?>>> withFinisher = 
-				collectingAndThen(collector, v -> finisher.apply(v, extracted));
+		SerCollector<T, ?, TT> withFinisher;
+		if (finisher == null)
+			withFinisher = collector;
+		else
+			withFinisher = collectingAndThen(collector, v -> (TT) finisher.apply(v, extracted));
 		
 		if (LOGGER.isTraceEnabled())
-			withFinisher = teeing(toList(), withFinisher, (source, result) -> {
-				LOGGER.trace("Result on component {} with values {} yield {}", newC, source, result);
+			withFinisher = teeing(toConcurrentSet(), withFinisher, (source, result) -> {
+				LOGGER.trace("Result on component {} with values {} yield {}", destComponent, source, result);
 				return result;
 			});
-
-		// Pair the result with the new measure
+		
 		return window.map(extractor).collect(withFinisher);
 	}
 

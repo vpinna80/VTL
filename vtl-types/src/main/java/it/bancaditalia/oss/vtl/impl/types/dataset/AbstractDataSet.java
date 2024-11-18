@@ -309,8 +309,7 @@ public abstract class AbstractDataSet implements DataSet
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
 
 		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
-				.removeComponent(sourceComp)
-				.addComponents(destComp)
+				.addComponent(destComp)
 				.build();
 		
 		return new AnalyticDataSet<>(this, newStructure, lineageOp, clause, sourceComp, destComp, extractor, collector, finisher);

@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 
 import java.util.Map;
@@ -60,7 +61,7 @@ public final class MappedDataSet extends AbstractDataSet
 
 	private DataPoint mapper(DataPoint dp)
 	{
-		return new DataPointBuilder(dp.getValues(Identifier.class))
+		return new DataPointBuilder(dp.getValues(Identifier.class), DONT_SYNC)
 					.addAll(operator.apply(dp))
 					.build(lineageOperator.apply(dp), dataStructure);
 	}
