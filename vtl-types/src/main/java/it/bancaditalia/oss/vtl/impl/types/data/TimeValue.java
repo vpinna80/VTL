@@ -50,7 +50,7 @@ public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Compa
 	public abstract DateValue<?> getEndDate();
 	
 	/**
-	 * Determines the extent of this time value expressed as a DurationValue
+	 * Determines the intrinsic frequency of this time value expressed as a {@link DurationValue}
 	 * 
 	 * @return
 	 */
@@ -68,16 +68,26 @@ public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Compa
 	 * Create a new TimeValue by adding a given period to this TimeValue.
 	 * If the period isn't aligned with this TimeValue, an exception is thrown. 
 	 * 
-	 * @param amount The TemporalAmount to increment this TimeVale of
+	 * @param length The {@link TemporalAmount} to increment this TimeVale of
 	 * @return a new incremented TimeValue
 	 * @throws InvalidParameterException if the period is not aligned with this TimeValue intrinsic period.
 	 */
 	public abstract I add(TemporalAmount length);
 
 	/**
+	 * Create a new TimeValue by subtracting a given period to this TimeValue.
+	 * If the period isn't aligned with this TimeValue, an exception is thrown. 
+	 * 
+	 * @param length The TemporalAmount to decrement this TimeVale of
+	 * @return a new decremented TimeValue
+	 * @throws InvalidParameterException if the period is not aligned with this TimeValue intrinsic period.
+	 */
+	public abstract TimeValue<?, ?, ?, ?> minus(TemporalAmount length);
+
+	/**
 	 * Determines the period lasting from the beginning of this TimeValue until the beginning of given TimeValue (excluded).
 	 * 
-	 * @param end
+	 * @param end the reference TimeValue
 	 * @return a {@link Period}
 	 */
 	public abstract Period until(TimeValue<?, ?, ?, ?> end);

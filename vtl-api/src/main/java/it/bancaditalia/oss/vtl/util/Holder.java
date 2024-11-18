@@ -31,7 +31,7 @@ import java.util.function.BinaryOperator;
  * serialization mechanism to store an instance of a unknown class V.
  * 
  * @param <V> The reference type class descriptor. It should not be 
- * a class with a wildcard generic parameter, i.e. List<?>.
+ * a class with a wildcard generic parameter, i.e. List$lt;?&gt;.
  */
 public class Holder<V> implements Serializable
 {

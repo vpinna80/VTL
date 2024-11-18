@@ -22,13 +22,17 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 
 import java.io.Serializable;
+import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 /**
@@ -47,7 +51,7 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NullDomain || other instanceof DurationDomain;
+		return other instanceof NullDomain || other instanceof DurationDomain || other instanceof StringDomain;
 	}
 
 	@Override
@@ -63,6 +67,8 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 			return NullValue.instance(INSTANCE);
 		else if (value instanceof DurationValue)
 			return (DurationValue) value;
+		else if (value instanceof StringValue && Set.of("A", "S", "Q", "M", "W", "D").contains(value.get()))
+			return Frequency.valueOf((String) value.get()).get();
 		else
 			throw new VTLCastException(INSTANCE, value);
 	}
@@ -88,8 +94,7 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	@Override
 	public Class<? extends Serializable> getRepresentation()
 	{
-		// TODO
-		throw new UnsupportedOperationException();
+		return Frequency.class;
 	}
 	
 	@Override

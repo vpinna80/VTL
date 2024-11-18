@@ -78,7 +78,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
-	 * @param component The component to retain.
+	 * @param alias The alias of the component to retain.
 	 * @return The projected dataset
 	 */
 	public DataSet membership(VTLAlias alias);
@@ -86,7 +86,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Finds a component with given name
 	 * 
-	 * @param name The requested component's name.
+	 * @param alias The requested component's alias.
 	 * @return an {@link Optional} eventually containing the requested {@link DataStructureComponent} if one was found.
 	 */
 	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias alias);
@@ -114,7 +114,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new DataSet that represents the subspace of this DataSet with given identifiers having specific values
 	 * @param keyValues A Map that gives the value for each identifier to subspace.
-	 * @param lineageOperator TODO
+	 * @param lineageOperator an operator to enrich the datapoint lineage 
 	 * @return A new DataSet that is a subspace of this DataSet.  
 	 */
 	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator);
@@ -182,7 +182,10 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	}
 
 	/**
-	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
+	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of 
+	 * another DataSet by matching the common identifiers. The matching pairs are merged with a binary 
+	 * operator whose first and second arguments are datapoints coming from this DataSet and datapoints 
+	 * coming from the indexed DataSet respectively. 
 	 * The same as {@code filteredMappedJoin(metadata, other, (a,  b) -> true, merge)}.
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
