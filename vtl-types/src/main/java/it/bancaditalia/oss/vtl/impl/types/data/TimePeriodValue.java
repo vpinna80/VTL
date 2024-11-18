@@ -86,6 +86,12 @@ public class TimePeriodValue<S extends TimePeriodDomainSubset<S>> extends TimeVa
 	{
 		return new TimePeriodValue<>(get().increment(period), getDomain());
 	}
+	
+	@Override
+	public TimePeriodValue<S> minus(TemporalAmount period)
+	{
+		return new TimePeriodValue<>(get().decrement(period), getDomain());
+	}
 
 	@Override
 	public Period until(TimeValue<?, ?, ?, ?> end)

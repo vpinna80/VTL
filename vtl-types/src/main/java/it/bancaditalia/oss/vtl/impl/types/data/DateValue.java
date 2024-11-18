@@ -81,6 +81,12 @@ public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValu
 	}
 	
 	@Override
+	public DateValue<S> minus(TemporalAmount length)
+	{
+		return new DateValue<>(get().minus(length), getDomain());
+	}
+	
+	@Override
 	public Period until(TimeValue<?, ?, ?, ?> end)
 	{
 		if (end instanceof DateValue)

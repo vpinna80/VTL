@@ -1,3 +1,22 @@
+/*
+ * Copyright © 2020 Banca D'Italia
+ *
+ * Licensed under the EUPL, Version 1.2 (the "License");
+ * You may not use this work except in compliance with the
+ * License.
+ * You may obtain a copy of the License at:
+ *
+ * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the License is
+ * distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied.
+ *
+ * See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
 import static java.time.temporal.ChronoUnit.MONTHS;
@@ -12,17 +31,22 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.List;
 
-public class OneQuarter implements TemporalAmount, Serializable
+public class Quarters implements TemporalAmount, Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private static final OneQuarter INSTANCE = new OneQuarter();
 	
-	private OneQuarter() {}
+	private final int quarters;
 	
-	public static OneQuarter get()
+	private Quarters(int quarters)
 	{
-		return INSTANCE;
+		this.quarters = quarters;
 	}
+	
+	public static Quarters of(int halves)
+	{
+		return new Quarters(halves);
+	}
+	
 	@Override
 	public Temporal subtractFrom(Temporal temporal)
 	{
@@ -39,13 +63,13 @@ public class OneQuarter implements TemporalAmount, Serializable
 	public long get(TemporalUnit unit)
 	{
 		if (unit == YEARS)
-			return 0;
+			return quarters / 4;
 		if (unit == HALF_YEARS)
-			return 0;
+			return quarters / 2;
 		if (unit == QUARTER_YEARS)
-			return 1;
+			return quarters;
 		if (unit == MONTHS)
-			return 3;
+			return quarters * 3;
 		
 		throw new UnsupportedTemporalTypeException("Unsupported unit " + unit);
 	}
@@ -53,6 +77,6 @@ public class OneQuarter implements TemporalAmount, Serializable
 	@Override
 	public Temporal addTo(Temporal temporal)
 	{
-		return temporal.plus(1, QUARTER_YEARS);
+		return temporal.plus(quarters % 4, QUARTER_YEARS).plus(quarters / 4, YEARS);
 	}
 }

@@ -26,8 +26,8 @@ import java.time.Period;
 import java.time.temporal.TemporalAmount;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.types.data.date.OneHalf;
-import it.bancaditalia.oss.vtl.impl.types.data.date.OneQuarter;
+import it.bancaditalia.oss.vtl.impl.types.data.date.Halves;
+import it.bancaditalia.oss.vtl.impl.types.data.date.Quarters;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
@@ -37,8 +37,8 @@ public class DurationValue extends BaseScalarValue<DurationValue, Frequency, Ent
 	private static final long serialVersionUID = 1L;
 	
 	public static final TemporalAmount P1Y = Period.ofYears(1); 
-	public static final TemporalAmount P1S = OneHalf.get(); 
-	public static final TemporalAmount P1Q = OneQuarter.get(); 
+	public static final TemporalAmount P1S = Halves.of(1); 
+	public static final TemporalAmount P1Q = Quarters.of(1); 
 	public static final TemporalAmount P1M = Period.ofMonths(1); 
 	public static final TemporalAmount P1W = Period.ofWeeks(1); 
 	public static final TemporalAmount P1D = Period.ofDays(1); 
@@ -52,7 +52,7 @@ public class DurationValue extends BaseScalarValue<DurationValue, Frequency, Ent
 	{
 		return freq != null ? freq.get() : null; 
 	}
-
+	
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{

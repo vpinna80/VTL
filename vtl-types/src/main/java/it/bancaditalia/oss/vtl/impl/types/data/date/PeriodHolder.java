@@ -131,6 +131,22 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 			throw new UnsupportedOperationException("Invalid PeriodHolder: " + this); 
 	}
 
+	public PeriodHolder<?> decrement(TemporalAmount period)
+	{
+		if (this instanceof YearPeriodHolder)
+			return new YearPeriodHolder(Year.from(this).minus(period));
+		else if (this instanceof SemesterPeriodHolder)
+			return new SemesterPeriodHolder(YearHalf.from(this).minus(period));
+		else if (this instanceof QuarterPeriodHolder)
+			return new QuarterPeriodHolder(YearQuarter.from(this).minus(period));
+		else if (this instanceof MonthPeriodHolder)
+			return new MonthPeriodHolder(YearMonth.from(this).minus(period));
+		else if (this instanceof WeekPeriodHolder)
+			return new WeekPeriodHolder(YearWeek.from(this).minus(period));
+		else
+			throw new UnsupportedOperationException("Invalid PeriodHolder: " + this); 
+	}
+
 	public Period until(TimeValue<?, ?, ?, ?> end)
 	{
 		return Period.between(startDate(), ((TimePeriodValue<?>) end).get().startDate());
