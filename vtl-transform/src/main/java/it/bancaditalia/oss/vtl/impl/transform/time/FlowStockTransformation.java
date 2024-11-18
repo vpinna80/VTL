@@ -211,7 +211,7 @@ public class FlowStockTransformation extends UnaryTransformation
 			
 			for (DataStructureComponent<Measure, ?, ?> measure: measures)
 				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
-					throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, measure.getVariable().getDomain());
+					throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, measure);
 
 			return dsmeta;
 		}

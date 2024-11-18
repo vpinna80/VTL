@@ -19,23 +19,48 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
+import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
+import static it.bancaditalia.oss.vtl.impl.types.data.Frequency.A;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 
+import java.time.Period;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
+import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class TimeShiftTransformation extends TimeSeriesTransformation
 {
@@ -52,14 +77,56 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
-		DataStructureComponent<Identifier, ?, ?> timeID = dataset.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
-		DataSetMetadata structure = dataset.getMetadata();
+		DataSetMetadata dsMeta = dataset.getMetadata();
+		DataStructureComponent<Identifier, ?, ?> timeID = dsMeta.getComponents(Identifier.class, TIMEDS).iterator().next();
 		
 		String lineageString = "timeshift " + amount;
+		long amount = this.amount;
+
+		SerCollector<TimeValue<?, ?, ?, ?>, ?, DurationValue> timesToFreq = collectingAndThen(toList(), times -> {
+			TimeValue<?, ?, ?, ?> last = null;
+			Frequency freq = A;
+			for (TimeValue<?, ?, ?, ?> current: times)
+			{
+				if (last != null)
+				{
+					Period p = last.until(current);
+					for (Frequency testFrequency: Frequency.values())
+						// Only allow inferred frequency to become smaller (i.e. from A to Q but not the opposite)
+						if ((freq == null || testFrequency.compareWith(freq) <= 0) && testFrequency.isMultiple(p))
+						{
+							freq = testFrequency;
+							break;
+						}
+				}
+
+				last = current;
+			}
+			
+			return freq.get();
+		});
+		
+		DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> freqComp = DURATIONDS.getDefaultVariable().as(Measure.class);
+		Set<DataStructureComponent<?, ?, ?>> idsNoTimeWithFreq = new HashSet<>(dsMeta.getIDs());
+		idsNoTimeWithFreq.remove(timeID);
+		idsNoTimeWithFreq.add(freqComp);
+		
+		WindowClause clause = new WindowClauseImpl(idsNoTimeWithFreq, List.of(new SortClause(timeID)), DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
+		DataSetMetadata withFreq = new DataStructureBuilder(dsMeta)
+				.addComponent(freqComp)
+				.build();
+		dataset = dataset.mapKeepingKeys(withFreq, DataPoint::getLineage, dp -> {
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+				map.put(freqComp, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).getFrequency());
+				return map;
+			}).analytic(lineageEnricher(this), timeID, freqComp, clause, null, timesToFreq, null);
+
+		DataSetMetadata structure = (DataSetMetadata) metadata;
 		return new FunctionDataSet<>(structure, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
 					.delete(timeID)
-					.add(timeID, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).add(amount))
+					.delete(freqComp)
+					.add(timeID, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).add(((Frequency) dp.get(freqComp).get()).getScaledPeriod((int) amount)))
 					.build(LineageNode.of(lineageString, dp.getLineage()), structure)
 				), dataset);
 	}
