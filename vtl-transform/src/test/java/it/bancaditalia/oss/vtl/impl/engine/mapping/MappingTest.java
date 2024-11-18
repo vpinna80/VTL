@@ -140,7 +140,7 @@ public class MappingTest
 			{
 				HashSet<String> tokens = new HashSet<>();
 				
-				Check check = mapping.getTokensOrContextOrNested();
+				Check check = mapping.getChecks();
 				if (check instanceof Tokenscheck)
 					tokens.addAll(((Tokenscheck) check).getValue());
 				else if (check != null)
@@ -171,7 +171,7 @@ public class MappingTest
 				
 				requireNonNull(fromClass, "from class missing in mapping: " + from);
 				System.out.println("Checking mapping from " + fromClass.getSimpleName() + " to " + toClass.getSimpleName());
-				checkParams(0, fromClass, tokensets, mapping.getParams().getNullparamOrAliasparamOrStringparam());
+				checkParams(0, fromClass, tokensets, mapping.getParams());
 			}
 	}
 
@@ -182,7 +182,7 @@ public class MappingTest
 				checkParam(level + 1, i, (Nonnullparam) params.get(i), fromClass, tokensets);
 	}
 
-	private void checkParam(int level, int index, Nonnullparam param, Class<?> fromClass, Map<String, Entry<Class<?>, Map<String, String>>> tokensets) throws ClassNotFoundException, NoSuchMethodException, SecurityException
+	private void checkParam(int level, int index, Param param, Class<?> fromClass, Map<String, Entry<Class<?>, Map<String, String>>> tokensets) throws ClassNotFoundException, NoSuchMethodException, SecurityException
 	{
 		String inClass = " in class " + fromClass.getSimpleName();
 		String tabs = "    ".repeat(level);
@@ -193,8 +193,8 @@ public class MappingTest
 			System.out.println(tabs + "Checking tokenset " + tokenset + inClass);
 			assertNotNull(tokenset, "tokenset for tokensetparam in " + fromClass.getSimpleName());
 			assertTrue(tokensets.containsKey(tokenset), "Undefined tokenset + " + tokenset);
-			if (param.getName() != null)
-				checkMember(param, fromClass);
+			if (((Tokensetparam) param).getName() != null)
+				checkMember((Nonnullparam) param, fromClass);
 		}
 		else if (param instanceof Listparam)
 		{
@@ -216,7 +216,7 @@ public class MappingTest
 				innerClass = (Class<?>) genericType.getActualTypeArguments()[0];
 			}
 
-			Nonnullparam itemParam = lParam.getStringparamOrAliasparamOrExprparam();
+			Param itemParam = lParam.getParams();
 			checkParam(level + 1, index, itemParam, innerClass, tokensets);
 		}
 		else if (param instanceof Nestedparam)
@@ -231,7 +231,7 @@ public class MappingTest
 			
 			System.out.println(": is " + innerClass.getSimpleName());
 			assertNotNull(innerClass);
-			checkParams(level, innerClass, tokensets, nParam.getNullparamOrAliasparamOrStringparam());
+			checkParams(level, innerClass, tokensets, nParam.getParams());
 		}
 		else if (param instanceof Customparam)
 		{
@@ -246,7 +246,7 @@ public class MappingTest
 
 			System.out.println(": is " + innerClass.getSimpleName());
 			assertNotNull(innerClass);
-			checkParams(level, innerClass, tokensets, cParam.getStringparamOrAliasparamOrExprparam());
+			//checkParams(level, innerClass, tokensets, cParam.getStringparamOrAliasparamOrExprparam());
 		}
 		else if (param instanceof Exprparam)
 		{

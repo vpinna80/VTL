@@ -68,6 +68,7 @@ import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Check;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Context;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Contextcheck;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Customparam;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Customparam.Case;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Exprparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Listparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Mapparam;
@@ -227,19 +228,19 @@ public class OpsFactory implements Serializable
 		for (Mapping mapping : available)
 			try
 			{
-				boolean found = checkMapping(mapping.getTokensOrContextOrNested(), ctx);
+				boolean found = checkMapping(mapping.getChecks(), ctx);
 				Class<?> target = Class.forName(packageName + "." + mapping.getTo());
 
 				if (found)
 				{
-					String paramsClasses = mapping.getParams().getNullparamOrAliasparamOrStringparam().stream()
+					String paramsClasses = mapping.getParams().stream()
 							.map(Object::getClass)
 							.map(Class::getSimpleName)
 							.collect(joining(", ", "{", "}"));
 
 					LOGGER.trace("|{}>> Resolving {} for {}", tabs, paramsClasses, target.getSimpleName());
 					List<Object> args = new ArrayList<>();
-					for (Param param : mapping.getParams().getNullparamOrAliasparamOrStringparam())
+					for (Param param : mapping.getParams())
 					{
 						Object oneOrMoreParam = createParam(ctx, param, level + 1);
 						if (param instanceof Nestedparam)
@@ -347,27 +348,34 @@ public class OpsFactory implements Serializable
 			boolean found = false;
 			Class<? extends ParserRuleContext> ctxClass = ctx.getClass();
 			
-			try
+			if (tokens.getOrdinal() != null)
 			{
-				if (((Token) ctxClass.getField(tokens.getName()).get(ctx)).getType() == VtlTokens.class.getField(value).getInt(null))
-				{
-					LOGGER.trace("Found token {}.", value);
-					found = true;
-				}
+				int type = ((Token) ctx.getChild(TerminalNode.class, tokens.getOrdinal() - 1).getPayload()).getType();
+				if (type == VtlTokens.class.getField(value).getInt(null))
+					return true;
 			}
-			catch (NoSuchFieldException e)
-			{
-				ParseTree rule = (ParseTree) ctxClass.getMethod(tokens.getName()).invoke(ctx);
-				if (rule != null)
+			else
+				try
 				{
-					TerminalNode leaf = (TerminalNode) rule.getClass().getMethod(value).invoke(rule);
-					if (leaf != null && ((Token) leaf.getPayload()).getType() == VtlTokens.class.getField(value).getInt(null))
+					if (((Token) ctxClass.getField(tokens.getName()).get(ctx)).getType() == VtlTokens.class.getField(value).getInt(null))
 					{
 						LOGGER.trace("Found token {}.", value);
 						found = true;
 					}
 				}
-			}
+				catch (NoSuchFieldException e)
+				{
+					ParseTree rule = (ParseTree) ctxClass.getMethod(tokens.getName()).invoke(ctx);
+					if (rule != null)
+					{
+						TerminalNode leaf = (TerminalNode) rule.getClass().getMethod(value).invoke(rule);
+						if (leaf != null && ((Token) leaf.getPayload()).getType() == VtlTokens.class.getField(value).getInt(null))
+						{
+							LOGGER.trace("Found token {}.", value);
+							found = true;
+						}
+					}
+				}
 			
 			return found;
 		}
@@ -443,8 +451,22 @@ public class OpsFactory implements Serializable
 			if (customCtx == null)
 				return null;
 			
-			innerParams = customParam.getStringparamOrAliasparamOrExprparam();
-
+			List<Serializable> customSpec = customParam.getCaseOrNullparamOrAliasparam();
+			if (customSpec.get(0).getClass() == Case.class)
+			{
+				Case found = null;
+				for (Case c: (List<Case>) (List<?>) customSpec)
+					if (found == null && checkMapping(c.getChecks(), customCtx))
+						found = c;
+				
+				if (found != null)
+					innerParams = found.getParams();
+				else
+					throw new IllegalStateException();
+			}
+			else
+				innerParams = customSpec.stream().map(Param.class::cast).collect(toList());
+			
 			resultList = new ArrayList<>(innerParams.size());
 			for (Param child : innerParams)
 				resultList.add(createParam(customCtx, child, level + 1));
@@ -486,7 +508,7 @@ public class OpsFactory implements Serializable
 		// get the nested context by looking up the name attribute of nestedparam in current context
 		ParserRuleContext nestedCtx = getFieldOrMethod(nestedParam, ctx, ParserRuleContext.class, level);
 		// iteratively resolve any parameters inside the nested context 
-		List<Param> innerParams = nestedParam.getNullparamOrAliasparamOrStringparam();
+		List<Param> innerParams = nestedParam.getParams();
 		// map each parameter to a constructed mapped object and collect the results into a list
 		List<Object> resultList = new ArrayList<>(innerParams.size());
 		for (Param child : innerParams)
@@ -501,8 +523,8 @@ public class OpsFactory implements Serializable
 		Map<Object, Object> resultMap = new HashMap<>();
 		@SuppressWarnings("unchecked")
 		List<? extends ParserRuleContext> entries = getFieldOrMethod(mapparam, ctx, List.class, level);
-		Nonnullparam keyParam = mapparam.getStringparamOrAliasparamOrExprparam().get(0);
-		Nonnullparam valueParam = mapparam.getStringparamOrAliasparamOrExprparam().get(1);
+		Param keyParam = mapparam.getKey().getParams();
+		Param valueParam = mapparam.getValue().getParams();
 		for (ParserRuleContext entry : entries)
 		{
 			Object key = createParam(entry, keyParam, level + 1);
@@ -516,7 +538,7 @@ public class OpsFactory implements Serializable
 	private List<?> parseListParam(ParserRuleContext ctx, int level, Listparam listParam)
 	{
 		List<?> result;
-		Nonnullparam insideParam = listParam.getStringparamOrAliasparamOrExprparam();
+		Param insideParam = listParam.getParams();
 		@SuppressWarnings("unchecked")
 		Collection<? extends ParserRuleContext> inside = getFieldOrMethod(listParam, ctx, Collection.class, level);
 		List<Object> resultList = new ArrayList<>();
@@ -606,13 +628,19 @@ public class OpsFactory implements Serializable
 	private ScalarValue<?, ?, ?, ?> parseValueParam(ParserRuleContext ctx, int level, Valueparam param)
 	{
 		// lookup actual token
-		ParserRuleContext element = getFieldOrMethod(param, ctx, ParserRuleContext.class, level);
+		ParseTree element = getFieldOrMethod(param, ctx, ParseTree.class, level);
 		if (element == null)
 			return null;
 		
-		element = resolveRecursiveContext(element);
+		Token token;
+		if (element instanceof TerminalNode)
+			token = ((TerminalNode) element).getSymbol();
+		else
+		{
+			ParserRuleContext recCtx = resolveRecursiveContext((ParserRuleContext) element);
+			token = (Token) requireNonNull(recCtx.getChild(TerminalNode.class, 0), "No terminal node in " + element.getClass().getSimpleName() + ": '" + element.getText() + "'").getPayload();
+		}
 		
-		Token token = (Token) requireNonNull(element.getChild(TerminalNode.class, 0), "No terminal node in " + element.getClass().getSimpleName() + ": '" + element.getText() + "'").getPayload();
 		int tokenType = token.getType();
 		String text = token.getText();
 		switch (tokenType)
@@ -728,7 +756,10 @@ public class OpsFactory implements Serializable
 			LOGGER.trace("|{}>> Looking up context {}", tabs, ctx.getClass().getSimpleName());
 		
 		if (param.getOrdinal() != null)
-			result = ((List<?>) result).get(param.getOrdinal().intValue());
+			if (result instanceof List)
+				result = ((List<?>) result).get(param.getOrdinal().intValue());
+			else
+				result = ((RuleContext) result).getChild(param.getOrdinal().intValue() - 1);
 
 		if (result instanceof ParserRuleContext)
 		{

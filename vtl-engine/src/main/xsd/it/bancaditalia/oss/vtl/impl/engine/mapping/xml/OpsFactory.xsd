@@ -23,10 +23,16 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://oss.bancaditalia.it/vtl" 
 	xmlns="http://oss.bancaditalia.it/vtl" elementFormDefault="qualified" version="1.1">
 
-	<xs:element name="parserconfig" type="parserconfig"></xs:element>
+	<xs:element name="parserconfig" type="parserconfig">
+		<xs:unique name="tokenset_unique">
+			<xs:selector xpath="./tokenset" />
+			<xs:field xpath="@name" />
+		</xs:unique>
+	</xs:element>
 
 	<xs:complexType name="parserconfig">
 		<xs:sequence>
+			<xs:element name="package" type="xs:string" minOccurs="1" />
 			<xs:element name="tokenset" type="tokenset" maxOccurs="unbounded" minOccurs="0" />
 			<xs:element name="recursivecontexts" type="recursivecontexts" minOccurs="0" />
 			<xs:element name="mapping" type="mapping" maxOccurs="unbounded" minOccurs="0" />
@@ -51,21 +57,27 @@
 		<xs:attribute name="class" type="xs:string" use="required" />
 	</xs:complexType>
 
-	<xs:complexType name="mapping">
-		<xs:sequence>
+	<xs:group name="checks">
+		<xs:choice>
 			<xs:choice>
 				<xs:element name="tokens" type="tokenscheck" maxOccurs="1" minOccurs="0" />
 				<xs:element name="context" type="contextcheck" maxOccurs="1" minOccurs="0" />
-				<xs:element name="nested" type="nestedcheck" maxOccurs="1" minOccurs="0" />
 			</xs:choice>
-			<xs:element name="params" type="params" maxOccurs="1" minOccurs="0" />
+		</xs:choice>
+	</xs:group>
+
+	<xs:complexType name="mapping">
+		<xs:sequence>
+			<xs:element name="from" type="xs:string" maxOccurs="unbounded" minOccurs="1" />
+			<xs:group ref="checks" minOccurs="0" maxOccurs="1" />
+			<xs:group ref="params" minOccurs="0" maxOccurs="unbounded" />
 		</xs:sequence>
-		<xs:attribute name="from" type="xs:string" use="required" />
 		<xs:attribute name="to" type="xs:string" use="required" />
 	</xs:complexType>
 
 	<xs:complexType name="check">
-		<xs:attribute name="name" type="xs:string" use="required" />
+		<xs:attribute name="name" type="xs:string" />
+		<xs:attribute name="ordinal" type="xs:int" />
 	</xs:complexType>
 	
 	<xs:complexType name="tokenscheck">
@@ -86,18 +98,6 @@
 		</xs:complexContent>
 	</xs:complexType>
 
-	<xs:complexType name="nestedcheck">
-		<xs:complexContent>
-			<xs:extension base="check">
-				<xs:choice>
-					<xs:element name="tokens" type="tokenscheck" maxOccurs="1" minOccurs="0" />
-					<xs:element name="context" type="contextcheck" maxOccurs="1" minOccurs="0" />
-					<xs:element name="nested" type="nestedcheck" maxOccurs="1" minOccurs="0" />
-				</xs:choice>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-
 	<xs:complexType name="tokenmapping">
 		<xs:attribute name="name" type="xs:string" use="required" />
 		<xs:attribute name="value" type="xs:string" use="required" />
@@ -111,25 +111,23 @@
 
 	<xs:complexType name="param" abstract="true" />
 
-	<xs:complexType name="params">
-		<xs:complexContent>
-			<xs:extension base="param">
-				<xs:choice xml:id="paramtypes" minOccurs="0" maxOccurs="unbounded">
-					<xs:element name="nullparam" type="nullparam" />
-					<xs:element name="aliasparam" type="aliasparam" />
-					<xs:element name="stringparam" type="stringparam" />
-					<xs:element name="exprparam" type="exprparam" />
-					<xs:element name="valueparam" type="valueparam" />
-					<xs:element name="roleparam" type="roleparam" />
-					<xs:element name="tokensetparam" type="tokensetparam" />
-					<xs:element name="listparam" type="listparam" />
-					<xs:element name="mapparam" type="mapparam" />
-					<xs:element name="customparam" type="customparam" />
-					<xs:element name="nestedparam" type="nestedparam" />
-				</xs:choice>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xs:group name="params">
+		<xs:choice>
+			<xs:choice>
+				<xs:element name="nullparam" type="nullparam" />
+				<xs:element name="aliasparam" type="aliasparam" />
+				<xs:element name="stringparam" type="stringparam" />
+				<xs:element name="exprparam" type="exprparam" />
+				<xs:element name="valueparam" type="valueparam" />
+				<xs:element name="roleparam" type="roleparam" />
+				<xs:element name="tokensetparam" type="tokensetparam" />
+				<xs:element name="listparam" type="listparam" />
+				<xs:element name="mapparam" type="mapparam" />
+				<xs:element name="customparam" type="customparam" />
+				<xs:element name="nestedparam" type="nestedparam" />
+			</xs:choice>
+		</xs:choice>
+	</xs:group>
 
 	<xs:complexType name="nullparam">
 		<xs:complexContent>
@@ -187,18 +185,18 @@
 	<xs:complexType name="mapparam">
 		<xs:complexContent>
 			<xs:extension base="nonnullparam">
-				<xs:choice minOccurs="2" maxOccurs="2">
-					<xs:element name="stringparam" type="stringparam" />
-					<xs:element name="aliasparam" type="aliasparam" />
-					<xs:element name="exprparam" type="exprparam" />
-					<xs:element name="valueparam" type="valueparam" />
-					<xs:element name="roleparam" type="roleparam" />
-					<xs:element name="tokensetparam" type="tokensetparam" />
-					<xs:element name="listparam" type="listparam" />
-					<xs:element name="mapparam" type="mapparam" />
-					<xs:element name="customparam" type="customparam" />
-					<xs:element name="nestedparam" type="nestedparam" />
-				</xs:choice>
+				<xs:sequence>
+					<xs:element name="key">
+						<xs:complexType>
+							<xs:group ref="params" />
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="value">
+						<xs:complexType>
+							<xs:group ref="params" />
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -206,18 +204,7 @@
 	<xs:complexType name="listparam">
 		<xs:complexContent>
 			<xs:extension base="nonnullparam">
-				<xs:choice>
-					<xs:element name="stringparam" type="stringparam" />
-					<xs:element name="aliasparam" type="aliasparam" />
-					<xs:element name="exprparam" type="exprparam" />
-					<xs:element name="valueparam" type="valueparam" />
-					<xs:element name="roleparam" type="roleparam" />
-					<xs:element name="tokensetparam" type="tokensetparam" />
-					<xs:element name="listparam" type="listparam" />
-					<xs:element name="mapparam" type="mapparam" />
-					<xs:element name="customparam" type="customparam" />
-					<xs:element name="nestedparam" type="nestedparam" />
-				</xs:choice>
+				<xs:group ref="params" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -225,17 +212,16 @@
 	<xs:complexType name="customparam">
 		<xs:complexContent>
 			<xs:extension base="nonnullparam">
-				<xs:choice minOccurs="1" maxOccurs="unbounded">
-					<xs:element name="stringparam" type="stringparam" />
-					<xs:element name="aliasparam" type="aliasparam" />
-					<xs:element name="exprparam" type="exprparam" />
-					<xs:element name="valueparam" type="valueparam" />
-					<xs:element name="roleparam" type="roleparam" />
-					<xs:element name="tokensetparam" type="tokensetparam" />
-					<xs:element name="listparam" type="listparam" />
-					<xs:element name="mapparam" type="mapparam" />
-					<xs:element name="customparam" type="customparam" />
-					<xs:element name="nestedparam" type="nestedparam" />
+				<xs:choice>
+					<xs:element name="case" minOccurs="2" maxOccurs="unbounded">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:group ref="checks" minOccurs="1" maxOccurs="1" />
+								<xs:group ref="params" minOccurs="1" maxOccurs="unbounded" />
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+					<xs:group ref="params" minOccurs="1" maxOccurs="unbounded" />
 				</xs:choice>
 				<xs:attribute name="class" type="xs:string" use="required" />
 				<xs:attribute name="method" type="xs:string" />
@@ -246,19 +232,7 @@
 	<xs:complexType name="nestedparam">
 		<xs:complexContent>
 			<xs:extension base="nonnullparam">
-				<xs:choice minOccurs="1" maxOccurs="unbounded">
-					<xs:element name="nullparam" type="nullparam" />
-					<xs:element name="aliasparam" type="aliasparam" />
-					<xs:element name="stringparam" type="stringparam" />
-					<xs:element name="exprparam" type="exprparam" />
-					<xs:element name="valueparam" type="valueparam" />
-					<xs:element name="roleparam" type="roleparam" />
-					<xs:element name="tokensetparam" type="tokensetparam" />
-					<xs:element name="listparam" type="listparam" />
-					<xs:element name="mapparam" type="mapparam" />
-					<xs:element name="customparam" type="customparam" />
-					<xs:element name="nestedparam" type="nestedparam" />
-				</xs:choice>
+				<xs:group ref="params" minOccurs="1" maxOccurs="unbounded" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>

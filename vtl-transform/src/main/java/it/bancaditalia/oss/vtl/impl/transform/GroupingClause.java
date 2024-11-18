@@ -36,6 +36,7 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -67,14 +68,11 @@ public class GroupingClause implements Serializable
 	private final VTLAlias[] fields;
 	private final Frequency frequency;
 
-	public GroupingClause(GroupingMode mode, List<VTLAlias> fields, Frequency frequency)
+	public GroupingClause(GroupingMode mode, List<VTLAlias> fields, StringValue<?, ?> frequency)
 	{
 		this.mode = mode;
 		this.fields = coalesce(fields, emptyList()).toArray(VTLAlias[]::new);
-		this.frequency = frequency;
-		
-		if (mode == GROUP_ALL)
-			throw new UnsupportedOperationException("group all not implemented");
+		this.frequency = frequency == null ? null : Frequency.valueOf(frequency.get());
 	}
 
 	public GroupingMode getMode()
@@ -94,6 +92,9 @@ public class GroupingClause implements Serializable
 	
 	public Set<DataStructureComponent<Identifier, ?, ?>> getGroupingComponents(DataSetMetadata dataset)
 	{
+		if (mode == GROUP_ALL)
+			return dataset.getIDs();
+		
 		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = Arrays.stream(fields)
 				.peek(n -> { if (dataset.getComponent(n).isEmpty()) throw new VTLMissingComponentsException(n, dataset); })
 				.map(dataset::getComponent)
