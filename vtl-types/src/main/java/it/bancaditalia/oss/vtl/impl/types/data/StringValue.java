@@ -35,12 +35,12 @@ public class StringValue<I extends StringValue<I, S>, S extends StringDomainSubs
 
 	public static ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> of(String value)
 	{
-		return value == null || value.isEmpty() ? NULL_INSTANCE : new StringValue<>(value, STRINGDS);
+		return value == null ? NULL_INSTANCE : new StringValue<>(value, STRINGDS);
 	}
 
 	public static <S extends StringDomainSubset<S>> ScalarValue<?, ?, S, StringDomain> of(String value, S domain)
 	{
-		return value == null || value.isEmpty() ? domain.cast(NULL_INSTANCE) : new StringValue<>(value, domain);
+		return value == null ? domain.cast(NULL_INSTANCE) : new StringValue<>(value, domain);
 	}
 
 	protected StringValue(String value, S domain)
