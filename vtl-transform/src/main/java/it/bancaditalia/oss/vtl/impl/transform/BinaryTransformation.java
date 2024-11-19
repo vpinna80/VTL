@@ -20,6 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.transform;
 
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.Set;
@@ -82,9 +84,14 @@ public abstract class BinaryTransformation extends TransformationImpl
 	{
 		try
 		{
-			return metadataCombiner(leftOperand.getMetadata(scheme), rightOperand.getMetadata(scheme));
+			if (isNull(leftOperand))
+				return requireNonNull(rightOperand, "Right operand is null.").getMetadata(scheme);
+			else if (isNull(rightOperand))
+				return requireNonNull(leftOperand, "Left operand is null.").getMetadata(scheme);
+			else
+				return metadataCombiner(leftOperand.getMetadata(scheme), rightOperand.getMetadata(scheme));
 		}
-		catch (VTLException e)
+		catch (VTLException | NullPointerException e)
 		{
 			throw new VTLNestedException("In expression " + this, e);
 		}

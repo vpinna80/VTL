@@ -93,7 +93,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		identifier = dataset.getComponent(identifierName, Identifier.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getIDs()));
 		if (!(identifier.getVariable().getDomain() instanceof StringEnumeratedDomainSubset))
-			throw new VTLException("pivot: " + identifier.getVariable().getName() + " is of type " + identifier.getVariable().getDomain() + " but should be of a StringEnumeratedDomainSubset.");
+			throw new VTLException("The pivot identifier " + identifier + " should be of a codelist type.");
 		
 		measure = dataset.getComponent(measureName, Measure.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getMeasures()));

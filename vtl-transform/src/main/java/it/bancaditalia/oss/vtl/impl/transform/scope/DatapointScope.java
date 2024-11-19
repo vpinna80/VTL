@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class DatapointScope extends AbstractScope
@@ -52,6 +54,9 @@ public class DatapointScope extends AbstractScope
 	
 	public DatapointScope(MetadataRepository repo, DataPoint dp, DataSetMetadata structure, DataStructureComponent<Identifier, ?, ?> timeId) 
 	{
+		if (!dp.keySet().equals(structure))
+			throw new IllegalStateException(structure  + " != " + dp.keySet());
+		
 		this.repo = repo;
 		this.dp = dp;
 		this.structure = structure;
@@ -84,7 +89,8 @@ public class DatapointScope extends AbstractScope
 			return structure;
 		
 		LOGGER.trace("Querying {} for {}:{}", alias, structure.hashCode(), structure);
-		return structure.getComponent(alias).map(DataStructureComponent::getVariable).orElseThrow(() -> new VTLUnboundAliasException(alias));
+		Optional<Variable<?, ?>> variable = structure.getComponent(alias).map(DataStructureComponent::getVariable);
+		return variable.orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 
 	@Override

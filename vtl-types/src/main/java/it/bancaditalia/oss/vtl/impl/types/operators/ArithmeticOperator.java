@@ -44,7 +44,7 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public enum ArithmeticOperator
 {
-	SUM(" + ", (l, r) -> l + r, BigDecimal::add, (l, r) -> l + r),
+	SUM(" + ", Double::sum, BigDecimal::add, Long::sum),
 	DIFF(" - ", (l, r) -> l - r, BigDecimal::subtract, (l, r) -> l - r), 
 	MULT(" * ", (l, r) -> l * r, (l, r) -> l.multiply(r, DECIMAL128), (l, r) -> l * r), 
 	DIV(" / ", (l, r) -> l / r, (l, r) -> l.divide(r, DECIMAL128), (l, r) -> l / r),
@@ -52,7 +52,8 @@ public enum ArithmeticOperator
 	POWER("power", Math::pow, (l, r) -> BigDecimal.valueOf(pow(l.doubleValue(), r.doubleValue())), (l, r) -> longPower(l, r)),
 	LOG("log", (l, r) -> log(l) / log(r), (l, r) -> BigDecimal.valueOf(log(l.doubleValue()) / log(r.doubleValue())), (l, r) -> (long) (log(l) / log(r))),
 	ROUND("round", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).doubleValue(), (l, r) -> l.setScale(r.intValue(), HALF_UP), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).intValue()),
-	TRUNC("trunc", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue());
+	TRUNC("trunc", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue()),
+	RANDOM("random", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue());
 
 	private final String name;
 	private final LongBinaryOperator opLong;
