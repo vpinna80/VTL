@@ -27,3 +27,8 @@ vtl-launcher/src/test/resources/snippet.vtl
 **/.idea
 **/*.iml
 vtl-parser/.gitignore
+**/.externalToolBuilders
+**/*_BACKUP_*
+**/*_BASE_*
+**/*_LOCAL_*
+**/*_REMOTE_*

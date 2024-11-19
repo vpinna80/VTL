@@ -17,4 +17,4 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-test_result := in_1[filter id1 <> "a" and m1 > 2 and att1 <> "att_d"][aggr obs_agg := sum(m1) group by id1];
+DS_r := in_1[filter id1 <> "a" and m1 > 2 and att1 <> "att_d"][aggr obs_agg := sum(m1) group by id1];

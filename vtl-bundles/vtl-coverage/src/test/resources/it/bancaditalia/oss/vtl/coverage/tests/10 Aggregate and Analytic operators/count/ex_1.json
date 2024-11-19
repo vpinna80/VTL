@@ -41,7 +41,7 @@
       "name": "ex_1_str",
       "components": [
         {
-          "name": "integer_var",
+          "name": "int_var",
           "role": "Measure"
         },
         {
@@ -65,7 +65,7 @@
       "domain": "string"
     },
     {
-      "name": "integer_var",
+      "name": "int_var",
       "domain": "integer"
     },
     {

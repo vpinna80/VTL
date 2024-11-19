@@ -17,4 +17,4 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-test_result:= lag(in_1, 2 over (partition by mkmvid order by edfdate));
+DS_r:= lag(in_1, 2 over (partition by mkmvid order by edfdate));

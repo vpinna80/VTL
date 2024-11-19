@@ -1,0 +1,9 @@
+Id_1,Id_2,Id_3,bool_var,ruleid,errorcode,errorlevel
+2011,l,CREDIT,true,1,,
+2011,l,DEBIT,true,1,,
+2012,l,CREDIT,true,1,,
+2012,l,DEBIT,true,1,,
+2011,l,CREDIT,true,2,,
+2011,l,DEBIT,false,2,Bad debit,
+2012,l,CREDIT,true,2,,
+2012,l,DEBIT,true,2,,

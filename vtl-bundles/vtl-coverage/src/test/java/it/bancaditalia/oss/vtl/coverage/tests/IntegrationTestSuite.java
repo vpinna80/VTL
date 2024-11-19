@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestTy
 import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.T;
 import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.TS;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -32,6 +33,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -48,23 +50,25 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.coverage.utils.RepeatedParameterizedTest;
+import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine;
 import it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment;
 import it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl;
-import it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class IntegrationTestSuite
 {
 	public static enum TestType
 	{
-		T, E, TS, ES;
+		T, E, TS, ES
 	}
 	
 	private static final int REPETITIONS = 1;
@@ -76,7 +80,7 @@ public class IntegrationTestSuite
 	{
 		try
 		{
-			System.getProperty("vtl.double.ulps.epsilon", "1000000000");
+			System.setProperty("vtl.double.epsilon", "5");
 			TEST_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../tests").toURI());
 			EXAMPLES_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../examples").toURI());
 			METADATA_REPOSITORY.setValue(JsonMetadataRepository.class);
@@ -161,10 +165,22 @@ public class IntegrationTestSuite
 	{
 		if (TO_SKIP.contains(TS))
 			return;
-		
+
+		Constructor<? extends Environment> env;
+		try
+		{
+			Class<? extends Environment> sparkClass = Class.forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment", true, IntegrationTestSuite.class.getClassLoader()).asSubclass(Environment.class);
+			env = sparkClass.getConstructor(List.class);
+		}
+		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
+		{
+			fail("Spark not available");
+			return;
+		}
+
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
 		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL), new JavaVTLEngine(), 
-				List.of(new SparkEnvironment(List.of(operator)), new WorkspaceImpl()));
+				List.of(env.newInstance(List.of(operator)), new WorkspaceImpl()));
 		doTest(number, session);
 	}
 
@@ -175,9 +191,21 @@ public class IntegrationTestSuite
 		if (TO_SKIP.contains(ES))
 			return;
 		
+		Constructor<? extends Environment> env;
+		try
+		{
+			Class<? extends Environment> sparkClass = Class.forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment", true, IntegrationTestSuite.class.getClassLoader()).asSubclass(Environment.class);
+			env = sparkClass.getConstructor(List.class);
+		}
+		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
+		{
+			fail("Spark not available");
+			return;
+		}
+		
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
 		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL), new JavaVTLEngine(), 
-				List.of(new SparkEnvironment(List.of(operator)), new WorkspaceImpl()));
+				List.of(env.newInstance(List.of(operator)), new WorkspaceImpl()));
 		doTest(number, session);
 	}
 
@@ -185,23 +213,38 @@ public class IntegrationTestSuite
 	{
 		session.compile();
 		
-		DataSet expected = session.resolve(VTLAliasImpl.of("ex_" + number), DataSet.class);
-		DataSet result = session.resolve(VTLAliasImpl.of("ds_r"), DataSet.class);
+		VTLValue expectedV = session.resolve(VTLAliasImpl.of("ex_" + number));
+		VTLValue resultV = session.resolve(VTLAliasImpl.of("ds_r"));
 		
-		for (DataStructureComponent<?, ?, ?> comp: expected.getMetadata())
-			assertTrue(result.getMetadata().contains(comp), "In " + session.getOriginalCode() + "Expected component " + comp + " is missing from result structure " + result.getMetadata());
-		for (DataStructureComponent<?, ?, ?> comp: result.getMetadata())
-			assertTrue(expected.getMetadata().contains(comp), "In " + session.getOriginalCode() + "Unexpected component " + comp + " not declared in structure " + expected.getMetadata());
-		
-		List<DataPoint> resDPs, expectedDPs;
-		try (Stream<DataPoint> resStream = result.stream(); Stream<DataPoint> expStream = expected.stream())
+		assertEquals(expectedV.getClass(), resultV.getClass(), "dataset != scalar");
+		if (expectedV instanceof DataSet)
 		{
-			resDPs = resStream.collect(toList());
-			expectedDPs = expStream.collect(toList());
+			DataSet expected = (DataSet) expectedV;
+			DataSet result = (DataSet) resultV;
+			
+			for (DataStructureComponent<?, ?, ?> comp: expected.getMetadata())
+				assertTrue(result.getMetadata().contains(comp), "In " + session.getOriginalCode() + "Expected component " + comp + " is missing from result structure " + result.getMetadata());
+			for (DataStructureComponent<?, ?, ?> comp: result.getMetadata())
+				assertTrue(expected.getMetadata().contains(comp), "In " + session.getOriginalCode() + "Unexpected component " + comp + " not declared in structure " + expected.getMetadata());
+			
+			List<DataPoint> resDPs, expectedDPs;
+			try (Stream<DataPoint> resStream = result.stream(); Stream<DataPoint> expStream = expected.stream())
+			{
+				resDPs = resStream.collect(toList());
+				expectedDPs = expStream.collect(toList());
+			}
+			
+			checkDPs(resDPs, expectedDPs, "Unexpected datapoint found");
+			checkDPs(expectedDPs, resDPs, "Expected datapoint not found");
 		}
-		
-		checkDPs(resDPs, expectedDPs, "Unexpected datapoint found");
-		checkDPs(expectedDPs, resDPs, "Expected datapoint not found");
+		else
+		{
+			ScalarValue<?, ?, ?, ?> expected = (ScalarValue<?, ?, ?, ?>) expectedV;
+			ScalarValue<?, ?, ?, ?> result = (ScalarValue<?, ?, ?, ?>) resultV;
+			
+			assertEquals(expected.getMetadata().getDomain(), result.getMetadata().getDomain());
+			assertEquals(expectedV, resultV);
+		}
 	}
 	
 	private static void checkDPs(List<DataPoint> toCheck, List<DataPoint> against, String prefix)

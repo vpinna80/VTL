@@ -1,0 +1,64 @@
+{
+  "datasets": [
+    {
+      "name": "ds_3",
+      "structure": "DS_3",
+      "source": "spark:csv:ds_3.csv"
+    },
+    {
+      "name": "ex_6",
+      "structure": "DS_r",
+      "source": "spark:csv:ex_6.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "DS_3",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "DS_r",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "Id_1",
+      "domain": "string"
+    },
+    {
+      "name": "Id_2",
+      "domain": "time_period"
+    },
+    {
+      "name": "Me_1",
+      "domain": "string"
+    }
+  ]
+}

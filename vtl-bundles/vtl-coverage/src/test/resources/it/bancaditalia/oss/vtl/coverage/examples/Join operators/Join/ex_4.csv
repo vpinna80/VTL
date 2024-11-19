@@ -1,0 +1,10 @@
+Id_11,Id_12,Id_21,Id_22,Me_1,Me12,Me_1A,Me_2
+1,A,1,A,A,B,B,Q
+1,A,1,B,A,B,S,T
+1,A,3,A,A,B,Z,M
+1,B,1,A,C,D,B,Q
+1,B,1,B,C,D,S,T
+1,B,3,A,C,D,Z,M
+2,A,1,A,E,F,B,Q
+2,A,1,B,E,F,S,T
+2,A,3,A,E,F,Z,M

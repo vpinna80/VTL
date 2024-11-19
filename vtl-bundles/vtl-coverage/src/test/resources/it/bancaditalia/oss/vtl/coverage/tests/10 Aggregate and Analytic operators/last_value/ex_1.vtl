@@ -17,4 +17,4 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-test_result:= last_value(in_1 over (partition by Id_1, Id_2 order by Id_3 data points between 1 preceding and 1 following));
+DS_r:= last_value(in_1 over (partition by Id_1, Id_2 order by Id_3 data points between 1 preceding and 1 following));

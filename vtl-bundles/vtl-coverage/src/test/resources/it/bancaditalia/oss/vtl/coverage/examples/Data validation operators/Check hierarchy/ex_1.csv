@@ -1,0 +1,12 @@
+Id_1,Id_2,ruleid,bool_var,imbalance,errorcode,errorlevel
+2010,A,R010,,,,5
+2010,B,R020,true,0,,5
+2010,C,R030,true,0,XX,5
+2010,D,R040,,,,1
+2010,E,R050,,,,0
+2010,F,R060,,,,7
+2010,G,R070,false,8,,
+2010,H,R080,,,,0
+2010,I,R090,,,YY,0
+2010,M,R100,false,-3,,5
+2010,M,R110,true,-17,,5

@@ -1,0 +1,13 @@
+Id_1,Id_2,bool_var,imbalance,errorcode,errorlevel
+2010,I,false,-8,,
+2011,I,true,0,,
+2012,I,true,0,,
+2013,I,false,-3,,
+2014,I,true,0,,
+2015,I,true,0,,
+2010,D,false,-25,,
+2011,D,true,0,,
+2012,D,true,5,,
+2013,D,true,0,,
+2014,D,false,-15,,
+2015,D,true,0,,

@@ -1,0 +1,72 @@
+{
+  "datasets": [
+    {
+      "name": "ds_1",
+      "structure": "DS_1",
+      "source": "spark:csv:ds_1.csv"
+    },
+    {
+      "name": "ex_2",
+      "structure": "DS_r",
+      "source": "spark:csv:ex_2.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "DS_1",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "DS_r",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        },
+        {
+          "name": "Me_2",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "Id_1",
+      "domain": "time_period"
+    },
+    {
+      "name": "Id_2",
+      "domain": "string"
+    },
+    {
+      "name": "Me_1",
+      "domain": "integer"
+    },
+    {
+      "name": "Me_2",
+      "domain": "boolean"
+    }
+  ]
+}
