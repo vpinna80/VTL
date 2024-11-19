@@ -272,9 +272,10 @@ public class SerCollectors
     		SerCollector<? super T, ?, R2> downstream2, SerBiFunction<? super R1, ? super R2, R> merger) 
     {
         EnumSet<Characteristics> characteristics = EnumSet.noneOf(Characteristics.class);
-        characteristics.addAll(downstream1.characteristics());
-        characteristics.retainAll(downstream2.characteristics());
-        characteristics.remove(IDENTITY_FINISH);
+        if (downstream1.characteristics().contains(CONCURRENT) && downstream2.characteristics().contains(CONCURRENT))
+        	characteristics.add(CONCURRENT);
+        if (downstream1.characteristics().contains(UNORDERED) && downstream2.characteristics().contains(UNORDERED))
+        	characteristics.add(UNORDERED);
 
         return SerCollector.of(() -> new PairBox<>(downstream1, downstream2, merger), PairBox::accumulate, PairBox::combine, PairBox::finish, characteristics);
     }
