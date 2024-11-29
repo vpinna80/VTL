@@ -137,9 +137,9 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 				return new DataPointBuilder(dp).build(LineageNode.of(lineageString, lineages), new DataStructureBuilder(dp.keySet()).build());
 			})); 
 		
-		return dataset.aggregate(structure, ids, collector, (dp, keys) -> new DataPointBuilder(keys.getValue())
+		return dataset.aggregate(structure, ids, collector, (dp, lineages, keys) -> new DataPointBuilder(keys)
 				.addAll(dp)
-				.build(LineageNode.of(this, keys.getKey()), structure));
+				.build(LineageNode.of(this, lineages), structure));
 	}
 
 	@Override

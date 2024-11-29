@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -42,6 +41,7 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
+import it.bancaditalia.oss.vtl.util.SerTriFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 /**
@@ -216,18 +216,19 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher);
 	
 	/**
-	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers 
+	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers.
+	 * If no grouping identifiers are specified, the dataset is aggregated to a scalar.
 	 * 
-	 * @param structure the metadata of the structure produced
+	 * @param metadata the metadata of the result value produced
 	 * @param keys the identifiers on whose values datapoints should be grouped 
 	 * @param groupCollector the aggregator that performs the reduction
 	 * @param finisher a finisher that may manipulate the result given the group where it belongs
 	 * 
-	 * @return a new dataset where each datapoint is the result of the aggregation of a group.
+	 * @return a new VTL value, either a scalar or a dataset, that is the result of the aggregation.
 	 */
-	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
+	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerBiFunction<T, Entry<Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, DataPoint> finisher);
+			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher);
 	
 	/**
 	 * Creates a new DataSet by applying a window function over a component of this DataSet.

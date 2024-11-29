@@ -120,6 +120,8 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
@@ -130,6 +132,7 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
+import it.bancaditalia.oss.vtl.util.SerTriFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
@@ -554,10 +557,11 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
+	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata,
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerBiFunction<T, Entry<Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, DataPoint> finisher)
+			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
+		DataSetMetadata structure = (DataSetMetadata) metadata;
 		DataPointEncoder resultEncoder = new DataPointEncoder(session, structure);
 		int bufferSize = Integer.parseInt(VTL_SPARK_PAGE_SIZE.getValue());
 		Dataset<Row> aggred;
@@ -567,7 +571,7 @@ public class SparkDataSet extends AbstractDataSet
 			MapGroupsFunction<Integer, Row, Row> aggregator = (i, s) -> {
 				return StreamSupport.stream(new SparkSpliterator(s, bufferSize), !Utils.SEQUENTIAL).map(encoder::decode)
 						.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> 
-							resultEncoder.encode(finisher.apply(aggr, new SimpleEntry<>(l.toArray(Lineage[]::new), emptyMap())))));
+							resultEncoder.encode((DataPoint) finisher.apply(aggr, l.toArray(Lineage[]::new), emptyMap()))));
 			};
 			
 			aggred = dataFrame.groupBy(lit(1))
@@ -588,7 +592,7 @@ public class SparkDataSet extends AbstractDataSet
 					
 					return StreamSupport.stream(new SparkSpliterator(s, bufferSize), !Utils.SEQUENTIAL).map(encoder::decode)
 							.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> 
-								resultEncoder.encode(finisher.apply(aggr, new SimpleEntry<>(l.toArray(Lineage[]::new), keyValues)))));
+								resultEncoder.encode((DataPoint) finisher.apply(aggr, l.toArray(Lineage[]::new), keyValues))));
 				};
 			
 			aggred = dataFrame.groupBy(keyNames)
