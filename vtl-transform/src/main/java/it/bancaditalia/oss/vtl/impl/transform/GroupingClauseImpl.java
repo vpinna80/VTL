@@ -19,8 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
-import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_ALL;
-import static it.bancaditalia.oss.vtl.impl.transform.GroupingClause.GroupingMode.GROUP_EXCEPT;
+import static it.bancaditalia.oss.vtl.model.transform.GroupingClause.GroupingMode.GROUP_ALL;
+import static it.bancaditalia.oss.vtl.model.transform.GroupingClause.GroupingMode.GROUP_EXCEPT;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyList;
@@ -35,44 +35,31 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
+import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
+import it.bancaditalia.oss.vtl.model.transform.GroupingClause;
 
-public class GroupingClause implements Serializable
+public class GroupingClauseImpl implements GroupingClause, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	public enum GroupingMode
-	{
-		GROUP_BY("group by"), GROUP_EXCEPT("group except"), GROUP_ALL("group all");
-
-		private final String repr;
-
-		GroupingMode(String repr)
-		{
-			this.repr = repr;
-		}
-
-		@Override
-		public String toString()
-		{
-			return repr;
-		}
-	}
-
 	private final GroupingMode mode;
 	private final VTLAlias[] fields;
-	private final Frequency frequency;
+	private final DurationValue frequency;
 
-	public GroupingClause(GroupingMode mode, List<VTLAlias> fields, StringValue<?, ?> frequency)
+	public GroupingClauseImpl(GroupingMode mode, List<VTLAlias> fields, StringValue<?, ?> frequency)
 	{
 		this.mode = mode;
 		this.fields = coalesce(fields, emptyList()).toArray(VTLAlias[]::new);
-		this.frequency = frequency == null ? null : Frequency.valueOf(frequency.get());
+		this.frequency = frequency == null ? null : Frequency.valueOf(frequency.get()).get();
 	}
 
 	public GroupingMode getMode()
@@ -85,7 +72,7 @@ public class GroupingClause implements Serializable
 		return fields;
 	}
 	
-	public Frequency getFrequency()
+	public ScalarValue<?, ?, ? extends DurationDomainSubset<?>, DurationDomain> getFrequency()
 	{
 		return frequency;
 	}

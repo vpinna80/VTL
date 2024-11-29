@@ -109,7 +109,15 @@
 		<xs:attribute name="method" type="xs:string" />
 	</xs:complexType>
 
-	<xs:complexType name="param" abstract="true" />
+	<xs:complexType name="param" abstract="true">
+		<xs:attribute name="type" type="type" use="optional" />
+	</xs:complexType>
+	
+	<xs:simpleType name="type">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="groupby" />
+		</xs:restriction>
+	</xs:simpleType>
 
 	<xs:group name="params">
 		<xs:choice>

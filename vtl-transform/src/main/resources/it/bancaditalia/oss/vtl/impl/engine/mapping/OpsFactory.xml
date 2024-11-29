@@ -30,17 +30,20 @@
 		<tokenmapping name="W" value="W" />
 		<tokenmapping name="D" value="D" />
 	</tokenset>
-	<tokenset name="ChronoField" class="it.bancaditalia.oss.vtl.impl.transform.time.ExtractTimeFieldTransformation$FieldOperator">
+
+	<tokenset name="ChronoField" class="it.bancaditalia.oss.vtl.impl.types.operators.TimeFieldOperator">
 		<tokenmapping name="YEAR_OP" value="YEAR" />
 		<tokenmapping name="MONTH_OP" value="MONTH" />
 		<tokenmapping name="DAYOFMONTH" value="DAY_MONTH" />
 		<tokenmapping name="DAYOFYEAR" value="DAY_YEAR" />
 	</tokenset>
+
 	<tokenset name="ExistsInMode" class="it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation$ExistsInMode">
 		<tokenmapping name="ALL" value="ALL" />
 		<tokenmapping name="TRUE" value="TRUE" />
 		<tokenmapping name="FALSE" value="FALSE" />
 	</tokenset>
+
 	<tokenset name="HierarchyMode" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyMode">
 		<tokenmapping name="NON_NULL" value="NON_NULL" />
 		<tokenmapping name="NON_ZERO" value="NON_ZERO" />
@@ -49,45 +52,55 @@
 		<tokenmapping name="ALWAYS_NULL" value="ALWAYS_NULL" />
 		<tokenmapping name="ALWAYS_ZERO" value="ALWAYS_ZERO" />
 	</tokenset>
+
 	<tokenset name="HierarchyInput" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyInput">
 		<tokenmapping name="DATASET" value="DATASET" />
 		<tokenmapping name="RULE" value="RULE" />
 		<tokenmapping name="RULE_PRIORITY" value="RULE_PRIORITY" />
 	</tokenset>
+
 	<tokenset name="HierarchyOutput" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation$HierarchyOutput">
 		<tokenmapping name="COMPUTED" value="COMPUTED" />
 		<tokenmapping name="ALL" value="ALL" />
 	</tokenset>
+
 	<tokenset name="ValidationInput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation$Input">
 		<tokenmapping name="DATASET" value="DATASET" />
 		<tokenmapping name="RULE" value="RULE" />
 		<tokenmapping name="RULE_PRIORITY" value="RULE_PRIORITY" />
 	</tokenset>
+
 	<tokenset name="ValidationOutput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation$Output">
 		<tokenmapping name="COMPUTED" value="COMPUTED" />
 		<tokenmapping name="ALL" value="ALL" />
 	</tokenset>
+
 	<tokenset name="WindowDirection" class="it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion$LimitDirection">
 		<tokenmapping name="PRECEDING" value="PRECEDING" />
 		<tokenmapping name="FOLLOWING" value="FOLLOWING" />
 	</tokenset>
-	<tokenset name="GroupingMode" class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause$GroupingMode">
+
+	<tokenset name="GroupingMode" class="it.bancaditalia.oss.vtl.model.transform.GroupingClause$GroupingMode">
 		<tokenmapping name="BY" value="GROUP_BY" />
 		<tokenmapping name="EXCEPT" value="GROUP_EXCEPT" />
 		<tokenmapping name="ALL" value="GROUP_ALL" />
 	</tokenset>
+
 	<tokenset name="OffsetDirection" class="it.bancaditalia.oss.vtl.impl.transform.aggregation.OffsetTransformation$OffsetDirection">
 		<tokenmapping name="LAG" value="LAG" />
 		<tokenmapping name="LEAD" value="LEAD" />
 	</tokenset>
+
 	<tokenset name="WindowRangeType" class="it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion$LimitType">
 		<tokenmapping name="RANGE" value="RANGE" />
 		<tokenmapping name="DATA" value="DATAPOINTS" />
 	</tokenset>
+
 	<tokenset name="OrderingMethod" class="it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion$SortingMethod">
 		<tokenmapping name="ASC" value="ASC" />
 		<tokenmapping name="DESC" value="DESC" />
 	</tokenset>
+
 	<tokenset name="ValueDomainType" class="it.bancaditalia.oss.vtl.impl.types.domain.Domains">
 		<tokenmapping name="STRING" value="STRING" />
 		<tokenmapping name="INTEGER" value="INTEGER" />
@@ -98,10 +111,12 @@
 		<tokenmapping name="TIME_PERIOD" value="TIME_PERIOD" />
 		<tokenmapping name="DURATION" value="DURATION" />
 	</tokenset>
+
 	<tokenset name="PeriodDelimiter" class="it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation$PeriodDelimiter">
 		<tokenmapping name="FIRST" value="FIRST" />
 		<tokenmapping name="LAST" value="LAST" />
 	</tokenset>
+
 	<tokenset name="StringOperator" class="it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation$StringOperator">
 		<tokenmapping name="TRIM" value="TRIM" />
 		<tokenmapping name="LTRIM" value="LTRIM" />
@@ -109,6 +124,7 @@
 		<tokenmapping name="UCASE" value="UCASE" />
 		<tokenmapping name="LCASE" value="LCASE" />
 	</tokenset>
+
 	<tokenset name="AggregateOperator" class="it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator">
 		<tokenmapping name="SUM" value="SUM" />
 		<tokenmapping name="COUNT" value="COUNT" />
@@ -121,6 +137,7 @@
 		<tokenmapping name="STDDEV_POP" value="STDDEV_POP" />
 		<tokenmapping name="STDDEV_SAMP" value="STDDEV_SAMP" />
 	</tokenset>
+
 	<tokenset name="AnalyticOperator" class="it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator">
 		<tokenmapping name="SUM" value="SUM" />
 		<tokenmapping name="COUNT" value="COUNT" />
@@ -135,6 +152,7 @@
 		<tokenmapping name="FIRST_VALUE" value="FIRST_VALUE" />
 		<tokenmapping name="LAST_VALUE" value="LAST_VALUE" />
 	</tokenset>
+
 	<tokenset name="NumericUnaryOperator" class="it.bancaditalia.oss.vtl.impl.transform.number.NumericUnaryTransformation$NumericOperator">
 		<tokenmapping name="PLUS" value="UNARY_PLUS" />
 		<tokenmapping name="MINUS" value="UNARY_MINUS" />
@@ -145,6 +163,7 @@
 		<tokenmapping name="LN" value="LN" />
 		<tokenmapping name="SQRT" value="SQRT" />
 	</tokenset>
+
 	<tokenset name="ComparisonOperator" class="it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator">
 		<tokenmapping name="MT" value="GT" />
 		<tokenmapping name="ME" value="GE" />
@@ -153,56 +172,69 @@
 		<tokenmapping name="EQ" value="EQ" />
 		<tokenmapping name="NEQ" value="NE" />
 	</tokenset>
+
 	<tokenset name="SetOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation$SetOperator">
 		<tokenmapping name="UNION" value="UNION" />
 		<tokenmapping name="INTERSECT" value="INTERSECT" />
 		<tokenmapping name="SETDIFF" value="SETDIFF" />
 		<tokenmapping name="SYMDIFF" value="SYMDIFF" />
 	</tokenset>
+
 	<tokenset name="DatasetOperator" class="it.bancaditalia.oss.vtl.impl.transform.time.FlowStockTransformation$DatasetOperator">
 		<tokenmapping name="FLOW_TO_STOCK" value="FLOW_TO_STOCK" />
 		<tokenmapping name="STOCK_TO_FLOW" value="STOCK_TO_FLOW" />
 	</tokenset>
+
 	<tokenset name="InOperator" class="it.bancaditalia.oss.vtl.impl.transform.bool.InclusionTransformation$InOperator">
 		<tokenmapping name="IN" value="IN" />
 		<tokenmapping name="NOT_IN" value="NOTIN" />
 	</tokenset>
+
 	<tokenset name="ArithmeticOperator" class="it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator">
 		<tokenmapping name="PLUS" value="SUM" />
 		<tokenmapping name="MINUS" value="DIFF" />
 		<tokenmapping name="MUL" value="MULT" />
 		<tokenmapping name="DIV" value="DIV" />
 		<tokenmapping name="MOD" value="MOD" />
-		<tokenmapping name="ROUND" value="ROUND" />
-		<tokenmapping name="TRUNC" value="TRUNC" />
 		<tokenmapping name="POWER" value="POWER" />
 		<tokenmapping name="LOG" value="LOG" />
+	</tokenset>
+
+	<tokenset name="NumericIntOperator" class="it.bancaditalia.oss.vtl.impl.types.operators.NumericIntOperator">
+		<tokenmapping name="ROUND" value="ROUND" />
+		<tokenmapping name="TRUNC" value="TRUNC" />
 		<tokenmapping name="RANDOM" value="RANDOM" />
 	</tokenset>
+
 	<tokenset name="BooleanOperator" class="it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation$BooleanBiOperator">
 		<tokenmapping name="AND" value="AND" />
 		<tokenmapping name="OR" value="OR" />
 		<tokenmapping name="XOR" value="XOR" />
 	</tokenset>
+
 	<tokenset name="JoinOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation$JoinOperator">
 		<tokenmapping name="INNER_JOIN" value="INNER_JOIN" />
 		<tokenmapping name="LEFT_JOIN" value="LEFT_JOIN" />
 		<tokenmapping name="FULL_JOIN" value="FULL_JOIN" />
 		<tokenmapping name="CROSS_JOIN" value="CROSS_JOIN" />
 	</tokenset>
+
 	<tokenset name="FillMode" class="it.bancaditalia.oss.vtl.impl.transform.time.FillTimeSeriesTransformation$FillMode">
 		<tokenmapping name="ALL" value="ALL" />
 		<tokenmapping name="SINGLE" value="SINGLE" />
 	</tokenset>
+
 	<tokenset name="CheckOutput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation$CheckOutput">
 		<tokenmapping name="ALL" value="ALL" />
 		<tokenmapping name="INVALID" value="INVALID" />
 	</tokenset>
+
 	<tokenset name="ValidationOutput" class="it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation$Output">
 		<tokenmapping name="INVALID" value="INVALID" />
 		<tokenmapping name="ALL" value="ALL" />
 		<tokenmapping name="ALL_MEASURES" value="ALL_MEASURES" />
 	</tokenset>
+	
 	<recursivecontexts>
 		<context name="AggregateFunctionsContext" />
 		<context name="AggregateFunctionsComponentsContext" />
@@ -238,9 +270,11 @@
 		<context name="ValidationFunctionsContext" />
 		<context name="VarIdExprContext" />
 	</recursivecontexts>
+	
 	<mapping to="time.CurrentDateOperand">
 		<from>CurrentDateAtom</from>
 	</mapping>
+
 	<mapping to="ops.CheckHierarchyTransformation">
 		<from>ValidateHRruleset</from>
 		<exprparam name="op" />
@@ -255,6 +289,7 @@
 		<tokensetparam name="inputMode" tokenset="ValidationInput" />
 		<tokensetparam name="validationOutput" tokenset="ValidationOutput" />
 	</mapping>
+
 	<mapping to="ops.CheckDataPointTransformation">
 		<from>ValidateDPruleset</from>
 		<exprparam name="op" />
@@ -264,6 +299,7 @@
 		</listparam>
 		<tokensetparam name="validationOutput" tokenset="ValidationOutput" />
 	</mapping>
+
 	<mapping to="aggregation.HierarchyTransformation">
 		<from>HierarchyOperators</from>
 		<exprparam name="expr" />
@@ -278,6 +314,7 @@
 		<tokensetparam name="inputModeHierarchy" tokenset="HierarchyInput" />
 		<tokensetparam name="outputModeHierarchy" tokenset="HierarchyOutput" />
 	</mapping>
+
 	<mapping to="aggregation.SimpleAnalyticTransformation">
 		<from>AnSimpleFunction</from>
 		<tokensetparam name="op" tokenset="AnalyticOperator" />
@@ -307,6 +344,7 @@
 			</customparam>
 		</customparam>
 	</mapping>
+
 	<mapping to="aggregation.OffsetTransformation">
 		<from>LagOrLeadAn</from>
 		<tokensetparam name="op" tokenset="OffsetDirection" />
@@ -327,6 +365,7 @@
 			</listparam>
 		</nestedparam>
 	</mapping>
+
 	<mapping to="aggregation.OffsetTransformation">
 		<from>LagOrLeadAnComponent</from>
 		<tokensetparam name="op" tokenset="OffsetDirection" />
@@ -347,6 +386,7 @@
 			</listparam>
 		</nestedparam>
 	</mapping>
+
 	<mapping to="aggregation.RatioToReportTransformation">
 		<from>RatioToReportAn</from>
 		<exprparam name="expr" />
@@ -356,6 +396,7 @@
 			</listparam>
 		</nestedparam>
 	</mapping>
+
 	<mapping to="aggregation.RatioToReportTransformation">
 		<from>RatioToReportAnComponent</from>
 		<exprparam name="exprComponent" />
@@ -365,6 +406,7 @@
 			</listparam>
 		</nestedparam>
 	</mapping>
+
 	<mapping to="aggregation.SimpleAnalyticTransformation">
 		<from>AnSimpleFunctionComponent</from>
 		<tokensetparam name="op" tokenset="AnalyticOperator" />
@@ -394,6 +436,7 @@
 			</customparam>
 		</customparam>
 	</mapping>
+
 	<mapping to="aggregation.RankTransformation">
 		<from>RankAnComponent</from>
 		<nestedparam name="partitionByClause">
@@ -410,12 +453,13 @@
 			</listparam>
 		</nestedparam>
 	</mapping>
+
 	<mapping to="aggregation.AggregateTransformation">
 		<from>AggrDataset</from>
 		<tokensetparam name="op" tokenset="AggregateOperator" />
 		<exprparam name="expr" />
-		<nestedparam name="groupingClause">
-			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause">
+		<nestedparam name="groupingClause" type="groupby">
+			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl">
 				<case>
 					<tokens ordinal="2">
 						<value>BY</value>
@@ -439,29 +483,21 @@
 		</nestedparam>
 		<exprparam name="havingClause" />
 	</mapping>
+
 	<mapping to="aggregation.AggregateTransformation">
 		<from>AggrComp</from>
-		<tokens name="op">
-			<value>SUM</value>
-			<value>MAX</value>
-			<value>MIN</value>
-			<value>MEDIAN</value>
-			<value>AVG</value>
-			<value>VAR_POP</value>
-			<value>VAR_SAMP</value>
-			<value>STDDEV_POP</value>
-			<value>STDDEV_SAMP</value>
-		</tokens>
-		<tokensetparam name="op" tokenset="AggregateOperator" />
-		<exprparam name="exprComponent" />
+		<tokensetparam ordinal="1" tokenset="AggregateOperator" />
 		<nullparam />
+		<nullparam type="groupby" />
 		<nullparam />
 	</mapping>
+
 	<mapping to="aggregation.AggregateTransformation">
 		<from>CountAggrComp</from>
-		<nullparam />
+		<nullparam type="groupby" />
 		<nullparam />
 	</mapping>
+
 	<mapping to="dataset.AggrClauseTransformation">
 		<from>AggrClause</from>
 		<tokens name="groupingClause">
@@ -477,8 +513,8 @@
 				</customparam>
 			</listparam>
 		</nestedparam>
-		<nestedparam name="groupingClause">
-			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause">
+		<nestedparam name="groupingClause" type="groupby">
+			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl">
 				<tokensetparam name="op" tokenset="GroupingMode" />
 				<listparam name="componentID">
 					<aliasparam />
@@ -488,6 +524,7 @@
 		</nestedparam>
 		<exprparam name="havingClause" />
 	</mapping>
+
 	<mapping to="dataset.AggrClauseTransformation">
 		<from>AggrClause</from>
 		<tokens name="groupingClause">
@@ -502,8 +539,8 @@
 				</customparam>
 			</listparam>
 		</nestedparam>
-		<nestedparam name="groupingClause">
-			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClause">
+		<nestedparam name="groupingClause" type="groupby">
+			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl">
 				<tokensetparam name="op" tokenset="GroupingMode" />
 				<nullparam />
 				<stringparam name="STRING_CONSTANT" />
@@ -511,6 +548,7 @@
 		</nestedparam>
 		<exprparam name="havingClause" />
 	</mapping>
+
 	<mapping to="dataset.KeepClauseTransformation">
 		<from>KeepOrDropClause</from>
 		<tokens name="op">
@@ -520,6 +558,7 @@
 			<aliasparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="dataset.DropClauseTransformation">
 		<from>KeepOrDropClause</from>
 		<tokens name="op">
@@ -529,18 +568,21 @@
 			<aliasparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="dataset.CalcClauseTransformation">
 		<from>CalcClause</from>
 		<listparam name="calcClauseItem">
 			<exprparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="dataset.CalcClauseTransformation$CalcClauseItem">
 		<from>CalcClauseItem</from>
 		<roleparam name="componentRole" />
 		<aliasparam name="componentID" />
 		<exprparam name="exprComponent" />
 	</mapping>
+
 	<mapping to="ops.JoinTransformation">
 		<from>JoinExpr</from>
 		<tokens name="joinKeyword">
@@ -568,6 +610,7 @@
 			<exprparam name="renameClause" />
 		</nestedparam>
 	</mapping>
+
 	<mapping to="ops.JoinTransformation">
 		<from>JoinExpr</from>
 		<tokens name="joinKeyword">
@@ -593,6 +636,7 @@
 			<exprparam name="renameClause" />
 		</nestedparam>
 	</mapping>
+
 	<mapping to="ops.SetTransformation">
 		<from>UnionAtom</from>
 		<tokensetparam tokenset="SetOperator" />
@@ -600,6 +644,7 @@
 			<exprparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="ops.SetTransformation">
 		<from>IntersectAtom</from>
 		<tokensetparam tokenset="SetOperator" />
@@ -607,6 +652,7 @@
 			<exprparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="ops.SetTransformation">
 		<from>SetOrSYmDiffAtom</from>
 		<tokensetparam tokenset="SetOperator" />
@@ -614,22 +660,26 @@
 			<exprparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="ops.JoinTransformation$JoinOperand">
 		<from>JoinClauseItem</from>
 		<exprparam name="expr" />
 		<aliasparam name="alias" />
 	</mapping>
+
 	<mapping to="dataset.BracketTransformation">
 		<from>ClauseExpr</from>
 		<exprparam name="dataset" />
 		<exprparam name="clause" />
 		<nullparam />
 	</mapping>
+
 	<mapping to="time.PeriodIndicatorTransformation">
 		<from>PeriodAtom</from>
 		<from>PeriodAtomComponent</from>
 		<exprparam name="expr|exprComponent" />
 	</mapping>
+
 	<mapping to="bool.ConditionalTransformation">
 		<from>IfExpr</from>
 		<from>IfExprComp</from>
@@ -637,6 +687,7 @@
 		<exprparam name="thenExpr" />
 		<exprparam name="elseExpr" />
 	</mapping>
+
 	<mapping to="bool.CaseWhenTransformation">
 		<from>CaseExpr</from>
 		<from>CaseExprComp</from>
@@ -648,6 +699,7 @@
 		</listparam>
 		<exprparam name="elseExpr" />
 	</mapping>
+
 	<mapping to="bool.BetweenTransformation">
 		<from>BetweenAtom</from>
 		<from>BetweenAtomComponent</from>
@@ -655,11 +707,13 @@
 		<exprparam name="from_" />
 		<exprparam name="to_" />
 	</mapping>
+
 	<mapping to="time.FillTimeSeriesTransformation">
 		<from>FillTimeAtom</from>
 		<exprparam name="expr" />
 		<tokensetparam tokenset="FillMode" name="op" />
 	</mapping>
+
 	<mapping to="time.DateAddTransformation">
 		<from>DateAddAtom</from>
 		<from>DateAddAtomComponent</from>
@@ -667,17 +721,20 @@
 		<exprparam name="shiftNumber" />
 		<exprparam name="periodInd" />
 	</mapping>
+
 	<mapping to="time.DateDiffTransformation">
 		<from>DateDiffAtom</from>
 		<from>DateDiffAtomComponent</from>
 		<exprparam name="dateFrom" />
 		<exprparam name="dateTo" />
 	</mapping>
+
 	<mapping to="time.TimeShiftTransformation">
 		<from>TimeShiftAtom</from>
 		<exprparam name="expr" />
 		<valueparam name="signedInteger" />
 	</mapping>
+
 	<mapping to="time.TimeAggTransformation">
 		<from>TimeAggAtom</from>
 		<from>TimeAggAtomComponent</from>
@@ -688,12 +745,14 @@
 		<stringparam name="periodIndFrom" />
 		<tokensetparam name="delim" tokenset="PeriodDelimiter" />
 	</mapping>
+
 	<mapping to="dataset.BracketTransformation">
 		<from>MembershipExpr</from>
 		<exprparam name="expr" />
 		<nullparam />
 		<aliasparam name="simpleComponentId" />
 	</mapping>
+
 	<mapping to="dataset.SubspaceClauseTransformation">
 		<from>SubspaceClause</from>
 		<mapparam name="subspaceClauseItem">
@@ -705,6 +764,7 @@
 			</value>
 		</mapparam>
 	</mapping>
+
 	<mapping to="dataset.RenameClauseTransformation">
 		<from>RenameClause</from>
 		<mapparam name="renameClauseItem">
@@ -716,10 +776,12 @@
 			</value>
 		</mapparam>
 	</mapping>
+
 	<mapping to="dataset.FilterClauseTransformation">
 		<from>FilterClause</from>
 		<exprparam name="exprComponent" />
 	</mapping>
+
 	<mapping to="ops.CallTransformation">
 		<from>CallComponent</from>
 		<aliasparam name="operatorID" />
@@ -727,6 +789,7 @@
 			<exprparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="ops.CallTransformation">
 		<from>CallDataset</from>
 		<aliasparam name="operatorID" />
@@ -734,6 +797,7 @@
 			<exprparam />
 		</listparam>
 	</mapping>
+
 	<mapping to="string.StringUnaryTransformation">
 		<from>UnaryStringFunction</from>
 		<from>UnaryStringFunctionComponent</from>
@@ -747,6 +811,7 @@
 		<tokensetparam tokenset="StringOperator" name="op" />
 		<exprparam name="expr|exprComponent" />
 	</mapping>
+
 	<mapping to="string.StrlenTransformation">
 		<from>UnaryStringFunction</from>
 		<from>UnaryStringFunctionComponent</from>
@@ -755,21 +820,25 @@
 		</tokens>
 		<exprparam name="expr|exprComponent" />
 	</mapping>
+
 	<mapping to="bool.ExistsInTransformation">
 		<from>ExistInAtom</from>
 		<exprparam name="left" />
 		<exprparam name="right" />
 		<tokensetparam tokenset="ExistsInMode" name="retainType" />
 	</mapping>
+
 	<mapping to="ConstantOperand">
 		<from>ConstantExpr</from>
 		<from>ConstantExprComp</from>
 		<valueparam name="constant" />
 	</mapping>
+
 	<mapping to="ConstantOperand">
 		<from>Constant</from>
 		<valueparam />
 	</mapping>
+
 	<mapping to="ops.CastTransformation">
 		<from>CastExprDataset</from>
 		<tokens name="basicScalarType">
@@ -787,12 +856,14 @@
 		<tokensetparam name="basicScalarType" tokenset="ValueDomainType" />
 		<stringparam name="STRING_CONSTANT" />
 	</mapping>
+
 	<mapping to="ops.CastTransformation">
 		<from>CastExprDataset</from>
 		<exprparam name="expr" />
 		<aliasparam name="valueDomainName" />
 		<stringparam name="STRING_CONSTANT" />
 	</mapping>
+
 	<mapping to="ops.CastTransformation">
 		<from>CastExprComponent</from>
 		<tokens name="basicScalarType">
@@ -810,12 +881,14 @@
 		<tokensetparam name="basicScalarType" tokenset="ValueDomainType" />
 		<stringparam name="STRING_CONSTANT" />
 	</mapping>
+
 	<mapping to="ops.CastTransformation">
 		<from>CastExprComponent</from>
 		<exprparam name="exprComponent" />
 		<aliasparam name="valueDomainName" />
 		<stringparam name="STRING_CONSTANT" />
 	</mapping>
+
 	<mapping to="number.NumericUnaryTransformation">
 		<from>UnaryExpr</from>
 		<from>UnaryExprComp</from>
@@ -826,6 +899,7 @@
 		<tokensetparam name="op" tokenset="NumericUnaryOperator" />
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="bool.NotTransformation">
 		<from>UnaryExpr</from>
 		<from>UnaryExprComp</from>
@@ -834,6 +908,7 @@
 		</tokens>
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="bool.ComparisonTransformation">
 		<from>ComparisonExpr</from>
 		<from>ComparisonExprComp</from>
@@ -841,6 +916,7 @@
 		<exprparam name="left" />
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="string.InStrTransformation">
 		<from>InstrAtom</from>
 		<from>InstrAtomComponent</from>
@@ -853,23 +929,27 @@
 			<exprparam name="expr|exprComponent" />
 		</nestedparam>
 	</mapping>
+
 	<mapping to="string.MatchTransformation">
 		<from>CharsetMatchAtom</from>
 		<from>CharsetMatchAtomComponent</from>
 		<exprparam name="op" />
 		<exprparam name="pattern" />
 	</mapping>
+
 	<mapping to="bool.IsNullTransformation">
 		<from>IsNullAtom</from>
 		<from>IsNullAtomComponent</from>
 		<exprparam name="expr|exprComponent" />
 	</mapping>
+
 	<mapping to="bool.NvlTransformation">
 		<from>NvlAtom</from>
 		<from>NvlAtomComponent</from>
 		<exprparam name="left" />
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="string.ReplaceTransformation">
 		<from>ReplaceAtom</from>
 		<from>ReplaceAtomComponent</from>
@@ -879,6 +959,7 @@
 			<exprparam name="expr|exprComponent" />
 		</nestedparam>
 	</mapping>
+
 	<mapping to="string.SubstrTransformation">
 		<from>SubstrAtom</from>
 		<from>SubstrAtomComponent</from>
@@ -890,6 +971,7 @@
 			<exprparam name="expr|exprComponent" />
 		</nestedparam>
 	</mapping>
+
 	<mapping to="time.ExtractTimeFieldTransformation">
 		<from>YearAtomComponent</from>
 		<from>MonthAtomComponent</from>
@@ -898,6 +980,7 @@
 		<tokensetparam ordinal="1" tokenset="ChronoField" />
 		<exprparam name="exprComponent" />
 	</mapping>
+
 	<mapping to="number.ArithmeticTransformation">
 		<from>ArithmeticExprOrConcat</from>
 		<from>ArithmeticExprOrConcatComp</from>
@@ -909,6 +992,7 @@
 		<exprparam name="left" />
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="number.ArithmeticTransformation">
 		<from>BinaryNumeric</from>
 		<from>BinaryNumericComponent</from>
@@ -916,25 +1000,27 @@
 			<value>MOD</value>
 			<value>LOG</value>
 			<value>POWER</value>
-			<value>RANDOM</value>
 		</tokens>
 		<tokensetparam name="op" tokenset="ArithmeticOperator" />
 		<exprparam name="left" />
 		<exprparam name="right" />
 	</mapping>
-	<mapping to="number.ArithmeticTransformation">
+
+	<mapping to="number.NumericIntTransformation">
 		<from>UnaryWithOptionalNumeric</from>
 		<from>UnaryWithOptionalNumericComponent</from>
 		<tokens name="op">
 			<value>ROUND</value>
 			<value>TRUNC</value>
+			<value>RANDOM</value>
 		</tokens>
-		<tokensetparam name="op" tokenset="ArithmeticOperator" />
+		<tokensetparam name="op" tokenset="NumericIntOperator" />
 		<exprparam name="expr|exprComponent" />
 		<nestedparam name="optionalExpr|optionalExprComponent">
 			<exprparam name="expr|exprComponent" />
 		</nestedparam>
 	</mapping>
+
 	<mapping to="bool.BooleanTransformation">
 		<from>BooleanExpr</from>
 		<from>BooleanExprComp</from>
@@ -942,6 +1028,7 @@
 		<exprparam name="left" />
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="string.ConcatTransformation">
 		<from>ArithmeticExprOrConcat</from>
 		<from>ArithmeticExprOrConcatComp</from>
@@ -951,6 +1038,7 @@
 		<exprparam name="left" />
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="number.ArithmeticTransformation">
 		<from>ArithmeticExpr</from>
 		<from>ArithmeticExprComp</from>
@@ -958,11 +1046,13 @@
 		<exprparam name="left" />
 		<exprparam name="right" />
 	</mapping>
+
 	<mapping to="time.FlowStockTransformation">
 		<from>FlowAtom</from>
 		<tokensetparam name="op" tokenset="DatasetOperator" />
 		<exprparam name="expr" />
 	</mapping>
+
 	<mapping to="bool.InclusionTransformation">
 		<from>InNotInExpr</from>
 		<from>InNotInExprComp</from>
@@ -975,14 +1065,17 @@
 		</nestedparam>
 		<aliasparam name="valueDomainID" />
 	</mapping>
+
 	<mapping to="VarIDOperand">
 		<from>VarID</from>
 		<aliasparam />
 	</mapping>
+
 	<mapping to="VarIDOperand">
 		<from>ComponentID</from>
 		<aliasparam name="IDENTIFIER" ordinal="0" />
 	</mapping>
+
 	<mapping to="number.NumericUnaryTransformation">
 		<from>UnaryNumeric</from>
 		<from>UnaryNumericComponent</from>
@@ -997,6 +1090,7 @@
 		<tokensetparam name="op" tokenset="NumericUnaryOperator" />
 		<exprparam name="expr|exprComponent" />
 	</mapping>
+
 	<mapping to="dataset.PivotClauseTransformation">
 		<from>PivotOrUnpivotClause</from>
 		<tokens name="op">
@@ -1005,6 +1099,7 @@
 		<aliasparam name="id_" />
 		<aliasparam name="mea" />
 	</mapping>
+
 	<mapping to="dataset.UnpivotClauseTransformation">
 		<from>PivotOrUnpivotClause</from>
 		<tokens name="op">
@@ -1013,6 +1108,7 @@
 		<aliasparam name="id_" />
 		<aliasparam name="mea" />
 	</mapping>
+
 	<mapping to="ops.CheckTransformation">
 		<from>ValidationSimple</from>
 		<exprparam name="op" />

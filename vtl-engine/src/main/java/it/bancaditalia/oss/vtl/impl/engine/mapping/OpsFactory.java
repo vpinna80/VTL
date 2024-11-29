@@ -19,8 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.mapping;
 
+import static it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Type.GROUPBY;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -100,8 +102,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
-import it.bancaditalia.oss.vtl.util.TriFunction;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 
@@ -119,11 +121,16 @@ public class OpsFactory implements Serializable
 					+ ctx.start.getInputStream().getText(new Interval(ctx.start.getStartIndex(), ctx.stop.getStopIndex())), t);
 		}
 	}
+	
+	private static interface ParamBuilder<P extends Nonnullparam> extends Serializable
+	{
+		public Object apply(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, P param);
+	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpsFactory.class);
 	private static final String MAPPING_FILENAME = OpsFactory.class.getName().replaceAll("\\.", "/") + ".xml";
 
-	private final Map<Class<? extends Nonnullparam>, TriFunction<ParserRuleContext, Integer, Nonnullparam, Object>> paramMappers = new HashMap<>();
+	private final Map<Class<? extends Nonnullparam>, ParamBuilder<?>> paramMappers = new HashMap<>();
 	private final Map<Class<? extends ParserRuleContext>, List<Mapping>> mappings = new HashMap<>();
 	private final Map<String, Tokenset> tokensets = new HashMap<>();
 	private final Set<Class<? extends ParserRuleContext>> recursivecontexts = new HashSet<>();
@@ -131,16 +138,16 @@ public class OpsFactory implements Serializable
 
 	public OpsFactory() throws JAXBException, ClassNotFoundException, IOException
 	{
-		paramMappers.put(Tokensetparam.class, (b, c, d) -> parseTokensetParam(b, c, (Tokensetparam) d));
-		paramMappers.put(Valueparam.class, (b, c, d) -> parseValueParam(b, c, (Valueparam) d));
-		paramMappers.put(Roleparam.class, (b, c, d) -> parseRoleParam(b, c, (Roleparam) d));
-		paramMappers.put(Stringparam.class, (b, c, d) -> parseStringParam(b, c, (Stringparam) d));
-		paramMappers.put(Aliasparam.class, (b, c, d) -> parseAliasParam(b, c, (Aliasparam) d));
-		paramMappers.put(Listparam.class, (b, c, d) -> parseListParam(b, c, (Listparam) d));
-		paramMappers.put(Mapparam.class, (b, c, d) -> parseMapParam(b, c, (Mapparam) d));
-		paramMappers.put(Nestedparam.class, (b, c, d) -> parseNestedParam(b, c, (Nestedparam) d));
-		paramMappers.put(Customparam.class, (b, c, d) -> parseCustomParam(b, c, (Customparam) d));
-		paramMappers.put(Exprparam.class, (b, c, d) -> parseExprParam(b, c, (Exprparam) d));
+		paramMappers.put(Tokensetparam.class, (ParamBuilder<Tokensetparam>) this::parseTokensetParam);
+		paramMappers.put(Valueparam.class, (ParamBuilder<Valueparam>) this::parseValueParam);
+		paramMappers.put(Roleparam.class, (ParamBuilder<Roleparam>) this::parseRoleParam);
+		paramMappers.put(Stringparam.class, (ParamBuilder<Stringparam>) this::parseStringParam);
+		paramMappers.put(Aliasparam.class, (ParamBuilder<Aliasparam>) this::parseAliasParam);
+		paramMappers.put(Listparam.class, (ParamBuilder<Listparam>) this::parseListParam);
+		paramMappers.put(Mapparam.class, (ParamBuilder<Mapparam>) this::parseMapParam);
+		paramMappers.put(Nestedparam.class, (ParamBuilder<Nestedparam>) this::parseNestedParam);
+		paramMappers.put(Customparam.class, (ParamBuilder<Customparam>) this::parseCustomParam);
+		paramMappers.put(Exprparam.class, (ParamBuilder<Exprparam>) this::parseExprParam);
 
 		JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
 		Enumeration<URL> files = Thread.currentThread().getContextClassLoader().getResources(MAPPING_FILENAME);
@@ -203,17 +210,17 @@ public class OpsFactory implements Serializable
 	{
 		String ctxText = ctx.start.getInputStream().getText(new Interval(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
 		LOGGER.debug("Parsing new context {} containing '{}'.", ctx.getClass().getSimpleName(), ctxText);
-		return buildExpr(ctx, 0);
+		return buildExpr(ctx, null, 0);
 	}
 
-	private Transformation buildExpr(ParserRuleContext ctx, int level)
+	private Transformation buildExpr(ParserRuleContext ctx, GroupingClause currentGroupBy, int level)
 	{
 		String tabs = new String(new char[level]).replace("\0", "    ");
 		Class<? extends ParserRuleContext> ctxClass = ctx.getClass();
 		if (recursivecontexts.contains(ctxClass))
 		{
 			LOGGER.trace("|{}>> Resolving recursive context {}", tabs, ctxClass.getSimpleName());
-			Transformation result = buildExpr(ctx.getRuleContext(ParserRuleContext.class, 0), level + 1);
+			Transformation result = buildExpr(ctx.getRuleContext(ParserRuleContext.class, 0), currentGroupBy, level + 1);
 			LOGGER.trace("|{}<< Recursive context {} yield {}", tabs, ctxClass.getSimpleName(), result.getClass().getSimpleName());
 			return result;
 		}
@@ -240,9 +247,37 @@ public class OpsFactory implements Serializable
 
 					LOGGER.trace("|{}>> Resolving {} for {}", tabs, paramsClasses, target.getSimpleName());
 					List<Object> args = new ArrayList<>();
-					for (Param param : mapping.getParams())
+					List<Param> params = mapping.getParams();
+
+					// find any param indicating a grouping clause
+					GroupingClause groupBy = null;
+					for (Param param: params)
+						if (param.getType() == GROUPBY)
+						{
+							Object groupByParam = createParam(ctx, param, currentGroupBy, level + 1);
+							
+							groupBy = param instanceof Nestedparam 
+									? (GroupingClause) ((Collection<?>) groupByParam).iterator().next()
+									: (GroupingClause) groupByParam;
+							
+							if (groupBy == null)
+								groupBy = currentGroupBy;
+							else
+								currentGroupBy = groupBy;
+							
+							break;
+						}
+					
+					for (Param param: params)
 					{
-						Object oneOrMoreParam = createParam(ctx, param, level + 1);
+						// if the grouping clause is null, fill it with the one from a parent param
+						// NOTE: this assumes aggregate invocations cannot be nested
+						Object oneOrMoreParam;
+						if (param.getType() == GROUPBY)
+							oneOrMoreParam = param instanceof Nestedparam ? singleton(currentGroupBy) : currentGroupBy;
+						else
+							oneOrMoreParam = createParam(ctx, param, currentGroupBy, level + 1);
+						
 						if (param instanceof Nestedparam)
 							args.addAll((Collection<?>) oneOrMoreParam);
 						else
@@ -252,15 +287,13 @@ public class OpsFactory implements Serializable
 					Constructor<?> constructor = findConstructor(target, args, level);
 					LOGGER.trace("|{}<< Invoking constructor for {} with {}", tabs, target.getSimpleName(), args);
 
-					Transformation transformation = (Transformation) constructor.newInstance(args.toArray());
-//					transformationCache.putIfAbsent(transformation, transformation);
-					return transformation/*Cache.get(transformation)*/;
+					return (Transformation) constructor.newInstance(args.toArray());
 				}
 			}
 			catch (Exception e)
 			{
-				throw new VTLNestedException(
-						"In expression " + ctx.start.getInputStream().getText(new Interval(ctx.start.getStartIndex(), ctx.stop.getStopIndex())), e);
+				String expression = ctx.start.getInputStream().getText(new Interval(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
+				throw new VTLNestedException("In expression " + expression + " from context " + ctxClass, e);
 			}
 
 		throw new VTLUnmappedContextException(ctx);
@@ -385,7 +418,7 @@ public class OpsFactory implements Serializable
 		}
 	}
 
-	private Object createParam(ParserRuleContext ctx, Param maybeNullParam, int level)
+	private <P extends Nonnullparam> Object createParam(ParserRuleContext ctx, Param maybeNullParam, GroupingClause currentGroupBy, int level)
 	{
 		String tabs = new String(new char[level]).replace("\0", "    ");
 		
@@ -394,7 +427,7 @@ public class OpsFactory implements Serializable
 		if (recursivecontexts.contains(ctx.getClass()))
 		{
 			LOGGER.trace("|{}++ {}: recursive context", tabs, ctxClass);
-			return createParam(ctx.getChild(ParserRuleContext.class, 0), maybeNullParam, level);
+			return createParam(ctx.getChild(ParserRuleContext.class, 0), maybeNullParam, currentGroupBy, level);
 		}
 		
 		if (maybeNullParam instanceof Nullparam)
@@ -405,39 +438,42 @@ public class OpsFactory implements Serializable
 		}
 		else
 		{
-			Nonnullparam param = (Nonnullparam) maybeNullParam;
+			@SuppressWarnings("unchecked")
+			P param = (P) maybeNullParam;
 			
-			String paramClass = param.getClass().getSimpleName();
+			Class<? extends Nonnullparam> paramClass = param.getClass();
+			String paramClassName = paramClass.getSimpleName();
 			Object result;
 			if (param.getName() != null)
-				LOGGER.trace("|{}>> {}: {} from subrule '{}'", tabs, ctxClass, paramClass, param.getName());
+				LOGGER.trace("|{}>> {}: {} from subrule '{}'", tabs, ctxClass, paramClassName, param.getName());
 			else
-				LOGGER.trace("|{}>> {}: {} from same context", tabs, ctxClass, paramClass);
+				LOGGER.trace("|{}>> {}: {} from same context", tabs, ctxClass, paramClassName);
 
-			TriFunction<ParserRuleContext, Integer, Nonnullparam, Object> contextParser = paramMappers.get(param.getClass());
+			@SuppressWarnings("unchecked")
+			ParamBuilder<P> contextParser = (ParamBuilder<P>) paramMappers.get(paramClass);
 			if (contextParser == null)
-				throw new IllegalStateException("Not implemented: " + paramClass);
+				throw new IllegalStateException("Not implemented: " + paramClassName);
 				
-			result = contextParser.apply(ctx, level, param);
+			result = contextParser.apply(ctx, currentGroupBy, level, (P) param);
 
 			if (param.getName() != null)
-				LOGGER.trace("|{}<< {}: {} from subrule '{}' yield {}", tabs, ctxClass, paramClass, param.getName(), result);
+				LOGGER.trace("|{}<< {}: {} from subrule '{}' yield {}", tabs, ctxClass, paramClassName, param.getName(), result);
 			else
-				LOGGER.trace("|{}<< {}: {} from same context yield {}", tabs, ctxClass, paramClass, result);
+				LOGGER.trace("|{}<< {}: {} from same context yield {}", tabs, ctxClass, paramClassName, result);
 
 			return result;
 		}
 	}
 
-	private Transformation parseExprParam(ParserRuleContext ctx, int level, Exprparam param)
+	private Transformation parseExprParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Exprparam param)
 	{
 		Transformation result;
 		ParserRuleContext subexpr = getFieldOrMethod(param, ctx, ParserRuleContext.class, level);
-		result = subexpr == null ? null : buildExpr(subexpr, level + 1);
+		result = subexpr == null ? null : buildExpr(subexpr, currentGroupBy, level + 1);
 		return result;
 	}
 
-	private Object parseCustomParam(ParserRuleContext ctx, int level, Customparam customParam)
+	private Object parseCustomParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Customparam customParam)
 	{
 		ParserRuleContext customCtx = null;
 		List<Param> innerParams = null;
@@ -452,24 +488,26 @@ public class OpsFactory implements Serializable
 				return null;
 			
 			List<Serializable> customSpec = customParam.getCaseOrNullparamOrAliasparam();
-			if (customSpec.get(0).getClass() == Case.class)
+			if (!customSpec.isEmpty() && customSpec.get(0).getClass() == Case.class)
 			{
 				Case found = null;
-				for (Case c: (List<Case>) (List<?>) customSpec)
+				@SuppressWarnings("unchecked")
+				List<Case> cases = (List<Case>) (List<?>) customSpec;
+				for (Case c: cases)
 					if (found == null && checkMapping(c.getChecks(), customCtx))
 						found = c;
 				
 				if (found != null)
 					innerParams = found.getParams();
 				else
-					throw new IllegalStateException();
+					throw new IllegalStateException("No matching cases for customparam");
 			}
 			else
 				innerParams = customSpec.stream().map(Param.class::cast).collect(toList());
 			
 			resultList = new ArrayList<>(innerParams.size());
 			for (Param child : innerParams)
-				resultList.add(createParam(customCtx, child, level + 1));
+				resultList.add(createParam(customCtx, child, currentGroupBy, level + 1));
 			
 			customClass = Class.forName(customParam.getClazz());
 			if (customParam.getMethod() != null)
@@ -502,7 +540,7 @@ public class OpsFactory implements Serializable
 		}
 	}
 
-	private Object parseNestedParam(ParserRuleContext ctx, int level, Nestedparam nestedParam)
+	private Object parseNestedParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Nestedparam nestedParam)
 	{
 		Object result;
 		// get the nested context by looking up the name attribute of nestedparam in current context
@@ -512,12 +550,12 @@ public class OpsFactory implements Serializable
 		// map each parameter to a constructed mapped object and collect the results into a list
 		List<Object> resultList = new ArrayList<>(innerParams.size());
 		for (Param child : innerParams)
-			resultList.add(nestedCtx == null ? null : createParam(nestedCtx, child, level + 1));
+			resultList.add(nestedCtx == null ? null : createParam(nestedCtx, child, currentGroupBy, level + 1));
 		result = resultList;
 		return result;
 	}
 
-	private Map<?, ?> parseMapParam(ParserRuleContext ctx, int level, Mapparam mapparam)
+	private Map<?, ?> parseMapParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Mapparam mapparam)
 	{
 		Map<?, ?> result;
 		Map<Object, Object> resultMap = new HashMap<>();
@@ -527,15 +565,15 @@ public class OpsFactory implements Serializable
 		Param valueParam = mapparam.getValue().getParams();
 		for (ParserRuleContext entry : entries)
 		{
-			Object key = createParam(entry, keyParam, level + 1);
-			Object value = createParam(entry, valueParam, level + 1);
+			Object key = createParam(entry, keyParam, currentGroupBy, level + 1);
+			Object value = createParam(entry, valueParam, currentGroupBy, level + 1);
 			resultMap.put(key, value);
 		}
 		result = resultMap;
 		return result;
 	}
 
-	private List<?> parseListParam(ParserRuleContext ctx, int level, Listparam listParam)
+	private List<?> parseListParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Listparam listParam)
 	{
 		List<?> result;
 		Param insideParam = listParam.getParams();
@@ -543,12 +581,12 @@ public class OpsFactory implements Serializable
 		Collection<? extends ParserRuleContext> inside = getFieldOrMethod(listParam, ctx, Collection.class, level);
 		List<Object> resultList = new ArrayList<>();
 		for (ParserRuleContext child : inside)
-			resultList.add(createParam(child, insideParam, level + 1));
+			resultList.add(createParam(child, insideParam, currentGroupBy, level + 1));
 		result = resultList;
 		return result;
 	}
 
-	private String parseStringParam(ParserRuleContext ctx, int level, Stringparam stringparam)
+	private String parseStringParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Stringparam stringparam)
 	{
 		String result;
 		Object value = getFieldOrMethod(stringparam, ctx, Object.class, level);
@@ -561,7 +599,7 @@ public class OpsFactory implements Serializable
 		return result;
 	}
 
-	private VTLAlias parseAliasParam(ParserRuleContext ctx, int level, Aliasparam stringparam)
+	private VTLAlias parseAliasParam(ParserRuleContext ctx, Object currentGroupBy, int level, Aliasparam stringparam)
 	{
 		String result;
 		Object value = getFieldOrMethod(stringparam, ctx, Object.class, level);
@@ -582,7 +620,7 @@ public class OpsFactory implements Serializable
 			return VTLAliasImpl.of(result);
 	}
 
-	private Class<? extends Component> parseRoleParam(ParserRuleContext ctx, int level, Roleparam param)
+	private Class<? extends Component> parseRoleParam(ParserRuleContext ctx, Object currentGroupBy, int level, Roleparam param)
 	{
 		// lookup actual token
 		ParseTree roleCtx = getFieldOrMethod(param, ctx, ParseTree.class, level);
@@ -625,7 +663,7 @@ public class OpsFactory implements Serializable
 		}
 	}
 
-	private ScalarValue<?, ?, ?, ?> parseValueParam(ParserRuleContext ctx, int level, Valueparam param)
+	private ScalarValue<?, ?, ?, ?> parseValueParam(ParserRuleContext ctx, Object currentGroupBy, int level, Valueparam param)
 	{
 		// lookup actual token
 		ParseTree element = getFieldOrMethod(param, ctx, ParseTree.class, level);
@@ -665,7 +703,7 @@ public class OpsFactory implements Serializable
 		return ctx;
 	}
 
-	private Enum<?> parseTokensetParam(ParserRuleContext ctx, int level, Tokensetparam tokensetParam)
+	private Enum<?> parseTokensetParam(ParserRuleContext ctx, Object currentGroupBy, int level, Tokensetparam tokensetParam)
 	{
 		try
 		{
