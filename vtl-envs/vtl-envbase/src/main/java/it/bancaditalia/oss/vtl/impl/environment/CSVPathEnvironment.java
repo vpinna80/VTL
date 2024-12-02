@@ -24,7 +24,6 @@ import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapVal
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,8 +36,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -68,6 +67,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -113,40 +113,53 @@ public class CSVPathEnvironment implements Environment
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
-		String source = repo.getDatasetSource(alias);
+		String source = repo.getDataSource(alias);
 		String fileName;
 		
 		fileName = source.startsWith("csv:") ? source.substring(4) : source == alias.toString() ? source + ".csv" : source;
 		LOGGER.debug("Looking for csv file '{}'", fileName);
 
 		return paths.stream()
-				.map(path -> path.resolve(fileName))
-				.filter(Files::exists)
-				.limit(1)
-				.peek(path -> LOGGER.info("Found {} in {}", fileName, path))
-				.map(path -> {
-					Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();
-					
-					DataSetMetadata structure = repo.getStructure(alias)
-							.orElseThrow(() -> 
-								new VTLUndefinedObjectException("Structure", alias)
-							);
-					if (isNull(structure))
-						try (BufferedReader reader = Files.newBufferedReader(path))
-						{
-							Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metadata = extractMetadata(repo, reader.readLine().split(","));
-							structure = new DataStructureBuilder(metadata.getKey()).build();
-							masks.putAll(metadata.getValue());
-						}
-						catch (IOException e)
-						{
-							throw new VTLNestedException("Exception while reading " + fileName, e);
-						}
-					
-					requireNonNull(structure, "no structure for " + alias);
-						
+			.map(path -> path.resolve(fileName))
+			.filter(Files::exists)
+			.limit(1)
+			.peek(path -> LOGGER.info("Found {} in {}", fileName, path))
+			.map(path -> {
+				Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();
+				
+				VTLValueMetadata repoMeta = repo.getMetadata(alias).orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
+				
+				// Infer structure from enriched CSV header 
+				if (isNull(repoMeta))
+					try (BufferedReader reader = Files.newBufferedReader(path))
+					{
+						Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metadata = extractMetadata(repo, reader.readLine().split(","));
+						DataSetMetadata structure = new DataStructureBuilder(metadata.getKey()).build();
+						masks.putAll(metadata.getValue());
+						return (VTLValue) new BiFunctionDataSet<>(structure, (p, s) -> streamFileName(p, s, repo, masks), path, structure);
+					}
+					catch (IOException e)
+					{
+						throw new VTLNestedException("Exception while reading " + fileName, e);
+					}
+				else if (repoMeta instanceof ScalarValueMetadata)
+					try (BufferedReader reader = Files.newBufferedReader(path))
+					{
+						String line = null;
+						for (int i = 0; i < 2; i++)
+							line = reader.readLine();
+						return mapValue(((ScalarValueMetadata<?, ?>) repoMeta).getDomain(), line, null);
+					}
+					catch (IOException e)
+					{
+						throw new VTLNestedException("Exception while reading " + fileName, e);
+					}
+				else
+				{
+					DataSetMetadata structure = (DataSetMetadata) repoMeta;
 					return (VTLValue) new BiFunctionDataSet<>(structure, (p, s) -> streamFileName(p, s, repo, masks), path, structure);
-				}).findAny();
+				}
+			}).findAny();
 	}
 
 	protected Stream<DataPoint> streamFileName(Path path, DataSetMetadata structure, MetadataRepository repo, Map<DataStructureComponent<?, ?, ?>, String> masks)
@@ -198,7 +211,8 @@ public class CSVPathEnvironment implements Environment
 			.map(line -> {
 				try
 				{
-					return lineToDPBuilder(line, metadata, masks);
+					// remove BIDI code points (often pasted from other software like ms office)
+					return lineToDPBuilder(line.replace("\u202C", "").replace("\u202A", ""), metadata, masks);
 				}
 				catch (VTLException e)
 				{
@@ -244,7 +258,8 @@ public class CSVPathEnvironment implements Environment
 	
 					// parse field value into a VTL scalar 
 					DataStructureComponent<?, ?, ?> component = metadata.get(count);
-					ScalarValue<?, ?, ?, ?> value = mapValue(component, token, masks.get(component));
+					LOGGER.trace("Parsing string value {} for component {} with mask {}", token, component, masks.get(component));
+					ScalarValue<?, ?, ?, ?> value = mapValue(component.getVariable().getDomain(), token, masks.get(component));
 					
 					if (value instanceof NullValue && component.is(Identifier.class))
 						throw new NullPointerException("Parsed a null value for identifier " + component + ": " + token);

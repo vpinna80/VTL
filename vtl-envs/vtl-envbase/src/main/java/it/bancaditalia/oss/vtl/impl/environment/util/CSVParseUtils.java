@@ -174,60 +174,55 @@ public class CSVParseUtils
 		
 	}
 
-	public static ScalarValue<?, ?, ?, ?> mapValue(DataStructureComponent<?, ?, ?> component, final String stringRepresentation, String mask)
+	public static ScalarValue<?, ?, ?, ?> mapValue(ValueDomainSubset<?, ?> domain, String stringRepresentation, String mask)
 	{
-		LOGGER.trace("Parsing string value {} for component {} with mask {}", stringRepresentation, component, mask);
-		
 		if (stringRepresentation == null || stringRepresentation.isEmpty() || "null".equalsIgnoreCase(stringRepresentation))
-			return NullValue.instanceFrom(component);
-		else if (component.getVariable().getDomain() instanceof StringDomainSubset)
-			return component.getVariable().getDomain().cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
-		else if (component.getVariable().getDomain() instanceof DurationDomainSubset)
+			return NullValue.instance(domain);
+		else if (domain instanceof StringDomainSubset)
+			return domain.cast(StringValue.of(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation));
+		else if (domain instanceof DurationDomainSubset)
 			return Frequency.valueOf(stringRepresentation.matches("^\".*\"$") ? stringRepresentation.substring(1, stringRepresentation.length() - 1) : stringRepresentation).get();
-		else if (component.getVariable().getDomain() instanceof IntegerDomainSubset)
-			if (stringRepresentation.trim().isEmpty())
-				return NullValue.instance(INTEGERDS);
-			else
-				try
-				{
-					return IntegerValue.of(Long.parseLong(stringRepresentation));
-				}
-				catch (NumberFormatException e)
-				{
-					double number = (long) Double.parseDouble(stringRepresentation);
-					if (((long) number) == number)
-						return IntegerValue.of((long) number);
-					
-					LOGGER.error("An Integer was expected but found: " + stringRepresentation);
+		else if (domain instanceof IntegerDomainSubset)
+			try
+			{
+				if (stringRepresentation.trim().isEmpty())
 					return NullValue.instance(INTEGERDS);
-				}
-		else if (component.getVariable().getDomain() instanceof NumberDomainSubset)
+				else
+					return IntegerValue.of(Long.parseLong(stringRepresentation.trim()));
+			}
+			catch (NumberFormatException e)
+			{
+				LOGGER.error("An Integer was expected but found: " + stringRepresentation);
+				throw e;
+//				return NullValue.instance(INTEGERDS);
+			}
+		else if (domain instanceof NumberDomainSubset)
 			try
 			{
 				if (stringRepresentation.trim().isEmpty())
 					return NullValue.instance(NUMBERDS);
 				else 
-					return createNumberValue(stringRepresentation);
+					return createNumberValue(stringRepresentation.trim());
 			}
 			catch (NumberFormatException e)
 			{
 				LOGGER.error("A Number was expected but found: " + stringRepresentation);
 				return NullValue.instance(NUMBERDS);
 			}
-		else if (component.getVariable().getDomain() instanceof BooleanDomainSubset)
+		else if (domain instanceof BooleanDomainSubset)
 			if (stringRepresentation == null || stringRepresentation.trim().isEmpty())
-				return NullValue.instanceFrom(component);
+				return NullValue.instance(domain);
 			else
-				return BooleanValue.of(Boolean.parseBoolean(stringRepresentation));
-		else if (component.getVariable().getDomain() instanceof DateDomainSubset)
+				return BooleanValue.of(Boolean.parseBoolean(stringRepresentation.trim()));
+		else if (domain instanceof DateDomainSubset)
 			return DateValue.of(parseString(stringRepresentation, coalesce(mask, "YYYY-MM-DD")));
-		else if (component.getVariable().getDomain() instanceof TimePeriodDomainSubset)
+		else if (domain instanceof TimePeriodDomainSubset)
 		{
 			if (mask != null)
 				throw new UnsupportedOperationException("A mask for time_period in a CSV file is not supported");
 			return stringToTimePeriod(stringRepresentation);
 		}
-		else if (component.getVariable().getDomain() instanceof TimeDomainSubset)
+		else if (domain instanceof TimeDomainSubset)
 		{
 			if (mask != null)
 				throw new UnsupportedOperationException("A mask for time in a CSV file is not supported");
@@ -235,7 +230,7 @@ public class CSVParseUtils
 			return stringToTime(stringRepresentation);
 		}
 		
-		throw new IllegalStateException("ValueDomain not implemented in CSV: " + component.getVariable().getDomain());
+		throw new IllegalStateException("ValueDomain not implemented in CSV: " + domain);
 	}
 
 	public static ScalarValue<?, ?, ?, ?> stringToTime(final String stringRepresentation)
