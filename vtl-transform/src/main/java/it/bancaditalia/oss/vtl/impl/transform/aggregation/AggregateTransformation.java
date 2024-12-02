@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
@@ -45,6 +46,7 @@ import static java.util.Collections.singleton;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -53,19 +55,21 @@ import java.util.stream.Stream;
 import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleParametersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
-import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
-import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
+import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
@@ -83,18 +87,23 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.transform.GroupingClause;
+import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
-public class AggregateTransformation extends UnaryTransformation
+public class AggregateTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
+	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> HAVING_COMP = BOOLEANDS.getDefaultVariable().as(Measure.class);
 
+	private final Transformation operand;
 	private final AggregateOperator	aggregation;
 	private final GroupingClause groupingClause;
 	private final Transformation having;
@@ -103,8 +112,7 @@ public class AggregateTransformation extends UnaryTransformation
 	
 	public AggregateTransformation(AggregateOperator aggregation, Transformation operand, GroupingClause groupingClause, Transformation having)
 	{
-		super(operand);
-		
+		this.operand = operand;
 		this.aggregation = aggregation;
 		this.groupingClause = groupingClause;
 		this.having = having;
@@ -118,29 +126,28 @@ public class AggregateTransformation extends UnaryTransformation
 		this(COUNT, null, groupingClause, having);
 	}
 	
-	// constructor for AGGR clause
-	public AggregateTransformation(AggregateTransformation other, GroupingClause groupingClause, Transformation having, Class<? extends Component> targetRole, VTLAlias targetName)
+	public AggregateTransformation(AggregateTransformation copy, VTLAlias targetName, Class<? extends Component> targetRole)
 	{
-		super(other.operand);
-		
-		this.aggregation = other.aggregation;
-		this.groupingClause = groupingClause;
-		this.having = having;
+		this.operand = copy.operand;
+		this.aggregation = copy.aggregation;
+		this.groupingClause = copy.groupingClause;
+		this.having = copy.having;
 		this.targetName = targetName;
-		this.targetRole = coalesce(targetRole, Measure.class);
+		this.targetRole = targetRole;
 	}
 	
 	@Override
-	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		return Stream.of(scalar).collect(aggregation.getReducer());
-	}
+		VTLValue opMeta = operand == null ? scheme.resolve(THIS) : operand.eval(scheme);
+		if (opMeta instanceof ScalarValue)
+			return Stream.of((ScalarValue<?, ?, ?, ?>) opMeta).collect(aggregation.getReducer());
 
-	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
-	{
+		DataSet dataset = (DataSet) opMeta;
 		SerCollector<DataPoint, ?, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> combined = null;
 		DataSetMetadata origStructure = dataset.getMetadata();
+		VTLValueMetadata metadata = getMetadata(scheme);
+		MetadataRepository repo = scheme.getRepository();
 
 		if (aggregation == COUNT)
 			combined = collectingAndThen(counting(), v -> Map.of(COUNT_MEASURE, IntegerValue.of(v)));
@@ -155,37 +162,55 @@ public class AggregateTransformation extends UnaryTransformation
 
 		if (groupingClause != null && groupingClause.getFrequency() != null)
 		{
-			// aggregate the time-id
 			DataStructureComponent<Identifier, ?, ?> timeID = groupIDs.stream()
 					.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
 					.findAny()
 					.orElseThrow(() -> new VTLMissingComponentsException("A time identifier", groupIDs));
 			
+			// remap the time id onto a specified duration
 			dataset = new FunctionDataSet<>(origStructure, ds -> ds.stream().map(dp -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> c = new HashMap<>(dp);
-				c.compute(timeID, (k, v) -> groupingClause.getFrequency().wrap((TimeValue<?, ?, ?, ?>) v));
+				c.compute(timeID, (k, v) -> ((Frequency) groupingClause.getFrequency().get()).wrap((TimeValue<?, ?, ?, ?>) v));
 				return new DataPointBuilder(c).build(dp.getLineage(), origStructure);
 			}), dataset);
 		}
 
-		// dataset-level aggregation
-		return dataset.aggregate((DataSetMetadata) metadata, groupIDs, combined, (map, keyValues) -> {
-			DataPointBuilder builder = new DataPointBuilder(keyValues.getValue());
-			if (targetName == null)
-				for (DataStructureComponent<?, ?, ?> measure: map.keySet())
-					builder = builder.add(getCompFor(measure, repo, (DataSetMetadata) metadata), map.get(measure));
-			else if (map.size() == 1)
-			{
-				DataStructureComponent<Measure, ?, ?> srcComp = origStructure.getMeasures().iterator().next();
-				builder = builder.add(getCompFor(srcComp, repo, (DataSetMetadata) metadata), map.values().iterator().next());
-			}
-			else
-				throw new IllegalStateException();
+		if (metadata instanceof DataSetMetadata)
+		{
+			DataSetMetadata structure = (DataSetMetadata) metadata; 
+			DataSet result = (DataSet) dataset.aggregate(structure, groupIDs, combined, (map, lineages, keyValues) -> {
+				DataPointBuilder builder = new DataPointBuilder(keyValues);
+				if (targetName == null)
+					for (DataStructureComponent<?, ?, ?> measure: map.keySet())
+						builder = builder.add(getCompFor(measure, repo, structure), map.get(measure));
+				else if (map.size() == 1)
+				{
+					DataStructureComponent<Measure, ?, ?> srcComp = origStructure.getMeasures().iterator().next();
+					builder = builder.add(getCompFor(srcComp, repo, structure), map.values().iterator().next());
+				}
+				else
+					throw new IllegalStateException();
+				
+				return builder.build(LineageNode.of(this, lineages), structure);
+			});
 			
-			return builder.build(LineageNode.of(THIS.toString(), keyValues.getKey()), (DataSetMetadata) metadata);
-		});
+			if (having != null)
+			{
+				DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset));
+				result = result.filteredMappedJoin(structure, dsHaving, (dp, having) -> 
+						having.getValue(HAVING_COMP) == BooleanValue.TRUE, (dp, havingCond) -> dp);
+			}
+			
+			return result;
+		}
+		else
+		{
+			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) metadata).getDomain();
+						
+			return dataset.aggregate(metadata, emptySet(), combined, (map, x, y) -> domain.cast(map.values().iterator().next()));
+		}
 	}
-
+	
 	private DataStructureComponent<?, ?, ?> getCompFor(DataStructureComponent<?, ?, ?> src, MetadataRepository repo, DataSetMetadata metadata)
 	{
 		DataStructureComponent<?, ?, ?> dest;
@@ -223,6 +248,7 @@ public class AggregateTransformation extends UnaryTransformation
 				if (measures.isEmpty())
 					throw new VTLExpectedRoleException(Measure.class, dataset);
 
+				// Determine which measure will contain the aggregated value
 				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = measures;
 				if (aggregation == COUNT)
 					newMeasures = singleton(COUNT_MEASURE);
@@ -235,11 +261,8 @@ public class AggregateTransformation extends UnaryTransformation
 					else if (newMeasures.stream().map(DataStructureComponent::getVariable).map(Variable::getDomain).anyMatch(INTEGERDS::isAssignableFrom))
 						throw new UnsupportedOperationException("Only number measures are allowed for " + this);
 
-				if (operand != null)
-					return new DataStructureBuilder(newMeasures).build();
-				
-				if (measures.size() == 1)
-					return measures.iterator().next().getVariable();
+				if (newMeasures.size() == 1 && operand != null)
+					return newMeasures.iterator().next().getVariable();
 				else
 					return new DataStructureBuilder(newMeasures).build();
 			}
@@ -281,24 +304,30 @@ public class AggregateTransformation extends UnaryTransformation
 				
 				if (having != null)
 				{
-					DataSetMetadata beforeHaving = new DataStructureBuilder(dataset).removeComponents(groupComps).build();
-					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, beforeHaving));
+					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, dataset));
 					ValueDomainSubset<?, ?> domain = null;
 					if (havingMeta instanceof ScalarValueMetadata)
 						domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
 					else
 					{
 						DataSetMetadata havingStructure = (DataSetMetadata) havingMeta;
-						if (havingStructure.size() == 1)
+
+						Set<DataStructureComponent<Identifier, ?, ?>> havingIDs = havingStructure.getIDs(); 
+						Set<DataStructureComponent<Identifier, ?, ?>> resultIDs = structure.getIDs();
+						if (!resultIDs.equals(havingIDs))
+							throw new VTLIncompatibleStructuresException("having", resultIDs, havingIDs);
+						
+						Set<DataStructureComponent<Measure, ?, ?>> havingMeasures = havingStructure.getMeasures(); 
+						if (havingMeasures.size() == 1)
 						{
-							DataStructureComponent<?, ?, ?> singleton = havingStructure.iterator().next();
+							DataStructureComponent<?, ?, ?> singleton = havingMeasures.iterator().next();
 							if (singleton.is(Measure.class))
 								domain = singleton.getVariable().getDomain();
 						}
 					}
 					
-					if (!Domains.BOOLEANDS.isAssignableFrom(domain))
-						throw new VTLIncompatibleParametersException(targetName.toString(), BOOLEAN, havingMeta);
+					if (!BOOLEANDS.isAssignableFrom(domain))
+						throw new VTLIncompatibleParametersException("aggr with having", BOOLEAN, havingMeta);
 				}
 				
 				return structure;
@@ -314,6 +343,22 @@ public class AggregateTransformation extends UnaryTransformation
 	@Override
 	public String toString()
 	{
-		return aggregation + "(" + coalesce(operand, "") + (groupingClause != null ? " " + groupingClause.toString() : " ") + ")";
+		return aggregation + "( " + coalesce(operand, "") + (groupingClause != null ? " " + groupingClause : "") 
+				+ (having != null ? " " + having : "") + ")";
+	}
+
+	@Override
+	public boolean isTerminal()
+	{
+		return false;
+	}
+
+	@Override
+	public Set<LeafTransformation> getTerminals()
+	{
+		Set<LeafTransformation> set = new HashSet<>(operand.getTerminals());
+		if (having != null)
+			set.addAll(having.getTerminals());
+		return set;
 	}
 }

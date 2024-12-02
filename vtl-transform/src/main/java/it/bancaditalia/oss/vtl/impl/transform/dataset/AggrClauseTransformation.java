@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
@@ -30,6 +31,7 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_SAMP;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
@@ -48,13 +50,13 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
-import it.bancaditalia.oss.vtl.impl.transform.GroupingClause;
+import it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -66,6 +68,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -91,14 +94,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		{
 			this.role = role;
 			this.component = component;
-			this.operand = operand;
-		}
-
-		public AggrClauseItem(AggrClauseItem other, GroupingClause groupingClause, Transformation havingExpr)
-		{
-			this.role = other.role;
-			this.component = other.component;
-			this.operand = new AggregateTransformation(other.operand, groupingClause, havingExpr, role, component);
+			this.operand = new AggregateTransformation(operand, component, coalesce(role, Measure.class));
 		}
 
 		public VTLAlias getName()
@@ -124,14 +120,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	}
 
 	private final List<AggrClauseItem> aggrItems;
-	private final GroupingClause groupingClause;
+	private final GroupingClauseImpl groupingClause;
 	private final Transformation having;
 
-	public AggrClauseTransformation(List<AggrClauseItem> aggrItems, GroupingClause groupingClause, Transformation having)
+	public AggrClauseTransformation(List<AggrClauseItem> aggrItems, GroupingClauseImpl groupingClause, Transformation having)
 	{
-		this.aggrItems = aggrItems.stream()
-				.map(item -> new AggrClauseItem(item, groupingClause, having))
-				.collect(toList());
+		this.aggrItems = aggrItems;
 		this.groupingClause = groupingClause;
 		this.having = having;
 	}
@@ -172,7 +166,11 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 		MetadataRepository repo = scheme.getRepository();
 		if (having != null)
-			result = result.filter(dp -> (BooleanValue<?>) having.eval(new DatapointScope(repo, dp, metadata, null)) == BooleanValue.of(true), lineage -> LineageNode.of(having, lineage));
+		{
+			DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset));
+			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> condMeasure = dsHaving.getMetadata().getSingleton(Measure.class, BOOLEANDS);
+			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a);
+		}
 
 		return result.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), identity());
 	}
