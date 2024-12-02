@@ -54,7 +54,7 @@ public final class Utils
 {
 	public static final boolean SEQUENTIAL = "true".equalsIgnoreCase(System.getProperty("vtl.sequential"));
 	public static final boolean ORDERED = "true".equalsIgnoreCase(System.getProperty("vtl.ordered"));
-	public static final int ULPS = Integer.parseInt(System.getProperty("vtl.double.ulps.epsilon", "1000"));
+	public static final int EPSILON = Integer.parseInt(System.getProperty("vtl.double.epsilon.digits", "12"));
 	
 	private Utils() {}
 

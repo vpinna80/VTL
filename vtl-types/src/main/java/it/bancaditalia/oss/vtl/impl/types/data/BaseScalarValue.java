@@ -19,8 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
-import static it.bancaditalia.oss.vtl.util.Utils.ULPS;
-import static java.lang.Double.doubleToRawLongBits;
+import static it.bancaditalia.oss.vtl.util.Utils.EPSILON;
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
@@ -115,14 +116,10 @@ public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R e
 			return true;
 		else if (value.getClass() == Double.class && other.value.getClass() == Double.class)
 		{
-			long d1 = doubleToRawLongBits((Double) get());
-			long d2 = doubleToRawLongBits((Double) other.get());
-			
-			if (d1 == d2 || d1 == Long.MIN_VALUE && d2 == 0 || d1 == 0 && d2 == Long.MIN_VALUE)
-				return true;
-			
-			// equal sign and exponent and difference less than 100 ulp
-			return (d1 >>> 52) == (d2 >>> 52) && (d1 & 0x000FFFFFFFFFFFFFL) - (d2 & 0x000FFFFFFFFFFFFFL) < ULPS;
+			double d1 = (Double) get(), d2 = (Double) other.get();
+			double tol = (2 << (int) (3.33 * EPSILON)) * max(1.0, max(abs(d1), abs(d2)));
+
+			return abs(d1 - d2) < tol;
 		}
 		else if (domain.isAssignableFrom(other.getDomain()))
 			return equals(domain.cast(other).get());
