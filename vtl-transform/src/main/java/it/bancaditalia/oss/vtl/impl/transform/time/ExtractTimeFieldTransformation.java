@@ -22,15 +22,14 @@ package it.bancaditalia.oss.vtl.impl.transform.time;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 
-import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalField;
-
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.operators.TimeFieldOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
+import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -43,43 +42,14 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class ExtractTimeFieldTransformation extends UnaryTransformation
 {
-	public enum FieldOperator
-	{
-		YEAR("year", ChronoField.YEAR), 
-		MONTH("month", ChronoField.MONTH_OF_YEAR), 
-		DAY_YEAR("dayofyear", ChronoField.DAY_OF_YEAR), 
-		DAY_MONTH("dayofmonth", ChronoField.DAY_OF_MONTH);
+	private static final long serialVersionUID = 1L;
+	private final TimeFieldOperator field;
 
-		private final String name;
-		private final TemporalField field;
-
-		FieldOperator(String name, TemporalField field)
-		{
-			this.name = name;
-			this.field = field;
-		}
-		
-		@Override
-		public String toString()
-		{
-			return name;
-		}
-
-		public TemporalField getField()
-		{
-			return field;
-		}
-	}
-	
-	private final FieldOperator field;
-
-	public ExtractTimeFieldTransformation(FieldOperator field, Transformation operand)
+	public ExtractTimeFieldTransformation(TimeFieldOperator field, Transformation operand)
 	{
 		super(operand);
 		this.field = field;
 	}
-
-	private static final long serialVersionUID = 1L;
 
 	@Override
 	public VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
@@ -107,6 +77,6 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 				throw new VTLIncompatibleTypesException(field.toString(), TIMEDS, domain);
 		}
 		else
-			throw new VTLInvalidParameterException(input, ScalarValueMetadata.class);
+			return computeMetadata(new ThisScope(scheme.getRepository(), (DataSetMetadata) input));
 	}
 }
