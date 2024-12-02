@@ -30,6 +30,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.maxBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.minBy;
 import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
+import static java.lang.Math.sqrt;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 
@@ -43,7 +44,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerSupplier;
@@ -56,10 +56,10 @@ public enum AggregateOperator
 	MEDIAN(() -> collectingAndThen(filtering(not(NullValue.class::isInstance), new MedianCollector(getSVClass())), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MIN(() -> collectingAndThen(minBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MAX(() -> collectingAndThen(maxBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
-	VAR_POP(() -> collectingAndThen(SerCollectors.mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / (acu[0] + 1))), NumberValueImpl::createNumberValue)),
-	VAR_SAMP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / acu[0])), NumberValueImpl::createNumberValue)),
-	STDDEV_POP(() -> collectingAndThen(VAR_POP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),
-	STDDEV_SAMP(() -> collectingAndThen(VAR_SAMP.getReducer(), dv -> createNumberValue(Math.sqrt((Double) dv.get()))));
+	VAR_POP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / acu[0])), NumberValueImpl::createNumberValue)),
+	VAR_SAMP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acc -> acc[2] / (acc[0] - 1))), NumberValueImpl::createNumberValue)),
+	STDDEV_POP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> sqrt(acu[2] / acu[0]))), NumberValueImpl::createNumberValue)),
+	STDDEV_SAMP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acc -> sqrt(acc[2] / (acc[0] - 1)))), NumberValueImpl::createNumberValue));
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static final Class<ScalarValue<?, ?, ?, ?>> CLASS = (Class<ScalarValue<?, ?, ?, ?>>) (Class<? extends ScalarValue>) ScalarValue.class;
@@ -72,12 +72,13 @@ public enum AggregateOperator
 	// See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	private static SerCollector<Number, ?, Double> varianceCollector(SerFunction<double[], Double> finalizer)
 	{
-		return SerCollector.of(() -> new double[3], (acu, v) -> {
+		// [count, 
+		return SerCollector.of(() -> new double[3], (acc, v) -> {
 	        	double d = v.doubleValue();
-	        	double delta = d - acu[1];
-	            acu[0]++;
-	            acu[1] += delta / acu[0];
-	            acu[2] += delta * (d - acu[1]);
+	        	double delta = d - acc[1];
+	            acc[0]++;
+	            acc[1] += delta / acc[0];
+	            acc[2] += delta * (d - acc[1]);
 	        }, (acuA, acuB) -> { 
 		            double delta = acuB[1] - acuA[1];
 		            double count = acuA[0] + acuB[0];
