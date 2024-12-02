@@ -26,8 +26,6 @@ import static java.lang.Double.NaN;
 import static java.lang.Math.log;
 import static java.lang.Math.pow;
 import static java.math.MathContext.DECIMAL128;
-import static java.math.RoundingMode.DOWN;
-import static java.math.RoundingMode.HALF_UP;
 
 import java.math.BigDecimal;
 import java.util.function.DoubleBinaryOperator;
@@ -50,10 +48,7 @@ public enum ArithmeticOperator
 	DIV(" / ", (l, r) -> l / r, (l, r) -> l.divide(r, DECIMAL128), (l, r) -> l / r),
 	MOD("mod", (l, r) -> l % r, BigDecimal::remainder, (l, r) -> l % r),
 	POWER("power", Math::pow, (l, r) -> BigDecimal.valueOf(pow(l.doubleValue(), r.doubleValue())), (l, r) -> longPower(l, r)),
-	LOG("log", (l, r) -> log(l) / log(r), (l, r) -> BigDecimal.valueOf(log(l.doubleValue()) / log(r.doubleValue())), (l, r) -> (long) (log(l) / log(r))),
-	ROUND("round", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).doubleValue(), (l, r) -> l.setScale(r.intValue(), HALF_UP), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).intValue()),
-	TRUNC("trunc", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue()),
-	RANDOM("random", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r.intValue(), DOWN), (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).intValue());
+	LOG("log", (l, r) -> log(l) / log(r), (l, r) -> BigDecimal.valueOf(log(l.doubleValue()) / log(r.doubleValue())), (l, r) -> (long) (log(l) / log(r)));
 
 	private final String name;
 	private final LongBinaryOperator opLong;
