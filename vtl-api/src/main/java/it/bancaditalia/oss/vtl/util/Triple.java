@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-public class Triple<A extends Serializable, B extends Serializable, C extends Serializable> implements Serializable
+public class Triple<A, B, C> implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	

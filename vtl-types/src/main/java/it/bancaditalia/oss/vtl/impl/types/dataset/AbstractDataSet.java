@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
@@ -73,6 +74,8 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -81,7 +84,9 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerSupplier;
+import it.bancaditalia.oss.vtl.util.SerTriFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
+import it.bancaditalia.oss.vtl.util.Triple;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public abstract class AbstractDataSet implements DataSet
@@ -203,7 +208,30 @@ public abstract class AbstractDataSet implements DataSet
 		
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
-		return new MappedDataSet(metadata, this, lineageOperator, operator);
+		return new AbstractDataSet(metadata) {
+			
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return AbstractDataSet.this.stream().map(this::mapper);
+			}
+			
+			@Override
+			public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
+					SerCollector<DataPoint, A, TT> groupCollector, SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
+			{
+				return AbstractDataSet.this.streamByKeys(keys, filter, mapping(this::mapper, groupCollector), finisher);			
+			}
+			
+			private DataPoint mapper(DataPoint dp)
+			{
+				return new DataPointBuilder(dp.getValues(Identifier.class), DONT_SYNC)
+							.addAll(operator.apply(dp))
+							.build(lineageOperator.apply(dp), dataStructure);
+			}
+		};
 	}
 
 	@Override
@@ -269,36 +297,44 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> DataSet aggregate(DataSetMetadata structure, 
+	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerBiFunction<T, Entry<Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, DataPoint> finisher)
+			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
-		return new AbstractDataSet(structure) {
-			private static final long serialVersionUID = 1L;
-			private transient Set<Entry<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Entry<Lineage[], T>>> cache = null;
-			
-			@Override
-			protected Stream<DataPoint> streamDataPoints()
+		if (metadata instanceof DataSetMetadata)
+			return new AbstractDataSet((DataSetMetadata) metadata) {
+				private static final long serialVersionUID = 1L;
+				private transient Set<Triple<T, Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> cache = null;
+				
+				@Override
+				protected Stream<DataPoint> streamDataPoints()
+				{
+					createCache(keys, groupCollector);
+					
+					return Utils.getStream(cache).map(finisher::apply).map(DataPoint.class::cast);
+				}
+	
+				private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,
+						SerCollector<DataPoint, ?, T> groupCollector)
+				{
+					if (cache == null)
+						try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
+						{
+							SerCollector<DataPoint, ?, Entry<T, Lineage[]>> collWithLineage = teeing(groupCollector, mapping(DataPoint::getLineage, collectingAndThen(toSet(), s -> s.toArray(Lineage[]::new))), SimpleEntry::new);
+	
+							cache = stream.collect(collectingAndThen(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), collWithLineage), map -> {
+									return Utils.getStream(map)
+										.map(splitting((k, v) -> new Triple<>(v.getKey(), v.getValue(), k)))
+										.collect(toConcurrentSet());
+								}));
+						}
+				}
+			};
+		else
+			try (Stream<DataPoint> stream = stream())
 			{
-				createCache(keys, groupCollector);
-
-				return Utils.getStream(cache).map(splitting((k, v) -> finisher.apply(v.getValue(), new SimpleEntry<>(v.getKey(), k))));
+				return (ScalarValue<?, ?, ?, ?>) finisher.apply(stream.collect(groupCollector), null, null);
 			}
-
-			private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-					SerCollector<DataPoint, ?, T> groupCollector)
-			{
-				if (cache == null)
-					try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
-					{
-						SerCollector<DataPoint, ?, Entry<Lineage[], T>> collWithLineage = teeing(mapping(DataPoint::getLineage, collectingAndThen(toSet(), s -> s.toArray(Lineage[]::new))), groupCollector, SimpleEntry::new);
-
-						cache = stream
-								.collect(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), collWithLineage))
-								.entrySet();
-					}
-			}
-		};
 	}
 
 	@Override
