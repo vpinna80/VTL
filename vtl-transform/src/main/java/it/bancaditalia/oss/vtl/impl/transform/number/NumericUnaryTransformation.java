@@ -41,7 +41,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -98,9 +97,9 @@ public class NumericUnaryTransformation extends UnaryTransformation
 				return res instanceof Long ? IntegerValue.of(res.longValue()) : createNumberValue(res);
 			}
 			else if (isUseBigDecimal())
-				return NumberValueImpl.createNumberValue(bigdOp.apply(((BigDecimalValue<?>) number).get()));
+				return createNumberValue(bigdOp.apply(((BigDecimalValue<?>) number).get()));
 			else
-				return NumberValueImpl.createNumberValue(doubleOp.applyAsDouble(((DoubleValue<?>) number).get().doubleValue()));
+				return createNumberValue(doubleOp.applyAsDouble(((DoubleValue<?>) number).get().doubleValue()));
 		}
 		
 		public String capsize(Transformation operand)

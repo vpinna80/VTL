@@ -79,7 +79,6 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 	private final int inf;
 	private final int sup;
 	private final SerFunction<DataPoint, Lineage> lineageOp;
-	private final DataStructureComponent<?, ?, ?> srcComponent;
 	private final DataStructureComponent<?, ?, ?> destComponent;
 	private final SerFunction<DataPoint, T> extractor;
 	private final SerCollector<T, ?, TT> collector;
@@ -97,7 +96,6 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		
 		this.source = source;
 		this.lineageOp = lineageOp;
-		this.srcComponent = srcComponent;
 		this.destComponent = destComponent;
 		this.extractor = coalesce(extractor, dp -> (T) dp.get(srcComponent));
 		this.collector = collector;
