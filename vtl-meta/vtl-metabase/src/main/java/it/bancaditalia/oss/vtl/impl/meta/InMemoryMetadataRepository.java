@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
@@ -89,7 +89,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 	
 	@Override
-	public Optional<DataSetMetadata> getStructure(VTLAlias name)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias name)
 	{
 		return Optional.empty();
 	}
@@ -129,7 +129,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 
 	@Override
-	public String getDatasetSource(VTLAlias name)
+	public String getDataSource(VTLAlias name)
 	{
 		return name.getName();
 	}

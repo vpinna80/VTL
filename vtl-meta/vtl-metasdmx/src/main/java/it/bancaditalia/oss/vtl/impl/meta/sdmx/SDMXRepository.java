@@ -114,6 +114,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -373,7 +374,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public Optional<DataSetMetadata> getStructure(VTLAlias alias)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
 	{
 		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
 		if (matcher.matches() && dataflows.containsKey(VTLAliasImpl.of(matcher.group(1))))
@@ -396,7 +397,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			return Optional.of(structure);
 		}
 		else
-			return super.getStructure(alias);
+			return super.getMetadata(alias);
 	}
 	
 	private static VTLAlias sdmxRef2VtlName(StructureReferenceBean ref)

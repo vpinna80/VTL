@@ -25,6 +25,7 @@ import static java.util.EnumSet.allOf;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.matchers.Times.exactly;
 import static org.mockserver.model.HttpRequest.request;
@@ -54,6 +55,7 @@ import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -95,13 +97,14 @@ public class SdmxRepositoryTest
 	@Test
 	public void testGetStructure(MockServerClient client) throws IOException
 	{
-		DataSetMetadata actual = repo.getStructure(VTLAliasImpl.of(true, "ECB:EXR(1.0)")).orElseThrow(() -> new NullPointerException());
+		VTLValueMetadata actual = repo.getMetadata(VTLAliasImpl.of(true, "ECB:EXR(1.0)")).orElseThrow(() -> new NullPointerException());
 		DataSetMetadata expected = new DataStructureBuilder()
 				.addComponents(TIME_PERIOD)
 				.addComponents(allOf(TestComponents.class).stream().map(c -> c.get(repo)).collect(toList()))
 				.build();
 		
-		for (DataStructureComponent<?, ?, ?> c: actual)
+		assertInstanceOf(DataSetMetadata.class, actual);
+		for (DataStructureComponent<?, ?, ?> c: (DataSetMetadata) actual)
 			assertTrue(expected.contains(c), c + " not found in " + expected);
 		assertEquals(expected, actual);
 	}

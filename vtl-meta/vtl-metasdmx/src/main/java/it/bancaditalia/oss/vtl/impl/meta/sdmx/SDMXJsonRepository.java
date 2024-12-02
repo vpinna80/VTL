@@ -34,8 +34,8 @@ import org.xml.sax.SAXException;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 /**
@@ -63,9 +63,9 @@ public class SDMXJsonRepository extends SDMXRepository
 	}
 	
 	@Override
-	public Optional<DataSetMetadata> getStructure(VTLAlias alias)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
 	{
-		return super.getStructure(alias).or(() -> jsonRepo.getStructure(alias));
+		return super.getMetadata(alias).or(() -> jsonRepo.getMetadata(alias));
 	}
 	
 	@Override

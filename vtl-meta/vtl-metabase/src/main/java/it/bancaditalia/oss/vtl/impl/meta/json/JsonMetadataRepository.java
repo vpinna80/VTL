@@ -49,7 +49,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLDuplicatedObjectException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
@@ -61,8 +60,11 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
@@ -85,9 +87,8 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	}
 
 	private final Map<VTLAlias, Variable<?, ?>> variables = new HashMap<>(); 
-	private final Map<VTLAlias, DataSetMetadata> structures = new HashMap<>(); 
 	private final Map<VTLAlias, String> sources = new HashMap<>(); 
-	private final Map<VTLAlias, VTLAlias> datasets = new HashMap<>(); 
+	private final Map<VTLAlias, VTLValueMetadata> metadata = new HashMap<>(); 
 	
 	public JsonMetadataRepository() throws IOException
 	{
@@ -108,30 +109,38 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				json = parser.readValueAs(Map.class);
 			}
 			
-			dsDefs = iterate(json, "dataset", this::createDataset);
-			strDefs = iterate(json, "structure", this::createStructure);
-			varDefs = iterate(json, "variable", this::createVariable);
 			iterate(json, "domain", this::createDomain);
+			varDefs = iterate(json, "variable", JsonMetadataRepository::createVariable);
+			strDefs = iterate(json, "structure", JsonMetadataRepository::createStructure);
+			dsDefs = iterate(json, "dataset", JsonMetadataRepository::createMetadata);
 		}
 
 		varDefs.forEach((n, d) -> variables.put(n, VariableImpl.of(n, getDomain(d))));
+		Map<VTLAlias, DataSetMetadata> structures = new HashMap<>(); 
 		strDefs.forEach((n, l) -> structures.put(n, l.entrySet().stream().map(splitting((c, r) -> {
 			requireNonNull(variables.get(c), "Undefined variable " + c);
 			return variables.get(c).as(r); 
 		})).collect(toDataStructure())));
 		dsDefs.forEach((n, e) -> {
 			VTLAlias strName = e.getKey();
-			if (!structures.containsKey(strName))
-				throw new VTLUndefinedObjectException("Structure", strName);
-			datasets.put(n, strName);
 			sources.put(n, e.getValue());
+			if (!structures.containsKey(strName))
+				metadata.put(n, uncheckedGetDomain(strName));
+			else
+				metadata.put(n, structures.get(strName));
 		});
 	}
 	
-	@Override
-	public Optional<DataSetMetadata> getStructure(VTLAlias name)
+	@SuppressWarnings("unchecked")
+	private <S extends ValueDomainSubset<S, D>, D extends ValueDomain> ScalarValueMetadata<S, D> uncheckedGetDomain(VTLAlias domainName)
 	{
-		return Optional.ofNullable(datasets.get(name)).map(structures::get);
+		return () -> (S) super.getDomain(domainName);
+	}
+	
+	@Override
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias name)
+	{
+		return Optional.ofNullable(metadata.get(name));
 	}
 	
 	@Override
@@ -145,14 +154,14 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public String getDatasetSource(VTLAlias name)
+	public String getDataSource(VTLAlias name)
 	{
 		String source = sources.get(name);
 		
-		return source != null ? source : super.getDatasetSource(name);
+		return source != null ? source : super.getDataSource(name);
 	}
 	
-	private <T> Map<VTLAlias, T> iterate(Map<?, ?> json, String element, SerBiFunction<VTLAlias, Map<?, ?>, T> processor)
+	private static <T> Map<VTLAlias, T> iterate(Map<?, ?> json, String element, SerBiFunction<VTLAlias, Map<?, ?>, T> processor)
 	{
 		Map<VTLAlias, T> result = new HashMap<>();
 		List<?> list = (List<?>) json.get(element + "s");
@@ -180,27 +189,27 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return result;
 	}
 	
-	private Entry<VTLAlias, String> createDataset(VTLAlias name, Map<?, ?> dataset)
+	private static Entry<VTLAlias, String> createMetadata(VTLAlias name, Map<?, ?> dataset)
 	{
-		VTLAlias structureRef = VTLAliasImpl.of((String) dataset.get("structure"));
+		VTLAlias metadataRef = VTLAliasImpl.of((String) dataset.get("structure"));
 		String source = (String) dataset.get("source");
 		
-		LOGGER.debug("Found dataset {} with structure {}", name, structureRef);
-		return new SimpleEntry<>(structureRef, source);
+		LOGGER.debug("Found dataset {} with structure {}", name, metadataRef);
+		return new SimpleEntry<>(metadataRef, source);
 	}
 
-	private Map<VTLAlias, Class<? extends Component>> createStructure(VTLAlias name, Map<?, ?> jsonStructure)
+	private static Map<VTLAlias, Class<? extends Component>> createStructure(VTLAlias name, Map<?, ?> jsonStructure)
 	{
 		LOGGER.info("Found structure {}", name);
-		return iterate(jsonStructure, "component", this::createComponent);
+		return iterate(jsonStructure, "component", JsonMetadataRepository::createComponent);
 	}
 
-	private Class<? extends Component> createComponent(VTLAlias name, Map<?, ?> jsonStructure)
+	private static Class<? extends Component> createComponent(VTLAlias name, Map<?, ?> jsonStructure)
 	{
 		return ROLES.get(jsonStructure.get("role"));
 	}
 
-	private VTLAlias createVariable(VTLAlias name, Map<?, ?> variable)
+	private static VTLAlias createVariable(VTLAlias name, Map<?, ?> variable)
 	{
 		return VTLAliasImpl.of((String) variable.get("domain"));
 	}

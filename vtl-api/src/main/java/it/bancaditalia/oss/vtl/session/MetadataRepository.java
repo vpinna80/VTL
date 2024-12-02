@@ -23,8 +23,8 @@ import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
@@ -59,15 +59,15 @@ public interface MetadataRepository
 	 * @param name the name of the dataset
 	 * @return the source definition or null if it's not defined.
 	 */
-	public String getDatasetSource(VTLAlias name);
+	public String getDataSource(VTLAlias name);
 
 	/**
-	 * Returns a dataset structure with the specified name if it exists.
+	 * Returns a metadata for a given alias if it is defined in the repository.
 	 * 
-	 * @param name the name of the structure
-	 * @return the structure or null if none exists.
+	 * @param alias the alias of the data source to retrieve
+	 * @return an optional containing the metadata, or empty if none was defined.
 	 */
-	public Optional<DataSetMetadata> getStructure(VTLAlias name);
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias);
 
 	/**
 	 * Returns a data point ruleset with the specified name if it exists.

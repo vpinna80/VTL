@@ -147,7 +147,7 @@ public class VTLSessionImpl implements VTLSession
 	@Override
 	public VTLValueMetadata getMetadata(VTLAlias alias)
 	{
-		VTLValueMetadata definedStructure = cacheHelper(alias, metacache, n -> repository.getStructure(alias).orElse(null));
+		VTLValueMetadata definedStructure = cacheHelper(alias, metacache, n -> repository.getMetadata(alias).orElse(null));
 		if (definedStructure != null)
 			return definedStructure;
 		

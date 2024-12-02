@@ -27,7 +27,6 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -96,9 +95,9 @@ class AssignStatement extends AbstractStatement implements DMLStatement, Transfo
 		if (persistent)
 			try
 			{
-				Optional<DataSetMetadata> registeredStructure = scheme.getRepository().getStructure(getAlias());
-				if (registeredStructure.filter(not(structure::equals)).isPresent())
-					throw new VTLException("Dataset " + getAlias() + " having structure " + registeredStructure + " cannot be assigned an expression of type " + structure + "");
+				Optional<VTLValueMetadata> repoMeta = scheme.getRepository().getMetadata(getAlias());
+				if (repoMeta.filter(not(structure::equals)).isPresent())
+					throw new VTLException("Dataset " + getAlias() + repoMeta.get() + " cannot be assigned an expression of type " + structure);
 			}
 			catch (VTLException e)
 			{

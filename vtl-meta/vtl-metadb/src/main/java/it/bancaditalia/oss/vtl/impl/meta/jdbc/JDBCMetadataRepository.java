@@ -67,6 +67,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -111,7 +112,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 	}
 
 	@Override
-	public Optional<DataSetMetadata> getStructure(VTLAlias name)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias name)
 	{
 		LOGGER.debug("Reading structure for {}", name);
 		try (Connection conn = pool.get();

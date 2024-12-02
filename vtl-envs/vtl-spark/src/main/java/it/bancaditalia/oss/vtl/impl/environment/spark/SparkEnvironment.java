@@ -246,7 +246,7 @@ public class SparkEnvironment implements Environment
 		if (frames.containsKey(alias))
 			return Optional.of(frames.get(alias));
 		
-		String source = repo.getDatasetSource(alias);
+		String source = repo.getDataSource(alias);
 		if (!source.startsWith("spark:") || source.substring(6).indexOf(':') == -1)
 			return Optional.empty();
 		Path sourcePath = Paths.get(source.substring(6).split(":", 2)[1]);
@@ -269,7 +269,7 @@ public class SparkEnvironment implements Environment
 		if ("csv".equals(type))
 			formatted = formatted.option("header", "true");
 		
-		Optional<DataSetMetadata> maybeStructure = repo.getStructure(alias);
+		Optional<DataSetMetadata> maybeStructure = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
 		if (maybeStructure.isPresent())
 		{
 			DataSetMetadata structure = maybeStructure.get();
@@ -381,7 +381,7 @@ public class SparkEnvironment implements Environment
 					.map(structure::getComponent)
 					.map(Optional::get)
 					.sorted(DataStructureComponent::byNameAndRole)
-					.map(c -> udf(repr -> mapValue(c, repr.toString(), masks.get(c)).get(), types.get(c))
+					.map(c -> udf(repr -> mapValue(c.getVariable().getDomain(), repr.toString(), masks.get(c)).get(), types.get(c))
 							.apply(sourceDataFrame.col(newToOldNames.get(c.getVariable().getAlias())))
 							.as(c.getVariable().getAlias().getName(), getMetadataFor(c)))
 					.collect(toList())
