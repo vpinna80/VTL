@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -79,6 +80,6 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 	@Override
 	public String toString()
 	{
-		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";	
+		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? is(ViralAttribute.class) ? "@@" : "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";	
 	}
 }

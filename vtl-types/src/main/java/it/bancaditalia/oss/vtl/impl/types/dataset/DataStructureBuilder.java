@@ -207,18 +207,16 @@ public class DataStructureBuilder
 			if (component == null)
 				throw new VTLMissingComponentsException(alias, byName.values());
 
+			DataStructureBuilder commonComponents = new DataStructureBuilder()
+					.addComponents(getIDs())
+					.addComponents(getComponents(ViralAttribute.class));
+			
 			if (component.is(Measure.class))
-				return new DataStructureBuilder()
-						.addComponent(component)
-						.addComponents(getIDs())
-						.addComponents(getComponents(ViralAttribute.class))
-						.build();
+				commonComponents = commonComponents.addComponent(component);
 			else
-				return new DataStructureBuilder()
-						.addComponent(component.getVariable().getDomain().getDefaultVariable().as(Measure.class))
-						.addComponents(getIDs())
-						.addComponents(getComponents(ViralAttribute.class))
-						.build();
+				commonComponents = commonComponents.addComponent(component.getVariable().getDomain().getDefaultVariable().as(Measure.class));
+			
+			return commonComponents.build();
 		}
 
 		@Override
