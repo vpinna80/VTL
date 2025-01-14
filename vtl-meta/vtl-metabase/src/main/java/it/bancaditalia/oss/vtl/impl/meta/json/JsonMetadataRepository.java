@@ -22,6 +22,8 @@ package it.bancaditalia.oss.vtl.impl.meta.json;
 import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.types.domain.tcds.TransformationCriterionDomainSubset.TEST_ALIAS;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
@@ -48,11 +50,16 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
+import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLDuplicatedObjectException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.domain.tcds.StringTransformationDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.tcds.TransformationCriterionScope;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -64,8 +71,10 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
@@ -92,15 +101,15 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	public JsonMetadataRepository() throws IOException
 	{
-		this(new URL(JSON_METADATA_URL.getValue()));
+		this(new URL(JSON_METADATA_URL.getValue()), ConfigurationManagerFactory.newManager().getEngine());
 	}
 	
-	public JsonMetadataRepository(URL jsonURL) throws IOException
+	public JsonMetadataRepository(URL jsonURL, Engine engine) throws IOException
 	{
 		Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
 		Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
 		Map<VTLAlias, VTLAlias> varDefs;
-
+		
 		try (InputStream source = jsonURL.openStream())
 		{
 			Map<?, ?> json;
@@ -109,7 +118,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				json = parser.readValueAs(Map.class);
 			}
 			
-			iterate(json, "domain", this::createDomain);
+			iterate(json, "domain", (a, d) -> createDomain(a, d, requireNonNull(engine)));
 			varDefs = iterate(json, "variable", JsonMetadataRepository::createVariable);
 			strDefs = iterate(json, "structure", JsonMetadataRepository::createStructure);
 			dsDefs = iterate(json, "dataset", JsonMetadataRepository::createMetadata);
@@ -214,7 +223,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return VTLAliasImpl.of((String) variable.get("domain"));
 	}
 	
-	private ValueDomainSubset<?, ?> createDomain(VTLAlias name, Map<?, ?> domainDef)
+	private ValueDomainSubset<?, ?> createDomain(VTLAlias name, Map<?, ?> domainDef, Engine engine)
 	{
 		Object parent = ((Map<?, ?>) domainDef).get("parent");
 		if (parent == null || !(parent instanceof String))
@@ -222,6 +231,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 
 		LOGGER.debug("Found domain {}", name);
 		Object enumerated = domainDef.get("enumerated");
+		Object described = domainDef.get("described");
 		if (enumerated instanceof List)
 			if ("string".equals(parent))
 			{
@@ -235,6 +245,43 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
 		else if (enumerated != null)
 			throw new InvalidParameterException("Invalid enumerated domain definition for " + name + ".");
+		else if (described instanceof String)
+		{
+			if ("string".equals(parent))
+			{
+				String code = (String) described;
+				
+				List<Statement> statements;
+				try
+				{
+					statements = engine.parseRules(TEST_ALIAS + " := " + code + ";").collect(toList());
+				}
+				catch (RuntimeException e)
+				{
+					throw new VTLNestedException("Syntax error defining domain " + name, e);
+				}
+				
+				if (statements.size() != 1)
+					throw new InvalidParameterException("Invalid domain definition expression: " + code);
+				
+				Statement statement = statements.get(0);
+				if (!(statement instanceof Transformation))
+					throw new InvalidParameterException("Invalid domain definition expression: " + code);
+				
+				VTLValueMetadata meta = ((Transformation) statement).getMetadata(new TransformationCriterionScope<>(STRINGDS));
+				if (!(meta instanceof ScalarValueMetadata))
+					throw new InvalidParameterException("Invalid domain definition expression: " + code);
+				
+				if (!(((ScalarValueMetadata<?, ?>) meta).getDomain() instanceof BooleanDomainSubset))
+					throw new InvalidParameterException("Invalid domain definition expression: " + code);
+				
+				ValueDomainSubset<?, ?> domain = new StringTransformationDomainSubset<>(name, STRINGDS, (Transformation) statement);
+				defineDomain(name, domain);
+				return domain;
+			}
+			else
+				LOGGER.warn("Ignoring unsupported domain {}[{}].", name, parent);
+		}
 		else
 			LOGGER.warn("Ignoring unsupported domain type {}[{}].", name, parent);
 		
