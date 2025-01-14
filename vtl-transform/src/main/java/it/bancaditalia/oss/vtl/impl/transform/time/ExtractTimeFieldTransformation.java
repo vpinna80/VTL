@@ -28,8 +28,10 @@ import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.operators.TimeFieldOperator;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -71,6 +73,15 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 		if (input instanceof ScalarValueMetadata)
 		{
 			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) input).getDomain();
+			if (domain instanceof TimeDomainSubset)
+				return INTEGER;
+			else
+				throw new VTLIncompatibleTypesException(field.toString(), TIMEDS, domain);
+		}
+		else if (scheme instanceof ThisScope)
+		{
+			DataStructureComponent<Measure, ?, ?> measure = ((DataSetMetadata) input).getMeasures().iterator().next();
+			ValueDomainSubset<?, ?> domain = measure.getVariable().getDomain();
 			if (domain instanceof TimeDomainSubset)
 				return INTEGER;
 			else

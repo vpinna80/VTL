@@ -24,7 +24,6 @@ import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 
 import java.io.Serializable;
 import java.util.EnumSet;
-import java.util.Set;
 import java.util.stream.Collector;
 
 public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
@@ -44,7 +43,7 @@ public class SerCollector<T, A, R> implements Collector<T, A, R>, Serializable
 	}
 
 	public static <T, A> SerCollector<T, A, A> of(SerSupplier<A> supplier, SerBiConsumer<A, T> accumulator, 
-			SerBinaryOperator<A> combiner, Set<Characteristics> characteristics)
+			SerBinaryOperator<A> combiner, EnumSet<Characteristics> characteristics)
 	{
 		EnumSet<Characteristics> newCharacteristics = EnumSet.of(IDENTITY_FINISH);
 		newCharacteristics.addAll(characteristics);
