@@ -28,7 +28,8 @@ import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V, S, D>, V extends ScalarValue<?, ?, S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DescribedDomainSubset<C, V, S, D>
+public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V, S, D>, V extends ScalarValue<?, ?, ? extends S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
+		implements DescribedDomainSubset<C, V, S, D>
 {
 	private static final long serialVersionUID = 1L;
 
