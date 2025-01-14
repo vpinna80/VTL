@@ -17,7 +17,9 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-DS_r := check_datapoint ( DS_1, dpr1 all );define datapoint ruleset dpr1 ( variable Id_3, Me_1 ) is
+define datapoint ruleset dpr1 ( variable Id_3, Me_1 ) is
     when Id_3 = "CREDIT" then Me_1 >= 0 errorcode "Bad credit"
     ; when Id_3 = "DEBIT" then Me_1 >= 0 errorcode "Bad debit"
 end datapoint ruleset;
+
+DS_r := check_datapoint ( DS_1, dpr1 all );

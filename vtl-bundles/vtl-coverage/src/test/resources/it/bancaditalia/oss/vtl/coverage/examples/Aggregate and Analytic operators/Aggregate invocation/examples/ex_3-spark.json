@@ -7,8 +7,8 @@
     },
     {
       "name": "ex_3",
-      "structure": "DS_r",
-      "source": "spark:csv:ex_3.csv"
+      "structure": "number",
+      "source": "csv:ex_3.csv"
     }
   ],
   "structures": [
@@ -33,7 +33,7 @@
         },
         {
           "name": "At_1",
-          "role": "Viral Attribute"
+          "role": "Attribute"
         }
       ]
     },

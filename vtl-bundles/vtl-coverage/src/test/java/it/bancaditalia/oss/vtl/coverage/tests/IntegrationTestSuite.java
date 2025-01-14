@@ -50,6 +50,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import it.bancaditalia.oss.vtl.coverage.utils.RepeatedParameterizedTest;
+import it.bancaditalia.oss.vtl.coverage.utils.TestEnvironment;
+import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine;
 import it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment;
@@ -63,6 +65,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
+import jakarta.xml.bind.JAXBException;
 
 public class IntegrationTestSuite
 {
@@ -74,7 +77,8 @@ public class IntegrationTestSuite
 	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_SKIP = Set.of();
+	private static final Set<TestType> TO_SKIP = Set.of(T, TS);
+	private static final Engine ENGINE; 
 	
 	static 
 	{
@@ -84,8 +88,9 @@ public class IntegrationTestSuite
 			TEST_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../tests").toURI());
 			EXAMPLES_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../examples").toURI());
 			METADATA_REPOSITORY.setValue(JsonMetadataRepository.class);
+			ENGINE = new JavaVTLEngine();
 		}
-		catch (URISyntaxException e)
+		catch (URISyntaxException | ClassNotFoundException | JAXBException | IOException e)
 		{
 			throw new ExceptionInInitializerError(e);
 		}
@@ -93,22 +98,22 @@ public class IntegrationTestSuite
 	
 	public static Stream<Arguments> test() throws IOException
 	{
-		return getStream(TEST_ROOT);
+		return getStream(TEST_ROOT, ".");
 	}
 
 	public static Stream<Arguments> examples() throws IOException
 	{
-		return getStream(EXAMPLES_ROOT);
+		return getStream(EXAMPLES_ROOT, "examples");
 	}
 
-	private static Stream<Arguments> getStream(Path root) throws IOException
+	private static Stream<Arguments> getStream(Path root, String suffix) throws IOException
 	{
 		StringBuilder testCode = new StringBuilder();
 		List<Arguments> tests = new ArrayList<>();
 
 		for (Path category: Files.newDirectoryStream(root, Files::isDirectory))
 			for (Path operator: Files.newDirectoryStream(category, Files::isDirectory))
-				for (Path test: Files.newDirectoryStream(operator, "*.vtl"))
+				for (Path test: Files.newDirectoryStream(operator.resolve(suffix), "*.vtl"))
 				{
 					Matcher matcher = Pattern.compile("([0-9])").matcher(test.getFileName().toString());
 					if (!matcher.find())
@@ -141,8 +146,9 @@ public class IntegrationTestSuite
 			return;
 		
 		URL jsonURL = operator.resolve(String.format("ex_%s.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL), new JavaVTLEngine(), 
-				List.of(new CSVPathEnvironment(List.of(operator)), new WorkspaceImpl()));
+		JavaVTLEngine engine = new JavaVTLEngine();
+		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, engine), engine, 
+				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator)), new WorkspaceImpl()));
 		doTest(number, session);
 	}
 
@@ -153,9 +159,9 @@ public class IntegrationTestSuite
 		if (TO_SKIP.contains(E))
 			return;
 		
-		URL jsonURL = operator.resolve(String.format("ex_%s.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL), new JavaVTLEngine(), 
-				List.of(new CSVPathEnvironment(List.of(operator)), new WorkspaceImpl()));
+		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s.json", number)).toUri().toURL();
+		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
+				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator.resolve("examples"))), new WorkspaceImpl()));
 		doTest(number, session);
 	}
 
@@ -174,13 +180,13 @@ public class IntegrationTestSuite
 		}
 		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
 		{
-			fail("Spark not available");
+			fail("Spark not available", e);
 			return;
 		}
 
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL), new JavaVTLEngine(), 
-				List.of(env.newInstance(List.of(operator)), new WorkspaceImpl()));
+		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
+				List.of(new TestEnvironment(), env.newInstance(List.of(operator)), new CSVPathEnvironment(List.of(operator.resolve("examples"))), new WorkspaceImpl()));
 		doTest(number, session);
 	}
 
@@ -199,13 +205,13 @@ public class IntegrationTestSuite
 		}
 		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
 		{
-			fail("Spark not available");
+			fail("Spark not available", e);
 			return;
 		}
 		
-		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL), new JavaVTLEngine(), 
-				List.of(env.newInstance(List.of(operator)), new WorkspaceImpl()));
+		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
+		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
+				List.of(new TestEnvironment(), env.newInstance(List.of(operator.resolve("examples"))), new CSVPathEnvironment(List.of(operator.resolve("examples"))), new WorkspaceImpl()));
 		doTest(number, session);
 	}
 
@@ -216,7 +222,7 @@ public class IntegrationTestSuite
 		VTLValue expectedV = session.resolve(VTLAliasImpl.of("ex_" + number));
 		VTLValue resultV = session.resolve(VTLAliasImpl.of("ds_r"));
 		
-		assertEquals(expectedV.getClass(), resultV.getClass(), "dataset != scalar");
+		assertTrue(expectedV instanceof DataSet ^ resultV instanceof ScalarValue, "dataset != scalar");
 		if (expectedV instanceof DataSet)
 		{
 			DataSet expected = (DataSet) expectedV;

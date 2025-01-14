@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2020 Banca D'Italia
  *
  * Licensed under the EUPL, Version 1.2 (the "License");
@@ -17,9 +17,27 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-define datapoint ruleset dpr1 ( variable Id_3, Me_1 ) is
-    when Id_3 = "CREDIT" then Me_1 >= 0 errorcode "Bad credit"
-    ; when Id_3 = "DEBIT" then Me_1 >= 0 errorcode "Bad debit"
-end datapoint ruleset;
+package it.bancaditalia.oss.vtl.coverage.utils;
 
-DS_r := check_datapoint ( DS_1, dpr1 );
+import java.util.Optional;
+
+import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
+
+public class TestEnvironment implements Environment
+{
+	@Override
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
+	{
+		return Optional.empty();
+	}
+	
+	@Override
+	public boolean store(VTLValue value, VTLAlias alias)
+	{
+		// Simulates persistent assignment without actually writing anything
+		return true;
+	}
+}

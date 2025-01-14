@@ -64,5 +64,12 @@
       "name": "bool_var",
       "domain": "boolean"
     }
+  ],
+  "domains": [
+    {
+      "name": "myGeoValueDomain",
+      "parent": "string",
+      "enumerated": [ "AF", "BS", "FJ", "GA", "KH", "MO", "PK", "QA", "UG" ]
+    }
   ]
 }
