@@ -14,9 +14,7 @@ written in Java, Javascript and R.
 ## Usage and documentation
 
 Usage info, documentation and examples are available at the
-[project site](http://vpinna80.github.io/VTL/).
-
-Now you can try the VTLStudio live on ShinyApps: [VTLStudio](https://vpinna80.shinyapps.io/vtlStudio/).
+[project wiki](https://github.com/vpinna80/VTL/wiki).
 
 ## Contributing to the project
 
@@ -41,35 +39,11 @@ To build this project, you will need:
 
 To build the project, launch the command:
 
-    mvn [-P with-r,with-sdmx,with-spark,with-jupyter,with-cli,with-rest] clean package
+    mvn [-P with-r,with-sdmx,with-spark,with-jupyter,with-cli] clean package
 
 Each artifact will be generated inside the `target` folder of each module.
 The optional maven profiles allow you to build any of the provided VTL bundles for
 the different front-ends capable of communicating with the VTL engine.
-
-### Spark support
-
-If you want to build with support for the Spark evironment, activate the 
-`with-spark` maven profile. Each bundle listed below created while this profile is
-active will contain the Spark environment (Note that the Spark libraries are not
-included in the bundle and must be made available at runtime in your CLASSPATH).
-
-### SDMX REST support
-
-If you want to build with support for SDMX web services, activate the
-`with-sdmx` maven profile. Each bundle created with this build will contain the support
-for interacting with a SDMX registry. Note that this requires that the 
-[sdmx-core](https://github.com/bis-med-it/sdmx-core) maven artifacts are already installed 
-in the local repository, because the artifacts are distributed only in source form 
-by the Bank of International Settlements.
-
-### Jupyter notebook kernel
-
-If you want to build the Jupyter notebook kernel along with the engine, also activate the 
-`with-jupyter` maven profile. The java-native jupyter kernel will be packaged as an
-executable jar that can be installed into your jupyter with the command
-`java -jar vtl-jupyter-x.x.x-complete.jar`. Please make sure that your Python environment
-is able to launch java, and that java version requirement is satisfied.
 
 ### RVTL and VTL Studio
 
@@ -92,6 +66,28 @@ to your environment settings, or directly replace them in the command above.
 The R package, ready for installation in R (with install.packages), 
 will be located there. Moreover, each bundle created while this profile is
 active will contain support for the R environment.
+
+### SDMX Support
+
+VTL E&E is fully integrated with sdmx.io Metadata Registry. In order to enable support in 
+built bundles for SDMX interactions, such as using DSD and datasets, activate the `with-sdmx`
+maven profile. To build you also need to have previously built and installed the metadata 
+registry maven artifacts, available from sdmx.io web site. 
+
+### Spark support
+
+If you want to build with support for the Spark evironment, activate the 
+`with-spark` maven profile. Each bundle listed below created while this profile is
+active will contain the Spark environment (Note that the Spark libraries are not
+included in the bundle and must be made available at runtime in your CLASSPATH).
+
+### Jupyter notebook kernel
+
+If you want to build the Jupyter notebook kernel along with the engine, also activate the 
+`with-jupyter` maven profile. The java-native jupyter kernel will be packaged as an
+executable jar that can be installed into your jupyter with the command
+`java -jar vtl-jupyter-x.x.x-complete.jar`. Please make sure that your Python environment
+is able to launch java, and that java version requirement is satisfied.
 
 ### Command-line interface for VTL Engine
 
@@ -124,7 +120,7 @@ The following table shows the current implementation status:
 | inner_join                  |           | &#10004;  |           |
 | left_join                   |           | &#10004;  |           |
 | full_join                   |           | &#10008;  |           |
-| cross_join                  |           | &#10008;  |           |
+| cross_join                  |           | &#10004;  |           |
 | concat (&#124;&#124;)       | &#10004;  | &#10004;  | &#10004;  |
 | l-r-trim                    | &#10004;  | &#10004;  | &#10004;  |
 | upper,lower                 | &#10004;  | &#10004;  | &#10004;  |
