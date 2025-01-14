@@ -27,6 +27,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransf
 import static it.bancaditalia.oss.vtl.impl.types.data.DoubleValue.ZERO;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
@@ -49,11 +50,11 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -66,7 +67,9 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -186,36 +189,55 @@ public class HierarchyTransformation extends TransformationImpl
 		// then, if all the right slots for the rule have been filled in, generate a result datapoint 
 		if (vals.keySet().containsAll(rule.getRightCodeItems()))
 		{
-			double acc = 0;
+			boolean isInt = measure.getVariable().getDomain() instanceof IntegerDomainSubset;
+			
+			double accd = 0;
+			long accl = 0;
+			boolean nullEncountered = false;
 			
 			for (CodeItem<?, ?, ?, ?> rightCode: rule.getRightCodeItems())
 			{
 				ScalarValue<?, ?, ?, ?> dpValue = requireNonNull(vals.get(rightCode));
 				if (!(dpValue instanceof NullValue))
-					acc += (rule.isPlusSign(rightCode) ? 1 : -1) * ((Number) dpValue.get()).doubleValue();
+					if (isInt)
+						accl += (rule.isPlusSign(rightCode) ? 1 : -1) * ((Number) dpValue.get()).longValue();
+					else
+						accd += (rule.isPlusSign(rightCode) ? 1 : -1) * ((Number) dpValue.get()).doubleValue();
 				else
-					acc = NaN;
+					if (isInt)
+						nullEncountered = true;
+					else
+						accd = NaN;
 			}
 
 			boolean isValidOutput = false;
-			ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> result = null;
+			ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain> result = null;
 			if (mode == NON_NULL)
 			{
-				isValidOutput = Double.isNaN(acc);
-				result = isValidOutput ? createNumberValue(acc) : NullValue.instance(NUMBERDS);
+				isValidOutput = (!isInt && !Double.isNaN(accd)) || (isInt && !nullEncountered);
+				if (isInt)
+					result = isValidOutput ? IntegerValue.of(accl) : NullValue.instance(INTEGERDS);
+				else
+					result = isValidOutput ? createNumberValue(accd) : NullValue.instance(NUMBERDS);
 			}
 			else if (mode == NON_ZERO)
 			{
-				result = !Double.isNaN(acc) ? createNumberValue(acc) : NullValue.instance(NUMBERDS);
-				isValidOutput = !Double.isNaN(acc) && acc != 0.0;
+				if (isInt)
+					result = !nullEncountered ? IntegerValue.of(accl) : NullValue.instance(INTEGERDS);
+				else
+					result = !Double.isNaN(accd) ? createNumberValue(accd) : NullValue.instance(NUMBERDS);
+				isValidOutput = (!isInt && !Double.isNaN(accd) && accd != 0.0) || (isInt && accl != 0);
 			}
 			
-			DataPoint resultDataPoint = new DataPointBuilder(key, DONT_SYNC)
-					.add(idComp, rule.getLeftCodeItem())
-					.add(measure, result)
-					.build(LineageNode.of("hierarchy"), newStructure);
 			if (isValidOutput)
+			{
+				DataPoint resultDataPoint = new DataPointBuilder(key, DONT_SYNC)
+						.add(idComp, rule.getLeftCodeItem())
+						.add(measure, result)
+						.build(LineageNode.of("hierarchy"), newStructure);
+				
 				results.add(resultDataPoint);
+			}
 
 			// recursively invoke processRule in order to reach the subtree leaves of the ruleset
 			CodeItem<?, ?, ?, ?> leftCode = rule.getLeftCodeItem();

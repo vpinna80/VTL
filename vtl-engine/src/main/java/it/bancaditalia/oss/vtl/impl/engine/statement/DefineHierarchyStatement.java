@@ -105,6 +105,6 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 			else
 				throw new UnsupportedOperationException("define hierarchical ruleset on codelist of " + cl.getParentDomain() + " not implemented.");
 		else
-			throw new VTLException(ruleID + " was expected to be a codelist but it is " + cl + " instead.");
+			throw new VTLException(ruleID + " was expected to be a codelist but it is " + cl.getClass().getSimpleName() + " instead.");
 	}
 }

@@ -19,12 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.engine;
 
-import java.util.Set;
-
-import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 /**
  * Interface that represents a single VTL rule.
@@ -32,26 +27,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
  * @author Valentino Pinna
  *
  */
-public interface DMLStatement extends Statement
+public interface DMLStatement extends Statement, Transformation
 {
-	/**
-	 * Computes the metadata of the rule in the context of a Transformation Scheme. 
-	 * 
-	 * @param scheme The transformation scheme
-	 * @return The metadata for this Statement
-	 */
-	public VTLValueMetadata getMetadata(TransformationScheme scheme);
-
-	/**
-	 * Computes this statement in the context of the provided scheme and returns the result.
-	 * 
-	 * @param scheme the context scheme
-	 * @return the result of the computation.
-	 */
-	public VTLValue eval(TransformationScheme scheme);
-
-	/**
-	 * @return a list of primitive nodes, such as aliases or constants, on which this statement depends on
-	 */
-	public Set<LeafTransformation> getTerminals();
+	
 }

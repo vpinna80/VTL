@@ -34,7 +34,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
-class AssignStatement extends AbstractStatement implements DMLStatement, Transformation
+class AssignStatement extends AbstractStatement implements DMLStatement
 {
 	//private final static Logger LOGGER = LoggerFactory.getLogger(AssignStatement.class);
 	private static final long serialVersionUID = 1L;
