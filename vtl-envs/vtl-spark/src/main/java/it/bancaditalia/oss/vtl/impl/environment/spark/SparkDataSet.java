@@ -68,7 +68,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -90,10 +89,12 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.api.java.UDF2;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.catalyst.expressions.Literal;
 import org.apache.spark.sql.execution.ExplainMode;
+import org.apache.spark.sql.expressions.UserDefinedFunction;
 import org.apache.spark.sql.expressions.Window;
 import org.apache.spark.sql.expressions.Window$;
 import org.apache.spark.sql.expressions.WindowSpec;
@@ -113,12 +114,14 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -138,8 +141,9 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SparkDataSet extends AbstractDataSet
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(SparkDataSet.class);
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SparkDataSet.class);
+	private static final Lineage IGNORED_LINEAGE = LineageNode.of("ignored");
 
 	private final SparkSession session;
 	private final DataPointEncoder encoder;
@@ -217,13 +221,12 @@ public class SparkDataSet extends AbstractDataSet
 		DataSetMetadata membershipStructure = getMetadata().membership(alias);
 		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, getMetadata(), membershipStructure);
 		
-		Dataset<Row> newDF = dataFrame;
-		Optional<DataStructureComponent<?, ?, ?>> idMembership = getMetadata().getComponent(alias).filter(d -> d.is(Identifier.class));
-		if (idMembership.isPresent())
-		{
-			VTLAlias defaultName = idMembership.get().getVariable().getDomain().getDefaultVariable().getAlias();
-			newDF = dataFrame.withColumn(defaultName.getName(), dataFrame.col(alias.getName()));
-		}
+		Dataset<Row> newDF = getMetadata().getComponent(alias)
+				.filter (comp -> !comp.is(Measure.class))
+				.map(comp -> {
+					VTLAlias defaultName = comp.getVariable().getDomain().getDefaultVariable().getAlias();
+					return dataFrame.withColumn(defaultName.getName(), dataFrame.col(alias.getName()));
+				}).orElse(dataFrame);
 		
 		Column[] columns = getColumnsFromComponents(membershipStructure).toArray(new Column[membershipStructure.size()]);
 
@@ -433,7 +436,7 @@ public class SparkDataSet extends AbstractDataSet
 	@Override
 	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
 			DataStructureComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor, 
-			SerCollector<T, ?, TT> collector2, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
+			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		// Convert a VTL window clause to a Spark Window Specification
 		WindowSpec windowSpec = Window$.MODULE$.spec();
@@ -464,56 +467,54 @@ public class SparkDataSet extends AbstractDataSet
 		if (supBound.getDirection() == PRECEDING)
 			sup = sup == Long.MAX_VALUE ? Long.MIN_VALUE : -sup;
 			
-		WindowSpec finalWindowSpec = clause.getWindowCriterion().getType() == RANGE 
+		windowSpec = clause.getWindowCriterion().getType() == RANGE 
 				? windowSpec.rangeBetween(inf, sup)
 				: windowSpec.rowsBetween(inf, sup);
 
-		SerCollector<Row, ?, TT> collector;
+		SerCollector<Row, ?, TT> sparkCollector;
 		if (extractor == null)
-			collector = (SerCollector<Row, ?, TT>) collector2;
+			sparkCollector = (SerCollector<Row, ?, TT>) collector;
 		else
-			collector = mapping(extractor.compose(encoder::decode), collector2);
+			sparkCollector = mapping(extractor.compose(encoder::decode), collector);
 
-		Serializable accum = (Serializable) collector.supplier().get();
-		@SuppressWarnings("unchecked")
-		Serializable tag = ((SerFunction<Object, Serializable>) collector.finisher()).apply(accum);
-		
 		DataSetMetadata structure = getMetadata();
+		Serializable accum = (Serializable) sparkCollector.supplier().get();
 		ValueDomainSubset<?, ?> domain = sourceComp.getVariable().getDomain();
-		Encoder<?> accEncoder = SparkUtils.getEncoderFor(accum, domain, structure);
+		Encoder<?> accEncoder = ExpressionEncoder.apply(getEncoderFor(accum, domain, structure));
+
 		@SuppressWarnings("unchecked")
-		Encoder<TT> ttEncoder = (Encoder<TT>) getEncoderFor(tag, domain, structure);
+		Serializable tag = ((SerFunction<Object, Serializable>) sparkCollector.finisher()).apply(accum);
+		Encoder<TT> ttEncoder = ExpressionEncoder.apply(getEncoderFor(tag, domain, structure));
 		
 		Column[] columns = new Column[getMetadata().size() + 1];
 		int l = 0;
 		for (String col: dataFrame.columns())
 			columns[l++] = dataFrame.col(col);
 		
-		Column udaf, input;
+		Column input;
+		UserDefinedFunction udaf;
 		UDF2<Serializable, ? extends Serializable, Serializable> udf = rowToScalarUDF(sourceComp, extractor, finisher);
 		if (extractor == null) // then T is ScalarValue<?, ?, ?, ?>
 		{
-			Encoder<T> inputEncoder = getEncoderFor(NullValue.instance(NULLDS), domain, structure);
-			udaf = udaf(new VTLSparkAggregator<>(collector2, accEncoder, ttEncoder), inputEncoder)
-					.apply(dataFrame.col(sourceComp.getVariable().getAlias().getName()))
-					.over(finalWindowSpec);
+			Encoder<T> inputEncoder = ExpressionEncoder.apply(getEncoderFor(NullValue.instance(NULLDS), domain, structure));
 			input = dataFrame.col(sourceComp.getVariable().getAlias().getName());
+			udaf = udaf(new VTLSparkAggregator<>(collector, accEncoder, ttEncoder), inputEncoder);
 		}
 		else
 		{
-			udaf = udaf(new VTLSparkAggregator<>(collector, accEncoder, ttEncoder), encoder.rowEncoder)
-					.apply(columns)
-					.over(finalWindowSpec);
 			input = struct(columns);
+			udaf = udaf(new VTLSparkAggregator<>(sparkCollector, accEncoder, ttEncoder), encoder.rowEncoder);
 		}
+		
+		Column udfCol = udaf.apply(input).over(windowSpec);
 		
 		// Shortcut if singleton result avoiding large amount of de/serialization
 		DataType anResType = finisher != null ? createArrayType(getDataTypeFor(sourceComp)) : getDataTypeFor(sourceComp);
 		Column appliedUDF;
 		if (finisher != null)
-			appliedUDF = udf(udf, anResType).apply(udaf, input);
+			appliedUDF = udf(udf, anResType).apply(udfCol, input);
 		else
-			appliedUDF = udf(serAcc -> ((ScalarValue<?, ?, ?, ?>) reinterpret(sourceComp, (Serializable) serAcc)).get(), anResType).apply(udaf);
+			appliedUDF = udf(serAcc -> ((ScalarValue<?, ?, ?, ?>) reinterpret(sourceComp, (Serializable) serAcc)).get(), anResType).apply(udfCol);
 
 		String destName = destComp.getVariable().getAlias().getName();
 		// Shortcut if singleton result omitting explode
@@ -561,7 +562,11 @@ public class SparkDataSet extends AbstractDataSet
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
 			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
-		DataSetMetadata structure = (DataSetMetadata) metadata;
+		DataSetMetadata structure;
+		if (metadata instanceof DataSetMetadata)
+			structure = (DataSetMetadata) metadata;
+		else
+			structure = new DataStructureBuilder(((ScalarValueMetadata<?, ?>) metadata).getDomain().getDefaultVariable().as(Measure.class)).build();
 		DataPointEncoder resultEncoder = new DataPointEncoder(session, structure);
 		int bufferSize = Integer.parseInt(VTL_SPARK_PAGE_SIZE.getValue());
 		Dataset<Row> aggred;
@@ -570,8 +575,14 @@ public class SparkDataSet extends AbstractDataSet
 		{
 			MapGroupsFunction<Integer, Row, Row> aggregator = (i, s) -> {
 				return StreamSupport.stream(new SparkSpliterator(s, bufferSize), !Utils.SEQUENTIAL).map(encoder::decode)
-						.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> 
-							resultEncoder.encode((DataPoint) finisher.apply(aggr, l.toArray(Lineage[]::new), emptyMap()))));
+						.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> {
+							TT finished = finisher.apply(aggr, l.toArray(Lineage[]::new), emptyMap());
+							if (finished instanceof DataPoint)
+								return resultEncoder.encode((DataPoint) finished);
+							
+							ScalarValue<?, ?, ?, ?>[] result = new ScalarValue<?, ?, ?, ?>[] { (ScalarValue<?, ?, ?, ?>) finished };
+							return resultEncoder.encode(new DataPointImpl(structure.toArray(DataStructureComponent<?, ?, ?>[]::new), result, IGNORED_LINEAGE));
+						}));
 			};
 			
 			aggred = dataFrame.groupBy(lit(1))
@@ -600,7 +611,20 @@ public class SparkDataSet extends AbstractDataSet
 					.mapGroups(aggregator, resultEncoder.getRowEncoder());
 		}
 		
-		return new SparkDataSet(session, structure, aggred);
+		if (metadata instanceof DataSetMetadata)
+			return new SparkDataSet(session, structure, aggred);
+		else
+		{
+			List<Row> results = aggred.collectAsList();
+			if (results.size() != 1)
+				throw new IllegalStateException("Expected a single datapoint but found more than one.");
+			
+			DataPoint dp = new DataPointEncoder(session, structure).decode(results.get(0));
+			if (dp.size() != 1)
+				throw new IllegalStateException("Expected a single measure but found a multicomponent dataset.");
+			
+			return dp.values().iterator().next();
+		}
 	}
 	
 	@Override

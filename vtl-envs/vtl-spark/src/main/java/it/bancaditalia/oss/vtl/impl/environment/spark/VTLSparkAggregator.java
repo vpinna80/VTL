@@ -33,37 +33,37 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
-public class VTLSparkAggregator<I, TT> extends Aggregator<I, Object, TT>
+public class VTLSparkAggregator<I, A, TT> extends Aggregator<I, A, TT>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSparkAggregator.class);
 
-	private final Encoder<Object> accEncoder;
+	private final Encoder<A> accEncoder;
 	private final Encoder<TT> resultEncoder;
-	private final SerCollector<I, Object, TT> collector;
+	private final SerCollector<I, A, TT> collector;
 
 	@SuppressWarnings("unchecked")
-	public VTLSparkAggregator(SerCollector<I, ?, TT> collector, Encoder<?> accEncoder, Encoder<TT> resultEncoder)
+	public VTLSparkAggregator(SerCollector<I, ?, TT> collector, Encoder<A> accEncoder, Encoder<TT> resultEncoder)
 	{
-		this.collector =  (SerCollector<I, Object, TT>) collector;
+		this.collector =  (SerCollector<I, A, TT>) collector;
 		this.resultEncoder = resultEncoder;
-		this.accEncoder = (Encoder<Object>) accEncoder;
+		this.accEncoder = accEncoder;
 	}
 	
 	@Override
-	public Object zero()
+	public A zero()
 	{
 		return collector.supplier().get();
 	}
 
 	@Override
-	public Encoder<Object> bufferEncoder()
+	public Encoder<A> bufferEncoder()
 	{
 		return accEncoder;
 	}
 
 	@Override
-	public Object reduce(Object acc, I value)
+	public A reduce(A acc, I value)
 	{
 		// For performance reasons scalars are encoded as boxed primitive types, and must be rebuilt
 		if (value != null && PRIM_BUILDERS.containsKey(value.getClass()))
@@ -76,13 +76,13 @@ public class VTLSparkAggregator<I, TT> extends Aggregator<I, Object, TT>
 	}
 
 	@Override
-	public Object merge(Object acc1, Object acc2)
+	public A merge(A acc1, A acc2)
 	{
 		return collector.combiner().apply(acc1, acc2);
 	}
 
 	@Override
-	public TT finish(Object reduction)
+	public TT finish(A reduction)
 	{
 		Object apply = collector.finisher().apply(reduction);
 		if (apply instanceof ScalarValue)

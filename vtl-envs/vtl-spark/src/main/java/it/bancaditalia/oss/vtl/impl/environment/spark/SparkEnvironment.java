@@ -246,7 +246,7 @@ public class SparkEnvironment implements Environment
 		if (frames.containsKey(alias))
 			return Optional.of(frames.get(alias));
 		
-		String source = repo.getDataSource(alias);
+		String source = repo != null ? repo.getDataSource(alias) : alias.getName();
 		if (!source.startsWith("spark:") || source.substring(6).indexOf(':') == -1)
 			return Optional.empty();
 		Path sourcePath = Paths.get(source.substring(6).split(":", 2)[1]);

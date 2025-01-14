@@ -49,6 +49,7 @@ import static scala.jdk.javaapi.CollectionConverters.asScala;
 import java.io.Serializable;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,7 +64,6 @@ import java.util.stream.Stream;
 
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.JavaTypeInference;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
@@ -72,7 +72,6 @@ import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.IterableEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.MapEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ProductEncoder;
-import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.Metadata;
@@ -113,6 +112,7 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.GenericTuple;
+import it.bancaditalia.oss.vtl.util.Holder;
 import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import scala.Option;
@@ -152,7 +152,7 @@ public class SparkUtils
 		DOMAIN_BUILDERS.put(STRINGDS, v -> StringValue.of((String) v));
 		DOMAIN_BUILDERS.put(INTEGERDS, v -> IntegerValue.of((Long) v));
 		DOMAIN_BUILDERS.put(NUMBERDS, v -> createNumberValue((Number) v));
-		DOMAIN_BUILDERS.put(DURATIONDS, v -> v == null ? NullValue.instance(DURATIONDS) : ((Frequency) v).get());
+		DOMAIN_BUILDERS.put(DURATIONDS, v -> ((Frequency) v).get());
 		DOMAIN_BUILDERS.put(TIMEDS, v -> GenericTimeValue.of((TimeRangeHolder) v));
 		DOMAIN_BUILDERS.put(TIME_PERIODDS, v -> TimePeriodValue.of((PeriodHolder<?>) v));
 		DOMAIN_BUILDERS.put(DATEDS, v -> DateValue.of((LocalDate) v));
@@ -316,7 +316,18 @@ public class SparkUtils
 			.collect(toList());
 	}
 
-	public static <T> Encoder<T> getEncoderFor(Serializable instance, ValueDomainSubset<?, ?> domain, DataSetMetadata structure)
+	/**
+	 * Infers an encoder for a given instance to be used in window functions.
+	 * If the instance is a ScalarValue, the encoder is from its domain.
+	 * NOTE: The third parameter is optional and used for a specific case.
+	 * 
+	 * @param <T>
+	 * @param instance
+	 * @param domain
+	 * @param structure
+	 * @return
+	 */
+	public static <T> AgnosticEncoder<T> getEncoderFor(Serializable instance, ValueDomainSubset<?, ?> domain, DataSetMetadata structure)
 	{
 		AgnosticEncoder<?> resultEncoder; 
 		
@@ -369,24 +380,32 @@ public class SparkUtils
 			try
 			{
 				List<EncoderField> fieldEncoders = new ArrayList<>();
-				Class<?> holdClass = (Class<?>) instance.getClass().getField("repr").get(instance);
+				Class<?> heldClass = (Class<?>) instance.getClass().getField("repr").get(instance);
 				AgnosticEncoder<?> vEncoder;
-				if (BaseScalarValue.class.isAssignableFrom(holdClass))
+				if (BaseScalarValue.class.isAssignableFrom(heldClass))
 				{
 					vEncoder = DOMAIN_ENCODERS.get(domain);
 					if (vEncoder == null)
 						throw new UnsupportedOperationException(domain.toString());
 				}
 				else
-					vEncoder = JavaTypeInference.encoderFor(holdClass);
+					vEncoder = JavaTypeInference.encoderFor(heldClass);
 				fieldEncoders.add(new EncoderField("get", vEncoder, true, new Metadata(), Option.empty(), Option.empty()));
 				Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
-				resultEncoder = new ProductEncoder<>(ClassTag.apply(SerDoubleSumAvgCount.class), seq, Option.empty());
+				resultEncoder = new ProductEncoder<>(ClassTag.apply(Holder.class), seq, Option.empty());
 			}
 			catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e)
 			{
 				throw new IllegalStateException(e);
 			}
+		}
+		else if ("CumulFreq".equals(className))
+		{
+			List<EncoderField> fieldEncoders = new ArrayList<>(); 
+			fieldEncoders.add(new EncoderField("freq", JavaTypeInference.encoderFor(Frequency.class), true, new Metadata(), Option.empty(), Option.empty()));
+			fieldEncoders.add(new EncoderField("last", STRICT_LOCAL_DATE_ENCODER(), true, new Metadata(), Option.empty(), Option.empty()));
+			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
+			resultEncoder = new ProductEncoder<>(ClassTag.apply(SimpleEntry.class), seq, Option.empty());
 		}
 		else if (instance instanceof BaseScalarValue)
 		{
@@ -406,7 +425,7 @@ public class SparkUtils
 			throw new IllegalStateException(instance.getClass().getName());
 		
 		@SuppressWarnings("unchecked")
-		Encoder<T> encoder = (Encoder<T>) ExpressionEncoder.apply(resultEncoder);
+		AgnosticEncoder<T> encoder = (AgnosticEncoder<T>) resultEncoder;
 		return encoder;
 	}
 
