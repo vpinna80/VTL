@@ -219,7 +219,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers.
 	 * If no grouping identifiers are specified, the dataset is aggregated to a scalar.
 	 * 
-	 * @param metadata the metadata of the result value produced
+	 * @param resultMetadata the metadata of the result value produced
 	 * @param keys the identifiers on whose values datapoints should be grouped 
 	 * @param groupCollector the aggregator that performs the reduction
 	 * @param finisher a finisher that may manipulate the result given the group where it belongs
