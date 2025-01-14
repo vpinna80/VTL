@@ -164,12 +164,6 @@
 		<exec.version>3.1.1</exec.version>
 		<frontend.version>1.15.0</frontend.version>
 
-		<site.version>4.0.0-M9</site.version>
-		<reflow.version>2.4.0-beta2</reflow.version>
-		<doxia.version>2.0.0-M7</doxia.version>
-		<doxiatools.version>2.0.0-M11</doxiatools.version>
-		<velocity.version>3.1</velocity.version>
-
 		<flatten.version>1.6.0</flatten.version>
 		<compiler.version>3.13.0</compiler.version>
 		<resources.version>3.3.1</resources.version>
@@ -224,48 +218,6 @@
 		<licenseUrl>
 			https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</licenseUrl>
 	</properties>
-
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>${reporting.version}</version>
-				<reportSets>
-					<reportSet>
-						<reports>
-							<!-- common reports -->
-							<report>summary</report>
-							<report>dependency-info</report>
-							<report>dependencies</report>
-							<report>modules</report>
-							<report>plugins</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>${javadoc.version}</version>
-				<reportSets>
-					<reportSet>
-						<id>aggregate</id>
-						<inherited>false</inherited>
-						<reports>
-							<report>aggregate-no-fork</report>
-						</reports>
-					</reportSet>
-					<reportSet>
-						<id>default</id>
-						<reports>
-							<report>javadoc-no-fork</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
-		</plugins>
-	</reporting>
 
 	<distributionManagement>
 		<site>
@@ -720,48 +672,6 @@
 					<version>${install.version}</version>
 				</plugin>
 				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-site-plugin</artifactId>
-					<version>${site.version}</version>
-					<dependencies>
-						<dependency>
-							<groupId>io.github.devacfr.maven.skins</groupId>
-							<artifactId>reflow-velocity-tools</artifactId>
-							<version>${reflow.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.apache.maven.doxia</groupId>
-							<artifactId>doxia-module-markdown</artifactId>
-							<version>${doxia.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.apache.maven.doxia</groupId>
-							<artifactId>doxia-core</artifactId>
-							<version>${doxia.version}</version>
-						</dependency>
-						<dependency>
-						    <groupId>org.apache.maven.doxia</groupId>
-						    <artifactId>doxia-integration-tools</artifactId>
-						    <version>${doxiatools.version}</version>
-						</dependency>
-						<dependency>
-						    <groupId>org.apache.maven.doxia</groupId>
-						    <artifactId>doxia-site-renderer</artifactId>
-						    <version>${doxiatools.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.apache.maven.doxia</groupId>
-							<artifactId>doxia-core</artifactId>
-							<version>${doxia.version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.apache.velocity.tools</groupId>
-							<artifactId>velocity-tools-generic</artifactId>
-							<version>${velocity.version}</version>
-						</dependency>
-					</dependencies>
-				</plugin>
-				<plugin>
 					<groupId>com.github.eirslett</groupId>
 					<artifactId>frontend-maven-plugin</artifactId>
 					<version>${frontend.version}</version>
@@ -947,14 +857,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-site-plugin</artifactId>
-				<configuration>
-					<port>18881</port>
-					<tempWebappDirectory>${project.build.directory}/site</tempWebappDirectory>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
