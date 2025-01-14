@@ -61,6 +61,7 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -187,7 +188,8 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			if (groupingClause != null)
 				identifiers = groupingClause.getGroupingComponents(operand);
 
-			DataStructureBuilder builder = new DataStructureBuilder(identifiers);
+			DataStructureBuilder builder = new DataStructureBuilder(identifiers)
+					.addComponents(operand.getComponents(ViralAttribute.class));
 
 			for (AggrClauseItem clause : aggrItems)
 			{
@@ -236,11 +238,11 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				}
 			}
 
-			DataSetMetadata beforeHaving = builder.build();
+			DataSetMetadata structure = builder.build();
 			
 			if (having != null)
 			{
-				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, beforeHaving));
+				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, structure));
 				ValueDomainSubset<?, ?> domain;
 				if (havingMeta instanceof ScalarValueMetadata<?, ?>)
 					domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
@@ -253,7 +255,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					throw new VTLIncompatibleParametersException("having", BOOLEAN, havingMeta);
 			} 
 
-			return beforeHaving;
+			return structure;
 		}
 		else
 			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);

@@ -77,6 +77,7 @@ import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -300,7 +301,10 @@ public class AggregateTransformation extends TransformationImpl
 					else
 						newComps = singleton(repo.createTempVariable(targetName, measures.iterator().next().getVariable().getDomain()).as(targetRole));
 
-				DataSetMetadata structure = new DataStructureBuilder(groupComps).addComponents(newComps).build();
+				DataSetMetadata structure = new DataStructureBuilder(groupComps)
+						.addComponents(dataset.getComponents(ViralAttribute.class))
+						.addComponents(newComps)
+						.build();
 				
 				if (having != null)
 				{
