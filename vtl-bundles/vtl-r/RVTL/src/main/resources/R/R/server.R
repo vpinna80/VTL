@@ -20,14 +20,13 @@
 
 repoImpls <- c(
   `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
-  `CSV file repository` = 'it.bancaditalia.oss.vtl.impl.meta.CSVMetadataRepository',
   `Json URL repository` = 'it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository',
   `SDMX REST Metadata repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository',
   `SDMX REST & Json combined repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository'
 )
 
 environments <- list(
-  `CSV Path environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
+  `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
   `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
   `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
   `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment",
@@ -86,10 +85,11 @@ vtlServer <- function(input, output, session) {
   
   # configure and change repository
   observe({
-    output$eng_conf_output <- renderPrint({
+    output$eng_conf_output <- renderPrint({ "ciao"
       lapply(configManager$getSupportedProperties(J(req(input$repoClass))@jobj), function (prop) {
         val <- input[[prop$getName()]]
-        prop$setValue(if (val == '') .jnull(class = "java/lang/String") else val)
+        browser()
+        prop$setValue(val)
         
         if (prop$isPassword()) {
           cat("Set property", prop$getDescription(), "to <masked value>\n")
@@ -140,7 +140,7 @@ vtlServer <- function(input, output, session) {
     output$eng_conf_output <- renderPrint({
       lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
         val <- input[[prop$getName()]]
-        prop$setValue(if (val == '') .jnull(class = "java/lang/String") else val)
+        prop$setValue(val)
         
         if (prop$isPassword()) {
           cat("Set property", prop$getDescription(), "to <masked value>\n")
@@ -179,7 +179,9 @@ vtlServer <- function(input, output, session) {
       colnames(df) <- c("Domain")
       df
     } else if (jstr %instanceof% "it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder$DataStructureImpl") {
-      df <- data.table::transpose(data.frame(lapply(jstr, function(x) { c(x$getVariable()$getName(), x$getVariable()$getDomain()$toString(), x$getRole()$getSimpleName()) } ), check.names = FALSE))
+      df <- data.table::transpose(data.frame(lapply(jstr, function(x) {
+        c(x$getVariable()$getAlias()$getName(), x$getVariable()$getDomain()$toString(), x$getRole()$getSimpleName()) 
+      } ), check.names = FALSE))
       colnames(df) <- c("Name", "Domain", "Role")
       df
     } else {
@@ -191,14 +193,27 @@ vtlServer <- function(input, output, session) {
   output$lineage <- networkD3::renderSankeyNetwork({
     req(input$sessionID)
     req(input$selectDatasets)
-    edges <- currentSession()$getLineage(input$selectDatasets)
-    vertices <- data.frame(name = unique(c(as.character(edges[,'source']), as.character(edges[,'target']))), stringsAsFactors = F)
-    edges[, 'source'] <- match(edges[, 'source'], vertices[, 'name']) - 1
-    edges[, 'target'] <- match(edges[, 'target'], vertices[, 'name']) - 1
-    graph <- networkD3::sankeyNetwork(Links = edges, Nodes = vertices, Source = 'source', 
-                                      Target = 'target', Value = 'value', NodeID = 'name', 
-                                      nodeWidth = 40, nodePadding = 20, fontSize = 10)
-    return(graph)
+    edges <- tryCatch({
+        currentSession()$getLineage(input$selectDatasets) 
+      }, error = function(e) {
+        if (is.null(e$jboj))
+          e$jobj$printStackTrace()
+        signalCondition(e)
+      }
+    )
+    if (nrow(edges) > 0) {
+      vertices <- data.frame(name = unique(c(as.character(edges[,'source']), as.character(edges[,'target']))), stringsAsFactors = F)
+      edges[, 'source'] <- match(edges[, 'source'], vertices[, 'name']) - 1
+      edges[, 'target'] <- match(edges[, 'target'], vertices[, 'name']) - 1
+      graph <- networkD3::sankeyNetwork(Links = edges, Nodes = vertices, Source = 'source', 
+                                        Target = 'target', Value = 'value', NodeID = 'name', 
+                                        nodeWidth = 40, nodePadding = 20, fontSize = 10)
+      return(graph)
+    }
+    else
+      shinyjs::alert(paste("Node", input$selectDatasets, "is a scalar or a source node."))
+    
+    return(invisible())
   })
   
   # output VTL result  
@@ -422,7 +437,9 @@ vtlServer <- function(input, output, session) {
   output$datasetsInfo <- renderUI({
     req(input$selectDatasets)
     statements <- currentSession()$getStatements()
-    statements <- sapply(statements$entrySet(), function (x) stats::setNames(list(x$getValue()), x$getKey()))
+    statements <- sapply(statements$entrySet(), function (x) {
+      stats::setNames(list(x$getValue()), x$getKey()$getName())
+    })
     ddf = evalNode()[[1]]
     formula <- statements[[input$selectDatasets]]
     

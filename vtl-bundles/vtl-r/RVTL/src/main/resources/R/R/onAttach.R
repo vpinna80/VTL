@@ -22,6 +22,17 @@
 #' @import R6
 .onAttach <- function(libname, pkgname) {
 
+  # javacmd <- if (.Platform$OS.type == "windows") "java.exe" else "java"
+  # javacmd <- paste(Sys.getenv('JAVA_HOME'), "bin", javacmd, sep = "/")
+  # javacmd <- if (file.exists(javacmd)) paste(javacmd, " -version") else "java -version"
+  # capture <- system(javacmd, intern = T)
+  # versionindex <- stop((grep("version", capture, T)))
+  # versionline <- capture[[versionindex]]
+  # javaversion <- as.numeric(gsub('^.* "([^.]+)\\..*".*$', '\\1', versionline, perl = T))
+  # if (javaversion == 11) {
+  #   stop("Detected a configured JVM with version ", javaversion, ".\nPlease make sure to use a JVM >= 11 before loading RVTL package.")
+  # }
+  
   spark <- Sys.getenv('SPARK_HOME')
   jars = c("log4j2.xml", system.file("java/log4j2.xml", package = pkgname), list.files(system.file("java", package = pkgname), ".*\\.jar"))
   files <- if (spark != '') list.files(paste0(spark, '/jars'), full.names = T) else ''

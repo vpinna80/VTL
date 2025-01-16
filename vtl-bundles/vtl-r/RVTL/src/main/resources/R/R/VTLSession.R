@@ -93,7 +93,10 @@ VTLSession <- R6Class("VTLSession",
       #' Obtains the structure of a VTL dataset with the given name.
       #' @param node
       #' The name of the dataset
-      getMetadata = function (node) { private$checkInstance()$getMetadata(node) },
+      getMetadata = function (node) { 
+        alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
+		private$checkInstance()$getMetadata(alias)
+	  },
       
       #' @description
       #' Obtains a named list of all rules and values submitted for this session.
@@ -112,10 +115,13 @@ VTLSession <- R6Class("VTLSession",
                       df <- get0(node, envir = private$env)
                       if (!is.null(df)) {
                         return(df)
-                      } 
-                      jnode <- tryCatch(private$checkInstance()$resolve(node), error = function(e) {
+                      }
+                      alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
+                      jnode <- tryCatch(private$checkInstance()$resolve(alias), error = function(e) {
+                        if (!is.null(e$jobj)) {
                           e$jobj$printStackTrace()
-                          signalCondition(e)
+                        }
+                        signalCondition(e)
                       })
                       if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
                         df <- as.data.frame(list(Scalar = jnode$get()))
@@ -124,11 +130,13 @@ VTLSession <- R6Class("VTLSession",
                                        .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
                         nc <- jnode$getMetadata()$size()
                         df <- tryCatch(convertDF(pager, nc), error = function(e) {
-                          e$jobj$printStackTrace()
+                          if (!is.null(e$jobj)) {
+                            e$jobj$printStackTrace()
+                          }
                           signalCondition(e)
                         })
-                        attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getName() })
-                        attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getName() })
+                        attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getAlias()$getName() })
+                        attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getAlias()$getName() })
                       }
                       
                       assign(node, df, envir = private$env)
@@ -141,19 +149,25 @@ VTLSession <- R6Class("VTLSession",
       
       #' @description
       #' Returns a lineage for the value of the named node defined in this session.
-      #' @param alias
+      #' @param node
       #' a name of a node to compute from this session
-      getLineage = function (alias) {
+      getLineage = function (node) {
                     instance <- private$checkInstance()
+                    alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
                     jds <- instance$resolve(alias)
-                    viewer <- new(J("it.bancaditalia.oss.vtl.util.LineageViewer"), jds)
-                    matrix <- viewer$generateAdiacenceMatrix(instance)
-                    df <- data.frame(source = matrix$getFirst(),
-                                     target = matrix$getSecond(), 
-                                     value = sapply(matrix$getThird(), function (x) { x$longValue() }),
-                                     stringsAsFactors = F)
-                    df <- df[df$source != df$target, ]
-                    return(df)
+                    if (jds %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
+                      viewer <- new(J("it.bancaditalia.oss.vtl.util.LineageViewer"), jds)
+                      matrix <- viewer$generateAdiacenceMatrix(instance)
+                      df <- data.frame(source = matrix$getFirst(),
+                                       target = matrix$getSecond(), 
+                                       value = sapply(matrix$getThird(), function (x) { x$longValue() }),
+                                       stringsAsFactors = F)
+                      df <- df[df$source != df$target, ]
+                      return(df)
+                    } else {
+                      warning("Cannot get lineage for ", node, " because it isn't a data.frame.")
+                      return(data.frame()) 
+                    }
                   },
 
       #' @description
@@ -173,8 +187,16 @@ VTLSession <- R6Class("VTLSession",
           outNodes <- sapply(edges[[2]], .jstrVal)
           allNodes <- unique(c(inNodes, outNodes))
           
-          statements <- sapply(private$checkInstance()$getStatements()$entrySet(), 
-                              function (x) setNames(list(x$getValue()), x$getKey()))
+          statements <- tryCatch({
+            sapply(private$checkInstance()$getStatements()$entrySet(), function (x) {
+              setNames(list(x$getValue()), x$getKey()$getName())
+            })
+          }, error = function(e) {
+            if (!is.null(e$jobj)) {
+              e$jobj$printStackTrace()
+            }
+            signalCondition(e)
+          })
           primitiveNodes <- allNodes[which(!allNodes %in% names(statements))]
           primitives <- rep('PRIMITIVE NODE', times=length(primitiveNodes))
           names(primitives) <- primitiveNodes

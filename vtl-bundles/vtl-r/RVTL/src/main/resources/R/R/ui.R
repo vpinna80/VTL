@@ -44,7 +44,7 @@ shinydashboard::dashboardPage(title="VTL Studio!",
       img(src="static/logo.svg", class="vtlLogo"),
       div(style="display:inline-block; vertical-align: bottom",
         h2(style="margin-bottom: 0", "VTL Studio!"),
-        div(style = "text-align: right", "${r.package.version}")       
+        div(style = "text-align: right", "1.2.0-20250116152911")       
       )
     ),
     hr(),

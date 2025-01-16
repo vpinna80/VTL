@@ -53,7 +53,7 @@ convertDF <- function(pager, nc) {
     	  sapply(pager$getIntColumn(i), as.logical),
     	  as.Date(pager$getIntColumn(i)),
     	  sapply(pager$getStringColumn(i), .jstrVal),
-    	  sapply(pager$getLongColumn(i))
+    	  pager$getLongColumn(i)
     	)  
     })
     names(part) <- sapply(0:(nc - 1), function(i) .jstrVal(pager$getName(i)))
