@@ -54,13 +54,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	@Override
 	public MetadataRepository getMetadataRepository()
 	{
-		return instanceOfClass(METADATA_REPOSITORY.getValue(), MetadataRepository.class, "Error initializing repository");
+		LOGGER.info("Initializing Metadata Repository " + METADATA_REPOSITORY.getValue());
+		MetadataRepository repo = instanceOfClass(METADATA_REPOSITORY.getValue(), MetadataRepository.class, "Error initializing repository");
+		return repo;
 	}
 
 	@Override
 	public Engine getEngine()
 	{
-		return instanceOfClass(ENGINE_IMPLEMENTATION.getValue(), Engine.class, "Error initializing engine");
+		LOGGER.info("Initializing VTL parser " + ENGINE_IMPLEMENTATION.getValue());
+		Engine engine = instanceOfClass(ENGINE_IMPLEMENTATION.getValue(), Engine.class, "Error initializing engine");
+		return engine;
 	}
 
 	@Override
@@ -91,7 +95,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 		for (String envName: envNames)
 			try 
 			{
+				LOGGER.info("Initializing VTL environment " + envName.replaceFirst("^.*\\.([^.]+)$", "$1"));
 				result.add(instanceOfClass(envName, Environment.class, "Error initializing environment " + envName));
+				LOGGER.info("Initialization of VTL environment " + envName.replaceFirst("^.*\\.([^.]+)$", "$1") + " complete");
 			}
 			catch (Exception e)
 			{
