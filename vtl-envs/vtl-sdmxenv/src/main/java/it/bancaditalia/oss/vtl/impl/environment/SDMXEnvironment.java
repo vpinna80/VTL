@@ -258,7 +258,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		private final VTLAlias alias;
 		private final DataReaderEngine dre;
 
-		private boolean no;
+		private boolean more;
 		private Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dmap = new HashMap<>();
 		private Entry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> parser;
 
@@ -272,8 +272,11 @@ public class SDMXEnvironment implements Environment, Serializable
 			if (structure.getMeasures().size() > 1)
 				throw new UnsupportedOperationException("Unsupported dataset with multiple measures.");
 
-			no = dre.moveNextDataset() && dre.moveNextKeyable() && dre.moveNextObservation();
-			if (no)
+			more = dre.moveNextDataset() && dre.moveNextKeyable();
+			while (!dre.getCurrentKey().isSeries())
+				more = dre.moveNextKeyable();
+			more &= dre.moveNextObservation();
+			if (more)
 				setDims(dre, structure);
 		}
 
@@ -300,7 +303,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		@Override
 		public boolean hasNext()
 		{
-			return no;
+			return more;
 		}
 
 		@Override
@@ -349,12 +352,22 @@ public class SDMXEnvironment implements Environment, Serializable
 				value = DateValue.of((LocalDate) holder);
 			builder.add(CommonComponents.TIME_PERIOD, value);
 			
-			if (!(no = dre.moveNextObservation()))
+			if (!(more = dre.moveNextObservation()))
 			{
-				if (!(no = dre.moveNextKeyable() && dre.moveNextObservation()))
-					no = dre.moveNextDataset() && dre.moveNextKeyable() && dre.moveNextObservation();
+				more = dre.moveNextKeyable();
+				while (more && !dre.getCurrentKey().isSeries())
+					more = dre.moveNextKeyable();
+				more &= dre.moveNextObservation();
+				
+				if (!more)
+				{
+					more = dre.moveNextDataset() && dre.moveNextKeyable();
+					while (more && !dre.getCurrentKey().isSeries())
+						more = dre.moveNextKeyable();
+					more &= dre.moveNextObservation();
+				}
 			
-				if (no)
+				if (more)
 					setDims(dre, structure);
 			}
 

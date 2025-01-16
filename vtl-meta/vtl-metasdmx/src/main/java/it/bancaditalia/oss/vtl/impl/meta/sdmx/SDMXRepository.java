@@ -268,7 +268,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			if (e.getCause() instanceof SdmxNoResultsException)
 				LOGGER.warn("No transformation schemes found.");
 			else
-				throw e;
+				LOGGER.error("Error accessing transformation schemes in registry", e);
 		}
 	}
 
