@@ -19,8 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Objects.requireNonNull;
 
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -41,7 +44,15 @@ public class VarIDOperand implements LeafTransformation
 	@Override
 	public VTLValue eval(TransformationScheme session)
 	{
-		return session.resolve(alias);
+		VTLValue vtlValue = session.resolve(alias);
+		
+		if (vtlValue instanceof DataSet)
+		{
+			DataSet dataset = (DataSet) vtlValue;
+			vtlValue = dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(alias.getName(), dp.getLineage()), identity());
+		}
+		
+		return vtlValue;
 	}
 
 	@Override
