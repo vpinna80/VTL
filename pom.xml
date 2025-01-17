@@ -715,6 +715,7 @@
 									<exclude>**/*.g4</exclude>
 									<exclude>**/*.part</exclude>
 									<exclude>**/*.bin</exclude>
+									<exclude>**/*.Rproj</exclude>
 									<exclude>/R</exclude>
 									<exclude>**/.externalToolBuilders/**</exclude>
 								</excludes>
