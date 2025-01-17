@@ -42,21 +42,21 @@ VTLSession <- R6Class("VTLSession",
       #' @param name the name of the session
       #' The name to identify this session
       initialize = function (name = character(0)) {
-                      if (!is.character(name) || length(name) != 1 || nchar(name) == 0)
-                        stop("name must be a non-empty character vector with exactly 1 element")
-                      self$name <- name
-                      private$env <- new.env(parent = emptyenv())
-                    }, 
+          if (!is.character(name) || length(name) != 1 || nchar(name) == 0)
+            stop("name must be a non-empty character vector with exactly 1 element")
+          self$name <- name
+          private$env <- new.env(parent = emptyenv())
+        }, 
 
       #' @description
       #' Terminates this VTL session.
       #' @details 
       #' This method should not be called by the application.
       finalize = function() { 
-                    finalized <- T
-                    private$clearInstance() 
-                    return(invisible()) 
-                  },
+          finalized <- T
+          private$clearInstance() 
+          return(invisible()) 
+        },
 
       #' @description
       #' Check if this session was compiled.
@@ -95,80 +95,80 @@ VTLSession <- R6Class("VTLSession",
       #' The name of the dataset
       getMetadata = function (node) { 
         alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
-		private$checkInstance()$getMetadata(alias)
-	  },
+        private$checkInstance()$getMetadata(alias)
+      },
       
       #' @description
       #' Obtains a named list of all rules and values submitted for this session.
       getNodes = function () { 
-                    if (is.null(private$instance))
-                      return(list())
-                    return(lapply(private$checkInstance()$getNodes(), .jstrVal)) 
-                  },
+          if (is.null(private$instance))
+            return(list())
+          return(lapply(private$checkInstance()$getNodes(), .jstrVal)) 
+        },
       
       #' @description
       #' Returns a list of data frames containing the values of the named nodes defined in this session.
       #' @param nodes
       #' a list of names of nodes to compute from this session
       getValues = function (nodes) {
-                    nodesdf <- lapply(nodes, function(node) {
-                      df <- get0(node, envir = private$env)
-                      if (!is.null(df)) {
-                        return(df)
-                      }
-                      alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
-                      jnode <- tryCatch(private$checkInstance()$resolve(alias), error = function(e) {
-                        if (!is.null(e$jobj)) {
-                          e$jobj$printStackTrace()
-                        }
-                        signalCondition(e)
-                      })
-                      if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
-                        df <- as.data.frame(list(Scalar = jnode$get()))
-                      } else {
-                        pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
-                                       .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
-                        nc <- jnode$getMetadata()$size()
-                        df <- tryCatch(convertDF(pager, nc), error = function(e) {
-                          if (!is.null(e$jobj)) {
-                            e$jobj$printStackTrace()
-                          }
-                          signalCondition(e)
-                        })
-                        attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getAlias()$getName() })
-                        attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getAlias()$getName() })
-                      }
-                      
-                      assign(node, df, envir = private$env)
-                      return(df)
-                    })
-                    
-                    names(nodesdf) <- nodes
-                    return(nodesdf)
-                  },
+          nodesdf <- lapply(nodes, function(node) {
+            df <- get0(node, envir = private$env)
+            if (!is.null(df)) {
+              return(df)
+            }
+            alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
+            jnode <- tryCatch(private$checkInstance()$resolve(alias), error = function(e) {
+              if (!is.null(e$jobj)) {
+                e$jobj$printStackTrace()
+              }
+              signalCondition(e)
+            })
+            if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
+              df <- as.data.frame(list(Scalar = jnode$get()))
+            } else {
+              pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
+                             .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
+              nc <- jnode$getMetadata()$size()
+              df <- tryCatch(convertDF(pager, nc), error = function(e) {
+                if (!is.null(e$jobj)) {
+                  e$jobj$printStackTrace()
+                }
+                signalCondition(e)
+              })
+              attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getAlias()$getName() })
+              attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getAlias()$getName() })
+            }
+            
+            assign(node, df, envir = private$env)
+            return(df)
+          })
+          
+          names(nodesdf) <- nodes
+          return(nodesdf)
+        },
       
       #' @description
       #' Returns a lineage for the value of the named node defined in this session.
       #' @param node
       #' a name of a node to compute from this session
       getLineage = function (node) {
-                    instance <- private$checkInstance()
-                    alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
-                    jds <- instance$resolve(alias)
-                    if (jds %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
-                      viewer <- new(J("it.bancaditalia.oss.vtl.util.LineageViewer"), jds)
-                      matrix <- viewer$generateAdiacenceMatrix(instance)
-                      df <- data.frame(source = matrix$getFirst(),
-                                       target = matrix$getSecond(), 
-                                       value = sapply(matrix$getThird(), function (x) { x$longValue() }),
-                                       stringsAsFactors = F)
-                      df <- df[df$source != df$target, ]
-                      return(df)
-                    } else {
-                      warning("Cannot get lineage for ", node, " because it isn't a data.frame.")
-                      return(data.frame()) 
-                    }
-                  },
+          instance <- private$checkInstance()
+          alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(node)
+          jds <- instance$resolve(alias)
+          if (jds %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSet") {
+            viewer <- new(J("it.bancaditalia.oss.vtl.util.LineageViewer"), jds)
+            matrix <- viewer$generateAdiacenceMatrix(instance)
+            df <- data.frame(source = matrix$getFirst(),
+                             target = matrix$getSecond(), 
+                             value = sapply(matrix$getThird(), function (x) { x$longValue() }),
+                             stringsAsFactors = F)
+            df <- df[df$source != df$target, ]
+            return(df)
+          } else {
+            warning("Cannot get lineage for ", node, " because it isn't a data.frame.")
+            return(data.frame()) 
+          }
+        },
 
       #' @description
       #' Creates a fore network representation of all nodes defined in this VTL session.
@@ -197,6 +197,7 @@ VTLSession <- R6Class("VTLSession",
             }
             signalCondition(e)
           })
+          
           primitiveNodes <- allNodes[which(!allNodes %in% names(statements))]
           primitives <- rep('PRIMITIVE NODE', times=length(primitiveNodes))
           names(primitives) <- primitiveNodes
@@ -206,22 +207,22 @@ VTLSession <- R6Class("VTLSession",
           net$links$value=rep(3, length(inNodes))
           net$nodes$statement=as.character(statements[as.character(net$nodes$name)])
           return(networkD3::forceNetwork(Links = net$links, 
-                       Nodes = net$nodes, 
-                       Source = 'source',
-                       Target = 'target',
-                       NodeID = 'name',
-                       Group = 'statement',
-                       Value = 'value',
-                       linkDistance = distance,
-                       charge = charge,
-                       fontSize = 20,
-                       opacity = 1,
-                       zoom =T,
-                       arrows = T,
-                       opacityNoHover = 1,
-                       clickAction = 'alert(d.group);',
-                       bounded = T
-            ))
+            Nodes = net$nodes, 
+            Source = 'source',
+            Target = 'target',
+            NodeID = 'name',
+            Group = 'statement',
+            Value = 'value',
+            linkDistance = distance,
+            charge = charge,
+            fontSize = 20,
+            opacity = 1,
+            zoom =T,
+            arrows = T,
+            opacityNoHover = 1,
+            clickAction = 'alert(d.group);',
+            bounded = T
+          ))
         }
     ),
     private = list(
