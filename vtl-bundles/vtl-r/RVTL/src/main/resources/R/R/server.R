@@ -88,7 +88,6 @@ vtlServer <- function(input, output, session) {
     output$eng_conf_output <- renderPrint({ "ciao"
       lapply(configManager$getSupportedProperties(J(req(input$repoClass))@jobj), function (prop) {
         val <- input[[prop$getName()]]
-        browser()
         prop$setValue(val)
         
         if (prop$isPassword()) {
