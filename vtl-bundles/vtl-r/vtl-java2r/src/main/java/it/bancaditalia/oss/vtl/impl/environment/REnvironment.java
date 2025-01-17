@@ -258,7 +258,7 @@ public class REnvironment implements Environment
 		if (reval("exists('???')", name).asBool().isTRUE())
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE())
 			{
-				Optional<VTLValueMetadata> maybeMeta = getValueMetadata(name).or(() -> repo.getMetadata(name));
+				Optional<VTLValueMetadata> maybeMeta = repo.getMetadata(name).or(() -> getValueMetadata(name));
 				if (maybeMeta.isEmpty())
 					return Optional.empty();
 				
