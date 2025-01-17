@@ -70,4 +70,10 @@ public class SyntaxError
     {
         return e;
     }
+    
+    @Override
+    public String toString()
+    {
+    	return "Syntax error in line " + line;
+    }
 }

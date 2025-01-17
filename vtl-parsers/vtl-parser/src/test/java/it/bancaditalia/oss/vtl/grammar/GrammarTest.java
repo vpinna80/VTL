@@ -19,12 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.grammar;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.newBufferedReader;
 import static org.antlr.v4.runtime.CharStreams.fromReader;
+import static org.antlr.v4.runtime.CharStreams.fromString;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.BufferedReader;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -33,9 +36,9 @@ import org.junit.jupiter.api.Test;
 public class GrammarTest
 {
 	@Test
-	public void grammarTest() throws Throwable
+	public void positiveTest() throws Throwable
 	{
-		try (Reader reader = new InputStreamReader(GrammarTest.class.getResourceAsStream("PositiveTests.vtl"), UTF_8))
+		try (BufferedReader reader = newBufferedReader(Paths.get(GrammarTest.class.getResource("PositiveTests.vtl").toURI())))
 		{
 			Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(fromReader(reader))));
 	        SyntaxErrorListener listener = new SyntaxErrorListener();
@@ -44,6 +47,45 @@ public class GrammarTest
 			
 			List<SyntaxError> errors = listener.getSyntaxErrors();
 			assertTrue(errors.isEmpty(), errors::toString);
+		}
+	}
+
+	@Test
+	public void negativeTest() throws Throwable
+	{
+		try (BufferedReader reader = newBufferedReader(Paths.get(GrammarTest.class.getResource("NegativeTests.vtl").toURI())))
+		{
+			String line;
+			int lineCount = 0;
+			String buffer = "";
+			while ((line = reader.readLine()) != null)
+			{
+				if (!line.trim().isEmpty())
+				{
+					buffer += line + System.lineSeparator();
+					lineCount++;
+				}
+				else if (!buffer.matches("(\r?\n| )*"))
+				{
+					Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(fromString(buffer))));
+			        SyntaxErrorListener listener = new SyntaxErrorListener();
+			        parser.addErrorListener(listener);
+					parser.start();
+
+					List<SyntaxError> errors = listener.getSyntaxErrors();
+					assertFalse(errors.isEmpty(), "Expected test to fail at line " + lineCount);
+					
+					lineCount++;
+					char[] emptyLines = new char[lineCount];
+					Arrays.fill(emptyLines, '\n');
+					buffer = new String(emptyLines);
+				}
+				else
+				{
+					lineCount++;
+					buffer += System.lineSeparator();
+				}
+			}
 		}
 	}
 }
