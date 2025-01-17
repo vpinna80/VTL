@@ -77,7 +77,7 @@ public class IntegrationTestSuite
 	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_SKIP = Set.of(T, TS);
+	private static final Set<TestType> TO_SKIP = Set.of();
 	private static final Engine ENGINE; 
 	
 	static 

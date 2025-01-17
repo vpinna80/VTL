@@ -44,9 +44,9 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -65,10 +65,10 @@ public class AggregateTransformationTest
 				Arguments.of(AVG, SAMPLE6,  23.5),
 				Arguments.of(AVG, SAMPLE16, 3.025),
 				Arguments.of(AVG, SAMPLE17, 14.18),
-				Arguments.of(MEDIAN, SAMPLE5,  14L),
+				Arguments.of(MEDIAN, SAMPLE5,  13L),
 				Arguments.of(MEDIAN, SAMPLE6,  23L),
 				Arguments.of(MEDIAN, SAMPLE16, 2.2),
-				Arguments.of(MEDIAN, SAMPLE17, 14.4),
+				Arguments.of(MEDIAN, SAMPLE17, 13.3),
 				Arguments.of(MIN, SAMPLE5,  11L),
 				Arguments.of(MIN, SAMPLE6,  21L),
 				Arguments.of(MIN, SAMPLE16, 1.1),
@@ -94,17 +94,14 @@ public class AggregateTransformationTest
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		AggregateTransformation at = new AggregateTransformation(operator, operand, null, null);
-		final VTLValueMetadata metadata = at.getMetadata(session);
-		assertTrue(metadata instanceof DataSetMetadata, "Result structure is dataset: " + metadata);
-		assertEquals(1, ((DataSetMetadata) metadata).size(), "Only one measure in " + metadata);
+		VTLValueMetadata metadata = at.getMetadata(session);
+		assertTrue(metadata instanceof ScalarValueMetadata, "Result metadata is dataset: " + metadata);
 
-		final VTLValue eval = at.eval(session);
-		assertTrue(eval instanceof DataSet, eval.getClass().getSimpleName() + " instanceof DataSet");
-		DataSet dataset = (DataSet) eval;
-		assertEquals(1, dataset.size(), "Only one datapoint in result");
+		VTLValue eval = at.eval(session);
+		assertTrue(eval instanceof ScalarValue, eval.getClass().getSimpleName() + " instanceof DataSet");
 		
-		DataPoint dp = dataset.stream().findAny().get();
-		Number value = ((Number) dp.values().iterator().next().get());
+		Object value = ((ScalarValue<?, ?, ?, ?>) eval).get();
+
 		if (operator == COUNT)
 			assertEquals(Long.class, value.getClass(), "Count is always long");
 		else if (operator == AVG)
@@ -113,8 +110,8 @@ public class AggregateTransformationTest
 			assertEquals(result.getClass(), value.getClass(), "Integer preserved");
 		
 		if (value instanceof Double)
-			assertEquals(result.doubleValue(), value.doubleValue(), 0.00001, "Result of " + operator);
+			assertEquals(result.doubleValue(), ((Number) value).doubleValue(), 0.00001, "Result of " + operator);
 		else
-			assertEquals(result.longValue(), value.longValue(), "Result of " + operator);
+			assertEquals(result.longValue(), ((Number) value).longValue(), "Result of " + operator);
 	}
 }

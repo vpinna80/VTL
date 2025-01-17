@@ -22,7 +22,7 @@
 -->
 <parserconfig xmlns="http://oss.bancaditalia.it/vtl">
 	<package>it.bancaditalia.oss.vtl.impl.transform</package>
-	<tokenset name="Duration" class="it.bancaditalia.oss.vtl.impl.types.data.DurationValue$Duration">
+	<tokenset name="Duration" class="it.bancaditalia.oss.vtl.impl.types.data.Frequency">
 		<tokenmapping name="A" value="A" />
 		<tokenmapping name="S" value="S" />
 		<tokenmapping name="Q" value="Q" />
