@@ -52,7 +52,10 @@ public interface Environment
 	 * @param repo TODO
 	 * @return An Optional with a reference to the requested object o {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias);
+	public default Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
+	{
+		return Optional.empty();
+	}
 
 	/**
 	 * Persistently store the given value in this environment for later use

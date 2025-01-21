@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.environment;
 
+import static java.util.Collections.emptyList;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -44,17 +46,26 @@ public interface Workspace extends Environment
 	 * @param name The name of requested rule.
 	 * @return An Optional with a reference to the requested object or {@link Optional#empty()} if the object is not found in this environment.
 	 */
-	public Optional<Statement> getRule(VTLAlias name);
+	public default Optional<Statement> getRule(VTLAlias name)
+	{
+		return Optional.empty();
+	}
 
 	/**
 	 * Add a new rule to this workspace.
 	 * 
 	 * @param statement The rule to add to this workspace.
 	 */
-	public void addRule(Statement statement);
+	public default Workspace addRule(Statement statement)
+	{
+		return this;
+	}
 	
 	/**
 	 * @return A list of all the rules defined in this workspace.
 	 */
-	public List<Statement> getRules();
+	public default List<Statement> getRules()
+	{
+		return emptyList();
+	}
 }

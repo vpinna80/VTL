@@ -25,6 +25,7 @@ import java.util.Map;
 
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -43,6 +44,11 @@ public interface VTLSession extends TransformationScheme, Serializable
 	 */
 	public Engine getEngine();
 	
+	/**
+	 * @return The list of environment instances configured for this TransformationScheme
+	 */
+	public List<Environment> getEnvironments();
+
 	/**
 	 * @return the {@link Workspace} used by this session
 	 */

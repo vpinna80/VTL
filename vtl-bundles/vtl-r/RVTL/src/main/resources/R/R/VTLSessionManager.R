@@ -87,14 +87,22 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
                 result <- assign(sessionID, VTLSession$new(name = sessionID), envir = private$sessions)
                 
                 metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
-              	if (metaRepo %instanceof% 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' && sessionID %in% sapply(metaRepo$getAvailableSchemes(), .jstrVal)) {
-              	  code <- metaRepo$getTransformationScheme(sessionID)$getOriginalCode()
-            	  result$setText(code)
-            	} 
+              	if (metaRepo %instanceof% 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' 
+              	    && sessionID %in% sapply(metaRepo$getAvailableSchemes(), .jstrVal)) {
+                  code <- metaRepo$getTransformationScheme(sessionID)$getOriginalCode()
+                  result$setText(code)
+                }
               }
               
               result
-            }), 
+            },
+            
+            #' @description
+            #' Reload the configuration of the current session, reloading the repository and the environments.
+            reload = function() {
+              sapply(ls(private$sessions), function(n) VTLSessionManager$getOrCreate(n)$refresh())
+            }
+          ),
           private = list(
             sessions = new.env(parent = emptyenv())
           ))

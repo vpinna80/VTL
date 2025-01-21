@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.json;
 
-import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.tcds.TransformationCriterionDomainSubset.TEST_ALIAS;
@@ -79,7 +79,7 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
 {
-	public static final VTLProperty JSON_METADATA_URL = new VTLPropertyImpl("vtl.json.metadata.url", "Json url providing structures and domains", "file://", EnumSet.of(REQUIRED));
+	public static final VTLProperty JSON_METADATA_URL = new VTLPropertyImpl("vtl.json.metadata.url", "Json url providing structures and domains", "file://", EnumSet.of(IS_REQUIRED));
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(JsonMetadataRepository.class);

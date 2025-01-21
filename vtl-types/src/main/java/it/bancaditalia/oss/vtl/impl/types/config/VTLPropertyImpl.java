@@ -19,44 +19,38 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.config;
 
-import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.MULTIPLE;
-import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.PASSWORD;
-import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_MULTIPLE;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
 import static java.util.stream.Collectors.joining;
 
 import java.security.InvalidParameterException;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Set;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 
 public class VTLPropertyImpl implements VTLProperty
 {
-	public enum Flags
-	{
-		REQUIRED, PASSWORD, MULTIPLE
-	}
-	
 	private final String name;
 	private final String description;
 	private final String placeholder;
 	private final String defaultValue;
-	private final EnumSet<Flags> flags;
+	private final Set<Options> options;
 
 	private String value;
 	private boolean hasValue;
 	
-	public VTLPropertyImpl(String name, String description, String placeholder, EnumSet<Flags> flags, String... defaultValue)
+	public VTLPropertyImpl(String name, String description, String placeholder, Set<Options> options, String... defaultValue)
 	{
-		if (flags.contains(PASSWORD) && defaultValue.length > 0)
+		if (options.contains(IS_PASSWORD) && defaultValue.length > 0)
 			throw new InvalidParameterException("VTLProperty cannot have a default value if it is a password.");
 
-		if (flags.contains(MULTIPLE) && defaultValue.length > 0)
+		if (options.contains(IS_MULTIPLE) && defaultValue.length > 0)
 			throw new InvalidParameterException("VTLProperty cannot have multiple values if it is a password.");
 		
 		this.name = name;
-		this.flags = flags;
+		this.options = options;
 		this.description = description;
 		this.placeholder = placeholder;
 
@@ -83,29 +77,17 @@ public class VTLPropertyImpl implements VTLProperty
 		value = Objects.toString(newValue);
 		hasValue = true;
 	}
+	
+	@Override
+	public Set<Options> getOptions()
+	{
+		return options;
+	}
 
 	@Override
 	public String getDescription()
 	{
 		return description;
-	}
-
-	@Override
-	public boolean isMultiple()
-	{
-		return flags.contains(MULTIPLE);
-	}
-
-	@Override
-	public boolean isPassword()
-	{
-		return flags.contains(PASSWORD);
-	}
-
-	@Override
-	public boolean isRequired()
-	{
-		return flags.contains(REQUIRED);
 	}
 
 	@Override

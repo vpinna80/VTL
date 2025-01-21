@@ -90,8 +90,6 @@ public class VTLSessionImpl implements VTLSession
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 	
-	private static transient ConfigurationManager c;
-
 	private final Engine engine;
 	private final List<Environment> environments;
 	private final Workspace workspace;
@@ -104,22 +102,31 @@ public class VTLSessionImpl implements VTLSession
 
 	public VTLSessionImpl(String code)
 	{
-		this(code, (c = ConfigurationManagerFactory.newManager()).getMetadataRepository(), c.getEngine(), c.getEnvironments());
+		ConfigurationManager c = ConfigurationManagerFactory.newManager();
+		this.repository = c.getMetadataRepository();
+		this.engine = c.getEngine();
+		this.environments = c.getEnvironments();
+		this.workspace = c.createWorkspace();
+		this.code = code;
+		
+		engine.parseRules(code).peek(workspace::addRule).collect(toList());
+		
+		LOGGER.info("Created new VTL session.");
 	}
 
-	public VTLSessionImpl(String code, MetadataRepository repository, Engine engine, List<Environment> environments)
+	public VTLSessionImpl(VTLSessionImpl old, String code)
+	{
+		this(code, old.repository, old.engine, old.environments, ConfigurationManagerFactory.newManager().createWorkspace());
+	}
+
+	public VTLSessionImpl(String code, MetadataRepository repository, Engine engine, List<Environment> environments, Workspace workspace)
 	{
 		this.repository = repository;
 		this.engine = engine;
 		this.environments = environments;
-
-		Workspace selectedWorkspace = null;
-		for (Environment env: environments)
-			if (env instanceof Workspace)
-				selectedWorkspace = (Workspace) env;
-		
-		this.workspace = Optional.ofNullable(selectedWorkspace).orElseThrow(() -> new IllegalStateException("A workspace environment must be supplied."));
+		this.workspace = workspace;
 		this.code = code;
+		
 		engine.parseRules(code).peek(workspace::addRule).collect(toList());
 		
 		LOGGER.info("Created new VTL session.");
@@ -403,7 +410,8 @@ public class VTLSessionImpl implements VTLSession
 		return result;
 	}
 
-	public List<? extends Environment> getEnvironments()
+	@Override
+	public List<Environment> getEnvironments()
 	{
 		return environments;
 	}

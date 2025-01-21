@@ -43,6 +43,7 @@ import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
@@ -105,6 +106,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 			}
 
 		return result;
+	}
+	
+	@Override
+	public Workspace createWorkspace()
+	{
+		return new WorkspaceImpl();
 	}
 	
 	@Override

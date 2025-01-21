@@ -29,8 +29,7 @@ environments <- list(
   `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
   `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
   `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
-  `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment",
-  `In-Memory environment` = "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"
+  `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
 )
 
 currentEnvironments <- function() {
@@ -85,7 +84,7 @@ vtlServer <- function(input, output, session) {
   
   # configure and change repository
   observe({
-    output$eng_conf_output <- renderPrint({ "ciao"
+    output$eng_conf_output <- renderPrint({
       lapply(configManager$getSupportedProperties(J(req(input$repoClass))@jobj), function (prop) {
         val <- input[[prop$getName()]]
         prop$setValue(val)
@@ -110,7 +109,7 @@ vtlServer <- function(input, output, session) {
     output$sortableEnvs <- renderUI({
       sortable::bucket_list(header = NULL, orientation = 'horizontal',
         sortable::add_rank_list(text = "Available", labels = activeEnvs(F)),
-        sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T)),
+        sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T))
       )
     })
     # Single execution only when VTL Studio starts
@@ -126,6 +125,8 @@ vtlServer <- function(input, output, session) {
       
       if (prop$isPassword()) {
         passwordInput(prop$getName(), prop$getDescription(), val)
+      } else if (prop$isFolder()) {
+        
       } else {
         textInput(prop$getName(), prop$getDescription(), val, placeholder = prop$getPlaceholder())
       }
@@ -161,6 +162,11 @@ vtlServer <- function(input, output, session) {
       writer$close()
     })
   }) |> bindEvent(input$saveconf)
+  
+  # Reload user configuration
+  observe({
+    VTLSessionManager$reload()
+  }) |> bindEvent(input$reloadconf)
   
   # Select dataset to browse
   output$dsNames<- renderUI({
@@ -291,6 +297,22 @@ vtlServer <- function(input, output, session) {
   observe({
     session$sendCustomMessage("editor-theme", input$editorTheme)
   }) |> bindEvent(input$editorTheme)
+  
+  observe({
+    if (input$navtab == "Engine settings") {
+      output$sortableEnvs <- renderUI({
+        loadedenvs <- sapply(VTLSessionManager$getOrCreate(req(input$sessionID))$getEnvs(), function (i) {
+          i$getClass()$getName()
+        })
+        active <- names(environments[unlist(environments) %in% loadedenvs])
+        inactive <- names(environments[!(unlist(environments) %in% loadedenvs)])
+        sortable::bucket_list(header = NULL, orientation = 'horizontal',
+          sortable::add_rank_list(text = "Available", labels = inactive),
+          sortable::add_rank_list(input_id = "envs", text = "Active", labels = active),
+        )
+      })
+    }
+  }) |> bindEvent(input$navtab)
   
   # Change editor font size
   observe({

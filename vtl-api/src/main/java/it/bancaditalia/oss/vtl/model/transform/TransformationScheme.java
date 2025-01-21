@@ -98,7 +98,7 @@ public interface TransformationScheme
 	 * @return whether the alias is defined or not.
 	 */
 	public boolean contains(VTLAlias alias);
-	
+
 	/**
 	 * Returns a holder map for computed values of type T
 	 *  

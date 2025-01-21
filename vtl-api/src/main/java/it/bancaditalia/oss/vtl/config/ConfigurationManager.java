@@ -30,6 +30,7 @@ import java.util.List;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 
@@ -79,6 +80,12 @@ public interface ConfigurationManager
 	 * @return The {@link List} of {@link Environment} instances
 	 */
 	public List<Environment> getEnvironments();
+	
+	/**
+	 * Creates a new, empty workspace.
+	 * @return The newly created {@link Woprkspace} instance
+	 */
+	public Workspace createWorkspace();
 	
 	/**
 	 * Saves the current configuration to the provided Writer as a list of Java properties.

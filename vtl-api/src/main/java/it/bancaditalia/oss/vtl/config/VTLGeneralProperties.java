@@ -19,10 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.config;
 
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_MULTIPLE;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Set;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
@@ -90,7 +94,7 @@ public enum VTLGeneralProperties implements VTLProperty
 	}
 	
 	private final String name;
-	private final boolean multiple;
+	private final Set<Options> options;
 	private final String defaultValue;
 	
 	private String value = null;
@@ -98,7 +102,8 @@ public enum VTLGeneralProperties implements VTLProperty
 	private VTLGeneralProperties(String name, boolean multiple, String... defaultValue)
 	{
 		this.name = name;
-		this.multiple = multiple;
+		this.options = multiple ? EnumSet.of(IS_MULTIPLE) : emptySet();
+		
 		this.defaultValue = Arrays.stream(defaultValue).collect(joining(","));
 	}
 
@@ -119,29 +124,16 @@ public enum VTLGeneralProperties implements VTLProperty
 	{
 		value = Objects.toString(newValue);
 	}
+	
+	public Set<Options> getOptions()
+	{
+		return options;
+	}
 
 	@Override
 	public String getDescription()
 	{
 		return "";
-	}
-
-	@Override
-	public boolean isMultiple()
-	{
-		return multiple;
-	}
-	
-	@Override
-	public boolean isPassword()
-	{
-		return false;
-	}
-	
-	@Override
-	public boolean isRequired()
-	{
-		return true;
 	}
 
 	@Override

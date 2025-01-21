@@ -19,8 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.util;
 
-import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
+import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static java.awt.EventQueue.invokeLater;
 import static java.util.function.UnaryOperator.identity;
 import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
@@ -45,7 +46,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ProgressWindow
 {
-	public static final VTLProperty CSV_PROGRESS_BAR_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", EnumSet.of(REQUIRED), "1000");
+	public static final VTLProperty CSV_PROGRESS_BAR_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", EnumSet.of(IS_REQUIRED), "1000");
 
 	private final JFrame window;
 	private final Timer timer;
@@ -57,7 +58,7 @@ public class ProgressWindow
 		ProgressWindow window = new ProgressWindow(title, maxValue);
 		return Stream.of(source)
 				.map(streamProducer.andThen(s -> s.onClose(window::dispose).peek(i -> window.progress())))
-				.collect(concatenating(Utils.ORDERED));
+				.collect(concatenating(ORDERED));
 	}
 
 	private static <K> IntStream intStreamHelper(String title, long maxValue, K source, Function<? super K, ? extends IntStream> streamProducer)

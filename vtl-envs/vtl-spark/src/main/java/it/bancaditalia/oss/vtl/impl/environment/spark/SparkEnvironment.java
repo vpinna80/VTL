@@ -20,13 +20,13 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.registerSupportedProperties;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getColumnsFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getComponentsFromStruct;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
-import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
@@ -104,15 +104,15 @@ public class SparkEnvironment implements Environment
 	private static final Logger LOGGER = LoggerFactory.getLogger(SparkEnvironment.class);
 
 	public static final VTLProperty VTL_SPARK_MASTER_CONNECTION = 
-			new VTLPropertyImpl("vtl.spark.master.connection", "Connection string to an orchestrator or local", "local[*]", EnumSet.of(REQUIRED), "local[*]");
+			new VTLPropertyImpl("vtl.spark.master.connection", "Connection string to an orchestrator or local", "local[*]", EnumSet.of(IS_REQUIRED), "local[*]");
 	public static final VTLProperty VTL_SPARK_UI_ENABLED = 
-			new VTLPropertyImpl("vtl.spark.ui.enabled", "Indicates if the Spark web UI should be initialized", "true", EnumSet.of(REQUIRED), "true");
+			new VTLPropertyImpl("vtl.spark.ui.enabled", "Indicates if the Spark web UI should be initialized", "true", EnumSet.of(IS_REQUIRED), "true");
 	public static final VTLProperty VTL_SPARK_UI_PORT = 
-			new VTLPropertyImpl("vtl.spark.ui.port", "Indicates which port the Spark web UI should be listening to", "4040", EnumSet.of(REQUIRED), "4040");
+			new VTLPropertyImpl("vtl.spark.ui.port", "Indicates which port the Spark web UI should be listening to", "4040", EnumSet.of(IS_REQUIRED), "4040");
 	public static final VTLProperty VTL_SPARK_PAGE_SIZE = 
-			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", EnumSet.of(REQUIRED), "1000");
+			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", EnumSet.of(IS_REQUIRED), "1000");
 	public static final VTLProperty VTL_SPARK_SEARCH_PATH = 
-			new VTLPropertyImpl("vtl.spark.search.path", "Path to search for spark files", System.getenv("VTL_PATH"), EnumSet.of(REQUIRED), System.getenv("VTL_PATH"));
+			new VTLPropertyImpl("vtl.spark.search.path", "Path to search for spark files", System.getenv("VTL_PATH"), EnumSet.of(IS_REQUIRED), System.getenv("VTL_PATH"));
 
 	/* package */ static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
 	private static final AtomicReference<SQLConf> MASTER_CONF = new AtomicReference<>();

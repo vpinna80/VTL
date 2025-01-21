@@ -74,15 +74,19 @@ VTLSession <- R6Class("VTLSession",
       #' The editor code to associate this session
       setText = function(code) { 
         self$text <- code
-        private$clearInstance()
         return(invisible(self)) 
       },
       
       #' @description
       #' Compiles the VTL statements submitted for this session.
       compile = function () {
+        private$updateInstance()$compile()
+      },
+      
+      #' @description
+      #' Refresh the session configuration after a change in the settings.
+      refresh = function() {
         private$clearInstance()
-        private$checkInstance()$compile()
       },
       
       #' @description
@@ -223,12 +227,17 @@ VTLSession <- R6Class("VTLSession",
             clickAction = 'alert(d.group);',
             bounded = T
           ))
+        },
+      
+      getEnvs = function() {
+          private$checkInstance()$getEnvironments()
         }
     ),
     private = list(
       instance = NULL,
       env = NULL,
       finalized = F,
+      
       checkInstance = function() {
         if (private$finalized)
           stop('Session ', self$name, ' was finalized')
@@ -237,6 +246,19 @@ VTLSession <- R6Class("VTLSession",
         }
         return(invisible(private$instance))
       },
+
+      updateInstance = function() {
+        if (private$finalized) {
+          stop('Session ', self$name, ' was finalized')
+        } else if (is.null(private$instance)) {
+          private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
+        } else {
+          private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", 
+              .jcast(private$instance, "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl"), self$text)
+        }
+        return(invisible(private$instance))
+      },
+      
       clearInstance = function() {
         private$instance <- NULL
         private$env <- new.env(parent = emptyenv())

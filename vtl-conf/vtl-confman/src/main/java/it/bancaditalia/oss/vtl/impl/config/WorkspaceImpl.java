@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment;
+package it.bancaditalia.oss.vtl.impl.config;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,11 +42,13 @@ public class WorkspaceImpl implements Workspace
 	private final Map<VTLAlias, Statement> rules = new ConcurrentHashMap<>();
 	
 	@Override
-	public synchronized void addRule(Statement statement)
+	public synchronized Workspace addRule(Statement statement)
 	{
 		if (rules.putIfAbsent(statement.getAlias(), statement) != null)
 			throw new IllegalStateException("Object " + statement.getAlias() + " was already defined");
 		LOGGER.info("Added a VTL rule with alias {}", statement.getAlias());
+		
+		return this;
 	}
 
 	@Override

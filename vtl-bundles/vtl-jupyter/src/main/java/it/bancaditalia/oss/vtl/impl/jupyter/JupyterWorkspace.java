@@ -30,23 +30,24 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
-import it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class JupyterWorkspace implements Workspace
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(WorkspaceImpl.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(JupyterWorkspace.class);
 
 	private final Map<VTLAlias, VTLValue> values = new ConcurrentHashMap<>();
 	private final Map<VTLAlias, Statement> rules = new ConcurrentHashMap<>();
 	
 	@Override
-	public void addRule(Statement statement)
+	public Workspace addRule(Statement statement)
 	{
 		rules.put(statement.getAlias(), statement);
 		LOGGER.info("Added a VTL rule with alias {}", statement.getAlias());
+		
+		return this;
 	}
 
 	@Override

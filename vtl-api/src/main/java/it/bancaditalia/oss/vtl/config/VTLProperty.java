@@ -19,12 +19,17 @@
  */
 package it.bancaditalia.oss.vtl.config;
 
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_FOLDER;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_MULTIPLE;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * This interface provides access to the configuration properties of the VTL Engine components.
@@ -36,6 +41,10 @@ import java.util.Objects;
  */
 public interface VTLProperty
 {
+	public enum Options {
+		IS_PASSWORD, IS_REQUIRED, IS_MULTIPLE, IS_FOLDER
+	}
+	
 	/**
 	 * @return The name of the system property that provides a starting value
 	 */
@@ -64,20 +73,42 @@ public interface VTLProperty
 	public String getPlaceholder();
 
 	/**
+	 * @return the set of configured options for this VTLProperty.
+	 */
+	public Set<Options> getOptions();
+
+	/**
 	 * @return {@code true} if the property allows multiple values
 	 */
-	public boolean isMultiple();
+	public default boolean isMultiple()
+	{
+		return getOptions().contains(IS_MULTIPLE);
+	}
 	
 	/**
 	 * @return {@code true} if the property represents a password
 	 */
-	public boolean isPassword();
+	public default boolean isPassword()
+	{
+		return getOptions().contains(IS_PASSWORD);
+	}
 	
 	/**
 	 * @return {@code true} if the property must have a value set before using the component
 	 */
-	public boolean isRequired();
-
+	public default boolean isRequired()
+	{
+		return getOptions().contains(IS_REQUIRED);
+	}
+	
+	/**
+	 * @return {@code true} if the property represents a folder name
+	 */
+	public default boolean isFolder()
+	{
+		return getOptions().contains(IS_FOLDER);
+	}
+	
 	/**
 	 * @return If the property {@link #isMultiple()}, a {@link List} where the elements 
 	 * 		match each of this property's values

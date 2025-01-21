@@ -131,7 +131,11 @@ shinydashboard::dashboardPage(title="VTL Studio!",
       ),
       tabPanel("Engine settings",
         shinydashboard::box(title = 'Configuration', status = 'primary', solidHeader = T, collapsible = T, width = 3,
-          actionButton(inputId = 'saveconf', label = 'Save configuration')
+          tags$div(
+            actionButton(inputId = 'saveconf', label = 'Save configuration'),
+          ), tags$div(
+            actionButton(inputId = 'reloadconf', label = 'Reload configuration')
+          )
         ),
         shinydashboard::box(title = 'VTL Environments', status = 'primary', solidHeader = T, collapsible = T, width = 9,
           uiOutput(outputId = "sortableEnvs")

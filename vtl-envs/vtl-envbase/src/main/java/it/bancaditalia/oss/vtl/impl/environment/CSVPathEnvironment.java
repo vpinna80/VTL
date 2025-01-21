@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
-import static it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl.Flags.REQUIRED;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static java.util.Objects.isNull;
 
@@ -79,7 +79,7 @@ public class CSVPathEnvironment implements Environment
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
 
 	public static final VTLProperty VTL_CSV_ENVIRONMENT_SEARCH_PATH = 
-			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), EnumSet.of(REQUIRED), System.getenv("VTL_PATH"));
+			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), EnumSet.of(IS_REQUIRED), System.getenv("VTL_PATH"));
 
 	static
 	{

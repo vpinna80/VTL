@@ -31,9 +31,10 @@
   
   .jpackage(pkgname, jars, files, lib.loc = libname)
 
-  java.version = as.integer(gsub("^([0-9]*)\\..*$", "\\1", J("java.lang.System")$getProperty("java.version")))
+  version.string <- J("java.lang.System")$getProperty("java.version")
+  java.version <- as.integer(gsub("^([0-9]*)\\..*$", "\\1", version.string))
   if (java.version != 11)
-    stop("RVTL requires a Java 11 virtual machine.")
+    stop("RVTL requires a Java 11 virtual machine, but version '", version.string , "' was found.")
   
   J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
       "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
