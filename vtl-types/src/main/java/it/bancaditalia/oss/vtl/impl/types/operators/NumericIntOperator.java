@@ -20,29 +20,26 @@
 package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static java.math.RoundingMode.DOWN;
 import static java.math.RoundingMode.HALF_UP;
 
 import java.math.BigDecimal;
 
-import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireNumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBigDecimalIntBiFunction;
 import it.bancaditalia.oss.vtl.util.SerDoubleIntBiFunction;
 
 public enum NumericIntOperator implements SerBiFunction<
-		ScalarValue<?, ?, ? extends NumberDomainSubset<?, ? extends NumberDomain>, ? extends NumberDomain>, 
+		ScalarValue<?, ?, ?, ?>, 
 		ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain>,
-		ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain>>
+		ScalarValue<?, ?, ?, ?>>
 {
 	ROUND("round", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, HALF_UP).doubleValue(), (l, r) -> l.setScale(r, HALF_UP)),
 	TRUNC("trunc", (l, r) -> BigDecimal.valueOf(l).setScale((int) r, DOWN).doubleValue(), (l, r) -> l.setScale(r, DOWN)),
@@ -60,17 +57,19 @@ public enum NumericIntOperator implements SerBiFunction<
 	}
 
 	@Override
-	public ScalarValue<?, ?, EntireNumberDomainSubset, NumberDomain> apply(
-			ScalarValue<?, ?, ? extends NumberDomainSubset<?, ? extends NumberDomain>, ? extends NumberDomain> t,
+	public ScalarValue<?, ?, ?, ?> apply(ScalarValue<?, ?, ?, ?> t, 
 			ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> u)
 	{
-		if (t instanceof NullValue)
-			return NullValue.instance(NUMBERDS);
+		if (t.getClass() == NullValue.class)
+			return t;
 
+		Number result;
 		if (isUseBigDecimal())
-			return BigDecimalValue.of(opBigDec.apply((BigDecimal) t.get(), ((Number) u.get()).intValue()));
+			result = opBigDec.apply((BigDecimal) t.get(), ((Number) u.get()).intValue());
 		else
-			return DoubleValue.of(opDouble.applyAsDouble(((Number) t.get()).doubleValue(), ((Number) u.get()).intValue()), NUMBERDS);
+			result = opDouble.applyAsDouble(((Number) t.get()).doubleValue(), ((Number) u.get()).intValue());
+
+		return INTEGERDS.isAssignableFrom(t.getDomain()) ? IntegerValue.of(result.longValue()) : createNumberValue(result);
 	}
 	
 	@Override

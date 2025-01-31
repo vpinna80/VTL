@@ -41,6 +41,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -62,7 +63,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 
-	public enum NumericOperator implements UnaryOperator<ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain>>
+	public enum NumericOperator implements UnaryOperator<ScalarValue<?, ?, ?, ?>>
 	{
 		CEIL("ceil", Math::ceil, bd -> bd.setScale(0, RoundingMode.CEILING), l -> l),
 		FLOOR("floor", Math::floor, bd -> bd.setScale(0, RoundingMode.FLOOR), l -> l),
@@ -87,7 +88,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		}
 
 		@Override
-		public ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain> apply(ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain> number)
+		public ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain> apply(ScalarValue<?, ?, ?, ?> number)
 		{
 			if (number instanceof NullValue)
 				return NullValue.instance(NUMBERDS);
@@ -102,7 +103,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 				return createNumberValue(doubleOp.applyAsDouble(((DoubleValue<?>) number).get().doubleValue()));
 		}
 		
-		public String capsize(Transformation operand)
+		public String capsizeString(Transformation operand)
 		{
 			if (this == UNARY_PLUS || this == UNARY_MINUS)
 				return name + operand.toString();
@@ -123,16 +124,15 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		return operator.apply(NUMBERDS.cast(scalar));
+		return operator.apply(scalar);
 	}
 
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
-		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(Measure.class));
-				map.replaceAll((c, v) -> operator.apply(NUMBERDS.cast(v)));
-				map.putAll(dp.getValues(Attribute.class));
+				map.replaceAll((c, v) -> operator.apply(v));
 				return map;
 			});
 	}
@@ -159,13 +159,13 @@ public class NumericUnaryTransformation extends UnaryTransformation
 			if (nonnumeric.size() > 0) 
 				throw new UnsupportedOperationException("Expected only numeric measures but found: " + nonnumeric);
 			
-			return dataset;
+			return new DataStructureBuilder(dataset).removeComponents(dataset.getComponents(Attribute.class)).build();
 		}
 	}
 	
 	@Override
 	public String toString()
 	{
-		return operator.capsize(operand);
+		return operator.capsizeString(operand);
 	}
 }

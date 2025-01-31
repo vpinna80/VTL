@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.transform.number;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
@@ -56,7 +55,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class NumericIntTransformation extends BinaryTransformation
@@ -64,6 +62,7 @@ public class NumericIntTransformation extends BinaryTransformation
 	private static final long serialVersionUID = 1L;
 	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(NumericIntTransformation.class);
+	
 	private final NumericIntOperator operator;
 	
 	public NumericIntTransformation(NumericIntOperator operator, Transformation left, Transformation right)
@@ -76,8 +75,7 @@ public class NumericIntTransformation extends BinaryTransformation
 	@Override
 	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> cast = INTEGERDS.cast(right);
-		return operator.apply(NUMBERDS.cast(left), cast);
+		return operator.apply(left, INTEGERDS.cast(right));
 	}
 
 	@Override
@@ -97,7 +95,7 @@ public class NumericIntTransformation extends BinaryTransformation
 				{
 					DataStructureComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
 							.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())).asRole(Measure.class);
-					result.put(comp, operator.apply(NUMBERDS.cast(dp.get(comp)), integer));
+					result.put(comp, operator.apply(dp.get(comp), integer));
 				}
 				return result;
 			});
@@ -120,7 +118,7 @@ public class NumericIntTransformation extends BinaryTransformation
 		if (!INTEGERDS.isAssignableFrom(domainRight))
 			throw new VTLIncompatibleTypesException(operator.toString(), domainRight, INTEGERDS);
 
-		return NUMBER;
+		return left;
 	}
 	
 	@Override
@@ -132,27 +130,13 @@ public class NumericIntTransformation extends BinaryTransformation
 		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMeasures();
 		if (measures.size() == 0)
 			throw new VTLExpectedRoleException(Measure.class, dataset);
-		else if (measures.size() > 1)
-		{
-			for (DataStructureComponent<Measure, ?, ?> measure: measures)
-			{
-				ValueDomainSubset<?, ?> domain = measure.getVariable().getDomain();
-				if (!NUMBERDS.isAssignableFrom(domain) || INTEGERDS.isAssignableFrom(domain))
-					throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), measure, NUMBERDS);
-			}
-			
-			return dataset;
-		}
 		else
 		{
-			DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
-			ValueDomainSubset<?, ?> domain = measure.getVariable().getDomain();
-			if (!NUMBERDS.isAssignableFrom(domain))
-				throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), measure, NUMBERDS);
-			else if (INTEGERDS.isAssignableFrom(domain))
-				return new DataStructureBuilder(dataset.getIDs()).addComponent(NUMBERDS.getDefaultVariable().as(Measure.class)).build();
-			else
-				return dataset;
+			for (DataStructureComponent<Measure, ?, ?> measure: measures)
+				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
+					throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), measure, NUMBERDS);
+			
+			return new DataStructureBuilder(dataset).removeComponents(dataset.getComponents(Attribute.class)).build();
 		}
 	}
 	
