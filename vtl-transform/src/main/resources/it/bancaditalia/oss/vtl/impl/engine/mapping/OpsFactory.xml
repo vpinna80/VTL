@@ -486,8 +486,8 @@
 
 	<mapping to="aggregation.AggregateTransformation">
 		<from>AggrComp</from>
-		<tokensetparam ordinal="1" tokenset="AggregateOperator" />
-		<nullparam />
+		<tokensetparam name="op" tokenset="AggregateOperator" />
+		<exprparam name="exprComponent" />
 		<nullparam type="groupby" />
 		<nullparam />
 	</mapping>
@@ -519,7 +519,7 @@
 				<listparam name="componentID">
 					<aliasparam />
 				</listparam>
-				<stringparam name="STRING_CONSTANT" />
+				<valueparam name="STRING_CONSTANT" />
 			</customparam>
 		</nestedparam>
 		<exprparam name="havingClause" />
@@ -541,9 +541,9 @@
 		</nestedparam>
 		<nestedparam name="groupingClause" type="groupby">
 			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl">
-				<tokensetparam name="op" tokenset="GroupingMode" />
+				<tokensetparam ordinal="2" tokenset="GroupingMode" />
 				<nullparam />
-				<stringparam name="STRING_CONSTANT" />
+				<valueparam name="STRING_CONSTANT" />
 			</customparam>
 		</nestedparam>
 		<exprparam name="havingClause" />

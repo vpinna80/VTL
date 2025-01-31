@@ -400,14 +400,19 @@ public class OpsFactory implements Serializable
 				{
 					ParseTree rule = (ParseTree) ctxClass.getMethod(tokens.getName()).invoke(ctx);
 					if (rule != null)
-					{
-						TerminalNode leaf = (TerminalNode) rule.getClass().getMethod(value).invoke(rule);
-						if (leaf != null && ((Token) leaf.getPayload()).getType() == VtlTokens.class.getField(value).getInt(null))
+						try
 						{
-							LOGGER.trace("Found token {}.", value);
-							found = true;
+							TerminalNode leaf = (TerminalNode) rule.getClass().getMethod(value).invoke(rule);
+							if (leaf != null && ((Token) leaf.getPayload()).getType() == VtlTokens.class.getField(value).getInt(null))
+							{
+								LOGGER.trace("Found token {}.", value);
+								found = true;
+							}
 						}
-					}
+						catch (NoSuchMethodException e1)
+						{
+							return false;
+						}
 				}
 			
 			return found;
