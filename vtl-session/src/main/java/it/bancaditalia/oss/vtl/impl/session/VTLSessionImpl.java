@@ -329,7 +329,7 @@ public class VTLSessionImpl implements VTLSession
 		Map<DMLStatement, VTLValueMetadata> statements = workspace.getRules().stream()
 				.filter(DMLStatement.class::isInstance)
 				.map(DMLStatement.class::cast)
-				.collect(toMapWithValues(s -> s.getMetadata(this)));
+				.collect(toMapWithValues(s -> getMetadata(s.getAlias())));
 
 		LOGGER.info("Compiled {} statements.", statements.size());
 		return statements;
