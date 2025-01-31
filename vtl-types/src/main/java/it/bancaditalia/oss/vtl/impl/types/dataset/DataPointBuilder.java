@@ -80,9 +80,13 @@ public class DataPointBuilder implements Serializable
 
 	private volatile boolean built = false;
 
-	public DataPointBuilder()
+	public DataPointBuilder(Option... options)
 	{
-		delegate = new ConcurrentHashMap<>();
+		EnumSet<Option> optSet = EnumSet.noneOf(Option.class);
+		for (Option option: options)
+			optSet.add(option);
+
+		delegate = optSet.contains(DONT_SYNC) ? new HashMap<>() : new ConcurrentHashMap<>();
 	}
 
 	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keys, Option... options)
@@ -99,6 +103,11 @@ public class DataPointBuilder implements Serializable
 		if (built)
 			throw new IllegalStateException("DataPoint already built.");
 		return this;
+	}
+	
+	public static DataPoint dpFromMap(Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map, DataSetMetadata structure, Lineage lineage)
+	{
+		return new DataPointImpl(lineage, structure, map);
 	}
 
 	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
@@ -194,7 +203,7 @@ public class DataPointBuilder implements Serializable
 		private static final long serialVersionUID = 1L;
 //		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 
-		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpValues;
+		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values;
 		private final Lineage lineage;
 		private final SerUnaryOperator<Lineage> enricher;
 		private final int hashCode; 
@@ -204,18 +213,15 @@ public class DataPointBuilder implements Serializable
 		private DataPointImpl(Lineage lineage, DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
 			this.lineage = lineage;
-			this.dpValues = new HashMap<>(structure.size(), 1.0f);
-			dpValues.putAll(values);
+			values.putAll(values);
 
-			if (!structure.equals(values.keySet()))
-				for (DataStructureComponent<?, ?, ?> component: structure)
-					if (!component.is(Identifier.class) && !values.containsKey(component))
-						dpValues.put(component, NullValue.instanceFrom(component));
+			for (DataStructureComponent<?, ?, ?> c: structure)
+				if (!c.is(Identifier.class))
+					values.putIfAbsent(c, NullValue.instanceFrom(c));
 
-			if (!structure.equals(dpValues.keySet()))
+			if (LOGGER.isTraceEnabled())
 			{
-				this.dpValues.keySet()
-					.stream()
+				values.keySet().stream()
 					.filter(c -> !structure.contains(c))
 					.findAny()
 					.ifPresent(nonExistingComp -> {
@@ -223,12 +229,13 @@ public class DataPointBuilder implements Serializable
 					});
 
 				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
-				missing.removeAll(this.dpValues.keySet());
+				missing.removeAll(values.keySet());
 				if (missing.size() > 0)
-					throw new VTLMissingComponentsException(missing, this.dpValues);
+					throw new VTLMissingComponentsException(missing, values);
 			}
 			
-			hashCode = dpValues.hashCode();
+			this.values = values;
+			hashCode = values.hashCode();
 			enricher = SerUnaryOperator.identity();
 		}
 
@@ -236,8 +243,8 @@ public class DataPointBuilder implements Serializable
 		{
 			this.lineage = other.lineage;
 			this.enricher = other.enricher.andThen(enricher);
-			this.dpValues = other.dpValues;
-			hashCode = dpValues.hashCode();
+			this.values = other.values;
+			hashCode = values.hashCode();
 		}
 
 		@Override
@@ -246,14 +253,14 @@ public class DataPointBuilder implements Serializable
 			if (role == Identifier.class)
 			{
 				if (ids == null)
-					ids = Utils.getStream(dpValues).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.asRole(Identifier.class))).collect(SerCollectors.entriesToMap());
+					ids = Utils.getStream(values).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.asRole(Identifier.class))).collect(SerCollectors.entriesToMap());
 				// safe cast, R is Identifier
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				final Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map) ids;
 				return result;
 			}
 			else
-				return Utils.getStream(dpValues.keySet()).filter(k -> k.is(role)).map(k -> k.asRole(role)).collect(SerCollectors.toMapWithValues(dpValues::get));
+				return Utils.getStream(values.keySet()).filter(k -> k.is(role)).map(k -> k.asRole(role)).collect(SerCollectors.toMapWithValues(values::get));
 		}
 
 		@Override
@@ -313,34 +320,34 @@ public class DataPointBuilder implements Serializable
 		@Override
 		public boolean containsKey(Object key)
 		{
-			return dpValues.containsKey(key);
+			return values.containsKey(key);
 		}
 
 		@Override
 		public boolean containsValue(Object value)
 		{
-			return dpValues.containsValue(value);
+			return values.containsValue(value);
 		}
 
 		@Override
 		public Set<Map.Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
 		{
-			return dpValues.entrySet();
+			return values.entrySet();
 		}
 
 		@Override
 		public boolean equals(Object o)
 		{
-			return dpValues.equals(o);
+			return values.equals(o);
 		}
 
 		@Override
 		public ScalarValue<?, ?, ?, ?> get(Object key)
 		{
-			if (dpValues.containsKey(key))
-				return dpValues.get(key);
+			if (values.containsKey(key))
+				return values.get(key);
 			else
-				throw new VTLMissingComponentsException(Objects.toString(key), dpValues.keySet());
+				throw new VTLMissingComponentsException(Objects.toString(key), values.keySet());
 		}
 
 		@Override
@@ -352,7 +359,7 @@ public class DataPointBuilder implements Serializable
 		@Override
 		public int size()
 		{
-			return dpValues.size();
+			return values.size();
 		}
 
 		@Override

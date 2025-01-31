@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.INNER_JOIN;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.JoinOperator.LEFT_JOIN;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
@@ -237,12 +238,18 @@ public class JoinTransformation extends TransformationImpl
 		remaining.removeAll(metadata);
 
 		DataSet finalResult = result;
-		return new StreamWrapperDataSet(metadata, () -> finalResult.stream().map(dp -> { 
-				return dp.entrySet().stream()
-						.map(keepingValue(applyIf(
-								comp -> comp.getVariable().getAlias().isComposed(), 
-								comp -> comp.getRenamed(repo, comp.getVariable().getAlias().split().getValue())
-						))).collect(toDataPoint(LineageNode.of("dealias", dp.getLineage()), metadata));
+		return new StreamWrapperDataSet(metadata, () -> finalResult.stream().map(dp -> {
+				DataPointBuilder builder = new DataPointBuilder(DONT_SYNC);
+				for (Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> entry: dp.entrySet())
+				{
+					DataStructureComponent<?, ?, ?> comp = entry.getKey();
+					VTLAlias alias = comp.getVariable().getAlias();
+					if (alias.isComposed())
+						comp = comp.getRenamed(repo, alias.split().getValue());
+					builder.add(comp, entry.getValue());
+				}
+
+				return builder.build(LineageNode.of("dealias", dp.getLineage()), metadata);
 			}));
 	}
 

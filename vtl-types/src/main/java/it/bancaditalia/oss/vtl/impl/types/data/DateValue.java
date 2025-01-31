@@ -44,14 +44,9 @@ public class DateValue<S extends DateDomainSubset<S>> extends TimeValue<DateValu
 		super(value, domain);
 	}
 	
-	public static ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> of(TemporalAccessor value)
+	public static ScalarValue<?, ?, EntireDateDomainSubset, DateDomain> of(TemporalAccessor value)
 	{
-		return value == null ? NULLINSTANCE : new DateValue<>(LocalDate.from(value), DATEDS);
-	}
-	
-	public static ScalarValue<?, ?, ? extends DateDomainSubset<?>, ? extends DateDomain> of(LocalDate value)
-	{
-		return value == null ? NULLINSTANCE : new DateValue<>(value, DATEDS);
+		return value == null ? NULLINSTANCE : new DateValue<>(value instanceof LocalDate ? (LocalDate) value : LocalDate.from(value), DATEDS);
 	}
 
 	public <S1 extends DateDomainSubset<S1>> DateValue<S1> as(S1 domain2)

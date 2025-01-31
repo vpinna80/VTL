@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
+import static java.util.Collections.newSetFromMap;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.toList;
@@ -39,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -152,7 +154,8 @@ public class DataStructureBuilder
 
 		private final Map<VTLAlias, DataStructureComponent<?, ?, ?>> byName;
 		private final Map<Class<? extends Component>, Set<DataStructureComponent<?, ?, ?>>> byRole;
-
+		private final Set<Set<?>> cache = newSetFromMap(new WeakHashMap<>());
+		
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
 			byName = components.stream()
@@ -246,7 +249,7 @@ public class DataStructureBuilder
 		@Override
 		public boolean equals(Object obj)
 		{
-			return super.equals(obj);
+			return cache.contains(obj) || super.equals(obj) && cache.add((Set<?>) obj);
 		}
 
 		@Override
@@ -260,7 +263,7 @@ public class DataStructureBuilder
 		{
 			return byName.values().iterator();
 		}
-
+		
 		@Override
 		public int size()
 		{
