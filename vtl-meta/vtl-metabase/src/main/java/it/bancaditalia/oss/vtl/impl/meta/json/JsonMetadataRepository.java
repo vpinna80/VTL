@@ -101,7 +101,12 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	public JsonMetadataRepository() throws IOException
 	{
-		this(new URL(JSON_METADATA_URL.getValue()), ConfigurationManagerFactory.newManager().getEngine());
+		this(new URL(JSON_METADATA_URL.getValue()));
+	}
+	
+	public JsonMetadataRepository(URL jsonURL) throws IOException
+	{
+		this(jsonURL, ConfigurationManagerFactory.newManager().getEngine());
 	}
 	
 	public JsonMetadataRepository(URL jsonURL, Engine engine) throws IOException

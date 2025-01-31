@@ -144,7 +144,6 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		SdmxMLStructureReaderFactory.registerInstance();
 	}
 
-	private final String url = SDMX_REGISTRY_ENDPOINT.getValue();
 	private final Map<VTLAlias, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
 	private final Map<VTLAlias, Map<String, Variable<?, ?>>> variables = new HashMap<>();
 	private final Map<VTLAlias, String> schemes = new HashMap<>();
@@ -152,10 +151,15 @@ public class SDMXRepository extends InMemoryMetadataRepository
 
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		if (url == null || url.isEmpty())
+		this(SDMX_REGISTRY_ENDPOINT.getValue(), SDMX_META_USERNAME.getValue(), SDMX_META_PASSWORD.getValue());
+	}
+	
+	public SDMXRepository(String endpoint, String username, String password) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	{
+		if (endpoint == null || endpoint.isEmpty())
 			throw new IllegalStateException("No endpoint configured for SDMX REST service.");
 
-		URI uri = new URI(url);
+		URI uri = new URI(endpoint);
 		Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
 		if (proxy.type() == Type.HTTP)
 		{
@@ -174,14 +178,12 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		else
 			RestMessageBroker.setProxies(emptyMap());
 		
-		String userName = SDMX_META_USERNAME.getValue();
-		String password = SDMX_META_PASSWORD.getValue();
-		if (userName != null && !userName.isEmpty() && password != null && !password.isEmpty())
-			RestMessageBroker.storeGlobalAuthorization(userName, password);
+		if (username != null && !username.isEmpty() && password != null && !password.isEmpty())
+			RestMessageBroker.storeGlobalAuthorization(username, password);
 		
-		LOGGER.info("Loading metadata from {}", url);
+		LOGGER.info("Loading metadata from {}", endpoint);
 
-		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(url, REST_API_VERSION.parseVersion(SDMX_API_VERSION.getValue())));
+		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, REST_API_VERSION.parseVersion(SDMX_API_VERSION.getValue())));
 		
 		// Load codelists
 		for (CodelistBean codelist: rbrm.getMaintainableBeans(CodelistBean.class, new MaintainableRefBeanImpl(null, null, "*")))

@@ -26,10 +26,13 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatte
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.QUARTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.YEAR_PERIOD_FORMATTER;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
+import static it.bancaditalia.oss.vtl.util.Utils.SEQUENTIAL;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static java.util.Spliterator.IMMUTABLE;
+import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +62,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -129,8 +131,6 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
 
-	private final String endpoint = SDMX_DATA_ENDPOINT.getValue();
-
 	static
 	{
 		registerSupportedProperties(SDMXEnvironment.class, SDMX_DATA_ENDPOINT, SDMX_DATA_USERNAME, SDMX_DATA_PASSWORD);
@@ -144,15 +144,28 @@ public class SDMXEnvironment implements Environment, Serializable
 		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodHolder::new);
 		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodHolder::new);
 	}
-	
+
+	private final String endpoint;
+	private final String username;
+	private final String password;
+
 	public SDMXEnvironment() throws URISyntaxException
+	{
+		this(SDMX_DATA_ENDPOINT.getValue(), SDMX_DATA_USERNAME.getValue(), SDMX_DATA_PASSWORD.getValue());
+	}
+
+	public SDMXEnvironment(String endpoint, String username, String password) throws URISyntaxException
 	{
 		LOGGER.info("Initializing SDMX Environment...");
 		if (endpoint == null || endpoint.isEmpty())
 			throw new IllegalStateException("No endpoint configured for SDMX Environment.");
 		
 		LOGGER.info("SDMX data will be loaded from {}", endpoint);
-		
+
+		this.endpoint = endpoint;
+		this.username = username;
+		this.password = password;
+
 		// FMR client configuration
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
 		SingletonStore.registerInstance(new StructureQueryBuilderRest());
@@ -186,11 +199,8 @@ public class SDMXEnvironment implements Environment, Serializable
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo2, VTLAlias alias)
 	{
-		SDMXRepository repo;
-		if (repo2 instanceof SDMXRepository)
-			repo = (SDMXRepository) repo2;
-		else
-			throw new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository.");
+		SDMXRepository repo = (SDMXRepository) Optional.of(repo2).filter(SDMXRepository.class::isInstance)
+				.orElseThrow(() -> new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository."));
 
 		Optional<DataSetMetadata> maybeMeta = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
 		if (maybeMeta.isEmpty())
@@ -226,7 +236,7 @@ public class SDMXEnvironment implements Environment, Serializable
 							urlc.setAllowUserInteraction(false);
 							urlc.addRequestProperty("Accept-Encoding", "gzip");
 							urlc.addRequestProperty("Accept", "*/*;q=1.0");
-							urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((SDMX_DATA_USERNAME.getValue() + ":" + SDMX_DATA_PASSWORD.getValue()).getBytes()));
+							urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
 							((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
 							InputStream is = urlc.getInputStream();
 							rdl = RDL_FACTORY.getReadableDataLocation("gzip".equals(urlc.getContentEncoding()) ? new GZIPInputStream(is) : is);
@@ -239,7 +249,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	
 					DataReaderManager manager = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
 					DataReaderEngine dre = manager.getDataReaderEngine(rdl, repo.getBeanRetrievalManager(), new FirstFailureErrorHandler());
-					return StreamSupport.stream(Spliterators.spliterator(new ObsIterator(alias, dre, structure, dims), 20, IMMUTABLE), false);
+					return StreamSupport.stream(spliteratorUnknownSize(new ObsIterator(alias, dre, structure, dims), IMMUTABLE), SEQUENTIAL);
 				}
 			}
 		});
@@ -310,7 +320,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		public synchronized DataPoint next()
 		{
 			Observation obs = dre.getCurrentObservation();
-			DataPointBuilder builder = new DataPointBuilder(dmap);
+			DataPointBuilder builder = new DataPointBuilder(dmap, DONT_SYNC);
 
 			if (parser == null)
 				parser = getDateParser(obs.getDimensionValue());

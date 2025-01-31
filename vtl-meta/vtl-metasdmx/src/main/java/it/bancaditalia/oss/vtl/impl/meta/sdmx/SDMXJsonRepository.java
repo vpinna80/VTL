@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.getSupp
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
+import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -55,11 +57,20 @@ public class SDMXJsonRepository extends SDMXRepository
 		ConfigurationManagerFactory.registerSupportedProperties(SDMXJsonRepository.class, props.toArray(VTLProperty[]::new));
 	}
 	
-	private final JsonMetadataRepository jsonRepo = new JsonMetadataRepository(); 
+	private final JsonMetadataRepository jsonRepo; 
 
 	public SDMXJsonRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		super();
+		
+		jsonRepo = new JsonMetadataRepository();
+	}
+	
+	public SDMXJsonRepository(String endpoint, String username, String password, URL jsonURL, Engine engine) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	{
+		super(endpoint, username, password);
+		
+		jsonRepo = new JsonMetadataRepository(jsonURL, engine);
 	}
 	
 	@Override
