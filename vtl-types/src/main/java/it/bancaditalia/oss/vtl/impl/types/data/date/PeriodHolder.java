@@ -72,7 +72,9 @@ public abstract class PeriodHolder<I extends PeriodHolder<I>> implements Tempora
 				.optionalStart()
 				.appendLiteral("-")
 				.optionalEnd()
+				.optionalStart()
 				.appendLiteral("M")
+				.optionalEnd()
 				.appendValue(MONTH_OF_YEAR, 1, 2, NOT_NEGATIVE));
 
 		private final DateTimeFormatter formatter;
