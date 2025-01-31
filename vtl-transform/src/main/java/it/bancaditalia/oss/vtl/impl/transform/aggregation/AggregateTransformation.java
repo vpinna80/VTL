@@ -229,10 +229,10 @@ public class AggregateTransformation extends TransformationImpl
 	}
 
 	@Override
-	public VTLValueMetadata computeMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session);
-		MetadataRepository repo = session.getRepository();
+		VTLValueMetadata opmeta = operand == null ? scheme.getMetadata(THIS) : operand.getMetadata(scheme);
+		MetadataRepository repo = scheme.getRepository();
 		
 		if (opmeta instanceof ScalarValueMetadata)
 			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))

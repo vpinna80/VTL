@@ -31,6 +31,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 public class DataStructureComponentImpl<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
 {
 	private static final long serialVersionUID = 1L;
+	
 	private final Variable<S, D> variable;
 	private final Class<R> role;
 	private transient int hashCode;

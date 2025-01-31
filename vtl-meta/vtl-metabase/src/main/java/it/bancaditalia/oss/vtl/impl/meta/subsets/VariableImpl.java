@@ -95,10 +95,10 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 			return false;
 		
 		Variable<?, ?> other = (Variable<?, ?>) obj;
-		if (!alias.equals(other.getAlias()) || !domain.equals(other.getDomain()))
-			return false;
+		if (domain.equals(other.getDomain()) && alias.equals(other.getAlias()))
+			return true;
 		
-		return true;
+		return false;
 	}
 	
 	@Override

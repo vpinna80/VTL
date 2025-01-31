@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import java.util.Comparator;
 import java.util.Map.Entry;
 
 /**
@@ -26,6 +27,16 @@ import java.util.Map.Entry;
  */
 public interface VTLAlias
 {
+	/**
+	 * Compares two aliases by lowercased name. Quoting is not considered.
+	 * 
+	 * @return The comparator by name
+	 */
+	public static Comparator<VTLAlias> byName()
+	{
+		return (a, b) -> a == null ? -1 : b == null ? 1 : a.getMemberAlias().getName().toLowerCase().compareTo(b.getMemberAlias().getName().toLowerCase());
+	}
+	
 	/**
 	 * 
 	 * @return the composed name of this alias. If a name element was quoted, quotes are removed  

@@ -42,9 +42,14 @@ public class GenericTimeValue<S extends TimeDomainSubset<S, TimeDomain>> extends
 		return value == null ? NullValue.instance(TIMEDS) : new GenericTimeValue<>(value, TIMEDS);
 	}
 	
-	public static ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> of(TimeValue<?, ?, ?, ?> start, TimeValue<?, ?, ?, ?> endInclusive)
+	public static ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> of(
+			ScalarValue<?, ?, ? extends TimeDomainSubset<?, ? extends TimeDomain>, ? extends TimeDomain> start, 
+			ScalarValue<?, ?, ? extends TimeDomainSubset<?, ? extends TimeDomain>, ? extends TimeDomain> endInclusive)
 	{
-		return start == null || endInclusive == null ? NullValue.instance(TIMEDS) : new GenericTimeValue<>(new TimeRangeHolder(start, endInclusive), TIMEDS);
+		if (start == null || endInclusive == null || start instanceof NullValue || endInclusive instanceof NullValue) 
+			return NullValue.instance(TIMEDS);
+		
+		return new GenericTimeValue<>(new TimeRangeHolder((TimeValue<?, ?, ?, ?>) start, (TimeValue<?, ?, ?, ?>) endInclusive), TIMEDS);
 	}
 	
 	private static final long serialVersionUID = 1L;
