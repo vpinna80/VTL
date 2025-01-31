@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.Li
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createStructFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getScalarFor;
 import static java.util.stream.Collectors.joining;
+import static org.apache.spark.sql.types.DataTypes.createStructType;
 
 import java.io.Serializable;
 import java.util.AbstractMap;
@@ -46,12 +47,14 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
@@ -59,6 +62,7 @@ public class DataPointEncoder implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	public final DataStructureComponent<?, ?, ?>[] components;
+	public final ValueDomainSubset<?, ?>[] domains;
 	public final StructType schema;
 	public final Encoder<Row> rowEncoder;
 	public final Encoder<Row> rowEncoderNoLineage;
@@ -71,11 +75,14 @@ public class DataPointEncoder implements Serializable
 		
 		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
 		Arrays.sort(components, DataStructureComponent::byNameAndRole);
-		List<StructField> fields = new ArrayList<>(createStructFromComponents(components));
-		StructType schemaNoLineage = new StructType(fields.toArray(new StructField[components.length]));
+		domains = new ValueDomainSubset<?, ?>[components.length];
+		for (int i = 0; i < components.length; i++)
+			domains[i] = components[i].getVariable().getDomain();
+		List<StructField> fields = new ArrayList<>(createStructFromComponents(structure));
+		StructType schemaNoLineage = createStructType(new ArrayList<>(fields));
 		rowEncoderNoLineage = Encoders.row(schemaNoLineage);
 		fields.add(new StructField("$lineage$", LineageSparkUDT, false, Metadata.empty()));
-		schema = new StructType(fields.toArray(new StructField[components.length + 1]));
+		schema = createStructType(fields);
 		rowEncoder = Encoders.row(schema);
 	}
 
@@ -89,11 +96,19 @@ public class DataPointEncoder implements Serializable
 			int k = 0;
 			for (int i = 0; i < dpi.comps.length; i++)
 				if (dpi.comps[i] != null)
-					vals[k++] = dpi.vals[i].get();
+				{
+					vals[k++] = dpi.vals[i];
+					if (vals[k - 1] instanceof NullValue)
+						vals[k - 1] = null;
+				}
 		}
 		else
 			for (int i = 0; i < components.length; i++)
-				vals[i] = dp.get(components[i]).get();
+			{
+				vals[i] = dp.get(components[i]);
+				if (vals[i] instanceof NullValue)
+					vals[i] = null;
+			}
 		
 		vals[components.length] = dp.getLineage();
 		return new GenericRowWithSchema(vals, schema);
@@ -103,7 +118,10 @@ public class DataPointEncoder implements Serializable
 	{
 		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length];
 		for (int i = 0; i < components.length; i++)
-			vals[i] = getScalarFor(components[i], (Serializable) row.get(i + start));
+			if (row.isNullAt(i + start))
+				vals[i] = NullValue.instance(domains[i]);
+			else
+				vals[i] = getScalarFor(domains[i], (Serializable) row.get(i + start));
 		
 		Object lineage = row.get(components.length + start);
 		if (lineage instanceof byte[])
@@ -126,6 +144,11 @@ public class DataPointEncoder implements Serializable
 	{
 		return rowEncoder;
 	}
+	
+	public DataStructureComponent<?, ?, ?>[] getComponents()
+	{
+		return components;
+	}
 
 	public Encoder<Row> getRowEncoderNoLineage()
 	{
@@ -139,7 +162,7 @@ public class DataPointEncoder implements Serializable
 			@Override
 			public int size()
 			{
-				return DataPointImpl.this.size;
+				return size;
 			}
 
 			@Override
@@ -159,10 +182,10 @@ public class DataPointEncoder implements Serializable
 					@Override
 					public boolean hasNext()
 					{
-						while (i < size && comps[i] == null)
+						while (i < comps.length && comps[i] == null)
 							i++;
 						
-						return i < size && comps[i] != null;
+						return i < comps.length && comps[i] != null;
 					}
 				};
 			}
@@ -176,7 +199,6 @@ public class DataPointEncoder implements Serializable
 		private final int size;
 		private final int hashCode;
 		private final EntrySetView view = new EntrySetView();
-
 
 		public DataPointImpl(DataStructureComponent<?, ?, ?>[] comps, ScalarValue<?, ?, ?, ?>[] vals, Lineage lineage)
 		{

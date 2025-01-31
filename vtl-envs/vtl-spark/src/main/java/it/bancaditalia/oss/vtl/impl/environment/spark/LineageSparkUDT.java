@@ -91,4 +91,16 @@ public class LineageSparkUDT extends UserDefinedType<Lineage>
 	{
 		return KRYO.get();
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Lineage";
+	}
+	
+	@Override
+	public String typeName()
+	{
+		return toString();
+	}
 }

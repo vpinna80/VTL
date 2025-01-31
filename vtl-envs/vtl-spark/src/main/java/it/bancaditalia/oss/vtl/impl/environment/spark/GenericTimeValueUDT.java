@@ -19,8 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
-import static org.apache.spark.sql.types.DataTypes.StringType;
 import static scala.collection.JavaConverters.asScala;
 
 import java.time.LocalDate;
@@ -30,65 +30,76 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.RowEncoder$;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.StringEncoder$;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.UserDefinedType;
+import org.apache.spark.unsafe.types.UTF8String;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeRangeHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 
-public class TimeRangeSparkUDT extends UserDefinedType<TimeRangeHolder>
+public class GenericTimeValueUDT extends UserDefinedType<GenericTimeValue<?>>
 {
 	private static final long serialVersionUID = 1L;
 	
-	private static final AgnosticEncoder<?> ENCODER = RowEncoder$.MODULE$.apply(asScala((Iterable<EncoderField>) List.of(
-			new EncoderField("_1", StringEncoder$.MODULE$, false, Metadata.empty(), null, null), 
-			new EncoderField("_2", STRICT_LOCAL_DATE_ENCODER(), true, Metadata.empty(), null, null), 
-			new EncoderField("_3", TimePeriodSparkUDT.getEncoder(), true, Metadata.empty(), null, null), 
-			new EncoderField("_4", STRICT_LOCAL_DATE_ENCODER(), true, Metadata.empty(), null, null), 
-			new EncoderField("_5", TimePeriodSparkUDT.getEncoder(), true, Metadata.empty(), null, null)
+	private static final TimePeriodValueUDT TIMEPERIOD_UDT = new TimePeriodValueUDT();
+	private static final AgnosticEncoder<?> PERIOD_ENCODER = TimePeriodValueUDT.ENCODER;
+	private static final UTF8String MAGIC = UTF8String.fromBytes("Ciao".getBytes(UTF_8));
+
+	public static final AgnosticEncoder<?> ENCODER = RowEncoder$.MODULE$.apply(asScala((Iterable<EncoderField>) List.of(
+			new EncoderField("_1", STRICT_LOCAL_DATE_ENCODER(), true, Metadata.empty(), null, null), 
+			new EncoderField("_2", PERIOD_ENCODER, true, Metadata.empty(), null, null), 
+			new EncoderField("_3", STRICT_LOCAL_DATE_ENCODER(), true, Metadata.empty(), null, null), 
+			new EncoderField("_4", PERIOD_ENCODER, true, Metadata.empty(), null, null)
 		)).toSeq());
-	private static final TimePeriodSparkUDT PERIOD_SERIALIZER = new TimePeriodSparkUDT();
-	private static final int SER_OFFSET = 1;
 
 	@Override
-	public TimeRangeHolder deserialize(Object datum)
+	public GenericTimeValue<?> deserialize(Object datum)
 	{
 		InternalRow row = (InternalRow) datum;
-		
-		if (row.get(0, StringType) != "Ciao")
-			throw new IllegalStateException("Invalid magic value for TIMEDS: " + row.get(0, StringType));
-		
-		ScalarValue<?, ?, ?, ?> start = !row.isNullAt(SER_OFFSET) 
-			? DateValue.of((LocalDate) row.get(SER_OFFSET, STRICT_LOCAL_DATE_ENCODER().dataType())) 
-			: TimePeriodValue.of(PERIOD_SERIALIZER.deserialize(row.get(1 + SER_OFFSET, PERIOD_SERIALIZER.sqlType())));
-		ScalarValue<?, ?, ?, ?> end = !row.isNullAt(2 + SER_OFFSET) 
-			? DateValue.of((LocalDate) row.get(2 + SER_OFFSET, STRICT_LOCAL_DATE_ENCODER().dataType())) 
-			: TimePeriodValue.of(PERIOD_SERIALIZER.deserialize(row.get(3 + SER_OFFSET, PERIOD_SERIALIZER.sqlType())));
+				
+		ScalarValue<?, ?, ? extends TimeDomainSubset<?, ? extends TimeDomain>, ? extends TimeDomain> start = !row.isNullAt(0) 
+			? DateValue.of((LocalDate) row.get(0, STRICT_LOCAL_DATE_ENCODER().dataType())) 
+			: TIMEPERIOD_UDT.deserialize(row.get(1, TIMEPERIOD_UDT.sqlType()));
+		ScalarValue<?, ?, ? extends TimeDomainSubset<?, ? extends TimeDomain>, ? extends TimeDomain> end = !row.isNullAt(2) 
+			? DateValue.of((LocalDate) row.get(2, STRICT_LOCAL_DATE_ENCODER().dataType())) 
+			: TIMEPERIOD_UDT.deserialize(row.get(3, TIMEPERIOD_UDT.sqlType()));
 
-		return new TimeRangeHolder((TimeValue<?, ?, ?, ?>) start, (TimeValue<?, ?, ?, ?>) end);
+		return (GenericTimeValue<?>) GenericTimeValue.of(start, end);
 	}
 
 	@Override
-	public Object serialize(TimeRangeHolder obj)
+	public Object serialize(GenericTimeValue<?> obj)
 	{
-		TimeValue<?, ?, ?, ?> start = obj.getStartTime();
-		TimeValue<?, ?, ?, ?> end = obj.getEndTime();
+		TimeRangeHolder range = obj.get();
+		TimeValue<?, ?, ?, ?> start = range.getStartTime();
+		TimeValue<?, ?, ?, ?> end = range.getEndTime();
 
-		Object[] tuple = new Object[SER_OFFSET + 4];
-		tuple[0] = "Ciao";
-		tuple[SER_OFFSET] = start instanceof DateValue ? start.get() : null;
-		tuple[SER_OFFSET + 1] = tuple[SER_OFFSET] == null ? PERIOD_SERIALIZER.serialize((PeriodHolder<?>) start.get()) : null;
-		tuple[SER_OFFSET + 2] = end instanceof DateValue ? end.get() : null;
-		tuple[SER_OFFSET + 3] = tuple[SER_OFFSET + 2] == null ? PERIOD_SERIALIZER.serialize((PeriodHolder<?>) end.get()) : null;
-		
-		return new GenericInternalRow(tuple);
+		InternalRow row = new GenericInternalRow(4);
+		row.update(0, MAGIC);
+		if (start instanceof DateValue)
+		{
+			row.setInt(0, (int) ((LocalDate) start.get()).toEpochDay());
+			row.setNullAt(1);
+			row.setInt(2, (int) ((LocalDate) end.get()).toEpochDay());
+			row.setNullAt(3);
+		}
+		else
+		{
+			row.setNullAt(0);
+			row.update(1, TIMEPERIOD_UDT.serialize((TimePeriodValue<?>) start));
+			row.setNullAt(2);
+			row.update(3, TIMEPERIOD_UDT.serialize((TimePeriodValue<?>) end));
+		}
+
+		return row;
 	}
 
 	@Override
@@ -98,13 +109,20 @@ public class TimeRangeSparkUDT extends UserDefinedType<TimeRangeHolder>
 	}
 
 	@Override
-	public Class<TimeRangeHolder> userClass()
+	public Class<GenericTimeValue<?>> userClass()
 	{
-		return TimeRangeHolder.class;
+		return (Class<GenericTimeValue<?>>) (Class<? extends GenericTimeValue<?>>) GenericTimeValue.class;
 	}
 	
-	public static AgnosticEncoder<?> getEncoder()
+	@Override
+	public String toString()
 	{
-		return ENCODER;
+		return "GenericTimeValue";
+	}
+	
+	@Override
+	public String typeName()
+	{
+		return toString();
 	}
 }

@@ -19,18 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.PRIM_BUILDERS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
-
-import java.io.Serializable;
-
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.expressions.Aggregator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class VTLSparkAggregator<I, A, TT> extends Aggregator<I, A, TT>
@@ -65,33 +59,32 @@ public class VTLSparkAggregator<I, A, TT> extends Aggregator<I, A, TT>
 	@Override
 	public A reduce(A acc, I value)
 	{
-		// For performance reasons scalars are encoded as boxed primitive types, and must be rebuilt
-		if (value != null && PRIM_BUILDERS.containsKey(value.getClass()))
-			value = (I) PRIM_BUILDERS.get(value.getClass()).apply((Serializable) value);
-		else if (value == null)
-			value = (I) NullValue.instance(NULLDS);
-		
 		collector.accumulator().accept(acc, value);
+		if (acc instanceof NullValue)
+			throw new IllegalStateException();
+		
 		return acc;
 	}
 
 	@Override
 	public A merge(A acc1, A acc2)
 	{
-		return collector.combiner().apply(acc1, acc2);
+		A acc = collector.combiner().apply(acc1, acc2);
+		if (acc instanceof NullValue)
+			throw new IllegalStateException();
+
+		return acc;
 	}
 
 	@Override
 	public TT finish(A reduction)
 	{
-		Object apply = collector.finisher().apply(reduction);
-		if (apply instanceof ScalarValue)
-			apply = ((ScalarValue<?, ?, ?, ?>) apply).get();
+		TT result = collector.finisher().apply(reduction);
+		LOGGER.debug("Finished Spark aggregation: {} of {}", result, result == null ? null : result.getClass());
+
+		if (result instanceof NullValue)
+			throw new IllegalStateException();
 		
-		LOGGER.debug("Finished Spark aggregation: {} of {}", apply, apply == null ? null : apply.getClass());
-		
-		@SuppressWarnings("unchecked")
-		TT result = (TT) apply;
 		return result;
 	}
 

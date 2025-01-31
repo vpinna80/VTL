@@ -25,8 +25,10 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getColum
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getComponentsFromStruct;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.parseCSVStrings;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
+import static it.bancaditalia.oss.vtl.model.data.VTLAlias.byName;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
@@ -77,13 +79,15 @@ import com.esotericsoftware.kryo.Kryo;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
-import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.TimeRangeHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
+import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
+import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -113,6 +117,8 @@ public class SparkEnvironment implements Environment
 			new VTLPropertyImpl("vtl.spark.page.size", "Indicates the buffer size when retrieving datapoints from Spark", "1000", EnumSet.of(IS_REQUIRED), "1000");
 	public static final VTLProperty VTL_SPARK_SEARCH_PATH = 
 			new VTLPropertyImpl("vtl.spark.search.path", "Path to search for spark files", System.getenv("VTL_PATH"), EnumSet.of(IS_REQUIRED), System.getenv("VTL_PATH"));
+	public static final VTLProperty VTL_SPARK_WHOLESTAGE_CODEGEN = 
+			new VTLPropertyImpl("vtl.spark.codegen.value", "set to false to disable Spark wholestage code generation", "true", EnumSet.of(IS_REQUIRED), "true");
 
 	/* package */ static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
 	private static final AtomicReference<SQLConf> MASTER_CONF = new AtomicReference<>();
@@ -126,11 +132,15 @@ public class SparkEnvironment implements Environment
 			List<Class<?>> lClasses = List.of(LineageExternal.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
 			for (Class<?> lineageClass: lClasses)
 				UDTRegistration.register(lineageClass.getName(), LineageSparkUDT.class.getName());
-			UDTRegistration.register(Frequency.class.getName(), FrequencySparkUDT.class.getName());
-			UDTRegistration.register(TimeRangeHolder.class.getName(), TimeRangeSparkUDT.class.getName());
-			List<Class<?>> pClasses = List.of(YearPeriodHolder.class, SemesterPeriodHolder.class, QuarterPeriodHolder.class, MonthPeriodHolder.class, PeriodHolder.class);
-			for (Class<?> periodClass: pClasses)
-				UDTRegistration.register(periodClass.getName(), TimePeriodSparkUDT.class.getName());
+			UDTRegistration.register(IntegerValue.class.getName(), IntegerValueUDT.class.getName());
+			UDTRegistration.register(StringValue.class.getName(), StringValueUDT.class.getName());
+			UDTRegistration.register(DoubleValue.class.getName(), DoubleValueUDT.class.getName());
+			UDTRegistration.register(BigDecimalValue.class.getName(), BigDecimalValueUDT.class.getName());
+			UDTRegistration.register(BooleanValue.class.getName(), BooleanValueUDT.class.getName());
+			UDTRegistration.register(DateValue.class.getName(), DateValueUDT.class.getName());
+			UDTRegistration.register(GenericTimeValue.class.getName(), GenericTimeValueUDT.class.getName());
+			UDTRegistration.register(TimePeriodValue.class.getName(), TimePeriodValueUDT.class.getName());
+			UDTRegistration.register(DurationValue.class.getName(), DurationValueUDT.class.getName());
 		}
 	}
 
@@ -161,19 +171,20 @@ public class SparkEnvironment implements Environment
 
 	private static SparkConf getConf()
 	{
-		return new SparkConf()
-		  .setAppName("Spark SQL Environment for VTL Engine")
+		SparkConf conf = new SparkConf()
 		  .set("spark.executor.processTreeMetrics.enabled", "false")
 		  .set("spark.executor.extraClassPath", System.getProperty("java.class.path")) 
 		  .set("spark.kryo.registrator", "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment$VTLKryoRegistrator")
-		  /* enable for DEBUG
-		  .set("spark.sql.codegen.wholeStage", "false")
-		  .set("spark.sql.codegen", "false")
-		  .set("spark.sql.codegen.factoryMode", "NO_CODEGEN")
-		  //*/
 		  .set("spark.sql.windowExec.buffer.in.memory.threshold", "16384")
 		  .set("spark.sql.datetime.java8API.enabled", "true")
 		  .set("spark.sql.catalyst.dateType", "Instant");
+
+		return conf
+		  // enable for debugging
+		  .set("spark.sql.codegen.wholeStage", "false")
+//		  .set("spark.sql.codegen", "false")
+//		  .set("spark.sql.codegen.factoryMode", "NO_CODEGEN")
+		  .setAppName("Spark SQL Environment for VTL Engine");
 	}
 	
 	public SparkEnvironment()
@@ -252,8 +263,6 @@ public class SparkEnvironment implements Environment
 		Path sourcePath = Paths.get(source.substring(6).split(":", 2)[1]);
 		String type = source.substring(6).split(":", 2)[0];
 		
-		SparkDataSet dataset = null;
-		
 		Path file = paths.stream()
 				.map(path -> path.resolve(sourcePath))
 				.filter(Files::exists)
@@ -270,15 +279,13 @@ public class SparkEnvironment implements Environment
 			formatted = formatted.option("header", "true");
 		
 		Optional<DataSetMetadata> maybeStructure = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
-		if (maybeStructure.isPresent())
-		{
-			DataSetMetadata structure = maybeStructure.get();
-			Dataset<Row> applied = SparkUtils.applyStructure(structure, formatted.load(file.toString()));
-			Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
-			dataset = new SparkDataSet(session, structure, new DataPointEncoder(session, structure), applied.withColumn("$lineage$", lineage));
-		}
-		else
-			dataset = inferSchema(repo, formatted.load(file.toString()), alias); 
+		Dataset<Row> sourceDataFrame = formatted.load(file.toString());
+		SparkDataSet dataset = maybeStructure.map(structure -> {
+				DataPointEncoder encoder = new DataPointEncoder(session, structure);
+				Lineage lineage = LineageExternal.of("spark:" + alias);
+				Dataset<Row> applied = sourceDataFrame.map(parseCSVStrings(structure, lineage, encoder), encoder.getRowEncoder());
+				return new SparkDataSet(session, structure, encoder, applied);
+			}).orElseGet(() -> inferSchema(repo, sourceDataFrame, alias)); 
 		frames.put(alias, dataset);
 		return Optional.of(dataset);
 	}
@@ -372,7 +379,7 @@ public class SparkEnvironment implements Environment
 					.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getVariable().getAlias(), fieldNames[i]))
 					.collect(entriesToMap());
 			VTLAlias[] normalizedNames = newToOldNames.keySet().toArray(new VTLAlias[newToOldNames.size()]);
-			Arrays.sort(normalizedNames, 0, normalizedNames.length);
+			Arrays.sort(normalizedNames, 0, normalizedNames.length, byName());
 			
 			// Array of parsers for CSV fields (strings) into scalars
 			Map<DataStructureComponent<?, ?, ?>, DataType> types = structure.stream()

@@ -24,23 +24,24 @@ import static org.apache.spark.sql.types.DataTypes.IntegerType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.UserDefinedType;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 
-public class FrequencySparkUDT extends UserDefinedType<Frequency>
+public class DurationValueUDT extends UserDefinedType<DurationValue>
 {
 	private static final long serialVersionUID = 1L;
-	private static final Frequency[] VALUES = Frequency.values();
+	private static final Frequency[] FREQS = Frequency.values();
 	
 	@Override
-	public Frequency deserialize(Object datum)
+	public DurationValue deserialize(Object datum)
 	{
-		return datum != null ? VALUES[(Integer) datum] : null;
+		return datum != null ? FREQS[(Integer) datum].get() : null;
 	}
 
 	@Override
-	public Integer serialize(Frequency frequency)
+	public Integer serialize(DurationValue frequency)
 	{
-		return frequency != null ? Integer.valueOf(frequency.ordinal()) : null;
+		return frequency != null ? Integer.valueOf(frequency.get().ordinal()) : null;
 	}
 
 	@Override
@@ -50,8 +51,20 @@ public class FrequencySparkUDT extends UserDefinedType<Frequency>
 	}
 
 	@Override
-	public Class<Frequency> userClass()
+	public Class<DurationValue> userClass()
 	{
-		return Frequency.class;
+		return DurationValue.class;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "DurationValue";
+	}
+	
+	@Override
+	public String typeName()
+	{
+		return toString();
 	}
 }
