@@ -20,19 +20,17 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
-import static it.bancaditalia.oss.vtl.impl.types.data.Frequency.A;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 
-import java.time.Period;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collector.Characteristics;
 
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
@@ -40,6 +38,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
@@ -65,6 +64,7 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class TimeShiftTransformation extends TimeSeriesTransformation
 {
 	private static final long serialVersionUID = 1L;
+
 	private final long amount;
 
 	public TimeShiftTransformation(Transformation operand, ScalarValue<?, ?, ?, ?> amount)
@@ -82,29 +82,9 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 		
 		String lineageString = "timeshift " + amount;
 		long amount = this.amount;
-
-		SerCollector<TimeValue<?, ?, ?, ?>, ?, DurationValue> timesToFreq = collectingAndThen(toList(), times -> {
-			TimeValue<?, ?, ?, ?> last = null;
-			Frequency freq = A;
-			for (TimeValue<?, ?, ?, ?> current: times)
-			{
-				if (last != null)
-				{
-					Period p = last.until(current);
-					for (Frequency testFrequency: Frequency.values())
-						// Only allow inferred frequency to become smaller (i.e. from A to Q but not the opposite)
-						if ((freq == null || testFrequency.compareWith(freq) <= 0) && testFrequency.isMultiple(p))
-						{
-							freq = testFrequency;
-							break;
-						}
-				}
-
-				last = current;
-			}
-			
-			return freq.get();
-		});
+		
+		SerCollector<TimeValue<?, ?, ?, ?>, ?, DurationValue> timesToFreq = SerCollector.of(TimeWithFreq::new, 
+				TimeWithFreq::setTime, TimeWithFreq::combine, TimeWithFreq::getDuration, EnumSet.noneOf(Characteristics.class));
 		
 		DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> freqComp = DURATIONDS.getDefaultVariable().as(Measure.class);
 		Set<DataStructureComponent<?, ?, ?>> idsNoTimeWithFreq = new HashSet<>(dsMeta.getIDs());
