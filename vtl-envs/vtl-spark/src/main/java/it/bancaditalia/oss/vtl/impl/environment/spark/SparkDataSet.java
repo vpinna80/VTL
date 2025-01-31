@@ -316,7 +316,7 @@ public class SparkDataSet extends AbstractDataSet
 			// Template of the result rows with the original id values
 			for (int i = 0, j = 0; j < comps.length; j++)
 				if (dp.getComp(i).equals(comps[j]) && ids.contains(comps[j]))
-					vals[j] = dp.getValue(i++).get();
+					vals[j] = dp.getValue(i++);
 			
 			return operator.apply(dp)
 				.map(map -> {
@@ -326,7 +326,7 @@ public class SparkDataSet extends AbstractDataSet
 						// fill a copy of the template 
 						DataStructureComponent<?, ?, ?> c = comps[i];
 						if (!ids.contains(c))
-							finalVals[i] = map.get(c).get();
+							finalVals[i] = map.get(c);
 					}
 					return (Row) new GenericRowWithSchema(finalVals, schema);
 				}).iterator();
