@@ -72,7 +72,7 @@ public abstract class NumberValueImpl<V extends NumberValueImpl<V, R, S, D>, R e
 	@Override
 	public int compareTo(ScalarValue<?, ?, ?, ?> o)
 	{
-		if (o == null || o instanceof NullValue)
+		if (o == null || o.isNull())
 			throw new NullPointerException("Comparison with null values");
 		else if (this instanceof IntegerValue && o instanceof IntegerValue)
 			return Long.valueOf(get().longValue()).compareTo(Long.valueOf(((NumberValueImpl<?, ?, ?, ?>) o).get().longValue()));

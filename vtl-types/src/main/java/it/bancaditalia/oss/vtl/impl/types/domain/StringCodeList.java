@@ -143,7 +143,7 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	@Override
 	public ScalarValue<?, ?, StringCodeList, StringDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (value instanceof NullValue)
+		if (value.isNull())
 			return NullValue.instance(this);
 		else if (value instanceof StringValue)
 		{

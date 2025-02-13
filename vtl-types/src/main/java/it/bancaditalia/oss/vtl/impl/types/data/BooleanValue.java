@@ -52,7 +52,7 @@ public class BooleanValue<S extends BooleanDomainSubset<S>> extends BaseScalarVa
 	
 	public static final ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> not(ScalarValue<?, ?, ? extends BooleanDomainSubset<?>, BooleanDomain> value)
 	{
-		return value instanceof NullValue ? NULL : ((Boolean) value.get() ? FALSE : TRUE);
+		return value.isNull() ? NULL : ((Boolean) value.get() ? FALSE : TRUE);
 	}
 	
 	@Override

@@ -53,7 +53,7 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 	@Override
 	public final ScalarValue<?, ?, C, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (value instanceof NullValue)
+		if (value.isNull())
 			return NullValue.instance((C) this);
 		
 		return castCasted((V) parent.cast(value));

@@ -65,7 +65,7 @@ public enum ArithmeticOperator
 
 	public ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> applyAsInteger(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (left instanceof NullValue || right instanceof NullValue)
+		if (left.isNull() || right.isNull())
 			return NullValue.instance(INTEGERDS);
 		return IntegerValue.of(opLong.applyAsLong(((Number) (INTEGERDS.cast(left)).get()).longValue(), 
 				(((Number) INTEGERDS.cast(right).get()).longValue())));
@@ -73,7 +73,7 @@ public enum ArithmeticOperator
 	
 	public ScalarValue<?, ?, ?, ?> applyAsNumber(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (left instanceof NullValue || right instanceof NullValue)
+		if (left.isNull() || right.isNull())
 			return NullValue.instance(NUMBERDS);
 		else if (isUseBigDecimal()) 
 			return BigDecimalValue.of(opBigd.apply(toBigDecimal(((Number) (NUMBERDS.cast(left)).get())), 

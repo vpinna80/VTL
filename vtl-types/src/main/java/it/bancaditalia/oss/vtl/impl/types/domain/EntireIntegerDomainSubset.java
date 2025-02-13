@@ -59,7 +59,7 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 	{
 		if (isAssignableFrom(value.getDomain()))
 		{
-			if (value instanceof NullValue)
+			if (value.isNull())
 				return NullValue.instance(this);
 //			else if (value instanceof BooleanValue)
 //				return IntegerValue.of(((BooleanValue<?>) value) == BooleanValue.TRUE ? 1L : 0);

@@ -128,4 +128,10 @@ public abstract class BaseScalarValue<V extends BaseScalarValue<V, R, S, D>, R e
 		
 		return false;
 	}
+	
+	@Override
+	public boolean isNull()
+	{
+		return false;
+	}
 }

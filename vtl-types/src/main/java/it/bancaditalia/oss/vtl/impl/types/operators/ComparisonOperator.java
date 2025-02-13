@@ -46,7 +46,7 @@ public enum ComparisonOperator implements SerBiFunction<ScalarValue<?, ?, ?, ?>,
 	@Override
 	public ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> apply(ScalarValue<?, ?, ?, ?> l, ScalarValue<?, ?, ?, ?> r)
 	{
-		return (l instanceof NullValue || r instanceof NullValue) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(lambda.test(l.compareTo(r)));
+		return (l.isNull() || r.isNull()) ? NullValue.instance(BOOLEANDS) : BooleanValue.of(lambda.test(l.compareTo(r)));
 	}
 	
 	@Override

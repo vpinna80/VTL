@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -70,7 +69,7 @@ public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends Va
 	@Override
 	public ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (value instanceof NullValue)
+		if (value.isNull())
 			throw new VTLCastException(this, value);
 		else
 			return subsetWithNull.cast(value);

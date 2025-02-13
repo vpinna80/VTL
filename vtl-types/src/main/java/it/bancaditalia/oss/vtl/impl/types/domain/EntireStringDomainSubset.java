@@ -57,7 +57,7 @@ public class EntireStringDomainSubset extends EntireDomainSubset<EntireStringDom
 	@Override
 	public ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (value instanceof NullValue)
+		if (value.isNull())
 			return NullValue.instance(this);
 		else if (value instanceof StringValue)
 			return StringValue.of(value.get().toString());

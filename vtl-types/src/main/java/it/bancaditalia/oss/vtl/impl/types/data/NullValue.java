@@ -59,6 +59,12 @@ public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain>
 	}
 
 	@Override
+	public boolean isNull()
+	{
+		return true;
+	}
+	
+	@Override
 	public String toString()
 	{
 		return "#NULL#";

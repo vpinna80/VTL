@@ -46,7 +46,7 @@ public class GenericTimeValue<S extends TimeDomainSubset<S, TimeDomain>> extends
 			ScalarValue<?, ?, ? extends TimeDomainSubset<?, ? extends TimeDomain>, ? extends TimeDomain> start, 
 			ScalarValue<?, ?, ? extends TimeDomainSubset<?, ? extends TimeDomain>, ? extends TimeDomain> endInclusive)
 	{
-		if (start == null || endInclusive == null || start instanceof NullValue || endInclusive instanceof NullValue) 
+		if (start == null || endInclusive == null || start.isNull() || endInclusive.isNull()) 
 			return NullValue.instance(TIMEDS);
 		
 		return new GenericTimeValue<>(new TimeRangeHolder((TimeValue<?, ?, ?, ?>) start, (TimeValue<?, ?, ?, ?>) endInclusive), TIMEDS);

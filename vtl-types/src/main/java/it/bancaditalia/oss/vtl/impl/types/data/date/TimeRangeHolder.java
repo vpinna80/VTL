@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.DurationValue.P1D;
 import static it.bancaditalia.oss.vtl.impl.types.data.DurationValue.P1M;
 import static it.bancaditalia.oss.vtl.impl.types.data.DurationValue.P1Q;
 import static it.bancaditalia.oss.vtl.impl.types.data.DurationValue.P1S;
@@ -79,6 +80,12 @@ public class TimeRangeHolder implements Serializable, Comparable<TimeRangeHolder
 					this.length = p;
 					return;
 				}
+		
+		if (length.getDays() == 1 && length.getMonths() == 0 && length.getYears() == 0)
+		{
+			this.length = P1D;
+			return;
+		}
 
 		throw new UnsupportedOperationException("Unsupported time value length: " + length);
 	}

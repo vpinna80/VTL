@@ -53,7 +53,7 @@ public class EntireBooleanDomainSubset extends EntireDomainSubset<EntireBooleanD
 	@Override
 	public ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (isAssignableFrom(value.getDomain()) && value instanceof NullValue)
+		if (isAssignableFrom(value.getDomain()) && value.isNull())
 			return NullValue.instance(this);
 		else if (value instanceof BooleanValue)
 			return BooleanValue.of((Boolean) value.get());

@@ -62,7 +62,7 @@ public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDom
 	{
 		if (isAssignableFrom(value.getDomain()))
 		{
-			if (value instanceof NullValue)
+			if (value.isNull())
 				return NullValue.instance(this);
 			else if (value instanceof NumberValue)
 				return createNumberValue((Number) value.get());

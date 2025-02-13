@@ -75,7 +75,7 @@ public class RegExpDomainSubset implements StringDomainSubset<RegExpDomainSubset
 	{
 		value = parent.cast(value);
 		
-		if (value instanceof NullValue)
+		if (value.isNull())
 			return NullValue.instance(this);
 		
 		String str = (String) value.get();
