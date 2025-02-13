@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -36,16 +35,13 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
-import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 /**
  * Composite metadata repository that queries a SDMX registry and fallbacks to a json file 
  * 
  * @author Valentino Pinna
  */
-public class SDMXJsonRepository extends SDMXRepository
+public class SDMXJsonRepository extends JsonMetadataRepository
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -57,37 +53,13 @@ public class SDMXJsonRepository extends SDMXRepository
 		ConfigurationManagerFactory.registerSupportedProperties(SDMXJsonRepository.class, props.toArray(VTLProperty[]::new));
 	}
 	
-	private final JsonMetadataRepository jsonRepo; 
-
 	public SDMXJsonRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		super();
-		
-		jsonRepo = new JsonMetadataRepository();
+		super(new SDMXRepository());
 	}
 	
 	public SDMXJsonRepository(String endpoint, String username, String password, URL jsonURL, Engine engine) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		super(endpoint, username, password);
-		
-		jsonRepo = new JsonMetadataRepository(jsonURL, engine);
-	}
-	
-	@Override
-	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
-	{
-		return super.getMetadata(alias).or(() -> jsonRepo.getMetadata(alias));
-	}
-	
-	@Override
-	public ValueDomainSubset<?, ?> getDomain(VTLAlias alias)
-	{
-		return maybeGetDomain(alias).orElseGet(() -> jsonRepo.getDomain(alias));
-	}
-	
-	@Override
-	public boolean isDomainDefined(VTLAlias domain)
-	{
-		return super.isDomainDefined(domain) || jsonRepo.isDomainDefined(domain);
+		super(new SDMXRepository(endpoint, username, password), jsonURL, engine);
 	}
 }

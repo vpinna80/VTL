@@ -19,20 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULL;
-import static java.util.Objects.requireNonNull;
-
 import java.io.Serializable;
+import java.security.InvalidParameterException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -47,90 +42,96 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class InMemoryMetadataRepository implements MetadataRepository, Serializable 
 {
 	private static final long serialVersionUID = 1L;
+	private static final Map<VTLAlias, ValueDomainSubset<?, ?>> DOMAINS = new HashMap<>();
+	private static final Map<VTLAlias, Variable<?, ?>> DEFAULT_VARS = new HashMap<>();
 
-	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new ConcurrentHashMap<>();
-	private final Map<ValueDomainSubset<?, ?>, Variable<?, ?>> defaultVars = new HashMap<>();
-	private final Map<VTLAlias, Variable<?, ?>> vars = new ConcurrentHashMap<>();
-	
-	public InMemoryMetadataRepository() 
+	static
 	{
 		for (Domains domain: EnumSet.allOf(Domains.class))
-		{
-			ValueDomainSubset<?, ?> d = domain.getDomain();
-			domains.put(VTLAliasImpl.of(domain.name()), d);
-			if (domain != NULL)
-				defaultVars.put(d, VariableImpl.of(VTLAliasImpl.of(d.getAlias() + "_var"), d));
-		}
+			if (domain != Domains.NULL)
+			{
+				ValueDomainSubset<?, ?> d = domain.getDomain();
+				DOMAINS.put(VTLAliasImpl.of(domain.name()), d);
+				Variable<?, ?> defaultVariable = d.getDefaultVariable();
+				DEFAULT_VARS.put(defaultVariable.getAlias(), d.getDefaultVariable());
+			}
 	}
 	
-	@Override
-	public boolean isDomainDefined(VTLAlias domain) 
+	private final MetadataRepository chained;
+	
+	public InMemoryMetadataRepository()
 	{
-		return domains.containsKey(domain); 
+		this(null);
+	}
+	
+	public InMemoryMetadataRepository(MetadataRepository chained)
+	{
+		this.chained = chained;
 	}
 
-	protected Optional<ValueDomainSubset<?, ?>> maybeGetDomain(VTLAlias alias)
-	{
-		return Optional.ofNullable(domains.get(alias));
-	}
-
 	@Override
-	public ValueDomainSubset<?, ?> getDomain(VTLAlias alias) 
+	public Optional<ValueDomainSubset<?, ?>> getDomain(VTLAlias alias) 
 	{
-		return maybeGetDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
+		return Optional.<ValueDomainSubset<?, ?>>ofNullable(DOMAINS.get(alias))
+				.or(() -> Optional.ofNullable(chained).flatMap(chained -> chained.getDomain(alias)));
 	}
 	
 	@Override
-	public void defineDomain(VTLAlias alias, ValueDomainSubset<?, ?> domain)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
 	{
-		ValueDomainSubset<?, ?> prev = domains.putIfAbsent(requireNonNull(alias, "alias"), requireNonNull(domain, "domain"));
-		if (prev != null && !prev.equals(domain))
-			throw new VTLCastException(domain, prev);
-	}
-	
-	@Override
-	public Optional<VTLValueMetadata> getMetadata(VTLAlias name)
-	{
-		return Optional.empty();
+		return Optional.ofNullable(chained).flatMap(chained -> chained.getMetadata(alias));
 	}
 	
 	@Override
 	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(VTLAlias alias)
 	{
-		throw new VTLException("Hierarchical ruleset " + alias + " not found.");
+		return Optional.ofNullable(chained).map(chained -> chained.getHierarchyRuleset(alias))
+				.orElseThrow(() -> new VTLException("Hierarchical ruleset " + alias + " not found."));
 	}
 	
 	@Override
 	public DataPointRuleSet getDataPointRuleset(VTLAlias alias)
 	{
-		throw new VTLException("Data point ruleset " + alias + " not found.");
+		return Optional.ofNullable(chained).map(chained -> chained.getDataPointRuleset(alias))
+				.orElseThrow(() -> new VTLException("Data Point ruleset " + alias + " not found."));
 	}
 
 	@Override
-	public Variable<?, ?> getVariable(VTLAlias alias)
+	public Optional<Variable<?, ?>> getVariable(VTLAlias alias)
 	{
-		Variable<?, ?> instance = vars.get(alias);
-		if (instance == null)
-			throw new VTLUnboundAliasException(alias);
-		
-		return instance;
+		return Optional.<Variable<?, ?>>ofNullable(DEFAULT_VARS.get(alias))
+				.or(() -> Optional.ofNullable(chained).flatMap(chained -> chained.getVariable(alias)));
 	}
 	
 	@Override
 	public Variable<?, ?> createTempVariable(VTLAlias alias, ValueDomainSubset<?, ?> domain)
 	{
-		Variable<?, ?> variable = vars.get(alias);
-		if (variable == null)
-			return VariableImpl.of(alias, domain);
-		else if (domain.equals(variable.getDomain()))
-			return variable;
-		else
+		Variable<?, ?> variable = DEFAULT_VARS.get(alias);
+		if (variable != null && domain != null && !domain.equals(variable.getDomain()))
 			throw new VTLCastException(variable.getDomain(), domain);
+		else if (variable != null)
+			return variable;
+		else if (domain != null)
+			return VariableImpl.of(alias, domain);
+		else
+			throw new InvalidParameterException("Variable " + alias + " must be defined or the domain must be non-null");
 	}
 
 	@Override
-	public String getDataSource(VTLAlias name)
+	public String getDataSource(VTLAlias alias)
 	{
-		return name.getName();
+		return Optional.ofNullable(chained).map(chained -> chained.getDataSource(alias)).orElse(alias.getName());
+	}
+
+	@Override
+	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias)
+	{
+		return Optional.ofNullable(chained).flatMap(chained -> chained.getStructureDefinition(alias));
+	}
+	
+	@Override
+	public MetadataRepository getLinkedRepository()
+	{
+		return Optional.ofNullable(chained).orElse(null);
 	}
 }

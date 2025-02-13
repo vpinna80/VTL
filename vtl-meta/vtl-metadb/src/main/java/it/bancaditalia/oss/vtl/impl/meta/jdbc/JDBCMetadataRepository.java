@@ -26,7 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
 
-import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -34,6 +34,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -84,9 +86,6 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 	public static final VTLProperty METADATA_JDBC_SIZE_REGEX = new VTLPropertyImpl("vtl.metadata.jdbc.regex", "Regex to recognize length restriction; must contain three groups", "jndi/myDB", 
 			EnumSet.of(IS_REQUIRED), "_(POS|POSNEG)_L(\\d+)_D(\\d+)$");
 
-	private final SerThrowingSupplier<Connection, SQLException> pool;
-	private final Pattern sizePattern;
-	
 	static
 	{
 		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_URL);
@@ -94,6 +93,10 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_SIZE_REGEX);
 	}
 
+	private final SerThrowingSupplier<Connection, SQLException> pool;
+	private final Pattern sizePattern;
+	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new HashMap<>();
+	
 	public JDBCMetadataRepository() throws NamingException
 	{
 		sizePattern = Pattern.compile(METADATA_JDBC_SIZE_REGEX.getValue());
@@ -109,6 +112,12 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 			String url = Objects.requireNonNull(METADATA_JDBC_URL.getValue(), "JDBC URL must not be null");
 			pool = () -> DriverManager.getConnection(url);
 		}
+	}
+	
+	@Override
+	public Optional<ValueDomainSubset<?, ?>> getDomain(VTLAlias alias)
+	{
+		return Optional.<ValueDomainSubset<?, ?>>ofNullable(domains.get(alias)).or(() -> super.getDomain(alias));
 	}
 
 	@Override
@@ -133,29 +142,22 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				
 				ValueDomainSubset<?, ?> domain;
 				VTLAlias domainName = VTLAliasImpl.of(rs.getString(3));
-				VTLAlias setId = VTLAliasImpl.of(rs.getString(4));
-				if (setId != null && isDomainDefined(setId))
-				{
-					domain = getDomain(setId);
-					LOGGER.trace("Set {} already defined as {}", setId, domain);
-				}
-				else
-				{
-					if (isDomainDefined(domainName))
-						domain = getDomain(domainName);
-					else
-					{
-						domain = parseDomain(domainName);
-						defineDomain(domainName, domain);
-						LOGGER.trace("Domain {} already defined as {}", domainName, domain);
-					}
-					
-					if (setId != null)
-					{
-						domain = parseSubset(conn, domain, setId);
-						defineDomain(setId, domain);
-					}
-				}
+				Optional<VTLAlias> setId = Optional.ofNullable(VTLAliasImpl.of(rs.getString(4)));
+				domain = setId.flatMap(this::getDomain)
+						.or(() -> getDomain(domainName))
+						.orElseGet(() -> {
+							ValueDomainSubset<?, ?> newDomain = parseDomain(domainName);
+							domains.put(domainName, newDomain);
+							
+							if (setId.isPresent())
+							{
+								newDomain = parseSubset(conn, newDomain, setId.get());
+								domains.put(setId.get(), newDomain);
+							}
+							
+							LOGGER.trace("Domain {} already defined as {}", domainName, newDomain);
+							return newDomain;
+						});
 				
 				DataStructureComponent<? extends Component, ?, ?> comp = createTempVariable(varName, domain).as(role);
 				LOGGER.trace("Read component {} for {}", comp, name);
@@ -166,7 +168,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 			LOGGER.debug("Structure for {} is {}", name, metadata);
 			return Optional.of(metadata);
 		}
-		catch (SQLException | IOException | NumberFormatException e)
+		catch (SQLException | UncheckedIOException | NumberFormatException e)
 		{
 			LOGGER.error("Error while querying metadata for " + name, e);
 			return Optional.empty();
@@ -230,7 +232,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 		return domain;
 	}
 	
-	private ValueDomainSubset<?, ?> parseSubset(Connection conn, ValueDomainSubset<?, ?> domain, VTLAlias setId) throws SQLException, IOException
+	private ValueDomainSubset<?, ?> parseSubset(Connection conn, ValueDomainSubset<?, ?> domain, VTLAlias setId)
 	{
 		try (PreparedStatement stat = conn.prepareStatement("SELECT CRITERIONPARAM FROM DOMAINSET WHERE SETID = ?"))
 		{
@@ -266,7 +268,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				return domain;
 			}
 		}
-		catch (NumberFormatException e)
+		catch (NumberFormatException | SQLException e)
 		{
 			LOGGER.error("Error while reading codelist for " + setId, e);
 			return domain;

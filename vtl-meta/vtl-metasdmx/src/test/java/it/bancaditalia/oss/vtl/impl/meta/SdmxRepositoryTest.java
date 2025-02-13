@@ -88,7 +88,7 @@ public class SdmxRepositoryTest
 	public void testGetCodes(MockServerClient client) throws IOException
 	{
 		assertTrue(repo instanceof SDMXRepository);
-		ValueDomainSubset<?, ?> domain = repo.getDomain(VTLAliasImpl.of(true, "ECB:CL_CURRENCY(1.0)"));
+		ValueDomainSubset<?, ?> domain = repo.getDomain(VTLAliasImpl.of(true, "ECB:CL_CURRENCY(1.0)")).get();
 		assertTrue(domain instanceof SdmxCodeList);
 		Set<CodeItem<?, ?, StringCodeList, StringDomain>> codes = ((SdmxCodeList) domain).getCodeItems();
 		assertEquals(369, codes.size());

@@ -37,6 +37,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -53,6 +54,7 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -60,6 +62,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -73,6 +76,7 @@ import io.sdmx.api.collection.KeyValue;
 import io.sdmx.api.exception.SdmxUnauthorisedException;
 import io.sdmx.api.io.ReadableDataLocation;
 import io.sdmx.api.sdmx.engine.DataReaderEngine;
+import io.sdmx.api.sdmx.manager.structure.SdmxBeanRetrievalManager;
 import io.sdmx.api.sdmx.model.data.Observation;
 import io.sdmx.core.data.api.manager.DataReaderManager;
 import io.sdmx.core.data.manager.DataFormatManagerImpl;
@@ -92,7 +96,6 @@ import io.sdmx.utils.http.broker.RestMessageBroker;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
@@ -105,6 +108,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -130,6 +134,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
+	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
 
 	static
 	{
@@ -197,14 +202,15 @@ public class SDMXEnvironment implements Environment, Serializable
 	}
 	
 	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo2, VTLAlias alias)
+	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
-		SDMXRepository repo = (SDMXRepository) Optional.of(repo2).filter(SDMXRepository.class::isInstance)
-				.orElseThrow(() -> new IllegalStateException("The SDMX Environment must be used with the FMR Metadata Repository."));
-
+		if (!SDMX_DATAFLOW_PATTERN.matcher(alias.getName()).matches())
+			return Optional.empty();
+		
 		Optional<DataSetMetadata> maybeMeta = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
 		if (maybeMeta.isEmpty())
 			return Optional.empty();
+		
 		DataSetMetadata structure = maybeMeta.get();
 		
 		String[] query = alias.getName().split("/", 2);
@@ -212,47 +218,8 @@ public class SDMXEnvironment implements Environment, Serializable
 		String resource = query.length > 1 ? "/" + query[1] : "";
 		String[] dims = query.length > 1 ? query[1].split("\\.") : new String[] {};
 
-		return Optional.of(new AbstractDataSet(structure) {
-			private static final long serialVersionUID = 1L;
-		
-			@Override
-			protected Stream<DataPoint> streamDataPoints()
-			{
-				synchronized (SDMXEnvironment.this)
-				{
-					String path = endpoint + "/data/" + dataflow + resource;
-					ReadableDataLocation rdl;
-					try 
-					{
-						rdl = RDL_FACTORY.getReadableDataLocation(path);
-					}
-					catch (SdmxUnauthorisedException e)
-					{
-						try
-						{
-							URL url = new URI(path).toURL();
-							URLConnection urlc = url.openConnection();
-							urlc.setDoOutput(true);
-							urlc.setAllowUserInteraction(false);
-							urlc.addRequestProperty("Accept-Encoding", "gzip");
-							urlc.addRequestProperty("Accept", "*/*;q=1.0");
-							urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
-							((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
-							InputStream is = urlc.getInputStream();
-							rdl = RDL_FACTORY.getReadableDataLocation("gzip".equals(urlc.getContentEncoding()) ? new GZIPInputStream(is) : is);
-						}
-						catch (IOException | URISyntaxException e1)
-						{
-							throw new VTLException("Error in creating readableDataLocation", e);
-						}
-					}
-	
-					DataReaderManager manager = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
-					DataReaderEngine dre = manager.getDataReaderEngine(rdl, repo.getBeanRetrievalManager(), new FirstFailureErrorHandler());
-					return StreamSupport.stream(spliteratorUnknownSize(new ObsIterator(alias, dre, structure, dims), IMMUTABLE), SEQUENTIAL);
-				}
-			}
-		});
+		AbstractDataSet sdmxDataflow = new StreamWrapperDataSet(structure, () -> getData(repo, alias, structure, dataflow, resource, dims));
+		return Optional.of(sdmxDataflow);
 	}
 
 	@Override
@@ -400,5 +367,59 @@ public class SDMXEnvironment implements Environment, Serializable
 			}
 
 		throw last;
+	}
+
+	private synchronized Stream<DataPoint> getData(MetadataRepository repo, VTLAlias alias, DataSetMetadata structure, String dataflow, String resource, String[] dims)
+	{
+		String path = endpoint + "/data/" + dataflow + resource;
+		ReadableDataLocation rdl;
+		try 
+		{
+			rdl = RDL_FACTORY.getReadableDataLocation(path);
+		}
+		catch (SdmxUnauthorisedException e)
+		{
+			try
+			{
+				URL url = new URI(path).toURL();
+				URLConnection urlc = url.openConnection();
+				urlc.setDoOutput(true);
+				urlc.setAllowUserInteraction(false);
+				urlc.addRequestProperty("Accept-Encoding", "gzip");
+				urlc.addRequestProperty("Accept", "*/*;q=1.0");
+				urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
+				((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
+				InputStream is = urlc.getInputStream();
+				rdl = RDL_FACTORY.getReadableDataLocation("gzip".equals(urlc.getContentEncoding()) ? new GZIPInputStream(is) : is);
+			}
+			catch (IOException | URISyntaxException e1)
+			{
+				throw new VTLException("Error in creating readableDataLocation", e);
+			}
+		}
+
+		SdmxBeanRetrievalManager brm = null;
+		try
+		{
+			MetadataRepository current = repo;
+			while (brm == null && current != null)
+			{
+				Optional<Field> field = Arrays.stream(repo.getClass().getFields())
+			            .filter(f -> f.getName().equals("rbrm"))
+			            .findFirst();
+				if (field.isPresent())
+					brm = (SdmxBeanRetrievalManager) field.get().get(repo);
+				else
+					repo = repo.getLinkedRepository();
+			}
+		}
+		catch (SecurityException | IllegalAccessException | IllegalArgumentException e)
+		{
+			throw new IllegalStateException("The SDMX Environment must be used with a SDMX Metadata Repository.");
+		}
+		
+		DataReaderManager manager = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
+		DataReaderEngine dre = manager.getDataReaderEngine(rdl, brm, new FirstFailureErrorHandler());
+		return StreamSupport.stream(spliteratorUnknownSize(new ObsIterator(alias, dre, structure, dims), IMMUTABLE), SEQUENTIAL);
 	}
 }

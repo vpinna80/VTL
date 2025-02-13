@@ -179,6 +179,6 @@ public enum TestComponents
 	@SuppressWarnings("unchecked")
 	public <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureComponent<R, S, D> get(MetadataRepository repo)
 	{
-		return (domain != null ? new TestVariable<>(VTLAliasImpl.of(name()), (S) domain) : new TestVariable<>(VTLAliasImpl.of(name()), (S) repo.getDomain(domainStr))).as((Class<R>) role);
+		return (domain != null ? new TestVariable<>(VTLAliasImpl.of(name()), (S) domain) : new TestVariable<>(VTLAliasImpl.of(name()), (S) repo.getDomain(domainStr).get())).as((Class<R>) role);
 	}
 }

@@ -54,6 +54,7 @@ import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLDuplicatedObjectException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
@@ -66,15 +67,14 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
@@ -96,21 +96,42 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	}
 
 	private final Map<VTLAlias, Variable<?, ?>> variables = new HashMap<>(); 
-	private final Map<VTLAlias, String> sources = new HashMap<>(); 
-	private final Map<VTLAlias, VTLValueMetadata> metadata = new HashMap<>(); 
+	private final Map<VTLAlias, String> sources = new HashMap<>();
+	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new HashMap<>(); 
+	// dsd alias to dsd
+	private final Map<VTLAlias, VTLValueMetadata> structures = new HashMap<>();
+	// data alias to dsd alias
+	private final Map<VTLAlias, VTLAlias> data = new HashMap<>(); 
 	
 	public JsonMetadataRepository() throws IOException
 	{
 		this(new URL(JSON_METADATA_URL.getValue()));
 	}
 	
-	public JsonMetadataRepository(URL jsonURL) throws IOException
+	public JsonMetadataRepository(MetadataRepository chained) throws IOException
 	{
-		this(jsonURL, ConfigurationManagerFactory.newManager().getEngine());
+		this(chained, new URL(JSON_METADATA_URL.getValue()));
 	}
 	
+	public JsonMetadataRepository(URL jsonURL) throws IOException
+	{
+		this(null, jsonURL, ConfigurationManagerFactory.newManager().getEngine());
+	}
+	
+	public JsonMetadataRepository(MetadataRepository chained, URL jsonURL) throws IOException
+	{
+		this(chained, jsonURL, ConfigurationManagerFactory.newManager().getEngine());
+	}
+
 	public JsonMetadataRepository(URL jsonURL, Engine engine) throws IOException
 	{
+		this(null, jsonURL, engine);
+	}
+
+	public JsonMetadataRepository(MetadataRepository chained, URL jsonURL, Engine engine) throws IOException
+	{
+		super(chained);
+		
 		Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
 		Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
 		Map<VTLAlias, VTLAlias> varDefs;
@@ -125,46 +146,41 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			
 			iterate(json, "domain", (a, d) -> createDomain(a, d, requireNonNull(engine)));
 			varDefs = iterate(json, "variable", JsonMetadataRepository::createVariable);
-			strDefs = iterate(json, "structure", JsonMetadataRepository::createStructure);
-			dsDefs = iterate(json, "dataset", JsonMetadataRepository::createMetadata);
+			strDefs = iterate(json, "structure", JsonMetadataRepository::createMetadata);
+			dsDefs = iterate(json, "dataset", JsonMetadataRepository::createData);
 		}
 
-		varDefs.forEach((n, d) -> variables.put(n, VariableImpl.of(n, getDomain(d))));
-		Map<VTLAlias, DataSetMetadata> structures = new HashMap<>(); 
-		strDefs.forEach((n, l) -> structures.put(n, l.entrySet().stream().map(splitting((c, r) -> {
-			requireNonNull(variables.get(c), "Undefined variable " + c);
-			return variables.get(c).as(r); 
-		})).collect(toDataStructure())));
-		dsDefs.forEach((n, e) -> {
-			VTLAlias strName = e.getKey();
-			sources.put(n, e.getValue());
-			if (!structures.containsKey(strName))
-				metadata.put(n, uncheckedGetDomain(strName));
-			else
-				metadata.put(n, structures.get(strName));
+		varDefs.forEach((alias, d) -> variables.put(alias, VariableImpl.of(alias, getDomain(d).orElseThrow(() -> new VTLUndefinedObjectException("Domain", d)))));
+		strDefs.forEach((dsdAlias, l) -> structures.put(dsdAlias, l.entrySet().stream()
+				.map(splitting((vAlias, r) -> getVariable(vAlias).orElseThrow(() -> new VTLUndefinedObjectException("Variable", vAlias)).as(r)))
+				.collect(toDataStructure())));
+		dsDefs.forEach((alias, e) -> {
+			data.put(alias, e.getKey());
+			sources.put(alias, e.getValue());
+			if (getStructureDefinition(e.getKey()).isEmpty())
+				structures.put(e.getKey(), ScalarValueMetadata.of(getDomain(e.getKey()).orElseThrow(() -> new VTLUndefinedObjectException("Structure or domain", e.getKey()))));
 		});
-	}
-	
-	@SuppressWarnings("unchecked")
-	private <S extends ValueDomainSubset<S, D>, D extends ValueDomain> ScalarValueMetadata<S, D> uncheckedGetDomain(VTLAlias domainName)
-	{
-		return () -> (S) super.getDomain(domainName);
+		
 	}
 	
 	@Override
-	public Optional<VTLValueMetadata> getMetadata(VTLAlias name)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
 	{
-		return Optional.ofNullable(metadata.get(name));
+		return Optional.ofNullable(data.get(alias))
+				.flatMap(this::getStructureDefinition)
+				.or(() -> super.getMetadata(alias));
 	}
 	
 	@Override
-	public Variable<?, ?> getVariable(VTLAlias alias)
+	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias)
 	{
-		Variable<?, ?> variable = variables.get(alias);
-		if (variable != null)
-			return variable;
-		else
-			return super.getVariable(alias);
+		return Optional.ofNullable(structures.get(alias)).or(() -> super.getStructureDefinition(alias));
+	}
+	
+	@Override
+	public Optional<Variable<?, ?>> getVariable(VTLAlias alias)
+	{
+		return Optional.<Variable<?, ?>>ofNullable(variables.get(alias)).or(() -> super.getVariable(alias));
 	}
 	
 	@Override
@@ -203,7 +219,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return result;
 	}
 	
-	private static Entry<VTLAlias, String> createMetadata(VTLAlias name, Map<?, ?> dataset)
+	private static Entry<VTLAlias, String> createData(VTLAlias name, Map<?, ?> dataset)
 	{
 		VTLAlias metadataRef = VTLAliasImpl.of((String) dataset.get("structure"));
 		String source = (String) dataset.get("source");
@@ -212,7 +228,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return new SimpleEntry<>(metadataRef, source);
 	}
 
-	private static Map<VTLAlias, Class<? extends Component>> createStructure(VTLAlias name, Map<?, ?> jsonStructure)
+	private static Map<VTLAlias, Class<? extends Component>> createMetadata(VTLAlias name, Map<?, ?> jsonStructure)
 	{
 		LOGGER.info("Found structure {}", name);
 		return iterate(jsonStructure, "component", JsonMetadataRepository::createComponent);
@@ -243,7 +259,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				Set<String> codes = ((List<?>) enumerated).stream().map(String.class::cast).collect(toSet());
 				LOGGER.debug("Obtained {} codes for {}", codes.size(), name);
 				StringCodeList domain = new StringCodeList(STRINGDS, name, codes);
-				defineDomain(name, domain);
+				domains.put(name, domain);
 				return domain;
 			}
 			else
@@ -281,7 +297,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 					throw new InvalidParameterException("Invalid domain definition expression: " + code);
 				
 				ValueDomainSubset<?, ?> domain = new StringTransformationDomainSubset<>(name, STRINGDS, (Transformation) statement);
-				defineDomain(name, domain);
+				domains.put(name, domain);
 				return domain;
 			}
 			else

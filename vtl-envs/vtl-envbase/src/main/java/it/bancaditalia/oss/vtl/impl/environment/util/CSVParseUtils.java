@@ -42,12 +42,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
@@ -295,8 +297,14 @@ public class CSVParseUtils
 			return new SimpleEntry<>(DATEDS, typeName.replaceAll(DATE_DOMAIN_PATTERN, "$1"));
 		else if ("DATE".equalsIgnoreCase(typeName))
 			return new SimpleEntry<>(DATEDS, "YYYY-MM-DD");
-		else if (repo != null && repo.isDomainDefined(VTLAliasImpl.of(typeName)))
-			return new SimpleEntry<>(repo.getDomain(VTLAliasImpl.of(typeName)), typeName);
+		else
+		{
+			VTLAlias alias = VTLAliasImpl.of(typeName);
+			Optional<MetadataRepository> maybeRepo = Optional.ofNullable(repo);
+			Optional<ValueDomainSubset<?, ?>> domain = maybeRepo.flatMap(r -> r.getDomain(alias));
+			if (maybeRepo.isPresent())
+				return new SimpleEntry<>(domain.orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias)), typeName);
+		}
 	
 		throw new VTLException("Unsupported type: " + typeName);
 	}

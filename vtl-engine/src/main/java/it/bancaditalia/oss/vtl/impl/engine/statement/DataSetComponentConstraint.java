@@ -79,7 +79,7 @@ public class DataSetComponentConstraint implements Serializable
 			return false;
 		else if (name != null && !name.equals(component.getVariable().getAlias()))
 			return false;
-		else if (domainName != null && !scheme.getRepository().getDomain(domainName).isAssignableFrom(component.getVariable().getDomain()))
+		else if (domainName != null && !scheme.getRepository().getDomain(domainName).get().isAssignableFrom(component.getVariable().getDomain()))
 			return false;
 		else
 			return true;

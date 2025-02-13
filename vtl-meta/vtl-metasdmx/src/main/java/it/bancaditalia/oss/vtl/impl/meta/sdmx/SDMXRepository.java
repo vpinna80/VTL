@@ -70,7 +70,6 @@ import org.xml.sax.SAXException;
 
 import io.sdmx.api.exception.SdmxNoResultsException;
 import io.sdmx.api.sdmx.constants.TEXT_TYPE;
-import io.sdmx.api.sdmx.manager.structure.SdmxBeanRetrievalManager;
 import io.sdmx.api.sdmx.model.beans.base.ComponentBean;
 import io.sdmx.api.sdmx.model.beans.base.RepresentationBean;
 import io.sdmx.api.sdmx.model.beans.base.TextFormatBean;
@@ -96,10 +95,10 @@ import io.sdmx.utils.sdmx.xs.MaintainableRefBeanImpl;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.NonNullDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
@@ -117,7 +116,10 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SDMXRepository extends InMemoryMetadataRepository
 {
@@ -144,18 +146,33 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		SdmxMLStructureReaderFactory.registerInstance();
 	}
 
-	private final Map<VTLAlias, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
+	public final SdmxRestToBeanRetrievalManager rbrm;
+	
+	private final Map<VTLAlias, Entry<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
+	private final Map<VTLAlias, VTLValueMetadata> dsds = new HashMap<>();
 	private final Map<VTLAlias, Map<String, Variable<?, ?>>> variables = new HashMap<>();
 	private final Map<VTLAlias, String> schemes = new HashMap<>();
-	private final SdmxRestToBeanRetrievalManager rbrm;
+	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new HashMap<>();
 
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		this(SDMX_REGISTRY_ENDPOINT.getValue(), SDMX_META_USERNAME.getValue(), SDMX_META_PASSWORD.getValue());
+		this(null, SDMX_REGISTRY_ENDPOINT.getValue(), SDMX_META_USERNAME.getValue(), SDMX_META_PASSWORD.getValue());
 	}
 	
+	public SDMXRepository(MetadataRepository chained) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	{
+		this(chained, SDMX_REGISTRY_ENDPOINT.getValue(), SDMX_META_USERNAME.getValue(), SDMX_META_PASSWORD.getValue());
+	}
+
 	public SDMXRepository(String endpoint, String username, String password) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
+		this(null, endpoint, username, password);
+	}
+	
+	public SDMXRepository(MetadataRepository chained, String endpoint, String username, String password) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	{
+		super(chained);
+		
 		if (endpoint == null || endpoint.isEmpty())
 			throw new IllegalStateException("No endpoint configured for SDMX REST service.");
 
@@ -190,15 +207,15 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		{
 			VTLAlias clName = sdmxRef2VtlName(codelist.asReference());
 			LOGGER.info("Loading codelist " + clName);
-			defineDomain(clName, new SdmxCodeList(codelist));
+			domains.put(clName, new SdmxCodeList(codelist));
 		}
 
 		// Define ALPHA and ALPHA_NUMERIC domains
-		defineDomain(VTLAliasImpl.of("'ALPHA'"), VTL_ALPHA);
-		defineDomain(VTLAliasImpl.of("'ALPHA_NUMERIC'"), VTL_ALPHA_NUMERIC);
+		domains.put(VTLAliasImpl.of("'ALPHA'"), VTL_ALPHA);
+		domains.put(VTLAliasImpl.of("'ALPHA_NUMERIC'"), VTL_ALPHA_NUMERIC);
 		
-		// Load structures
-		Map<VTLAlias, Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>>> structures = new HashMap<>();
+		// Load dsds
+		Map<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>> enumIDMap = new HashMap<>();
 		for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
 		{
 			DataStructureBuilder builder = new DataStructureBuilder();
@@ -213,7 +230,10 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				if (dimBean.isTimeDimension())
 					domain = TIMEDS;
 				else if (dimBean.hasCodedRepresentation())
-					domain = getDomain(sdmxRef2VtlName(dimBean.getEnumeratedRepresentation()));
+				{
+					VTLAlias alias = sdmxRef2VtlName(dimBean.getEnumeratedRepresentation());
+					domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
+				}
 				else
 					domain = sdmxRepr2VTLDomain(dimBean);
 
@@ -230,7 +250,10 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				ValueDomainSubset<?, ?> domain;
 				
 				if (attrBean.hasCodedRepresentation())
-					domain = getDomain(sdmxRef2VtlName(attrBean.getEnumeratedRepresentation()));
+				{
+					VTLAlias alias = sdmxRef2VtlName(attrBean.getEnumeratedRepresentation());
+					domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
+				}
 				else
 					domain = sdmxRepr2VTLDomain(attrBean);
 				
@@ -239,7 +262,8 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				builder.addComponent(attr);
 			}
 
-			structures.put(dsdName, new SimpleEntry<>(builder.build(), new ArrayList<>(enumIds.values())));
+			dsds.put(dsdName, builder.build());
+			enumIDMap.put(dsdName, new ArrayList<>(enumIds.values()));
 		}
 		
 		// Load dataflows
@@ -248,7 +272,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			VTLAlias dataflowName = sdmxRef2VtlName(dataflow.asReference());
 			VTLAlias dsdName = sdmxRef2VtlName(dataflow.getDataStructureRef());
 			LOGGER.info("Loading dataflow {} with structure {}", dataflowName, dsdName);
-			dataflows.put(dataflowName, structures.get(dsdName));
+			dataflows.put(dataflowName, new SimpleEntry<>(dsdName, enumIDMap.get(dsdName)));
 		}
 		
 		// Load transformation schemes
@@ -273,8 +297,97 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				LOGGER.error("Error accessing transformation schemes in registry", e);
 		}
 	}
+	
+	@Override
+	public Optional<ValueDomainSubset<?, ?>> getDomain(VTLAlias alias)
+	{
+		return Optional.<ValueDomainSubset<?, ?>>ofNullable(domains.get(alias)).or(() -> super.getDomain(alias)); 
+	}
+	
+	@Override
+	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(VTLAlias alias)
+	{
+		return getDomain(alias)
+				.filter(SdmxCodeList.class::isInstance)
+				.map(SdmxCodeList.class::cast)
+				.map(SdmxCodeList::getDefaultRuleSet)
+				.map(HierarchicalRuleSet.class::cast)
+				.orElseGet(() -> super.getHierarchyRuleset(alias));
+	}
+	
+	@Override
+	public DataPointRuleSet getDataPointRuleset(VTLAlias alias)
+	{
+		return super.getDataPointRuleset(alias);
+	}
+	
+	@Override
+	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias)
+	{
+		return Optional.ofNullable(dsds.get(alias)).or(() -> super.getStructureDefinition(alias));
+	}
+	
+	@Override
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
+	{
+		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
+		if (matcher.matches() && dataflows.containsKey(VTLAliasImpl.of(matcher.group(1))))
+		{
+			Entry<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>> metadata = dataflows.get(VTLAliasImpl.of(matcher.group(1)));
+			DataSetMetadata structure = (DataSetMetadata) getStructureDefinition(metadata.getKey()).get();
+			List<DataStructureComponent<Identifier, ?, ?>> subbedIDs = metadata.getValue();
+			// drop identifiers in the query part of the id
+			if (matcher.group(2) != null)
+			{
+				DataStructureBuilder builder = new DataStructureBuilder(structure);
+				
+				String[] dims = matcher.group(2).split("\\.");
+				for (int i = 0; i < dims.length; i++)
+					if (!dims[i].isEmpty() && dims[i].indexOf('+') <= 0)
+						builder.removeComponent(subbedIDs.get(i));
+				
+				structure = builder.build();
+			}
+			
+			return Optional.of(structure);
+		}
+		else
+			return super.getMetadata(alias);
+	}
+	
+	@Override
+	public Optional<Variable<?, ?>> getVariable(VTLAlias alias)
+	{
+		String agency = alias.toString().indexOf(":") >= 0 ? alias.toString().split(":", 2)[0] : null;
+		
+		Variable<?, ?> variable = null;
+		Map<String, Variable<?, ?>> varsOfConcept = variables.get(alias);
+		if (agency != null)
+			variable = varsOfConcept.get(agency);
+		else if (varsOfConcept != null && !varsOfConcept.isEmpty())
+			variable = varsOfConcept.values().iterator().next();
+		
+		return Optional.<Variable<?, ?>>ofNullable(variable).or(() -> super.getVariable(alias));
+	}
+	
+	public TransformationScheme getTransformationScheme(VTLAlias alias)
+	{
+		return Optional.ofNullable(schemes.get(alias))
+			.map(ConfigurationManagerFactory.newManager()::createSession)
+			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
+	}
+	
+	public Set<VTLAlias> getAvailableSchemes()
+	{
+		return schemes.keySet();
+	}
 
-	private ValueDomainSubset<?, ?> sdmxRepr2VTLDomain(ComponentBean compBean)
+	private static VTLAlias sdmxRef2VtlName(StructureReferenceBean ref)
+	{
+		return VTLAliasImpl.of("'" + ref.getAgencyId() + ":" + ref.getMaintainableId() + "(" + ref.getVersion() + ")" + "'");
+	}
+
+	private static ValueDomainSubset<?, ?> sdmxRepr2VTLDomain(ComponentBean compBean)
 	{
 		Optional<TextFormatBean> optFormat = Optional.of(compBean)
 				.map(ComponentBean::getRepresentation)
@@ -363,82 +476,5 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		LOGGER.debug("{} {} converted to component {}", sdmxType, name, component);
 		
 		return component;
-	}
-	
-	@Override
-	public StringHierarchicalRuleSet getHierarchyRuleset(VTLAlias alias)
-	{
-		return maybeGetDomain(alias)
-				.filter(SdmxCodeList.class::isInstance)
-				.map(SdmxCodeList.class::cast)
-				.map(SdmxCodeList::getDefaultRuleSet)
-				.orElseThrow(() -> new VTLException("Hierarchical ruleset " + alias + " not found."));
-	}
-	
-	@Override
-	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
-	{
-		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
-		if (matcher.matches() && dataflows.containsKey(VTLAliasImpl.of(matcher.group(1))))
-		{
-			Entry<DataSetMetadata, List<DataStructureComponent<Identifier, ?, ?>>> entry = dataflows.get(VTLAliasImpl.of(matcher.group(1)));
-			DataSetMetadata structure = entry.getKey();
-			// drop identifiers in the query part of the id
-			if (matcher.group(2) != null)
-			{
-				DataStructureBuilder builder = new DataStructureBuilder(structure);
-				
-				String[] dims = matcher.group(2).split("\\.");
-				for (int i = 0; i < dims.length; i++)
-					if (!dims[i].isEmpty() && dims[i].indexOf('+') <= 0)
-						builder.removeComponent(entry.getValue().get(i));
-				
-				structure = builder.build();
-			}
-			
-			return Optional.of(structure);
-		}
-		else
-			return super.getMetadata(alias);
-	}
-	
-	private static VTLAlias sdmxRef2VtlName(StructureReferenceBean ref)
-	{
-		return VTLAliasImpl.of("'" + ref.getAgencyId() + ":" + ref.getMaintainableId() + "(" + ref.getVersion() + ")" + "'");
-	}
-	
-	@Override
-	public Variable<?, ?> getVariable(VTLAlias alias)
-	{
-		String agency = alias.toString().indexOf(":") >= 0 ? alias.toString().split(":", 2)[0] : null;
-		
-		Variable<?, ?> variable = null;
-		Map<String, Variable<?, ?>> varsOfConcept = variables.get(alias);
-		if (agency != null)
-			variable = varsOfConcept.get(agency);
-		else if (varsOfConcept != null && !varsOfConcept.isEmpty())
-			variable = varsOfConcept.values().iterator().next();
-		
-		if (variable != null)
-			return variable;
-		else
-			return super.getVariable(alias);
-	}
-
-	public SdmxBeanRetrievalManager getBeanRetrievalManager()
-	{
-		return rbrm;
-	}
-	
-	public TransformationScheme getTransformationScheme(VTLAlias alias)
-	{
-		return Optional.ofNullable(schemes.get(alias))
-			.map(ConfigurationManagerFactory.newManager()::createSession)
-			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
-	}
-	
-	public Set<VTLAlias> getAvailableSchemes()
-	{
-		return schemes.keySet();
 	}
 }

@@ -56,7 +56,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -261,7 +260,7 @@ public class CSVPathEnvironment implements Environment
 					LOGGER.trace("Parsing string value {} for component {} with mask {}", token, component, masks.get(component));
 					ScalarValue<?, ?, ?, ?> value = mapValue(component.getVariable().getDomain(), token, masks.get(component));
 					
-					if (value instanceof NullValue && component.is(Identifier.class))
+					if (value.isNull() && component.is(Identifier.class))
 						throw new NullPointerException("Parsed a null value for identifier " + component + ": " + token);
 						
 					builder.add(component, value);

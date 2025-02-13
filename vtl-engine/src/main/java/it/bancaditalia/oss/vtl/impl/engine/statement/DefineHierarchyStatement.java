@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 
 import it.bancaditalia.oss.vtl.engine.RulesetStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringRule;
@@ -79,10 +80,11 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 		ValueDomainSubset<?, ?> cl;
 
 		if (rulesetType == VALUE_DOMAIN)
-			cl = scheme.getRepository().getDomain(ruleID);
+			cl = scheme.getRepository().getDomain(ruleID).orElseThrow(() -> new VTLUndefinedObjectException("Domain", ruleID));
 		else
 		{
-			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleID);
+			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleID)
+					.orElseThrow(() -> new NullPointerException("Variable ruleid is not defined"));
 			cl = variable.getDomain();
 		}
 
