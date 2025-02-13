@@ -33,6 +33,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.reducing;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -79,6 +80,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class FlowStockTransformation extends UnaryTransformation
 {
@@ -144,7 +146,7 @@ public class FlowStockTransformation extends UnaryTransformation
 		ids.add(freq);
 		
 		DataSetMetadata metaWithFreq = new DataStructureBuilder(dsMeta).addComponent(freq).build(); 
-		dataset = dataset.mapKeepingKeys(metaWithFreq, DataPoint::getLineage, dp -> new DataPointBuilder(dp)
+		dataset = dataset.mapKeepingKeys(metaWithFreq, identity(), dp -> new DataPointBuilder(dp)
 				.add(freq, ((TimeValue<?, ?, ?, ?>) dp.getValue(timeId)).getFrequency())
 				.build(dp.getLineage(), metaWithFreq));
 
@@ -152,7 +154,7 @@ public class FlowStockTransformation extends UnaryTransformation
 		// compute stock or flow one measure at a time
 		for (DataStructureComponent<Measure, ?, ?> measure: measures)
 		{
-			SerFunction<DataPoint, Lineage> lineageOp = lineageEnricher(this);
+			SerUnaryOperator<Lineage> lineageOp = lineageEnricher(this);
 			WindowCriterion size = operator == STOCK_TO_FLOW ? new WindowCriterionImpl(DATAPOINTS, preceding(1), CURRENT_DATA_POINT) : DATAPOINTS_UNBOUNDED_PRECEDING_TO_CURRENT;
 			WindowClause window = new WindowClauseImpl(ids, List.of(new SortClause(timeId)), size);
 			SerFunction<DataPoint, Number> extractor = dp -> (Number) dp.get(measure).get();
@@ -176,7 +178,7 @@ public class FlowStockTransformation extends UnaryTransformation
 		}
 		
 		// remove the freq measure
-		return partial.mapKeepingKeys((DataSetMetadata) metadata, DataPoint::getLineage, dp -> {
+		return partial.mapKeepingKeys((DataSetMetadata) metadata, identity(), dp -> {
 				var map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.remove(freq);
 				return map;

@@ -71,7 +71,7 @@ public class BetweenTransformation extends UnaryTransformation
 		
 		if (!from.getDomain().isAssignableFrom(to.getDomain()) || !to.getDomain().isAssignableFrom(from.getDomain()))
 			throw new VTLIncompatibleTypesException("between", from, to);
-		if (from instanceof NullValue || to instanceof NullValue)
+		if (from.isNull() || to.isNull())
 			throw new VTLException("Between: Null constant not allowed.");
 		this.domain = from.getDomain(); 
 	}
@@ -107,14 +107,14 @@ public class BetweenTransformation extends UnaryTransformation
 	@Override
 	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		return scalar instanceof NullValue ? NullValue.instance(BOOLEANDS) : BooleanValue.of(scalar.compareTo(from) >= 0 && scalar.compareTo(to) <= 0);
+		return scalar.isNull() ? NullValue.instance(BOOLEANDS) : BooleanValue.of(scalar.compareTo(from) >= 0 && scalar.compareTo(to) <= 0);
 	}
 
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_VAR, evalOnScalar(repo, dp.get(measure), metadata)));
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineage -> LineageNode.of(this, lineage), dp -> singletonMap(BOOL_VAR, evalOnScalar(repo, dp.get(measure), metadata)));
 	}
 	
 	@Override

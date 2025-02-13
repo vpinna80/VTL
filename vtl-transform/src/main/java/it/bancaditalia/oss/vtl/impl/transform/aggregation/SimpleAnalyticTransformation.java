@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.RANGE_UNBOUNDED_PRECEDING_TO_CURRENT;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.COUNT;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -47,7 +48,6 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -120,7 +120,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, criterion);
 		
 		for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
-			dataset = dataset.analytic(dp -> LineageNode.of(this, dp.getLineage()), measure, measure, clause, 
+			dataset = dataset.analytic(lineageEnricher(this), measure, measure, clause, 
 					null, aggregation.getReducer(measure.getVariable().getDomain()), null);
 
 		return dataset;

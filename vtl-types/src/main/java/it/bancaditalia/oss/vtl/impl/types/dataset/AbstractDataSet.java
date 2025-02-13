@@ -131,11 +131,11 @@ public abstract class AbstractDataSet implements DataSet
 				return map;
 			};
 		
-		return mapKeepingKeys(membershipStructure, dp -> LineageNode.of("#" + alias, dp.getLineage()), operator);
+		return mapKeepingKeys(membershipStructure, lineage -> LineageNode.of("#" + alias, lineage), operator);
 	}
 	
 	@Override
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator)
 	{
 		DataSetMetadata newMetadata = new DataStructureBuilder(dataStructure).removeComponents(keyValues.keySet()).build();
 		
@@ -143,7 +143,7 @@ public abstract class AbstractDataSet implements DataSet
 			.filter(dp -> dp.matches(keyValues))
 			.map(dp -> new DataPointBuilder(dp)
 					.delete(keyValues.keySet())
-					.build(lineageOperator.apply(dp), newMetadata)));
+					.build(lineageOperator.apply(dp.getLineage()), newMetadata)));
 	}
 
 	@Override
@@ -199,7 +199,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, 
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator, 
 			SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
@@ -229,13 +229,13 @@ public abstract class AbstractDataSet implements DataSet
 			{
 				return new DataPointBuilder(dp.getValues(Identifier.class), DONT_SYNC)
 							.addAll(operator.apply(dp))
-							.build(lineageOperator.apply(dp), dataStructure);
+							.build(lineageOperator.apply(dp.getLineage()), dataStructure);
 			}
 		};
 	}
 
 	@Override
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOp,
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOp,
 			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
 	{
 		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
@@ -249,7 +249,7 @@ public abstract class AbstractDataSet implements DataSet
 			.flatMap(dp -> {
 				Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIDValues = dp.getValues(Identifier.class);
 				return operator.apply(dp)
-					.map(map -> new DataPointBuilder(nonIDValues).addAll(map).build(lineageOp.apply(dp), metadata));
+					.map(map -> new DataPointBuilder(nonIDValues).addAll(map).build(lineageOp.apply(dp.getLineage()), metadata));
 			}));
 	}
 	
@@ -338,7 +338,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
+	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
 			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)

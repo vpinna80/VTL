@@ -64,6 +64,7 @@ import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public final class AnalyticDataSet<T, TT> extends AbstractDataSet
@@ -78,7 +79,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 	private final Comparator<DataPoint> orderBy;
 	private final int inf;
 	private final int sup;
-	private final SerFunction<DataPoint, Lineage> lineageOp;
+	private final SerUnaryOperator<Lineage> lineageOp;
 	private final DataStructureComponent<?, ?, ?> destComponent;
 	private final SerFunction<DataPoint, T> extractor;
 	private final SerCollector<T, ?, TT> collector;
@@ -86,7 +87,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 
 	private final transient WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>> cache;
 
-	public AnalyticDataSet(DataSet source, DataSetMetadata structure, SerFunction<DataPoint, Lineage> lineageOp, WindowClause clause,
+	public AnalyticDataSet(DataSet source, DataSetMetadata structure, SerUnaryOperator<Lineage> lineageOp, WindowClause clause,
 			DataStructureComponent<?, ?, ?> srcComponent, DataStructureComponent<?, ?, ?> destComponent,
 			SerFunction<DataPoint, T> extractor,
 			SerCollector<T, ?, TT> collector, 
@@ -206,7 +207,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 			.map(splitting((value, dp) -> new DataPointBuilder(dp, DONT_SYNC)
 				.delete(destComponent)
 				.add(destComponent, value)
-				.build(lineageOp.apply(dp), getMetadata())));
+				.build(lineageOp.apply(dp.getLineage()), getMetadata())));
 	}
 
 	// Explode the collections resulting from the application of the window function to single components

@@ -37,7 +37,6 @@ import java.util.Arrays;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
@@ -105,7 +104,7 @@ public class CastTransformation extends UnaryTransformation
 				.addComponent(measure)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
+		return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(this, lineage), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
 	}
 
 	@Override
@@ -155,7 +154,7 @@ public class CastTransformation extends UnaryTransformation
 		
 		DecimalFormat formatter = getNumberFormatter();
 		
-		if (scalar instanceof NullValue)
+		if (scalar.isNull())
 			return target.getDomain().cast(scalar);
 		else if (scalar instanceof StringValue && target == DATE)
 			return DateValue.of(parseString(scalar.get().toString(), mask));

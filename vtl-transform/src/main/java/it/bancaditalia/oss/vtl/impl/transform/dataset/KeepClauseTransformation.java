@@ -59,7 +59,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
-		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), dp -> {
 				var map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
 				return map;

@@ -90,7 +90,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		@Override
 		public ScalarValue<?, ?, ? extends NumberDomainSubset<?, ?>, ? extends NumberDomain> apply(ScalarValue<?, ?, ?, ?> number)
 		{
-			if (number instanceof NullValue)
+			if (number.isNull())
 				return NullValue.instance(NUMBERDS);
 			if (number instanceof IntegerValue)
 			{
@@ -130,7 +130,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
 	{
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineage -> LineageNode.of(this, lineage), dp -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(Measure.class));
 				map.replaceAll((c, v) -> operator.apply(v));
 				return map;

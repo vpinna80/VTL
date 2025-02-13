@@ -28,7 +28,6 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -58,7 +57,7 @@ public class IsNullTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		return BooleanValue.of(scalar instanceof NullValue);
+		return BooleanValue.of(scalar.isNull());
 	}
 
 	@Override
@@ -70,7 +69,7 @@ public class IsNullTransformation extends UnaryTransformation
 
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 
-		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> singletonMap(BOOL_MEASURE, BooleanValue.of(dp.get(measure) instanceof NullValue)));
+		return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(this, lineage), dp -> singletonMap(BOOL_MEASURE, BooleanValue.of(dp.get(measure).isNull())));
 	}
 
 	@Override

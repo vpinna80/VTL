@@ -31,7 +31,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
@@ -84,7 +83,7 @@ public class BooleanTransformation extends BinaryTransformation
 		{
 			if (left == FALSE || right == FALSE)
 				return FALSE;
-			else if (left instanceof NullValue || right instanceof NullValue)
+			else if (left.isNull() || right.isNull())
 				return BooleanValue.NULL;
 			else 
 				return TRUE; 
@@ -94,7 +93,7 @@ public class BooleanTransformation extends BinaryTransformation
 		{
 			if (left == TRUE || right == TRUE)
 				return TRUE;
-			else if (left instanceof NullValue || right instanceof NullValue)
+			else if (left.isNull() || right.isNull())
 				return BooleanValue.of(null);
 			else 
 				return FALSE; 
@@ -106,7 +105,7 @@ public class BooleanTransformation extends BinaryTransformation
 				return FALSE;
 			else if (left == TRUE || right == TRUE)
 				return TRUE;
-			else if (left instanceof NullValue || right instanceof NullValue)
+			else if (left.isNull() || right.isNull())
 				return BooleanValue.of(null);
 			else 
 				return FALSE; 
@@ -142,7 +141,7 @@ public class BooleanTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(!datasetIsLeftOp);
 
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineage -> LineageNode.of(this, lineage), 
 				dp -> singletonMap(resultMeasure, reversedIf.apply(dp.get(datasetMeasure), scalar)));
 	}
 

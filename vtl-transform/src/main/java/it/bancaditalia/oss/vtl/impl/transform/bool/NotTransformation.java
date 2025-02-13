@@ -65,7 +65,7 @@ public class NotTransformation extends UnaryTransformation
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
-		return dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+		return dataset.mapKeepingKeys(dataset.getMetadata(), lineage -> LineageNode.of(this, lineage), dp -> {
 					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 					map.replaceAll((c, v) -> BooleanValue.not(BOOLEANDS.cast(v)));
 					return map;

@@ -58,7 +58,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -77,6 +76,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
@@ -141,7 +141,9 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			idComp = dataset.getComponent(id).orElseThrow(() -> new VTLMissingComponentsException(id, ids));
 		else
 		{
-			VTLAlias variableName = scheme.getRepository().getVariable(ruleset.getRuleId()).getAlias();
+			Variable<?, ?> ruleVariable = scheme.getRepository().getVariable(ruleset.getRuleId())
+					.orElseThrow(() -> new NullPointerException("Variable ruleid is not defined"));
+			VTLAlias variableName = ruleVariable.getAlias();
 			idComp = dataset.getComponent(variableName).orElseThrow(() -> new VTLMissingComponentsException(variableName, ids));
 		}
 		
@@ -251,9 +253,9 @@ public class CheckHierarchyTransformation extends TransformationImpl
 				for (CodeItem<?, ?, ?, ?> rightCode : rule.getRightCodeItems())
 				{
 					ScalarValue<?, ?, ?, ?> dpValue = codeVals.get(rightCode);
-					if (dpValue == null && mode == NON_NULL || dpValue instanceof NullValue)
+					if (dpValue == null && mode == NON_NULL || dpValue.isNull())
 						imbalance = NaN;
-					else if (dpValue != null && !(dpValue instanceof NullValue))
+					else if (dpValue != null && !(dpValue.isNull()))
 						imbalance += (rule.isPlusSign(rightCode) ? 1 : -1) * ((Number) dpValue.get()).doubleValue();
 				}
 

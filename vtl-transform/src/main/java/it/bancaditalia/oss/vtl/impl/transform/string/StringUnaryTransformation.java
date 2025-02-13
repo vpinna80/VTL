@@ -73,7 +73,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 
 		private ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> extracted(UnaryOperator<String> stringOp, ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> s)
 		{
-			if (s instanceof NullValue)
+			if (s.isNull())
 				return NullValue.instance(STRINGDS);
 			
 			String ret = stringOp.apply(((StringValue<?, ?>) s).get());
@@ -113,7 +113,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 	{
 		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineage -> LineageNode.of(this, lineage), dp -> {
 					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 					map.replaceAll((c, v) -> {
 						ValueDomainSubset<?, ?> domain = c.getVariable().getDomain();

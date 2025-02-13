@@ -198,7 +198,7 @@ public class HierarchyTransformation extends TransformationImpl
 			for (CodeItem<?, ?, ?, ?> rightCode: rule.getRightCodeItems())
 			{
 				ScalarValue<?, ?, ?, ?> dpValue = requireNonNull(vals.get(rightCode));
-				if (!(dpValue instanceof NullValue))
+				if (!(dpValue.isNull()))
 					if (isInt)
 						accl += (rule.isPlusSign(rightCode) ? 1 : -1) * ((Number) dpValue.get()).longValue();
 					else

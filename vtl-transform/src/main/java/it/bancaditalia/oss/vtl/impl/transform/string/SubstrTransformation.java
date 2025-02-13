@@ -106,7 +106,7 @@ public class SubstrTransformation extends TransformationImpl
 			DataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
 			
-			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(this, dp.getLineage()), dp -> measures.stream()
+			return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(this, lineage), dp -> measures.stream()
 					.map(toEntryWithValue(measure -> getSubstring(len, start, STRINGDS.cast(dp.get(measure)))))
 					.collect(entriesToMap())
 			); 
@@ -120,9 +120,9 @@ public class SubstrTransformation extends TransformationImpl
 			ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> start,
 			ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> scalar)
 	{
-		int startV = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
+		int startV = start.isNull() ? 1 : (int) (long) (Long) start.get();
 		ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> result;
-		if (scalar instanceof NullValue)
+		if (scalar.isNull())
 			result = STRINGDS.cast(NullValue.instance(STRINGDS));
 		else
 		{
@@ -132,7 +132,7 @@ public class SubstrTransformation extends TransformationImpl
 				result = StringValue.of("");
 			else
 			{
-				Integer lenV = len instanceof NullValue ? null : (int) (long) (Long) len.get() + startV - 1;
+				Integer lenV = len.isNull() ? null : (int) (long) (Long) len.get() + startV - 1;
 			
 				if (lenV != null && lenV > string.length())
 					lenV = string.length();

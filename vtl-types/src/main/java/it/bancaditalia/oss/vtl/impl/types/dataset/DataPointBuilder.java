@@ -152,7 +152,7 @@ public class DataPointBuilder implements Serializable
 		
 		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
 
-		if (value instanceof NullValue && oldValue != null && component.is(Identifier.class)) {
+		if (value.isNull() && oldValue != null && component.is(Identifier.class)) {
 			throw new NullPointerException("Null value for identifier " + component);
 		}
 		
@@ -264,7 +264,7 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public DataPoint dropComponents(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components)
+		public DataPoint drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components)
 		{
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(this);
 			for (DataStructureComponent<?, ?, ?> component : components)
@@ -303,7 +303,7 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public DataPoint renameComponent(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
+		public DataPoint rename(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
 		{
 			if (!containsKey(oldComponent))
 				throw new VTLMissingComponentsException(oldComponent, keySet());

@@ -82,14 +82,14 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 					.findAny()
 					.get();
 
-			return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), dp -> LineageNode.of(this, dp.getLineage()), 
+			return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), lineage -> LineageNode.of(this, lineage), 
 					dp -> singletonMap(DURATION_MEASURE, evalScalar(dp.get(component))));
 		}
 	}
 
 	private ScalarValue<?, ?, ?, ?> evalScalar(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (value instanceof NullValue)
+		if (value.isNull())
 			return NullValue.instance(TIMEDS);
 		else 
 			return ((TimeValue<?, ?, ?, ?>) value).getFrequency();

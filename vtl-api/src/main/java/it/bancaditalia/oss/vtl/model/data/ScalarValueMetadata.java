@@ -45,8 +45,9 @@ public interface ScalarValueMetadata<S extends ValueDomainSubset<S, D>, D extend
 	 * @param domain the domain to create a metadata object from
 	 * @return the new metadata instance
 	 */
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> ScalarValueMetadata<S, D> of(S domain)
+	@SuppressWarnings("unchecked")
+	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> ScalarValueMetadata<S, D> of(ValueDomainSubset<S, D> domain)
 	{
-		return () -> domain;
+		return () -> (S) domain;
 	}
 }

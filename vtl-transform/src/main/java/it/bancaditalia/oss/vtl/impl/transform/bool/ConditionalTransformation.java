@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toSet;
@@ -155,20 +156,20 @@ public class ConditionalTransformation extends TransformationImpl
 		DataSetMetadata joinIds = new DataStructureBuilder(condD.getMetadata().getIDs()).addComponent(COND_ID).build();
 		DataSetMetadata enriched = new DataStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();
 		
-		DataSet condResolved = condD.mapKeepingKeys(joinIds, dp -> LineageNode.of(thenExpr, dp.getLineage()), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
-		DataSet thenResolved = thenD.mapKeepingKeys(enriched, DataPoint::getLineage, dp -> {
+		DataSet condResolved = condD.mapKeepingKeys(joinIds, lineage -> LineageNode.of(thenExpr, lineage), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
+		DataSet thenResolved = thenD.mapKeepingKeys(enriched, identity(), dp -> {
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, TRUE);
 			return result;	
 		});
-		DataSet elseResolved = elseD.mapKeepingKeys(enriched, DataPoint::getLineage, dp -> {
+		DataSet elseResolved = elseD.mapKeepingKeys(enriched, identity(), dp -> {
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, FALSE);
 			return result;	
 		});
 		
-		return condResolved.mappedJoin(enriched, thenResolved, (a, b) -> b).subspace(singletonMap(COND_ID, TRUE), DataPoint::getLineage)
-			.union(DataPoint::getLineage, singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), DataPoint::getLineage)));
+		return condResolved.mappedJoin(enriched, thenResolved, (a, b) -> b).subspace(singletonMap(COND_ID, TRUE), identity())
+			.union(DataPoint::getLineage, singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), identity())));
 	}
 
 	private boolean checkCondition(ScalarValue<?, ?, ?, ?> value)

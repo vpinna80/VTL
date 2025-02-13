@@ -100,7 +100,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the components to drop
 	 * @return a new datapoint without the provided components.
 	 */
-	public DataPoint dropComponents(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components);
+	public DataPoint drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components);
 
 	/**
 	 * Creates a new datapoint keeping all the identifiers and only the provided non-id components
@@ -117,7 +117,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param newComponent the already renamed component
 	 * @return a new datapoint with the old component renamed.
 	 */
-	public DataPoint renameComponent(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent);
+	public DataPoint rename(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent);
 
 	/**
 	 * Create a new datapoint combining this and another datapoint.

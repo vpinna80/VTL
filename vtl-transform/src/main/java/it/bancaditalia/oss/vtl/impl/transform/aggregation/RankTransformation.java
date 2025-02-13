@@ -24,7 +24,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DA
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
@@ -35,10 +34,8 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,6 +54,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
+import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -73,7 +72,6 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
-import it.bancaditalia.oss.vtl.util.GenericTuple;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class RankTransformation extends TransformationImpl implements AnalyticTransformation, LeafTransformation
@@ -81,24 +79,6 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	private static final long serialVersionUID = 1L;
 	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
 //	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
-	
-	public static final class RankedPartition extends HashMap<GenericTuple, Long>
-	{
-		private static final long serialVersionUID = 1L;
-		public final Class<?>[] repr;
-
-		public RankedPartition(Class<?>[] repr, int size)
-		{
-			super(size);
-			
-			this.repr = repr;
-		}
-	}
-	
-	private static final class PartitionToRank extends ArrayList<DataPoint>
-	{
-		private static final long serialVersionUID = 1L;
-	}
 	
 	private final List<VTLAlias> partitionBy;
 	private final List<OrderByItem> orderByClause;
@@ -115,7 +95,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet dataset = (DataSet) scheme.resolve(THIS); 
-				
+		
 		List<SortCriterion> ordering = new ArrayList<>(orderByClause.size()); 
 		for (OrderByItem orderByComponent: orderByClause)
 			ordering.add(new SortClause(dataset.getComponent(orderByComponent.getAlias()).get(), orderByComponent.getMethod()));
@@ -133,42 +113,36 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 			for (SortCriterion clause: ordering)
 				partitionIDs.remove(clause.getComponent());
 		}
+
+		Set<VTLAlias> orderByAliases = orderByClause.stream().map(OrderByItem::getAlias).collect(toSet());
 		
-		List<DataStructureComponent<Identifier, ?, ?>> ids = new ArrayList<>(dataset.getMetadata().getIDs());
 		WindowClause window = new WindowClauseImpl(partitionIDs, ordering, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		Class<?>[] repr = ids.stream().map(id -> id.getVariable().getDomain().getRepresentation())
-				.collect(toArray(new Class<?>[ids.size()]));
-		SerCollector<DataPoint, List<DataPoint>, Map<GenericTuple, Long>> collector = 
-				collectingAndThen(toList(PartitionToRank::new), l -> rankPartition(l, ids, repr));
+		SerCollector<DataPoint, ?, RankedPartition> collector = 
+				collectingAndThen(toList(PartitionToRank::new), l -> rankPartition(dataset.getMetadata(), orderByAliases, l));
 
-		return dataset.analytic(dp -> LineageNode.of(lineageDescriptor, dp.getLineage()), measure, 
-				INTEGERDS.getDefaultVariable().as(Measure.class), window, identity(), collector, (r, dp) -> finisher(r, ids, repr, dp))
+		return dataset.analytic(lineage -> LineageNode.of(lineageDescriptor, lineage), measure, 
+				INTEGERDS.getDefaultVariable().as(Measure.class), window, identity(), collector, (r, dp) -> finisher(r, dp))
 			.membership(INTEGERDS.getDefaultVariable().getAlias());
 	}
 	
-	private Collection<ScalarValue<?, ?, ?, ?>> finisher(Map<GenericTuple, Long> ranks, List<DataStructureComponent<Identifier, ?, ?>> ids, Class<?>[] repr, DataPoint dp)
+	private Collection<ScalarValue<?, ?, ?, ?>> finisher(RankedPartition ranks, DataPoint dp)
 	{
-		Serializable[] tuple = new Serializable[ids.size()];
-		for (int i = 0; i < tuple.length; i++)
-			tuple[i] = dp.get(ids.get(i)).get();
-		
-		return singleton(IntegerValue.of(ranks.get(new GenericTuple(tuple))));
+		return singleton(IntegerValue.of(ranks.get(dp)));
 	}
 
-	private RankedPartition rankPartition(List<DataPoint> partition, List<DataStructureComponent<Identifier, ?, ?>> ids,
-			Class<?>[] repr)
+	private RankedPartition rankPartition(DataSetMetadata metadata, Set<VTLAlias> orderByAliases, PartitionToRank partition)
 	{
 		long rank = 1, position = 1;
 		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, orderByValues = emptyMap();
 		// Workaround to allow creating a spark encoder to correctly process the tuple
-		RankedPartition ranks = new RankedPartition(repr, partition.size());
+		RankedPartition ranks = new RankedPartition(partition.size());
 
 		// Cannot use streams (perhaps gatherers when java version becomes high enough)
 		for (DataPoint dp: partition)
 		{
 			oldValues = orderByValues;
-			orderByValues = dp.getValuesByNames(orderByClause.stream().map(OrderByItem::getAlias).collect(toSet()));
+			orderByValues = dp.getValuesByNames(orderByAliases);
 			
 			long rankResult;
 			if (orderByValues.equals(oldValues))
@@ -178,11 +152,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				rankResult = rank = position;
 			position++;
 
-			Serializable[] tuple = new Serializable[ids.size()];
-			for (int i = 0; i < tuple.length; i++)
-				tuple[i] = dp.get(ids.get(i)).get();
-
-			ranks.put(new GenericTuple(tuple), rankResult);
+			ranks.put(dp, rankResult);
 		}
 		
 		return ranks;

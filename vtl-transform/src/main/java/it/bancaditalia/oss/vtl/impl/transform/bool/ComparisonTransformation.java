@@ -66,7 +66,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (left instanceof NullValue || right instanceof NullValue)
+		if (left.isNull() || right.isNull())
 			return NullValue.instance(BOOLEANDS);
 
 		if (left.getDomain().isAssignableFrom(right.getDomain()))
@@ -108,7 +108,7 @@ public class ComparisonTransformation extends BinaryTransformation
 				extractor = dp -> operator.apply(castedScalar, dp.get(measure));
 
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, 
-				dp -> LineageNode.of(this, dp.getLineage()), 
+				lineage -> LineageNode.of(this, lineage), 
 				dp -> singletonMap(resultMeasure, extractor.apply(dp)));
 	}
 

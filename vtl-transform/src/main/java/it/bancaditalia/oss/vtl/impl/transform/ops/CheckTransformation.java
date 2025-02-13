@@ -96,7 +96,7 @@ public class CheckTransformation extends TransformationImpl
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		if (imbalanceExpr == null)
-			dataset = dataset.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+			dataset = dataset.mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
 				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
 				result.put(ERRORCODE.get(), NullValue.instance(STRINGDS));

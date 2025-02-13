@@ -36,7 +36,6 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -92,7 +91,7 @@ public class DateAddTransformation extends TransformationImpl
 
 	private ScalarValue<?, ?, ?, ?> evalOnScalar(long i, Frequency freq, ScalarValue<?, ?, ?, ?> op)
 	{
-		if (op instanceof NullValue)
+		if (op.isNull())
 			return op;
 		
 		LocalDate date = ((TimeValue<?, ?, ?, ?>) op).getEndDate().get();

@@ -154,7 +154,8 @@ public class DataStructureBuilder
 
 		private final Map<VTLAlias, DataStructureComponent<?, ?, ?>> byName;
 		private final Map<Class<? extends Component>, Set<DataStructureComponent<?, ?, ?>>> byRole;
-		private final Set<Set<?>> cache = newSetFromMap(new WeakHashMap<>());
+		
+		private transient Set<Set<?>> cache;
 		
 		private DataStructureImpl(Set<DataStructureComponent<?, ?, ?>> components)
 		{
@@ -249,6 +250,8 @@ public class DataStructureBuilder
 		@Override
 		public boolean equals(Object obj)
 		{
+			if (cache == null)
+				cache = newSetFromMap(new WeakHashMap<>());
 			return cache.contains(obj) || super.equals(obj) && cache.add((Set<?>) obj);
 		}
 

@@ -49,7 +49,7 @@ public class VarIDOperand implements LeafTransformation
 		if (vtlValue instanceof DataSet)
 		{
 			DataSet dataset = (DataSet) vtlValue;
-			vtlValue = dataset.mapKeepingKeys(dataset.getMetadata(), dp -> LineageNode.of(alias.getName(), dp.getLineage()), identity());
+			vtlValue = dataset.mapKeepingKeys(dataset.getMetadata(), lineage -> LineageNode.of(this, lineage), identity());
 		}
 		
 		return vtlValue;

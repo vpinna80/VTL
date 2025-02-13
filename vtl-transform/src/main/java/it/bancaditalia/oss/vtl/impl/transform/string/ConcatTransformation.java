@@ -41,7 +41,6 @@ import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -55,7 +54,7 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
-import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class ConcatTransformation extends BinaryTransformation
 {
@@ -84,9 +83,9 @@ public class ConcatTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = CONCAT.reverseIf(!datasetIsLeftOp);
 		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, ?, ?> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
-		SerFunction<DataPoint, Lineage> lineageFunc = dp -> datasetIsLeftOp
-				? LineageNode.of("x || " + scalar, dp.getLineage())
-				: LineageNode.of(scalar + " || x" + scalar, dp.getLineage());
+		SerUnaryOperator<Lineage> lineageFunc = lineage -> datasetIsLeftOp
+				? LineageNode.of("x || " + scalar, lineage)
+				: LineageNode.of(scalar + " || x" + scalar, lineage);
 		
 		return dataset.mapKeepingKeys(structure, lineageFunc, dp -> singletonMap(measure, 
 						function.apply(STRINGDS.cast(dp.get(measure)), STRINGDS.cast(scalar)))); 

@@ -29,11 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class LineageNode extends LineageImpl
 {
@@ -52,9 +51,9 @@ public class LineageNode extends LineageImpl
 			return of(transformation, LineageCall.of(sources));
 	}
 	
-	public static SerFunction<DataPoint, Lineage> lineageEnricher(Transformation transformation)
+	public static SerUnaryOperator<Lineage> lineageEnricher(Transformation transformation)
 	{
-		return dp -> LineageNode.of(transformation, dp.getLineage());
+		return lineage -> LineageNode.of(transformation, lineage);
 	}
 	
 	public static LineageNode of(Transformation transformation, LineageSet sources)

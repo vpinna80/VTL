@@ -76,7 +76,7 @@ public class MatchTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> string, ScalarValue<?, ?, ?, ?> pattern)
 	{
-		if (string instanceof NullValue || pattern instanceof NullValue)
+		if (string.isNull() || pattern.isNull())
 			return NullValue.instance(BOOLEANDS);
 		
 		return BooleanValue.of(STRINGDS.cast(string).get().toString().matches(STRINGDS.cast(pattern).get().toString()));
@@ -90,10 +90,10 @@ public class MatchTransformation extends BinaryTransformation
 				.build();
 
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
-		String pattern = patternV instanceof NullValue ? null : STRINGDS.cast(patternV).get().toString();
+		String pattern = patternV.isNull() ? null : STRINGDS.cast(patternV).get().toString();
 		
 		String lineageString = "match " + pattern;
-		return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> singletonMap(BOOL_MEASURE, (pattern == null 
+		return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(lineageString, lineage), dp -> singletonMap(BOOL_MEASURE, (pattern == null 
 						? BOOLEANDS.cast(NullValue.instance(BOOLEANDS))
 						: BooleanValue.of(STRINGDS.cast(dp.get(measure)).get().toString().matches(pattern))))); 
 	}

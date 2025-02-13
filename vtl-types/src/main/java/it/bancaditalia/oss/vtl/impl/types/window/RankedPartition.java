@@ -17,31 +17,38 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.exceptions;
+package it.bancaditalia.oss.vtl.impl.types.window;
 
-import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
 
-/**
- * Base Class for all VTL-related exceptions
- * 
- * @author Attilio Mattiocco
- *
- */
-public class VTLUndefinedObjectException extends VTLException {
+import it.bancaditalia.oss.vtl.model.data.DataPoint;
 
+public final class RankedPartition implements Serializable
+{
 	private static final long serialVersionUID = 1L;
 	
-	private final VTLAlias alias;
+	private final HashMap<DataPoint, Long> map;
 
-	public VTLUndefinedObjectException(String what, VTLAlias alias) 
+	public RankedPartition(int size)
 	{
-		super(what + " '" + alias.getName() + "' is not defined in metadata.");
-	
-		this.alias = alias;
+		this.map = new HashMap<>(size);
 	}
 
-	public VTLAlias getAlias()
+	public Long get(DataPoint dp)
 	{
-		return alias;
+		return map.get(dp);
+	}
+
+	public Long put(DataPoint dp, Long rankResult)
+	{
+		return map.put(dp, rankResult);
+	}
+	
+	public Set<Entry<DataPoint, Long>> entrySet()
+	{
+		return map.entrySet();
 	}
 }

@@ -113,7 +113,7 @@ public class InclusionTransformation extends UnaryTransformation
 		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		checkSet(repo);
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineage -> LineageNode.of(this, lineage), 
 				dp -> singletonMap(BOOL_VAR, BooleanValue.of(operator.test(set, dp.get(measure)))));
 	}
 
@@ -121,7 +121,7 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		if (set.isEmpty())
 		{
-			EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) repo.getDomain(domainName);
+			EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) repo.getDomain(domainName).get();
 			set.addAll(domain.getCodeItems());
 		}
 	}

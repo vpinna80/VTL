@@ -89,7 +89,7 @@ public class NumericIntTransformation extends BinaryTransformation
 		
 		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> integer = INTEGERDS.cast(scalar);
 		String lineageDescriptor = toString();
-		return dataset.mapKeepingKeys(dsMeta, dp -> LineageNode.of(lineageDescriptor, dp.getLineage()), dp -> { 
+		return dataset.mapKeepingKeys(dsMeta, lineage -> LineageNode.of(lineageDescriptor, lineage), dp -> { 
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp.getValues(Attribute.class));
 				for (VTLAlias name: measureNames)
 				{

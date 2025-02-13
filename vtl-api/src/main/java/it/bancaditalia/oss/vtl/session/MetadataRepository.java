@@ -21,8 +21,6 @@ package it.bancaditalia.oss.vtl.session;
 
 import java.util.Optional;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -38,20 +36,12 @@ import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 public interface MetadataRepository
 {
 	/**
-	 * Checks if a {@link ValueDomainSubset} with the specified name exists.
-	 * 
-	 * @param name the name of the domain to check
-	 * @return true if a domain exists.
-	 */
-	public boolean isDomainDefined(VTLAlias name);
-	
-	/**
 	 * Returns a domain with the specified name if it exists.
 	 * 
 	 * @param name the name of the domain
-	 * @return the domain or null if none exists.
+	 * @return An optional containing the domain or an empty one if it's not defined.
 	 */
-	public ValueDomainSubset<?, ?> getDomain(VTLAlias name);
+	public Optional<ValueDomainSubset<?, ?>> getDomain(VTLAlias name);
 
 	/**
 	 * Returns the source definition for the dataset with the specified name if it's defined.
@@ -62,12 +52,20 @@ public interface MetadataRepository
 	public String getDataSource(VTLAlias name);
 
 	/**
-	 * Returns a metadata for a given alias if it is defined in the repository.
+	 * Returns metadata for a given VTL alias if it's defined in the repository.
 	 * 
 	 * @param alias the alias of the data source to retrieve
-	 * @return an optional containing the metadata, or empty if none was defined.
+	 * @return an optional containing metadata, or empty if none was defined.
 	 */
 	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias);
+
+	/**
+	 * Returns the definition of a structure with the given VTL alias if it's defined in the repository.
+	 * 
+	 * @param alias the alias of the structure to retrieve
+	 * @return an optional containing the structure defintion, or empty if none was defined.
+	 */
+	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias);
 
 	/**
 	 * Returns a data point ruleset with the specified name if it exists.
@@ -84,25 +82,14 @@ public interface MetadataRepository
 	 * @return the ruleset or null if none exists.
 	 */
 	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(VTLAlias name);
-
-	/**
-	 * Registers a new domain instance inside this repository if it is not.
-	 * 
-	 * @param name the name of the new domain
-	 * @param domain the domain to define 
-	 * 
-	 * @throws VTLCastException if the domain already exists and it's not the same.
-	 */
-	public void defineDomain(VTLAlias name, ValueDomainSubset<?, ?> domain);
 	
 	/**
-	 * Returns a {@link Variable} referred by an alias defined in this TransformationScheme.
+	 * Returns a {@link Variable} referred by an alias if defined in this TransformationScheme.
 	 * 
 	 * @param alias the alias of the variable
-	 * @return a {@link Variable} instance.
-	 * @throws VTLUnboundAliasException if the alias is not defined.
+	 * @return a optional containing the {@link Variable}, or empty if the variable was not defined.
 	 */
-	public Variable<?, ?> getVariable(VTLAlias alias);
+	public Optional<Variable<?, ?>> getVariable(VTLAlias alias);
 
 	/**
 	 * Creates a temporary variable with provided alias and domain. An error is raised if a persistent variable with a different domain is already defined in metadata.
@@ -112,4 +99,9 @@ public interface MetadataRepository
 	 * @return a {@link Variable} instance.
 	 */
 	public Variable<?, ?> createTempVariable(VTLAlias alias, ValueDomainSubset<?, ?> domain);
+
+	/**
+	 * @return A repository linked to this if there's one, or null
+	 */
+	public MetadataRepository getLinkedRepository();
 }

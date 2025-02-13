@@ -102,7 +102,7 @@ public class ReplaceTransformation extends TransformationImpl
 			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getMetadata().getMeasures();
 			
 			String lineageString = "replace " + storedPattern + " with " + replace;
-			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> measures.stream()
+			return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(lineageString, lineage), dp -> measures.stream()
 					.map(measure -> new SimpleEntry<>(measure, replaceSingle(replace, storedPattern, dp.get(measure))))
 					.collect(entriesToMap())
 			); 

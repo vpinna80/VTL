@@ -77,7 +77,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		DataStructureComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
 
 		String lineageString = toString();
-		return dataset.flatmapKeepingKeys(metadata, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> {
+		return dataset.flatmapKeepingKeys(metadata, lineage -> LineageNode.of(lineageString, lineage), dp -> {
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> measureVals = dp.getValues(Measure.class);
 			return measureVals.entrySet().stream()
 				.map(splitting((m, v) -> {

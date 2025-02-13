@@ -99,9 +99,9 @@ public class InStrTransformation extends TransformationImpl
 		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> start = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) startOperand.eval(session));
 		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> occurrence = INTEGERDS.cast((ScalarValue<?, ?, ?, ?>) occurrenceOperand.eval(session));
 		
-		int startPos = start instanceof NullValue ? 1 : (int) (long) (Long) start.get();
-		int nOcc = occurrence instanceof NullValue ? 1 : (int) (long) (Long) occurrence.get();
-		String pattern = right instanceof NullValue ? null : STRINGDS.cast(right).get().toString();
+		int startPos = start.isNull() ? 1 : (int) (long) (Long) start.get();
+		int nOcc = occurrence.isNull() ? 1 : (int) (long) (Long) occurrence.get();
+		String pattern = right.isNull() ? null : STRINGDS.cast(right).get().toString();
 		
 		if (startPos < 1)
 			throw new VTLNonPositiveConstantException("instr", start);
@@ -117,7 +117,7 @@ public class InStrTransformation extends TransformationImpl
 			DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			String lineageString = "instr with " + pattern;
-			return dataset.mapKeepingKeys(structure, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> singletonMap(INT_MEASURE, 
+			return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(lineageString, lineage), dp -> singletonMap(INT_MEASURE, 
 							instrScalar(dp.get(measure), pattern, startPos, nOcc))); 
 		}
 		else
@@ -127,7 +127,7 @@ public class InStrTransformation extends TransformationImpl
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> instrScalar(ScalarValue<?, ?, ?, ?> scalar,
 			String pattern, int startPos, int nOcc)
 	{
-		if (pattern == null || scalar instanceof NullValue)
+		if (pattern == null || scalar.isNull())
 			return NullValue.instance(INTEGERDS);
 		else
 			return findOccurrence(STRINGDS.cast(scalar).get().toString(), pattern, startPos, nOcc);

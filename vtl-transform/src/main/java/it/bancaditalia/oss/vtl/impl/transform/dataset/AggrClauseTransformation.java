@@ -173,7 +173,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a);
 		}
 
-		return result.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), identity());
+		return result.mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), identity());
 	}
 
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)

@@ -57,7 +57,6 @@ import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -74,7 +73,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class CalcClauseTransformation extends DatasetClauseTransformation
 {
@@ -203,7 +202,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
-			: operand.mapKeepingKeys(nonAnalyticResultMetadata, dp -> LineageNode.of(lineageString, dp.getLineage()), dp -> {
+			: operand.mapKeepingKeys(nonAnalyticResultMetadata, lineage -> LineageNode.of(lineageString, lineage), dp -> {
 					DatapointScope dpSession = new DatapointScope(repo, dp, operand.getMetadata(), timeId);
 					
 					// place calculated components (eventually overriding existing ones) 
@@ -222,13 +221,13 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		// TODO: more efficient way to compute this instead of reduction by joining
 		return analyticClauses.stream()
-			.map(calcAndRename(metadata, scheme, dp -> LineageNode.of(lineageString, dp.getLineage())))
+			.map(calcAndRename(metadata, scheme, lineage -> LineageNode.of(lineageString, lineage)))
 			.reduce(this::joinByIDs)
 			.map(anResult -> joinByIDs(anResult, nonAnalyticResult))
 			.orElse(nonAnalyticResult);
 	}
 	
-	private Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme, SerFunction<DataPoint, Lineage> lineage)
+	private Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme, SerUnaryOperator<Lineage> lineage)
 	{
 		return clause -> {
 			LOGGER.debug("Evaluating calc expression {}", clause.calcClause.toString());

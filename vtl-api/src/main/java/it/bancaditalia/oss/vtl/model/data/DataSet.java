@@ -117,7 +117,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param lineageOperator an operator to enrich the datapoint lineage 
 	 * @return A new DataSet that is a subspace of this DataSet.  
 	 */
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator);
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator);
 	
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
@@ -127,7 +127,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
@@ -137,7 +137,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
@@ -249,7 +249,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return A new dataset resulting from the application of the specified window function.
 	 */
-	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
+	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
 			DataStructureComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor,
 			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher);
 

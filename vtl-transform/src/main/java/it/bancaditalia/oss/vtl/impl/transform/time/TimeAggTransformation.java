@@ -31,7 +31,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
@@ -71,7 +70,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	@Override
 	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		if (scalar instanceof NullValue)
+		if (scalar.isNull())
 			return scalar;
 		else if (scalar instanceof TimeValue)
 		{
@@ -92,7 +91,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	{
 		DataStructureComponent<Measure, ?, ?> measure = ((DataSetMetadata) metadata).getComponents(Measure.class).iterator().next();
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, dp -> LineageNode.of(this, dp.getLineage()), 
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineage -> LineageNode.of(this, lineage), 
 				dp -> singletonMap(measure, evalOnScalar(repo, dp.get(measure), null)));
 	}
 

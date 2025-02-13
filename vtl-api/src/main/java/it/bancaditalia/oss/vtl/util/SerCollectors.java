@@ -116,12 +116,12 @@ public class SerCollectors
         		downstream.combiner(), downstream.finisher(), downstream.characteristics());
     }
 
-    public static <T> SerCollector<T, List<T>, List<T>> toList()
+    public static <T> SerCollector<T, ?, List<T>> toList()
     {
     	return toList(ArrayList::new);
     }
 
-    public static <T> SerCollector<T, List<T>, List<T>> toList(SerSupplier<List<T>> supplier)
+    public static <T, L extends List<T>> SerCollector<T, ?, L> toList(SerSupplier<? extends L> supplier)
     {
         return new SerCollector<>(supplier::get, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH));
     }

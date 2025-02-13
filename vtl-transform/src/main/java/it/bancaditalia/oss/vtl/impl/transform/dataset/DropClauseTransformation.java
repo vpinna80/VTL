@@ -67,7 +67,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+		return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), lineage -> LineageNode.of(this, lineage), dp -> {
 					Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(dp.getValues(NonIdentifier.class));
 					newVals.keySet().removeAll(toDrop);
 					return newVals;

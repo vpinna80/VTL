@@ -66,7 +66,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 				.map(keepingValue(Optional::get))
 				.collect(toConcurrentMap(e -> e.getKey().asRole(Identifier.class), Entry::getValue));
 		
-		return operand.subspace(subspaceKeyValues, dp -> LineageNode.of(lineageString, dp.getLineage()));
+		return operand.subspace(subspaceKeyValues, lineage -> LineageNode.of(lineageString, lineage));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

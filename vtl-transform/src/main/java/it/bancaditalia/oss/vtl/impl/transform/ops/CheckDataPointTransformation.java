@@ -29,6 +29,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.Output;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
@@ -59,6 +61,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -109,9 +112,10 @@ public class CheckDataPointTransformation extends TransformationImpl
 		RuleSetType type = ruleset.getType();
 		List<DataPointRule> rules = ruleset.getRules();
 		DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var = BOOLEANDS.getDefaultVariable().as(Measure.class);
-		DataStructureComponent<Identifier, ?, ?> ruleid = repo.getVariable(VTLAliasImpl.of("ruleid")).as(Identifier.class);
+		Variable<?,?> variable = repo.getVariable(VTLAliasImpl.of("ruleid")).orElseThrow(() -> new NullPointerException("Variable ruleid is not defined."));
+		DataStructureComponent<Identifier, ?, ?> ruleid = variable.as(Identifier.class);
 		
-		return dataset.flatmapKeepingKeys(structure, DataPoint::getLineage, dp -> rules.stream()
+		return dataset.flatmapKeepingKeys(structure, identity(), dp -> rules.stream()
 			.map(rule -> evalRule(new DatapointScope(repo, dp, dataset.getMetadata(), null), type, bool_var, ruleid, dp, rule))
 			.filter(Objects::nonNull));
 	}
@@ -165,7 +169,8 @@ public class CheckDataPointTransformation extends TransformationImpl
 			else
 				for (int i = 0; i < vars.size(); i++)
 				{
-					ValueDomainSubset<?, ?> domain = repo.getDomain(vars.get(i).getKey());
+					VTLAlias alias = vars.get(i).getKey();
+					ValueDomainSubset<?, ?> domain = repo.getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
 					VTLAlias compName = components.get(i);
 					DataStructureComponent<?, ?, ?> component = structure.getComponent(compName).orElseThrow(() -> new VTLMissingComponentsException(compName, structure));
 					
@@ -181,7 +186,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 			return builder
 					.addComponent(ERRORCODE.get())
 					.addComponent(ERRORLEVEL.get())
-					.addComponent(repo.getVariable(VTLAliasImpl.of("ruleid")).as(Identifier.class))
+					.addComponent(repo.getVariable(VTLAliasImpl.of("ruleid")).orElseThrow(() -> new NullPointerException("Variable ruleid is not defined")).as(Identifier.class))
 					.build();
 		}
 		else

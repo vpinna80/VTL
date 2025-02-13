@@ -138,7 +138,7 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator)
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator)
 	{
 		DataSetMetadata newMetadata = new DataStructureBuilder(dataset.getMetadata()).removeComponents(keyValues.keySet()).build();
 		
@@ -199,7 +199,7 @@ public enum SampleDataSets implements DataSet
 	}
 	
 	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			SerFunction<? super DataPoint, ? extends Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+			SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		return dataset.mapKeepingKeys(metadata, lineageOperator, operator);
 	}
@@ -220,7 +220,7 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public <T, TT> DataSet analytic(SerFunction<DataPoint, Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
+	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
 			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		return dataset.analytic(lineageOp, sourceComp, destComp, clause, extractor, collector, finisher);
@@ -233,7 +233,7 @@ public enum SampleDataSets implements DataSet
 	}
 	
 	@Override
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerFunction<? super DataPoint, ? extends Lineage> lineageOperator,
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator,
 			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
 	{
 		throw new UnsupportedOperationException();

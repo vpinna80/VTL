@@ -109,7 +109,7 @@ public class DateDiffTransformation extends BinaryTransformation
 
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> computeScalar(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (left instanceof NullValue || right instanceof NullValue)
+		if (left.isNull() || right.isNull())
 			return NullValue.instance(INTEGERDS);
 		
 		LocalDate dLeft = ((TimeValue<?, ?, ?, ?>) left).getEndDate().get();

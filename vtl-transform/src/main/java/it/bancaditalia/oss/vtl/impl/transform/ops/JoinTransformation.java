@@ -267,7 +267,7 @@ public class JoinTransformation extends TransformationImpl
 			if (result == null)
 				result = toJoin;
 			else
-				result = result.flatmapKeepingKeys(joinedBuilder.build(), DataPoint::getLineage, dp -> {
+				result = result.flatmapKeepingKeys(joinedBuilder.build(), identity(), dp -> {
 					Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> template = dp.getValues(NonIdentifier.class);
 					return toJoin.stream()
 						.map(dpj -> {
@@ -327,7 +327,7 @@ public class JoinTransformation extends TransformationImpl
 		Set<VTLAlias> lDsComponentNames = lDs.getMetadata().stream().map(DataStructureComponent::getVariable).map(Variable::getAlias).collect(toSet());
 		DataSetMetadata stepMetadata = rDs.getMetadata().stream().filter(component -> !lDsComponentNames.contains(component.getVariable().getAlias())).collect(toDataStructure());
 		
-		DataSet stepResult = lDs.mapKeepingKeys(stepMetadata, DataPoint::getLineage, dp -> {
+		DataSet stepResult = lDs.mapKeepingKeys(stepMetadata, identity(), dp -> {
 			var key = dp.getValuesByNames(usingNames);
 			if (index.containsKey(key))
 				return dp.combine(index.get(key), this::lineageCombiner);
@@ -517,7 +517,7 @@ public class JoinTransformation extends TransformationImpl
 
 		DataSetMetadata applyMetadata = dataset.getMetadata().stream().filter(c -> !c.is(Measure.class) || !c.getVariable().getAlias().isComposed()).collect(toDataStructure(applyComponents));
 
-		return dataset.mapKeepingKeys(applyMetadata, dp -> LineageNode.of(this, dp.getLineage()),
+		return dataset.mapKeepingKeys(applyMetadata, lineage -> LineageNode.of(this, lineage),
 				dp -> applyComponents.stream().collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(scheme, c.getVariable().getAlias(), dp)))));
 	}
 

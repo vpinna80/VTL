@@ -38,12 +38,10 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -59,7 +57,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class RatioToReportTransformation extends UnaryTransformation implements AnalyticTransformation
 {
@@ -88,11 +86,11 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
 		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
 		
-		SerFunction<DataPoint, Lineage> lineageOp = dp -> LineageNode.of(this, dp.getLineage());
+		SerUnaryOperator<Lineage> lineageOp = lineage -> LineageNode.of(this, lineage);
 		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher = (newV, oldV) -> {
-			if (newV instanceof NullValue || oldV instanceof NullValue)
-				return singleton(newV instanceof NullValue ? newV : oldV);
+			if (newV.isNull() || oldV.isNull())
+				return singleton(newV.isNull() ? newV : oldV);
 			else if (newV instanceof NumberValue && oldV instanceof NumberValue)
 				return singleton(createNumberValue(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
 			else

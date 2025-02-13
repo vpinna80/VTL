@@ -43,6 +43,11 @@ public interface ScalarValue<C extends ScalarValue<C, R, S, D>, R extends Compar
 	 */
 	public S getDomain();
 	
+	/**
+	 * @return true if this value represents a VTL null value.
+	 */
+	public boolean isNull();
+	
 	@Override
 	public ScalarValueMetadata<S, D> getMetadata();
 	

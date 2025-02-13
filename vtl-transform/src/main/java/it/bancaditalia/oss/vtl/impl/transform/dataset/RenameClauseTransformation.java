@@ -75,10 +75,10 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata))));
 
 		if (oldComponents.values().stream().allMatch(c -> c.is(NonIdentifier.class)))
-			return operand.mapKeepingKeys(metadata, dp -> LineageNode.of(this, dp.getLineage()), dp -> {
+			return operand.mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), dp -> {
 					DataPoint renamed = dp;
 					for (Entry<VTLAlias, VTLAlias> rename: renames.entrySet())
-						renamed = renamed.renameComponent(oldComponents.get(rename.getKey()), newComponents.get(rename.getValue()));
+						renamed = renamed.rename(oldComponents.get(rename.getKey()), newComponents.get(rename.getValue()));
 					return renamed;
 				});
 		else

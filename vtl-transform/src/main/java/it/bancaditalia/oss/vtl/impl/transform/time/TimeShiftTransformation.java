@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DA
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -47,7 +48,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -95,7 +95,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 		DataSetMetadata withFreq = new DataStructureBuilder(dsMeta)
 				.addComponent(freqComp)
 				.build();
-		dataset = dataset.mapKeepingKeys(withFreq, DataPoint::getLineage, dp -> {
+		dataset = dataset.mapKeepingKeys(withFreq, identity(), dp -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.put(freqComp, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).getFrequency());
 				return map;

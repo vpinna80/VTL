@@ -91,7 +91,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@Override
 	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (left instanceof NullValue || right instanceof NullValue)
+		if (left.isNull() || right.isNull())
 			if (operator != DIV && INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(right.getDomain()))
 				return NullValue.instance(INTEGERDS);
 			else
@@ -121,7 +121,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				.apply(dp.get(comp), scalar);
 		
 		String lineageDescriptor = datasetIsLeftOp ? "x" + operator.toString() + scalar : scalar + operator.toString() + "x"; 
-		return dataset.mapKeepingKeys(dsMeta, dp -> LineageNode.of(lineageDescriptor, dp.getLineage()), dp -> { 
+		return dataset.mapKeepingKeys(dsMeta, lineage -> LineageNode.of(lineageDescriptor, lineage), dp -> { 
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
 				for (VTLAlias name: measureNames)
 				{
@@ -202,7 +202,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	// take account of the order of parameters because some operators are not commutative 
 	private ScalarValue<?, ?, ?, ?> compute(boolean swap, boolean intResult, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
-		if (left instanceof NullValue || right instanceof NullValue)
+		if (left.isNull() || right.isNull())
 			return intResult ? NullValue.instance(INTEGERDS) : NullValue.instance(NUMBERDS);
 		
 		return reverseIf(intResult && operator != DIV ? operator::applyAsInteger : operator::applyAsNumber, swap)
