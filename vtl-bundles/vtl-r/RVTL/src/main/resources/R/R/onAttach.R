@@ -37,8 +37,7 @@
     stop("RVTL requires a Java 11 virtual machine, but version '", version.string , "' was found.")
   
   J("java.lang.System")$setProperty("vtl.environment.implementation.classes", paste(sep = ",",
-      "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
-      "it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl")
+      "it.bancaditalia.oss.vtl.impl.environment.REnvironment")
   )
 
   if (!any(grepl("roxygenize", sys.calls())) && !any(grepl("test_load_package", sys.calls())))

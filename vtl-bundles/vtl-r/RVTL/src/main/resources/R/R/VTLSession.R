@@ -256,6 +256,8 @@ VTLSession <- R6Class("VTLSession",
           private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", 
               .jcast(private$instance, "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl"), self$text)
         }
+
+        private$env <- new.env(parent = emptyenv())
         return(invisible(private$instance))
       },
       

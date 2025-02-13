@@ -371,7 +371,7 @@ public class REnvironment implements Environment
 	private static UnaryOperator<ScalarValue<?, ?, ?, ?>> toTime(DataStructureComponent<?, ?, ?> comp)
 	{
 		return value -> {
-			if (value instanceof NullValue)
+			if (value.isNull())
 				return NullValue.instanceFrom(comp);
 			else if (value instanceof DateValue)
 			{

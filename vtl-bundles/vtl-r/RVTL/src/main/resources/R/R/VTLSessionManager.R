@@ -48,13 +48,18 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             #' List all active named VTL sessions.
             #' If an active SDMX metadata repository is active, also load Transformation schemes from it
             list = function() { 
-            	ss <- ls(private$sessions)
-            	metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
-            	if (metaRepo %instanceof% 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository') {
-            		sdmxTs <- sapply(metaRepo$getAvailableSchemes(), .jstrVal)
-            		ss <- unique(c(ss, sdmxTs))
-            	}
-            	ss
+              tryCatch({
+                sessions <- list()
+                metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
+                if (metaRepo$getClass()$getName() == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository') {
+                  sessions <- sapply(metaRepo$getAvailableSchemes(), .jstrVal)
+                }
+                unique(c(ls(private$sessions), sessions))
+              }, error = function(e) {
+                if (!is.null(e$jobj)) {
+                  e$jobj$printStackTrace()
+                }
+              })
             },
             
             #' @description
@@ -81,17 +86,24 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             #' @param sessionID The session to retrieve or create
             #' The name of the session to create
             getOrCreate = function(sessionID) {
-              result <- get0(sessionID, envir = private$sessions)
+              if (is.character(sessionID) && length(sessionID) == 1)
+              result <- get0(req(sessionID), envir = private$sessions)
               
               if (is.null(result)) {
                 result <- assign(sessionID, VTLSession$new(name = sessionID), envir = private$sessions)
                 
-                metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
-              	if (metaRepo %instanceof% 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' 
-              	    && sessionID %in% sapply(metaRepo$getAvailableSchemes(), .jstrVal)) {
-                  code <- metaRepo$getTransformationScheme(sessionID)$getOriginalCode()
-                  result$setText(code)
-                }
+                tryCatch({
+                  metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
+              	  if (metaRepo$getClass()$getName() == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' 
+              	      && sessionID %in% sapply(metaRepo$getAvailableSchemes(), .jstrVal)) {
+                    code <- metaRepo$getTransformationScheme(sessionID)$getOriginalCode()
+                    result$setText(code)
+                  }
+                }, error = function(e) {
+                  if (!is.null(e$jobj)) {
+                    e$jobj$printStackTrace()
+                  }
+                })
               }
               
               result

@@ -26,10 +26,10 @@ repoImpls <- c(
 )
 
 environments <- list(
-  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
-  `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
-  `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
-  `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
+  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
+  , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
+  , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
+#  , `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
 )
 
 currentEnvironments <- function() {
@@ -50,6 +50,78 @@ vtlServer <- function(input, output, session) {
   evalNode <- reactive(currentSession()$getValues(input$selectDatasets)) |> bindEvent(input$selectDatasets)
   isCompiled <- reactiveVal(F)
   
+  controlsGen <- function(javaclass) {
+    renderUI({
+      ctrls <- lapply(configManager$getSupportedProperties(J(javaclass)@jobj), function (prop) {
+        val <- prop$getValue()
+        if (val == 'null')
+          val <- ''
+        
+        if (prop$isPassword()) {
+          passwordInput(prop$getName(), prop$getDescription(), val)
+        } else if (prop$isFolder()) {
+          
+        } else {
+          textInput(prop$getName(), prop$getDescription(), val, placeholder = prop$getPlaceholder())
+        }
+      })
+
+      do.call(tagList, ctrls)
+    })
+  }
+  
+  observers <- list()
+  observerGen <- function(prop) {
+    if (is.null(observers[[prop$getName()]])) {
+      observers[[prop$getName()]] <- observe({
+        val <- input[[prop$getName()]]
+        if (prop$getValue() != val) {
+          prop$setValue(val)
+          output$eng_conf_output <- renderPrint({
+            if (prop$isPassword()) {
+              cat("Set property", prop$getDescription(), "to <masked value>\n")
+            } else {
+              cat("Set property", prop$getDescription(), "to", val, "\n")
+            }
+          })
+        }
+      }) |> bindEvent(input[[prop$getName()]], ignoreInit = T)
+	  }
+  }
+
+  output$proxyControls <- renderUI({
+    ctrls <- lapply(c('Host', 'Port', 'User', 'Password'), function (prop) {
+      inputId <- paste0("proxy", prop)
+      label <- paste0(prop, ':') 
+      value <- J("java.lang.System")$getProperty(paste0("https.proxy", prop))
+      if (is.null(value))
+        value <- ''
+      
+      (if (prop == 'Password') passwordInput else textInput)(inputId, label, value)
+    })
+    
+    do.call(tagList, ctrls)
+  })
+  
+  # Proxy controls
+  lapply(c('Host', 'Port', 'User', 'Password'), function (prop) {
+    inputId <- paste0('proxy', prop)
+    observe({
+      value <- input[[inputId]]
+      output$eng_conf_output <- renderPrint({
+        print(paste('Setting Proxy', prop, 'to', value))
+        
+        if (value == '') {
+          J("java.lang.System")$clearProperty(paste0("http.proxy", prop))
+          J("java.lang.System")$clearProperty(paste0("https.proxy", prop))
+        } else {
+          J("java.lang.System")$setProperty(paste0("http.proxy", prop), value)
+          J("java.lang.System")$setProperty(paste0("https.proxy", prop), value)
+        }
+      })
+    }) |> bindEvent(input[[inputId]], ignoreInit = T)
+  })
+
   # Upload vtl script button
   output$saveas <- downloadHandler(
     filename = function() {
@@ -60,47 +132,11 @@ vtlServer <- function(input, output, session) {
     }
   )
 
-  # Repository Properties box
-  output$repoProperties <- renderUI({
-    ctrls <- lapply(configManager$getSupportedProperties(J(input$repoClass)@jobj), function (prop) {
-      val <- prop$getValue()
-      if (val == 'null')
-        val <- ''
-
-      if (prop$isPassword()) {
-        passwordInput(prop$getName(), prop$getDescription(), val)
-      } else {
-        textInput(prop$getName(), prop$getDescription(), val, placeholder = prop$getPlaceholder())
-      }
-    })
-    
-    do.call(tagList, ctrls)
-  }) |> bindEvent(input$repoClass)
-
   # load theme list
   observe({
     updateSelectInput(inputId = 'editorTheme', choices = input$themeNames)
   }) |> bindEvent(input$themeNames)
   
-  # configure and change repository
-  observe({
-    output$eng_conf_output <- renderPrint({
-      lapply(configManager$getSupportedProperties(J(req(input$repoClass))@jobj), function (prop) {
-        val <- input[[prop$getName()]]
-        prop$setValue(val)
-        
-        if (prop$isPassword()) {
-          cat("Set property", prop$getDescription(), "to <masked value>\n")
-        } else {
-          cat("Set property", prop$getDescription(), "to", val, "\n")
-        }
-      })
-      
-      vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
-      cat("Set metadata repository to", input$repoClass, "\n")
-    })
-  }) |> bindEvent(input$setRepo)
-
   # Initially populate environment list and load properties
   envlistdone <- observe({
     defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
@@ -115,58 +151,35 @@ vtlServer <- function(input, output, session) {
     # Single execution only when VTL Studio starts
     envlistdone$destroy()
   })
-  
+
   # Environment properties list
-  output$envprops <- renderUI({
-    ctrls <- lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
-      val <- prop$getValue()
-      if (val == 'null')
-        val <- ''
-      
-      if (prop$isPassword()) {
-        passwordInput(prop$getName(), prop$getDescription(), val)
-      } else if (prop$isFolder()) {
-        
-      } else {
-        textInput(prop$getName(), prop$getDescription(), val, placeholder = prop$getPlaceholder())
-      }
-    })
-    
-    do.call(tagList, ctrls)
+  observe({
+    output$envprops <- controlsGen(input$selectEnv)
+    lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), observerGen)
   }) |> bindEvent(input$selectEnv, ignoreInit = T)
 
-  # save environment properties
+  # Repository properties list
   observe({
+    output$repoProperties <- controlsGen(input$repoClass)
+    lapply(configManager$getSupportedProperties(J(input$repoClass)@jobj), observerGen)
+
     output$eng_conf_output <- renderPrint({
-      lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), function (prop) {
-        val <- input[[prop$getName()]]
-        prop$setValue(val)
-        
-        if (prop$isPassword()) {
-          cat("Set property", prop$getDescription(), "to <masked value>\n")
-        } else {
-          cat("Set property", prop$getDescription(), "to", val, "\n")
-        }
-      })
-      cat("Finished setting properties for", input$selectEnv, "\n")
+      vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
+      cat("Set metadata repository to", input$repoClass, "\n")
     })
-  }) |> bindEvent(input$saveenvprops)
-  
+  }) |> bindEvent(input$repoClass, ignoreInit = T)
+
   # Save user configuration
   observe({
     propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
     writer = .jnew("java.io.FileWriter", propfile)
     tryCatch({
       configManager$newManager()$saveConfiguration(writer)
+      VTLSessionManager$reload()
     }, finally = {
       writer$close()
     })
   }) |> bindEvent(input$saveconf)
-  
-  # Reload user configuration
-  observe({
-    VTLSessionManager$reload()
-  }) |> bindEvent(input$reloadconf)
   
   # Select dataset to browse
   output$dsNames<- renderUI({
@@ -436,20 +449,6 @@ vtlServer <- function(input, output, session) {
       shinyjs::enable("compile")
     }))
   }) |> bindEvent(input$compile)
-
-  # configure proxy
-  observeEvent(input$setProxy, {
-    req(input$proxyHost)
-    req(input$proxyPort)
-    output$conf_output <- renderPrint({
-      print(paste('Setting proxy', input$proxyHost, ':', input$proxyPort))
-      J("java.lang.System")$setProperty("http.proxyHost", input$proxyHost)
-      J("java.lang.System")$setProperty("https.proxyHost", input$proxyHost)
-      J("java.lang.System")$setProperty("http.proxyPort", input$proxyPort)
-      J("java.lang.System")$setProperty("https.proxyPort", input$proxyPort)
-      print('OK.')
-    })
-  })
   
   observeEvent(input$editorText, {
     currentSession()$setText(req(input$editorText))

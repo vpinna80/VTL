@@ -17,10 +17,6 @@
 # See the License for the specific language governing
 # permissions and limitations under the License.
 #
-
-# Main class for consuming SDMX web services
-#
-# Author: Attilio Mattiocco
 ###############################################################################
 
 #' @title Launch VTL editor
