@@ -34,6 +34,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -121,16 +122,17 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		if (set.isEmpty())
 		{
-			EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) repo.getDomain(domainName).get();
+			EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) repo.getDomain(domainName)
+					.orElseThrow(() -> new VTLUndefinedObjectException("Domain", domainName));
 			set.addAll(domain.getCodeItems());
 		}
 	}
 
 	@Override
-	public VTLValueMetadata computeMetadata(TransformationScheme session)
+	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata value = operand.getMetadata(session);
-		checkSet(session.getRepository());
+		VTLValueMetadata value = operand.getMetadata(scheme);
+		checkSet(scheme.getRepository());
 
 		ScalarValue<?, ?, ?, ?> item1 = null;
 		for (ScalarValue<?, ?, ?, ?> item: set)
