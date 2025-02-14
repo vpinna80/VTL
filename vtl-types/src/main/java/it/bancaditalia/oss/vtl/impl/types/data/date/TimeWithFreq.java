@@ -51,7 +51,7 @@ public final class TimeWithFreq implements Serializable
 			p = holder.until(newTime);
 
 		if (p != null)
-			for (int i = freq + 1; i < FREQS.length; i++)
+			for (int i = freq; i < FREQS.length; i++)
 				// Only allow inferred frequency to become smaller (i.e. from A to Q but not the opposite)
 				if (FREQS[i].isMultiple(p))
 				{
