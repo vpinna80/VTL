@@ -1,0 +1,9 @@
+#Thu Feb 13 10:54:32 CET 2025
+vtl.metadatarepository.class=it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository
+vtl.csv.search.path=d\:\\Dati\\CSV_VTL
+vtl.environment.implementation.classes=it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment
+vtl.engine.implementation.class=it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine
+vtl.config.impl.class=it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl
+vtl.json.metadata.url=file\:///D\:/Dati/CSV_VTL/ex_csv.json
+vtl.session.implementation.class=it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl
+vtl.config.use.bigdecimal=false

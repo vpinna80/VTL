@@ -113,7 +113,42 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             #' Reload the configuration of the current session, reloading the repository and the environments.
             reload = function() {
               sapply(ls(private$sessions), function(n) VTLSessionManager$getOrCreate(n)$refresh())
-            }
+            },
+
+            #' @description
+            #' load_config will read the configuration of the VTL Engine from a ".properties" file given in input as propfile
+            #' if none is given the function will try to read from the user.home directory.
+            load_config = function(propfile = NULL) {
+                if (is.null(propfile)) {
+                  propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
+                }
+                if (file.exists(propfile)) {
+                  reader = .jnew("java.io.FileReader", propfile)
+                  tryCatch({
+                    J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
+                    packageStartupMessage("VTL settings loaded from ", propfile, ".")
+                  }, finally = {
+                    reader$close()
+                  })
+                }
+                VTLSessionManager$reload()
+            },
+
+            #' @description
+            #' save_config will save the current loaded config on the VTL engine on the given .properties file, if none is given
+            #' it will save it in the default path in the user.home directory
+            save_config = function(propfile = NULL) {
+                if (is.null(propfile)) {
+                  propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
+                }
+                configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
+                writer = .jnew("java.io.FileWriter", propfile)
+                tryCatch({
+                  configManager$newManager()$saveConfiguration(writer)
+                }, finally = {
+                  writer$close()
+                }) 
+            }          
           ),
           private = list(
             sessions = new.env(parent = emptyenv())

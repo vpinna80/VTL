@@ -146,7 +146,14 @@ vtlUI <- function() {
             uiOutput(outputId = "envprops")
           ),
           shinydashboard::box(title = 'Status', status = 'primary', solidHeader = T, width = 12,
-            actionButton(inputId = 'saveconf', label = 'Save & apply configuration'),
+            fluidRow(
+              column(6,
+                actionButton(inputId = 'saveconf', label = 'Save & apply configuration')
+              ),
+              column(6,
+                fileInput(inputId = "custom_conf", label="import"))
+              )
+            ,
             tags$div(style = "height: 1em"),
             verbatimTextOutput(outputId = "eng_conf_output", placeholder = T)
           )

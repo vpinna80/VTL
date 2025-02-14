@@ -21,8 +21,8 @@
 testthat::test_that("R env", {
   
   #TODO set conf
-  
-	ds <- data.frame(l=letters, 
+  RVTL::VTLSessionManager$load_config(propfile=".vtlStudio.properties")
+  ds <- data.frame(l=letters,
 				   n=as.integer(1:length(letters)), 
 				   m=rnorm(n = length(letters), mean = 0), 
 				   b=rnorm(n = length(letters), mean = 0) >0,
@@ -54,7 +54,7 @@ testthat::test_that("R env", {
 testthat::test_that("R env + json repo", {
   
   #TODO set conf
-  
+  RVTL::VTLSessionManager$load_config(propfile=".vtlStudio.properties.r_json")
   ds=data.frame(Id_1=c(10L, 10L, 11L, 11L),                                     
                        Id_2 = c('A', 'B', 'A', 'B'),
                        Me_1 = c(5L, 2L, 3L, 4L),        
@@ -81,7 +81,7 @@ testthat::test_that("R env + json repo", {
 testthat::test_that("CSV env + json repo", {
   
   #TODO set conf
-  
+  RVTL::VTLSessionManager$load_config(propfile=".vtlStudio.properties.csv")
   vtlAddStatements('test3', 'ds2:=ds_csv;ds3:=ds_csv+ds2;')
   vtlCompile('test3')
   ds_csv=vtlEvalNodes('test3', 'ds_csv')[['ds_csv']]
@@ -109,7 +109,7 @@ testthat::test_that("CSV env + json repo", {
 testthat::test_that("SDMX env + SDMX repo", {
   
   #TODO set conf
-  
+  RVTL::VTLSessionManager$load_config(propfile=".vtlStudio.properties.sdmx")
   vtlAddStatements('test4', "ds_sdmx:='BIS:WS_EER(1.0)/D.N.B.IT';")
   vtlCompile('test4')
   ds_sdmx=vtlEvalNodes('test4', 'ds_sdmx')[['ds_sdmx']]
@@ -124,7 +124,8 @@ testthat::test_that("SDMX env + SDMX repo", {
 testthat::test_that("CSV env + json and SDMX CL repo", {
   
   #TODO set conf
-  
+  RVTL::VTLSessionManager$load_config(propfile=".vtlStudio.properties.csv_sdmx_cl")
+
   vtlAddStatements('test5', "ds_csv_sdmx:=ds_csv;")
   vtlCompile('test5')
   ds_sdmx=vtlEvalNodes('test5', 'ds_csv_sdmx')[['ds_csv_sdmx']]
@@ -143,7 +144,7 @@ testthat::test_that("CSV env + json and SDMX CL repo", {
 testthat::test_that("R env + json and SDMX DSD repo", {
   
   #TODO set conf
-  
+  RVTL::VTLSessionManager$load_config(propfile=".vtlStudio.properties.r_sdmx_dsd")
   ds_r <<- RJSDMX::getTimeSeriesTable('BIS_PUBLIC', 'WS_EER/D.N.B.IT')
   vtlAddStatements('test6', "ds_sdmx:=ds_r;")
   vtlCompile('test6')
