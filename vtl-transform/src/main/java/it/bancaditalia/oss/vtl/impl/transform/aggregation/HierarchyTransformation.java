@@ -59,6 +59,7 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -128,6 +129,7 @@ public class HierarchyTransformation extends TransformationImpl
 		DataSet dataset = (DataSet) operand.eval(scheme);
 		
 		HierarchicalRuleSet<?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
+		DataSetMetadata newStructure = (DataSetMetadata) getMetadata(scheme);
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(dataset.getMetadata().getIDs());
 		DataStructureComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? dataset.getComponent(id) : dataset.getComponent(ruleset.getRuleId()))
@@ -138,7 +140,6 @@ public class HierarchyTransformation extends TransformationImpl
 		List<? extends Rule<?, ?>> rules = ruleset.getRules();
 		Set<CodeItem<?, ?, ?, ?>> computed = rules.stream().filter(rule -> rule.getRuleType() == EQ).map(Rule::getLeftCodeItem).collect(toSet());
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		DataSetMetadata newStructure = new DataStructureBuilder(ids).addComponent(measure).addComponent(idComp).build();
 		
 		// key: map with all id vals except idcomp; val: map with key: left-hand code; val: map with vals of each right hand vals for each measure in dataset
 		Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Map<CodeItem<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> index = new ConcurrentHashMap<>();
@@ -280,6 +281,7 @@ public class HierarchyTransformation extends TransformationImpl
 			return new DataStructureBuilder()
 					.addComponents(opMeta.getComponents(Identifier.class))
 					.addComponents(opMeta.getComponents(Measure.class))
+					.addComponents(opMeta.getComponents(ViralAttribute.class))
 					.build();
 		}
 		else
