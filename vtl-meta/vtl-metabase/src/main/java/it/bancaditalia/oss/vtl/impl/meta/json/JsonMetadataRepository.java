@@ -184,6 +184,12 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
+	public Optional<ValueDomainSubset<?, ?>> getDomain(VTLAlias alias)
+	{
+		return Optional.<ValueDomainSubset<?, ?>>ofNullable(domains.get(alias)).or(() -> super.getDomain(alias));
+	}
+	
+	@Override
 	public String getDataSource(VTLAlias name)
 	{
 		String source = sources.get(name);
