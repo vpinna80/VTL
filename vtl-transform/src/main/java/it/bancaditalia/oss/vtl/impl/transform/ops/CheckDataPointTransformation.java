@@ -163,8 +163,10 @@ public class CheckDataPointTransformation extends TransformationImpl
 				for (int i = 0; i < vars.size(); i++)
 				{
 					VTLAlias varName = vars.get(i).getKey();
-					if (structure.getComponent(varName).filter(c -> c.getVariable().equals(repo.getVariable(varName))).isEmpty())
+					if (structure.getComponent(varName).isEmpty())
 						throw new VTLMissingComponentsException(varName, structure);
+					if (repo.getVariable(varName).isEmpty())
+						throw new VTLUndefinedObjectException("Variable", varName);
 				}
 			else
 				for (int i = 0; i < vars.size(); i++)
