@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -218,7 +219,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	public default Set<DataStructureComponent<Identifier, ?, ?>> matchIdComponents(Collection<? extends VTLAlias> names, String operation)
 	{
 		if (names == null || names.isEmpty())
-			return getIDs();
+			return new HashSet<>(getIDs());
 		
 		return names.stream()
 			.peek(n -> { if (!contains(n)) throw new VTLMissingComponentsException(n, this); })
