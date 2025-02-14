@@ -235,33 +235,43 @@ public class CSVParseUtils
 		throw new IllegalStateException("ValueDomain not implemented in CSV: " + domain);
 	}
 
-	public static ScalarValue<?, ?, ?, ?> stringToTime(final String stringRepresentation)
+	public static ScalarValue<?, ?, ?, ?> stringToTime(String stringRepresentation)
 	{
 		String[] items = stringRepresentation.split("/", 2);
 		ScalarValue<?, ?, ?, ?>[] limits = new TimeValue<?, ?, ?, ?>[2];
 		
-		for (int i = 0; i < 2; i++)
+		if (items.length == 1)
 			try
 			{
-				limits[i] = DateValue.of(parseString(items[i], "YYYY-MM-DD"));
+				return DateValue.of(parseString(stringRepresentation, "YYYY-MM-DD"));
 			}
-			catch (RuntimeException e)
+			catch (RuntimeException last)
 			{
-				DateTimeException last = null;
-				for (DateTimeFormatter formatter : FORMATTERS.keySet())
-					try
-					{
-						limits[i] = TimePeriodValue.of(formatter.parse(items[i], FORMATTERS.get(formatter)));
-						break;
-					}
-					catch (DateTimeException e1)
-					{
-						last = e1;
-					}
-
-				if (limits[i] == null)
-					throw last;
+				return stringToTimePeriod(stringRepresentation);
 			}
+		else
+			for (int i = 0; i < 2; i++)
+				try
+				{
+					limits[i] = DateValue.of(parseString(items[i], "YYYY-MM-DD"));
+				}
+				catch (RuntimeException last)
+				{
+					last = null;
+					for (DateTimeFormatter formatter : FORMATTERS.keySet())
+						try
+						{
+							limits[i] = TimePeriodValue.of(formatter.parse(items[i], FORMATTERS.get(formatter)));
+							break;
+						}
+						catch (RuntimeException e1)
+						{
+							last = e1;
+						}
+	
+					if (limits[i] == null)
+						throw last;
+				}
 		
 		return GenericTimeValue.of((TimeValue<?, ?, ?, ?>) limits[0], (TimeValue<?, ?, ?, ?>) limits[1]);
 	}
