@@ -19,11 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingBy;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.toList;
@@ -32,6 +34,7 @@ import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -161,10 +164,11 @@ public class DataStructureBuilder
 		{
 			byName = components.stream()
 				.sorted(DataStructureComponent::byNameAndRole)
-				.collect(toMap(c -> c.getVariable().getAlias(), identity(), LinkedHashMap::new));
+				.collect(collectingAndThen(toMap(c -> c.getVariable().getAlias(), identity(), LinkedHashMap::new), Collections::unmodifiableMap));
 			byRole = components.stream()
 					.collect(groupingBy(DataStructureComponent::getRole, DataStructureBuilder::createEmptyStructure, toSet()));
 			byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
+			byRole.replaceAll((k, v) -> unmodifiableSet(v));
 			
 			int totalSize = byRole.values().stream().mapToInt(Collection::size).sum() - byRole.get(ViralAttribute.class).size();
 			if (totalSize != components.size())
