@@ -83,7 +83,7 @@ public interface ConfigurationManager
 	
 	/**
 	 * Creates a new, empty workspace.
-	 * @return The newly created {@link Woprkspace} instance
+	 * @return The newly created {@link Workspace} instance
 	 */
 	public Workspace createWorkspace();
 	

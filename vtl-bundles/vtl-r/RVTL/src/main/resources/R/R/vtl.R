@@ -17,7 +17,6 @@
 # See the License for the specific language governing
 # permissions and limitations under the License.
 #
-###############################################################################
 
 #' @title Launch VTL editor
 #' @description This command opens a shiny-based rich editor for writing and testing VTL programs.

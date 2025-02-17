@@ -65,6 +65,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireDateDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -81,6 +82,7 @@ import it.bancaditalia.oss.vtl.model.domain.DurationDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
@@ -243,11 +245,13 @@ public class CSVParseUtils
 		if (items.length == 1)
 			try
 			{
-				return DateValue.of(parseString(stringRepresentation, "YYYY-MM-DD"));
+				ScalarValue<?, ?, EntireDateDomainSubset, DateDomain> date = DateValue.of(parseString(stringRepresentation, "YYYY-MM-DD"));
+				return GenericTimeValue.of(date, date);
 			}
 			catch (RuntimeException last)
 			{
-				return stringToTimePeriod(stringRepresentation);
+				TimePeriodValue<?> timePeriod = stringToTimePeriod(stringRepresentation);
+				return GenericTimeValue.of(timePeriod, timePeriod);
 			}
 		else
 			for (int i = 0; i < 2; i++)
@@ -276,7 +280,7 @@ public class CSVParseUtils
 		return GenericTimeValue.of((TimeValue<?, ?, ?, ?>) limits[0], (TimeValue<?, ?, ?, ?>) limits[1]);
 	}
 
-	public static ScalarValue<?, ?, ?, ?> stringToTimePeriod(final String stringRepresentation)
+	public static TimePeriodValue<?> stringToTimePeriod(final String stringRepresentation)
 	{
 		DateTimeException last = null;
 		for (DateTimeFormatter formatter : FORMATTERS.keySet())

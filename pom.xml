@@ -153,7 +153,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.2.0-SNAPSHOT</revision>
+		<revision>1.2.0</revision>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -187,16 +187,11 @@
 
 		<scala.version>2.13.13</scala.version>
 		<scala.compat.version>2.13</scala.compat.version>
-		<spark.version>3.5.1</spark.version>
+		<spark.version>3.5.4</spark.version>
 
-		<ac-lang.version>2.6</ac-lang.version>
-		<ac-lang3.version>3.14.0</ac-lang3.version>
-		<ac-math3.version>3.6.1</ac-math3.version>
-		<ac-compress.version>1.26.1</ac-compress.version>
-		<ac-collection.version>3.2.2</ac-collection.version>
-
+		<ac-lang3.version>3.17.0</ac-lang3.version>
+		<jackson.version>2.18.2</jackson.version>
 		<picocli.version>4.7.5</picocli.version>
-		<jackson.version>2.15.2</jackson.version>
 		<jaxb.version>4.0.2</jaxb.version>
 		<jaxb.runtime.version>4.0.5</jaxb.runtime.version>
 		<thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
@@ -217,7 +212,8 @@
 		<scmUrl>https://github.com/vpinna80/VTL</scmUrl>
 		<siteUrl>https://vpinna80.github.io/VTL</siteUrl>
 		<licenseUrl>
-			https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt</licenseUrl>
+			https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+		</licenseUrl>
 	</properties>
 
 	<distributionManagement>
@@ -273,6 +269,30 @@
 				<artifactId>vtl-envs</artifactId>
 				<version>${project.version}</version>
 				<type>pom</type>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-bundles</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-r</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-java2r</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-editor</artifactId>
+				<version>${project.version}</version>
+				<type>zip</type>
+				<classifier>bundle</classifier>
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -355,12 +375,14 @@
 				<version>${antlr4.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>jakarta.activation</groupId>
-				<artifactId>jakarta.activation-api</artifactId>
-				<version>2.0.1</version>
+				<groupId>com.fasterxml.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<type>pom</type>
+				<version>${jackson.version}</version>
+				<scope>import</scope>
 			</dependency>
 
-			<!-- fixes for dependency convergence errors in sdmx.io fusion -->
+			<!-- fixes for dependency convergence errors -->
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-lang3</artifactId>
@@ -424,13 +446,6 @@
 			</dependency>
 			
 			<!-- spark environment -->
-			<dependency>
-				<groupId>com.fasterxml.jackson</groupId>
-				<artifactId>jackson-bom</artifactId>
-				<type>pom</type>
-				<version>${jackson.version}</version>
-				<scope>import</scope>
-			</dependency>
 			<dependency>
 				<groupId>org.scala-lang</groupId>
 				<artifactId>scala-reflect</artifactId>
