@@ -171,14 +171,7 @@ vtlServer <- function(input, output, session) {
 
   # Save user configuration
   observe({
-    propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
-    writer = .jnew("java.io.FileWriter", propfile)
-    tryCatch({
-      configManager$newManager()$saveConfiguration(writer)
-      VTLSessionManager$reload()
-    }, finally = {
-      writer$close()
-    })
+    VTLSessionManager$save_config()
   }) |> bindEvent(input$saveconf)
   
   # Select dataset to browse
@@ -468,4 +461,8 @@ vtlServer <- function(input, output, session) {
       tags$p(tags$span("Rule:"), ifelse(test = is.null(formula), no = formula, yes = 'Source data'))
     ))
   })
+
+  observe({
+    VTLSessionManager$load_config(input$custom_conf$datapath)
+  }) |> bindEvent(input$custom_conf)
 }
