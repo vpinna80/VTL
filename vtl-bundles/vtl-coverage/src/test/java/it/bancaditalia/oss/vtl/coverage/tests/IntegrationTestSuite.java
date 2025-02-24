@@ -28,19 +28,27 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Answers.RETURNS_SMART_NULLS;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,10 +60,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import it.bancaditalia.oss.vtl.coverage.utils.RepeatedParameterizedTest;
 import it.bancaditalia.oss.vtl.coverage.utils.TestEnvironment;
 import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine;
 import it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment;
-import it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -63,6 +72,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import jakarta.xml.bind.JAXBException;
@@ -77,7 +87,7 @@ public class IntegrationTestSuite
 	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_SKIP = Set.of();
+	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
 	private static final Engine ENGINE; 
 	
 	static 
@@ -142,13 +152,12 @@ public class IntegrationTestSuite
 	@MethodSource("test")
 	public void test(Path categ, Path operator, String number, String testCode) throws Throwable 
 	{
-		if (TO_SKIP.contains(T))
-			return;
+		assumeTrue(TO_RUN.contains(T));
 		
 		URL jsonURL = operator.resolve(String.format("ex_%s.json", number)).toUri().toURL();
 		JavaVTLEngine engine = new JavaVTLEngine();
 		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, engine), engine, 
-				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator)), new WorkspaceImpl()));
+				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator))), getMockWorkspace());
 		doTest(number, session);
 	}
 
@@ -156,12 +165,11 @@ public class IntegrationTestSuite
 	@MethodSource("examples")
 	public void examples(Path categ, Path operator, String number, String testCode) throws Throwable
 	{
-		if (TO_SKIP.contains(E))
-			return;
+		assumeTrue(TO_RUN.contains(E));
 		
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s.json", number)).toUri().toURL();
 		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
-				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator.resolve("examples"))), new WorkspaceImpl()));
+				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
 		doTest(number, session);
 	}
 
@@ -169,24 +177,12 @@ public class IntegrationTestSuite
 	@MethodSource("test")
 	public void testSpark(Path categ, Path operator, String number, String testCode) throws Throwable 
 	{
-		if (TO_SKIP.contains(TS))
-			return;
+		assumeTrue(TO_RUN.contains(TS));
 
-		Constructor<? extends Environment> env;
-		try
-		{
-			Class<? extends Environment> sparkClass = Class.forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment", true, IntegrationTestSuite.class.getClassLoader()).asSubclass(Environment.class);
-			env = sparkClass.getConstructor(List.class);
-		}
-		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
-		{
-			fail("Spark not available", e);
-			return;
-		}
-
+		Environment sparkEnv = getSparkEnv(List.of(operator));
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
 		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
-				List.of(new TestEnvironment(), env.newInstance(List.of(operator)), new CSVPathEnvironment(List.of(operator.resolve("examples"))), new WorkspaceImpl()));
+				List.of(new TestEnvironment(), sparkEnv, new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
 		doTest(number, session);
 	}
 
@@ -194,25 +190,44 @@ public class IntegrationTestSuite
 	@MethodSource("examples")
 	public void examplesSpark(Path categ, Path operator, String number, String testCode) throws Throwable
 	{
-		if (TO_SKIP.contains(ES))
-			return;
+		assumeTrue(TO_RUN.contains(ES));
 		
-		Constructor<? extends Environment> env;
+		Environment sparkEnv = getSparkEnv(List.of(operator.resolve("examples")));
+		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
+		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
+				List.of(new TestEnvironment(), sparkEnv, new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
+		doTest(number, session);
+	}
+
+	public static Workspace getMockWorkspace()
+	{
+		Map<VTLAlias, Statement> stats = new HashMap<>();
+		Workspace workspace = mock(Workspace.class, RETURNS_SMART_NULLS);
+		
+		when(workspace.addRule(any())).thenAnswer(ctx -> {
+			Statement stat = ctx.getArgument(0);
+			stats.put(stat.getAlias(), stat);
+			return ctx.getMock();
+		});
+		
+		when(workspace.getRule(any())).thenAnswer(ctx -> Optional.ofNullable(stats.get(ctx.getArgument(0))));
+		
+		return workspace;
+	}
+	
+	public static Environment getSparkEnv(List<Path> paths) throws InstantiationException, IllegalAccessException, InvocationTargetException
+	{
 		try
 		{
-			Class<? extends Environment> sparkClass = Class.forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment", true, IntegrationTestSuite.class.getClassLoader()).asSubclass(Environment.class);
-			env = sparkClass.getConstructor(List.class);
+			Class<? extends Environment> sparkClass = Class.forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment", 
+					true, IntegrationTestSuite.class.getClassLoader()).asSubclass(Environment.class);
+			return sparkClass.getConstructor(List.class).newInstance(paths);
 		}
 		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
 		{
 			fail("Spark not available", e);
-			return;
+			return null;
 		}
-		
-		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
-				List.of(new TestEnvironment(), env.newInstance(List.of(operator.resolve("examples"))), new CSVPathEnvironment(List.of(operator.resolve("examples"))), new WorkspaceImpl()));
-		doTest(number, session);
 	}
 
 	public static void doTest(String number, VTLSession session)

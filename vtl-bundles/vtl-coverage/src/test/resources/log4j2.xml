@@ -25,14 +25,14 @@
 	xsi:schemaLocation="http://logging.apache.org/log4j/2.0/config log4j2.xsd">
                
 	<Appenders>
-		<Appender name="STDERR1" type="Console">
+		<Appender name="STDOUT" type="Console">
 			<Layout type="PatternLayout" pattern="%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n" />
 			<Filters>
  				<Filter type="ThresholdFilter" level="TRACE"/>
     			<Filter type="ThresholdFilter" level="INFO" onMatch="DENY" onMismatch="NEUTRAL"/>
    			</Filters>
 		</Appender>
-		<Appender name="STDERR2" type="Console" target="SYSTEM_ERR">
+		<Appender name="STDERR" type="Console" target="SYSTEM_ERR">
 			<Layout type="PatternLayout">
 				<Pattern>%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%t] - %m%n</Pattern>
 			</Layout>
@@ -46,8 +46,8 @@
 		<Logger name="it.bancaditalia.oss.vtl" level="warn" />
 		
 		<Root level="off">
-			<AppenderRef ref="STDERR1" />
-			<AppenderRef ref="STDERR2" />
+			<AppenderRef ref="STDOUT" />
+			<AppenderRef ref="STDERR" />
 		</Root>
 	</Loggers>
 </Configuration>
