@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
+
 import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
@@ -33,16 +35,10 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimePeriodDomainSubset, TimePeriodValue<EntireTimePeriodDomainSubset>, EntireTimePeriodDomainSubset, TimePeriodDomain> implements TimePeriodDomainSubset<EntireTimePeriodDomainSubset>
 {
 	private static final long serialVersionUID = 1L;
-	private static final EntireTimePeriodDomainSubset INSTANCE = new EntireTimePeriodDomainSubset(null);
-	
-	public static EntireTimePeriodDomainSubset getInstance()
+
+	EntireTimePeriodDomainSubset()
 	{
-		return INSTANCE;
-	}
-	
-	private EntireTimePeriodDomainSubset(TimePeriodDomain parentDomain)
-	{
-		super(parentDomain);
+		super(TIME_PERIODDS);
 	}
 
 	@Override

@@ -31,9 +31,9 @@ public enum Domains implements ScalarValueMetadata
 	DURATION(EntireDurationDomainSubset.INSTANCE),
 	STRING(new EntireStringDomainSubset()),
 	NUMBER(new EntireNumberDomainSubset()),
-	TIME(EntireTimeDomainSubset.getInstance()),
-	DATE(EntireDateDomainSubset.getInstance()),
-	TIME_PERIOD(EntireTimePeriodDomainSubset.getInstance()),
+	TIME(new EntireTimeDomainSubset()),
+	DATE(new EntireDateDomainSubset()),
+	TIME_PERIOD(new EntireTimePeriodDomainSubset()),
 	NULL(new NullDomain());
 	
 	public static final EntireDurationDomainSubset DURATIONDS = (EntireDurationDomainSubset) DURATION.getDomain();

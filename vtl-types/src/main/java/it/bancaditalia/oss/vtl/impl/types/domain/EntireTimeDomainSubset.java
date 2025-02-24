@@ -32,14 +32,8 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainSubset, TimeValue<?, ?, EntireTimeDomainSubset, TimeDomain>, EntireTimeDomainSubset, TimeDomain> implements TimeDomainSubset<EntireTimeDomainSubset, TimeDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private static final EntireTimeDomainSubset INSTANCE = new EntireTimeDomainSubset();
-	
-	public static EntireTimeDomainSubset getInstance()
-	{
-		return INSTANCE;
-	}
 
-	private EntireTimeDomainSubset()
+	EntireTimeDomainSubset()
 	{
 		super(TIMEDS);
 	}
