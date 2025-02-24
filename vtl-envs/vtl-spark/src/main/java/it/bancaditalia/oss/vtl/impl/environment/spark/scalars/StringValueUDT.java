@@ -17,47 +17,39 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.spark;
+package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
-import static org.apache.spark.sql.types.DataTypes.BooleanType;
+import static org.apache.spark.sql.types.DataTypes.StringType;
 
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.UserDefinedType;
+import org.apache.spark.unsafe.types.UTF8String;
 
-import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 
-public class BooleanValueUDT extends UserDefinedType<BooleanValue<?>>
+public class StringValueUDT extends SingleFieldScalarValueUDT<StringValue<?, ?>>
 {
 	private static final long serialVersionUID = 1L;
 
-	@Override
-	public BooleanValue<?> deserialize(Object datum)
+	public StringValueUDT()
 	{
-		return (BooleanValue<?>) BooleanValue.of((Boolean) datum);
+		super(StringType);
+	}
+	
+	@Override
+	public StringValue<?, ?> deserializeInternal(Object datum)
+	{
+		return (StringValue<?, ?>) StringValue.of(((UTF8String) datum).toString());
 	}
 
 	@Override
-	public Object serialize(BooleanValue<?> obj)
+	public Object serializeInternal(StringValue<?, ?> obj)
 	{
-		return obj.get();
-	}
-
-	@Override
-	public DataType sqlType()
-	{
-		return BooleanType;
+		return UTF8String.fromString(obj.get());
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Class<BooleanValue<?>> userClass()
+	public Class<StringValue<?, ?>> userClass()
 	{
-		return (Class<BooleanValue<?>>) (Class<? extends BooleanValue<?>>) BooleanValue.class;
-	}
-	
-	@Override
-	public String toString()
-	{
-		return "BooleanValue";
+		return (Class<StringValue<?, ?>>) (Class<?>) StringValue.class;
 	}
 }

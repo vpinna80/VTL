@@ -17,48 +17,38 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.spark;
+package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static org.apache.spark.sql.types.DataTypes.DoubleType;
-
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.UserDefinedType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 
-public class DoubleValueUDT extends UserDefinedType<DoubleValue<?>>
+public class DoubleValueUDT extends SingleFieldScalarValueUDT<DoubleValue<?>>
 {
 	private static final long serialVersionUID = 1L;
 
+	public DoubleValueUDT()
+	{
+		super(DoubleType);
+	}
+	
 	@Override
-	public DoubleValue<?> deserialize(Object datum)
+	public DoubleValue<?> deserializeInternal(Object datum)
 	{
 		return (DoubleValue<?>) DoubleValue.of((Double) datum, Domains.NUMBERDS);
 	}
 
 	@Override
-	public Object serialize(DoubleValue<?> obj)
+	public Object serializeInternal(DoubleValue<?> obj)
 	{
 		return obj.get();
-	}
-
-	@Override
-	public DataType sqlType()
-	{
-		return DoubleType;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Class<DoubleValue<?>> userClass()
 	{
-		return (Class<DoubleValue<?>>) (Class<? extends DoubleValue<?>>) DoubleValue.class;
-	}
-	
-	@Override
-	public String toString()
-	{
-		return "DoubleValue";
+		return (Class<DoubleValue<?>>) (Class<?>) DoubleValue.class;
 	}
 }

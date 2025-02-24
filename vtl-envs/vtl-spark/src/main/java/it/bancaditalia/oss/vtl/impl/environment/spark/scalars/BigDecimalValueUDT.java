@@ -17,48 +17,43 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.spark;
+package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
+
+import static org.apache.spark.sql.types.DataTypes.createDecimalType;
 
 import java.math.BigDecimal;
 
-import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DecimalType;
-import org.apache.spark.sql.types.UserDefinedType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 
-public class BigDecimalValueUDT extends UserDefinedType<BigDecimalValue<?>>
+public class BigDecimalValueUDT extends SingleFieldScalarValueUDT<BigDecimalValue<?>>
 {
 	private static final long serialVersionUID = 1L;
 
+	private static final DecimalType DECIMAL_TYPE = createDecimalType();
+
+	public BigDecimalValueUDT()
+	{
+		super(DECIMAL_TYPE);
+	}
+	
 	@Override
-	public BigDecimalValue<?> deserialize(Object datum)
+	public BigDecimalValue<?> deserializeInternal(Object datum)
 	{
 		return (BigDecimalValue<?>) BigDecimalValue.of((BigDecimal) datum);
 	}
 
 	@Override
-	public Object serialize(BigDecimalValue<?> obj)
+	public Object serializeInternal(BigDecimalValue<?> obj)
 	{
 		return obj.get();
-	}
-
-	@Override
-	public DataType sqlType()
-	{
-		return DecimalType.USER_DEFAULT();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Class<BigDecimalValue<?>> userClass()
 	{
-		return (Class<BigDecimalValue<?>>) (Class<? extends BigDecimalValue<?>>) BigDecimalValue.class;
-	}
-	
-	@Override
-	public String toString()
-	{
-		return "BigDecimalValue";
+		return (Class<BigDecimalValue<?>>) (Class<?>) BigDecimalValue.class;
 	}
 }

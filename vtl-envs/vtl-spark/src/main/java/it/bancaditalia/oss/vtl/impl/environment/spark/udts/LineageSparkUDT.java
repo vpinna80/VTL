@@ -17,7 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.spark;
+package it.bancaditalia.oss.vtl.impl.environment.spark.udts;
 
 import static org.apache.spark.sql.types.DataTypes.BinaryType;
 
@@ -31,6 +31,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import it.bancaditalia.oss.vtl.impl.environment.spark.LineageSerializer;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
@@ -41,6 +42,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 public class LineageSparkUDT extends UserDefinedType<Lineage>
 {
 	private static final long serialVersionUID = 1L;
+	public static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
 
     public static final ThreadLocal<Kryo> KRYO = new ThreadLocal<Kryo>() {
 

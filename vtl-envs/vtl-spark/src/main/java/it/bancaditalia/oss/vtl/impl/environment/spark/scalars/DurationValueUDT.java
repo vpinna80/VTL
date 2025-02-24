@@ -17,54 +17,39 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.spark;
+package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static org.apache.spark.sql.types.DataTypes.IntegerType;
-
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.UserDefinedType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 
-public class DurationValueUDT extends UserDefinedType<DurationValue>
+public class DurationValueUDT extends SingleFieldScalarValueUDT<DurationValue>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Frequency[] FREQS = Frequency.values();
 	
-	@Override
-	public DurationValue deserialize(Object datum)
+	public DurationValueUDT()
 	{
-		return datum != null ? FREQS[(Integer) datum].get() : null;
+		super(IntegerType);
 	}
 
 	@Override
-	public Integer serialize(DurationValue frequency)
+	public DurationValue deserializeInternal(Object datum)
 	{
-		return frequency != null ? Integer.valueOf(frequency.get().ordinal()) : null;
+		int tag = (Integer) datum;
+		return tag >= 0 ? FREQS[tag].get() : null;
 	}
 
 	@Override
-	public DataType sqlType()
+	public Object serializeInternal(DurationValue value)
 	{
-		return IntegerType;
+		return value != null ? value.get().ordinal() : -1;
 	}
 
 	@Override
 	public Class<DurationValue> userClass()
 	{
 		return DurationValue.class;
-	}
-	
-	@Override
-	public String toString()
-	{
-		return "DurationValue";
-	}
-	
-	@Override
-	public String typeName()
-	{
-		return toString();
 	}
 }

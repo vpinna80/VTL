@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getCompo
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.parseCSVStrings;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.model.data.VTLAlias.byName;
@@ -78,6 +79,17 @@ import com.esotericsoftware.kryo.Kryo;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BigDecimalValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BooleanValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DateValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DoubleValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DurationValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.GenericTimeValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.IntegerValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
@@ -88,6 +100,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -120,7 +133,6 @@ public class SparkEnvironment implements Environment
 	public static final VTLProperty VTL_SPARK_WHOLESTAGE_CODEGEN = 
 			new VTLPropertyImpl("vtl.spark.codegen.value", "set to false to disable Spark wholestage code generation", "true", EnumSet.of(IS_REQUIRED), "true");
 
-	/* package */ static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
 	private static final AtomicReference<SQLConf> MASTER_CONF = new AtomicReference<>();
 	private static final ThreadLocal<Boolean> CONFS = new ThreadLocal<>();
 	
@@ -141,6 +153,7 @@ public class SparkEnvironment implements Environment
 			UDTRegistration.register(GenericTimeValue.class.getName(), GenericTimeValueUDT.class.getName());
 			UDTRegistration.register(TimePeriodValue.class.getName(), TimePeriodValueUDT.class.getName());
 			UDTRegistration.register(DurationValue.class.getName(), DurationValueUDT.class.getName());
+			UDTRegistration.register(TimeWithFreq.class.getName(), TimeWithFreqUDT.class.getName());
 		}
 	}
 
@@ -182,7 +195,7 @@ public class SparkEnvironment implements Environment
 		return conf
 		  // enable for debugging
 		  .set("spark.sql.codegen.wholeStage", "false")
-//		  .set("spark.sql.codegen", "false")
+		  .set("spark.sql.codegen", "false")
 //		  .set("spark.sql.codegen.factoryMode", "NO_CODEGEN")
 		  .setAppName("Spark SQL Environment for VTL Engine");
 	}

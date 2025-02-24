@@ -25,9 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
-public class VTLSparkAggregator<I, A, TT> extends Aggregator<I, A, TT>
+public class VTLSparkAggregator<I, A, TT, S extends ScalarValue<?, ?, ?, ?>> extends Aggregator<I, A, TT>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSparkAggregator.class);
@@ -40,8 +41,39 @@ public class VTLSparkAggregator<I, A, TT> extends Aggregator<I, A, TT>
 	public VTLSparkAggregator(SerCollector<I, ?, TT> collector, Encoder<A> accEncoder, Encoder<TT> resultEncoder)
 	{
 		this.collector =  (SerCollector<I, A, TT>) collector;
-		this.resultEncoder = resultEncoder;
 		this.accEncoder = accEncoder;
+		this.resultEncoder = resultEncoder;
+	}
+
+	@Override
+	public A reduce(A acc, I value)
+	{
+		collector.accumulator().accept(acc, value);
+		return acc instanceof NullValue ? null : acc;
+	}
+
+	@Override
+	public A merge(A acc1, A acc2)
+	{
+		A acc = collector.combiner().apply(acc1, acc2);
+		if (acc == null)
+			throw new IllegalStateException();
+
+		return acc instanceof NullValue ? null : acc;
+	}
+
+	@Override
+	public TT finish(A reduction)
+	{
+		TT result = collector.finisher().apply(reduction);
+		LOGGER.debug("Finished Spark aggregation: {} of {}", result, result == null ? null : result.getClass());
+
+		if (result instanceof ScalarValue)
+		{
+			return result.getClass() != NullValue.class ? result : null;
+		}
+		
+		return result;
 	}
 	
 	@Override
@@ -54,38 +86,6 @@ public class VTLSparkAggregator<I, A, TT> extends Aggregator<I, A, TT>
 	public Encoder<A> bufferEncoder()
 	{
 		return accEncoder;
-	}
-
-	@Override
-	public A reduce(A acc, I value)
-	{
-		collector.accumulator().accept(acc, value);
-		if (acc instanceof NullValue)
-			throw new IllegalStateException();
-		
-		return acc;
-	}
-
-	@Override
-	public A merge(A acc1, A acc2)
-	{
-		A acc = collector.combiner().apply(acc1, acc2);
-		if (acc instanceof NullValue)
-			throw new IllegalStateException();
-
-		return acc;
-	}
-
-	@Override
-	public TT finish(A reduction)
-	{
-		TT result = collector.finisher().apply(reduction);
-		LOGGER.debug("Finished Spark aggregation: {} of {}", result, result == null ? null : result.getClass());
-
-		if (result instanceof NullValue)
-			throw new IllegalStateException();
-		
-		return result;
 	}
 
 	@Override

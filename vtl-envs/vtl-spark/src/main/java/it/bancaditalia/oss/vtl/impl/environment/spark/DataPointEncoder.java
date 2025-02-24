@@ -19,24 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createStructFromComponents;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getScalarFor;
-import static java.util.stream.Collectors.joining;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT.LineageSparkUDT;
+import static java.util.Objects.requireNonNull;
 import static org.apache.spark.sql.types.DataTypes.createStructType;
 
 import java.io.Serializable;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
@@ -48,15 +40,11 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class DataPointEncoder implements Serializable
 {
@@ -71,7 +59,7 @@ public class DataPointEncoder implements Serializable
 	{
 		// Ensures that SQL configuration is correct between all threads
 		// Avoids ClassCastException LocalDate -> java.sql.Date
-		SparkEnvironment.ensureConf(session);
+		SparkEnvironment.ensureConf(requireNonNull(session));
 		
 		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
 		Arrays.sort(components, DataStructureComponent::byNameAndRole);
@@ -89,48 +77,28 @@ public class DataPointEncoder implements Serializable
 	public Row encode(DataPoint dp)
 	{
 		Serializable[] vals = new Serializable[components.length + 1];
-		if (dp instanceof DataPointImpl)
+		for (int i = 0; i < components.length; i++)
 		{
-			DataPointImpl dpi = (DataPointImpl) dp;
-			
-			int k = 0;
-			for (int i = 0; i < dpi.comps.length; i++)
-				if (dpi.comps[i] != null)
-				{
-					vals[k++] = dpi.vals[i];
-					if (vals[k - 1] instanceof NullValue)
-						vals[k - 1] = null;
-				}
+			vals[i] = dp.get(components[i]);
+			if (((ScalarValue<?, ?, ?, ?>) vals[i]).isNull())
+				vals[i] = null;
 		}
-		else
-			for (int i = 0; i < components.length; i++)
-			{
-				vals[i] = dp.get(components[i]);
-				if (vals[i] instanceof NullValue)
-					vals[i] = null;
-			}
 		
 		vals[components.length] = dp.getLineage();
 		return new GenericRowWithSchema(vals, schema);
 	}
 
-	public DataPointImpl decode(Row row, int start)
+	public SparkDataPoint decode(Row row, int start)
 	{
-		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length];
+		Lineage lineage = row.getAs(components.length + start);
+		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length]; 
 		for (int i = 0; i < components.length; i++)
-			if (row.isNullAt(i + start))
-				vals[i] = NullValue.instance(domains[i]);
-			else
-				vals[i] = getScalarFor(domains[i], (Serializable) row.get(i + start));
+			vals[i] = row.isNullAt(i + start) ? NullValue.instance(domains[i]) : row.getAs(i + start);
 		
-		Object lineage = row.get(components.length + start);
-		if (lineage instanceof byte[])
-			lineage = LineageSparkUDT.deserialize(lineage);
-		
-		return new DataPointImpl(components, vals, (Lineage) lineage);
+		return new SparkDataPoint(components, vals, lineage);
 	}
 
-	public DataPointImpl decode(Row row)
+	public SparkDataPoint decode(Row row)
 	{
 		return decode(row, 0);
 	}
@@ -153,225 +121,5 @@ public class DataPointEncoder implements Serializable
 	public Encoder<Row> getRowEncoderNoLineage()
 	{
 		return rowEncoderNoLineage;
-	}
-	
-	public static class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable 
-	{
-		private class EntrySetView extends AbstractSet<Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>>
-		{
-			@Override
-			public int size()
-			{
-				return size;
-			}
-
-			@Override
-			public Iterator<Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> iterator()
-			{
-				return new Iterator<Entry<DataStructureComponent<?,?,?>,ScalarValue<?,?,?,?>>>() {
-					int i = 0;
-					
-					@Override
-					public Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> next()
-					{
-						int cur = i++;
-						hasNext();
-						return new SimpleEntry<>(comps[cur], vals[cur]);
-					}
-					
-					@Override
-					public boolean hasNext()
-					{
-						while (i < comps.length && comps[i] == null)
-							i++;
-						
-						return i < comps.length && comps[i] != null;
-					}
-				};
-			}
-		}
-
-		private static final long serialVersionUID = 1L;
-		
-		private final DataStructureComponent<?, ?, ?>[] comps;
-		private final ScalarValue<?, ?, ?, ?>[] vals;
-		private final Lineage lineage;
-		private final int size;
-		private final int hashCode;
-		private final EntrySetView view = new EntrySetView();
-
-		public DataPointImpl(DataStructureComponent<?, ?, ?>[] comps, ScalarValue<?, ?, ?, ?>[] vals, Lineage lineage)
-		{
-			this.comps = comps;
-			this.vals = vals;
-			this.lineage = lineage;
-			
-			int size = 0;
-			for (int i = 0; i < comps.length; i++)
-				if (comps[i] != null)
-					size++;
-			this.size = size;
-			hashCode = super.hashCode();
-		}
-		
-		@Override
-		public DataPoint dropComponents(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components)
-		{
-			DataStructureComponent<?, ?, ?>[] comps2 = Arrays.copyOf(comps, comps.length);
-			for (int i = 0; i < comps2.length; i++)
-				if (comps2[i] != null && comps2[i].is(NonIdentifier.class) && components.contains(comps2[i]))
-					comps2[i] = null;
-			
-			return new DataPointImpl(comps2, vals, lineage);
-		}
-
-		@Override
-		public DataPoint keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components)
-		{
-			DataStructureComponent<?, ?, ?>[] comps2 = Arrays.copyOf(comps, comps.length);
-			for (int i = 0; i < comps2.length; i++)
-				if (comps2[i] != null && comps2[i].is(NonIdentifier.class) && !components.contains(comps2[i]))
-					comps2[i] = null;
-			
-			return new DataPointImpl(comps2, vals, lineage);
-		}
-
-		@Override
-		public DataPoint renameComponent(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
-		{
-			DataStructureComponent<?, ?, ?>[] comps2 = Arrays.copyOf(comps, comps.length);
-			for (int i = 0; i < comps2.length; i++)
-				if (comps2[i] != null && oldComponent.equals(comps2[i]))
-					comps2[i] = newComponent;
-			
-			return new DataPointImpl(comps2, vals, lineage);
-		}
-
-		@Override
-		public DataPoint combine(DataPoint other, SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
-		{
-			DataPointImpl dpo = (DataPointImpl) other;
-			
-			DataStructureComponent<?, ?, ?>[] comps2 = new DataStructureComponent<?, ?, ?>[comps.length + dpo.comps.length];
-			ScalarValue<?, ?, ?, ?>[] vals2 = new ScalarValue<?, ?, ?, ?>[comps.length + dpo.comps.length];
-			
-			int i = 0, j = 0, k = 0;
-			
-			// Merge sorted components and values
-			while (k < comps.length + dpo.comps.length)
-			{
-				while (i < comps.length && comps[i] == null)
-					i++;
-				while (j < dpo.comps.length && dpo.comps[j] == null)
-					j++;
-				
-				int compare = i < comps.length ? j < dpo.comps.length ? DataStructureComponent.byNameAndRole(comps[i], dpo.comps[j]) : -1 : 1;
-				if (compare < 0)
-				{
-					comps2[k] = comps[i];  
-					vals2[k++] = vals[i++];  
-				}
-				else
-				{
-					comps2[k] = dpo.comps[j];  
-					vals2[k++] = dpo.vals[j++];  
-				}
-			}
-
-			// Remove consecutive equal components
-			for (i = 0; i < comps2.length; i++)
-				if (comps2[i] != null)
-					for (j = i + 1; j < comps2.length; j++)
-						if (comps2[j] != null && comps2[i].equals(comps2[j]))
-						{
-							comps2[j] = null;
-							j = comps2.length;
-						}
-
-			return new DataPointImpl(comps2, vals2, lineageCombiner.apply(this, dpo));
-		}
-
-		@Override
-		public <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
-		{
-			Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>();
-
-			for (int i = 0; i < comps.length; i++)
-				if (comps[i] != null && comps[i].is(role))
-					map.put(comps[i].asRole(role), vals[i]);
-			
-			return map;
-		}
-		
-		@Override
-		public ScalarValue<?, ?, ?, ?> get(Object key)
-		{
-			if (key instanceof DataStructureComponent)
-				for (int i = 0; i < comps.length; i++)
-					if (comps[i] != null && comps[i].equals(key))
-						return vals[i];
-			
-			return null;
-		}
-
-		@Override
-		public Lineage getLineage()
-		{
-			return lineage;
-		}
-
-		@Override
-		public DataPoint enrichLineage(SerUnaryOperator<Lineage> enricher)
-		{
-			return new DataPointImpl(comps, vals, enricher.apply(lineage));
-		}
-
-		@Override
-		public Set<Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
-		{
-			return view;
-		}
-
-		@Override
-		public int hashCode()
-		{
-			return hashCode;
-		}
-
-		@Override
-		public boolean equals(Object obj)
-		{
-			return super.equals(obj);
-		}
-
-		@Override
-		public String toString()
-		{
-			return IntStream.range(0, comps.length)
-				.filter(i -> comps[i] != null)
-				.mapToObj(i -> comps[i] + "=" + vals[i])
-				.collect(joining(", ", "{ ", " }"));
-		}
-		
-		@Override
-		public Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<?, ?, ?>> components)
-		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
-			for (int i = 0; i < comps.length; i++)
-				if (comps[i] != null && components.contains(comps[i]))
-					result.put(comps[i], vals[i]);
-			
-			return result;
-		}
-		
-		DataStructureComponent<?, ?, ?> getComp(int i)
-		{
-			return comps[i];
-		}
-		
-		ScalarValue<?, ?, ?, ?> getValue(int i)
-		{
-			return vals[i];
-		}
 	}
 }

@@ -17,47 +17,39 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.spark;
+package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
-import static org.apache.spark.sql.types.DataTypes.LongType;
+import static org.apache.spark.sql.types.DataTypes.IntegerType;
 
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.UserDefinedType;
+import java.time.LocalDate;
 
-import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 
-public class IntegerValueUDT extends UserDefinedType<IntegerValue<?, ?>>
+public class DateValueUDT extends SingleFieldScalarValueUDT<DateValue<?>>
 {
 	private static final long serialVersionUID = 1L;
 
-	@Override
-	public IntegerValue<?, ?> deserialize(Object datum)
+	public DateValueUDT()
 	{
-		return (IntegerValue<?, ?>) IntegerValue.of((Long) datum);
+		super(IntegerType);
 	}
 
 	@Override
-	public Object serialize(IntegerValue<?, ?> obj)
+	public DateValue<?> deserializeInternal(Object datum)
 	{
-		return obj.get();
+		return (DateValue<?>) DateValue.of(LocalDate.ofEpochDay((Integer) datum));
 	}
 
 	@Override
-	public DataType sqlType()
+	public Object serializeInternal(DateValue<?> obj)
 	{
-		return LongType;
+		return (int) obj.get().toEpochDay();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Class<IntegerValue<?, ?>> userClass()
+	public Class<DateValue<?>> userClass()
 	{
-		return (Class<IntegerValue<?, ?>>) (Class<? extends IntegerValue<?, ?>>) IntegerValue.class;
-	}
-	
-	@Override
-	public String toString()
-	{
-		return "IntegerValue";
+		return (Class<DateValue<?>>) (Class<?>) DateValue.class;
 	}
 }

@@ -17,23 +17,25 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.spark;
+package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
-import static org.apache.spark.sql.catalyst.util.ArrayData.toArrayData;
+import static org.apache.spark.sql.types.DataTypes.IntegerType;
+import static org.apache.spark.sql.types.DataTypes.LongType;
+import static org.apache.spark.sql.types.DataTypes.createStructField;
+import static org.apache.spark.sql.types.DataTypes.createStructType;
 import static org.threeten.extra.TemporalFields.HALF_OF_YEAR;
 
 import java.security.InvalidParameterException;
 import java.time.Year;
 import java.time.YearMonth;
+import java.util.List;
 
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders;
-import org.apache.spark.sql.catalyst.util.ArrayData;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.UserDefinedType;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.expressions.SpecificInternalRow;
+import org.apache.spark.sql.types.StructType;
 import org.threeten.extra.YearHalf;
 import org.threeten.extra.YearQuarter;
 
@@ -44,83 +46,77 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 
-public class TimePeriodValueUDT extends UserDefinedType<TimePeriodValue<?>>
+public class TimePeriodValueUDT extends ScalarValueUDT<TimePeriodValue<?>>
 {
-	public static final AgnosticEncoder<?> ENCODER = AgnosticEncoders.ArrayEncoder$.MODULE$.apply(AgnosticEncoders.PrimitiveIntEncoder$.MODULE$, false);
-	
 	private static final long serialVersionUID = 1L;
-	private static final ArrayData NULL_ARRAY = toArrayData(new int[] {});
-
+	private static final StructType SQL_TYPE = createStructType(List.of(
+			createStructField("year", IntegerType, false),
+			createStructField("freq", IntegerType, false),
+			createStructField("subyear", LongType, true)
+		));
+	
+	public TimePeriodValueUDT()
+	{
+		super(SQL_TYPE);
+	}
+	
 	@Override
 	public TimePeriodValue<?> deserialize(Object datum)
 	{
-		int[] array = (int[]) ((ArrayData) datum).toIntArray();
+		InternalRow row = (InternalRow) datum;
+		int year = row.getInt(0);
+		int tag = row.getInt(1); 
 		
 		PeriodHolder<?> holder;
 		
-		switch (array.length)
+		switch (tag)
 		{
-			case 0: return null;
-			case 1: holder = new YearPeriodHolder(Year.of(array[0])); break;
-			case 3: switch (array[0])
-				{
-					case 0: holder = new SemesterPeriodHolder(YearHalf.of(array[1], array[2])); break;
-					case 1: holder = new QuarterPeriodHolder(YearQuarter.of(array[1], array[2])); break;
-					case 2: holder = new MonthPeriodHolder(YearMonth.of(array[1], array[2])); break;
-					default: throw new InvalidParameterException("deserialize - bad period");
-				}; 
-				break;
-			default: throw new InvalidParameterException("deserialize - bad length: " + array.length);
-		}
+			case 0: holder = new YearPeriodHolder(Year.of(year)); break;
+			case 1: holder = new SemesterPeriodHolder(YearHalf.of(year, (int) row.getLong(2))); break;
+			case 2: holder = new QuarterPeriodHolder(YearQuarter.of(year, (int) row.getLong(2))); break;
+			case 3: holder = new MonthPeriodHolder(YearMonth.of(year, (int) row.getLong(2))); break;
+			default: throw new InvalidParameterException("deserialize - bad period");
+		}; 
 		
 		return TimePeriodValue.of(holder);
 	}
 
 	@Override
-	public ArrayData serialize(TimePeriodValue<?> value)
+	public InternalRow serialize(TimePeriodValue<?> value)
 	{
-		if (value == null)
-			return NULL_ARRAY;
+		SpecificInternalRow row = new SpecificInternalRow(SQL_TYPE);
 		
 		PeriodHolder<?> holder = value.get();
 		Class<?> objClass = holder.getClass();
-		int[] result;
+		
+		row.setInt(0, holder.get(YEAR));
 		if (objClass == YearPeriodHolder.class)
-			result = new int[] { holder.get(YEAR)};
+			row.setInt(1, 0);
 		else if (objClass == SemesterPeriodHolder.class)
-			result = new int[] { 0, (int) holder.getLong(YEAR), (int) holder.getLong(HALF_OF_YEAR)};
+		{
+			row.setInt(1, 1);
+			row.setLong(2, holder.getLong(HALF_OF_YEAR));
+		}
 		else if (objClass == QuarterPeriodHolder.class)
-			result = new int[] { 1, (int) holder.getLong(YEAR), (int) holder.getLong(QUARTER_OF_YEAR)};
+		{
+			row.setInt(1, 2);
+			row.setLong(2, holder.getLong(QUARTER_OF_YEAR));
+		}
 		else if (objClass == MonthPeriodHolder.class)
-			result = new int[] { 2, (int) holder.getLong(YEAR), (int) holder.getLong(MONTH_OF_YEAR)};
+		{
+			row.setInt(1, 3);
+			row.setLong(2, holder.getLong(MONTH_OF_YEAR));
+		}
 		else
 			throw new UnsupportedOperationException("Spark serialization not implemented for " + objClass);
 		
-		return toArrayData(result);
-	}
-
-	@Override
-	public DataType sqlType()
-	{
-		return ENCODER.dataType();
+		return row;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Class<TimePeriodValue<?>> userClass()
 	{
-		return (Class<TimePeriodValue<?>>) (Class<? extends TimePeriodValue<?>>) TimePeriodValue.class;
-	}
-	
-	@Override
-	public String toString()
-	{
-		return "TimePeriodValue";
-	}
-	
-	@Override
-	public String typeName()
-	{
-		return toString();
+		return (Class<TimePeriodValue<?>>) (Class<?>) TimePeriodValue.class;
 	}
 }

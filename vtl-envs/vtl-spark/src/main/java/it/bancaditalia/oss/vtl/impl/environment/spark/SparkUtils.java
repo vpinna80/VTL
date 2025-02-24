@@ -29,26 +29,19 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.DEFAULT_JAVA_DECIMAL_ENCODER;
-import static org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.STRICT_LOCAL_DATE_ENCODER;
 import static org.apache.spark.sql.functions.col;
-import static scala.collection.JavaConverters.asJava;
 import static scala.jdk.javaapi.CollectionConverters.asScala;
 
 import java.io.Serializable;
 import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.apache.spark.api.java.function.MapFunction;
@@ -56,21 +49,31 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.JavaTypeInference;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.IterableEncoder;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.MapEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ProductEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.UDTEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.types.UserDefinedType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BigDecimalValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BooleanValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DateValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DoubleValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DurationValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.GenericTimeValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.IntegerValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.PartitionToRankUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.RankedPartitionUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.data.BaseScalarValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
@@ -79,10 +82,12 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
+import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
+import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -95,12 +100,10 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.util.GenericTuple;
 import it.bancaditalia.oss.vtl.util.Holder;
 import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import scala.Option;
-import scala.Tuple2;
 import scala.collection.immutable.Seq;
 import scala.reflect.ClassTag;
 
@@ -111,19 +114,19 @@ public class SparkUtils
 	
 	@SuppressWarnings("rawtypes")
 	private static final Map<Class<? extends ScalarValue>, AgnosticEncoder<?>> SCALAR_ENCODERS = new ConcurrentHashMap<>();
-	private static final Map<ValueDomainSubset<?, ?>, UserDefinedType<?>> DOMAIN_DATATYPES = new ConcurrentHashMap<>();
+	private static final Map<ValueDomainSubset<?, ?>, ScalarValueUDT<?>> DOMAIN_DATATYPES = new ConcurrentHashMap<>();
 	
 	static
 	{
-		SCALAR_ENCODERS.put(BooleanValue.class, AgnosticEncoders.BoxedBooleanEncoder$.MODULE$);
-		SCALAR_ENCODERS.put(StringValue.class, AgnosticEncoders.StringEncoder$.MODULE$);
-		SCALAR_ENCODERS.put(IntegerValue.class, AgnosticEncoders.BoxedLongEncoder$.MODULE$);
-		SCALAR_ENCODERS.put(DoubleValue.class, AgnosticEncoders.BoxedDoubleEncoder$.MODULE$);
-		SCALAR_ENCODERS.put(BigDecimalValue.class, DEFAULT_JAVA_DECIMAL_ENCODER());
-		SCALAR_ENCODERS.put(DurationValue.class, AgnosticEncoders.BoxedIntEncoder$.MODULE$);
-		SCALAR_ENCODERS.put(GenericTimeValue.class, GenericTimeValueUDT.ENCODER);
-		SCALAR_ENCODERS.put(TimePeriodValue.class, TimePeriodValueUDT.ENCODER);
-		SCALAR_ENCODERS.put(DateValue.class, STRICT_LOCAL_DATE_ENCODER());
+		SCALAR_ENCODERS.put(BooleanValue.class, new BooleanValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(StringValue.class, new StringValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(IntegerValue.class, new IntegerValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(DoubleValue.class, new DoubleValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(BigDecimalValue.class, new BigDecimalValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(DurationValue.class, new DurationValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(GenericTimeValue.class, new GenericTimeValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(DateValue.class, new DateValueUDT().getEncoder());
+		SCALAR_ENCODERS.put(TimePeriodValue.class, new TimePeriodValueUDT().getEncoder());
 
 		DOMAIN_DATATYPES.put(BOOLEANDS, new BooleanValueUDT());
 		DOMAIN_DATATYPES.put(STRINGDS, new StringValueUDT());
@@ -156,14 +159,16 @@ public class SparkUtils
 			default: throw new UnsupportedOperationException("No VTL role corresponding to metadata.");
 		}
 		
-		return repo.getVariable(VTLAliasImpl.of(field.name())).as(role);
+		return repo.getVariable(VTLAliasImpl.of(field.name())).orElseThrow(() -> new NullPointerException("Variable " + field.name() + " is not defined")).as(role);
 	}
 
 	public static MapFunction<Row, Row> parseCSVStrings(DataSetMetadata structure, Lineage lineage, DataPointEncoder encoder)
 	{
 		DataStructureComponent<?, ?, ?>[] comps = encoder.components;
 		ValueDomainSubset<?,?>[] domains = encoder.domains;
-		String[] names = Arrays.stream(comps).map(c -> c.getVariable().getAlias().getName()).collect(toArray(new String[comps.length]));
+		String[] names = new String[comps.length];
+		for (int i = 0; i < names.length; i++)
+			names[i] = comps[i].getVariable().getAlias().getName();
 		
 		return srcRow -> {
 			int size = srcRow.size() + 1;
@@ -171,7 +176,7 @@ public class SparkUtils
 			for (int i = 0; i < size - 1; i++)
 			{
 				newCols[i] = mapValue(domains[i], srcRow.getAs(names[i]), null);
-				if (newCols[i] instanceof NullValue)
+				if (((ScalarValue<?, ?, ?, ?>) newCols[i]).isNull())
 					newCols[i] = null;
 			}
 			
@@ -215,25 +220,28 @@ public class SparkUtils
 		return new StructField(component.getVariable().getAlias().getName(), type, component.is(NonIdentifier.class), metadata);
 	}
 
-//	public static EncoderField getEncoderFieldFor(DataStructureComponent<?, ?, ?> component)
-//	{
-//		return new EncoderField(component.getVariable().getAlias().getName(), SCALAR_ENCODERS.get(component.getVariable().getDomain()), 
-//				true, getMetadataFor(component), Option.empty(), Option.empty());
-//	}
-
 	public static DataType getDataTypeFor(DataStructureComponent<?, ?, ?> component)
 	{
 		ValueDomainSubset<?, ?> domain = component.getVariable().getDomain();
+		while (!DOMAIN_DATATYPES.containsKey(domain))
+			domain = (ValueDomainSubset<?, ?>) domain.getParentDomain();
 		if (DOMAIN_DATATYPES.containsKey(domain))
 			return DOMAIN_DATATYPES.get(domain);
 		else
 			throw new UnsupportedOperationException("Domain " + domain + " is not supported on Spark.");
 	}
 
-//	public static List<EncoderField> createFieldFromComponents(DataStructureComponent<?, ?, ?>[] components)
-//	{
-//		return structHelper(Arrays.stream(components), SparkUtils::getEncoderFieldFor);
-//	}
+	public static EncoderField getEncoderFieldFor(DataStructureComponent<?, ?, ?> comp)
+	{
+		ScalarValueUDT<?> scalarValueUDT = DOMAIN_DATATYPES.get(comp.getVariable().getDomain());
+		return new EncoderField(comp.getVariable().getAlias().getName(), scalarValueUDT.getEncoder(), 
+				!comp.is(Identifier.class), getMetadataFor(comp), Option.empty(), Option.empty());
+	}
+
+	public static List<EncoderField> createFieldFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	{
+		return structHelper(components.stream(), SparkUtils::getEncoderFieldFor);
+	}
 
 	public static List<StructField> createStructFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
 	{
@@ -267,62 +275,49 @@ public class SparkUtils
 	 * @param instance
 	 * @param structure
 	 * @return
+	 * @throws SecurityException 
+	 * @throws IllegalArgumentException 
 	 */
 	public static <T> AgnosticEncoder<T> getEncoderFor(Serializable instance, DataSetMetadata structure)
 	{
 		AgnosticEncoder<?> resultEncoder; 
 		
-		String className = instance.getClass().getSimpleName();
-//		if ("PartitionToRank".equals(className))
-//		{
-//			DataStructureComponent<?, ?, ?>[] components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
-//			Arrays.sort(components, DataStructureComponent::byNameAndRole);
-//			List<EncoderField> fields = new ArrayList<>(createFieldFromComponents(components));
-//			fields.add(new EncoderField("$lineage$", new AgnosticEncoders.UDTEncoder<>(LineageSparkUDT, LineageSparkUDT.class), false, Metadata.empty(), Option.empty(), Option.empty()));
-//			resultEncoder = new AgnosticEncoders.RowEncoder(asScala((Iterable<EncoderField>) fields).toSeq());
-//		}
-//		else 
-		if ("RankedPartition".equals(className))
+		Class<? extends Serializable> clazz = instance.getClass();
+		if (instance instanceof BaseScalarValue)
 		{
-			try
+			if (((ScalarValue<?, ?, ?, ?>) instance).isNull())
 			{
-				Class<?>[] repr = (Class<?>[]) instance.getClass().getField("repr").get(instance);
-				List<EncoderField> fieldEncoders = new ArrayList<>(); 
-				for (int i = 0; i < repr.length; i++)
-					fieldEncoders.add(new EncoderField("get" + (i + 1), JavaTypeInference.encoderFor(repr[i]), 
-							true, new Metadata(), Option.apply("get" + (i + 1)), Option.apply("set" + (i + 1))));
-				
-				Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
-				ProductEncoder<GenericTuple> keyEncoder = new ProductEncoder<>(ClassTag.apply(GenericTuple.class), seq, Option.empty());
-				AgnosticEncoder<Long> longEncoder = JavaTypeInference.encoderFor(Long.class);
-				resultEncoder = new MapEncoder<>(ClassTag.apply(HashMap.class), keyEncoder, longEncoder, true);
+				ValueDomainSubset<?, ?> domain = ((ScalarValue<?, ?, ?, ?>) instance).getMetadata().getDomain();
+				ScalarValueUDT<?> type = DOMAIN_DATATYPES.get(domain);
+				if (type == null)
+					throw new UnsupportedOperationException(domain.toString());
+				resultEncoder = type.getEncoder();
 			}
-			catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e)
+			else
 			{
-				throw new IllegalStateException(e);
+				resultEncoder = SCALAR_ENCODERS.get(clazz);
+				if (resultEncoder == null)
+					throw new UnsupportedOperationException(clazz.getSimpleName());
 			}
 		}
-		else if ("SerDoubleSumAvgCount".equals(className))
+		else if (clazz == PartitionToRank.class)
 		{
-			List<EncoderField> fieldEncoders = new ArrayList<>(); 
-			fieldEncoders.add(new EncoderField("getCount", JavaTypeInference.encoderFor(int.class), true, new Metadata(), Option.empty(), Option.empty()));
-			fieldEncoders.add(new EncoderField("getSums", JavaTypeInference.encoderFor(double[].class), true, new Metadata(), Option.empty(), Option.empty()));
-			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
-			resultEncoder = new ProductEncoder<>(ClassTag.apply(SerDoubleSumAvgCount.class), seq, Option.empty());
+			resultEncoder = new UDTEncoder<>(new PartitionToRankUDT(structure), PartitionToRankUDT.class);
 		}
-		else if ("ListOfDateValues".equals(className))
+		else if (clazz == RankedPartition.class)
 		{
-			List<EncoderField> fieldEncoders = new ArrayList<>();
-			fieldEncoders.add(new EncoderField("get", STRICT_LOCAL_DATE_ENCODER(), true, new Metadata(), Option.empty(), Option.empty()));
-			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
-			resultEncoder = new IterableEncoder<>(ClassTag.apply(ArrayList.class), new ProductEncoder<>(ClassTag.apply(DateValue.class), seq, Option.empty()), true, false);
+			resultEncoder = new UDTEncoder<>(new RankedPartitionUDT(structure), RankedPartitionUDT.class);
 		}
-		else if ("Holder".equals(className))
+		else if (clazz == SerDoubleSumAvgCount.class)
+		{
+			resultEncoder = JavaTypeInference.encoderFor(SerDoubleSumAvgCount.class);
+		}
+		else if (clazz == Holder.class)
 		{
 			try
 			{
 				List<EncoderField> fieldEncoders = new ArrayList<>();
-				Class<?> heldClass = (Class<?>) instance.getClass().getField("repr").get(instance);
+				Class<?> heldClass = (Class<?>) clazz.getField("repr").get(instance);
 				AgnosticEncoder<?> vEncoder;
 				if (BaseScalarValue.class.isAssignableFrom(heldClass))
 				{
@@ -341,77 +336,16 @@ public class SparkUtils
 				throw new IllegalStateException(e);
 			}
 		}
-		else if ("TimeWithFreq".equals(className))
+		else if (clazz == TimeWithFreq.class)
 		{
-			List<EncoderField> fieldEncoders = new ArrayList<>(); 
-			fieldEncoders.add(new EncoderField("freq", AgnosticEncoders.PrimitiveIntEncoder$.MODULE$, false, new Metadata(), Option.empty(), Option.empty()));
-			fieldEncoders.add(new EncoderField("range", GenericTimeValueUDT.ENCODER, true, new Metadata(), Option.empty(), Option.empty()));
-			fieldEncoders.add(new EncoderField("date", STRICT_LOCAL_DATE_ENCODER(), true, new Metadata(), Option.empty(), Option.empty()));
-			fieldEncoders.add(new EncoderField("holder", TimePeriodValueUDT.ENCODER, true, new Metadata(), Option.empty(), Option.empty()));
-			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
-			resultEncoder = AgnosticEncoders.RowEncoder$.MODULE$.apply(seq);
-		}
-		else if (instance instanceof NullValue)
-		{
-			ValueDomainSubset<?, ?> domain = ((NullValue<?, ?>) instance).getMetadata().getDomain();
-
-			@SuppressWarnings("unchecked")
-			UserDefinedType<T> type = (UserDefinedType<T>) DOMAIN_DATATYPES.get(domain);
-			if (type == null)
-				throw new UnsupportedOperationException(domain.toString());
-			
-			@SuppressWarnings("unchecked")
-			Class<? extends UserDefinedType<?>> clazz = (Class<? extends UserDefinedType<?>>) type.getClass();
-			return AgnosticEncoders.UDTEncoder$.MODULE$.apply(type, clazz);
-		}
-		else if (instance instanceof BaseScalarValue)
-		{
-			resultEncoder = SCALAR_ENCODERS.get(instance.getClass());
-			if (resultEncoder == null)
-				throw new UnsupportedOperationException(instance.getClass().getSimpleName());
-		}
-		else if (instance instanceof Object[])
-		{
-			resultEncoder = JavaTypeInference.encoderFor(instance.getClass());
-		}
-		else if (instance instanceof AtomicReference)
-		{
-			resultEncoder = JavaTypeInference.encoderFor(instance.getClass());
+			resultEncoder = new UDTEncoder<>(new TimeWithFreqUDT(), TimeWithFreqUDT.class);
 		}
 		else 
-			throw new IllegalStateException(instance.getClass().getName());
+			throw new IllegalStateException(clazz.getName());
 		
 		@SuppressWarnings("unchecked")
 		AgnosticEncoder<T> encoder = (AgnosticEncoder<T>) resultEncoder;
 		return encoder;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <TT extends Serializable> TT reinterpret(DataStructureComponent<?, ?, ?> comp, Serializable serAcc)
-	{
-		if (serAcc instanceof ScalarValue)
-			return (TT) serAcc;
-		else if (serAcc instanceof Row)
-			return (TT) serAcc;
-		else if (serAcc instanceof scala.collection.immutable.Map)
-		{
-			// RankedPartition should be the only class that maps to a scala Map
-			Map<GenericTuple, Long> rankedPartition = new HashMap<>();
-			scala.collection.Iterator<? extends Tuple2<?, ?>> iterator = ((scala.collection.immutable.Map<?, ?>) serAcc).iterator();
-			while (iterator.hasNext())
-			{
-				Tuple2<?, ?> entry = iterator.next();
-				
-				Serializable[] values = asJava(((Row) entry._1).toSeq()).toArray(Serializable[]::new);
-				rankedPartition.put(new GenericTuple(values), (Long) entry._2);
-			}
-			
-			return (TT) rankedPartition;
-		}
-		else if (serAcc instanceof scala.collection.immutable.ArraySeq)
-			return (TT) asJava((scala.collection.Iterable<?>) serAcc);
-		else		
-			return (TT) serAcc;
 	}
 
 	private SparkUtils()
