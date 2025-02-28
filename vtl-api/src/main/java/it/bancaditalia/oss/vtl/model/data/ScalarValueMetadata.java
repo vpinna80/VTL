@@ -50,4 +50,10 @@ public interface ScalarValueMetadata<S extends ValueDomainSubset<S, D>, D extend
 	{
 		return () -> (S) domain;
 	}
+	
+	@Override
+	public default boolean isDataSet()
+	{
+		return false;
+	}
 }

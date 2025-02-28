@@ -142,7 +142,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
-		if (meta instanceof ScalarValueMetadata)
+		if (!meta.isDataSet())
 			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
 				return NUMBER;
 			else

@@ -141,7 +141,7 @@ public class CSVPathEnvironment implements Environment
 					{
 						throw new VTLNestedException("Exception while reading " + fileName, e);
 					}
-				else if (repoMeta instanceof ScalarValueMetadata)
+				else if (!repoMeta.isDataSet())
 					try (BufferedReader reader = Files.newBufferedReader(path))
 					{
 						String line = null;

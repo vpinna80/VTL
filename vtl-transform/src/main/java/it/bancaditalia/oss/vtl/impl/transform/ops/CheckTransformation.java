@@ -50,7 +50,6 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -127,9 +126,9 @@ public class CheckTransformation extends TransformationImpl
 		VTLValueMetadata meta = operand.getMetadata(scheme),
 				imbalanceValue = imbalanceExpr != null ? imbalanceExpr.getMetadata(scheme) : null;
 
-		if (meta instanceof ScalarValueMetadata)
+		if (!meta.isDataSet())
 			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
-		else if (imbalanceExpr instanceof ScalarValueMetadata)
+		else if (!imbalanceValue.isDataSet())
 			throw new VTLInvalidParameterException(imbalanceValue, DataSetMetadata.class);
 		else
 		{

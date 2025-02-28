@@ -49,11 +49,11 @@ public interface ScalarValue<C extends ScalarValue<C, R, S, D>, R extends Compar
 	public boolean isNull();
 	
 	@Override
+	public default boolean isDataSet()
+	{
+		return false;
+	}
+	
+	@Override
 	public ScalarValueMetadata<S, D> getMetadata();
-	
-	@Override
-	public int hashCode();
-	
-	@Override
-	public boolean equals(Object obj);
 }

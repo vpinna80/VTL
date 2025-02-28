@@ -26,5 +26,8 @@ package it.bancaditalia.oss.vtl.model.data;
  */
 public interface VTLValueMetadata
 {
-	
+	/**
+	 * @return true if this metadata is a {@link DataSetMetadata}, false if it is a {@link ScalarValueMetadata}.
+	 */
+	public boolean isDataSet();
 }

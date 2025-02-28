@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.statement;
 
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -53,7 +52,7 @@ class ScalarParameter extends BaseParameter
 	public boolean matches(TransformationScheme scheme, Transformation argument)
 	{
 		VTLValueMetadata metadata = argument.getMetadata(scheme);
-		return metadata instanceof ScalarValueMetadata || metadata instanceof UnknownValueMetadata;
+		return !metadata.isDataSet() || metadata instanceof UnknownValueMetadata;
 	}
 	
 	@Override

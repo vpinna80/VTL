@@ -77,7 +77,7 @@ public class StrlenTransformation extends UnaryTransformation
 	public VTLValueMetadata computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata op = operand.getMetadata(session);
-		if (op instanceof ScalarValueMetadata && ((ScalarValueMetadata<?, ?>) op).getDomain() instanceof StringDomainSubset)
+		if (!op.isDataSet() && ((ScalarValueMetadata<?, ?>) op).getDomain() instanceof StringDomainSubset)
 			return INTEGER;
 		else 
 		{

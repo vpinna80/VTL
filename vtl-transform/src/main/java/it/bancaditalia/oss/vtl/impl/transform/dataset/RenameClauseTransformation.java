@@ -98,7 +98,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	{
 		VTLValueMetadata operand = getThisMetadata(session);
 		
-		if (!(operand instanceof DataSetMetadata))
+		if (!(operand.isDataSet()))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
 		DataSetMetadata dataset = (DataSetMetadata) operand;

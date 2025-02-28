@@ -108,7 +108,7 @@ public class MatchTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> pattern, ScalarValueMetadata<?, ?> scalar)
 	{
-		if (!(pattern instanceof ScalarValueMetadata))
+		if (!(!pattern.isDataSet()))
 			throw new VTLInvalidParameterException(pattern, ScalarValueMetadata.class);
 		else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
 			throw new VTLIncompatibleTypesException("match_characters: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) pattern).getDomain());

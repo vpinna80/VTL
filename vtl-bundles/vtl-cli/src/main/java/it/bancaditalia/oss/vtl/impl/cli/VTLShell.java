@@ -97,7 +97,7 @@ public class VTLShell implements Callable<Void>
 		{
 			final VTLValue result = session.resolve(name);
 			System.out.println(result + " := {");
-			if (result instanceof DataSet)
+			if (result.isDataSet())
 				((DataSet) result).forEach(dp -> { System.out.print("\t"); System.out.println(dp); });
 			System.out.println("}\n");
 		}

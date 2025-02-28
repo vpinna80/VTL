@@ -64,7 +64,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 		
 		try
 		{
-			if (value instanceof DataSet)
+			if (value.isDataSet())
 				return evalOnDataset(scheme.getRepository(), (DataSet) value, getMetadata(scheme));
 			else
 				return evalOnScalar(scheme.getRepository(), (ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme));

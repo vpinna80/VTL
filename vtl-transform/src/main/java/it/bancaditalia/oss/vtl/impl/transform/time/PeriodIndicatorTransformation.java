@@ -71,7 +71,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	{
 		VTLValue value = operand != null ? operand.eval(scheme) : ((DatapointScope) scheme).getTimeIdValue();
 
-		if (value instanceof ScalarValue)
+		if (!value.isDataSet())
 			return evalScalar((ScalarValue<?, ?, ? ,?>) value);
 		else 
 		{
@@ -118,7 +118,7 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		{
 			VTLValueMetadata metadata = operand.getMetadata(scheme);
 			
-			if (metadata instanceof ScalarValueMetadata)
+			if (!metadata.isDataSet())
 			{
 				ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) metadata).getDomain();
 				if (!TIMEDS.isAssignableFrom(domain))

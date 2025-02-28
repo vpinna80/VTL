@@ -120,7 +120,7 @@ public class SetTransformation extends TransformationImpl
 				.map(t -> t.getMetadata(scheme))
 				.collect(toList());
 		
-		if (allMetadata.stream().anyMatch(m -> !(m instanceof DataSetMetadata)))
+		if (allMetadata.stream().anyMatch(m -> !(m.isDataSet())))
 			throw new UnsupportedOperationException("In set operation expected all datasets but found a scalar"); 
 			
 		if (allMetadata.stream().distinct().limit(2).count() != 1)

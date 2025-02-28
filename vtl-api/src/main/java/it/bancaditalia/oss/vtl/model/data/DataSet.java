@@ -314,4 +314,10 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	{
 		return true;
 	}
+	
+	@Override
+	public default boolean isDataSet()
+	{
+		return true;
+	}
 }

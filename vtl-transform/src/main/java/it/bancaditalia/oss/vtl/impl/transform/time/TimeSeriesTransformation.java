@@ -59,7 +59,7 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata metadata = operand.getMetadata(scheme);
 		
-		if (!(metadata instanceof DataSetMetadata))
+		if (!(metadata.isDataSet()))
 			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
 		
 		DataSetMetadata ds = (DataSetMetadata) metadata;

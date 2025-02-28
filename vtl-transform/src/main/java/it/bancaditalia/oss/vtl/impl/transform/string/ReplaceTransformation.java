@@ -95,7 +95,7 @@ public class ReplaceTransformation extends TransformationImpl
 		String pattern = (String) coalesce(STRINGDS.cast((ScalarValue<?, ?, ?, ?>) patternOperand.eval(session)).get(), "");
 		Pattern storedPattern = Pattern.compile(pattern);
 
-		if (left instanceof DataSet)
+		if (left.isDataSet())
 		{
 			DataSet dataset = (DataSet) left;
 			DataSetMetadata structure = dataset.getMetadata();
@@ -135,16 +135,16 @@ public class ReplaceTransformation extends TransformationImpl
 			VTLValueMetadata source = exprOperand.getMetadata(session), pattern = patternOperand.getMetadata(session),
 					replace = replaceOperand.getMetadata(session);
 			
-			if (!(pattern instanceof ScalarValueMetadata))
+			if (!(!pattern.isDataSet()))
 				throw new VTLInvalidParameterException(pattern, DataSetMetadata.class);
-			if (!(replace instanceof ScalarValueMetadata))
+			if (!(!replace.isDataSet()))
 				throw new VTLInvalidParameterException(replace, DataSetMetadata.class);
 			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
 				throw new VTLIncompatibleTypesException("replace: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
 			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) replace).getDomain()))
 				throw new VTLIncompatibleTypesException("replace: replacement parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) replace).getDomain());
 			
-			if (source instanceof ScalarValueMetadata)
+			if (!source.isDataSet())
 			{
 				ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) source; 
 				if (!(STRING.isAssignableFrom(leftV.getDomain())))

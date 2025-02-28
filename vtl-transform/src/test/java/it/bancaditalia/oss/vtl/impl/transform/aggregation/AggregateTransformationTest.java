@@ -46,7 +46,6 @@ import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -95,10 +94,10 @@ public class AggregateTransformationTest
 
 		AggregateTransformation at = new AggregateTransformation(operator, operand, null, null);
 		VTLValueMetadata metadata = at.getMetadata(session);
-		assertTrue(metadata instanceof ScalarValueMetadata, "Result metadata is dataset: " + metadata);
+		assertTrue(!metadata.isDataSet(), "Result metadata is dataset: " + metadata);
 
 		VTLValue eval = at.eval(session);
-		assertTrue(eval instanceof ScalarValue, eval.getClass().getSimpleName() + " instanceof DataSet");
+		assertTrue(!eval.isDataSet(), eval.getClass().getSimpleName() + " instanceof DataSet");
 		
 		Object value = ((ScalarValue<?, ?, ?, ?>) eval).get();
 

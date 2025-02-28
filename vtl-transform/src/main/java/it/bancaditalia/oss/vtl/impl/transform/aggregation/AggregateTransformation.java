@@ -141,7 +141,7 @@ public class AggregateTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		VTLValue opMeta = operand == null ? scheme.resolve(THIS) : operand.eval(scheme);
-		if (opMeta instanceof ScalarValue)
+		if (!opMeta.isDataSet())
 			return Stream.of((ScalarValue<?, ?, ?, ?>) opMeta).collect(aggregation.getReducer());
 
 		DataSet dataset = (DataSet) opMeta;
@@ -176,7 +176,7 @@ public class AggregateTransformation extends TransformationImpl
 			}), dataset);
 		}
 
-		if (metadata instanceof DataSetMetadata)
+		if (metadata.isDataSet())
 		{
 			DataSetMetadata structure = (DataSetMetadata) metadata; 
 			DataSet result = (DataSet) dataset.aggregate(structure, groupIDs, combined, (map, lineages, keyValues) -> {
@@ -234,7 +234,7 @@ public class AggregateTransformation extends TransformationImpl
 		VTLValueMetadata opmeta = operand == null ? scheme.getMetadata(THIS) : operand.getMetadata(scheme);
 		MetadataRepository repo = scheme.getRepository();
 		
-		if (opmeta instanceof ScalarValueMetadata)
+		if (!opmeta.isDataSet())
 			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))
 				return NUMBER;
 			else
@@ -310,7 +310,7 @@ public class AggregateTransformation extends TransformationImpl
 				{
 					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, dataset));
 					ValueDomainSubset<?, ?> domain = null;
-					if (havingMeta instanceof ScalarValueMetadata)
+					if (!havingMeta.isDataSet())
 						domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
 					else
 					{

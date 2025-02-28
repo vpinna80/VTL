@@ -181,7 +181,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		VTLValueMetadata meta = getThisMetadata(scheme);
 		MetadataRepository repo = scheme.getRepository();
 
-		if (meta instanceof DataSetMetadata)
+		if (meta.isDataSet())
 		{
 			DataSetMetadata operand = (DataSetMetadata) meta;
 			Set<DataStructureComponent<Identifier, ?, ?>> identifiers = emptySet();
@@ -195,7 +195,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			{
 				VTLValueMetadata clauseMeta = clause.getOperand().getMetadata(scheme);
 				
-				if (clauseMeta instanceof DataSetMetadata)
+				if (clauseMeta.isDataSet())
 				{
 					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) clauseMeta).getMeasures();
 					if (measures.size() != 1)
@@ -204,7 +204,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					clauseMeta = measure.getVariable();
 				}
 
-				if (!(clauseMeta instanceof ScalarValueMetadata) || !NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
+				if (!(!clauseMeta.isDataSet()) || !NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
 					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, ((ScalarValueMetadata<?, ?>) clauseMeta).getDomain());
 
 				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getName());
@@ -229,7 +229,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 					else
 					{
 						VTLValueMetadata metadata = clause.getOperand().getMetadata(scheme);
-						targetDomain = metadata instanceof ScalarValueMetadata 
+						targetDomain = !metadata.isDataSet() 
 								? ((ScalarValueMetadata<?, ?>) metadata).getDomain() 
 								: ((DataSetMetadata) metadata).getSingleton(Measure.class).getVariable().getDomain();
 					}
@@ -244,9 +244,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			{
 				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, structure));
 				ValueDomainSubset<?, ?> domain;
-				if (havingMeta instanceof ScalarValueMetadata<?, ?>)
+				if (!havingMeta.isDataSet())
 					domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
-				else if (havingMeta instanceof DataSetMetadata)
+				else if (havingMeta.isDataSet())
 					domain = ((DataSetMetadata) havingMeta).getSingleton(Measure.class).getVariable().getDomain();
 				else
 					domain = null;

@@ -108,7 +108,7 @@ public class InStrTransformation extends TransformationImpl
 		if (nOcc < 1)
 			throw new VTLNonPositiveConstantException("instr", occurrence);
 		
-		if (left instanceof DataSet)
+		if (left.isDataSet())
 		{
 			DataSet dataset = (DataSet) left;
 			DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
@@ -149,21 +149,21 @@ public class InStrTransformation extends TransformationImpl
 		VTLValueMetadata left = leftOperand.getMetadata(session), right = rightOperand.getMetadata(session),
 				start = startOperand.getMetadata(session), occurrence = occurrenceOperand.getMetadata(session);
 		
-		if (!(start instanceof ScalarValueMetadata))
+		if (!(!start.isDataSet()))
 			throw new VTLInvalidParameterException(start, ScalarValueMetadata.class);
-		if (!(occurrence instanceof ScalarValueMetadata))
+		if (!(!occurrence.isDataSet()))
 			throw new VTLInvalidParameterException(occurrence, ScalarValueMetadata.class);
 		if (!INTEGER.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
 			throw new VTLIncompatibleTypesException("instr: start parameter", INTEGERDS, ((ScalarValueMetadata<?, ?>) start).getDomain());
 		if (!INTEGER.isAssignableFrom(((ScalarValueMetadata<?, ?>) occurrence).getDomain()))
 			throw new VTLIncompatibleTypesException("instr: occurrence parameter", INTEGERDS, ((ScalarValueMetadata<?, ?>) occurrence).getDomain());
 		
-		if (left instanceof ScalarValueMetadata)
+		if (!left.isDataSet())
 		{
 			ScalarValueMetadata<?, ?> leftV = (ScalarValueMetadata<?, ?>) left; 
 
 			// pattern must be a scalar too
-			if (!(right instanceof ScalarValueMetadata))
+			if (!(!right.isDataSet()))
 				throw new VTLInvalidParameterException(right, ScalarValueMetadata.class);
 			else if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) right).getDomain()))
 				throw new VTLIncompatibleTypesException("instr: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) right).getDomain());
@@ -177,7 +177,7 @@ public class InStrTransformation extends TransformationImpl
 		{
 			DataSetMetadata metadata = (DataSetMetadata) left;
 			
-			if (right instanceof DataSetMetadata)
+			if (right.isDataSet())
 			{
 				DataSetMetadata patternMetadata = (DataSetMetadata) right;
 				final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> patternMeasures = patternMetadata.getMeasures();

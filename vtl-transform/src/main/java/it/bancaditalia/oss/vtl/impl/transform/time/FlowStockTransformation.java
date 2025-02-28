@@ -196,7 +196,7 @@ public class FlowStockTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata metadata = operand.getMetadata(session);
 		
-		if (metadata instanceof DataSetMetadata)
+		if (metadata.isDataSet())
 		{
 			DataSetMetadata dsmeta = (DataSetMetadata) metadata;
 			

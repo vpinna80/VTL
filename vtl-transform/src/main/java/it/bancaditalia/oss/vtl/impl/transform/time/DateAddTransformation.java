@@ -75,7 +75,7 @@ public class DateAddTransformation extends TransformationImpl
 		Frequency freq = Frequency.valueOf(((StringValue<?, ?>) duration.eval(scheme)).get());
 		VTLValue op = operand.eval(scheme);
 		
-		if (op instanceof ScalarValue)
+		if (!op.isDataSet())
 			return evalOnScalar(i, freq, (ScalarValue<?, ?, ?, ?>) op);
 
 		DataSet dataset = (DataSet) op;
@@ -110,16 +110,16 @@ public class DateAddTransformation extends TransformationImpl
 		VTLValueMetadata metaduration = duration.getMetadata(scheme);
 		VTLValueMetadata meta = operand.getMetadata(scheme);
 		
-		if (!(metashift instanceof ScalarValueMetadata))
+		if (!(!metashift.isDataSet()))
 			throw new VTLInvalidParameterException(metashift, ScalarValueMetadata.class);
 		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) metashift).getDomain()))
 			throw new VTLIncompatibleTypesException("dateadd", INTEGERDS, ((ScalarValueMetadata<?, ?>) metashift).getDomain());
-		if (!(metaduration instanceof ScalarValueMetadata))
+		if (!(!metaduration.isDataSet()))
 			throw new VTLInvalidParameterException(metaduration, ScalarValueMetadata.class);
 		if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) metaduration).getDomain()))
 			throw new VTLIncompatibleTypesException("dateadd", STRINGDS, ((ScalarValueMetadata<?, ?>) metashift).getDomain());
 		
-		if (meta instanceof ScalarValueMetadata)
+		if (!meta.isDataSet())
 		{
 			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) meta).getDomain();
 			if (!(domain instanceof TimeDomainSubset))

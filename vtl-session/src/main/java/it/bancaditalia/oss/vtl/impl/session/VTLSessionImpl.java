@@ -312,7 +312,7 @@ public class VTLSessionImpl implements VTLSession
 		try
 		{
 			VTLValue result = statement.eval(this);
-			if (result instanceof DataSet && ((DataSet) result).isCacheable())
+			if (result.isDataSet() && ((DataSet) result).isCacheable())
 				result = new CachedDataSet(this, alias, (DataSet) result);
 
 			return result;

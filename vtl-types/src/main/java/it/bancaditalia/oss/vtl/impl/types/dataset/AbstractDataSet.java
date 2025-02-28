@@ -301,7 +301,7 @@ public abstract class AbstractDataSet implements DataSet
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
 			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
-		if (metadata instanceof DataSetMetadata)
+		if (metadata.isDataSet())
 			return new AbstractDataSet((DataSetMetadata) metadata) {
 				private static final long serialVersionUID = 1L;
 				private transient Set<Triple<T, Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> cache = null;

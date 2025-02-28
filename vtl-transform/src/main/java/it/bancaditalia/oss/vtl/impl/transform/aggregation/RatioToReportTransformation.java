@@ -48,7 +48,6 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -108,7 +107,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session);
 		
-		if (opmeta instanceof ScalarValueMetadata)
+		if (!opmeta.isDataSet())
 			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
 		
 		DataSetMetadata dataset = (DataSetMetadata) opmeta;

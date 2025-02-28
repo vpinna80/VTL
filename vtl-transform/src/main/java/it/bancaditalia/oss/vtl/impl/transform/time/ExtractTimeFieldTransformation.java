@@ -70,7 +70,7 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata input = operand.getMetadata(scheme);
 		
-		if (input instanceof ScalarValueMetadata)
+		if (!input.isDataSet())
 		{
 			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) input).getDomain();
 			if (domain instanceof TimeDomainSubset)

@@ -237,8 +237,8 @@ public class IntegrationTestSuite
 		VTLValue expectedV = session.resolve(VTLAliasImpl.of("ex_" + number));
 		VTLValue resultV = session.resolve(VTLAliasImpl.of("ds_r"));
 		
-		assertTrue(expectedV instanceof DataSet ^ resultV instanceof ScalarValue, "dataset != scalar");
-		if (expectedV instanceof DataSet)
+		assertTrue(expectedV.isDataSet() ^ !resultV.isDataSet(), "dataset != scalar");
+		if (expectedV.isDataSet())
 		{
 			DataSet expected = (DataSet) expectedV;
 			DataSet result = (DataSet) resultV;

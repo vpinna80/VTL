@@ -503,7 +503,7 @@ public class SparkDataSet extends AbstractDataSet
 			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
 		DataSetMetadata structure;
-		if (metadata instanceof DataSetMetadata)
+		if (metadata.isDataSet())
 			structure = (DataSetMetadata) metadata;
 		else
 			structure = new DataStructureBuilder(((ScalarValueMetadata<?, ?>) metadata).getDomain().getDefaultVariable().as(Measure.class)).build();
@@ -553,7 +553,7 @@ public class SparkDataSet extends AbstractDataSet
 					.mapGroups(aggregator, resultEncoder.getRowEncoder());
 		}
 		
-		if (metadata instanceof DataSetMetadata)
+		if (metadata.isDataSet())
 			return new SparkDataSet(session, structure, aggred);
 		else
 		{

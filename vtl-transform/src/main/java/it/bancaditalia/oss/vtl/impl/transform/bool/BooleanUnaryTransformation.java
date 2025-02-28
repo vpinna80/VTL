@@ -100,7 +100,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 
-		if (meta instanceof ScalarValueMetadata)
+		if (!meta.isDataSet())
 			if (((ScalarValueMetadata<?, ?>) meta).getDomain() instanceof BooleanDomainSubset)
 				return BOOLEAN;
 			else

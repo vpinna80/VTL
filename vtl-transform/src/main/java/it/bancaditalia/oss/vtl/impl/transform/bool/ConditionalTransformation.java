@@ -84,7 +84,7 @@ public class ConditionalTransformation extends TransformationImpl
 		VTLValueMetadata metadata = getMetadata(session);
 		VTLValue cond = condition.eval(session);
 		
-		if (cond instanceof ScalarValue)
+		if (!cond.isDataSet())
 		{
 			VTLValueMetadata thenMeta = thenExpr.getMetadata(session);
 			VTLValueMetadata elseMeta = elseExpr.getMetadata(session);
@@ -92,7 +92,7 @@ public class ConditionalTransformation extends TransformationImpl
 			ValueDomainSubset<?, ?> thenDomain;
 			if (thenMeta instanceof Variable)
 				thenDomain = ((Variable<?, ?>) thenMeta).getDomain();
-			else if (thenMeta instanceof ScalarValueMetadata)
+			else if (!thenMeta.isDataSet())
 				thenDomain = ((ScalarValueMetadata<?, ?>) thenMeta).getDomain();
 			else
 				throw new IllegalStateException(thenMeta.getClass().getName());
@@ -100,7 +100,7 @@ public class ConditionalTransformation extends TransformationImpl
 			ValueDomainSubset<?, ?> elseDomain;
 			if (elseMeta instanceof Variable)
 				elseDomain = ((Variable<?, ?>) elseMeta).getDomain();
-			else if (elseMeta instanceof ScalarValueMetadata)
+			else if (!elseMeta.isDataSet())
 				elseDomain = ((ScalarValueMetadata<?, ?>) elseMeta).getDomain();
 			else
 				throw new IllegalStateException(elseMeta.getClass().getName());
@@ -119,12 +119,12 @@ public class ConditionalTransformation extends TransformationImpl
 			VTLValue elseV = elseExpr.eval(session);
 			DataStructureComponent<Measure, ?, ?> booleanConditionMeasure = condD.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
-			if (thenV instanceof DataSet && elseV instanceof DataSet) // Two datasets
+			if (thenV.isDataSet() && elseV.isDataSet()) // Two datasets
 				return evalTwoDatasets((DataSetMetadata) metadata, condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
 			else // One dataset and one scalar
 			{
-				DataSet dataset = thenV instanceof DataSet ? (DataSet) thenV : (DataSet) elseV;
-				ScalarValue<?, ?, ?, ?> scalar = thenV instanceof ScalarValue ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
+				DataSet dataset = thenV.isDataSet() ? (DataSet) thenV : (DataSet) elseV;
+				ScalarValue<?, ?, ?, ?> scalar = !thenV.isDataSet() ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
 				return condD.mappedJoin((DataSetMetadata) metadata, dataset, (dpCond, dp) -> 
 						evalDatasetAndScalar((DataSetMetadata) metadata, thenV == dataset ^ checkCondition(dpCond.get(booleanConditionMeasure)), dp, scalar, booleanConditionMeasure), false);
 			}
@@ -209,26 +209,26 @@ public class ConditionalTransformation extends TransformationImpl
 		VTLValueMetadata left = metas[1]; 
 		VTLValueMetadata right = metas[2]; 
 
-		if (cond instanceof ScalarValueMetadata && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) cond).getDomain()))
-			if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
+		if (!cond.isDataSet() && BOOLEANDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) cond).getDomain()))
+			if (!left.isDataSet() && !right.isDataSet())
 				return left;
 			else
 				throw new VTLIncompatibleParametersException("if-then-else", left, right);
 		else // if (cond instanceof VTLDataSetMetadata)
 		{
 			// both 'then' and 'else' are scalar
-			if (left instanceof ScalarValueMetadata && right instanceof ScalarValueMetadata)
+			if (!left.isDataSet() && !right.isDataSet())
 				return left;
 			
 			// one is a dataset, first check it
 			((DataSetMetadata) cond).getSingleton(Measure.class, BOOLEANDS);
-			DataSetMetadata dataset = (DataSetMetadata) (left instanceof DataSetMetadata ? left : right);
-			VTLValueMetadata other = left instanceof DataSetMetadata ? right : left;
+			DataSetMetadata dataset = (DataSetMetadata) (left.isDataSet() ? left : right);
+			VTLValueMetadata other = left.isDataSet() ? right : left;
 
 			if (!dataset.getIDs().equals(((DataSetMetadata) cond).getIDs()))
 				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getIDs() + " -- " + ((DataSetMetadata) cond).getIDs());
 
-			if (other instanceof DataSetMetadata)
+			if (other.isDataSet())
 			{
 				// if structures are not equal, each dataset must have only one measure and they must be of compatible domains
 				if (!dataset.equals(other))

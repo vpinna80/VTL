@@ -69,7 +69,7 @@ public class BracketTransformation extends UnaryTransformation
 		if (metadata instanceof UnknownValueMetadata)
 			return INSTANCE;
 		
-		if (!(metadata instanceof DataSetMetadata))
+		if (!(metadata.isDataSet()))
 			throw new UnsupportedOperationException("Dataset expected as left operand of '[]' or '#' but found " + metadata);
 
 		if (clause != null)

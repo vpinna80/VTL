@@ -296,7 +296,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 					throw new InvalidParameterException("Invalid domain definition expression: " + code);
 				
 				VTLValueMetadata meta = ((Transformation) statement).getMetadata(new TransformationCriterionScope<>(STRINGDS));
-				if (!(meta instanceof ScalarValueMetadata))
+				if (!(!meta.isDataSet()))
 					throw new InvalidParameterException("Invalid domain definition expression: " + code);
 				
 				if (!(((ScalarValueMetadata<?, ?>) meta).getDomain() instanceof BooleanDomainSubset))

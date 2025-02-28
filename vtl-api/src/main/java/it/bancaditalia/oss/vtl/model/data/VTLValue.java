@@ -32,4 +32,9 @@ public interface VTLValue extends Serializable
 	 * @return the metadata describing this value
 	 */
 	public VTLValueMetadata getMetadata();
+	
+	/**
+	 * @return true if this value represents a dataset
+	 */
+	public boolean isDataSet();
 }

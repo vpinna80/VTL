@@ -118,11 +118,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 	private BinaryOperator<VTLValue> evalCombiner(VTLValueMetadata metadata) 
 	{
 		return (left, right) -> {
-			if (left instanceof DataSet && right instanceof DataSet)
+			if (left.isDataSet() && right.isDataSet())
 				return evalTwoDatasets(metadata, (DataSet) left, (DataSet) right);
-			else if (left instanceof DataSet && right instanceof ScalarValue)
+			else if (left.isDataSet() && !right.isDataSet())
 				return evalDatasetWithScalar(metadata, true, (DataSet) left, (ScalarValue<?, ?, ?, ?>) right);
-			else if (left instanceof ScalarValue && right instanceof DataSet)
+			else if (!left.isDataSet() && right.isDataSet())
 				return evalDatasetWithScalar(metadata, false, (DataSet) right, (ScalarValue<?, ?, ?, ?>) left);
 			else // both scalars
 				return evalTwoScalars(metadata, (ScalarValue<?, ?, ?, ?>) left, (ScalarValue<?, ?, ?, ?>) right);
@@ -133,11 +133,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 	{
 		if (left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
 			return INSTANCE;
-		if (left instanceof DataSetMetadata && right instanceof DataSetMetadata)
+		if (left.isDataSet() && right.isDataSet())
 			return getMetadataTwoDatasets((DataSetMetadata) left, (DataSetMetadata) right);
-		else if (left instanceof DataSetMetadata && right instanceof ScalarValueMetadata)
+		else if (left.isDataSet() && !right.isDataSet())
 			return getMetadataDatasetWithScalar(true, (DataSetMetadata) left, (ScalarValueMetadata<?, ?>) right);
-		else if (left instanceof ScalarValueMetadata && right instanceof DataSetMetadata)
+		else if (!left.isDataSet() && right.isDataSet())
 			return getMetadataDatasetWithScalar(false, (DataSetMetadata) right, (ScalarValueMetadata<?, ?>) left);
 		else // both scalars
 			return getMetadataTwoScalars((ScalarValueMetadata<?, ?>) left, (ScalarValueMetadata<?, ?>) right);

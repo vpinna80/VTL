@@ -132,7 +132,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 		{
 			VTLValueMetadata metadata = calcClause.getMetadata(scheme);
-			if (metadata instanceof DataSetMetadata && ((DataSetMetadata) metadata).getMeasures().size() != 1)
+			if (metadata.isDataSet() && ((DataSetMetadata) metadata).getMeasures().size() != 1)
 				throw new VTLInvalidParameterException(metadata, ScalarValueMetadata.class);
 			else
 				return metadata;
@@ -262,7 +262,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	{
 		VTLValueMetadata operand = getThisMetadata(scheme);
 
-		if (!(operand instanceof DataSetMetadata))
+		if (!(operand.isDataSet()))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 
 		final DataSetMetadata metadata = (DataSetMetadata) operand;
@@ -286,7 +286,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			// get the domain of the calculated component
 			if (itemMeta instanceof UnknownValueMetadata)
 				return INSTANCE;
-			else if (itemMeta instanceof DataSetMetadata)
+			else if (itemMeta.isDataSet())
 			{
 				// calc item expression is a component, check for mono-measure dataset
 				DataSetMetadata value = (DataSetMetadata) itemMeta;

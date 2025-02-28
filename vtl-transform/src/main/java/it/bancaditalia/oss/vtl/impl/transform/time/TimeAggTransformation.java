@@ -101,7 +101,7 @@ public class TimeAggTransformation extends UnaryTransformation
 		VTLValueMetadata value;
 		value = operand.getMetadata(session);
 
-		if (value instanceof ScalarValueMetadata)
+		if (!value.isDataSet())
 		{
 			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) value).getDomain();
 			if (!TIMEDS.isAssignableFrom(domain))

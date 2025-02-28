@@ -165,7 +165,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	{
 		VTLValueMetadata metadata = operand.getMetadata(scheme);
 
-		if (metadata instanceof DataSetMetadata)
+		if (metadata.isDataSet())
 		{
 			DataSetMetadata opMeta = (DataSetMetadata) metadata;
 

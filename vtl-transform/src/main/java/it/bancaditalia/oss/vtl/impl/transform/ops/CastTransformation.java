@@ -113,7 +113,7 @@ public class CastTransformation extends UnaryTransformation
 		VTLValueMetadata meta = operand.getMetadata(scheme);
 		ValueDomainSubset<?, ?> domain;
 		
-		if (meta instanceof ScalarValueMetadata)
+		if (!meta.isDataSet())
 			domain = ((ScalarValueMetadata<?, ?>) meta).getDomain();
 		else
 		{

@@ -54,7 +54,7 @@ public class DataSetParameter extends BaseParameter
 	{
 		VTLValueMetadata metadata = argument.getMetadata(scheme);
 		
-		if (metadata instanceof DataSetMetadata)
+		if (metadata.isDataSet())
 		{
 			LOGGER.info("Matching {} against parameter {}", metadata, this);
 			List<List<DataSetComponentConstraint>> partialMatches = new ArrayList<>();

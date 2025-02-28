@@ -229,4 +229,10 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 			.map(c -> c.asRole(Identifier.class))
 			.collect(toSet());
 	}
+	
+	@Override
+	public default boolean isDataSet()
+	{
+		return false;
+	}
 }

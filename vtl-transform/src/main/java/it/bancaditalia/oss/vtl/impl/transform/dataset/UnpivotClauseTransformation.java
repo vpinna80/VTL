@@ -93,7 +93,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	{
 		VTLValueMetadata value = getThisMetadata(scheme);
 
-		if (!(value instanceof DataSetMetadata))
+		if (!(value.isDataSet()))
 			throw new VTLInvalidParameterException(value, DataSetMetadata.class);
 
 		DataSetMetadata dataset = (DataSetMetadata) value;

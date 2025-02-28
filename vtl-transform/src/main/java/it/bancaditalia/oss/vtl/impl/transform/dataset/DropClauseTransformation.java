@@ -78,7 +78,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 	{
 		VTLValueMetadata operand = getThisMetadata(scheme);
 		
-		if (!(operand instanceof DataSetMetadata))
+		if (!(operand.isDataSet()))
 			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
 		
 		DataSetMetadata dataset = (DataSetMetadata) operand;

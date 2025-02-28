@@ -100,7 +100,7 @@ public class SubstrTransformation extends TransformationImpl
 		if (len instanceof IntegerValue && (Long) len.get() < 1)
 			throw new VTLNonPositiveConstantException("substr", len);
 		
-		if (expr instanceof DataSet)
+		if (expr.isDataSet())
 		{
 			DataSet dataset = (DataSet) expr;
 			DataSetMetadata structure = dataset.getMetadata();
@@ -148,16 +148,16 @@ public class SubstrTransformation extends TransformationImpl
 		VTLValueMetadata source = exprOperand.getMetadata(session), start = startOperand.getMetadata(session),
 				len = lenOperand.getMetadata(session);
 		
-		if (!(start instanceof ScalarValueMetadata))
+		if (!(!start.isDataSet()))
 			throw new VTLInvalidParameterException(start, DataSetMetadata.class);
-		if (!(len instanceof ScalarValueMetadata))
+		if (!(!len.isDataSet()))
 			throw new VTLInvalidParameterException(len, DataSetMetadata.class);
 		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
 			throw new VTLIncompatibleTypesException("substr: start parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) start).getDomain());
 		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) len).getDomain()))
 			throw new VTLIncompatibleTypesException("substr: len parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) len).getDomain());
 		
-		if (source instanceof ScalarValueMetadata)
+		if (!source.isDataSet())
 		{
 			ScalarValueMetadata<?, ?> scalar = (ScalarValueMetadata<?, ?>) source; 
 			if (!(STRING.isAssignableFrom(scalar.getDomain())))

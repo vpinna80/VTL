@@ -68,12 +68,7 @@ public class VTLSparkAggregator<I, A, TT, S extends ScalarValue<?, ?, ?, ?>> ext
 		TT result = collector.finisher().apply(reduction);
 		LOGGER.debug("Finished Spark aggregation: {} of {}", result, result == null ? null : result.getClass());
 
-		if (result instanceof ScalarValue)
-		{
-			return result.getClass() != NullValue.class ? result : null;
-		}
-		
-		return result;
+		return result.getClass() != NullValue.class ? result : null;
 	}
 	
 	@Override

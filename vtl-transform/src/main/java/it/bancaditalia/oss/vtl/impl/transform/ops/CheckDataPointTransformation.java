@@ -151,7 +151,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 		DataPointRuleSet ruleset = scheme.findDatapointRuleset(rulesetID);
 		MetadataRepository repo = scheme.getRepository();
 		
-		if (meta instanceof DataSetMetadata)
+		if (meta.isDataSet())
 		{
 			DataSetMetadata structure = (DataSetMetadata) meta;
 			DataStructureBuilder builder = new DataStructureBuilder()

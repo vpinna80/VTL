@@ -81,7 +81,7 @@ public class BetweenTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata op = operand.getMetadata(scheme);
 
-		if (op instanceof DataSetMetadata)
+		if (op.isDataSet())
 		{
 			DataSetMetadata ds = (DataSetMetadata) op;
 

@@ -306,7 +306,7 @@ public class SparkEnvironment implements Environment
 	@Override
 	public boolean store(VTLValue value, VTLAlias alias)
 	{
-		if (!(value instanceof DataSet) || !alias.getName().startsWith("spark:"))
+		if (!(value.isDataSet()) || !alias.getName().startsWith("spark:"))
 			return false;
 		
 		String[] parts = alias.getName().substring(6).split(":", 2);

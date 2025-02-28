@@ -129,7 +129,7 @@ public class StringUnaryTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
-		if (meta instanceof ScalarValueMetadata)
+		if (!meta.isDataSet())
 			if (STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
 				return STRING;
 			else

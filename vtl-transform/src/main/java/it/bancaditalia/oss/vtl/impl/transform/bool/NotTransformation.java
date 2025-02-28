@@ -77,7 +77,7 @@ public class NotTransformation extends UnaryTransformation
 	{
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
-		if (meta instanceof ScalarValueMetadata)
+		if (!meta.isDataSet())
 		{
 			ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) meta).getDomain();
 			if (BOOLEANDS.isAssignableFrom(domain))

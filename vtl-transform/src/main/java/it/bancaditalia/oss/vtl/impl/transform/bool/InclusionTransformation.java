@@ -145,7 +145,7 @@ public class InclusionTransformation extends UnaryTransformation
 		if (item1 == null)
 			throw new IllegalStateException("At least one item is expected for " + operator.toString().toLowerCase());
 		
-		if (value instanceof DataSetMetadata)
+		if (value.isDataSet())
 		{
 			DataSetMetadata ds = (DataSetMetadata) value;
 
