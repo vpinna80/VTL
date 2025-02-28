@@ -30,9 +30,7 @@
 #'     vtlStudio()
 #' }
 vtlStudio <- function(launch.browser = T, ...) {
-  shiny::addResourcePath('static', system.file('www', package = 'RVTL'))
-  shiny::runApp(list(ui = vtlUI(), server = vtlServer), launch.browser = launch.browser, ...)
-  shiny::removeResourcePath('static')  
+  shiny::runApp(system.file("VTLStudio", package = "RVTL"), launch.browser = launch.browser, ...)
 }
 
 #' @title Process VTL statements

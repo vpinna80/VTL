@@ -33,9 +33,7 @@ defaultProxy <- function() {
   return(list(host = J("java.lang.System")$getProperty("https.proxyHost"), port = J("java.lang.System")$getProperty("https.proxyPort"), user = ''))
 }
 
-vtlUI <- function() {
-
-  shinydashboard::dashboardPage(title="VTL Studio!",
+vtlUI <- shinydashboard::dashboardPage(title="VTL Studio!",
     
     shinydashboard::dashboardHeader(disable = T),
   
@@ -161,4 +159,3 @@ vtlUI <- function() {
       )                 
     )
   )
-}

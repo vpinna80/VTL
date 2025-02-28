@@ -227,7 +227,7 @@
 									<overWrite>true</overWrite>
 								</artifactItem>
 							</artifactItems>
-							<outputDirectory>${project.build.outputDirectory}/R/inst/www</outputDirectory>
+							<outputDirectory>${project.build.outputDirectory}/R/inst/VTLStudio/www/static</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>
