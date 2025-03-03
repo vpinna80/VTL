@@ -233,6 +233,6 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	@Override
 	public default boolean isDataSet()
 	{
-		return false;
+		return true;
 	}
 }
