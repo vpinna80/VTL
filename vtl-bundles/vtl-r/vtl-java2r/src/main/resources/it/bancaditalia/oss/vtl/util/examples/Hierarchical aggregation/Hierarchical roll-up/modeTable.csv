@@ -1,0 +1,7 @@
+OPTION of the MODE PARAMETER:,Missing Data Points are considered:,Null Data Points are considered:,Condition for evaluating the rule,Returned Data Points
+Non_null,NULL,NULL,If all the involved Data Points are not NULL,Only not NULL Data Points (Zeros are returned too)
+Non_zero,Zero,NULL,If at least one the involved Data Points is <> zero,Only not zero Data Points (NULL are returned too)
+Partial_null,NULL,NULL,If at least the involved Data Points is not NULL,Data Points of any value (NULL or not NULL and zero too)
+Partial_zero,Zero,NULL,If at least the involved Data Points is not NULL,Data Points of any value (NULL or not NULL and zero too)
+Always_null,NULL,NULL,Always,Data Points of any value (NULL or not NULL and zero too)
+Always_zero,Zero,NULL,Always,Data Points of any value (NULL or not NULL and zero too)

@@ -1,0 +1,75 @@
+{
+  "datasets": [
+    {
+      "name": "ds_1",
+      "structure": "DS_1",
+      "source": "csv:ds_1.csv"
+    },
+    {
+      "name": "ex_3",
+      "structure": "DS_r",
+      "source": "csv:ex_3.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "DS_1",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "DS_r",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "bool_var",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "Id_1",
+      "domain": "time_period"
+    },
+    {
+      "name": "Id_2",
+      "domain": "string"
+    },
+    {
+      "name": "Me_1",
+      "domain": "integer"
+    },
+    {
+      "name": "bool_var",
+      "domain": "boolean"
+    }
+  ],
+  "domains": [
+    {
+      "name": "myGeoValueDomain",
+      "parent": "string",
+      "enumerated": [ "AF", "BS", "FJ", "GA", "KH", "MO", "PK", "QA", "UG" ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+/**
+ * Copyright © 2020 Banca D'Italia
+ *
+ * Licensed under the EUPL, Version 1.2 (the "License");
+ * You may not use this work except in compliance with the
+ * License.
+ * You may obtain a copy of the License at:
+ *
+ * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the License is
+ * distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied.
+ *
+ * See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+define hierarchical ruleset HR_1 ( valuedomain rule VD_1 ) is
+    R010 : A = J + K + L errorlevel 5
+    ; R020 : B = M + N + O errorlevel 5
+    ; R030 : C = P + Q errorcode "XX" errorlevel 5
+    ; R040 : D = R + S errorlevel 1
+    ; R060 : F = Y + W + Z errorlevel 7
+    ; R070 : G = B + C
+    ; R080 : H = D + E errorlevel 0
+    ; R090 : I = D + G errorcode "YY" errorlevel 0
+    ; R100 : M >= N errorlevel 5
+    ; R110 : M <= G errorlevel 5
+end hierarchical ruleset;
+
+DS_r1 := check_hierarchy ( DS_1, HR_1 rule Id_2 partial_null all );
