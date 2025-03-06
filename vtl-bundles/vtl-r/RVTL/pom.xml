@@ -137,6 +137,7 @@
 
 	<properties>
 		<r.prepend.path></r.prepend.path>
+		<r.append.path></r.append.path>
 		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 	</properties>
 

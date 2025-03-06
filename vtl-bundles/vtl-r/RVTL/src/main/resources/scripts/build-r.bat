@@ -18,25 +18,6 @@
 @REM permissions and limitations under the License.
 @REM
 
-@rem ***************************************************************************
-@rem Copyright 2020, Bank Of Italy
-@rem
-@rem Licensed under the EUPL, Version 1.2 (the "License");
-@rem You may not use this work except in compliance with the
-@rem License.
-@rem You may obtain a copy of the License at:
-@rem
-@rem https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
-@rem
-@rem Unless required by applicable law or agreed to in
-@rem writing, software distributed under the License is
-@rem distributed on an "AS IS" basis,
-@rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-@rem express or implied.
-@rem
-@rem See the License for the specific language governing
-@rem permissions and limitations under the License.
-@rem ***************************************************************************
 @echo off
 set filename="${project.artifactId}_${r.package.version}.tar.gz"
 echo Building: %filename%
