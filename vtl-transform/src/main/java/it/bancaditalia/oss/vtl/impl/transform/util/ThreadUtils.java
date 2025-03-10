@@ -19,21 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import static java.util.concurrent.ForkJoinTask.adapt;
+
+import java.util.concurrent.ForkJoinTask;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
-import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
-import it.bancaditalia.oss.vtl.impl.transform.bool.IsNullTransformation;
-import it.bancaditalia.oss.vtl.impl.transform.time.CurrentDateOperand;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -47,38 +42,38 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class ThreadUtils 
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(ThreadUtils.class);
-	private final static Set<Class<? extends Transformation>> SIMPLE_TRANSFORMATIONS = new HashSet<>();
-	
-	static {
-		SIMPLE_TRANSFORMATIONS.add(ConstantOperand.class);
-		SIMPLE_TRANSFORMATIONS.add(VarIDOperand.class);
-		SIMPLE_TRANSFORMATIONS.add(CurrentDateOperand.class);
-		SIMPLE_TRANSFORMATIONS.add(IsNullTransformation.class);
-	}
 	
 	private ThreadUtils() {}
 
 	/**
-	 * @param <T> The type returned by the extractor
+	 * @param <T> The type returned by the subexpression evaluators
 	 * 
-	 * @param extractors functions that extracts the results of each subexpression
-	 * @param combiner an associative function that reduces the results of the subexpressions 
+	 * @param leftExpr function that evaluates the left subexpression
+	 * @param rightExpr function that evaluates the right subexpression
+	 * @param combiner a function that combines the results of the subexpressions 
 	 * @return the result of the computation
 	 */
-	@SafeVarargs
-	public static <T> SerFunction<Transformation, T> evalFuture(BinaryOperator<T> combiner, SerFunction<? super Transformation, T>... extractors) 
+	public static <T> SerFunction<Transformation, T> evalFuture(BinaryOperator<T> combiner, 
+			SerFunction<? super Transformation, T> leftExpr, SerFunction<? super Transformation, T> rightExpr) 
 	{
 		return transformation -> {
-			LOGGER.trace("Extracting {} subexpressions from {}", extractors.length, transformation);
-			Stream<Function<? super Transformation, T>> stream = Arrays.stream(extractors);
-			if (!Utils.SEQUENTIAL)
-			{
-				LOGGER.trace("Computation is done concurrently");
-				stream = stream.parallel();
-			}
-			T result = stream.map(e -> e.apply(transformation)).reduce(combiner).get();
-			LOGGER.trace("Reduced result for {}", transformation);
-			return result;
+			LOGGER.trace("Extracting subexpressions from {}", transformation);
+			
+			if (Utils.SEQUENTIAL)
+				return combiner.apply(leftExpr.apply(transformation), rightExpr.apply(transformation));
+			
+			ForkJoinTask<T> left = adapt(() -> leftExpr.apply(transformation)).fork();
+			ForkJoinTask<T> right = adapt(() -> rightExpr.apply(transformation)).fork();
+			
+			left.quietlyJoin();
+			right.quietlyJoin();
+			
+			if (left.isCompletedNormally() && right.isCompletedNormally())
+				return combiner.apply(left.getRawResult(), right.getRawResult());
+			else if (!left.isCompletedNormally())
+				throw new VTLNestedException("While evaluating " + transformation, left.getException());
+			else
+				throw new VTLNestedException("While evaluating " + transformation, right.getException());
 		};
 	}
 }
