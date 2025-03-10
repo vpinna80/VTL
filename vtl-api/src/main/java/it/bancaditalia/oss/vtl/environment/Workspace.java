@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.environment;
 
 import static java.util.Collections.emptyList;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,7 +39,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
  * @author Valentino Pinna
  *
  */
-public interface Workspace extends Environment
+public interface Workspace extends Serializable
 {
 	/**
 	 * Returns an {@link Optional} reference to a {@link DMLStatement} with the specified name in this environment.

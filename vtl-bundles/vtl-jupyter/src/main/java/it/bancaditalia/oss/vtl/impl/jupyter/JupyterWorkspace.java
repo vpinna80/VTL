@@ -31,14 +31,12 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class JupyterWorkspace implements Workspace
 {
-	private final static Logger LOGGER = LoggerFactory.getLogger(JupyterWorkspace.class);
+	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(JupyterWorkspace.class);
 
-	private final Map<VTLAlias, VTLValue> values = new ConcurrentHashMap<>();
 	private final Map<VTLAlias, Statement> rules = new ConcurrentHashMap<>();
 	
 	@Override
@@ -54,18 +52,6 @@ public class JupyterWorkspace implements Workspace
 	public List<Statement> getRules()
 	{
 		return new ArrayList<>(rules.values());
-	}
-	
-	@Override
-	public synchronized boolean contains(VTLAlias alias)
-	{
-		return values.containsKey(alias) || rules.containsKey(alias);
-	}
-
-	@Override
-	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
-	{
-		return Optional.ofNullable(values.get(alias));
 	}
 	
 	@Override
