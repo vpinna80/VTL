@@ -23,14 +23,15 @@ import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapVal
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -40,16 +41,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManager;
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingValueException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
+import it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
@@ -65,6 +68,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
+import jakarta.xml.bind.JAXBException;
 
 public class VTLExamplesEnvironment implements Environment, Serializable
 {
@@ -104,13 +108,35 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		{
 			VTLExamplesEnvironment env = new VTLExamplesEnvironment(category, operator);
 
-			ConfigurationManager cm = ConfigurationManagerFactory.newManager();
-			JsonMetadataRepository repo = new JsonMetadataRepository(env.jsonURL);
-			return new VTLSessionImpl(env.code, repo, cm.getEngine(), List.of(env), cm.createWorkspace());
+			JsonMetadataRepository repo = new JsonMetadataRepository(env.jsonURL, new JavaVTLEngine());
+			return new VTLSessionImpl(env.code, repo, new JavaVTLEngine(), List.of(env), new Workspace() {
+				private static final long serialVersionUID = 1L;
+				
+				private final Map<VTLAlias, Statement> rules = new ConcurrentHashMap<>(); 
+				
+				@Override
+				public Workspace addRule(Statement statement)
+				{
+					rules.put(statement.getAlias(), statement);
+					return this;
+				}
+				
+				@Override
+				public Optional<Statement> getRule(VTLAlias name)
+				{
+					return Optional.ofNullable(rules.get(name));
+				}
+				
+				@Override
+				public List<Statement> getRules()
+				{
+					return new ArrayList<>(rules.values());
+				}
+			});
 		}
-		catch (IOException e)
+		catch (IOException | ClassNotFoundException | JAXBException e)
 		{
-			throw new UncheckedIOException(e);
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -125,7 +151,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		inputs = new String[nInputs][];
 		for (int i = 0; i < nInputs; i++)
 		{
-			try (BufferedReader reader = getReader(category + "/" + operator + "/ds_" + i)) 
+			try (BufferedReader reader = getReader(category + "/" + operator + "/ds_" + (i + 1) + ".csv")) 
 			{
 				inputs[i] = reader.lines().collect(toList()).toArray(String[]::new);
 			}
@@ -143,7 +169,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	public boolean contains(VTLAlias alias)
 	{
 		for (int i = 0; i < nInputs; i++)
-			if (VTLAliasImpl.of("ds_" + i).equals(alias))
+			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
 				return true;
 		
 		return false;
@@ -153,7 +179,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		for (int i = 0; i < nInputs; i++)
-			if (VTLAliasImpl.of("ds_" + i).equals(alias))
+			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
 			{
 				DataSetMetadata structure = repo.getMetadata(alias).map(DataSetMetadata.class::cast).orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
 				
@@ -226,6 +252,10 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 
 	private static BufferedReader getReader(String path)
 	{
-		return new BufferedReader(new InputStreamReader(VTLExamplesEnvironment.class.getResourceAsStream("examples/" + path), UTF_8));
+		String resName = "./examples/" + path;
+		InputStream res = VTLExamplesEnvironment.class.getResourceAsStream(resName);
+		
+		requireNonNull(res, "Could not load resource " + resName);
+		return new BufferedReader(new InputStreamReader(res, UTF_8));
 	}
 }

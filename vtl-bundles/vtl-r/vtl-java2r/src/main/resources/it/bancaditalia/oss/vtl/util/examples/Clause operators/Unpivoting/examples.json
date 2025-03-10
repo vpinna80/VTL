@@ -1,0 +1,51 @@
+{
+  "datasets": [
+    {
+      "name": "ds_1",
+      "structure": "DS_1",
+      "source": "csv:ds_1.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "DS_1",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "A",
+          "role": "Measure"
+        },
+        {
+          "name": "B",
+          "role": "Measure"
+        },
+        {
+          "name": "C",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "A",
+      "domain": "integer"
+    },
+    {
+      "name": "B",
+      "domain": "integer"
+    },
+    {
+      "name": "C",
+      "domain": "integer"
+    },
+    {
+      "name": "Id_1",
+      "domain": "integer"
+    }
+  ],
+  "domains": []
+}

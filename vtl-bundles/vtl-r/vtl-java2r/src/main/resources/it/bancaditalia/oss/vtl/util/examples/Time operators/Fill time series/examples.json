@@ -1,0 +1,109 @@
+{
+  "datasets": [
+    {
+      "name": "ds_1",
+      "structure": "DS_1",
+      "source": "csv:ds_1.csv"
+    },
+    {
+      "name": "ds_2",
+      "structure": "DS_2",
+      "source": "csv:ds_2.csv"
+    },
+    {
+      "name": "ds_3",
+      "structure": "DS_3",
+      "source": "csv:ds_3.csv"
+    },
+    {
+      "name": "ds_4",
+      "structure": "DS_4",
+      "source": "csv:ds_4.csv"
+    }
+  ],
+  "structures": [
+    {
+      "name": "DS_1",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "DS_2",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "DS_3",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    },
+    {
+      "name": "DS_4",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "Id_1",
+      "domain": "string"
+    },
+    {
+      "name": "Id_2",
+      "domain": "time"
+    },
+    {
+      "name": "Me_1",
+      "domain": "string"
+    }
+  ],
+  "domains": []
+}
