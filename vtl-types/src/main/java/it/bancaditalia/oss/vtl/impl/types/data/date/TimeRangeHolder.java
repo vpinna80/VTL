@@ -191,6 +191,11 @@ public class TimeRangeHolder implements Serializable, Comparable<TimeRangeHolder
 			if (freq.getPeriod().equals(period))
 				return frequency = freq.get();
 		
+		if (Period.ofMonths(6).equals(period))
+			return Frequency.S.get();
+		else if (Period.ofMonths(3).equals(period))
+			return Frequency.Q.get();
+		
 		throw new UnsupportedOperationException("Unsupported frequency " + period + " for " + this);
 	}
 
