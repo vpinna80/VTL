@@ -29,8 +29,10 @@ import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -38,7 +40,6 @@ import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerComparator;
 import it.bancaditalia.oss.vtl.util.SerToIntBiFunction;
@@ -84,16 +85,6 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 		return comparator::applyAsInt;
 	}
 
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> SerComparator<DataPoint> compareBy(DataStructureComponent<?, ?, ?> component)
-	{
-		return compareBy(List.of(component));
-	}
-
-	public static SerBinaryOperator<DataPoint> combiner(SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
-	{
-		return (dp1, dp2) -> dp1.combine(dp2, lineageCombiner);
-	}
-
 	/**
 	 * Creates a new datapoint dropping all provided non-id components
 	 * 
@@ -128,6 +119,21 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @return a new datapoint that is the combination of this and another datapoint.
 	 */
 	public DataPoint combine(DataPoint other, SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner);
+
+	/**
+	 * Get the source transformation of this DataPoint
+	 * 
+	 * @return the transformation from where the datapoint originated 
+	 */
+	public Lineage getLineage();
+
+
+	/**
+	 * Create a new DataPoint by enriching its lineage information with the provided function.
+	 * 
+	 * @return the new enriched datapoint 
+	 */
+	public DataPoint enrichLineage(SerUnaryOperator<Lineage> enricher);
 	
 	/**
 	 * If the component exists, retrieves the value for it in this datapoint, performing a cast of the result.
@@ -212,6 +218,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.collect(Collectors.toMap(Entry::getValue, e -> get(e.getValue())));
 
 	}
+	
 	/**
 	 * Returns the values for the chosen components having a specified role.
 	 * 
@@ -227,19 +234,27 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				.map(keepingValue(c -> c.asRole(role)))
 				.collect(SerCollectors.entriesToMap());
 	}
-
+	
 	/**
-	 * Get the source transformation of this DataPoint
-	 * 
-	 * @return the transformation from where the datapoint originated 
+	 * Returns a distance, in term of components and values, between this and another DataPoint.
+	 * The distance is computed as the number of components present only in one datapoint,
+	 * plus the number of all the components present in both datapoints which have a different value respectively.
+	 *  
+	 * @param other The other datapoint.
+	 * @return A positive integer representing the distance, 0 if equals. 
 	 */
-	public Lineage getLineage();
-
-
-	/**
-	 * Create a new DataPoint by enriching its lineage information with the provided function.
-	 * 
-	 * @return the new enriched datapoint 
-	 */
-	public DataPoint enrichLineage(SerUnaryOperator<Lineage> enricher);
+	public default int getDistance(DataPoint other)
+	{
+		Set<DataStructureComponent<?, ?, ?>> cmp1 = this.keySet();
+		Set<DataStructureComponent<?, ?, ?>> cmp2 = other.keySet();
+		Set<DataStructureComponent<?, ?, ?>> intersect = new HashSet<>(cmp1);
+		intersect.retainAll(cmp2);
+		
+		int distance = cmp1.size() + cmp2.size() - intersect.size() * 2;
+		for (DataStructureComponent<?, ?, ?> c: intersect)
+			if (!this.get(c).equals(other.get(c)))
+				distance++;
+		
+		return distance;
+	}
 }

@@ -31,8 +31,10 @@ import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnri
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.DATAPOINTS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.reducing;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 
 import java.io.Serializable;
@@ -40,7 +42,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -62,7 +63,6 @@ import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
-import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -157,7 +157,6 @@ public class FlowStockTransformation extends UnaryTransformation
 			SerUnaryOperator<Lineage> lineageOp = lineageEnricher(this);
 			WindowCriterion size = operator == STOCK_TO_FLOW ? new WindowCriterionImpl(DATAPOINTS, preceding(1), CURRENT_DATA_POINT) : DATAPOINTS_UNBOUNDED_PRECEDING_TO_CURRENT;
 			WindowClause window = new WindowClauseImpl(ids, List.of(new SortClause(timeId)), size);
-			SerFunction<DataPoint, Number> extractor = dp -> (Number) dp.get(measure).get();
 
 			Class<?> repr;
 			if (Domains.INTEGERDS.isAssignableFrom(measure.getVariable().getDomain())) 
@@ -171,10 +170,15 @@ public class FlowStockTransformation extends UnaryTransformation
 					? IntegerValue::of
 					: NumberValueImpl::createNumberValue;
 			
-			SerCollector<Number, ?, ScalarValue<?, ?, ?, ?>> collector = collectingAndThen(collectingAndThen(
-					filtering(Objects::nonNull, reducing(repr, operator::apply)), create), measure.getVariable().getDomain()::cast);
+			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> collector = collectingAndThen(
+					collectingAndThen(
+						filtering(not(ScalarValue::isNull), 
+							mapping(v -> (Number) v.get(), 
+								reducing(repr, operator::apply))
+					), create
+				), measure.getVariable().getDomain()::cast);
 			
-			partial = partial.analytic(lineageOp, measure, measure, window, extractor, collector, null);
+			partial = partial.analytic(lineageOp, measure, measure, window, null, collector, null);
 		}
 		
 		// remove the freq measure
