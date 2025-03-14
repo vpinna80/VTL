@@ -212,7 +212,7 @@ public class VTLSessionImpl implements VTLSession
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
+	public HierarchicalRuleSet<?, ?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
 	{
 		return findRuleset(alias, HierarchicalRuleSet.class);
 	}

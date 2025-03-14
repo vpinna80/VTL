@@ -45,6 +45,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class DefineHierarchyStatement extends AbstractStatement implements RulesetStatement
@@ -55,12 +56,15 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 	private final VTLAlias ruleID;
 	private final VTLAlias names[];
 	private final String leftOps[];
+	private final Transformation whenOps[];
 	private final RuleType[] compOps;
 	private final List<Map<String, Boolean>> rightOps;
 	private final ScalarValue<?, ?, ?, ?>[] ercodes;
 	private final ScalarValue<?, ?, ?, ?>[] erlevels;
+
 	
-	public DefineHierarchyStatement(VTLAlias alias, RuleSetType rulesetType, VTLAlias ruleID, List<VTLAlias> names, List<String> leftOps, List<RuleType> compOps, List<Map<String,Boolean>> rightOps, List<String> ercodes, List<Long> erlevels)
+	public DefineHierarchyStatement(VTLAlias alias, RuleSetType rulesetType, VTLAlias ruleID, List<VTLAlias> names, 
+			List<String> leftOps, List<RuleType> compOps, List<Transformation> whenOps, List<Map<String,Boolean>> rightOps, List<String> ercodes, List<Long> erlevels)
 	{
 		super(alias);
 		
@@ -69,6 +73,7 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 		this.names = names.toArray(VTLAlias[]::new);
 		this.leftOps = leftOps.toArray(String[]::new);
 		this.compOps = compOps.toArray(RuleType[]::new);
+		this.whenOps = whenOps.toArray(Transformation[]::new);
 		this.rightOps = rightOps;
 		this.ercodes = ercodes.stream().map(StringValue::of).toArray(ScalarValue<?, ?, ?, ?>[]::new);
 		this.erlevels = erlevels.stream().map(IntegerValue::of).toArray(ScalarValue<?, ?, ?, ?>[]::new);
@@ -99,7 +104,7 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 						Map<String, Boolean> right = rightOps.get(i);
 						Map<StringCodeItem, Boolean> codes = right.keySet().stream()
 							.collect(toMap(codelist::getCodeItem, c -> coalesce(right.get(c), true)));
-						return new StringRule(names[i], leftOp, compOps[i], codes, ercodes[i], erlevels[i]);
+						return new StringRule(names[i], leftOp, compOps[i], whenOps[i], codes, ercodes[i], erlevels[i]);
 					}).collect(toList());
 				
 				return new StringHierarchicalRuleSet(getAlias(), ruleID, codelist, rulesetType, rules);

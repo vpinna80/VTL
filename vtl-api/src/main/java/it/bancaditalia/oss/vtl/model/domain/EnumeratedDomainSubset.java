@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.model.domain;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 /**
@@ -33,7 +32,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
  * @param <S> the enumerated domain subset
  * @param <D> the base domain
  */
-public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
+public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, C, D>, C extends CodeItem<?, ?, S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
 {
 	/**
 	 * @return the domain name.
@@ -45,7 +44,5 @@ public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, D>, 
 	 * 
 	 * @return the set of all the code items in this domain.
 	 */
-	public Set<CodeItem<?, ?, S, D>> getCodeItems();
-
-	@Override ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
+	public Set<C> getCodeItems();
 }

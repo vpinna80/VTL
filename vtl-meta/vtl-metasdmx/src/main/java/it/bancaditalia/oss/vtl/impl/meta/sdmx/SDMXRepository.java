@@ -305,7 +305,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(VTLAlias alias)
+	public HierarchicalRuleSet<?, ?, ?, ?> getHierarchyRuleset(VTLAlias alias)
 	{
 		return getDomain(alias)
 				.filter(SdmxCodeList.class::isInstance)

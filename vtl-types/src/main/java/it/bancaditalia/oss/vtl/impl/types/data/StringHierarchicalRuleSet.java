@@ -28,7 +28,6 @@ import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,26 +44,29 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 import it.bancaditalia.oss.vtl.model.rules.RuleSet;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.Utils;
 
-public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule, StringCodeList, StringDomain>, Serializable
+public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule, StringCodeItem, StringCodeList, StringDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	public static class StringRule implements Rule<StringCodeList, StringDomain>
+	public static class StringRule implements Rule<StringCodeItem, StringCodeList, StringDomain>
 	{
 		private final VTLAlias name;
 		private final StringCodeItem leftCodeItem;
 		private final RuleType ruleType;
+		private final Transformation when;
 		private final Map<StringCodeItem, Boolean> sign;
 		private final ScalarValue<?, ?, ?, ?> errorCode;
 		private final ScalarValue<?, ?, ?, ?> errorLevel;
 		
-		public StringRule(VTLAlias name, StringCodeItem leftCodeItem, RuleType ruleType, Map<StringCodeItem, Boolean> sign, ScalarValue<?, ?, ?, ?> errorCode, ScalarValue<?, ?, ?, ?> errorLevel)
+		public StringRule(VTLAlias name, StringCodeItem leftCodeItem, RuleType ruleType, Transformation when, Map<StringCodeItem, Boolean> sign, ScalarValue<?, ?, ?, ?> errorCode, ScalarValue<?, ?, ?, ?> errorLevel)
 		{
 			this.name = name;
 			this.leftCodeItem = leftCodeItem;
 			this.ruleType = ruleType;
+			this.when = when;
 			this.sign = sign;
 			this.errorCode = errorCode;
 			this.errorLevel = errorLevel;
@@ -77,13 +79,19 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 		}
 		
 		@Override
+		public Transformation getCondition()
+		{
+			return when;
+		}
+		
+		@Override
 		public StringCodeItem getLeftCodeItem()
 		{
 			return leftCodeItem;
 		}
 
 		@Override
-		public Collection<StringCodeItem> getRightCodeItems()
+		public Set<StringCodeItem> getRightCodeItems()
 		{
 			return sign.keySet();
 		}
@@ -123,7 +131,7 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 	private final Map<StringCodeItem, Set<StringRule>> depends;
 	private final RuleSetType type;
 	private final StringCodeList domain;
-	private final Set<CodeItem<?, ?, StringCodeList, StringDomain>> leaves;
+	private final Set<StringCodeItem> leaves;
 
 	public StringHierarchicalRuleSet(VTLAlias name, VTLAlias ruleComp, StringCodeList domain, RuleSetType type, List<StringRule> rules)
 	{
@@ -151,6 +159,12 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 	}
 
 	@Override
+	public Set<StringCodeItem> getComputedCodes()
+	{
+		return rules.keySet();
+	}
+	
+	@Override
 	public List<StringRule> getRulesFor(CodeItem<?, ?, ?, ?> code)
 	{
 		return rules.get(code);
@@ -163,7 +177,7 @@ public class StringHierarchicalRuleSet implements HierarchicalRuleSet<StringRule
 	}
 	
 	@Override
-	public Set<CodeItem<?, ?, StringCodeList, StringDomain>> getLeaves()
+	public Set<StringCodeItem> getLeaves()
 	{
 		return leaves;
 	}

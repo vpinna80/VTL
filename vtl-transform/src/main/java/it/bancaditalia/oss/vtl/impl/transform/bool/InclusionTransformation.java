@@ -122,7 +122,7 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		if (set.isEmpty())
 		{
-			EnumeratedDomainSubset<?, ?> domain = (EnumeratedDomainSubset<?, ?>) repo.getDomain(domainName)
+			EnumeratedDomainSubset<?, ?, ?> domain = (EnumeratedDomainSubset<?, ?, ?>) repo.getDomain(domainName)
 					.orElseThrow(() -> new VTLUndefinedObjectException("Domain", domainName));
 			set.addAll(domain.getCodeItems());
 		}

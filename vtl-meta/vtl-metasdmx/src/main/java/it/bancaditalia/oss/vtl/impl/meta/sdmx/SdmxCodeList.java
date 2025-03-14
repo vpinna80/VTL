@@ -63,7 +63,7 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 
 		List<StringRule> rules = new ArrayList<>(); 
 		for (StringCodeItem ruleComp: hierarchy.keySet())
-			rules.add(new StringRule(VTLAliasImpl.of(ruleComp.get()), ruleComp, EQ, hierarchy.get(ruleComp).stream().collect(toMap(identity(), k -> TRUE)), null, null));
+			rules.add(new StringRule(VTLAliasImpl.of(ruleComp.get()), ruleComp, EQ, null, hierarchy.get(ruleComp).stream().collect(toMap(identity(), k -> TRUE)), null, null));
 		
 		defaultRuleSet = rules.isEmpty() ? null : new StringHierarchicalRuleSet(clAlias, clAlias, this, VALUE_DOMAIN, rules);
 

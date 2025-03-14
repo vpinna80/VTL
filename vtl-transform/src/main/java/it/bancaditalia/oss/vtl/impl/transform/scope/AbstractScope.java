@@ -54,7 +54,7 @@ public abstract class AbstractScope implements TransformationScheme, Serializabl
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
+	public HierarchicalRuleSet<?, ?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}

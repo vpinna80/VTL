@@ -51,6 +51,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents;
 import it.bancaditalia.oss.vtl.model.data.Component;
+import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -216,7 +217,7 @@ public class DataPointBuilder implements Serializable
 			values.putAll(values);
 
 			for (DataStructureComponent<?, ?, ?> c: structure)
-				if (!c.is(Identifier.class))
+				if (c.is(Attribute.class))
 					values.putIfAbsent(c, NullValue.instanceFrom(c));
 
 			if (LOGGER.isTraceEnabled())
@@ -227,7 +228,7 @@ public class DataPointBuilder implements Serializable
 					.ifPresent(nonExistingComp -> {
 						throw new VTLMissingComponentsException(nonExistingComp, structure);
 					});
-
+	
 				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
 				missing.removeAll(values.keySet());
 				if (missing.size() > 0)

@@ -83,7 +83,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?> getHierarchyRuleset(VTLAlias alias)
+	public HierarchicalRuleSet<?, ?, ?, ?> getHierarchyRuleset(VTLAlias alias)
 	{
 		return Optional.ofNullable(chained).map(chained -> chained.getHierarchyRuleset(alias))
 				.orElseThrow(() -> new VTLException("Hierarchical ruleset " + alias + " not found."));

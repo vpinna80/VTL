@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
+import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList.IntegerCodeItem;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.DefaultVariable;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
@@ -37,13 +38,13 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, IntegerDomain>, IntegerDomainSubset<IntegerCodeList>, Serializable
+public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, IntegerCodeItem, IntegerDomain>, IntegerDomainSubset<IntegerCodeList>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
 	private final VTLAlias alias; 
 	private final IntegerDomainSubset<?> parent;
-	private final Set<CodeItem<?, ?, IntegerCodeList, IntegerDomain>> items = new HashSet<>();
+	private final Set<IntegerCodeItem> items = new HashSet<>();
 	private final int hashCode;
 
 	public class IntegerCodeItem extends IntegerValue<IntegerCodeItem, IntegerCodeList> implements CodeItem<IntegerCodeItem, Long, IntegerCodeList, IntegerDomain>
@@ -115,7 +116,7 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	}
 
 	@Override
-	public Set<CodeItem<?, ?, IntegerCodeList, IntegerDomain>> getCodeItems()
+	public Set<IntegerCodeItem> getCodeItems()
 	{
 		return items;
 	}

@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.model.rules;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -29,21 +28,24 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
+import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 /**
  * Representation of a hierarchy ruleset.
  * 
  * @author Valentino Pinna
  */
-public interface HierarchicalRuleSet<I extends Rule<S, D>, S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain> extends RuleSet
+public interface HierarchicalRuleSet<I extends Rule<C, S, D>, C extends CodeItem<?, ?, S, D>, S extends EnumeratedDomainSubset<S, C, D>, D extends ValueDomain> extends RuleSet
 {
-	public interface Rule<S extends EnumeratedDomainSubset<S, D>, D extends ValueDomain>
+	public interface Rule<C extends CodeItem<?, ?, S, D>, S extends EnumeratedDomainSubset<S, C, D>, D extends ValueDomain>
 	{
 		public VTLAlias getAlias();
-		
-		public CodeItem<?, ?, S, D> getLeftCodeItem();
 
-		public Collection<? extends CodeItem<?, ?, S, D>> getRightCodeItems();
+		public C getLeftCodeItem();
+
+		public Transformation getCondition();
+		
+		public Set<C> getRightCodeItems();
 		
 		public boolean isPlusSign(CodeItem<?, ?, ?, ?> item);
 		
@@ -58,6 +60,8 @@ public interface HierarchicalRuleSet<I extends Rule<S, D>, S extends EnumeratedD
 	
 	public List<I> getRulesFor(CodeItem<?, ?, ?, ?> code);
 	
+	public Set<C> getComputedCodes();
+	
 	public VTLAlias getAlias();
 
 	public VTLAlias getRuleId();
@@ -68,5 +72,5 @@ public interface HierarchicalRuleSet<I extends Rule<S, D>, S extends EnumeratedD
 
 	public Set<I> getDependingRules(CodeItem<?, ?, ?, ?> code);
 
-	public Set<? extends CodeItem<?, ?, S, D>> getLeaves();
+	public Set<C> getLeaves();
 }

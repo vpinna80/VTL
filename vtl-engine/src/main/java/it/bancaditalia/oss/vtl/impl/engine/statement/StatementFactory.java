@@ -62,6 +62,7 @@ import it.bancaditalia.oss.vtl.grammar.Vtl.DefHierarchicalContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorsContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.DefineExpressionContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.ExprComponentContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.InputParameterTypeContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.MultModifierContext;
 import it.bancaditalia.oss.vtl.grammar.Vtl.OutputParameterTypeContext;
@@ -129,6 +130,7 @@ public class StatementFactory implements Serializable
 				
 				List<VTLAlias> names = new ArrayList<>();
 				List<String> leftOps = new ArrayList<>();
+				List<Transformation> whenOps = new ArrayList<>();
 				List<RuleType> compOps = new ArrayList<>();
 				List<Map<String, Boolean>> rightOps = new ArrayList<>();
 				List<String> ercodes = new ArrayList<>();
@@ -142,7 +144,6 @@ public class StatementFactory implements Serializable
 					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
 
 					CodeItemRelationContext relation = rule.codeItemRelation();
-					leftOps.add(relation.codetemRef.getText());
 					switch (relation.comparisonOperand().getStart().getType())
 					{
 						case Vtl.EQ: compOps.add(RuleType.EQ); break;
@@ -152,11 +153,16 @@ public class StatementFactory implements Serializable
 						case Vtl.ME: compOps.add(RuleType.GE); break;
 						default: throw new UnsupportedOperationException("Invalid operand in ruleset rule " + rule.ruleName.getText() + ": " + relation.comparisonOperand().getText());
 					}
+					
+					ExprComponentContext when = relation.exprComponent();
+					
+					leftOps.add(relation.codetemRef.getText());
+					whenOps.add(when != null ? buildExpr(when): null);
 					rightOps.add(relation.codeItemRelationClause().stream()
 						.collect(toMap(r -> r.rightCodeItem.getText(), r -> r.opAdd == null || r.opAdd.getType() == Vtl.PLUS)));
 				}
 				
-				return new DefineHierarchyStatement(alias, rulesetType, ruleID, names, leftOps, compOps, rightOps, ercodes, erlevels);
+				return new DefineHierarchyStatement(alias, rulesetType, ruleID, names, leftOps, compOps, whenOps, rightOps, ercodes, erlevels);
 			}
 			else if (defineContext instanceof DefDatapointRulesetContext)
 			{
