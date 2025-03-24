@@ -38,7 +38,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 public enum CommonComponents
 {
 	TIME_PERIOD("TIME_PERIOD", Identifier.class, TIMEDS),
-	RULEID("ruleid", Measure.class, STRINGDS), 
+	RULEID("ruleid", Identifier.class, STRINGDS), 
 	ERRORCODE("errorcode", Measure.class, STRINGDS), 
 	ERRORLEVEL("errorlevel", Measure.class, INTEGERDS), 
 	IMBALANCE("imbalance", Measure.class, NUMBERDS);

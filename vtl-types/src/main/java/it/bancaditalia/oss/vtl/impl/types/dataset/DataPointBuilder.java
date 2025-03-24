@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
+import static java.lang.invoke.MethodHandles.lookup;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
@@ -30,6 +31,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
+import java.lang.invoke.VarHandle;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,23 +73,30 @@ public class DataPointBuilder implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataPointBuilder.class);
+	private static final VarHandle IS_BUILT_HANDLE;
 
 	public enum Option
 	{
 		DONT_SYNC;
 	}
 	
+	static {
+        try
+        {
+        	IS_BUILT_HANDLE = lookup().findVarHandle(DataPointBuilder.class, "isBuilt", boolean.class);
+        }
+        catch (ReflectiveOperationException e)
+        {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+	
 	private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
-
-	private volatile boolean built = false;
+	private boolean isBuilt = false;
 
 	public DataPointBuilder(Option... options)
 	{
-		EnumSet<Option> optSet = EnumSet.noneOf(Option.class);
-		for (Option option: options)
-			optSet.add(option);
-
-		delegate = optSet.contains(DONT_SYNC) ? new HashMap<>() : new ConcurrentHashMap<>();
+		this(Map.of(), options);
 	}
 
 	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keys, Option... options)
@@ -99,9 +108,9 @@ public class DataPointBuilder implements Serializable
 		delegate = optSet.contains(DONT_SYNC) ? new HashMap<>(keys) : new ConcurrentHashMap<>(keys);
 	}
 
-	private synchronized DataPointBuilder checkState()
+	private DataPointBuilder checkState()
 	{
-		if (built)
+		if (isBuilt)
 			throw new IllegalStateException("DataPoint already built.");
 		return this;
 	}
@@ -184,9 +193,8 @@ public class DataPointBuilder implements Serializable
 
 	public DataPoint build(Lineage lineage, DataSetMetadata structure)
 	{
-		if (built)
-			throw new IllegalStateException("DataPoint already built");
-		built = true;
+		if (!IS_BUILT_HANDLE.compareAndSet(this, false, true))
+			throw new IllegalStateException("DataPoint already built.");
 		
 		DataPoint dp = new DataPointImpl(requireNonNull(lineage), requireNonNull(structure, () -> "DataSet structure is null for " + delegate), delegate);
 		LOGGER.trace("Datapoint@{} is {}", hashCode(), dp);
@@ -202,7 +210,6 @@ public class DataPointBuilder implements Serializable
 	private static class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable
 	{
 		private static final long serialVersionUID = 1L;
-//		private static final Logger LOGGER = LoggerFactory.getLogger(DataPointImpl.class);
 
 		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values;
 		private final Lineage lineage;

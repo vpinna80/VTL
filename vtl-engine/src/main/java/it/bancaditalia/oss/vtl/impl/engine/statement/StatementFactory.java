@@ -140,7 +140,13 @@ public class StatementFactory implements Serializable
 				{
 					RuleItemHierarchicalContext rule = defineHier.ruleClauseHierarchical().ruleItemHierarchical(i);
 					names.add(rule.ruleName != null ? VTLAliasImpl.of(rule.ruleName.getText()) : null);
-					ercodes.add(rule.erCode() != null ? rule.erCode().constant().getText() : null);
+					String erCode = null;
+					if (rule.erCode() != null)
+					{
+						erCode = rule.erCode().constant().getText();
+						erCode = erCode.substring(1, erCode.length() - 1);
+					}
+					ercodes.add(erCode);
 					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
 
 					CodeItemRelationContext relation = rule.codeItemRelation();

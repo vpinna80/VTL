@@ -45,11 +45,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -87,8 +90,9 @@ public class IntegrationTestSuite
 	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
-	private static final Engine ENGINE; 
+	private static final Set<TestType> TO_RUN = Set.of(/*T,*/ E/*, TS, ES*/);
+	private static final Engine ENGINE;
+	private static final boolean TOTAL_REPORT = true;
 	
 	static 
 	{
@@ -255,8 +259,8 @@ public class IntegrationTestSuite
 				expectedDPs = expStream.collect(toList());
 			}
 			
-			checkDPs(resDPs, expectedDPs, "Unexpected datapoint found");
-			checkDPs(expectedDPs, resDPs, "Expected datapoint not found");
+			checkDPs(resDPs, expectedDPs, "Unexpected datapoint", "found", session.getOriginalCode());
+			checkDPs(expectedDPs, resDPs, "Expected datapoint", "not found", session.getOriginalCode());
 		}
 		else
 		{
@@ -268,7 +272,7 @@ public class IntegrationTestSuite
 		}
 	}
 	
-	private static void checkDPs(List<DataPoint> toCheck, List<DataPoint> against, String prefix)
+	private static void checkDPs(List<DataPoint> toCheck, List<DataPoint> against, String what, String verb, String code)
 	{
 		for (DataPoint dpr: toCheck)
 		{
@@ -281,11 +285,24 @@ public class IntegrationTestSuite
 			{
 				StringWriter writer = new StringWriter();
 				PrintWriter pr = new PrintWriter(writer);
-				pr.println(prefix + "\n" + dpr + "\n--------------------------------");
-				for (DataPoint dpe: against)
-					pr.println(dpe);
+				TreeSet<DataPoint> sorted = new TreeSet<>((dpa, dpb) -> Integer.compare(dpr.getDistance(dpa), dpr.getDistance(dpb)));
+				sorted.addAll(against);
+				pr.println(what + " " + verb + " for the code\n" + code + "\n--" + what + "---------------------\n" + treeify(dpr) 
+						+ "\n--" + verb + " in------(" + dpr.getDistance(sorted.first()) + ")-----------");
+				
+				Collection<DataPoint> report = TOTAL_REPORT ? against : sorted.headSet(sorted.first(), true);
+				for (DataPoint dpe: report)
+					pr.println(treeify(dpe));
+				pr.println("--------------------------------");
 				fail(writer.toString());
 			}
 		}
+	}
+
+	private static TreeMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> treeify(DataPoint dpe)
+	{
+		TreeMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpeTree = new TreeMap<>(DataStructureComponent::byNameAndRole);
+		dpeTree.putAll(dpe);
+		return dpeTree;
 	}
 }

@@ -21,6 +21,9 @@ package it.bancaditalia.oss.vtl.model.rules;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.util.SerIntPredicate;
+
 public interface RuleSet extends Serializable
 {
 	public enum RuleSetType
@@ -30,19 +33,31 @@ public interface RuleSet extends Serializable
 	
 	public enum RuleType
 	{
-		EQ("="), LT("<"), LE("<="), GT(">"), GE(">=");
+		EQ("=", c -> c == 0), 
+		LT("<", c -> c < 0), 
+		LE("<=", c -> c <= 0), 
+		GT(">", c -> c > 0), 
+		GE(">=", c -> c >= 0);
 		
 		private final String toString;
+		private final SerIntPredicate test;
 	
-		RuleType(String toString)
+		RuleType(String toString, SerIntPredicate test)
 		{
 			this.toString = toString;
+			this.test = test;
 		}
 		
 		@Override
 		public String toString()
 		{
 			return toString;
+		}
+		
+		public boolean test(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+		{
+			int compare = left.compareTo(right);
+			return test.test(compare);
 		}
 	}
 	

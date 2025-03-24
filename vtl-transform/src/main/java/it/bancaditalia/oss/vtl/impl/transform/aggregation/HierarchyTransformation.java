@@ -21,12 +21,8 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyInput.DATASET;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyInput.RULE;
-import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode.ALWAYS_NULL;
-import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode.ALWAYS_ZERO;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode.NON_NULL;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode.NON_ZERO;
-import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode.PARTIAL_NULL;
-import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode.PARTIAL_ZERO;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyOutput.ALL;
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyOutput.COMPUTED;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
@@ -37,6 +33,7 @@ import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMA
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithKeys;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.lang.Math.round;
 import static java.util.Collections.emptyList;
@@ -49,10 +46,14 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
@@ -62,13 +63,12 @@ import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
-import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringRule;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
-import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
+import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -83,6 +83,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -92,7 +93,8 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class HierarchyTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final LineageNode LINEAGE_MISSING = LineageNode.of("hierarchy-generated");
+	private static final Logger LOGGER = LoggerFactory.getLogger(HierarchyTransformation.class);
+	private static final Lineage LINEAGE_MISSING = LineageExternal.of("hierarchy-generated-missing");
 
 	private final Transformation operand;
 	private final VTLAlias rulesetID;
@@ -105,6 +107,21 @@ public class HierarchyTransformation extends TransformationImpl
 	public enum HierarchyMode
 	{
 		NON_NULL, NON_ZERO, PARTIAL_NULL, PARTIAL_ZERO, ALWAYS_NULL, ALWAYS_ZERO;
+		
+		public boolean isZero()
+		{
+			return this == NON_ZERO || this == PARTIAL_ZERO || this == ALWAYS_ZERO;
+		}
+		
+		public boolean isPartial()
+		{
+			return this == PARTIAL_NULL || this == PARTIAL_ZERO;
+		}
+		
+		public boolean isAlways()
+		{
+			return this == ALWAYS_NULL || this == ALWAYS_ZERO;
+		}
 	}
 	
 	public enum HierarchyInput
@@ -140,13 +157,13 @@ public class HierarchyTransformation extends TransformationImpl
 		DataSetMetadata structure = (DataSetMetadata) getMetadata(scheme);
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
-		// Store code values that can be compute, to determine the input behavior 
-		StringHierarchicalRuleSet ruleset = (StringHierarchicalRuleSet) scheme.findHierarchicalRuleset(rulesetID);
-		Set<StringCodeItem> computedCodes = ruleset.getComputedCodes();
-		Set<StringCodeItem> nonComputedCodes = ruleset.getRules().stream()
-				.map(StringRule::getRightCodeItems)
+		// Store code values that can be computed, to determine the input behavior 
+		HierarchicalRuleSet<?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
+		Set<? extends CodeItem<?, ?, ?, ?>> computedCodes = ruleset.getComputedCodes();
+		Set<? extends CodeItem<?, ?, ?, ?>> nonComputedCodes = ruleset.getRules().stream()
+				.map(Rule::getRightCodeItems)
 				.flatMap(Set::stream)
-				.filter(SerPredicate.not(computedCodes::contains))
+				.filter(not(computedCodes::contains))
 				.collect(toSet());
 		
 		// All ids excluding the code id
@@ -155,143 +172,151 @@ public class HierarchyTransformation extends TransformationImpl
 				.orElseThrow(() -> new VTLMissingComponentsException(id, noCodeIds));
 		noCodeIds.remove(codeId);
 		
-		Map<? extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Map<ScalarValue<?, ?, ?, ?>, DataPoint>> grouped;
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> results = new ConcurrentHashMap<>();
-
 		ScalarValue<?, ?, ?, ?> missingValue;
-		if (mode == NON_NULL || mode == PARTIAL_NULL || mode == ALWAYS_NULL)
-			missingValue = NullValue.instanceFrom(measure);
-		else
+		if (mode.isZero())
 			missingValue = INTEGERDS.isAssignableFrom(measure.getVariable().getDomain())
 					? IntegerValue.of(0L)
 					: createNumberValue(0.0);
+		else
+			missingValue = NullValue.instanceFrom(measure);
 
-		try (Stream<DataPoint> stream = dataset.stream())
-		{
-			Stream<DataPoint> stream2 = stream;
-			if (output == ALL)
-				stream2 = stream.peek(dp -> results.put(dp.getValues(Identifier.class), dp));
-			grouped = stream2.collect(groupingByConcurrent(dp -> dp.getValues(noCodeIds), toMapWithKeys(dp -> dp.get(codeId))));
-		}
-
-		// group computations are independent of each other.
-		Utils.getStream(grouped.keySet()).forEach(keyValues -> {
-			Map<ScalarValue<?, ?, ?, ?>, DataPoint> originalDpGroup = new HashMap<>(grouped.remove(keyValues));
-			Map<ScalarValue<?, ?, ?, ?>, DataPoint> computedDpGroup = new HashMap<>();
-			
-			// Add fictious datapoints with a measure value of 0 for 
-			// non-computed codes, so that computation may proceed in any case
-			for (StringCodeItem code: nonComputedCodes)
-				if (!originalDpGroup.containsKey(code))
-					originalDpGroup.put(code, new DataPointBuilder(keyValues, DONT_SYNC)
-							.add(codeId, code)
-							.add(measure, missingValue)
-							.build(LINEAGE_MISSING, structure));
-
-			// Start with codes that can be computed from the start, then add them on the way.
-			Queue<StringCodeItem> toCompute = new LinkedList<>();
-			for (StringCodeItem code: computedCodes)
-				if (canBeComputed(code, ruleset, measure, computedCodes, originalDpGroup, computedDpGroup))
-					toCompute.add(code);
-
-			while (!toCompute.isEmpty())
+		// Keep here all datapoints that go into the output, for subsequent streaming
+		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> results = new ConcurrentHashMap<>();
+		
+		return new FunctionDataSet<DataSet>(structure, ds -> {
+			LOGGER.debug("hierarchy(): classifying source datapoints");
+			Map<? extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Map<CodeItem<?, ?, ?, ?>, DataPoint>> grouped;
+			try (Stream<DataPoint> stream = ds.stream())
 			{
-				StringCodeItem code = toCompute.remove();
-				// TODO: assuming only 1 rule per code.
-				StringRule rule = ruleset.getRulesFor(code).get(0);
-				StringCodeItem[] rightItems = rule.getRightCodeItems().toArray(StringCodeItem[]::new);
-				
-				Map<DataStructureComponent<?, ?, ?>, List<ScalarValue<?, ?, ?, ?>>> virals = new HashMap<>();
-				
-				// Retrieve the datapoints corresponding to the right-side codes of the rule
-				Lineage[] lineages = new Lineage[rightItems.length];
-				ScalarValue<?, ?, ?, ?>[] values = new ScalarValue<?, ?, ?, ?>[rightItems.length];
-				for (int i = 0; i < rightItems.length; i++)
-				{
-					StringCodeItem rightCode = rightItems[i];
+				Stream<DataPoint> stream2 = stream;
+				if (output == ALL)
+					stream2 = stream.peek(dp -> results.put(dp.getValues(Identifier.class), dp));
+				grouped = stream2.collect(groupingByConcurrent(dp -> dp.getValues(noCodeIds), toMapWithKeys(dp -> (CodeItem<?, ?, ?, ?>) dp.get(codeId))));
+			}
 
-					DataPoint dpRight;
-					if (input == DATASET)
-						dpRight = originalDpGroup.get(rightCode);
-					else if (input == RULE)
-						dpRight = (computedDpGroup.containsKey(rightCode) ? computedDpGroup : originalDpGroup).get(rightCode);
-					else // if (input == RULE_PRIORITY)
+			// group computations are independent of each other.
+			Utils.getStream(grouped.keySet()).forEach(keyValues -> {
+				Map<CodeItem<?, ?, ?, ?>, DataPoint> originalDpGroup = new HashMap<>(grouped.remove(keyValues));
+				Map<CodeItem<?, ?, ?, ?>, DataPoint> computedDpGroup = new HashMap<>();
+				LOGGER.debug("hierarchy(): Start processing group {}", keyValues);
+				
+				// Add fictious datapoints with a measure value of 0 for 
+				// non-computed codes, so that computation may proceed in any case
+				for (CodeItem<?, ?, ?, ?> code: nonComputedCodes)
+					if (!originalDpGroup.containsKey(code))
+						originalDpGroup.put(code, new DataPointBuilder(keyValues, DONT_SYNC)
+								.add(codeId, code)
+								.add(measure, missingValue)
+								.build(LINEAGE_MISSING, structure));
+
+				// Start with codes that can be computed from the start, then add them on the way.
+				Queue<CodeItem<?, ?, ?, ?>> toCompute = new LinkedList<>();
+				for (CodeItem<?, ?, ?, ?> code: computedCodes)
+					if (canBeComputedNow(code, ruleset, measure, computedCodes, originalDpGroup, computedDpGroup))
+						toCompute.add(code);
+
+				while (!toCompute.isEmpty())
+				{
+					CodeItem<?, ?, ?, ?> code = toCompute.remove();
+					LOGGER.trace("Processing code {} in group {}", code, keyValues);
+					
+					// TODO: assuming only 1 rule per code.
+					Rule<?, ?, ?> rule = ruleset.getRulesFor(code).get(0);
+					CodeItem<?, ?, ?, ?>[] rightItems = rule.getRightCodeItems().toArray(CodeItem<?, ?, ?, ?>[]::new);
+					
+					Map<DataStructureComponent<?, ?, ?>, List<ScalarValue<?, ?, ?, ?>>> virals = new HashMap<>();
+					
+					// Retrieve the datapoints corresponding to the right-side codes of the rule
+					Lineage[] lineages = new Lineage[rightItems.length];
+					ScalarValue<?, ?, ?, ?>[] values = new ScalarValue<?, ?, ?, ?>[rightItems.length];
+					for (int i = 0; i < rightItems.length; i++)
 					{
-						dpRight = computedDpGroup.get(rightCode);
-						if (dpRight == null || dpRight.get(measure).isNull())
+						CodeItem<?, ?, ?, ?> rightCode = rightItems[i];
+
+						DataPoint dpRight;
+						if (input == DATASET)
 							dpRight = originalDpGroup.get(rightCode);
+						else if (input == RULE)
+							dpRight = (computedDpGroup.containsKey(rightCode) ? computedDpGroup : originalDpGroup).get(rightCode);
+						else // if (input == RULE_PRIORITY)
+						{
+							dpRight = computedDpGroup.get(rightCode);
+							if (dpRight == null || dpRight.get(measure).isNull())
+								dpRight = originalDpGroup.get(rightCode);
+						}
+						
+						lineages[i] = dpRight.getLineage();
+						values[i] = dpRight.get(measure);
+						for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
+							virals.computeIfAbsent(viral, k -> new ArrayList<>()).add(dpRight.get(viral));
 					}
 					
-					lineages[i] = dpRight.getLineage();
-					values[i] = dpRight.get(measure);
-					for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
-						virals.computeIfAbsent(viral, k -> new ArrayList<>()).add(dpRight.get(viral));
-				}
-				
-				// Perform the calculation
-				double accumulator = 0.0;
-				boolean allIsNonNull = true;
-				boolean allIsMissing = true;
-				for (int i = 0; i < rightItems.length; i++)
-				{
-					if (values[i].isNull())
-						allIsNonNull = false;
-					else
+					// Perform the calculation
+					double accumulator = 0.0;
+					boolean allIsNonNull = true;
+					boolean allIsMissing = true;
+					for (int i = 0; i < rightItems.length; i++)
 					{
-						double value = ((Number) values[i].get()).doubleValue();
-						if (!rule.isPlusSign(rightItems[i]))
-							value *= -1;	
-						accumulator += value;
+						if (values[i].isNull())
+							allIsNonNull = false;
+						else
+						{
+							double value = ((Number) values[i].get()).doubleValue();
+							if (!rule.isPlusSign(rightItems[i]))
+								value *= -1;	
+							accumulator += value;
+						}
+
+						if (lineages[i] != LINEAGE_MISSING)
+							allIsMissing = false;
 					}
+					
+					ScalarValue<?, ?, ?, ?> aggResult;
+					if (!allIsNonNull)
+						aggResult = NullValue.instanceFrom(measure);
+					else
+						aggResult = INTEGERDS.isAssignableFrom(measure.getVariable().getDomain())
+								? IntegerValue.of(round(accumulator))
+								: createNumberValue(accumulator);
+					
+					DataPointBuilder builder = new DataPointBuilder(keyValues, DONT_SYNC)
+							.add(codeId, code)
+							.add(measure, aggResult);
+					for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
+						builder = builder.add(viral, computeViral(virals.get(viral)));
+					
+					DataPoint dp = builder.build(LineageNode.of(this, lineages), structure);
 
-					if (lineages[i] != LINEAGE_MISSING)
-						allIsMissing = false;
+					// Depending on mode, store the computed dp for use by other rules
+					if (mode == NON_NULL && !aggResult.isNull()
+							|| mode == NON_ZERO && !allIsMissing
+							|| mode.isPartial() && !allIsMissing
+							|| mode.isAlways())
+					{
+						computedDpGroup.put(code, dp);
+						
+						// Mode codes could now be computed with this new code result
+						Set<? extends CodeItem<?, ?, ?, ?>> dependingCodes = ruleset.getDependingRules(code).stream().map(Rule::getLeftCodeItem).collect(toSet());
+						for (CodeItem<?, ?, ?, ?> rightCode: dependingCodes)
+							if (!computedDpGroup.containsKey(rightCode)
+									&& canBeComputedNow(rightCode, ruleset, measure, computedCodes, originalDpGroup, computedDpGroup))
+								toCompute.add(rightCode);
+					}
+					
+					// Output the datapoint if the case
+					if (mode == NON_NULL && allIsNonNull
+						|| mode == NON_ZERO && accumulator != 0.0
+						|| mode.isPartial() && !allIsMissing
+						|| mode.isAlways())
+					{
+						LOGGER.trace("Created output datapoint {}", dp);
+						results.put(dp.getValues(Identifier.class), dp);
+					}
 				}
-				
-				ScalarValue<?, ?, ?, ?> aggResult;
-				if (!allIsNonNull)
-					aggResult = NullValue.instanceFrom(measure);
-				else
-					aggResult = INTEGERDS.isAssignableFrom(measure.getVariable().getDomain())
-							? IntegerValue.of(round(accumulator))
-							: createNumberValue(accumulator);
-				
-				DataPointBuilder builder = new DataPointBuilder(keyValues, DONT_SYNC)
-						.add(codeId, code)
-						.add(measure, aggResult);
-				for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
-					builder = builder.add(viral, computeViral(virals.get(viral)));
-				
-				DataPoint dp = builder.build(LineageNode.of(this, lineages), structure);
-
-				// Depending on mode, store the computed dp for use by other rules
-				if (mode == NON_NULL && !aggResult.isNull()
-						|| mode == NON_ZERO && !allIsMissing
-						|| mode == PARTIAL_NULL && !allIsMissing
-						|| mode == PARTIAL_ZERO && !allIsMissing
-						|| mode == ALWAYS_NULL
-						|| mode == ALWAYS_ZERO)
-					computedDpGroup.put(code, dp);
-
-				// Output the datapoint if the case
-				if (mode == NON_NULL && allIsNonNull
-					|| mode == NON_ZERO && accumulator != 0.0
-					|| mode == PARTIAL_NULL && !allIsMissing
-					|| mode == PARTIAL_ZERO && !allIsMissing
-					|| mode == ALWAYS_NULL
-					|| mode == ALWAYS_ZERO)
-					results.put(dp.getValues(Identifier.class), dp);
-				
-				// Mode codes could be computed with this new code result
-				Set<StringCodeItem> dependingCodes = ruleset.getDependingRules(code).stream().map(StringRule::getLeftCodeItem).collect(toSet());
-				for (StringCodeItem rightCode: dependingCodes)
-					if (!computedDpGroup.containsKey(rightCode)
-							&& canBeComputed(rightCode, ruleset, measure, computedCodes, originalDpGroup, computedDpGroup))
-						toCompute.add(rightCode);
-			}
-		});
-		
-		return new StreamWrapperDataSet(structure, () -> Utils.getStream(results.values()));
+			}); // forEach lambda end
+			
+			return Utils.getStream(results.values()).filter(Objects::nonNull);
+		}, dataset);
 	}
 
 	// TODO: Sample implementation tailored to the examples
@@ -307,11 +332,12 @@ public class HierarchyTransformation extends TransformationImpl
 		});
 	}
 
-	private boolean canBeComputed(StringCodeItem code, StringHierarchicalRuleSet ruleset, DataStructureComponent<Measure, ?, ?> measure,
-			Set<StringCodeItem> computedCodes, Map<ScalarValue<?, ?, ?, ?>, DataPoint> originalDpGroup, Map<ScalarValue<?, ?, ?, ?>, DataPoint> computedDpGroup)
+	private boolean canBeComputedNow(CodeItem<?, ?, ?, ?> code, HierarchicalRuleSet<?, ?, ?, ?> ruleset, DataStructureComponent<Measure, ?, ?> measure,
+			Set<? extends CodeItem<?, ?, ?, ?>> computedCodes, Map<CodeItem<?, ?, ?, ?>, DataPoint> originalDpGroup, Map<CodeItem<?, ?, ?, ?>, DataPoint> computedDpGroup)
 	{
-		StringRule rule = ruleset.getRulesFor(code).get(0);
-		Set<StringCodeItem> rightItems = rule.getRightCodeItems();
+		Rule<?, ?, ?> rule = ruleset.getRulesFor(code).get(0);
+		Set<? extends CodeItem<?, ?, ?, ?>> rightItems = rule.getRightCodeItems();
+		
 		boolean canBeComputedNow = false;
 		if (input == DATASET)
 			canBeComputedNow = rightItems.stream().allMatch(originalDpGroup::containsKey);
@@ -319,7 +345,7 @@ public class HierarchyTransformation extends TransformationImpl
 			canBeComputedNow = rightItems.stream().allMatch(c -> computedCodes.contains(c) ? computedDpGroup.containsKey(c) : originalDpGroup.containsKey(c));
 		else // if (input == RULE_PRIORITY)
 		{
-			SerPredicate<StringCodeItem> predicate = c -> {
+			SerPredicate<? super CodeItem<?, ?, ?, ?>> predicate = c -> {
 				if (computedCodes.contains(c))
 					return computedDpGroup.containsKey(c) && !computedDpGroup.get(c).getValue(measure).isNull() || originalDpGroup.containsKey(c);
 				else
@@ -338,6 +364,13 @@ public class HierarchyTransformation extends TransformationImpl
 		if (metadata.isDataSet())
 		{
 			DataSetMetadata opMeta = (DataSetMetadata) metadata;
+
+			if (opMeta.getMeasures().size() != 1)
+				throw new VTLSingletonComponentRequiredException(Measure.class, NUMBERDS, opMeta);
+			
+			DataStructureComponent<Measure, ?, ?> measure = opMeta.getMeasures().iterator().next();
+			if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
+				throw new VTLIncompatibleTypesException("hierarchy", measure, NUMBERDS);
 			
 			HierarchicalRuleSet<?, ?, ?, ?> ruleset = scheme.findHierarchicalRuleset(rulesetID);
 			if (ruleset != null)
@@ -348,15 +381,13 @@ public class HierarchyTransformation extends TransformationImpl
 				DataStructureComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? opMeta.getComponent(id) : opMeta.getComponent(ruleset.getRuleId()))
 						.orElseThrow(() -> new VTLMissingComponentsException(id, opMeta.getIDs()));
 				
+				Set<CodeItem<?, ?, ?, ?>> uniqueLeft = new HashSet<>();
+				for (Rule<?, ?, ?> rule: ruleset.getRules())
+					if (!uniqueLeft.add(rule.getLeftCodeItem()))
+						throw new UnsupportedOperationException("Multiple rules for the same code not implemented");
+						
 				if (!ruleset.getDomain().isAssignableFrom(idComp.getVariable().getDomain()))
 					throw new VTLIncompatibleTypesException("hierarchy", idComp, ruleset.getDomain());
-				
-				if (opMeta.getMeasures().size() != 1)
-					throw new VTLSingletonComponentRequiredException(Measure.class, NUMBERDS, opMeta);
-				
-				DataStructureComponent<Measure, ?, ?> measure = opMeta.getMeasures().iterator().next();
-				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
-					throw new VTLIncompatibleTypesException("hierarchy", measure, NUMBERDS);
 			}
 			else
 				throw new VTLException("Hierarchical ruleset " + rulesetID + " not found.");

@@ -40,4 +40,16 @@ public interface SerPredicate<T> extends Predicate<T>, Serializable
 	{
 		return a -> !test(a);
 	}
+	
+	@Override
+	public default SerPredicate<T> and(Predicate<? super T> other)
+	{
+		return (t) -> test(t) && other.test(t);
+	}
+	
+	@Override
+	public default SerPredicate<T> or(Predicate<? super T> other)
+	{
+		return (t) -> test(t) || other.test(t);
+	}
 }
