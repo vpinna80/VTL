@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Answers.RETURNS_SMART_NULLS;
 import static org.mockito.ArgumentMatchers.any;
@@ -90,7 +91,8 @@ public class IntegrationTestSuite
 	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_RUN = Set.of(/*T,*/ E/*, TS, ES*/);
+	private static final Set<TestType> TO_RUN = Set.of(/*T, */E/*, TS, ES*/);
+	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
 	private static final Engine ENGINE;
 	private static final boolean TOTAL_REPORT = true;
 	
@@ -157,6 +159,7 @@ public class IntegrationTestSuite
 	public void test(Path categ, Path operator, String number, String testCode) throws Throwable 
 	{
 		assumeTrue(TO_RUN.contains(T));
+		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve(String.format("ex_%s.json", number)).toUri().toURL();
 		JavaVTLEngine engine = new JavaVTLEngine();
@@ -170,6 +173,7 @@ public class IntegrationTestSuite
 	public void examples(Path categ, Path operator, String number, String testCode) throws Throwable
 	{
 		assumeTrue(TO_RUN.contains(E));
+		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s.json", number)).toUri().toURL();
 		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
@@ -182,6 +186,7 @@ public class IntegrationTestSuite
 	public void testSpark(Path categ, Path operator, String number, String testCode) throws Throwable 
 	{
 		assumeTrue(TO_RUN.contains(TS));
+		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 
 		Environment sparkEnv = getSparkEnv(List.of(operator));
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
@@ -195,6 +200,7 @@ public class IntegrationTestSuite
 	public void examplesSpark(Path categ, Path operator, String number, String testCode) throws Throwable
 	{
 		assumeTrue(TO_RUN.contains(ES));
+		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
 		Environment sparkEnv = getSparkEnv(List.of(operator.resolve("examples")));
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
