@@ -24,6 +24,7 @@ import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,6 +77,8 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	private static final long serialVersionUID = 1L;
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
 	private static final Map<Entry<String, String>, VTLSession> SESSIONS = new HashMap<>();
+	private static final Set<String> EXCLUDED_OPERATORS = Set.of("Pivoting", "Random", "Hierarchical roll-up", "Check datapoint", 
+			"Check hierarchy", "Persistent assignment", "Duration to number days", "Fill time series", "Number days to duration");
 	
 	private final int nInputs;
 	private final String[][] inputs;
@@ -93,7 +97,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	{
 		try (BufferedReader reader = getReader(category))
 		{
-			return reader.lines().collect(toList());
+			return reader.lines().filter(not(EXCLUDED_OPERATORS::contains)).collect(toList());
 		}
 	}
 	

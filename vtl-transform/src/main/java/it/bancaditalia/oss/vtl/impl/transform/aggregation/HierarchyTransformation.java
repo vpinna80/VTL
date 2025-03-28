@@ -319,7 +319,7 @@ public class HierarchyTransformation extends TransformationImpl
 		}, dataset);
 	}
 
-	// TODO: Sample implementation tailored to the examples
+	// TODO: This is only a sample implementation tailored to the examples
 	private static ScalarValue<?, ?, ?, ?> computeViral(List<ScalarValue<?, ?, ?, ?>> list)
 	{
 		return min(list, (v1, v2) -> {
