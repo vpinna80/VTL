@@ -41,22 +41,30 @@ VTLSession <- R6Class("VTLSession",
       #' This method should not be called by the application.
       #' @param name the name of the session
       #' The name to identify this session
-      initialize = function (name = character(0)) {
-          if (!is.character(name) || length(name) != 1 || nchar(name) == 0)
-            stop("name must be a non-empty character vector with exactly 1 element")
-          self$name <- name
-          private$env <- new.env(parent = emptyenv())
-        }, 
+      initialize = function (name = character(0), category = character(0)) {
+        if (!is.character(name) || length(name) != 1 || nchar(name) == 0)
+          stop("name must be a non-empty character vector with exactly 1 element")
+        
+        self$name <- name
+        private$env <- new.env(parent = emptyenv())
+        
+        if (is.character(category) && length(category) == 1 && nchar(category) != 0) {
+          private$instance <- exampleEnv$createSession(category, operator)
+          self$text <- private$instance$getOriginalCode()
+          private$updateInstance()$compile()
+          private$isDemo <- T
+		}
+      }, 
 
       #' @description
       #' Terminates this VTL session.
       #' @details 
       #' This method should not be called by the application.
       finalize = function() { 
-          finalized <- T
-          private$clearInstance() 
-          return(invisible()) 
-        },
+        finalized <- T
+        private$clearInstance() 
+        return(invisible()) 
+      },
 
       #' @description
       #' Check if this session was compiled.
@@ -233,10 +241,12 @@ VTLSession <- R6Class("VTLSession",
           private$checkInstance()$getEnvironments()
         }
     ),
+    
     private = list(
       instance = NULL,
       env = NULL,
       finalized = F,
+      isDemo = F,
       
       checkInstance = function() {
         if (private$finalized)
@@ -248,8 +258,8 @@ VTLSession <- R6Class("VTLSession",
       },
 
       updateInstance = function() {
-        if (private$finalized) {
-          stop('Session ', self$name, ' was finalized')
+        if (private$finalized || private$isDemo) {
+          stop('Session ', self$name, ' is a example session or it was already finalized')
         } else if (is.null(private$instance)) {
           private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
         } else {

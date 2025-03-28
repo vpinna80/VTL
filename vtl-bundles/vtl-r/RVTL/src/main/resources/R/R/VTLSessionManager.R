@@ -80,6 +80,18 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
               rm(list = sessionID, envir = private$sessions)
               return(invisible())
             },
+
+            #' @description
+            #' Initializes all VTL example sessions.
+            initExampleSessions = function() {
+              for (category in exampleEnv$getCategories()) {
+                for (operator in exampleEnv$getOperators(category)) {
+		          assign(operator, VTLSession$new(operator, category), envir = private$sessions)
+		        }
+	          }
+              
+              return(ls(envir = private$sessions)[[1]])
+            },
             
             #' @description
             #' If the named VTL session exists, return it, otherwise create a new VTL session with the given name and possibly code.

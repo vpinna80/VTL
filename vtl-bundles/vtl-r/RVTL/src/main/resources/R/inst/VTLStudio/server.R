@@ -132,6 +132,21 @@ vtlServer <- function(input, output, session) {
     }
   )
 
+  observe({
+	VTLSessionManager$clear()
+	
+	if (input$demo) {
+      exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
+      
+      VTLSessionManager$kill('test')
+      name <- VTLSessionManager$initExampleSessions()
+	} else {
+	  name <- 'test'
+	}
+	
+	updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = name)
+  }) |> bindEvent(input$demomode)
+  
   # load theme list
   observe({
     updateSelectInput(inputId = 'editorTheme', choices = input$themeNames)
