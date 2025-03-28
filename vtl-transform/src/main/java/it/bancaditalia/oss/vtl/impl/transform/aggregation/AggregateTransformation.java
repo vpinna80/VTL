@@ -37,16 +37,19 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.filtering;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.SerPredicate.not;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.min;
 import static java.util.Collections.singleton;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -153,6 +156,7 @@ public class AggregateTransformation extends TransformationImpl
 		if (aggregation == COUNT)
 			combined = collectingAndThen(counting(), v -> Map.of(COUNT_MEASURE, IntegerValue.of(v)));
 		else
+			// Create a single collector that combines each collector that aggregates a measure into one
 			for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
 				if (combined == null)
 					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(), v -> new HashMap<>(Map.of(measure, v)))));
@@ -179,20 +183,31 @@ public class AggregateTransformation extends TransformationImpl
 		if (metadata.isDataSet())
 		{
 			DataSetMetadata structure = (DataSetMetadata) metadata; 
+
+			// Add collectors for Viral Attributes when the aggregation produces a dataset 
+			for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
+			{
+				combined = teeing(mapping(dp -> dp.get(viral), collectingAndThen(toList(), vals -> new SimpleEntry<>(viral, computeViral(vals)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
+			}
+			
 			DataSet result = (DataSet) dataset.aggregate(structure, groupIDs, combined, (map, lineages, keyValues) -> {
 				DataPointBuilder builder = new DataPointBuilder(keyValues);
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> measuresMap = new HashMap<>();
+				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> viralsMap = new HashMap<>();
+				for (DataStructureComponent<?, ?, ?> comp: map.keySet())
+					(comp.is(Measure.class) ? measuresMap : viralsMap).put(comp, map.get(comp));
 				if (targetName == null)
-					for (DataStructureComponent<?, ?, ?> measure: map.keySet())
-						builder = builder.add(getCompFor(measure, repo, structure), map.get(measure));
-				else if (map.size() == 1)
+					for (DataStructureComponent<?, ?, ?> measure: measuresMap.keySet())
+						builder = builder.add(getCompFor(measure, repo, structure), measuresMap.get(measure));
+				else if (measuresMap.size() == 1)
 				{
 					DataStructureComponent<Measure, ?, ?> srcComp = origStructure.getMeasures().iterator().next();
-					builder = builder.add(getCompFor(srcComp, repo, structure), map.values().iterator().next());
+					builder = builder.add(getCompFor(srcComp, repo, structure), measuresMap.values().iterator().next());
 				}
 				else
 					throw new IllegalStateException();
 				
-				return builder.build(LineageNode.of(this, lineages), structure);
+				return builder.addAll(viralsMap).build(LineageNode.of(this, lineages), structure);
 			});
 			
 			if (having != null)
@@ -210,6 +225,19 @@ public class AggregateTransformation extends TransformationImpl
 						
 			return dataset.aggregate(metadata, emptySet(), combined, (map, x, y) -> domain.cast(map.values().iterator().next()));
 		}
+	}
+
+	// TODO: Sample implementation tailored to the examples
+	private static ScalarValue<?, ?, ?, ?> computeViral(List<? extends ScalarValue<?, ?, ?, ?>> list)
+	{
+		return min(list, (v1, v2) -> {
+			if (v1.isNull())
+				return -1;
+			else if (v2.isNull())
+				return 1;
+			else
+				return v1.compareTo(v2);
+		});
 	}
 	
 	private DataStructureComponent<?, ?, ?> getCompFor(DataStructureComponent<?, ?, ?> src, MetadataRepository repo, DataSetMetadata metadata)
