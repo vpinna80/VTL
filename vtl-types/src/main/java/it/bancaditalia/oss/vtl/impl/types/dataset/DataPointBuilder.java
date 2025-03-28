@@ -227,8 +227,8 @@ public class DataPointBuilder implements Serializable
 				if (c.is(Attribute.class))
 					values.putIfAbsent(c, NullValue.instanceFrom(c));
 
-			if (LOGGER.isTraceEnabled())
-			{
+//			if (LOGGER.isTraceEnabled())
+//			{
 				values.keySet().stream()
 					.filter(c -> !structure.contains(c))
 					.findAny()
@@ -240,7 +240,7 @@ public class DataPointBuilder implements Serializable
 				missing.removeAll(values.keySet());
 				if (missing.size() > 0)
 					throw new VTLMissingComponentsException(missing, values);
-			}
+//			}
 			
 			this.values = values;
 			hashCode = values.hashCode();

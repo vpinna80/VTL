@@ -259,38 +259,37 @@ public class JoinTransformation extends TransformationImpl
 		// Find out which component must be renamed inside each dataset
 		Map<JoinOperand, DataSet> datasets = renameBefore(repo, values);
 
+		// Structure before applying any clause
+		Map<JoinOperand, DataSetMetadata> datasetsMeta = datasets.keySet().stream().collect(toMapWithValues(k -> datasets.get(k).getMetadata()));
+		DataSetMetadata structureBefore = virtualStructure(repo, datasetsMeta, null, false);
+		// fictious datapoints filled with nulls for when datapoints from some datasets are missing
+		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> filler = structureBefore.stream()
+				.filter(k -> k.is(NonIdentifier.class))
+				.collect(toMapWithValues(k -> NullValue.instance(k.getVariable().getDomain())));
+
 		SerCollector<DataPoint, ?, DataPoint> unifier = SerCollector.of(
-				() -> new SimpleEntry<>(new DataPointBuilder(), new ConcurrentLinkedQueue<>()),
-				(a, dp) -> { a.getKey().addAll(dp); a.getValue().add(dp.getLineage()); },
-				(a, b) -> { throw new UnsupportedOperationException(); },
-				a -> a.getKey().build(LineageNode.of(this, a.getValue().toArray(Lineage[]::new)), datasets.values().iterator().next().getMetadata()),
+				() -> new SimpleEntry<>(new ConcurrentHashMap<>(filler), new ConcurrentLinkedQueue<>()),
+				(entry, dp) -> { entry.getKey().putAll(dp); entry.getValue().add(dp.getLineage()); },
+				(entryLeft, entryRight) -> { throw new UnsupportedOperationException(); },
+				entry -> new DataPointBuilder(entry.getKey(), DONT_SYNC)
+						.build(LineageNode.of(this, entry.getValue().toArray(Lineage[]::new)), structureBefore),
 				EnumSet.of(CONCURRENT, UNORDERED)
 			);
 		
-		// Structure before applying any clause
-		DataSetMetadata structureBefore = datasets.values().stream().map(DataSet::getMetadata).flatMap(Set::stream).collect(toDataStructure());
 
 		LOGGER.debug("Joining all datapoints");
 
-		return new FunctionDataSet<>(structureBefore, dps -> {
-			List<Stream<DataPoint>> streams = datasets.values().stream().map(DataSet::stream).collect(toList());
-
+		return new FunctionDataSet<>(structureBefore, dss -> {
 			// TODO: Memory hungry!!! Find some way to stream instead of building this big
 			// index collection
 			LOGGER.debug("Indexing all datapoints");
 
-			try
+			try (Stream<DataPoint> allDpsStream = dss.stream().map(DataSet::stream).collect(concatenating(false)))
 			{
-				Collection<DataPoint> allDps = streams.stream()
-					.collect(concatenating(false))
+				return allDpsStream
 					.collect(groupingByConcurrent(dp -> dp.getValues(Identifier.class), unifier))
-					.values();
-
-				return allDps.stream();
-			}
-			finally
-			{
-				streams.forEach(Stream::close);
+					.values()
+					.stream();
 			}
 		}, datasets.values());
 	}
