@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.number;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
@@ -40,7 +41,6 @@ import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.NumericIntOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -88,8 +88,7 @@ public class NumericIntTransformation extends BinaryTransformation
 				.collect(toSet());
 		
 		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> integer = INTEGERDS.cast(scalar);
-		String lineageDescriptor = toString();
-		return dataset.mapKeepingKeys(dsMeta, lineage -> LineageNode.of(lineageDescriptor, lineage), dp -> { 
+		return dataset.mapKeepingKeys(dsMeta, lineageEnricher(this), dp -> { 
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp.getValues(Attribute.class));
 				for (VTLAlias name: measureNames)
 				{

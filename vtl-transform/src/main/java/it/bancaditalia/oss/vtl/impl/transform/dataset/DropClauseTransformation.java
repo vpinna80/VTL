@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.joining;
@@ -34,7 +35,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -67,7 +67,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), lineage -> LineageNode.of(this, lineage), dp -> {
+		return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), lineageEnricher(this), dp -> {
 					Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(dp.getValues(NonIdentifier.class));
 					newVals.keySet().removeAll(toDrop);
 					return newVals;

@@ -22,13 +22,12 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
@@ -63,7 +62,6 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
@@ -86,7 +84,6 @@ import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerSupplier;
 import it.bancaditalia.oss.vtl.util.SerTriFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
-import it.bancaditalia.oss.vtl.util.Triple;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public abstract class AbstractDataSet implements DataSet
@@ -115,7 +112,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet membership(VTLAlias alias)
+	public DataSet membership(VTLAlias alias, SerUnaryOperator<Lineage> lineageOperator)
 	{
 		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
@@ -131,7 +128,7 @@ public abstract class AbstractDataSet implements DataSet
 				return map;
 			};
 		
-		return mapKeepingKeys(membershipStructure, lineage -> LineageNode.of("#" + alias, lineage), operator);
+		return mapKeepingKeys(membershipStructure, lineageOperator, operator);
 	}
 	
 	@Override
@@ -299,37 +296,24 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
+		// if the result is a dataset, then we are performing a group by
 		if (metadata.isDataSet())
-			return new AbstractDataSet((DataSetMetadata) metadata) {
-				private static final long serialVersionUID = 1L;
-				private transient Set<Triple<T, Lineage[], Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>> cache = null;
-				
-				@Override
-				protected Stream<DataPoint> streamDataPoints()
+			return new StreamWrapperDataSet((DataSetMetadata) metadata, () -> {
+				try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
 				{
-					createCache(keys, groupCollector);
+					Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Entry<T, List<Lineage>>> result = stream.collect(
+							groupingByConcurrent(dp -> {
+								Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = dp.getValues(keys, Identifier.class);
+								return keyValues;
+							}, teeing(groupCollector, mapping(DataPoint::getLineage, toList()), SimpleEntry::new)));
 					
-					return Utils.getStream(cache).map(finisher::apply).map(DataPoint.class::cast);
+					return Utils.getStream(result)
+						.map(splitting((k, e) -> (DataPoint) finisher.apply(e.getKey(), e.getValue(), k)));
 				}
-	
-				private synchronized void createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-						SerCollector<DataPoint, ?, T> groupCollector)
-				{
-					if (cache == null)
-						try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
-						{
-							SerCollector<DataPoint, ?, Entry<T, Lineage[]>> collWithLineage = teeing(groupCollector, mapping(DataPoint::getLineage, collectingAndThen(toSet(), s -> s.toArray(Lineage[]::new))), SimpleEntry::new);
-	
-							cache = stream.collect(collectingAndThen(groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), collWithLineage), map -> {
-									return Utils.getStream(map)
-										.map(splitting((k, v) -> new Triple<>(v.getKey(), v.getValue(), k)))
-										.collect(toConcurrentSet());
-								}));
-						}
-				}
-			};
+			});
+		// Otherwise the result is a scalar
 		else
 			try (Stream<DataPoint> stream = stream())
 			{
@@ -352,7 +336,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 	
 	@Override
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean check)
+	public DataSet union(List<DataSet> others, SerUnaryOperator<Lineage> lineageOp, boolean check)
 	{
 		// Fast track when the functional aspect is preserved
 		if (!check)
@@ -372,7 +356,7 @@ public abstract class AbstractDataSet implements DataSet
 		{
 			results.add(stream
 					.peek(dp -> seen.add(dp.getValues(ids)))
-					.map(dp -> dp.enrichLineage(l -> lineageOp.apply(dp)))
+					.map(dp -> dp.enrichLineage(lineageOp))
 					.collect(toConcurrentSet())
 			);
 		}
@@ -392,7 +376,7 @@ public abstract class AbstractDataSet implements DataSet
 
 				results.add(stream2
 						.filter(dp -> seen.add(dp.getValues(ids)))
-						.map(dp -> dp.enrichLineage(l -> lineageOp.apply(dp)))
+						.map(dp -> dp.enrichLineage(lineageOp))
 						.collect(toConcurrentSet()));
 			}
 		

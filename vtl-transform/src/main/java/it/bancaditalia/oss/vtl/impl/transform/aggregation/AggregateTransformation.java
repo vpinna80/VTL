@@ -74,6 +74,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
 import it.bancaditalia.oss.vtl.model.data.Component;
@@ -207,7 +208,7 @@ public class AggregateTransformation extends TransformationImpl
 				else
 					throw new IllegalStateException();
 				
-				return builder.addAll(viralsMap).build(LineageNode.of(this, lineages), structure);
+				return builder.addAll(viralsMap).build(LineageNode.of(this, LineageCall.of(lineages)), structure);
 			});
 			
 			if (having != null)

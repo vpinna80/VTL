@@ -40,6 +40,7 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
@@ -57,7 +58,6 @@ import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -101,8 +101,7 @@ public class ReplaceTransformation extends TransformationImpl
 			DataSetMetadata structure = dataset.getMetadata();
 			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getMetadata().getMeasures();
 			
-			String lineageString = "replace " + storedPattern + " with " + replace;
-			return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(lineageString, lineage), dp -> measures.stream()
+			return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> measures.stream()
 					.map(measure -> new SimpleEntry<>(measure, replaceSingle(replace, storedPattern, dp.get(measure))))
 					.collect(entriesToMap())
 			); 

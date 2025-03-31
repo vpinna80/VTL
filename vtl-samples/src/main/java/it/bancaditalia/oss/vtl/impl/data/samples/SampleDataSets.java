@@ -58,7 +58,7 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -133,7 +133,7 @@ public enum SampleDataSets implements DataSet
 						.map(toEntry(
 							var -> var.getComponent(counts.get(var.getType()).getAndIncrement()),
 							var -> SampleValues.getValues(var.getType(), var.getIndex()).get(dpIdx) 
-						)).collect(toDataPoint(LineageNode.of("sample"), structure));
+						)).collect(toDataPoint(LineageExternal.of("sample"), structure));
 				}));
 	}
 
@@ -151,7 +151,7 @@ public enum SampleDataSets implements DataSet
 			{
 				return dataset.stream()
 						.filter(dp -> dp.matches(keyValues))
-						.map(dp -> new DataPointBuilder(dp).delete(keyValues.keySet()).build(LineageNode.of("SUB" + keyValues, dp.getLineage()), newMetadata));
+						.map(dp -> new DataPointBuilder(dp).delete(keyValues.keySet()).build(lineageOperator.apply(dp.getLineage()), newMetadata));
 			}
 		};
 }
@@ -171,9 +171,9 @@ public enum SampleDataSets implements DataSet
 		return dataset.getMetadata();
 	}
 
-	public DataSet membership(VTLAlias component)
+	public DataSet membership(VTLAlias component, SerUnaryOperator<Lineage> lineageOp)
 	{
-		return dataset.membership(component);
+		return dataset.membership(component, lineageOp);
 	}
 
 	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias name)
@@ -213,8 +213,9 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			SerCollector<DataPoint, ?, T> groupCollector, SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
+			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector, 
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
 		return dataset.aggregate(metadata, keys, groupCollector, finisher);
 	}
@@ -227,9 +228,9 @@ public enum SampleDataSets implements DataSet
 	}
 	
 	@Override
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean check)
+	public DataSet union(List<DataSet> others, SerUnaryOperator<Lineage> lineageOp, boolean check)
 	{
-		return dataset.union(lineageOp, others);
+		return dataset.union(others, lineageOp);
 	}
 	
 	@Override

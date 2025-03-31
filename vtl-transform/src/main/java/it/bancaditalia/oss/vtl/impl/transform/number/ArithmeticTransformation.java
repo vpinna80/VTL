@@ -60,6 +60,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -72,6 +73,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class ArithmeticTransformation extends BinaryTransformation
 {
@@ -120,8 +122,8 @@ public class ArithmeticTransformation extends BinaryTransformation
 			reverseIf(operator != DIV && bothIntegers.test(comp) ? operator::applyAsInteger : operator::applyAsNumber, !datasetIsLeftOp)
 				.apply(dp.get(comp), scalar);
 		
-		String lineageDescriptor = datasetIsLeftOp ? "x" + operator.toString() + scalar : scalar + operator.toString() + "x"; 
-		return dataset.mapKeepingKeys(dsMeta, lineage -> LineageNode.of(lineageDescriptor, lineage), dp -> { 
+		SerUnaryOperator<Lineage> enricher = LineageNode.lineageEnricher(this);
+		return dataset.mapKeepingKeys(dsMeta, lineage -> enricher.apply(LineageCall.of(lineage)), dp -> { 
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
 				for (VTLAlias name: measureNames)
 				{

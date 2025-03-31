@@ -29,6 +29,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.HashMap;
@@ -43,12 +44,12 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -56,6 +57,7 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class CheckTransformation extends TransformationImpl
 {
@@ -95,7 +97,7 @@ public class CheckTransformation extends TransformationImpl
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
 		if (imbalanceExpr == null)
-			dataset = dataset.mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), dp -> {
+			dataset = dataset.mapKeepingKeys(metadata, lineageEnricher(this), dp -> {
 				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
 				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
 				result.put(ERRORCODE.get(), NullValue.instance(STRINGDS));
@@ -107,6 +109,7 @@ public class CheckTransformation extends TransformationImpl
 			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(scheme);
 			DataStructureComponent<Measure, ?, ?> imbalanceMeasure = imbalanceDataset.getMetadata().getSingleton(Measure.class);
 			
+			SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 			dataset = dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> {
 				return new DataPointBuilder()
 					.addAll(dp1.getValues(Identifier.class))
@@ -114,11 +117,11 @@ public class CheckTransformation extends TransformationImpl
 					.add(IMBALANCE, NUMBERDS.cast(dp2.get(imbalanceMeasure)))
 					.add(ERRORCODE, NullValue.instance(STRINGDS))
 					.add(ERRORLEVEL, NullValue.instance(INTEGERDS))
-					.build(LineageNode.of("check " + operand, dp1.getLineage()), metadata);
+					.build(enricher.apply(dp1.getLineage()), metadata);
 			}, false);
 		}
 		
-		return output == ALL ? dataset : dataset.filter(dp -> dp.getValue(BOOL_VAR) != TRUE, l -> LineageNode.of(this, l));
+		return output == ALL ? dataset : dataset.filter(dp -> dp.getValue(BOOL_VAR) != TRUE, lineageEnricher(this));
 	}
 	
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)

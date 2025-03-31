@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Objects.requireNonNull;
 
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -49,7 +49,7 @@ public class VarIDOperand implements LeafTransformation
 		if (vtlValue.isDataSet())
 		{
 			DataSet dataset = (DataSet) vtlValue;
-			vtlValue = dataset.mapKeepingKeys(dataset.getMetadata(), lineage -> LineageNode.of(this, lineage), identity());
+			vtlValue = dataset.mapKeepingKeys(dataset.getMetadata(), lineageEnricher(this), identity());
 		}
 		
 		return vtlValue;

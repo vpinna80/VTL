@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIOD;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static java.util.Collections.singletonMap;
 import static java.util.Locale.ENGLISH;
 
@@ -43,7 +44,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -104,7 +104,7 @@ public class CastTransformation extends UnaryTransformation
 				.addComponent(measure)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(this, lineage), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
 	}
 
 	@Override

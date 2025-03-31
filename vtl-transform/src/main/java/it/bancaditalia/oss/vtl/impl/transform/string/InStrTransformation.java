@@ -42,6 +42,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static java.util.Collections.singletonMap;
 
 import java.util.HashSet;
@@ -58,7 +59,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -116,8 +116,7 @@ public class InStrTransformation extends TransformationImpl
 					.build();
 			DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
-			String lineageString = "instr with " + pattern;
-			return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(lineageString, lineage), dp -> singletonMap(INT_MEASURE, 
+			return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(INT_MEASURE, 
 							instrScalar(dp.get(measure), pattern, startPos, nOcc))); 
 		}
 		else

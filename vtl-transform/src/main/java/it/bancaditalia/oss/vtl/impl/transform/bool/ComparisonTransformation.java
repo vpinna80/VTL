@@ -21,7 +21,12 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineagesEnricher;
 import static java.util.Collections.singletonMap;
+
+import java.util.Collection;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +38,6 @@ import it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -41,6 +45,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -48,6 +53,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class ComparisonTransformation extends BinaryTransformation
 {
@@ -107,8 +113,9 @@ public class ComparisonTransformation extends BinaryTransformation
 			else
 				extractor = dp -> operator.apply(castedScalar, dp.get(measure));
 
+		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, 
-				lineage -> LineageNode.of(this, lineage), 
+				lineage -> enricher.apply(lineage), 
 				dp -> singletonMap(resultMeasure, extractor.apply(dp)));
 	}
 
@@ -128,12 +135,13 @@ public class ComparisonTransformation extends BinaryTransformation
 		else
 			casted = (l, r) -> operator.apply(rDomain.cast(l), r);
 		
+		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
 		return left.mappedJoin((DataSetMetadata) metadata, right,
 				(dpl, dpr) -> new DataPointBuilder()
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
 						.add(resultMeasure, casted.apply(dpl.get(lMeasure), dpr.get(rMeasure)))
-						.build(LineageNode.of(operator.toString(), dpl.getLineage(), dpr.getLineage()), (DataSetMetadata) metadata), false);
+						.build(enricher.apply(List.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata), false);
 	}
 
 	@Override

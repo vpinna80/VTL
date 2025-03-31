@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
@@ -32,7 +33,6 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -56,17 +56,13 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		String lineageString = subspace.keySet().stream()
-				.map(VTLAlias::toString)
-				.collect(joining(", ", "sub ", ""));
-		
 		DataSet operand = (DataSet) getThisValue(scheme);
 		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = subspace.entrySet().stream()
 				.map(keepingValue(operand::getComponent))
 				.map(keepingValue(Optional::get))
 				.collect(toConcurrentMap(e -> e.getKey().asRole(Identifier.class), Entry::getValue));
 		
-		return operand.subspace(subspaceKeyValues, lineage -> LineageNode.of(lineageString, lineage));
+		return operand.subspace(subspaceKeyValues, lineageEnricher(this));
 	}
 	
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

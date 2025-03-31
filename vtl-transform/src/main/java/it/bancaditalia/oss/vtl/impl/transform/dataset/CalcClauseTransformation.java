@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentMap;
@@ -73,6 +74,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class CalcClauseTransformation extends DatasetClauseTransformation
@@ -191,8 +193,6 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 				.removeComponents(analyticClauses.stream().map(CalcClauseItem::getAlias).collect(toSet()))
 				.build();
 		
-		String lineageString = calcClauses.stream().map(CalcClauseItem::getAlias).map(VTLAlias::toString).collect(joining(", ", "calc ", ""));
-		
 		DataStructureComponent<Identifier, ?, ?> timeId = metadata.getIDs().stream()
 					.map(c -> c.asRole(Identifier.class))
 					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
@@ -202,7 +202,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		// preserve original dataset if no nonAnalyticsClauses are present
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
-			: operand.mapKeepingKeys(nonAnalyticResultMetadata, lineage -> LineageNode.of(lineageString, lineage), dp -> {
+			: operand.mapKeepingKeys(nonAnalyticResultMetadata, lineageEnricher(this), dp -> {
 					DatapointScope dpSession = new DatapointScope(repo, dp, operand.getMetadata(), timeId);
 					
 					// place calculated components (eventually overriding existing ones) 
@@ -221,7 +221,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 
 		// TODO: more efficient way to compute this instead of reduction by joining
 		return analyticClauses.stream()
-			.map(calcAndRename(metadata, scheme, lineage -> LineageNode.of(lineageString, lineage)))
+			.map(calcAndRename(metadata, scheme, lineageEnricher(this)))
 			.reduce(this::joinByIDs)
 			.map(anResult -> joinByIDs(anResult, nonAnalyticResult))
 			.orElse(nonAnalyticResult);
@@ -254,8 +254,9 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	
 	private DataSet joinByIDs(DataSet left, DataSet right)
 	{
+		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
 		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, 
-				(dpl, dpr) -> dpl.combine(dpr, (dp1, dp2) -> LineageNode.of(((LineageNode) dp1.getLineage()).getTransformation(), dp2.getLineage())), false);
+				(dpl, dpr) -> dpl.combine(dpr, (dp1, dp2) -> enricher.apply(dp1.getLineage(), dp2.getLineage())), false);
 	}
 
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

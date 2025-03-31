@@ -44,13 +44,13 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -60,6 +60,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class TimeShiftTransformation extends TimeSeriesTransformation
 {
@@ -80,9 +81,6 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 		DataSetMetadata dsMeta = dataset.getMetadata();
 		DataStructureComponent<Identifier, ?, ?> timeID = dsMeta.getComponents(Identifier.class, TIMEDS).iterator().next();
 		
-		String lineageString = "timeshift " + amount;
-		long amount = this.amount;
-		
 		SerCollector<TimeValue<?, ?, ?, ?>, ?, DurationValue> timesToFreq = SerCollector.of(TimeWithFreq::new, 
 				TimeWithFreq::setTime, TimeWithFreq::combine, TimeWithFreq::getDuration, EnumSet.noneOf(Characteristics.class));
 		
@@ -102,12 +100,13 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 			}).analytic(lineageEnricher(this), timeID, freqComp, clause, null, timesToFreq, null);
 
 		DataSetMetadata structure = (DataSetMetadata) metadata;
+		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 		return new FunctionDataSet<>(structure, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
 					.delete(timeID)
 					.delete(freqComp)
 					.add(timeID, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).add(((Frequency) dp.get(freqComp).get()).getScaledPeriod((int) amount)))
-					.build(LineageNode.of(lineageString, dp.getLineage()), structure)
+					.build(enricher.apply(dp.getLineage()), structure)
 				), dataset);
 	}
 

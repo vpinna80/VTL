@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.string;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static java.util.Collections.singletonMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
@@ -30,7 +31,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -70,7 +70,7 @@ public class StrlenTransformation extends UnaryTransformation
 				.addComponent(LEN_MEASURE)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(this, lineage), dp -> singletonMap(LEN_MEASURE, evalOnScalar(repo, dp.get(originalMeasure), metadata)));
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(LEN_MEASURE, evalOnScalar(repo, dp.get(originalMeasure), metadata)));
 	}
 
 	@Override

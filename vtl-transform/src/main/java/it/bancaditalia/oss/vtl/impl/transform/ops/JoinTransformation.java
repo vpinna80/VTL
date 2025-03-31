@@ -26,6 +26,8 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineagesEnricher;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.counting;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
@@ -49,7 +51,6 @@ import static it.bancaditalia.oss.vtl.util.Utils.tryWith;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
@@ -112,7 +113,10 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class JoinTransformation extends TransformationImpl
 {
@@ -250,7 +254,7 @@ public class JoinTransformation extends TransformationImpl
 					builder.add(comp, entry.getValue());
 				}
 
-				return builder.build(LineageNode.of("dealias", dp.getLineage()), metadata);
+				return builder.build(dp.getLineage(), metadata);
 			}));
 	}
 
@@ -267,12 +271,12 @@ public class JoinTransformation extends TransformationImpl
 				.filter(k -> k.is(NonIdentifier.class))
 				.collect(toMapWithValues(k -> NullValue.instance(k.getVariable().getDomain())));
 
+		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
 		SerCollector<DataPoint, ?, DataPoint> unifier = SerCollector.of(
-				() -> new SimpleEntry<>(new ConcurrentHashMap<>(filler), new ConcurrentLinkedQueue<>()),
+				() -> new SimpleEntry<>(new ConcurrentHashMap<>(filler), new ConcurrentLinkedQueue<Lineage>()),
 				(entry, dp) -> { entry.getKey().putAll(dp); entry.getValue().add(dp.getLineage()); },
 				(entryLeft, entryRight) -> { throw new UnsupportedOperationException(); },
-				entry -> new DataPointBuilder(entry.getKey(), DONT_SYNC)
-						.build(LineageNode.of(this, entry.getValue().toArray(Lineage[]::new)), structureBefore),
+				entry -> new DataPointBuilder(entry.getKey(), DONT_SYNC).build(enricher.apply(entry.getValue()), structureBefore),
 				EnumSet.of(CONCURRENT, UNORDERED)
 			);
 		
@@ -338,12 +342,13 @@ public class JoinTransformation extends TransformationImpl
 		DataSet finalResult = result;
 		DataSetMetadata dealiasedStructure = dealiased.build();
 		
+		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 		return new StreamWrapperDataSet(dealiasedStructure, () -> finalResult.stream().map(dp ->  
 			dp.entrySet().stream()
 				.map(keepingValue(applyIf(
 						comp -> !dealiasedStructure.contains(comp) && comp.getVariable().getAlias().isComposed(), 
 						comp -> comp.getRenamed(repo, comp.getVariable().getAlias().split().getValue())
-				))).collect(toDataPoint(LineageNode.of("unalias-after-join", dp.getLineage()), dealiasedStructure))
+				))).collect(toDataPoint(enricher.apply(dp.getLineage()), dealiasedStructure))
 			));
 	}
 
@@ -353,12 +358,13 @@ public class JoinTransformation extends TransformationImpl
 			.map(c -> c.getRenamed(repo, c.getVariable().getAlias().in(op.getId())))
 			.collect(toDataStructure());
 		
+		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 		return new FunctionDataSet<>(renamedStructure, ds -> ds.stream()
 			.map(dp -> new DataPointBuilder()
 				.addAll(dp.entrySet().stream()
 					.map(keepingValue(c -> c.getRenamed(repo, c.getVariable().getAlias().in(op.getId()))))
 					.collect(entriesToMap())
-				).build(LineageNode.of("rename-before-cross-join", dp.getLineage()), renamedStructure)
+				).build(enricher.apply(dp.getLineage()), renamedStructure)
 			), toJoin);
 	}
 
@@ -368,10 +374,11 @@ public class JoinTransformation extends TransformationImpl
 		Set<VTLAlias> lDsComponentNames = lDs.getMetadata().stream().map(DataStructureComponent::getVariable).map(Variable::getAlias).collect(toSet());
 		DataSetMetadata stepMetadata = rDs.getMetadata().stream().filter(component -> !lDsComponentNames.contains(component.getVariable().getAlias())).collect(toDataStructure());
 		
+		SerBiFunction<DataPoint, DataPoint, Lineage> enricher = LineageNode.lineage2Enricher(this).before(DataPoint::getLineage, DataPoint::getLineage);
 		DataSet stepResult = lDs.mapKeepingKeys(stepMetadata, identity(), dp -> {
 			var key = dp.getValuesByNames(usingNames);
 			if (index.containsKey(key))
-				return dp.combine(index.get(key), this::lineageCombiner);
+				return dp.combine(index.get(key), enricher);
 			else
 				return new DataPointBuilder(dp).addAll(resultMetadata.stream().filter(c -> !lDsComponentNames.contains(c.getVariable().getAlias())).collect(toMapWithValues(NullValue::instanceFrom)))
 						.build(dp.getLineage(), resultMetadata);
@@ -428,6 +435,7 @@ public class JoinTransformation extends TransformationImpl
 
 		LOGGER.debug("Joining all datapoints");
 
+		SerBiFunction<DataPoint, DataPoint, Lineage> enricher = LineageNode.lineage2Enricher(this).before(DataPoint::getLineage, DataPoint::getLineage);
 		result = new FunctionDataSet<>(structureBefore, dataset -> dataset.stream().peek(refDP -> LOGGER.trace("Joining {}", refDP)).map(refDP -> {
 			// Get all datapoints from other datasets (there is no more than 1 for each
 			// dataset)
@@ -447,7 +455,7 @@ public class JoinTransformation extends TransformationImpl
 							return null;
 						else
 						{
-							var dp = otherDPs.stream().reduce(refDP, (dp1, dp2) -> dp1.combine(dp2, this::lineageCombiner));
+							var dp = otherDPs.stream().reduce(refDP, (dp1, dp2) -> dp1.combine(dp2, enricher));
 							return new DataPointBuilder(dp)
 									.addAll(structureBefore.stream()
 											.filter(Predicate.not(dp::containsKey))
@@ -459,7 +467,7 @@ public class JoinTransformation extends TransformationImpl
 						// Join all datapoints
 						DataPoint accDP = refDP;
 						for (DataPoint otherDP : otherDPs)
-							accDP = accDP.combine(otherDP, this::lineageCombiner);
+							accDP = accDP.combine(otherDP, enricher);
 
 						LOGGER.trace("Joined {}", accDP);
 						return accDP;
@@ -489,29 +497,6 @@ public class JoinTransformation extends TransformationImpl
 		LOGGER.debug("Joining using {}", usingComponents);
 
 		throw new UnsupportedOperationException();
-	}
-
-	private Lineage lineageCombiner(DataPoint dp1, DataPoint dp2)
-	{
-		Lineage l1 = dp1.getLineage();
-		Lineage l2 = dp2.getLineage();
-
-		String joinString = operands.stream().map(o -> o.getId() != null ? o.getId().toString() : o.getOperand().toString()).collect(joining(", ", operator.toString().toLowerCase() + "(", ")"));
-
-		Collection<Lineage> s1, s2;
-		if (l1 instanceof LineageNode && joinString == ((LineageNode) l1).getTransformation())
-			s1 = ((LineageNode) l1).getSourceSet().getSources();
-		else
-			s1 = singleton(l1);
-		if (l2 instanceof LineageNode && joinString == ((LineageNode) l2).getTransformation())
-			s2 = ((LineageNode) l2).getSourceSet().getSources();
-		else
-			s2 = singleton(l2);
-
-		List<Lineage> sources = new ArrayList<>(s1);
-		sources.addAll(s2);
-
-		return LineageNode.of(joinString, sources.toArray(new Lineage[sources.size()]));
 	}
 
 	private Map<JoinOperand, DataSet> renameBefore(MetadataRepository repo, Map<JoinOperand, DataSet> datasets)
@@ -569,7 +554,7 @@ public class JoinTransformation extends TransformationImpl
 
 		DataSetMetadata applyMetadata = dataset.getMetadata().stream().filter(c -> !c.is(Measure.class) || !c.getVariable().getAlias().isComposed()).collect(toDataStructure(applyComponents));
 
-		return dataset.mapKeepingKeys(applyMetadata, lineage -> LineageNode.of(this, lineage),
+		return dataset.mapKeepingKeys(applyMetadata, lineageEnricher(this),
 				dp -> applyComponents.stream().collect(toMapWithValues(c -> (ScalarValue<?, ?, ?, ?>) apply.eval(new JoinApplyScope(scheme, c.getVariable().getAlias(), dp)))));
 	}
 

@@ -66,6 +66,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
@@ -285,7 +286,7 @@ public class HierarchyTransformation extends TransformationImpl
 					for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
 						builder = builder.add(viral, computeViral(virals.get(viral)));
 					
-					DataPoint dp = builder.build(LineageNode.of(this, lineages), structure);
+					DataPoint dp = builder.build(LineageNode.of(this, LineageCall.of(lineages)), structure);
 
 					// Depending on mode, store the computed dp for use by other rules
 					if (mode == NON_NULL && !aggResult.isNull()

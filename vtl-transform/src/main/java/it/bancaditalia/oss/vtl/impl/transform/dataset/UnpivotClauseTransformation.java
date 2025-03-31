@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
@@ -38,7 +39,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -76,8 +76,7 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		DataStructureComponent<Identifier, ?, ?> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
 		DataStructureComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
 
-		String lineageString = toString();
-		return dataset.flatmapKeepingKeys(metadata, lineage -> LineageNode.of(lineageString, lineage), dp -> {
+		return dataset.flatmapKeepingKeys(metadata, lineageEnricher(this), dp -> {
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> measureVals = dp.getValues(Measure.class);
 			return measureVals.entrySet().stream()
 				.map(splitting((m, v) -> {

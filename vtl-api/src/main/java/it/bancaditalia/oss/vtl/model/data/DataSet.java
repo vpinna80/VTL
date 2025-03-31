@@ -79,9 +79,11 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
 	 * @param alias The alias of the component to retain.
+	 * @param lineageOp TODO
+	 * @param lineageOperator The lineage enricher of this datapoint.
 	 * @return The projected dataset
 	 */
-	public DataSet membership(VTLAlias alias);
+	public DataSet membership(VTLAlias alias, SerUnaryOperator<Lineage> lineageOp);
 
 	/**
 	 * Finds a component with given name
@@ -228,7 +230,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 */
 	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata resultMetadata, 
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher);
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher);
 	
 	/**
 	 * Creates a new DataSet by applying a window function over a component of this DataSet.
@@ -258,11 +260,12 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * The datasets must have the same structure, and duplicated datapoints are taken from the leftmost operand
 	 * 
 	 * @param others The datasets to perform the union with
+	 * @param lineageOp The lineage operator
 	 * @return The result of the union. 
 	 */
-	public default DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
+	public default DataSet union(List<DataSet> others, SerUnaryOperator<Lineage> lineageOp)
 	{
-		return union(lineageOp, others, true);
+		return union(others, lineageOp, true);
 	}
 
 	/**
@@ -270,9 +273,11 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * If <code>check</code> is true, the duplicated datapoints are taken only from the leftmost operand.
 	 * 
 	 * @param others The datasets to perform the union with
+	 * @param lineageOp The lineage operator
+	 * @param check True if a check of uniqueness of datapoints must be performed.
 	 * @return The result of the union. 
 	 */
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others, boolean check);
+	public DataSet union(List<DataSet> others, SerUnaryOperator<Lineage> lineageOp, boolean check);
 
 	/**
 	 * <b>NOTE</b>: The default implementation traverses this DataSet entirely.

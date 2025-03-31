@@ -42,6 +42,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static java.util.Collections.singletonMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
@@ -51,7 +52,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -92,8 +92,7 @@ public class MatchTransformation extends BinaryTransformation
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		String pattern = patternV.isNull() ? null : STRINGDS.cast(patternV).get().toString();
 		
-		String lineageString = "match " + pattern;
-		return dataset.mapKeepingKeys(structure, lineage -> LineageNode.of(lineageString, lineage), dp -> singletonMap(BOOL_MEASURE, (pattern == null 
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(BOOL_MEASURE, (pattern == null 
 						? BOOLEANDS.cast(NullValue.instance(BOOLEANDS))
 						: BooleanValue.of(STRINGDS.cast(dp.get(measure)).get().toString().matches(pattern))))); 
 	}

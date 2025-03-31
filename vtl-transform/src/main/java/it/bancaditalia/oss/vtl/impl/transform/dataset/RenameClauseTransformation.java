@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
@@ -36,17 +37,18 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class RenameClauseTransformation extends DatasetClauseTransformation
 {
@@ -75,13 +77,15 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata))));
 
 		if (oldComponents.values().stream().allMatch(c -> c.is(NonIdentifier.class)))
-			return operand.mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), dp -> {
+			return operand.mapKeepingKeys(metadata, lineageEnricher(this), dp -> {
 					DataPoint renamed = dp;
 					for (Entry<VTLAlias, VTLAlias> rename: renames.entrySet())
 						renamed = renamed.rename(oldComponents.get(rename.getKey()), newComponents.get(rename.getValue()));
 					return renamed;
 				});
 		else
+		{
+			SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 			return new FunctionDataSet<>(metadata, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
 						.addAll(renames.entrySet().stream()
@@ -89,8 +93,9 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 										dp.get(oldComponents.get(oldName)))))
 								.collect(entriesToMap()))
 						.delete(oldComponents.values())
-						.build(LineageNode.of(this, dp.getLineage()), metadata)
+						.build(enricher.apply(dp.getLineage()), metadata)
 				), operand);
+		}
 	}
 
 	@Override

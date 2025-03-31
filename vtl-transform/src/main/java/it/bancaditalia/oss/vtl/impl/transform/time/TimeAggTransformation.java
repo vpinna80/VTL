@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.time;
 import static it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation.PeriodDelimiter.FIRST;
 import static it.bancaditalia.oss.vtl.impl.transform.time.TimeAggTransformation.PeriodDelimiter.LAST;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static java.util.Collections.singletonMap;
 
 import java.util.Set;
@@ -33,7 +34,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -91,7 +91,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	{
 		DataStructureComponent<Measure, ?, ?> measure = ((DataSetMetadata) metadata).getComponents(Measure.class).iterator().next();
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineage -> LineageNode.of(this, lineage), 
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
 				dp -> singletonMap(measure, evalOnScalar(repo, dp.get(measure), null)));
 	}
 

@@ -110,7 +110,6 @@ import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
@@ -141,7 +140,7 @@ public class SparkDataSet extends AbstractDataSet
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SparkDataSet.class);
-	private static final Lineage IGNORED_LINEAGE = LineageNode.of("ignored");
+	private static final Lineage IGNORED_LINEAGE = LineageExternal.of("ignored");
 
 	private final SparkSession session;
 	private final DataPointEncoder encoder;
@@ -222,7 +221,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet membership(VTLAlias alias)
+	public DataSet membership(VTLAlias alias, SerUnaryOperator<Lineage> lineageOp)
 	{
 		DataSetMetadata membershipStructure = getMetadata().membership(alias);
 		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, getMetadata(), membershipStructure);
@@ -282,7 +281,7 @@ public class SparkDataSet extends AbstractDataSet
 
 		Dataset<Row> filterKeys = broadcast(session.createDataFrame(singletonList(RowFactory.create(values)), createStructType(fields)));
 		Dataset<Row> joinDF = dataFrame.join(filterKeys, names)
-				.withColumn("$lineage$", udf((Lineage lineage) -> LineageNode.of("sub " + keyValues, lineage), LineageSparkUDT)
+				.withColumn("$lineage$", udf((Lineage lineage) -> lineageOperator.apply(lineage), LineageSparkUDT)
 						.apply(dataFrame.col("$lineage$")))
 				.drop(names);
 		
@@ -500,7 +499,7 @@ public class SparkDataSet extends AbstractDataSet
 	@Override
 	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata,
 			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerTriFunction<? super T, ? super Lineage[], ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
 		DataSetMetadata structure;
 		if (metadata.isDataSet())
@@ -516,7 +515,7 @@ public class SparkDataSet extends AbstractDataSet
 			MapGroupsFunction<Integer, Row, Row> aggregator = (i, s) -> StreamSupport.stream(new SparkSpliterator(s, bufferSize), !SEQUENTIAL)
 				.map(encoder::decode)
 				.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> {
-					TT finished = finisher.apply(aggr, l.toArray(Lineage[]::new), emptyMap());
+					TT finished = finisher.apply(aggr, l, emptyMap());
 					if (finished instanceof DataPoint)
 						return resultEncoder.encode((DataPoint) finished);
 					
@@ -545,7 +544,7 @@ public class SparkDataSet extends AbstractDataSet
 					
 					return StreamSupport.stream(new SparkSpliterator(s, bufferSize), !Utils.SEQUENTIAL).map(encoder::decode)
 							.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> 
-								resultEncoder.encode((DataPoint) finisher.apply(aggr, l.toArray(Lineage[]::new), keyValues))));
+								resultEncoder.encode((DataPoint) finisher.apply(aggr, l, keyValues))));
 				};
 			
 			aggred = dataFrame.groupBy(keyNames)
@@ -666,7 +665,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet union(SerFunction<DataPoint, Lineage> lineageOp, List<DataSet> others)
+	public DataSet union(List<DataSet> others, SerUnaryOperator<Lineage> lineageOp)
 	{
 		List<Dataset<Row>> allSparkDs = Stream.concat(Stream.of(this), others.stream())
 				.map(other -> other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other))

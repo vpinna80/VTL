@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +35,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class LineageCall extends LineageImpl implements LineageSet
 {
 	private static final long serialVersionUID = 1L;
-	private static final Map<List<Lineage>, SoftReference<LineageCall>> CACHE = new ConcurrentHashMap<>();
+	private static final Map<Collection<? extends Lineage>, SoftReference<LineageCall>> CACHE = new ConcurrentHashMap<>();
 	
 	private final List<Lineage> sources;
 
@@ -43,22 +44,22 @@ public class LineageCall extends LineageImpl implements LineageSet
 		return of(Arrays.asList(sources));
 	}
 
-	public static LineageCall of(List<Lineage> sources)
+	public static LineageCall of(Collection<? extends Lineage> sources)
 	{
-		LineageCall instance = CACHE.computeIfAbsent(sources, s -> new SoftReference<>(new LineageCall(s))).get();
-		if (instance == null)
+		SoftReference<LineageCall> ref = CACHE.computeIfAbsent(sources, s -> new SoftReference<>(new LineageCall(s)));
+		
+		if (ref.get() == null)
 		{
-			instance = new LineageCall(sources);
-			CACHE.put(sources, new SoftReference<>(instance));
+			ref = new SoftReference<>(new LineageCall(sources));
+			CACHE.put(sources, ref);
 		}
-		return instance;
+		
+		return ref.get();
 	}
 
-	private LineageCall(List<Lineage> sources)
+	private LineageCall(Collection<? extends Lineage> sources)
 	{
-		sources.stream()
-			.forEach(Objects::requireNonNull);
-		this.sources = sources;
+		this.sources = sources.stream().peek(Objects::requireNonNull).collect(toList());
 	}
 
 	@Override

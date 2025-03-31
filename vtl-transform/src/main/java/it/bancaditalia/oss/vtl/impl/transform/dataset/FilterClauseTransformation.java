@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 
 import java.util.Set;
 
@@ -29,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
@@ -73,7 +73,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 			final DatapointScope dpScope = new DatapointScope(repo, dp, metadata, null);
 			final ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
 			return (TRUE.equals(BOOLEANDS.cast(filterValue)));
-		}, lineage -> LineageNode.of(this, lineage));
+		}, lineageEnricher(this));
 	}
 
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

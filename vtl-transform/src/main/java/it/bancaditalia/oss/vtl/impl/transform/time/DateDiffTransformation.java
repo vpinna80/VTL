@@ -47,6 +47,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -100,11 +101,12 @@ public class DateDiffTransformation extends BinaryTransformation
 		
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> func = streamed == left ? DateDiffTransformation::computeScalar : (a, b) -> computeScalar(b, a);
 		
+		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
 		return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dps, dpi) -> new DataPointBuilder(dps.getValues(Identifier.class), DONT_SYNC)
 			.addAll(dpi.getValues(Identifier.class))
 			.delete(measure)
 			.add(newMeasure, func.apply(dps.get(measure), dps.get(measure)))
-			.build(LineageNode.of(this, dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata));
+			.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata));
 	}
 
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> computeScalar(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)

@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -53,7 +54,6 @@ import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
 import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -81,13 +81,11 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	
 	private final List<VTLAlias> partitionBy;
 	private final List<OrderByItem> orderByClause;
-	private final String lineageDescriptor;
 
 	public RankTransformation(List<VTLAlias> partitionBy, List<OrderByItem> orderByClause)
 	{
 		this.partitionBy = coalesce(partitionBy, emptyList());
 		this.orderByClause = coalesce(orderByClause, emptyList());
-		this.lineageDescriptor = "rank by " + orderByClause.stream().map(OrderByItem::getAlias).map(VTLAlias::toString).collect(joining(" "));
 	}
 
 	@Override
@@ -120,9 +118,9 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		SerCollector<DataPoint, ?, RankedPartition> collector = 
 				collectingAndThen(toList(PartitionToRank::new), l -> rankPartition(dataset.getMetadata(), orderByAliases, l));
 
-		return dataset.analytic(lineage -> LineageNode.of(lineageDescriptor, lineage), measure, 
+		return dataset.analytic(lineageEnricher(this), measure, 
 				INTEGERDS.getDefaultVariable().as(Measure.class), window, identity(), collector, (r, dp) -> finisher(r, dp))
-			.membership(INTEGERDS.getDefaultVariable().getAlias());
+			.membership(INTEGERDS.getDefaultVariable().getAlias(), identity());
 	}
 	
 	private Collection<ScalarValue<?, ?, ?, ?>> finisher(RankedPartition ranks, DataPoint dp)

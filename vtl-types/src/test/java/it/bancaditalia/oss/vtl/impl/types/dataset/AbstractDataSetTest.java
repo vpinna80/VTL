@@ -119,10 +119,10 @@ public class AbstractDataSetTest
 				new SimpleEntry<>(BOL_ME, Stream.of(STR_ID, INT_ID, BOL_ME)));
 		
 		expected.map(keepingKey(s -> s.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).build()))
-				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getVariable().getAlias()).getMetadata()))
+				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getVariable().getAlias(), identity()).getMetadata()))
 				.forEach(e -> assertEquals(e.getKey(), e.getValue(), "Structural mismatch in membership"));
 		
-		verify(INSTANCE, times(4)).membership(any(VTLAlias.class));
+		verify(INSTANCE, times(4)).membership(any(VTLAlias.class), identity());
 	}
 
 	@Test

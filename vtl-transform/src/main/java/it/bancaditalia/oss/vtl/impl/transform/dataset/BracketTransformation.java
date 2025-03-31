@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
 
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
@@ -53,7 +54,7 @@ public class BracketTransformation extends UnaryTransformation
 		if (clause != null)
 			return clause.eval(new ThisScope(repo, dataset));
 		else
-			return dataset.membership(componentName);
+			return dataset.membership(componentName, lineageEnricher(this));
 	}
 	
 	@Override

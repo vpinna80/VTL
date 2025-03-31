@@ -51,6 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -61,6 +62,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class ConditionalTransformation extends TransformationImpl
 {
@@ -141,10 +143,11 @@ public class ConditionalTransformation extends TransformationImpl
 			// replace all measures values in the datapoint with the scalar casted to the component domain
 			nonIdValues.replaceAll((c, v) -> c.getVariable().getDomain().cast(scalar));
 			
+			SerUnaryOperator<Lineage> enricher = LineageNode.lineageEnricher(condition);
 			return new DataPointBuilder(dp.getValues(Identifier.class))
 					.addAll(dp.getValues(Attribute.class))
 					.addAll(nonIdValues)
-					.build(LineageNode.of("if", dp.getLineage()), (DataSetMetadata) metadata);
+					.build(enricher.apply(dp.getLineage()), (DataSetMetadata) metadata);
 		}
 		else
 			// condition is false and 'then' is the scalar or condition is true and 'else' is the scalar
@@ -156,20 +159,20 @@ public class ConditionalTransformation extends TransformationImpl
 		DataSetMetadata joinIds = new DataStructureBuilder(condD.getMetadata().getIDs()).addComponent(COND_ID).build();
 		DataSetMetadata enriched = new DataStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();
 		
-		DataSet condResolved = condD.mapKeepingKeys(joinIds, lineage -> LineageNode.of(thenExpr, lineage), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
+		DataSet condResolved = condD.mapKeepingKeys(joinIds, LineageNode.lineageEnricher(thenExpr), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
 		DataSet thenResolved = thenD.mapKeepingKeys(enriched, identity(), dp -> {
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, TRUE);
 			return result;	
 		});
-		DataSet elseResolved = elseD.mapKeepingKeys(enriched, identity(), dp -> {
+		DataSet elseResolved = elseD.mapKeepingKeys(enriched, LineageNode.lineageEnricher(elseExpr), dp -> {
 			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, FALSE);
 			return result;	
 		});
 		
 		return condResolved.mappedJoin(enriched, thenResolved, (a, b) -> b).subspace(singletonMap(COND_ID, TRUE), identity())
-			.union(DataPoint::getLineage, singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), identity())));
+			.union(singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), identity())), identity());
 	}
 
 	private boolean checkCondition(ScalarValue<?, ?, ?, ?> value)

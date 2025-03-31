@@ -38,6 +38,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -83,10 +84,8 @@ public class ConcatTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = CONCAT.reverseIf(!datasetIsLeftOp);
 		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, ?, ?> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
-		SerUnaryOperator<Lineage> lineageFunc = lineage -> datasetIsLeftOp
-				? LineageNode.of("x || " + scalar, lineage)
-				: LineageNode.of(scalar + " || x" + scalar, lineage);
-		
+
+		SerUnaryOperator<Lineage> lineageFunc = lineage -> LineageNode.of(this, LineageCall.of(lineage));
 		return dataset.mapKeepingKeys(structure, lineageFunc, dp -> singletonMap(measure, 
 						function.apply(STRINGDS.cast(dp.get(measure)), STRINGDS.cast(scalar)))); 
 	}
@@ -100,6 +99,7 @@ public class ConcatTransformation extends BinaryTransformation
 		DataSet indexed = leftHasMoreIdentifiers ? left: right;
 		Set<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = ((DataSetMetadata) metadata).getComponents(Measure.class, STRINGDS);
 		
+		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
 		if (resultMeasures.size() == 1 && (!left.getMetadata().containsAll(resultMeasures) || !right.getMetadata().containsAll(resultMeasures)))
 		{
 			DataStructureComponent<Measure, ?, ?> resultMeasure = resultMeasures.iterator().next();
@@ -107,12 +107,11 @@ public class ConcatTransformation extends BinaryTransformation
 			DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			BinaryOperator<ScalarValue<?, ?, ?, ?>> finalOperator = CONCAT.reverseIf(!leftHasMoreIdentifiers);
-			
 			return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dps, dpi) -> new DataPointBuilder()
 				.add(resultMeasure, finalOperator.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build(LineageNode.of("concat", dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
+				.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
 		}
 		else
 		{
@@ -127,7 +126,7 @@ public class ConcatTransformation extends BinaryTransformation
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build(LineageNode.of("concat", dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
+					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
 		}
 	}
 
@@ -191,5 +190,11 @@ public class ConcatTransformation extends BinaryTransformation
 				.addComponents(rightIds)
 				.addComponents(leftMeasures)
 				.build();
+	}
+	
+	@Override
+	public String toString()
+	{
+		return getLeftOperand() + " || " + getRightOperand();
 	}
 }

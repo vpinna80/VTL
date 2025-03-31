@@ -341,7 +341,7 @@ public class SerCollectors
         return (m, t) -> {
     		final K key = keyMapper.apply(t);
 			final V value = valueMapper.apply(t);
-			if (m.putIfAbsent(key, requireNonNull(value)) != null)
+			if (m.putIfAbsent(requireNonNull(key), requireNonNull(value)) != null)
             	throw new IllegalStateException(String.format("Duplicate key %s with values %s and %s", key, value, m.get(key)));
         };
     }

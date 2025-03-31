@@ -23,6 +23,8 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineage2Enricher;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_POP;
@@ -57,7 +59,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -65,6 +66,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -75,6 +77,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public class AggrClauseTransformation extends DatasetClauseTransformation
 {
@@ -156,12 +159,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata currentStructure = result.getMetadata();
 		for (int i = 1; i < resultList.size(); i++)
 		{
-			AggrClauseItem aggrItem = aggrItems.get(i);
+			SerBinaryOperator<Lineage> enricher = lineage2Enricher(aggrItems.get(i).getOperand());
 			DataSet other = resultList.get(i);
 			DataSetMetadata otherStructure = other.getMetadata();
 			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
 			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> {
-				return dp1.combine(dp2, (d1, d2) -> LineageNode.of(aggrItem.getOperand(), dp1.getLineage(), dp2.getLineage()));
+				return dp1.combine(dp2, (d1, d2) -> enricher.apply(dp1.getLineage(), dp2.getLineage()));
 			}, false);
 		}
 
@@ -173,7 +176,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a);
 		}
 
-		return result.mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), identity());
+		return result.mapKeepingKeys(metadata, lineageEnricher(this), identity());
 	}
 
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)

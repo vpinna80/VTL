@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.lineage;
 
 import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -32,6 +33,8 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
+import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class LineageNode extends LineageImpl
@@ -43,30 +46,32 @@ public class LineageNode extends LineageImpl
 	private final String transformation;
 	private final LineageSet sources;
 
-	public static LineageNode of(String transformation, Lineage... sources)
-	{
-		if (sources.length == 1 && sources[0] instanceof LineageCall)
-			return of(transformation, (LineageCall) sources[0]);
-		else
-			return of(transformation, LineageCall.of(sources));
-	}
-	
 	public static SerUnaryOperator<Lineage> lineageEnricher(Transformation transformation)
 	{
-		return lineage -> LineageNode.of(transformation, lineage);
+		return lineage -> LineageNode.of(transformation.toString(), LineageCall.of(lineage));
 	}
 	
+	public static SerFunction<Collection<Lineage>, Lineage> lineagesEnricher(Transformation transformation)
+	{
+		return lineages -> LineageNode.of(transformation.toString(), LineageCall.of(lineages));
+	}
+	
+	public static SerBinaryOperator<Lineage> lineage2Enricher(Transformation transformation)
+	{
+		return (linLeft, linRight)-> LineageNode.of(transformation.toString(), LineageCall.of(linLeft, linRight));
+	}
+	
+	public static LineageNode of(Transformation transformation)
+	{
+		return of(transformation.toString(), LineageCall.of());
+	}
+
 	public static LineageNode of(Transformation transformation, LineageSet sources)
 	{
 		return of(transformation.toString(), sources);
 	}
 
-	public static LineageNode of(Transformation transformation, Lineage... sources)
-	{
-		return of(transformation.toString(), sources);
-	}
-
-	private static LineageNode of(String transformation, LineageSet sources)
+	public static LineageNode of(String transformation, LineageSet sources)
 	{
 		Entry<String, LineageSet> entry = new SimpleEntry<>(transformation, sources);
 		LineageNode instance = CACHE2.computeIfAbsent(entry, e -> {
@@ -108,7 +113,7 @@ public class LineageNode extends LineageImpl
 	@Override
 	public Lineage resolveExternal(TransformationScheme scheme)
 	{
-		return of(getTransformation(), sources.resolveExternal(scheme));
+		return of(getTransformation(), LineageCall.of(sources.resolveExternal(scheme)));
 	}
 
 	@Override

@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.scope;
 
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
+
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
@@ -81,7 +83,7 @@ public class ThisScope extends AbstractScope
 		else 
 		{
 			if (thisValue.getComponent(alias).isPresent())
-				return thisValue.membership(alias);
+				return thisValue.membership(alias, identity());
 			else 
 				throw new VTLMissingComponentsException(alias, thisMetadata);
 		}

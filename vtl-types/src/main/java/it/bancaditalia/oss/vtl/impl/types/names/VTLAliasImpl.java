@@ -42,17 +42,17 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 	public VTLAliasImpl(boolean isQuoted, String name)
 	{
 		this.isQuoted = isQuoted;
-		quotedName = name;
-		this.name = name;
-		hash = this.name.toLowerCase().hashCode();
+		this.quotedName = name;
+		this.name = isQuoted ? name.substring(1, name.length() - 1) : name;
+		this.hash = this.name.toLowerCase().hashCode();
 	}
 	
 	private VTLAliasImpl(String name)
 	{
-		quotedName = name;
-		isQuoted = requireNonNull(name).matches("^'.*'$");
+		this.quotedName = name;
+		this.isQuoted = requireNonNull(name).matches("^'.*'$");
 		this.name = isQuoted ? name.substring(1, name.length() - 1) : name;
-		hash = this.name.toLowerCase().hashCode();
+		this.hash = this.name.toLowerCase().hashCode();
 		
 		if (!isQuoted && name.contains("#"))
 			throw new InvalidParameterException(name);

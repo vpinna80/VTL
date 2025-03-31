@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.UNION;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
@@ -33,7 +34,6 @@ import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -97,7 +97,7 @@ public class SetTransformation extends TransformationImpl
 			DataSet left = (DataSet) operands.get(0).eval(scheme);
 			DataSet right = (DataSet) operands.get(1).eval(scheme);
 			
-			return setOperator.getReducer(lin -> LineageNode.of(this, lin)).apply(left, right);
+			return setOperator.getReducer(lineageEnricher(this)).apply(left, right);
 		}
 		// Special case for UNION as it has the largest memory requirements
 		else
@@ -109,7 +109,7 @@ public class SetTransformation extends TransformationImpl
 					datasets.add((DataSet) operand.eval(scheme));
 				else
 					first = false;
-			return ((DataSet) operands.get(0).eval(scheme)).union(dp -> LineageNode.of(this, dp.getLineage()), datasets);
+			return ((DataSet) operands.get(0).eval(scheme)).union(datasets, lineageEnricher(this));
 		}
 	}
 

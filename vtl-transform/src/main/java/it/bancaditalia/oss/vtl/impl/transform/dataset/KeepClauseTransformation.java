@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static java.util.Collections.singleton;
@@ -33,7 +34,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -59,7 +59,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	{
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		
-		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, lineage -> LineageNode.of(this, lineage), dp -> {
+		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, lineageEnricher(this), dp -> {
 				var map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.keySet().retainAll(metadata.getComponents(NonIdentifier.class));
 				return map;
