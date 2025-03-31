@@ -79,8 +79,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	/**
 	 * Creates a new dataset retaining the specified component along with all identifiers of this dataset
 	 * @param alias The alias of the component to retain.
-	 * @param lineageOp TODO
-	 * @param lineageOperator The lineage enricher of this datapoint.
+	 * @param lineageOp The lineage enricher of this datapoint.
 	 * @return The projected dataset
 	 */
 	public DataSet membership(VTLAlias alias, SerUnaryOperator<Lineage> lineageOp);
@@ -111,35 +110,35 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param predicate The {@link Predicate} to be applied.
 	 * @return A new filtered DataSet. 
 	 */
-	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOperator);
+	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOp);
 
 	/**
 	 * Creates a new DataSet that represents the subspace of this DataSet with given identifiers having specific values
 	 * @param keyValues A Map that gives the value for each identifier to subspace.
-	 * @param lineageOperator an operator to enrich the datapoint lineage 
+	 * @param lineageOp an operator to enrich the datapoint lineage 
 	 * @return A new DataSet that is a subspace of this DataSet.  
 	 */
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator);
+	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOp);
 	
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new dataset must conform to.
-	 * @param lineageOperator TODO
+	 * @param lineageOp TODO
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOp, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new dataset must conform to.
-	 * @param lineageOperator TODO
+	 * @param lineageOp TODO
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
+	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOp, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
