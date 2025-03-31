@@ -172,7 +172,7 @@ public enum TestComponents
 	private TestComponents(Class<? extends Component> role, String domainStr)
 	{
 		this.role = role;
-		this.domainStr = VTLAliasImpl.of(domainStr);
+		this.domainStr = VTLAliasImpl.of(true, domainStr);
 		this.domain = null;
 	}
 	

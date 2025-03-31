@@ -43,7 +43,7 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	
 	public StrlenDomainSubset(S parent, OptionalInt minLenInclusive, OptionalInt maxLenInclusive)
 	{
-		super(VTLAliasImpl.of(parent.getAlias() + (minLenInclusive.isPresent() ? ">=" + minLenInclusive.getAsInt() : "") + (maxLenInclusive.isPresent() ? "<=" + maxLenInclusive.getAsInt() : "")), parent);
+		super(VTLAliasImpl.of(true, parent.getAlias() + (minLenInclusive.isPresent() ? ">=" + minLenInclusive.getAsInt() : "") + (maxLenInclusive.isPresent() ? "<=" + maxLenInclusive.getAsInt() : "")), parent);
 		
 		this.minLenInclusive = requireNonNull(minLenInclusive);
 		this.maxLenInclusive = requireNonNull(maxLenInclusive);

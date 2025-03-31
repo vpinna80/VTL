@@ -19,8 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.names;
 
-import static java.util.Objects.requireNonNull;
-
 import java.io.Serializable;
 import java.security.InvalidParameterException;
 
@@ -34,40 +32,31 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private final String name;
-	private final String quotedName;
-	private final int hash;
-	private final boolean isQuoted;
-
-	public VTLAliasImpl(boolean isQuoted, String name)
-	{
-		this.isQuoted = isQuoted;
-		this.quotedName = name;
-		this.name = isQuoted ? name.substring(1, name.length() - 1) : name;
-		this.hash = this.name.toLowerCase().hashCode();
-	}
-	
-	private VTLAliasImpl(String name)
-	{
-		this.quotedName = name;
-		this.isQuoted = requireNonNull(name).matches("^'.*'$");
-		this.name = isQuoted ? name.substring(1, name.length() - 1) : name;
-		this.hash = this.name.toLowerCase().hashCode();
-		
-		if (!isQuoted && name.contains("#"))
-			throw new InvalidParameterException(name);
-	}
-	
 	public static VTLAlias of(String name)
 	{
-		return name != null ? new VTLAliasImpl(name) : null;
+		return name != null ? new VTLAliasImpl(name, false) : null;
 	}
 
 	public static VTLAlias of(boolean isQuoted, String name)
 	{
-		return name != null ? new VTLAliasImpl(isQuoted, name) : null;
+		return name != null ? new VTLAliasImpl(name, isQuoted) : null;
 	}
 
+	private final String name;
+	private final int hash;
+	private final boolean isQuoted;
+
+	private VTLAliasImpl(String name, boolean isQuoted)
+	{
+		this.isQuoted = isQuoted;
+		this.name = isQuoted && name.startsWith("'") && name.endsWith("'") ? name.substring(1, name.length() - 1) : name;
+		this.hash = this.name.toLowerCase().hashCode();
+		
+		if (!isQuoted && !this.name.matches("^[a-zA-Z0-9_]+$"))
+			throw new InvalidParameterException("Trying to create an unquoted alias with illegal characters: " + this.name);
+	}
+
+	@Override
 	public String getName()
 	{
 		return name;
@@ -91,7 +80,7 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 	@Override
 	public String toString()
 	{
-		return isQuoted ? quotedName : name;
+		return isQuoted ? "'" + name + "'" : name;
 	}
 
 	@Override

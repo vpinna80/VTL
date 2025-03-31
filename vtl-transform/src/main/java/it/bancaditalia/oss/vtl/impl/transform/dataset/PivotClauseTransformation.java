@@ -99,7 +99,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
 		
 		SerCollector<DataPoint, ?, DataPoint> collector = mapping(dp -> {
-				DataStructureComponent<Measure, ?, ?> genMeasure = measureMap.get(VTLAliasImpl.of(true, "'" + dp.get(pivotId).get() + "'"));
+				DataStructureComponent<Measure, ?, ?> genMeasure = measureMap.get(VTLAliasImpl.of(true, dp.get(pivotId).get().toString()));
 				return new SimpleEntry<>(requireNonNull(genMeasure), dp);
 			}, collectingAndThen(entriesToMap(), map -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dp = new HashMap<>();
@@ -146,7 +146,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		ValueDomainSubset<?, ?> measureDomain = pivotMeasure.getVariable().getDomain();
 
 		for (CodeItem<?, ?, ?, ?> codeItem: ((EnumeratedDomainSubset<?, ?, ?>) pivotId.getVariable().getDomain()).getCodeItems())
-			builder.addComponent(repo.createTempVariable(VTLAliasImpl.of(true, "'" + codeItem.get().toString() + "'"), measureDomain).as(Measure.class));
+			builder.addComponent(repo.createTempVariable(VTLAliasImpl.of(true, codeItem.get().toString()), measureDomain).as(Measure.class));
 		
 		return builder.addComponents(ids)
 				.removeComponent(pivotId)

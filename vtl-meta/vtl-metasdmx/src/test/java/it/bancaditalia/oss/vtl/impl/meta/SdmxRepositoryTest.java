@@ -103,7 +103,8 @@ public class SdmxRepositoryTest
 		
 		assertInstanceOf(DataSetMetadata.class, actual);
 		for (DataStructureComponent<?, ?, ?> c: (DataSetMetadata) actual)
-			assertTrue(expected.contains(c), c + " not found in " + expected);
+			if (!expected.contains(c))
+				assertTrue(expected.contains(c), c + " not found in " + expected);
 		assertEquals(expected, actual);
 	}
 }

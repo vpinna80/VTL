@@ -35,7 +35,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class ThisScope extends AbstractScope
 {
 	private static final long serialVersionUID = 1L;
-	public static final VTLAlias THIS = VTLAliasImpl.of("$$THIS");
+	public static final VTLAlias THIS = VTLAliasImpl.of(true, "$$THIS");
 	
 	private final DataSet thisValue;
 	private final DataSetMetadata thisMetadata;

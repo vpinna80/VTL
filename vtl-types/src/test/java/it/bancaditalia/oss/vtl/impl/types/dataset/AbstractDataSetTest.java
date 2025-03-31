@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -122,7 +123,7 @@ public class AbstractDataSetTest
 				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getVariable().getAlias(), identity()).getMetadata()))
 				.forEach(e -> assertEquals(e.getKey(), e.getValue(), "Structural mismatch in membership"));
 		
-		verify(INSTANCE, times(4)).membership(any(VTLAlias.class), identity());
+		verify(INSTANCE, times(4)).membership(any(VTLAlias.class), eq(identity()));
 	}
 
 	@Test

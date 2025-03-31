@@ -49,12 +49,12 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 	
 	public SdmxCodeList(CodelistBean codelist)
 	{
-		super(STRINGDS, VTLAliasImpl.of(codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")"));
+		super(STRINGDS, VTLAliasImpl.of(true, codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")"));
 		
 		this.agency = codelist.getAgencyId();
 		
 		// retrieve codelist 
-		VTLAlias clAlias = VTLAliasImpl.of("'" + codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")" + "'");
+		VTLAlias clAlias = VTLAliasImpl.of(true, codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")");
 
 		// build hierarchy if present
 		Map<StringCodeItem, List<StringCodeItem>> hierarchy = new HashMap<>();
