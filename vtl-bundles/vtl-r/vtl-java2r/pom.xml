@@ -76,6 +76,28 @@
 				<artifactId>flatten-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>FileList</mainClass>
+							<additionalClasspathElements>
+								<additionalClasspathElement>${basedir}/src/FileList</additionalClasspathElement>
+							</additionalClasspathElements>
+							<arguments>
+								<argument>${basedir}/src/main/resources/it/bancaditalia/oss/vtl/util/examples</argument>
+								<argument>${basedir}/target/classes/it/bancaditalia/oss/vtl/util</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
 			</plugin>

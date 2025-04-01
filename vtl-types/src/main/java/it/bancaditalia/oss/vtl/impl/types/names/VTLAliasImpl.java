@@ -32,24 +32,29 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	public static VTLAlias of(String name)
+	public static VTLAlias of(String alias)
 	{
-		return name != null ? new VTLAliasImpl(name, false) : null;
+		if (alias == null)
+			return null;
+		else if (alias.startsWith("'") && alias.endsWith("'"))
+			return VTLAliasImpl.of(true, alias);
+		else
+			return VTLAliasImpl.of(false, alias);
 	}
 
-	public static VTLAlias of(boolean isQuoted, String name)
+	public static VTLAlias of(boolean isQuoted, String alias)
 	{
-		return name != null ? new VTLAliasImpl(name, isQuoted) : null;
+		return alias == null ? null : new VTLAliasImpl(alias, isQuoted);
 	}
 
 	private final String name;
 	private final int hash;
 	private final boolean isQuoted;
 
-	private VTLAliasImpl(String name, boolean isQuoted)
+	private VTLAliasImpl(String alias, boolean isQuoted)
 	{
 		this.isQuoted = isQuoted;
-		this.name = isQuoted && name.startsWith("'") && name.endsWith("'") ? name.substring(1, name.length() - 1) : name;
+		this.name = isQuoted && alias.startsWith("'") && alias.endsWith("'") ? alias.substring(1, alias.length() - 1) : alias;
 		this.hash = this.name.toLowerCase().hashCode();
 		
 		if (!isQuoted && !this.name.matches("^[a-zA-Z0-9_]+$"))

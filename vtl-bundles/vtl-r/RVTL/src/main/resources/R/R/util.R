@@ -43,23 +43,26 @@ vtlTryCatch <- function(expr) {
   }))
 }
 
-convertDF <- function(pager, nc) {
+convertDF <- function(pager, nc, max.rows = -1L) {
   total <- NULL
   repeat {               
     pager$prepareMore()
     part <- lapply(0:(nc - 1), function(i) {
-    	switch (pager$getType(i),
-    	  pager$getDoubleColumn(i),  
-    	  sapply(pager$getIntColumn(i), as.logical),
-    	  as.Date(pager$getIntColumn(i)),
-    	  sapply(pager$getStringColumn(i), .jstrVal),
-    	  pager$getLongColumn(i)
-    	)  
+      switch (pager$getType(i),
+    	pager$getDoubleColumn(i),  
+        sapply(pager$getIntColumn(i), as.logical),
+        as.Date(pager$getIntColumn(i)),
+        sapply(pager$getStringColumn(i), .jstrVal),
+        pager$getLongColumn(i)
+      )  
     })
     names(part) <- sapply(0:(nc - 1), function(i) .jstrVal(pager$getName(i)))
     part <- as.data.frame(part)
     if (nrow(part) > 0) {
       total <- if (is.null(total)) part else rbind(total, part)
+      if (is.integer(max.rows) && max.rows > 0 && total > max.rows) {
+        break
+      }
     } else {
       break
     }

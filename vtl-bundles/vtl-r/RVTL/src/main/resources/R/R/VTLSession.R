@@ -40,6 +40,7 @@ VTLSession <- R6Class("VTLSession",
       #' @details 
       #' This method should not be called by the application.
       #' @param name the name of the session
+      #' @param category the category of the example, usually not set
       #' The name to identify this session
       initialize = function (name = character(0), category = character(0)) {
         if (!is.character(name) || length(name) != 1 || nchar(name) == 0)
@@ -49,22 +50,19 @@ VTLSession <- R6Class("VTLSession",
         private$env <- new.env(parent = emptyenv())
         
         if (is.character(category) && length(category) == 1 && nchar(category) != 0) {
-          private$instance <- exampleEnv$createSession(category, operator)
-          self$text <- private$instance$getOriginalCode()
-          private$updateInstance()$compile()
-          private$isDemo <- T
-		}
+          tryCatch({
+            exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
+            private$instance <- exampleEnv$createSession(category, name)
+            self$text <- private$instance$getOriginalCode()
+            private$updateInstance()$compile()
+          }, error = function(e) {
+            if (!is.null(e$jobj)) {
+              e$jobj$printStackTrace()
+            }
+            stop(e)
+          })
+	    	}
       }, 
-
-      #' @description
-      #' Terminates this VTL session.
-      #' @details 
-      #' This method should not be called by the application.
-      finalize = function() { 
-        finalized <- T
-        private$clearInstance() 
-        return(invisible()) 
-      },
 
       #' @description
       #' Check if this session was compiled.
@@ -113,16 +111,22 @@ VTLSession <- R6Class("VTLSession",
       #' @description
       #' Obtains a named list of all rules and values submitted for this session.
       getNodes = function () { 
-          if (is.null(private$instance))
-            return(list())
-          return(lapply(private$checkInstance()$getNodes(), .jstrVal)) 
-        },
+        if (is.null(private$instance))
+          return(list())
+        return(lapply(private$checkInstance()$getNodes(), .jstrVal)) 
+      },
       
       #' @description
-      #' Returns a list of data frames containing the values of the named nodes defined in this session.
-      #' @param nodes
-      #' a list of names of nodes to compute from this session
-      getValues = function (nodes) {
+      #' Evaluates the given VTL nodes as data.frames.
+      #' @param nodes a list of names of nodes to compute from this session
+      #' @param max.rows The maximum number of rows to retrieve from each node
+      #' @details
+      #' Returns a list of vertors or data frames containing the values of the 
+      #' named nodes defined in this session. Each node is retrieved up to 
+      #' max.rows number of observations, or all observations are retrieved if
+      #' max.rows is not a positive long integer. In the latter case, the dataset
+      #' value is also cached.
+      getValues = function (nodes, max.rows = -1L) {
           nodesdf <- lapply(nodes, function(node) {
             df <- get0(node, envir = private$env)
             if (!is.null(df)) {
@@ -141,7 +145,7 @@ VTLSession <- R6Class("VTLSession",
               pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
                              .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
               nc <- jnode$getMetadata()$size()
-              df <- tryCatch(convertDF(pager, nc), error = function(e) {
+              df <- tryCatch(convertDF(pager, nc, max.rows), error = function(e) {
                 if (!is.null(e$jobj)) {
                   e$jobj$printStackTrace()
                 }
@@ -151,7 +155,9 @@ VTLSession <- R6Class("VTLSession",
               attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getAlias()$getName() })
             }
             
-            assign(node, df, envir = private$env)
+            if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue" || !is.integer(max.rows) || max.rows <= 0) {
+              assign(node, df, envir = private$env)
+            }
             return(df)
           })
           
@@ -182,72 +188,79 @@ VTLSession <- R6Class("VTLSession",
           }
         },
 
-      #' @description
-      #' Creates a fore network representation of all nodes defined in this VTL session.
-      #' @param distance
-      #' The distance between dots
-      #' @param charge
-      #' The repelling force between dots
-      #' @importFrom igraph make_graph
-      getTopology = function(distance = 100, charge = -100) {
-          if (is.null(private$instance))
-            return(NULL)
+     #' @description
+     #' Creates a fore network representation of all nodes defined in this VTL session.
+     #' @param distance
+     #' The distance between dots
+     #' @param charge
+     #' The repelling force between dots
+     #' @importFrom igraph make_graph
+     getTopology = function(distance = 100, charge = -100) {
+        if (is.null(private$instance))
+          return(NULL)
+       
+        jedges <- private$checkInstance()$getTopology()
+        edges <- .jcall(jedges, "[Ljava/lang/Object;","toArray")
+        inNodes <- sapply(edges[[1]], .jstrVal)
+        outNodes <- sapply(edges[[2]], .jstrVal)
+        allNodes <- unique(c(inNodes, outNodes))
         
-          jedges <- private$checkInstance()$getTopology()
-          edges <- .jcall(jedges, "[Ljava/lang/Object;","toArray")
-          inNodes <- sapply(edges[[1]], .jstrVal)
-          outNodes <- sapply(edges[[2]], .jstrVal)
-          allNodes <- unique(c(inNodes, outNodes))
-          
-          statements <- tryCatch({
-            sapply(private$checkInstance()$getStatements()$entrySet(), function (x) {
-              setNames(list(x$getValue()), x$getKey()$getName())
-            })
-          }, error = function(e) {
-            if (!is.null(e$jobj)) {
-              e$jobj$printStackTrace()
-            }
-            signalCondition(e)
+        statements <- tryCatch({
+          sapply(private$checkInstance()$getStatements()$entrySet(), function (x) {
+            setNames(list(x$getValue()), x$getKey()$getName())
           })
-          
-          primitiveNodes <- allNodes[which(!allNodes %in% names(statements))]
-          primitives <- rep('PRIMITIVE NODE', times=length(primitiveNodes))
-          names(primitives) <- primitiveNodes
-          statements <- append(statements, primitives)
-          
-          net = networkD3::igraph_to_networkD3(make_graph(c(rbind(outNodes, inNodes))))
-          net$links$value=rep(3, length(inNodes))
-          net$nodes$statement=as.character(statements[as.character(net$nodes$name)])
-          return(networkD3::forceNetwork(Links = net$links, 
-            Nodes = net$nodes, 
-            Source = 'source',
-            Target = 'target',
-            NodeID = 'name',
-            Group = 'statement',
-            Value = 'value',
-            linkDistance = distance,
-            charge = charge,
-            fontSize = 20,
-            opacity = 1,
-            zoom =T,
-            arrows = T,
-            opacityNoHover = 1,
-            clickAction = 'alert(d.group);',
-            bounded = T
-          ))
-        },
-      
+        }, error = function(e) {
+          if (!is.null(e$jobj)) {
+            e$jobj$printStackTrace()
+          }
+          signalCondition(e)
+        })
+        
+        primitiveNodes <- allNodes[which(!allNodes %in% names(statements))]
+        primitives <- rep('PRIMITIVE NODE', times=length(primitiveNodes))
+        names(primitives) <- primitiveNodes
+        statements <- append(statements, primitives)
+        
+        net = networkD3::igraph_to_networkD3(make_graph(c(rbind(outNodes, inNodes))))
+        net$links$value=rep(3, length(inNodes))
+        net$nodes$statement=as.character(statements[as.character(net$nodes$name)])
+        return(networkD3::forceNetwork(Links = net$links, 
+          Nodes = net$nodes, 
+          Source = 'source',
+          Target = 'target',
+          NodeID = 'name',
+          Group = 'statement',
+          Value = 'value',
+          linkDistance = distance,
+          charge = charge,
+          fontSize = 20,
+          opacity = 1,
+          zoom =T,
+          arrows = T,
+          opacityNoHover = 1,
+          clickAction = 'alert(d.group);',
+          bounded = T
+        ))
+      },
+     
+      #' @description
+      #' Returns the environments used by this VTLSession
       getEnvs = function() {
-          private$checkInstance()$getEnvironments()
-        }
+        private$checkInstance()$getEnvironments()
+      }
     ),
     
     private = list(
       instance = NULL,
       env = NULL,
       finalized = F,
-      isDemo = F,
       
+      finalize = function() { 
+        finalized <- T
+        private$clearInstance() 
+        return(invisible()) 
+      },
+
       checkInstance = function() {
         if (private$finalized)
           stop('Session ', self$name, ' was finalized')
@@ -258,8 +271,8 @@ VTLSession <- R6Class("VTLSession",
       },
 
       updateInstance = function() {
-        if (private$finalized || private$isDemo) {
-          stop('Session ', self$name, ' is a example session or it was already finalized')
+        if (private$finalized) {
+          stop('Session ', self$name, ' was already finalized')
         } else if (is.null(private$instance)) {
           private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
         } else {
@@ -281,4 +294,3 @@ VTLSession <- R6Class("VTLSession",
 
 #' @export
 as.character.VTLSession <- function(x, ...) { return(x$name) }
-

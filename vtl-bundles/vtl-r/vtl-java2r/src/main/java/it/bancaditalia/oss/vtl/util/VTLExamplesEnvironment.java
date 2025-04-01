@@ -23,21 +23,21 @@ import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapVal
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,6 +46,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
@@ -75,30 +78,44 @@ import jakarta.xml.bind.JAXBException;
 public class VTLExamplesEnvironment implements Environment, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(VTLExamplesEnvironment.class);
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
 	private static final Map<Entry<String, String>, VTLSession> SESSIONS = new HashMap<>();
+	private static final Map<String, List<String>> OPERATORS = new LinkedHashMap<>();
 	private static final Set<String> EXCLUDED_OPERATORS = Set.of("Pivoting", "Random", "Hierarchical roll-up", "Check datapoint", 
 			"Check hierarchy", "Persistent assignment", "Duration to number days", "Fill time series", "Number days to duration");
 	
-	private final int nInputs;
-	private final String[][] inputs;
-	private final String code;
-	private final URL jsonURL;
+	static
+	{
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(VTLExamplesEnvironment.class.getResourceAsStream("exampleslist.txt"), UTF_8)))
+		{
+			reader.lines().forEach(line -> {
+				String[] elems = line.split(",");
+				String category = elems[0];
+				String operator = elems[1];
+				
+				if (!EXCLUDED_OPERATORS.contains(operator))
+					OPERATORS.merge(category, List.of(operator), (l1, l2) -> {
+						List<String> res = new ArrayList<>(l1);
+						res.addAll(l2);
+						return res;
+					});
+			});
+		}
+		catch (Exception e)
+		{
+			throw new ExceptionInInitializerError(e);
+		}
+	}
 	
 	public static List<String> getCategories() throws IOException
 	{
-		try (BufferedReader reader = getReader("."))
-		{
-			return reader.lines().collect(toList());
-		}
+		return new ArrayList<>(OPERATORS.keySet());
 	}
 	
 	public static List<String> getOperators(String category) throws IOException
 	{
-		try (BufferedReader reader = getReader(category))
-		{
-			return reader.lines().filter(not(EXCLUDED_OPERATORS::contains)).collect(toList());
-		}
+		return OPERATORS.get(category);
 	}
 	
 	public static synchronized VTLSession createSession(String category, String operator)
@@ -112,6 +129,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		{
 			VTLExamplesEnvironment env = new VTLExamplesEnvironment(category, operator);
 
+			LOGGER.info("Initializing metadata for {}", operator);
 			JsonMetadataRepository repo = new JsonMetadataRepository(env.jsonURL, new JavaVTLEngine());
 			return new VTLSessionImpl(env.code, repo, new JavaVTLEngine(), List.of(env), new Workspace() {
 				private static final long serialVersionUID = 1L;
@@ -138,33 +156,42 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 				}
 			});
 		}
-		catch (IOException | ClassNotFoundException | JAXBException e)
+		catch (IOException | ClassNotFoundException | JAXBException | URISyntaxException e)
 		{
 			throw new RuntimeException(e);
 		}
 	}
 
-	private VTLExamplesEnvironment(String category, String operator) throws IOException
+	private final String[][] inputs;
+	private final String code;
+	private final URL jsonURL;
+	
+	private VTLExamplesEnvironment(String category, String operator) throws IOException, URISyntaxException
 	{
-		try (BufferedReader reader = getReader(category + "/" + operator))
+		LOGGER.info("Initializing example for operator {}", operator);
+		List<String[]> csv_lines = new ArrayList<>();
+		for(int i = 1; true; i++)
 		{
-			List<String> files = reader.lines().collect(toList());
-			nInputs = files.size() - 2;
-		}
-		
-		inputs = new String[nInputs][];
-		for (int i = 0; i < nInputs; i++)
-		{
-			try (BufferedReader reader = getReader(category + "/" + operator + "/ds_" + (i + 1) + ".csv")) 
+			URL csv = VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/ds_" + i + ".csv");
+			if (csv == null)
+				break;
+				
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(csv.openStream(), UTF_8)))
 			{
-				inputs[i] = reader.lines().collect(toList()).toArray(String[]::new);
+				csv_lines.add(reader.lines().collect(toList()).toArray(String[]::new));
 			}
 		}
+		inputs = csv_lines.toArray(String[][]::new);
+		LOGGER.info("Loaded {} datasets for {}", inputs.length, operator);
 		
-		try (BufferedReader reader = getReader(category + "/" + operator + "/examples.vtl"))
+		URL vtl = VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.vtl");
+		if (vtl == null)
+			throw new FileNotFoundException("Cannot find examples/" + category + "/" + operator + "/examples.vtl");
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(vtl.openStream(), UTF_8)))
 		{
 			code = reader.lines().collect(joining(lineSeparator()));
 		}
+		LOGGER.info("Loaded vtl code for {}", operator);
 		
 		jsonURL = VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.json");
 	}
@@ -172,7 +199,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	@Override
 	public boolean contains(VTLAlias alias)
 	{
-		for (int i = 0; i < nInputs; i++)
+		for (int i = 0; i < inputs.length; i++)
 			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
 				return true;
 		
@@ -182,7 +209,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
-		for (int i = 0; i < nInputs; i++)
+		for (int i = 0; i < inputs.length; i++)
 			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
 			{
 				DataSetMetadata structure = repo.getMetadata(alias).map(DataSetMetadata.class::cast).orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
@@ -252,14 +279,5 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 				throw new VTLMissingValueException(metadata.get(count), line);
 		
 		return builder;
-	}
-
-	private static BufferedReader getReader(String path)
-	{
-		String resName = "./examples/" + path;
-		InputStream res = VTLExamplesEnvironment.class.getResourceAsStream(resName);
-		
-		requireNonNull(res, "Could not load resource " + resName);
-		return new BufferedReader(new InputStreamReader(res, UTF_8));
 	}
 }

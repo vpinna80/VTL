@@ -84,6 +84,20 @@ vtlServer <- function(input, output, session) {
               cat("Set property", prop$getDescription(), "to", val, "\n")
             }
           })
+          
+          tryCatch({
+            writer <- .jnew("java.io.StringWriter")
+            configManager$newManager()$saveConfiguration(writer)
+            string <- .jstrVal(writer$toString())
+            propfile <- file.path(J("java.lang.System")$getProperty("user.home"), '.vtlStudio.properties')
+            browser()
+            writeLines(string, propfile)
+          }, error = function(e) {
+            if (!is.null(e$jobj)) {
+              e$jobj$printStackTrace()
+            }
+            stop(e)
+          })
         }
       }) |> bindEvent(input[[prop$getName()]], ignoreInit = T)
 	  }
@@ -109,7 +123,7 @@ vtlServer <- function(input, output, session) {
     observe({
       value <- input[[inputId]]
       output$eng_conf_output <- renderPrint({
-        print(paste('Setting Proxy', prop, 'to', value))
+        cat(paste('Setting Proxy', prop, 'to', value, '\n'))
         
         if (value == '') {
           J("java.lang.System")$clearProperty(paste0("http.proxy", prop))
@@ -122,7 +136,7 @@ vtlServer <- function(input, output, session) {
     }) |> bindEvent(input[[inputId]], ignoreInit = T)
   })
 
-  # Upload vtl script button
+  # Download vtl script button
   output$saveas <- downloadHandler(
     filename = function() {
       req(input$sessionID)
@@ -133,18 +147,14 @@ vtlServer <- function(input, output, session) {
   )
 
   observe({
-	VTLSessionManager$clear()
-	
-	if (input$demo) {
-      exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
-      
+  	VTLSessionManager$clear()
+  	if (isTRUE(input$demomode)) {
       VTLSessionManager$kill('test')
       name <- VTLSessionManager$initExampleSessions()
-	} else {
-	  name <- 'test'
-	}
-	
-	updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = name)
+  	} else {
+  	  name <- 'test'
+  	}
+  	updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = name)
   }) |> bindEvent(input$demomode)
   
   # load theme list
@@ -184,11 +194,24 @@ vtlServer <- function(input, output, session) {
     })
   }) |> bindEvent(input$repoClass, ignoreInit = T)
 
-  # Save user configuration
-  observe({
-    VTLSessionManager$save_config()
-  }) |> bindEvent(input$saveconf)
-  
+  # Save Configuration as...
+  output$saveconfas <- downloadHandler(
+    filename = ".vtlStudio.properties",
+    content = function (file) {
+      tryCatch({
+        writer <- .jnew("java.io.StringWriter")
+        configManager$newManager()$saveConfiguration(writer)
+        string <- .jstrVal(writer$toString())
+        writeLines(string, file)
+      }, error = function(e) {
+        if (!is.null(e$jobj)) {
+          e$jobj$printStackTrace()
+        }
+        stop(e)
+      })
+    }
+  )
+
   # Select dataset to browse
   output$dsNames<- renderUI({
     selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, 
@@ -305,12 +328,14 @@ vtlServer <- function(input, output, session) {
     shinyjs::toggleCssClass(selector = ".nav-tabs li:nth-child(2)", class = "tab-disabled", condition = !isCompiled())
     shinyjs::toggleCssClass(selector = ".nav-tabs li:nth-child(3)", class = "tab-disabled", condition = !isCompiled())
     if (isCompiled()) {
+      vtlSession <- currentSession()
       output$topology <- networkD3::renderForceNetwork({
-        currentSession()$getTopology(distance = input$distance)
+        vtlSession$getTopology(distance = input$distance)
       })
       #update list of datasets to be explored
-      updateSelectInput(session = session, inputId = 'selectDatasets', label = 'Select Node', 
-                        choices = c('', currentSession()$getNodes()), selected ='')
+      updateSelectInput(session, 'selectDatasets', 'Select Node', c('', vtlSession$getNodes()), '')
+      #update list of dataset structures
+      updateSelectInput(session, 'structureSelection', 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
     } 
   })
 
@@ -350,11 +375,25 @@ vtlServer <- function(input, output, session) {
     session$sendCustomMessage("editor-focus", message = '')
   })
 
-  observeEvent(input$envs, {
+  observe({
     vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(paste0(unlist(environments[req(input$envs)]), collapse = ","))
-  })
+
+    tryCatch({
+      writer <- .jnew("java.io.StringWriter")
+      configManager$newManager()$saveConfiguration(writer)
+      string <- .jstrVal(writer$toString())
+      propfile <- file.path(J("java.lang.System")$getProperty("user.home"), '.vtlStudio.properties')
+      browser()
+      writeLines(string, propfile)
+    }, error = function(e) {
+      if (!is.null(e$jobj)) {
+        e$jobj$printStackTrace()
+      }
+      stop(e)
+    })
+  }) |> bindEvents(input$envs, ignoreInit = T)
     
-  # load vl script
+  # load vtl script
   observe({
     lines = suppressWarnings(readLines(input$scriptFile$datapath))
     lines = paste0(lines, collapse = '\n')
@@ -364,7 +403,7 @@ vtlServer <- function(input, output, session) {
     updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = input$scriptFile$name)
   }) |> bindEvent(input$scriptFile)
   
-  # load CSV file to GlobalEnv
+  # upload CSV file to GlobalEnv
   observeEvent(input$datafile, {
     datasetName = basename(input$datafile$name)
     data = readLines(con = input$datafile$datapath)
@@ -435,10 +474,9 @@ vtlServer <- function(input, output, session) {
       # Update force network
       output$topology <- networkD3::renderForceNetwork(vtlSession$getTopology(distance = input$distance))
       #update list of datasets to be explored
-      updateSelectInput(session = session, inputId = 'selectDatasets',
-                        label = 'Select Node', choices = c('', vtlSession$getNodes()), selected ='')
+      updateSelectInput(session, 'selectDatasets', 'Select Node', c('', vtlSession$getNodes()), '')
       #update list of dataset structures
-      updateSelectInput(inputId = 'structureSelection', label = 'Select Node', choices = c('', sort(unlist(vtlSession$getNodes()))), selected ='')
+      updateSelectInput(session, 'structureSelection', 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
     }, error = function(e) {
       msg <- conditionMessage(e)
       trace <- NULL
@@ -478,6 +516,17 @@ vtlServer <- function(input, output, session) {
   })
 
   observe({
-    VTLSessionManager$load_config(input$custom_conf$datapath)
+    conf = readLines(con = input$uploadconf$datapath)
+    
+    reader <- NULL
+    tryCatch({
+      reader <- .jnew("java.io.StringReader", conf)
+      J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
+    }, finally = {
+      if (!is.null(reader)) {
+        reader$close()
+      }
+    })
+    VTLSessionManager$reload()
   }) |> bindEvent(input$custom_conf)
 }

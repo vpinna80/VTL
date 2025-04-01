@@ -17,6 +17,27 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
+.main {
+  padding: 0 !important;
+}
+
+[data-value="Graph Explorer"] > .forceNetwork {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.row .btn {
+    width: 100%;
+}
+
+.default-sortable.bucket-list-container {
+  padding: 0;
+  margin: 0;
+}
+
 .antlr-editor {
   position: relative;
   height: 70vh;
@@ -57,6 +78,7 @@
   height: calc(100vh - 45px);
   padding: 10px;
   overflow-y: auto;
+  position: relative;
 }
 
 /* Code editor tab contents */
@@ -77,22 +99,16 @@
 
 #vtl_output {
 border-radius: 0;
-    padding: 0;
-    margin: 0;
-    flex-shrink: 1;
-    flex-grow: 0;
-    flex-basis: auto;
-    max-height: 30%;
-    overflow-y: auto;
-}
-
-#saveas {
-  margin: 6px 5px 6px 15px;
-  color: #444;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 1;
+  flex-grow: 0;
+  flex-basis: auto;
+  max-height: 30%;
+  overflow-y: auto;
 }
 
 .tab-disabled {
   pointer-events: none;
   opacity: 0.6;
 }
-

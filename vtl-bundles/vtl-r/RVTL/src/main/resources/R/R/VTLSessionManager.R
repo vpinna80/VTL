@@ -36,16 +36,8 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             },
             
             #' @description
-            #' Finalization
-            #' @details
-            #' Clears any managed VTL session when this manager is discarded by the garbage collector.
-            #' This method should not be called by the application.
-            finalize = function() {
-              self$clear()
-            },
-            
-            #' @description
             #' List all active named VTL sessions.
+            #' @details
             #' If an active SDMX metadata repository is active, also load Transformation schemes from it
             list = function() { 
               tryCatch({
@@ -73,8 +65,7 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             
             #' @description
             #' Silently terminates the named active VTL session if it exists.
-            #' @param sessionID
-            #' The name of the session to kill
+            #' @param sessionID The name of the session to kill
             kill = function (sessionID) { 
               if (exists(sessionID, envir = private$sessions))
               rm(list = sessionID, envir = private$sessions)
@@ -83,20 +74,35 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
 
             #' @description
             #' Initializes all VTL example sessions.
+            #' @details
+            #' All examples from the VTL documentation are compiled and added to the list of active sessions
             initExampleSessions = function() {
-              for (category in exampleEnv$getCategories()) {
-                for (operator in exampleEnv$getOperators(category)) {
-		          assign(operator, VTLSession$new(operator, category), envir = private$sessions)
-		        }
-	          }
+              tryCatch({
+                exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
+                
+                categories <- lapply(exampleEnv$getCategories(), .jstrVal)
+                for (category in categories) {
+                  operators <- lapply(exampleEnv$getOperators(category), .jstrVal)
+                  for (operator in operators) {
+                    example <- VTLSession$new(operator, category)
+                    assign(operator, example, envir = private$sessions)
+                  }
+                }
               
-              return(ls(envir = private$sessions)[[1]])
+                return(ls(envir = private$sessions)[[1]])
+              }, error = function(e) {
+                if (!is.null(e$jobj)) {
+                  e$jobj$printStackTrace()
+                }
+                stop(e)
+              })
             },
             
             #' @description
-            #' If the named VTL session exists, return it, otherwise create a new VTL session with the given name and possibly code.
+            #' Get or create a VTL session
             #' @param sessionID The session to retrieve or create
-            #' The name of the session to create
+            #' @details
+            #' If the named VTL session exists, return it, otherwise create a new VTL session with the given name and possibly code.
             getOrCreate = function(sessionID) {
               if (is.character(sessionID) && length(sessionID) == 1)
               result <- get0(req(sessionID), envir = private$sessions)
@@ -128,42 +134,35 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             },
 
             #' @description
-            #' load_config will read the configuration of the VTL Engine from a ".properties" file given in input as propfile
-            #' if none is given the function will try to read from the user.home directory.
+            #' Load a VTL configuration file
+            #' @param propfile the property file path
+            #' @details
+            #' load_config will read the VTL configuration from a specified .properties file. if the file
+            #' is not specified, a default file named vtlStudio.properties from the user home directory will be opened.
             load_config = function(propfile = NULL) {
-                if (is.null(propfile)) {
-                  propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
-                }
-                if (file.exists(propfile)) {
-                  reader = .jnew("java.io.FileReader", propfile)
-                  tryCatch({
-                    J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
-                    packageStartupMessage("VTL settings loaded from ", propfile, ".")
-                  }, finally = {
-                    reader$close()
-                  })
-                }
-                VTLSessionManager$reload()
-            },
-
-            #' @description
-            #' save_config will save the current loaded config on the VTL engine on the given .properties file, if none is given
-            #' it will save it in the default path in the user.home directory
-            save_config = function(propfile = NULL) {
-                if (is.null(propfile)) {
-                  propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
-                }
-                configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
-                writer = .jnew("java.io.FileWriter", propfile)
+              if (is.null(propfile)) {
+                propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
+              }
+              
+              if (file.exists(propfile)) {
+                reader = .jnew("java.io.FileReader", propfile)
                 tryCatch({
-                  configManager$newManager()$saveConfiguration(writer)
+                  J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
+                  packageStartupMessage("VTL settings loaded from ", propfile, ".")
                 }, finally = {
-                  writer$close()
-                }) 
-            }          
+                  reader$close()
+                })
+              }
+              VTLSessionManager$reload()
+            }
           ),
+          
           private = list(
-            sessions = new.env(parent = emptyenv())
+            sessions = new.env(parent = emptyenv()),
+            
+            finalize = function() {
+              self$clear()
+            }
           ))
 
 #' Manage VTL sessions

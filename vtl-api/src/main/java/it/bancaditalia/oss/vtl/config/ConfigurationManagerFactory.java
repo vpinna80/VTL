@@ -158,7 +158,7 @@ public class ConfigurationManagerFactory
 		}
 		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
 		{
-			throw new VTLNestedException(errorMsg, e);
+			throw new VTLNestedException("Error requesting instance of " + className, e);
 		}
 	}
 }

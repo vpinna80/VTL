@@ -314,7 +314,7 @@ public class StatementFactory implements Serializable
 		return new SimpleEntry<>(role, domain);
 	}
 
-	private BaseParameter buildResultType(OutputParameterTypeContext type)
+	private static BaseParameter buildResultType(OutputParameterTypeContext type)
 	{
 		if (type == null)
 			return null;
@@ -340,6 +340,4 @@ public class StatementFactory implements Serializable
 		else
 			throw new UnsupportedOperationException("Parameter of type " + type.getText() + " not implemented.");
 	}
-	
-	
 }
