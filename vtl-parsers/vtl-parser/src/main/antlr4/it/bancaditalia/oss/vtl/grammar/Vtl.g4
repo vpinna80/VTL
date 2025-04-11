@@ -233,12 +233,12 @@ timeOperatorsComponent:
     | TIMESHIFT LPAREN exprComponent COMMA signedInteger RPAREN                                                                                 # timeShiftAtomComponent
     | TIME_AGG LPAREN periodIndTo=STRING_CONSTANT (COMMA periodIndFrom=(STRING_CONSTANT| OPTIONAL ))? (COMMA op=optionalExprComponent)? (COMMA delim=(FIRST|LAST))? RPAREN    # timeAggAtomComponent
     | CURRENT_DATE LPAREN RPAREN                                                                                                               # currentDateAtomComponent
-    | DATEDIFF LPAREN dateFrom=exprComponent COMMA dateTo=exprComponent RPAREN                    # dateDiffAtomComponent
+    | DATEDIFF LPAREN dateFrom=exprComponent COMMA dateTo=exprComponent RPAREN           # dateDiffAtomComponent
     | DATEADD LPAREN op=exprComponent COMMA shiftNumber=exprComponent COMMA periodInd=exprComponent RPAREN # dateAddAtomComponent
     | YEAR_OP LPAREN exprComponent RPAREN                                                # yearAtomComponent
     | MONTH_OP LPAREN exprComponent RPAREN                                               # monthAtomComponent
     | DAYOFMONTH LPAREN exprComponent RPAREN                                             # dayOfMonthAtomComponent
-    | DAYOFYEAR LPAREN exprComponent RPAREN                                              # dayOfYearAtomComponent
+    | DAYOFYEAR LPAREN exprComponent RPAREN                                              # datOfYearAtomComponent
     | DAYTOYEAR LPAREN exprComponent RPAREN                                              # dayToYearAtomComponent
     | DAYTOMONTH LPAREN exprComponent RPAREN                                             # dayToMonthAtomComponent
     | YEARTODAY LPAREN exprComponent RPAREN                                              # yearTodayAtomComponent
@@ -331,7 +331,7 @@ aggrOperatorsGrouping:
          | FIRST_VALUE
          | LAST_VALUE)
          LPAREN exprComponent OVER LPAREN (partition=partitionByClause? orderBy=orderByClause? windowing=windowingClause?)RPAREN RPAREN       #anSimpleFunctionComponent
-    | op=(LAG |LEAD)  LPAREN exprComponent (COMMA offet=signedInteger(defaultValue=scalarItem)?)?  OVER  LPAREN (partition=partitionByClause? orderBy=orderByClause)   RPAREN RPAREN   # lagOrLeadAnComponent
+    | op=(LAG |LEAD)  LPAREN exprComponent (COMMA offset=signedInteger(defaultValue=scalarItem)?)?  OVER  LPAREN (partition=partitionByClause? orderBy=orderByClause)   RPAREN RPAREN   # lagOrLeadAnComponent
     | op=RANK LPAREN  OVER  LPAREN (partition=partitionByClause? orderBy=orderByClause) RPAREN RPAREN                                                                           # rankAnComponent
     | op=RATIO_TO_REPORT LPAREN exprComponent OVER  LPAREN (partition=partitionByClause) RPAREN RPAREN                                                                          # ratioToReportAnComponent
 ;
@@ -418,12 +418,16 @@ windowingClause:
 ;
 
 signedInteger:
-  INTEGER_CONSTANT
+  (MINUS|PLUS)?INTEGER_CONSTANT
+;
+
+signedNumber:
+  (MINUS|PLUS)?NUMBER_CONSTANT
 ;
 
 limitClauseItem:
-    INTEGER_CONSTANT dir=PRECEDING
-    | INTEGER_CONSTANT dir=FOLLOWING
+    signedInteger dir=PRECEDING
+    | signedInteger dir=FOLLOWING
     | CURRENT DATA POINT
     | UNBOUNDED dir=PRECEDING
     | UNBOUNDED dir=FOLLOWING
@@ -433,7 +437,7 @@ limitClauseItem:
 /* ------------------------------------------------------------ GROUPING CLAUSE ------------------------------------*/
 groupingClause:
     GROUP op=(BY | EXCEPT) componentID (COMMA componentID)* ( TIME_AGG LPAREN STRING_CONSTANT (COMMA delim=(FIRST|LAST))? RPAREN )?     # groupByOrExcept
-    | GROUP ALL ( TIME_AGG LPAREN STRING_CONSTANT RPAREN )?                                   # groupAll
+    | GROUP ALL ( TIME_AGG LPAREN STRING_CONSTANT RPAREN )?                                                               # groupAll
   ;
 
 havingClause:
@@ -556,8 +560,8 @@ codeItemRelationClause:
 
 valueDomainValue:
     IDENTIFIER
-    | INTEGER_CONSTANT
-    | NUMBER_CONSTANT
+    | signedInteger
+    | signedNumber
 ;
 
 scalarTypeConstraint:
@@ -679,8 +683,8 @@ routineName:
 ;
 
 constant:
-    INTEGER_CONSTANT
-    | NUMBER_CONSTANT
+    signedInteger
+    | signedNumber
     | BOOLEAN_CONSTANT
     | STRING_CONSTANT
     | NULL_CONSTANT

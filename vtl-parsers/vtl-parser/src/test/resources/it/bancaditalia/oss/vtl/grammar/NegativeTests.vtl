@@ -75,8 +75,8 @@ NORTH_AMERICA > US ;
 SOUTH_AMERICA = BR + UY + AR + CL 
 end hierarchical ruleset;
 
-//operator name starts with symbol
-define operator _max1 (x integer, y integer)
+//operator name starts with dot
+define operator .max1 (x integer, y integer)
 returns boolean is 
 if x > y then x else y
 end operator;

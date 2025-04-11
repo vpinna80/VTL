@@ -67,8 +67,10 @@ public class GrammarTest
 				}
 				else if (!buffer.matches("(\r?\n| )*"))
 				{
-					Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(fromString(buffer))));
+					VtlTokens lexer = new VtlTokens(fromString(buffer));
+					Vtl parser = new Vtl(new CommonTokenStream(lexer));
 			        SyntaxErrorListener listener = new SyntaxErrorListener();
+			        lexer.addErrorListener(listener);
 			        parser.addErrorListener(listener);
 					parser.start();
 

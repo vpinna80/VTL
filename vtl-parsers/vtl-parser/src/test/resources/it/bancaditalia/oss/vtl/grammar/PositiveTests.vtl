@@ -515,7 +515,7 @@ ds2 := ds1[calc Me2 := dateadd(Me1, 3, "W")];
 
 DS_r := dateadd(DS_1, 1, "M");
 
-temp := year("2022Q1");
+temp := getyear("2022Q1");
 
 temp := dayofyear("2020-12-14");
 
@@ -707,3 +707,10 @@ DS_r := DS_1 [ sub Id_1 = 1, Id_2 = "A"];
 DS_r := DS_1 [ sub Id_1 = 1, Id_2 = "B", Id_3 = "YY"];
 
 DS_r := DS_1 [sub Id_2 ="A"] + DS_1 [sub Id_2 ="B"];
+
+// Test SDMX identifiers
+DS_r := 1 + ECB:EXR;
+
+DS_r := EXR(*)/A.USD... + ECB:EXR/A.GBP...;
+
+DS_r := ECB:EXR(1.0)/....[sub CURRENCY = "USD"]; 
