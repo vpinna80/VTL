@@ -76,7 +76,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		DataSetMetadata dsMeta = dataset.getMetadata();
 		DataStructureComponent<Identifier, ?, ?> timeID = dsMeta.getComponents(Identifier.class, TIMEDS).iterator().next();

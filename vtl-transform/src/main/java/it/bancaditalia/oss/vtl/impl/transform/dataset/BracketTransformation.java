@@ -19,50 +19,64 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata.INSTANCE;
+import static java.util.Collections.emptySet;
 
-import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
+import java.util.Set;
+
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-public class BracketTransformation extends UnaryTransformation
+public class BracketTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
+	
 	private final DatasetClauseTransformation clause;
 	private final VTLAlias componentName;
+	private final Transformation operand;
 	
 	public BracketTransformation(Transformation operand, DatasetClauseTransformation clause, VTLAlias componentName)
 	{
-		super(operand);
+		this.operand = operand;
 		this.clause = clause;
 		this.componentName = componentName;
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
+	public VTLValue eval(TransformationScheme scheme)
 	{
-		if (clause != null)
-			return clause.eval(new ThisScope(repo, dataset));
-		else
-			return dataset.membership(componentName, lineageEnricher(this));
+		DataSet value = (DataSet) (operand == null ? scheme.resolve(THIS) : operand.eval(scheme));
+		
+		try
+		{
+			if (value.isDataSet())
+				if (clause != null)
+					return clause.eval(new ThisScope(scheme.getRepository(), value, scheme));
+				else
+					return value.membership(componentName, lineageEnricher(this));
+			else
+				throw new VTLInvalidParameterException(value, DataSet.class);
+		}
+		catch (VTLException e)
+		{
+			throw new VTLNestedException("In expression " + this, e);
+		}
 	}
 	
-	@Override
-	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
-	{
-		throw new UnsupportedOperationException();
-	}
-
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata metadata = operand.getMetadata(scheme);
@@ -71,10 +85,10 @@ public class BracketTransformation extends UnaryTransformation
 			return INSTANCE;
 		
 		if (!(metadata.isDataSet()))
-			throw new UnsupportedOperationException("Dataset expected as left operand of '[]' or '#' but found " + metadata);
+			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope(scheme.getRepository(), (DataSetMetadata) metadata));
+			return clause.getMetadata(new ThisScope(scheme.getRepository(), (DataSetMetadata) metadata, scheme));
 		else
 			return ((DataSetMetadata) metadata).membership(componentName);
 	}
@@ -83,5 +97,18 @@ public class BracketTransformation extends UnaryTransformation
 	public String toString()
 	{
 		return operand + (clause != null ? "[" + clause.toString() + "]": "") + (componentName != null ? "#" + componentName : "");
+	}
+
+	
+	@Override
+	public final boolean isTerminal()
+	{
+		return operand != null;
+	}
+	
+	@Override
+	public final Set<LeafTransformation> getTerminals()
+	{
+		return operand != null ? operand.getTerminals() : emptySet();
 	}
 }

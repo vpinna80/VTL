@@ -99,7 +99,7 @@ vtlServer <- function(input, output, session) {
           })
         }
       }) |> bindEvent(input[[prop$getName()]], ignoreInit = T)
-	  }
+    }
   }
 
   output$proxyControls <- renderUI({

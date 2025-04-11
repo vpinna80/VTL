@@ -134,7 +134,7 @@ public class FlowStockTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		DataSetMetadata dsMeta = dataset.getMetadata();
 		DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> freq = DURATIONDS.getDefaultVariable().as(Measure.class);
@@ -190,7 +190,7 @@ public class FlowStockTransformation extends UnaryTransformation
 	}
 	
 	@Override
-	protected final VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected final VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		throw new VTLInvalidParameterException(scalar, DataSet.class); 
 	}

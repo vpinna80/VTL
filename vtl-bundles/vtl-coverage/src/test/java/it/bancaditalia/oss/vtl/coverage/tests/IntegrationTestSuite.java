@@ -91,7 +91,7 @@ public class IntegrationTestSuite
 	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_RUN = Set.of(/*T, */E/*, TS, ES*/);
+	private static final Set<TestType> TO_RUN = Set.of(T, E/*, TS, ES*/);
 	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
 	private static final Engine ENGINE;
 	private static final boolean TOTAL_REPORT = true;

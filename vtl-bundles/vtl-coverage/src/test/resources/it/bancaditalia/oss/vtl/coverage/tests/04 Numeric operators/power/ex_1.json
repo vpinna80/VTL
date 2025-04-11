@@ -3,7 +3,7 @@
     {
       "name": "in_1",
       "source": "csv:in_1.csv",
-      "structure": "ex_1_str"
+      "structure": "in_1_str"
     },
     {
       "name": "ex_1",
@@ -13,7 +13,7 @@
   ],
   "structures": [
     {
-      "name": "ex_1_str",
+      "name": "in_1_str",
       "components": [
         {
           "name": "id1",
@@ -26,6 +26,19 @@
         {
           "name": "att1",
           "role": "Attribute"
+        }
+      ]
+    },
+    {
+      "name": "ex_1_str",
+      "components": [
+        {
+          "name": "id1",
+          "role": "Identifier"
+        },
+        {
+          "name": "m1",
+          "role": "Measure"
         }
       ]
     }

@@ -26,9 +26,8 @@ import static java.util.Collections.singletonMap;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
-import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -39,6 +38,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
@@ -52,34 +52,52 @@ public class BetweenTransformation extends UnaryTransformation
 	private static final long serialVersionUID = 1L;
 	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().as(Measure.class);
 	
-	private final ScalarValue<?, ?, ?, ?> from;
-	private final ScalarValue<?, ?, ?, ?> to;
+	private final Transformation from;
+	private final Transformation to;
 
-	private final transient ValueDomainSubset<?, ?> domain;
-
-	public BetweenTransformation(Transformation operand, Transformation fromT, Transformation toT)
+	public BetweenTransformation(Transformation operand, Transformation from, Transformation to)
 	{
 		super(operand);
+
+		this.from = from;
+		this.to = to;
+	}
+
+	@Override
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	{
+		ScalarValue<?, ?, ?, ?> fromValue = (ScalarValue<?, ?, ?, ?>) from.eval(scheme);
+		ScalarValue<?, ?, ?, ?> toValue = (ScalarValue<?, ?, ?, ?>) to.eval(scheme);
 		
-		if (fromT instanceof ConstantOperand && toT instanceof ConstantOperand)
-		{
-			this.from = ((ConstantOperand) fromT).eval(null);
-			this.to = ((ConstantOperand) toT).eval(null);
-		}
+		return test(scalar, fromValue, toValue);
+	}
+
+	@Override
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
+	{
+		ScalarValue<?, ?, ?, ?> fromValue = (ScalarValue<?, ?, ?, ?>) from.eval(scheme);
+		ScalarValue<?, ?, ?, ?> toValue = (ScalarValue<?, ?, ?, ?>) to.eval(scheme);
+		
+		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
+				dp -> singletonMap(BOOL_VAR, test(dp.get(measure), fromValue, toValue)));
+	}
+
+	private static ScalarValue<?, ?, EntireBooleanDomainSubset, BooleanDomain> test(ScalarValue<?, ?, ?, ?> scalar,
+			ScalarValue<?, ?, ?, ?> fromValue, ScalarValue<?, ?, ?, ?> toValue) 
+	{
+		if (scalar.isNull()) 
+			return NullValue.instance(BOOLEANDS);
 		else
-			throw new UnsupportedOperationException("Non-constant range parameters in between expression are not supported");
-		
-		if (!from.getDomain().isAssignableFrom(to.getDomain()) || !to.getDomain().isAssignableFrom(from.getDomain()))
-			throw new VTLIncompatibleTypesException("between", from, to);
-		if (from.isNull() || to.isNull())
-			throw new VTLException("Between: Null constant not allowed.");
-		this.domain = from.getDomain(); 
+			return BooleanValue.of(scalar.compareTo(fromValue) >= 0 && scalar.compareTo(toValue) <= 0);
 	}
 
 	@Override
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata op = operand.getMetadata(scheme);
+		VTLValueMetadata fromOp = from.getMetadata(scheme);
+		VTLValueMetadata toOp = to.getMetadata(scheme);
 
 		if (op.isDataSet())
 		{
@@ -91,9 +109,19 @@ public class BetweenTransformation extends UnaryTransformation
 				throw new UnsupportedOperationException("Expected single measure but found: " + measures);
 
 			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
+			
+			if (!(fromOp instanceof ScalarValueMetadata))
+				throw new VTLInvalidParameterException(fromOp, ScalarValueMetadata.class);
+			if (!(toOp instanceof ScalarValueMetadata))
+				throw new VTLInvalidParameterException(toOp, ScalarValueMetadata.class);
+			
+			ValueDomainSubset<?, ?> fromDomain = ((ScalarValueMetadata<?, ?>) fromOp).getDomain();
+			ValueDomainSubset<?, ?> toDomain = ((ScalarValueMetadata<?, ?>) toOp).getDomain();
 
-			if (!measure.getVariable().getDomain().isAssignableFrom(domain))
-				throw new VTLIncompatibleTypesException("between", measure, domain);
+			if (!measure.getVariable().getDomain().isAssignableFrom(fromDomain))
+				throw new VTLIncompatibleTypesException("between", measure, fromDomain);
+			if (!measure.getVariable().getDomain().isAssignableFrom(toDomain))
+				throw new VTLIncompatibleTypesException("between", measure, toDomain);
 
 			return new DataStructureBuilder()
 					.addComponents(ds.getIDs())
@@ -102,19 +130,6 @@ public class BetweenTransformation extends UnaryTransformation
 		}
 		else
 			return BOOLEAN;
-	}
-
-	@Override
-	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
-	{
-		return scalar.isNull() ? NullValue.instance(BOOLEANDS) : BooleanValue.of(scalar.compareTo(from) >= 0 && scalar.compareTo(to) <= 0);
-	}
-
-	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
-	{
-		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), dp -> singletonMap(BOOL_VAR, evalOnScalar(repo, dp.get(measure), metadata)));
 	}
 	
 	@Override

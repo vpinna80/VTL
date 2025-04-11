@@ -238,7 +238,7 @@ timeOperatorsComponent:
     | YEAR_OP LPAREN exprComponent RPAREN                                                # yearAtomComponent
     | MONTH_OP LPAREN exprComponent RPAREN                                               # monthAtomComponent
     | DAYOFMONTH LPAREN exprComponent RPAREN                                             # dayOfMonthAtomComponent
-    | DAYOFYEAR LPAREN exprComponent RPAREN                                              # datOfYearAtomComponent
+    | DAYOFYEAR LPAREN exprComponent RPAREN                                              # dayOfYearAtomComponent
     | DAYTOYEAR LPAREN exprComponent RPAREN                                              # dayToYearAtomComponent
     | DAYTOMONTH LPAREN exprComponent RPAREN                                             # dayToMonthAtomComponent
     | YEARTODAY LPAREN exprComponent RPAREN                                              # yearTodayAtomComponent
@@ -683,11 +683,11 @@ routineName:
 ;
 
 constant:
-    signedInteger
-    | signedNumber
-    | BOOLEAN_CONSTANT
-    | STRING_CONSTANT
-    | NULL_CONSTANT
+    signedInteger      # integerLiteral
+    | signedNumber     # numberLiteral
+    | BOOLEAN_CONSTANT # booleanLiteral
+    | STRING_CONSTANT  # stringLiteral
+    | NULL_CONSTANT    # nullLiteral
 ;
 
 basicScalarType:

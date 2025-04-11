@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine;
 
+import static org.antlr.v4.runtime.atn.PredictionMode.LL_EXACT_AMBIG_DETECTION;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
@@ -85,9 +87,13 @@ public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements 
 			return result;
 		}
 		else if (node instanceof StatementContext)
-			try {
+			try
+			{
 				return Stream.of(buildStatement((StatementContext) node));
-			} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException | InstantiationException cause) {
+			}
+			catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException 
+					| InvocationTargetException | NoSuchMethodException | ClassNotFoundException | InstantiationException cause)
+			{
 				throw new RuntimeException(cause);
 			}
 		else
@@ -100,6 +106,7 @@ public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements 
 		Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(CharStreams.fromString(statements))));
 		parser.removeErrorListeners();
 		parser.addErrorListener(ThrowingErrorListener.INSTANCE);
+		parser.getInterpreter().setPredictionMode(LL_EXACT_AMBIG_DETECTION);
 		return parser.start().accept(this);
 	}
 }

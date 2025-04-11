@@ -248,7 +248,10 @@ public class ArithmeticTransformation extends BinaryTransformation
 					throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), NUMBERDS, measure);
 		}
 		
-		return new DataStructureBuilder(dataset).removeComponents(dataset.getComponents(Attribute.class)).build();
+		return new DataStructureBuilder(dataset)
+				.removeComponents(dataset.getComponents(Attribute.class))
+				.addComponents(dataset.getComponents(ViralAttribute.class))
+				.build();
 	}
 	
 	@Override

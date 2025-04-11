@@ -224,20 +224,20 @@ public class JoinTransformation extends TransformationImpl
 			result = joinCaseB2(repo, values);
 
 		if (filter != null)
-			result = (DataSet) filter.eval(new ThisScope(scheme.getRepository(), result));
+			result = (DataSet) filter.eval(new ThisScope(scheme.getRepository(), result, scheme));
 
 		if (apply != null)
 			result = applyClause(metadata, scheme, result);
 		else if (calc != null)
-			result = (DataSet) calc.eval(new ThisScope(scheme.getRepository(), result));
+			result = (DataSet) calc.eval(new ThisScope(scheme.getRepository(), result, scheme));
 		else if (aggr != null)
-			result = (DataSet) aggr.eval(new ThisScope(scheme.getRepository(), result));
+			result = (DataSet) aggr.eval(new ThisScope(scheme.getRepository(), result, scheme));
 		
 		if (keepOrDrop != null)
-			result = (DataSet) keepOrDrop.eval(new ThisScope(scheme.getRepository(), result));
+			result = (DataSet) keepOrDrop.eval(new ThisScope(scheme.getRepository(), result, scheme));
 		
 		if (rename != null)
-			result = (DataSet) rename.eval(new ThisScope(scheme.getRepository(), result));
+			result = (DataSet) rename.eval(new ThisScope(scheme.getRepository(), result, scheme));
 
 		Set<DataStructureComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
 		remaining.removeAll(metadata);
@@ -597,7 +597,7 @@ public class JoinTransformation extends TransformationImpl
 
 		// modify the result structure as needed
 		if (filter != null)
-			result = (DataSetMetadata) filter.getMetadata(new ThisScope(scheme.getRepository(), result));
+			result = (DataSetMetadata) filter.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
 		if (apply != null)
 		{
 			DataSetMetadata applyResult = result;
@@ -611,13 +611,13 @@ public class JoinTransformation extends TransformationImpl
 					.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).addComponents(applyComponents).build();
 		}
 		else if (calc != null)
-			result = (DataSetMetadata) calc.getMetadata(new ThisScope(scheme.getRepository(), result));
+			result = (DataSetMetadata) calc.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
 		else if (aggr != null)
-			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(scheme.getRepository(), result));
+			result = (DataSetMetadata) aggr.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
 		if (keepOrDrop != null)
-			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(scheme.getRepository(), result));
+			result = (DataSetMetadata) keepOrDrop.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
 		if (rename != null)
-			result = (DataSetMetadata) rename.getMetadata(new ThisScope(scheme.getRepository(), result));
+			result = (DataSetMetadata) rename.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
 
 		// check if keep - drop - rename has made some components unambiguous
 		Map<VTLAlias, List<VTLAlias>> unaliasedNames = result.stream().map(c -> c.getVariable().getAlias())

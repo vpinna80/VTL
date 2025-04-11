@@ -213,7 +213,7 @@ public class AggregateTransformation extends TransformationImpl
 			
 			if (having != null)
 			{
-				DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset));
+				DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
 				result = result.filteredMappedJoin(structure, dsHaving, (dp, having) -> 
 						having.getValue(HAVING_COMP) == BooleanValue.TRUE, (dp, havingCond) -> dp);
 			}
@@ -337,7 +337,7 @@ public class AggregateTransformation extends TransformationImpl
 				
 				if (having != null)
 				{
-					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, dataset));
+					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, dataset, scheme));
 					ValueDomainSubset<?, ?> domain = null;
 					if (!havingMeta.isDataSet())
 						domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();

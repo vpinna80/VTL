@@ -146,7 +146,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet dataset = (DataSet) getThisValue(scheme);
 
-		TransformationScheme thisScope = new ThisScope(scheme.getRepository(), dataset);
+		TransformationScheme thisScope = new ThisScope(scheme.getRepository(), dataset, scheme);
 		
 		List<DataSet> resultList = aggrItems.stream()
 			.map(AggrClauseItem::getOperand)
@@ -171,7 +171,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		MetadataRepository repo = scheme.getRepository();
 		if (having != null)
 		{
-			DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset));
+			DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
 			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> condMeasure = dsHaving.getMetadata().getSingleton(Measure.class, BOOLEANDS);
 			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a);
 		}
@@ -245,7 +245,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			
 			if (having != null)
 			{
-				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, structure));
+				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, structure, scheme));
 				ValueDomainSubset<?, ?> domain;
 				if (!havingMeta.isDataSet())
 					domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();

@@ -86,13 +86,13 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		List<SortCriterion> ordering;
 		if (orderByClause.isEmpty())

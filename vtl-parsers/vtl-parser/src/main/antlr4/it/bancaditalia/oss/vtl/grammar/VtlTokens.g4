@@ -267,7 +267,7 @@ STRING_CONSTANT
 
 fragment
 ID_PART
-  : [A-Za-z0-9_] [A-Za-z0-9_.]*
+  : [A-Za-z_] [A-Za-z0-9_.]*
   ;
   
 IDENTIFIER

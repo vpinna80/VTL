@@ -82,7 +82,7 @@ public class FilterClauseTransformationTest
 	@MethodSource
 	public void test(String name, DataSet sample, String[] expectedResult)
 	{
-		session = new ThisScope(session.getRepository(), sample);
+		session = new ThisScope(session.getRepository(), sample, session);
 		FilterClauseTransformation fct = new FilterClauseTransformation(condition);
 		
 		DataSetMetadata metadata = (DataSetMetadata) fct.getMetadata(session);

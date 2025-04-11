@@ -68,7 +68,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		if (scalar.isNull())
 			return scalar;
@@ -87,12 +87,12 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		DataStructureComponent<Measure, ?, ?> measure = ((DataSetMetadata) metadata).getComponents(Measure.class).iterator().next();
 		
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
-				dp -> singletonMap(measure, evalOnScalar(repo, dp.get(measure), null)));
+				dp -> singletonMap(measure, evalOnScalar(repo, dp.get(measure), null, scheme)));
 	}
 
 	@Override

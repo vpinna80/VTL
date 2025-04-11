@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.number;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
@@ -45,6 +46,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -92,7 +94,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		{
 			if (number.isNull())
 				return NullValue.instance(NUMBERDS);
-			if (number instanceof IntegerValue)
+			else if (number instanceof IntegerValue)
 			{
 				Number res = longOp.apply(((IntegerValue<?, ?>) number).get());
 				return res instanceof Long ? IntegerValue.of(res.longValue()) : createNumberValue(res);
@@ -122,17 +124,18 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		return operator.apply(scalar);
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), dp -> {
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(Measure.class));
-				map.replaceAll((c, v) -> operator.apply(v));
+				map.replaceAll((k, v) -> operator.apply(v));
+				map.putAll(dp.getValues(ViralAttribute.class));
 				return map;
 			});
 	}
@@ -143,7 +146,9 @@ public class NumericUnaryTransformation extends UnaryTransformation
 		VTLValueMetadata meta = operand.getMetadata(session);
 		
 		if (!meta.isDataSet())
-			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
+			if (INTEGER.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
+				return INTEGER;
+			else if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) meta).getDomain()))
 				return NUMBER;
 			else
 				throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
@@ -159,7 +164,10 @@ public class NumericUnaryTransformation extends UnaryTransformation
 			if (nonnumeric.size() > 0) 
 				throw new UnsupportedOperationException("Expected only numeric measures but found: " + nonnumeric);
 			
-			return new DataStructureBuilder(dataset).removeComponents(dataset.getComponents(Attribute.class)).build();
+			return new DataStructureBuilder(dataset)
+					.removeComponents(dataset.getComponents(Attribute.class))
+					.addComponents(dataset.getComponents(ViralAttribute.class))
+					.build();
 		}
 	}
 	

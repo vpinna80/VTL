@@ -21,15 +21,15 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 
-import it.bancaditalia.oss.vtl.engine.DMLStatement;
+import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class ThisScope extends AbstractScope
@@ -40,19 +40,22 @@ public class ThisScope extends AbstractScope
 	private final DataSet thisValue;
 	private final DataSetMetadata thisMetadata;
 	private final MetadataRepository repo;
+	private final TransformationScheme parent;
 	
-	public ThisScope(MetadataRepository repo, DataSet thisValue)
+	public ThisScope(MetadataRepository repo, DataSet thisValue, TransformationScheme parent)
 	{
-		this.repo = repo;
 		this.thisValue = thisValue;
 		this.thisMetadata = thisValue.getMetadata();
+		this.repo = repo;
+		this.parent = parent;
 	}
 
-	public ThisScope(MetadataRepository repo, DataSetMetadata thisMetadata)
+	public ThisScope(MetadataRepository repo, DataSetMetadata thisMetadata, TransformationScheme parent)
 	{
-		this.repo = repo;
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
+		this.repo = repo;
+		this.parent = parent;
 	}
 
 	@Override
@@ -90,9 +93,9 @@ public class ThisScope extends AbstractScope
 	}
 
 	@Override
-	public DMLStatement getRule(VTLAlias node)
+	public Statement getRule(VTLAlias node)
 	{
-		throw new VTLUnboundAliasException(node);
+		return parent.getRule(node);
 	}
 
 	@Override

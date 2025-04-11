@@ -54,13 +54,13 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	public VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		return IntegerValue.of((long) ((TimeValue<?, ?, ?, ?>) scalar).getEndDate().get().get(field.getField()));
 	}
 
 	@Override
-	public VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata)
+	public VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -88,6 +88,6 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 				throw new VTLIncompatibleTypesException(field.toString(), TIMEDS, domain);
 		}
 		else
-			return computeMetadata(new ThisScope(scheme.getRepository(), (DataSetMetadata) input));
+			return computeMetadata(new ThisScope(scheme.getRepository(), (DataSetMetadata) input, scheme));
 	}
 }

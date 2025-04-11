@@ -65,9 +65,9 @@ public abstract class UnaryTransformation extends TransformationImpl
 		try
 		{
 			if (value.isDataSet())
-				return evalOnDataset(scheme.getRepository(), (DataSet) value, getMetadata(scheme));
+				return evalOnDataset(scheme.getRepository(), (DataSet) value, getMetadata(scheme), scheme);
 			else
-				return evalOnScalar(scheme.getRepository(), (ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme));
+				return evalOnScalar(scheme.getRepository(), (ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme), scheme);
 		}
 		catch (VTLException e)
 		{
@@ -80,7 +80,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 		return operand;
 	}
 
-	protected abstract VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata);
+	protected abstract VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme);
 
-	protected abstract VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata);
+	protected abstract VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme);
 }

@@ -56,12 +56,20 @@ import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.grammar.Vtl;
+import it.bancaditalia.oss.vtl.grammar.Vtl.BooleanLiteralContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.IntegerLiteralContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.LimitClauseItemContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.NullLiteralContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.NumberLiteralContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.SignedIntegerContext;
+import it.bancaditalia.oss.vtl.grammar.Vtl.StringLiteralContext;
 import it.bancaditalia.oss.vtl.grammar.VtlTokens;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedTokenException;
@@ -675,29 +683,41 @@ public class OpsFactory implements Serializable
 		if (element == null)
 			return null;
 		
-		Token token;
-		if (element instanceof TerminalNode)
-			token = ((TerminalNode) element).getSymbol();
-		else
+		if (element instanceof RuleNode)
+			element = resolveRecursiveContext((ParserRuleContext) element);
+		
+		String text = element.getText();
+		if (element instanceof StringLiteralContext)
+			return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
+		if (element instanceof IntegerLiteralContext || element instanceof SignedIntegerContext)
+			return IntegerValue.of(Long.parseLong(text));
+		if (element instanceof NumberLiteralContext)
+			return NumberValueImpl.createNumberValue(text);
+		if (element instanceof NullLiteralContext)
+			return NullValue.instance(NULLDS);
+		if (element instanceof BooleanLiteralContext)
+			return BooleanValue.of(Boolean.parseBoolean(text));
+		if (element instanceof LimitClauseItemContext)
 		{
-			ParserRuleContext recCtx = resolveRecursiveContext((ParserRuleContext) element);
-			token = (Token) requireNonNull(recCtx.getChild(TerminalNode.class, 0), "No terminal node in " + element.getClass().getSimpleName() + ": '" + element.getText() + "'").getPayload();
+			if (((LimitClauseItemContext) element).UNBOUNDED() != null) 
+				return IntegerValue.of((long) (Integer.MAX_VALUE));
+			if (((LimitClauseItemContext) element).CURRENT() != null) 
+				return IntegerValue.of(0L);
+
+			return IntegerValue.of(Long.parseLong(element.getChild(0).getText()));
 		}
 		
-		int tokenType = token.getType();
-		String text = token.getText();
-		switch (tokenType)
+		if (element instanceof TerminalNode)
 		{
-			case Vtl.INTEGER_CONSTANT: return IntegerValue.of(Long.parseLong(text));
-			case Vtl.NUMBER_CONSTANT: return NumberValueImpl.createNumberValue(text);
-			case Vtl.BOOLEAN_CONSTANT: return BooleanValue.of(Boolean.parseBoolean(text));
-			case Vtl.STRING_CONSTANT: return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
-			case Vtl.NULL_CONSTANT: return NullValue.instance(NULLDS);
-			// These are specific values for analytic invocations to determine the sliding window size
-			case Vtl.UNBOUNDED: return IntegerValue.of((long) (Integer.MAX_VALUE));
-			case Vtl.CURRENT: return IntegerValue.of(0L);
-			default: throw new VTLUnmappedTokenException(text, param);
+			Token token = ((TerminalNode) element).getSymbol();
+			switch (token.getType())
+			{
+				case Vtl.STRING_CONSTANT: return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
+				default: throw new VTLUnmappedTokenException(text, param);
+			}
 		}
+		else
+			throw new VTLUnmappedContextException((ParserRuleContext) element);
 	}
 
 	private ParserRuleContext resolveRecursiveContext(ParserRuleContext ctx)
