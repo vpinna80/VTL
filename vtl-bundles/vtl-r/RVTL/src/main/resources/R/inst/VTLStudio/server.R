@@ -90,7 +90,6 @@ vtlServer <- function(input, output, session) {
             configManager$newManager()$saveConfiguration(writer)
             string <- .jstrVal(writer$toString())
             propfile <- file.path(J("java.lang.System")$getProperty("user.home"), '.vtlStudio.properties')
-            browser()
             writeLines(string, propfile)
           }, error = function(e) {
             if (!is.null(e$jobj)) {
@@ -383,7 +382,6 @@ vtlServer <- function(input, output, session) {
       configManager$newManager()$saveConfiguration(writer)
       string <- .jstrVal(writer$toString())
       propfile <- file.path(J("java.lang.System")$getProperty("user.home"), '.vtlStudio.properties')
-      browser()
       writeLines(string, propfile)
     }, error = function(e) {
       if (!is.null(e$jobj)) {
@@ -391,7 +389,7 @@ vtlServer <- function(input, output, session) {
       }
       stop(e)
     })
-  }) |> bindEvents(input$envs, ignoreInit = T)
+  }) |> bindEvent(input$envs, ignoreInit = T)
     
   # load vtl script
   observe({
