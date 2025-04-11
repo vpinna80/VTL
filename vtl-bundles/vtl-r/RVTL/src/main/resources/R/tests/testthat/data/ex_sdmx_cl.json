@@ -1,0 +1,49 @@
+{
+  "datasets": [
+    {
+      "name": "ds_csv",
+      "structure": "DS_1"
+    }
+  ],
+  "structures": [
+    {
+      "name": "DS_1",
+      "components": [
+        {
+          "name": "Id_1",
+          "role": "Identifier"
+        },
+        {
+          "name": "Id_2",
+          "role": "Identifier"
+        },
+        {
+          "name": "Me_1",
+          "role": "Measure"
+        },
+        {
+          "name": "Me_2",
+          "role": "Measure"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "Id_1",
+      "domain": "integer"
+    },
+    {
+      "name": "Id_2",
+      "domain": "BIS:CL_FREQ(1.0)"
+    },
+    {
+      "name": "Me_1",
+      "domain": "integer"
+    },
+    {
+      "name": "Me_2",
+      "domain": "number"
+    }
+  ]
+}

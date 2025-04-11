@@ -739,6 +739,7 @@
 									<exclude>**/*.Rproj</exclude>
 									<exclude>/R</exclude>
 									<exclude>**/.externalToolBuilders/**</exclude>
+									<exclude>**/*.Rdata</exclude>
 								</excludes>
 							</licenseSet>
 						</licenseSets>
