@@ -245,3 +245,27 @@ vtlListSessions <- function(){
 vtlKillSessions <- function(sessions){
   VTLSessionManager$kill(sessions)
 }
+
+#' @title Sets the VTL backend logging level
+#' @description This command sets a given logging level in the VTL Java engine.
+#' @usage vtlLogLevel(level)
+#' @param level the log level as one of the following strings: 'fatal' 'warn' 'info' 'debug' 'trace' 'off'
+#' @export
+vtlLogLevel <- function (level = c('debug', 'trace', 'info', 'warn', 'fatal', 'off')) {
+  vtlTryCatch({
+    level <- match.arg(level)
+    config <- J("org.apache.logging.log4j.core.config.Configurator")
+    loggerName <- "it.bancaditalia.oss.vtl"
+    levels <- J("org.apache.logging.log4j.Level")
+    config$setLevel(loggerName, 
+      switch(level,
+        fatal = levels$FATAL,
+        warn = levels$WARN,
+        info = levels$INFO,
+        debug = levels$DEBUG,
+        trace = levels$TRACE,
+        off = levels$OFF
+      )
+    )
+  })
+}

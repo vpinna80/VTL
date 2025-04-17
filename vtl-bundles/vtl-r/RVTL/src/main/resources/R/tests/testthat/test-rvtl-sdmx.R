@@ -19,6 +19,8 @@
 #
 
 testthat::test_that("SDMX env + SDMX repo", {
+    vtlLogLevel('off')
+    
     tryCatch({
     set_vtl_sdmx_properties()
     vtlAddStatements("test4", "ds_sdmx:='BIS:WS_EER(1.0)/D.N.B.IT';")
@@ -40,6 +42,8 @@ testthat::test_that("SDMX env + SDMX repo", {
 })
 
 testthat::test_that("CSV env + json and SDMX CL repo", {
+    vtlLogLevel('off')
+    
     tryCatch({
     set_vtl_sdmx_csv_properties()
     vtlAddStatements("test5", "ds_csv_sdmx:=ds_csv;")
@@ -65,6 +69,8 @@ testthat::test_that("CSV env + json and SDMX CL repo", {
 })
 
 testthat::test_that("R env + json and SDMX DSD repo", {
+    vtlLogLevel('off')
+    
     tryCatch(
         {
             set_vtl_sdmx_dsd_properties()

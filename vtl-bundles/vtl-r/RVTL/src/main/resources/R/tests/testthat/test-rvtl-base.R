@@ -19,6 +19,8 @@
 #
 
 testthat::test_that("R env", {
+  vtlLogLevel('off')
+  
   tryCatch({
   set_vtl_properties()
   ds <- data.frame(l=letters,
@@ -58,6 +60,8 @@ testthat::test_that("R env", {
 })
 
 testthat::test_that("R env + json repo", {
+  vtlLogLevel('off')
+  
   tryCatch({
   set_vtl_r_json_properties()
   ds_local=data.frame(Id_1=c(10L, 10L, 11L, 11L),                                     
@@ -92,6 +96,8 @@ testthat::test_that("R env + json repo", {
 })
 
 testthat::test_that("CSV env + json repo", {
+  vtlLogLevel('off')
+
   tryCatch({
   set_vtl_csv_json_properties()
   vtlAddStatements('test3', 'ds2:=ds_csv;ds3:=ds_csv+ds2;')

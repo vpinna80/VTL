@@ -296,7 +296,7 @@ ID_PART
 
 IDENTIFIER
   : (ID_PART COLON)? ID_PART ( LPAREN [0-9._+*~]+ RPAREN )? ( DIV ('.' | ID_PART)+ )?
-  | '\'' ( '\\\'' | [^'] )* '\''
+  | '\'' ( '\\\'' | ~'\'' )* '\''
   ;
 
 /*
