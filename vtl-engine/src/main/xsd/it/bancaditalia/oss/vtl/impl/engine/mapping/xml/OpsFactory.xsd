@@ -33,6 +33,7 @@
 	<xs:complexType name="parserconfig">
 		<xs:sequence>
 			<xs:element name="package" type="xs:string" minOccurs="1" />
+			<xs:element name="parserclass" type="xs:string" minOccurs="1" />
 			<xs:element name="tokenset" type="tokenset" maxOccurs="unbounded" minOccurs="0" />
 			<xs:element name="recursivecontexts" type="recursivecontexts" minOccurs="0" />
 			<xs:element name="mapping" type="mapping" maxOccurs="unbounded" minOccurs="0" />

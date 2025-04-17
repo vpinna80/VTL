@@ -32,6 +32,8 @@ import java.util.List;
 
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.jupiter.api.Test;
+import org.sdmx.vtl.VtlLexer;
+import org.sdmx.vtl.VtlParser;
 
 public class GrammarTest
 {
@@ -40,7 +42,7 @@ public class GrammarTest
 	{
 		try (BufferedReader reader = newBufferedReader(Paths.get(GrammarTest.class.getResource("PositiveTests.vtl").toURI())))
 		{
-			Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(fromReader(reader))));
+			VtlParser parser = new VtlParser(new CommonTokenStream(new VtlLexer(fromReader(reader))));
 	        SyntaxErrorListener listener = new SyntaxErrorListener();
 	        parser.addErrorListener(listener);
 			parser.start();
@@ -67,8 +69,8 @@ public class GrammarTest
 				}
 				else if (!buffer.matches("(\r?\n| )*"))
 				{
-					VtlTokens lexer = new VtlTokens(fromString(buffer));
-					Vtl parser = new Vtl(new CommonTokenStream(lexer));
+					VtlLexer lexer = new VtlLexer(fromString(buffer));
+					VtlParser parser = new VtlParser(new CommonTokenStream(lexer));
 			        SyntaxErrorListener listener = new SyntaxErrorListener();
 			        lexer.addErrorListener(listener);
 			        parser.addErrorListener(listener);

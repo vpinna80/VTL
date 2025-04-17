@@ -21,7 +21,10 @@
 
 -->
 <parserconfig xmlns="http://oss.bancaditalia.it/vtl">
+	
 	<package>it.bancaditalia.oss.vtl.impl.transform</package>
+	<parserclass>org.sdmx.vtl.VtlParser</parserclass>
+	
 	<tokenset name="Duration" class="it.bancaditalia.oss.vtl.impl.types.data.Frequency">
 		<tokenmapping name="A" value="A" />
 		<tokenmapping name="S" value="S" />

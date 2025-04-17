@@ -24,6 +24,10 @@ import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestTy
 import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.ES;
 import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.T;
 import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.TS;
+import static java.lang.Integer.compare;
+import static java.lang.System.lineSeparator;
+import static java.nio.file.Files.newBufferedReader;
+import static java.nio.file.Files.newDirectoryStream;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -127,15 +131,15 @@ public class IntegrationTestSuite
 		StringBuilder testCode = new StringBuilder();
 		List<Arguments> tests = new ArrayList<>();
 
-		for (Path category: Files.newDirectoryStream(root, Files::isDirectory))
-			for (Path operator: Files.newDirectoryStream(category, Files::isDirectory))
-				for (Path test: Files.newDirectoryStream(operator.resolve(suffix), "*.vtl"))
+		for (Path category: newDirectoryStream(root, Files::isDirectory))
+			for (Path operator: newDirectoryStream(category, Files::isDirectory))
+				for (Path test: newDirectoryStream(operator.resolve(suffix), "*.vtl"))
 				{
 					Matcher matcher = Pattern.compile("([0-9])").matcher(test.getFileName().toString());
 					if (!matcher.find())
 						throw new IllegalStateException(test.toString());
 					String number = matcher.group(1);
-					try (BufferedReader testReader = Files.newBufferedReader(test))
+					try (BufferedReader testReader = newBufferedReader(test))
 					{
 						String testLine;
 						int headerLines = 20;
@@ -143,7 +147,7 @@ public class IntegrationTestSuite
 						{
 							if (--headerLines > 0)
 								continue;
-							testCode.append(testLine).append(System.lineSeparator());
+							testCode.append(testLine).append(lineSeparator());
 						}
 
 						tests.add(Arguments.of(category, operator, number, testCode.toString()));
@@ -154,6 +158,11 @@ public class IntegrationTestSuite
 		return tests.parallelStream();
 	}
 	
+	private static JsonMetadataRepository getJsonMetaRepo(URL jsonURL) throws IOException
+	{
+		return new JsonMetadataRepository(jsonURL, ENGINE);
+	}
+	
 	@RepeatedParameterizedTest(value = REPETITIONS, name = "{1} test {2} rep {currentRepetition}/{totalRepetitions}")
 	@MethodSource("test")
 	public void test(Path categ, Path operator, String number, String testCode) throws Throwable 
@@ -162,8 +171,7 @@ public class IntegrationTestSuite
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve(String.format("ex_%s.json", number)).toUri().toURL();
-		JavaVTLEngine engine = new JavaVTLEngine();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, engine), engine, 
+		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
 				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator))), getMockWorkspace());
 		doTest(number, session);
 	}
@@ -176,7 +184,7 @@ public class IntegrationTestSuite
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
+		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
 				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
 		doTest(number, session);
 	}
@@ -190,7 +198,7 @@ public class IntegrationTestSuite
 
 		Environment sparkEnv = getSparkEnv(List.of(operator));
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
+		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
 				List.of(new TestEnvironment(), sparkEnv, new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
 		doTest(number, session);
 	}
@@ -204,7 +212,7 @@ public class IntegrationTestSuite
 		
 		Environment sparkEnv = getSparkEnv(List.of(operator.resolve("examples")));
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, new JsonMetadataRepository(jsonURL, ENGINE), ENGINE, 
+		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
 				List.of(new TestEnvironment(), sparkEnv, new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
 		doTest(number, session);
 	}
@@ -289,6 +297,10 @@ public class IntegrationTestSuite
 				
 			if (!found)
 			{
+				Map<DataPoint, Integer> map = new TreeMap<>((dp1, dp2) -> compare(dpr.getDistance(dp1), dpr.getDistance(dp2)));
+				for (DataPoint dpe: against)
+					map.put(dpe, dpr.getDistance(dpe));
+
 				StringWriter writer = new StringWriter();
 				PrintWriter pr = new PrintWriter(writer);
 				TreeSet<DataPoint> sorted = new TreeSet<>((dpa, dpb) -> Integer.compare(dpr.getDistance(dpa), dpr.getDistance(dpb)));

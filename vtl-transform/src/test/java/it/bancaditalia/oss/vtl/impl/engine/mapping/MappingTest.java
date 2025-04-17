@@ -51,10 +51,10 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.Test;
+import org.sdmx.vtl.VtlParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.grammar.Vtl;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Aliasparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Check;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Context;
@@ -116,11 +116,12 @@ public class MappingTest
 		StreamSource xmlConfig = new StreamSource(file.openStream());
 		Parserconfig config = jc.createUnmarshaller().unmarshal(xmlConfig, Parserconfig.class).getValue();
 		String packageName = config.getPackage();
+		String parserClassName = config.getParserclass();
 
 		Set<Class<?>> recursive = new HashSet<>();
 		for (Context context : config.getRecursivecontexts().getContext())
 		{
-			Class<?> recClass = Class.forName("it.bancaditalia.oss.vtl.grammar.Vtl$" + context.getName(), true, Thread.currentThread().getContextClassLoader());
+			Class<?> recClass = Class.forName(parserClassName + "$" + context.getName(), true, Thread.currentThread().getContextClassLoader());
 			recursive.add(recClass);
 		}
 
@@ -166,7 +167,7 @@ public class MappingTest
 				else
 					mappings.put(from, tokens);
 				
-				Class<?> fromClass = Class.forName("it.bancaditalia.oss.vtl.grammar.Vtl$" + from + "Context", true, Thread.currentThread().getContextClassLoader());
+				Class<?> fromClass = Class.forName(parserClassName + "$" + from + "Context", true, Thread.currentThread().getContextClassLoader());
 				Class<?> toClass = Class.forName(packageName + "." + mapping.getTo(), true, Thread.currentThread().getContextClassLoader());
 				
 				requireNonNull(fromClass, "from class missing in mapping: " + from);
@@ -290,9 +291,9 @@ public class MappingTest
 							.filter(m -> m.getName().equals(name))
 							.findAny();
 					
-				if (member.isEmpty() && Arrays.stream(Vtl.class.getDeclaredClasses()).anyMatch(c -> fromClass == c))
+				if (member.isEmpty() && Arrays.stream(VtlParser.class.getDeclaredClasses()).anyMatch(c -> fromClass == c))
 				{
-					List<Class<?>> candidates = Arrays.stream(Vtl.class.getDeclaredClasses())
+					List<Class<?>> candidates = Arrays.stream(VtlParser.class.getDeclaredClasses())
 							.filter(fromClass::isAssignableFrom)
 							.collect(toList());
 					

@@ -49,30 +49,30 @@ import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.sdmx.vtl.VtlParser;
+import org.sdmx.vtl.VtlParser.CodeItemRelationContext;
+import org.sdmx.vtl.VtlParser.CompConstraintContext;
+import org.sdmx.vtl.VtlParser.ComponentIDContext;
+import org.sdmx.vtl.VtlParser.ComponentTypeContext;
+import org.sdmx.vtl.VtlParser.DatasetTypeContext;
+import org.sdmx.vtl.VtlParser.DefDatapointRulesetContext;
+import org.sdmx.vtl.VtlParser.DefHierarchicalContext;
+import org.sdmx.vtl.VtlParser.DefOperatorContext;
+import org.sdmx.vtl.VtlParser.DefOperatorsContext;
+import org.sdmx.vtl.VtlParser.DefineExpressionContext;
+import org.sdmx.vtl.VtlParser.ExprComponentContext;
+import org.sdmx.vtl.VtlParser.InputParameterTypeContext;
+import org.sdmx.vtl.VtlParser.MultModifierContext;
+import org.sdmx.vtl.VtlParser.OutputParameterTypeContext;
+import org.sdmx.vtl.VtlParser.ParameterItemContext;
+import org.sdmx.vtl.VtlParser.PersistAssignmentContext;
+import org.sdmx.vtl.VtlParser.RuleItemDatapointContext;
+import org.sdmx.vtl.VtlParser.RuleItemHierarchicalContext;
+import org.sdmx.vtl.VtlParser.ScalarTypeContext;
+import org.sdmx.vtl.VtlParser.StatementContext;
+import org.sdmx.vtl.VtlParser.TemporaryAssignmentContext;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.grammar.Vtl;
-import it.bancaditalia.oss.vtl.grammar.Vtl.CodeItemRelationContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.CompConstraintContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentIDContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.ComponentTypeContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.DatasetTypeContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.DefDatapointRulesetContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.DefHierarchicalContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.DefOperatorsContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.DefineExpressionContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.ExprComponentContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.InputParameterTypeContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.MultModifierContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.OutputParameterTypeContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.ParameterItemContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.PersistAssignmentContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.RuleItemDatapointContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.RuleItemHierarchicalContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.ScalarTypeContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.TemporaryAssignmentContext;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
 import it.bancaditalia.oss.vtl.impl.engine.statement.DataSetComponentConstraint.QuantifierConstraints;
@@ -152,11 +152,11 @@ public class StatementFactory implements Serializable
 					CodeItemRelationContext relation = rule.codeItemRelation();
 					switch (relation.comparisonOperand().getStart().getType())
 					{
-						case Vtl.EQ: compOps.add(RuleType.EQ); break;
-						case Vtl.LT: compOps.add(RuleType.LT); break;
-						case Vtl.LE: compOps.add(RuleType.LE); break;
-						case Vtl.MT: compOps.add(RuleType.GT); break;
-						case Vtl.ME: compOps.add(RuleType.GE); break;
+						case VtlParser.EQ: compOps.add(RuleType.EQ); break;
+						case VtlParser.LT: compOps.add(RuleType.LT); break;
+						case VtlParser.LE: compOps.add(RuleType.LE); break;
+						case VtlParser.MT: compOps.add(RuleType.GT); break;
+						case VtlParser.ME: compOps.add(RuleType.GE); break;
 						default: throw new UnsupportedOperationException("Invalid operand in ruleset rule " + rule.ruleName.getText() + ": " + relation.comparisonOperand().getText());
 					}
 					
@@ -165,7 +165,7 @@ public class StatementFactory implements Serializable
 					leftOps.add(relation.codetemRef.getText());
 					whenOps.add(when != null ? buildExpr(when): null);
 					rightOps.add(relation.codeItemRelationClause().stream()
-						.collect(toMap(r -> r.rightCodeItem.getText(), r -> r.opAdd == null || r.opAdd.getType() == Vtl.PLUS)));
+						.collect(toMap(r -> r.rightCodeItem.getText(), r -> r.opAdd == null || r.opAdd.getType() == VtlParser.PLUS)));
 				}
 				
 				return new DefineHierarchyStatement(alias, rulesetType, ruleID, names, leftOps, compOps, whenOps, rightOps, ercodes, erlevels);
@@ -295,20 +295,20 @@ public class StatementFactory implements Serializable
 		Role role;
 		if (resultList.size() == 0)
 			role = null;
-		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.COMPONENT)
+		else if (resultList.size() == 1 && resultList.get(0).getType() == VtlParser.COMPONENT)
 			role = COMPONENT;
-		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.MEASURE)
+		else if (resultList.size() == 1 && resultList.get(0).getType() == VtlParser.MEASURE)
 			role = MEASURE;
-		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.DIMENSION)
+		else if (resultList.size() == 1 && resultList.get(0).getType() == VtlParser.DIMENSION)
 			role = IDENTIFIER;
-		else if (resultList.size() == 1 && resultList.get(0).getType() == Vtl.ATTRIBUTE)
+		else if (resultList.size() == 1 && resultList.get(0).getType() == VtlParser.ATTRIBUTE)
 			role = ATTRIBUTE;
-		else if (resultList.size() == 2 && resultList.get(0).getType() == Vtl.VIRAL && resultList.get(1).getType() == Vtl.ATTRIBUTE)
+		else if (resultList.size() == 2 && resultList.get(0).getType() == VtlParser.VIRAL && resultList.get(1).getType() == VtlParser.ATTRIBUTE)
 			role = VIRAL_ATTRIBUTE;
 		else
 		{
 			Token token = resultList.get(0);
-			throw new IllegalStateException("Unrecognized role token " + Vtl.VOCABULARY.getSymbolicName(token.getType()) + " containing " + token.getText());
+			throw new IllegalStateException("Unrecognized role token " + VtlParser.VOCABULARY.getSymbolicName(token.getType()) + " containing " + token.getText());
 		}
 		
 		return new SimpleEntry<>(role, domain);

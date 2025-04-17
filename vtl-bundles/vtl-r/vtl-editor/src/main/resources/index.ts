@@ -27,8 +27,8 @@ import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap, C
 import { syntaxTree, Language, defineLanguageFacet, foldGutter, indentOnInput, bracketMatching, foldKeymap, languageDataProp } from "@codemirror/language"
 import { Parser as LezerParser, NodeType, NodeSet, Tree, SyntaxNodeRef, NodeProp } from "@lezer/common"
 import { styleTags, tags } from "@lezer/highlight"
-import { default as VTLParser, StartContext, ComponentIDContext, ClauseExprContext, VarIDContext, DatasetClauseContext } from "./Vtl"
-import { default as VTLLexer } from "./VtlTokens"
+import { default as VTLParser, StartContext, ComponentIDContext, ClauseExprContext, VarIDContext, DatasetClauseContext } from "./VtlParser"
+import { default as VTLLexer } from "./VtlLexer"
 import antlr4 from 'antlr4'
 import * as th from '@uiw/codemirror-themes-all'
 import { TokenSource } from "antlr4/src/antlr4/TokenSource"

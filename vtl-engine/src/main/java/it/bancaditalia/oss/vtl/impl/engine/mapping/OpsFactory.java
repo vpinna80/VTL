@@ -58,19 +58,19 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.sdmx.vtl.VtlLexer;
+import org.sdmx.vtl.VtlParser;
+import org.sdmx.vtl.VtlParser.BooleanLiteralContext;
+import org.sdmx.vtl.VtlParser.IntegerLiteralContext;
+import org.sdmx.vtl.VtlParser.LimitClauseItemContext;
+import org.sdmx.vtl.VtlParser.NullLiteralContext;
+import org.sdmx.vtl.VtlParser.NumberLiteralContext;
+import org.sdmx.vtl.VtlParser.SignedIntegerContext;
+import org.sdmx.vtl.VtlParser.StringLiteralContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
-import it.bancaditalia.oss.vtl.grammar.Vtl;
-import it.bancaditalia.oss.vtl.grammar.Vtl.BooleanLiteralContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.IntegerLiteralContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.LimitClauseItemContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.NullLiteralContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.NumberLiteralContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.SignedIntegerContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.StringLiteralContext;
-import it.bancaditalia.oss.vtl.grammar.VtlTokens;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedTokenException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Aliasparam;
@@ -195,7 +195,7 @@ public class OpsFactory implements Serializable
 		for (Mapping mapping : config.getMapping())
 			for (String ctxFrom: mapping.getFrom())
 			{
-				String ctxClassName = Vtl.class.getName() + "$" + ctxFrom + "Context";
+				String ctxClassName = VtlParser.class.getName() + "$" + ctxFrom + "Context";
 				Class<? extends ParserRuleContext> classFrom = Class.forName(ctxClassName).asSubclass(ParserRuleContext.class);
 				mappings.putIfAbsent(classFrom, new ArrayList<>());
 				mappings.get(classFrom).add(mapping);
@@ -211,7 +211,7 @@ public class OpsFactory implements Serializable
 
 		LOGGER.debug("Loading recursive context");
 		for (Context context : config.getRecursivecontexts().getContext())
-			recursivecontexts.add(Class.forName(Vtl.class.getName() + "$" + context.getName()).asSubclass(ParserRuleContext.class));
+			recursivecontexts.add(Class.forName(VtlParser.class.getName() + "$" + context.getName()).asSubclass(ParserRuleContext.class));
 	}
 
 	public Transformation buildExpr(ParserRuleContext ctx)
@@ -365,7 +365,7 @@ public class OpsFactory implements Serializable
 				else if (check instanceof Contextcheck)
 				{
 					Contextcheck context = (Contextcheck) check;
-					Class<? extends ParserRuleContext> target = Class.forName(Vtl.class.getName() + "$" + context.getContext())
+					Class<? extends ParserRuleContext> target = Class.forName(VtlParser.class.getName() + "$" + context.getContext())
 							.asSubclass(ParserRuleContext.class);
 					Class<? extends Object> childruleclass = ctxClass.getField(context.getName()).get(ctx).getClass();
 					if (target == childruleclass)
@@ -392,13 +392,13 @@ public class OpsFactory implements Serializable
 			if (tokens.getOrdinal() != null)
 			{
 				int type = ((Token) ctx.getChild(TerminalNode.class, tokens.getOrdinal() - 1).getPayload()).getType();
-				if (type == VtlTokens.class.getField(value).getInt(null))
+				if (type == VtlLexer.class.getField(value).getInt(null))
 					return true;
 			}
 			else
 				try
 				{
-					if (((Token) ctxClass.getField(tokens.getName()).get(ctx)).getType() == VtlTokens.class.getField(value).getInt(null))
+					if (((Token) ctxClass.getField(tokens.getName()).get(ctx)).getType() == VtlLexer.class.getField(value).getInt(null))
 					{
 						LOGGER.trace("Found token {}.", value);
 						found = true;
@@ -411,7 +411,7 @@ public class OpsFactory implements Serializable
 						try
 						{
 							TerminalNode leaf = (TerminalNode) rule.getClass().getMethod(value).invoke(rule);
-							if (leaf != null && ((Token) leaf.getPayload()).getType() == VtlTokens.class.getField(value).getInt(null))
+							if (leaf != null && ((Token) leaf.getPayload()).getType() == VtlLexer.class.getField(value).getInt(null))
 							{
 								LOGGER.trace("Found token {}.", value);
 								found = true;
@@ -660,18 +660,18 @@ public class OpsFactory implements Serializable
 		else if (!secondToken.isPresent())
 			switch (firstToken.get().getType())
 			{
-				case Vtl.MEASURE: return Measure.class;
-				case Vtl.DIMENSION: return Identifier.class;
-				case Vtl.ATTRIBUTE: return Attribute.class;
+				case VtlParser.MEASURE: return Measure.class;
+				case VtlParser.DIMENSION: return Identifier.class;
+				case VtlParser.ATTRIBUTE: return Attribute.class;
 				default: 
-					throw new IllegalStateException("Unrecognized role token " + Vtl.VOCABULARY.getSymbolicName(firstToken.get().getType()) 
+					throw new IllegalStateException("Unrecognized role token " + VtlParser.VOCABULARY.getSymbolicName(firstToken.get().getType()) 
 							+ " containing " + firstToken.get().getText());
 			}
-		else if (firstToken.get().getType() == Vtl.VIRAL && secondToken.get().getType() == Vtl.ATTRIBUTE)
+		else if (firstToken.get().getType() == VtlParser.VIRAL && secondToken.get().getType() == VtlParser.ATTRIBUTE)
 			return ViralAttribute.class;
 		else
 		{
-			throw new IllegalStateException("Unrecognized role token " + Vtl.VOCABULARY.getSymbolicName(firstToken.get().getType()) 
+			throw new IllegalStateException("Unrecognized role token " + VtlParser.VOCABULARY.getSymbolicName(firstToken.get().getType()) 
 					+ " containing " + firstToken.get().getText());
 		}
 	}
@@ -712,7 +712,7 @@ public class OpsFactory implements Serializable
 			Token token = ((TerminalNode) element).getSymbol();
 			switch (token.getType())
 			{
-				case Vtl.STRING_CONSTANT: return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
+				case VtlParser.STRING_CONSTANT: return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
 				default: throw new VTLUnmappedTokenException(text, param);
 			}
 		}
@@ -749,7 +749,7 @@ public class OpsFactory implements Serializable
 				if (rule instanceof Token)
 				{
 					String ruleText = ((Token) rule).getText();
-					String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(((Token) rule).getType());
+					String sourceToken = VtlLexer.VOCABULARY.getSymbolicName(((Token) rule).getType());
 					// find corresponding enum value
 					Set<Tokenmapping> matchingTokens = tokenset.getTokenmapping().stream()
 							.filter(t -> t.getName().equals(sourceToken) || t.getName().equalsIgnoreCase(ruleText))
@@ -833,13 +833,13 @@ public class OpsFactory implements Serializable
 		else if (result instanceof Token)
 		{
 			Token token = (Token) result;
-			String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(token.getType());
+			String sourceToken = VtlLexer.VOCABULARY.getSymbolicName(token.getType());
 			LOGGER.trace("|{}<< Found token {} with value '{}'", tabs, sourceToken, token.getText());
 		}
 		else if (result instanceof TerminalNode)
 		{
 			Token token = (Token) ((TerminalNode) result).getPayload();
-			String sourceToken = VtlTokens.VOCABULARY.getSymbolicName(token.getType());
+			String sourceToken = VtlLexer.VOCABULARY.getSymbolicName(token.getType());
 			LOGGER.trace("|{}<< Found token {} with value '{}'", tabs, sourceToken, token.getText());
 		}
 		else if (result != null)

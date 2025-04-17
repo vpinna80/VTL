@@ -32,7 +32,7 @@
 
 	<fileSets>
 		<fileSet>
-			<directory>${project.build.directory}/generated-sources/js/it/bancaditalia/oss/vtl/grammar</directory>
+			<directory>${project.build.directory}/generated-sources/js/org/sdmx/vtl</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
 				<include>**/*.?s</include>

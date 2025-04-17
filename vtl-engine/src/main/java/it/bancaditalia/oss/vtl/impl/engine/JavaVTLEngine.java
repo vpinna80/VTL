@@ -33,20 +33,20 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.RuleNode;
+import org.sdmx.vtl.VtlLexer;
+import org.sdmx.vtl.VtlParser;
+import org.sdmx.vtl.VtlParser.StartContext;
+import org.sdmx.vtl.VtlParser.StatementContext;
+import org.sdmx.vtl.VtlParserBaseVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.grammar.Vtl;
-import it.bancaditalia.oss.vtl.grammar.Vtl.StartContext;
-import it.bancaditalia.oss.vtl.grammar.Vtl.StatementContext;
-import it.bancaditalia.oss.vtl.grammar.VtlBaseVisitor;
-import it.bancaditalia.oss.vtl.grammar.VtlTokens;
 import it.bancaditalia.oss.vtl.impl.engine.statement.StatementFactory;
 import jakarta.xml.bind.JAXBException;
 
-public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements Engine, Serializable
+public class JavaVTLEngine extends VtlParserBaseVisitor<Stream<Statement>> implements Engine, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -103,7 +103,7 @@ public class JavaVTLEngine extends VtlBaseVisitor<Stream<Statement>> implements 
 	@Override
 	public Stream<Statement> parseRules(String statements)
 	{
-		Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(CharStreams.fromString(statements))));
+		VtlParser parser = new VtlParser(new CommonTokenStream(new VtlLexer(CharStreams.fromString(statements))));
 		parser.removeErrorListeners();
 		parser.addErrorListener(ThrowingErrorListener.INSTANCE);
 		parser.getInterpreter().setPredictionMode(LL_EXACT_AMBIG_DETECTION);
