@@ -1,0 +1,61 @@
+{
+	"datasets": [{
+		"name": "DS_1",
+		"structure": "DS_1_str"
+	}, {
+		"name": "DS_2",
+		"structure": "DS_2_str"
+	}],	"structures": [{
+		"name": "DS_1_str",
+		"components": [{
+			"name": "Id_1",
+			"role": "Identifier"
+		}, {
+			"name": "Me_1",
+			"role": "Measure"
+		}, {
+			"name": "At_1",
+			"role": "Attribute"
+		}, {
+			"name": "Va_1",
+			"role": "Viral Attribute"
+		}]
+	}, {
+		"name": "DS_2_str",
+		"components": [{
+			"name": "Id_2",
+			"role": "Identifier"
+		}, {
+			"name": "Me_2",
+			"role": "Measure"
+		}, {
+			"name": "At_1",
+			"role": "Attribute"
+		}, {
+			"name": "Va_1",
+			"role": "Viral Attribute"
+		}]
+	}],	"variables": [{
+		"name": "Id_1",
+		"domain": "string"
+	}, {
+		"name": "Id_2",
+		"domain": "string"
+	}, {
+		"name": "Me_1",
+		"domain": "number"
+	}, {
+		"name": "Me_2",
+		"domain": "integer"
+	}, {
+		"name": "At_1",
+		"domain": "ECB:CL_CURRENCY(1.0)"
+	}, {
+		"name": "Va_1",
+		"domain": "VD_1"
+	}],	"domains": [{
+		"name": "VD_1",
+		"parent": "string",
+		"enumerated": [ "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" ]
+	}]
+}

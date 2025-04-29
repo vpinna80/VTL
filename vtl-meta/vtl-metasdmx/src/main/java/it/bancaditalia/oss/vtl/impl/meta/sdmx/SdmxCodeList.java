@@ -69,7 +69,7 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 
 		for (StringCodeItem ruleComp: hierarchy.keySet())
 		{
-			VTLAlias ruleName = VTLAliasImpl.of(ruleComp.get());
+			VTLAlias ruleName = VTLAliasImpl.of(true, ruleComp.get());
 			List<String> list = hierarchy.get(ruleComp).stream().map(StringCodeItem::get).collect(toList());
 			rules.add(new HierarchicalRuleImpl(ruleName, null, ruleComp.get(), EQ, list, nCopies(list.size(), PLUS), List.of(), null, null));
 		}

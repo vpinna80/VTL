@@ -20,7 +20,10 @@
     permissions and limitations under the License.
 
 -->
-<message:Error xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+<message:Error xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" 
+	xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common"
+	xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message https://registry.sdmx.org/schemas/v2_1/SDMXMessage.xsd">
   <message:ErrorMessage code="100">
     <com:Text>No Results Found</com:Text>
   </message:ErrorMessage>

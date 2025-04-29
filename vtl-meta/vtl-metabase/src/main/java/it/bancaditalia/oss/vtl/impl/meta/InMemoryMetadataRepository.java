@@ -132,6 +132,6 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	@Override
 	public MetadataRepository getLinkedRepository()
 	{
-		return Optional.ofNullable(chained).orElse(null);
+		return chained;
 	}
 }

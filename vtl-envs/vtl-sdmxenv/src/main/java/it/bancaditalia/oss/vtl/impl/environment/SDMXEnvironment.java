@@ -136,7 +136,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
-	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^(?:(?<agency>[A-Za-z_][A-Za-z0-9_.]*):)(?<dataflow>[A-Za-z_][A-Za-z0-9_.]*)(?:\\(?<version>([0-9._+*~]+)\\))?(?::(?<query>(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+))?$");
+	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^(?:(?<agency>[A-Za-z_][A-Za-z0-9_.]*):)(?<dataflow>[A-Za-z_][A-Za-z0-9_.]*)(?:\\((?<version>[0-9._+*~]+)\\))?(?::(?<query>(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+))?$");
 
 	static
 	{
@@ -379,7 +379,10 @@ public class SDMXEnvironment implements Environment, Serializable
 
 	private synchronized Stream<DataPoint> getData(MetadataRepository repo, VTLAlias alias, DataSetMetadata structure, String dataflow, String resource, String[] dims)
 	{
-		String path = endpoint + "/data/" + dataflow + resource;
+		String path = endpoint + "/data/" + dataflow;
+		if (!resource.isEmpty())
+			 path += "/" + resource;
+		
 		ReadableDataLocation rdl;
 		try 
 		{

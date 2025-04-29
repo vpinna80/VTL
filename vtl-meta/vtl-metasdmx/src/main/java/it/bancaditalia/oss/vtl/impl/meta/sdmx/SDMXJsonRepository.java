@@ -31,6 +31,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
+import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
 import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
@@ -45,6 +46,8 @@ public class SDMXJsonRepository extends JsonMetadataRepository
 {
 	private static final long serialVersionUID = 1L;
 	
+	public final SdmxRestToBeanRetrievalManager rbrm;
+	
 	static
 	{
 		Set<VTLProperty> props = new HashSet<>(getSupportedProperties(SDMXRepository.class));
@@ -56,10 +59,14 @@ public class SDMXJsonRepository extends JsonMetadataRepository
 	public SDMXJsonRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		super(new SDMXRepository());
+		
+		rbrm = ((SDMXRepository) getLinkedRepository()).rbrm;
 	}
 	
 	public SDMXJsonRepository(String endpoint, String username, String password, URL jsonURL, Engine engine) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		super(new SDMXRepository(endpoint, username, password), jsonURL, engine);
+
+		rbrm = ((SDMXRepository) getLinkedRepository()).rbrm;
 	}
 }

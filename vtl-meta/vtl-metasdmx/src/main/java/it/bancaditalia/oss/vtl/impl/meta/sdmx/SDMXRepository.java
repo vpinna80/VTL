@@ -125,7 +125,9 @@ public class SDMXRepository extends InMemoryMetadataRepository
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXRepository.class);
-	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
+	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile(
+			"^(?:(?<agency>[A-Za-z_][A-Za-z0-9_.]*):)(?<dataflow>[A-Za-z_][A-Za-z0-9_.]*)(?:\\((?<version>[0-9._+*~]+)\\))?(?::(?<query>(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+))?$"
+		);
 	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset(VTLAliasImpl.of(true, "ALPHA"), "(?U)^\\p{Alpha}*$", STRINGDS);
 	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of(true, "ALPHA_NUMERIC"), "(?U)^\\p{Alnum}*$", STRINGDS);
 	private static final RegExpDomainSubset VTL_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of(true, "NUMERIC"), "(?U)^\\p{Digit}*$", STRINGDS);
@@ -331,25 +333,37 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
 	{
 		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
-		if (matcher.matches() && dataflows.containsKey(VTLAliasImpl.of(true, matcher.group(1))))
+		if (matcher.matches())
 		{
-			Entry<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>> metadata = dataflows.get(VTLAliasImpl.of(true, matcher.group(1)));
-			DataSetMetadata structure = (DataSetMetadata) getStructureDefinition(metadata.getKey()).get();
-			List<DataStructureComponent<Identifier, ?, ?>> subbedIDs = metadata.getValue();
-			// drop identifiers in the query part of the id
-			if (matcher.group(2) != null)
-			{
-				DataStructureBuilder builder = new DataStructureBuilder(structure);
-				
-				String[] dims = matcher.group(2).split("\\.");
-				for (int i = 0; i < dims.length; i++)
-					if (!dims[i].isEmpty() && dims[i].indexOf('+') <= 0)
-						builder.removeComponent(subbedIDs.get(i));
-				
-				structure = builder.build();
-			}
+			String agency = matcher.group("agency");
+			String dataflow = matcher.group("dataflow");
+			String version = matcher.group("version");
+			String query = matcher.group("query");
+			VTLAlias dsAlias = VTLAliasImpl.of(true, agency + ":" + dataflow + "(" + version + ")");
 			
-			return Optional.of(structure);
+			if (dataflows.containsKey(dsAlias))
+			{
+				Entry<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>> metadata = dataflows.get(dsAlias);
+				DataSetMetadata structure = (DataSetMetadata) getStructureDefinition(metadata.getKey()).get();
+				List<DataStructureComponent<Identifier, ?, ?>> subbedIDs = metadata.getValue();
+				
+				// drop identifiers in the query part of the id
+				if (query != null)
+				{
+					DataStructureBuilder builder = new DataStructureBuilder(structure);
+					
+					String[] dims = query.split("\\.");
+					for (int i = 0; i < dims.length; i++)
+						if (!dims[i].isEmpty() && dims[i].indexOf('+') <= 0)
+							builder.removeComponent(subbedIDs.get(i));
+					
+					structure = builder.build();
+				}
+				
+				return Optional.of(structure);
+			}
+			else
+				return super.getMetadata(alias);
 		}
 		else
 			return super.getMetadata(alias);

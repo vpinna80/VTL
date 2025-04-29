@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.TIME_PERIOD;
 import static java.util.EnumSet.allOf;
 import static java.util.Objects.requireNonNull;
@@ -60,26 +59,23 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 @ExtendWith(MockServerExtension.class)
 @MockServerSettings(ports = { 38765 })
-public class SdmxRepositoryTest
+public class SDMXRepositoryTest
 {
 	private final MetadataRepository repo;
 
-	public SdmxRepositoryTest(MockServerClient client) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	public SDMXRepositoryTest(MockServerClient client) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		System.setProperty("vtl.sdmx.meta.endpoint", "http://localhost:" + client.getPort());
-		METADATA_REPOSITORY.setValue(SDMXRepository.class.getName());
-
 		for (String[] entry: new String[][] { 
 			{ "codelists.xml", "/codelist/all/all/all/" },
 			{ "dsds.xml", "/datastructure/all/all/latest/" },
 			{ "dataflows.xml", "/dataflow/all/all/latest/" },
 			{ "schemes.xml", "/transformationscheme/all/all/latest/" }
-		}) try (InputStream resource = requireNonNull(SdmxRepositoryTest.class.getResourceAsStream(entry[0])))
-		{
-			client.when(request().withPath(entry[1]), exactly(1)).respond(response().withBody(new StringBody(IOUtils.toString(resource, "UTF-8"))));
-		}
+		}) try (InputStream resource = requireNonNull(SDMXJsonRepositoryTest.class.getResourceAsStream(entry[0])))
+			{
+				client.when(request().withPath(entry[1]), exactly(1)).respond(response().withBody(new StringBody(IOUtils.toString(resource, "UTF-8"))));
+			}
 
-		repo = new SDMXRepository();
+		repo = new SDMXRepository("http://localhost:" + client.getPort(), null, null);
 	}
 
 	@Test
