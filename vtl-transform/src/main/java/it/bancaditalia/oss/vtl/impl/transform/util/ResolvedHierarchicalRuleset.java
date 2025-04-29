@@ -81,11 +81,10 @@ public class ResolvedHierarchicalRuleset implements Serializable
 		codesMap = ruleCodes.entrySet().stream()
 				.flatMap(splitting((left, right) -> Stream.concat(Stream.of(left), right.getRightCodeItems().stream())))
 				.distinct()
-				.collect(toMap(identity(), code -> (CodeItem<?, ?, ?, ?>) domain.cast(StringValue.of(code))));
+				.collect(toMap(identity(), code -> (CodeItem<?, ?, ?, ?>) codelist.cast(StringValue.of(code))));
 		
 		computedCodes = ruleCodes.keySet().stream()
-				.map(code -> codelist.cast(StringValue.of(code)))
-				.map(CodeItem.class::cast)
+				.map(code -> (CodeItem<?, ?, ?, ?>) codelist.cast(StringValue.of(code)))
 				.collect(toSet());
 		
 		computingRules = ruleset.getRules().stream()
@@ -95,8 +94,7 @@ public class ResolvedHierarchicalRuleset implements Serializable
 		leafCodes = ruleCodes.values().stream()
 				.map(HierarchicalRule::getRightCodeItems)
 				.flatMap(Set::stream)
-				.map(code -> domain.cast(StringValue.of(code)))
-				.map(CodeItem.class::cast)
+				.map(code -> (CodeItem<?, ?, ?, ?>) codelist.cast(StringValue.of(code)))
 				.filter(not(computedCodes::contains))
 				.collect(toSet());
 	}

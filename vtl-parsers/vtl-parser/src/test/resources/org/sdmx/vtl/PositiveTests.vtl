@@ -1013,7 +1013,7 @@ DS_r := DS_1 [ sub Id_1 = 1, Id_2 = "B", Id_3 = "YY"];
 DS_r := DS_1 [sub Id_2 ="A"] + DS_1 [sub Id_2 ="B"];
 
 ## Start[TemporaryAssignment[VarID ArithmeticExprOrConcat[ConstantExpr[IntegerLiteral[SignedInteger]] VarIdExpr[VarID]]]]
-// Test SDMX identifiers
+// Test SDMX identifiers and identifiers starting with _
 DS_r := 1 + ECB:EXR;
 
 ## Start[TemporaryAssignment[VarID ArithmeticExpr[VarIdExpr[VarID] VarIdExpr[VarID]]]]
@@ -1027,3 +1027,6 @@ DS_r := ECB:EXR(1.0):....[sub CURRENCY = "USD"];
 
 ## Start[TemporaryAssignment[VarID ClauseExpr[VarIdExpr[VarID] DatasetClause[SubspaceClause[SubspaceClauseItem[ComponentID SimpleScalar[StringLiteral]]]]]]]
 DS_r:='ECB:EXR(1.0):....'[sub CURRENCY = "USD"];
+
+## Start[TemporaryAssignment[VarID ClauseExpr[VarIdExpr[VarID] DatasetClause[SubspaceClause[SubspaceClauseItem[ComponentID SimpleScalar[IntegerLiteral[SignedInteger]]] SubspaceClauseItem[ComponentID SimpleScalar[StringLiteral]]]]]]]
+DS_r := _DS_1 [ sub _Id_1 = 1, _Id_2 = "A"];

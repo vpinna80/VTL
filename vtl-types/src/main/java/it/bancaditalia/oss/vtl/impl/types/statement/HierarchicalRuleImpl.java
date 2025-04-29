@@ -65,7 +65,7 @@ public class HierarchicalRuleImpl implements HierarchicalRule
 		{
 			this.rightCodes.put(rightCodes.get(i), signs.get(i) != MINUS);
 			
-			if (rightConds.get(i) != null)
+			if (rightConds != null && i < rightConds.size()  && rightConds.get(i) != null)
 				this.rightConds.put(rightCodes.get(i), rightConds.get(i));
 		}
 	}
