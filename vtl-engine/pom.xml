@@ -83,14 +83,6 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>jaxb2-maven-plugin</artifactId>
-				<version>3.1.0</version>
-				<dependencies>
-					<dependency>
-						<groupId>com.github.sabomichal</groupId>
-						<artifactId>immutable-xjc-plugin</artifactId>
-						<version>2.0.2</version>
-					</dependency>
-				</dependencies>
 				<executions>
 					<execution>
 						<id>build</id>
@@ -105,22 +97,7 @@
 							<arguments>
 								<argument>-Ximm</argument>
 								<argument>-Ximm-nofinalclasses</argument>
-							</arguments>
-						</configuration>
-					</execution>
-					<execution>
-						<id>site</id>
-						<phase>pre-site</phase>
-						<goals>
-							<goal>xjc</goal>
-						</goals>
-						<configuration>
-							<packageName>
-								it.bancaditalia.oss.vtl.impl.engine.mapping.xml</packageName>
-							<locale>en</locale>
-							<arguments>
-								<argument>-Ximm</argument>
-								<argument>-Ximm-nofinalclasses</argument>
+								<argument>-Ximm-skipcollections</argument>
 							</arguments>
 						</configuration>
 					</execution>

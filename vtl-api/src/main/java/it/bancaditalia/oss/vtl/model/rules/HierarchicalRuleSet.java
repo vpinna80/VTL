@@ -20,57 +20,33 @@
 package it.bancaditalia.oss.vtl.model.rules;
 
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.Rule;
-import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 /**
  * Representation of a hierarchy ruleset.
  * 
  * @author Valentino Pinna
  */
-public interface HierarchicalRuleSet<I extends Rule<C, S, D>, C extends CodeItem<?, ?, S, D>, S extends EnumeratedDomainSubset<S, C, D>, D extends ValueDomain> extends RuleSet
+public interface HierarchicalRuleSet extends RuleSet
 {
-	public interface Rule<C extends CodeItem<?, ?, S, D>, S extends EnumeratedDomainSubset<S, C, D>, D extends ValueDomain>
+	public enum HierarchicalRuleSign
 	{
-		public VTLAlias getAlias();
-
-		public C getLeftCodeItem();
-
-		public Transformation getCondition();
-		
-		public Set<C> getRightCodeItems();
-		
-		public boolean isPlusSign(CodeItem<?, ?, ?, ?> item);
-		
-		public RuleType getRuleType();
-		
-		public ScalarValue<?, ?, ?, ?> getErrorCode();
-		
-		public ScalarValue<?, ?, ?, ?> getErrorLevel();
+		PLUS, MINUS
 	}
 	
 	public RuleSetType getType();
 	
-	public List<I> getRulesFor(CodeItem<?, ?, ?, ?> code);
-	
-	public Set<C> getComputedCodes();
-	
 	public VTLAlias getAlias();
 
-	public VTLAlias getRuleId();
+	public VTLAlias getRuleComponent();
 
-	public List<I> getRules();
-	
-	public S getDomain();
+	public List<HierarchicalRule> getRules();
 
-	public Set<I> getDependingRules(CodeItem<?, ?, ?, ?> code);
+	public Set<HierarchicalRule> getDependingRules(CodeItem<?, ?, ?, ?> code);
 
-	public Set<C> getLeaves();
+	public List<Entry<VTLAlias, VTLAlias>> getConditions();
 }

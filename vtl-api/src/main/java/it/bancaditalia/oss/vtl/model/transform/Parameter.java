@@ -36,15 +36,16 @@ public interface Parameter
 	
 	/**
 	 * Checks if the provided metadata argument matches this Parameter definition
-	 * @param scheme The trasformation scheme in which the match should be tested
+	 * @param scheme The transformation scheme in which the match should be tested
 	 * @param argument The argument expression to match to this parameter
 	 * 
-	 * @return tue if the check is positive
+	 * @return true if the check is positive
 	 */
 	public boolean matches(TransformationScheme scheme, Transformation argument);
 
 	/**
-	 * @return The serialized definition of this parameter.
+	 * 
+	 * @return the type constraint definition for this parameter
 	 */
-	public String getDefinitionString();
+	public ParameterType getParameterType();
 }

@@ -81,7 +81,7 @@ public interface MetadataRepository
 	 * @param name the name of the ruleset
 	 * @return the ruleset or null if none exists.
 	 */
-	public HierarchicalRuleSet<?, ?, ?, ?> getHierarchyRuleset(VTLAlias name);
+	public HierarchicalRuleSet getHierarchyRuleset(VTLAlias name);
 	
 	/**
 	 * Returns a {@link Variable} referred by an alias if defined in this TransformationScheme.

@@ -179,7 +179,10 @@
 		<enforcer.version>3.4.0</enforcer.version>
 		<reporting.version>3.7.0</reporting.version>
 		<gpg.version>3.1.0</gpg.version>
-
+		
+		<jaxb2-maven-plugin.version>3.3.0</jaxb2-maven-plugin.version>
+		<immutable-xjc-plugin.version>2.0.4</immutable-xjc-plugin.version>
+		
 		<slf4j.version>2.0.12</slf4j.version>
 		<log4j.version>2.23.1</log4j.version>
 		
@@ -711,6 +714,18 @@
 						<nexusUrl>https://oss.sonatype.org/</nexusUrl>
 						<autoReleaseAfterClose>true</autoReleaseAfterClose>
 					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>jaxb2-maven-plugin</artifactId>
+					<version>${jaxb2-maven-plugin.version}</version>
+					<dependencies>
+						<dependency>
+							<groupId>com.github.sabomichal</groupId>
+							<artifactId>immutable-xjc-plugin</artifactId>
+							<version>${immutable-xjc-plugin.version}</version>
+						</dependency>
+					</dependencies>
 				</plugin>
 				<plugin>
 					<groupId>com.mycila</groupId>

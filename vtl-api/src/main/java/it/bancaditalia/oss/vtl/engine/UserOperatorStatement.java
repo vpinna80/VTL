@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.engine;
 import java.util.List;
 
 import it.bancaditalia.oss.vtl.model.transform.Parameter;
+import it.bancaditalia.oss.vtl.model.transform.ParameterType;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 /**
@@ -32,7 +33,21 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
  */
 public interface UserOperatorStatement extends DDLStatement
 {
+	/**
+	 * 
+	 * @return The list of formal parameters to this operator
+	 */
 	public List<Parameter> getParameters();
 
+	/**
+	 * 
+	 * @return The type returned by this operator
+	 */
+	public ParameterType getReturnType();
+	
+	/**
+	 * 
+	 * @return The expression used to compute the result of this operator
+	 */
 	public Transformation getExpression();
 }

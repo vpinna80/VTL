@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.mapping;
 
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -49,9 +50,9 @@ import java.util.function.Predicate;
 
 import javax.xml.transform.stream.StreamSource;
 
+import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.Test;
-import org.sdmx.vtl.VtlParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,19 +117,20 @@ public class MappingTest
 		StreamSource xmlConfig = new StreamSource(file.openStream());
 		Parserconfig config = jc.createUnmarshaller().unmarshal(xmlConfig, Parserconfig.class).getValue();
 		String packageName = config.getPackage();
-		String parserClassName = config.getParserclass();
+		Class<? extends Parser> parserClass = Class.forName(config.getParserclass(), true, currentThread().getContextClassLoader())
+				.asSubclass(Parser.class);
 
 		Set<Class<?>> recursive = new HashSet<>();
 		for (Context context : config.getRecursivecontexts().getContext())
 		{
-			Class<?> recClass = Class.forName(parserClassName + "$" + context.getName(), true, Thread.currentThread().getContextClassLoader());
+			Class<?> recClass = Class.forName(parserClass.getName() + "$" + context.getName(), true, currentThread().getContextClassLoader());
 			recursive.add(recClass);
 		}
 
 		Map<String, Entry<Class<?>, Map<String, String>>> tokensets = new HashMap<>();
 		for (Tokenset tokenset : config.getTokenset())
 		{
-			Class<?> tokenClass = Class.forName(tokenset.getClazz(), true, Thread.currentThread().getContextClassLoader());
+			Class<?> tokenClass = Class.forName(tokenset.getClazz(), true, currentThread().getContextClassLoader());
 			Map<String, String> mappings = new HashMap<>();
 			for (Tokenmapping mapping: tokenset.getTokenmapping())
 				mappings.put(mapping.getName(), mapping.getValue());
@@ -167,23 +169,24 @@ public class MappingTest
 				else
 					mappings.put(from, tokens);
 				
-				Class<?> fromClass = Class.forName(parserClassName + "$" + from + "Context", true, Thread.currentThread().getContextClassLoader());
+				Class<?> fromClass = Class.forName(parserClass.getName() + "$" + from + "Context", true, Thread.currentThread().getContextClassLoader());
 				Class<?> toClass = Class.forName(packageName + "." + mapping.getTo(), true, Thread.currentThread().getContextClassLoader());
 				
 				requireNonNull(fromClass, "from class missing in mapping: " + from);
 				System.out.println("Checking mapping from " + fromClass.getSimpleName() + " to " + toClass.getSimpleName());
-				checkParams(0, fromClass, tokensets, mapping.getParams());
+				
+				checkParams(0, parserClass, fromClass, tokensets, mapping.getParams());
 			}
 	}
 
-	private void checkParams(int level, Class<?> fromClass, Map<String, Entry<Class<?>, Map<String, String>>> tokensets, List<? extends Param> params) throws ClassNotFoundException, NoSuchMethodException, SecurityException
+	private void checkParams(int level, Class<? extends Parser> parserClass, Class<?> fromClass, Map<String, Entry<Class<?>, Map<String, String>>> tokensets, List<? extends Param> params) throws ClassNotFoundException, NoSuchMethodException, SecurityException
 	{
 		for (int i = 0; i < params.size(); i++)
 			if (params.get(i) instanceof Nonnullparam)
-				checkParam(level + 1, i, (Nonnullparam) params.get(i), fromClass, tokensets);
+				checkParam(level + 1, i, parserClass, (Nonnullparam) params.get(i), fromClass, tokensets);
 	}
 
-	private void checkParam(int level, int index, Param param, Class<?> fromClass, Map<String, Entry<Class<?>, Map<String, String>>> tokensets) throws ClassNotFoundException, NoSuchMethodException, SecurityException
+	private void checkParam(int level, int index, Class<? extends Parser> parserClass, Param param, Class<?> fromClass, Map<String, Entry<Class<?>, Map<String, String>>> tokensets) throws ClassNotFoundException, NoSuchMethodException, SecurityException
 	{
 		String inClass = " in class " + fromClass.getSimpleName();
 		String tabs = "    ".repeat(level);
@@ -195,7 +198,7 @@ public class MappingTest
 			assertNotNull(tokenset, "tokenset for tokensetparam in " + fromClass.getSimpleName());
 			assertTrue(tokensets.containsKey(tokenset), "Undefined tokenset + " + tokenset);
 			if (((Tokensetparam) param).getName() != null)
-				checkMember((Nonnullparam) param, fromClass);
+				checkMember(parserClass, (Nonnullparam) param, fromClass);
 		}
 		else if (param instanceof Listparam)
 		{
@@ -203,7 +206,7 @@ public class MappingTest
 			String lName = lParam.getName();
 			System.out.println(tabs + "Checking listParam " + lName + inClass);
 
-			Member member = checkMember(lParam, fromClass);
+			Member member = checkMember(parserClass, lParam, fromClass);
 			Class<?> innerClass = null;
 			if (member instanceof Method)
 			{
@@ -218,21 +221,21 @@ public class MappingTest
 			}
 
 			Param itemParam = lParam.getParams();
-			checkParam(level + 1, index, itemParam, innerClass, tokensets);
+			checkParam(level + 1, index, parserClass, itemParam, innerClass, tokensets);
 		}
 		else if (param instanceof Nestedparam)
 		{
 			Nestedparam nParam = (Nestedparam) param;
 			System.out.print(tabs + "Checking nestedParam " + nParam.getName() + inClass);
 			
-			Member member = checkMember(nParam, fromClass);
+			Member member = checkMember(parserClass, nParam, fromClass);
 			Class<?> innerClass = fromClass;
 			if (member != null)
 				innerClass = member instanceof Field ? ((Field) member).getType() : ((Method) member).getReturnType();
 			
 			System.out.println(": is " + innerClass.getSimpleName());
 			assertNotNull(innerClass);
-			checkParams(level, innerClass, tokensets, nParam.getParams());
+			checkParams(level, parserClass, innerClass, tokensets, nParam.getParams());
 		}
 		else if (param instanceof Customparam)
 		{
@@ -240,7 +243,7 @@ public class MappingTest
 			System.out.print(tabs + "Checking customParam " + cParam.getName() + inClass);
 			Class.forName(cParam.getClazz(), true, Thread.currentThread().getContextClassLoader());
 			
-			Member member = checkMember(cParam, fromClass);
+			Member member = checkMember(parserClass, cParam, fromClass);
 			Class<?> innerClass = fromClass;
 			if (member != null)
 				innerClass = member instanceof Field ? ((Field) member).getType() : ((Method) member).getReturnType();
@@ -257,7 +260,7 @@ public class MappingTest
 			Class<?> innerClass = fromClass;
 			if (eParam.getName() != null)
 			{
-				Member member = checkMember(eParam, fromClass);
+				Member member = checkMember(parserClass, eParam, fromClass);
 				innerClass = member instanceof Field ? ((Field) member).getType() : ((Method) member).getReturnType();
 			}
 			System.out.println(": is " + innerClass.getSimpleName());
@@ -267,11 +270,11 @@ public class MappingTest
 		else if (param instanceof Nonnullparam)
 		{
 			System.out.println(tabs + "Checking " + param.getClass().getSimpleName() + " " + ((Nonnullparam) param).getName() + inClass);
-			checkMember((Nonnullparam) param, fromClass);
+			checkMember(parserClass, (Nonnullparam) param, fromClass);
 		}
 	}
 
-	private Member checkMember(Nonnullparam param, Class<?> fromClass)
+	private Member checkMember(Class<? extends Parser> parserClass, Nonnullparam param, Class<?> fromClass)
 	{
 		boolean hasOrdinal = param.getOrdinal() != null;
 		Predicate<Method> checkParams = m -> hasOrdinal ? Arrays.equals(new Class<?>[] { int.class }, m.getParameterTypes()) : m.getParameterCount() == 0;
@@ -291,9 +294,9 @@ public class MappingTest
 							.filter(m -> m.getName().equals(name))
 							.findAny();
 					
-				if (member.isEmpty() && Arrays.stream(VtlParser.class.getDeclaredClasses()).anyMatch(c -> fromClass == c))
+				if (member.isEmpty() && Arrays.stream(parserClass.getDeclaredClasses()).anyMatch(c -> fromClass == c))
 				{
-					List<Class<?>> candidates = Arrays.stream(VtlParser.class.getDeclaredClasses())
+					List<Class<?>> candidates = Arrays.stream(parserClass.getDeclaredClasses())
 							.filter(fromClass::isAssignableFrom)
 							.collect(toList());
 					

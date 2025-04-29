@@ -27,7 +27,9 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatte
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.YEAR_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.TIME_PERIOD;
 import static it.bancaditalia.oss.vtl.util.Utils.SEQUENTIAL;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
@@ -62,9 +64,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -109,7 +112,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
-import it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -134,7 +136,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
-	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^([[\\p{Alnum}][_.]]+:[[\\p{Alnum}][_.]]+\\([0-9._+*~]+\\))(?:/(.*))?$");
+	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^(?:(?<agency>[A-Za-z_][A-Za-z0-9_.]*):)(?<dataflow>[A-Za-z_][A-Za-z0-9_.]*)(?:\\(?<version>([0-9._+*~]+)\\))?(?::(?<query>(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+))?$");
 
 	static
 	{
@@ -204,7 +206,8 @@ public class SDMXEnvironment implements Environment, Serializable
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
-		if (!SDMX_DATAFLOW_PATTERN.matcher(alias.getName()).matches())
+		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
+		if (!matcher.matches())
 			return Optional.empty();
 		
 		Optional<DataSetMetadata> maybeMeta = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
@@ -213,10 +216,15 @@ public class SDMXEnvironment implements Environment, Serializable
 		
 		DataSetMetadata structure = maybeMeta.get();
 		
-		String[] query = alias.getName().split("/", 2);
-		String dataflow = query[0].replace(':', ',').replace('(', ',').replaceAll("\\)(?=/|$)", "");
-		String resource = query.length > 1 ? "/" + query[1] : "";
-		String[] dims = query.length > 1 ? query[1].split("\\.") : new String[] {};
+		String version = coalesce(matcher.group("version"), "");
+		String dataflow;
+		if (version.isEmpty())
+			dataflow = matcher.group("agency") + "," + matcher.group("dataflow");
+		else
+			dataflow = matcher.group("agency") + "," + matcher.group("dataflow") + "," + version;
+
+		String resource = coalesce(matcher.group("query"), "");
+		String[] dims = resource.isEmpty() ? new String[] {} : resource.split("\\.");
 
 		AbstractDataSet sdmxDataflow = new StreamWrapperDataSet(structure, () -> getData(repo, alias, structure, dataflow, resource, dims));
 		return Optional.of(sdmxDataflow);
@@ -327,7 +335,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				value = TimePeriodValue.of((PeriodHolder<?>) holder);
 			else
 				value = DateValue.of((LocalDate) holder);
-			builder.add(CommonComponents.TIME_PERIOD, value);
+			builder.add(TIME_PERIOD, value);
 			
 			if (!(more = dre.moveNextObservation()))
 			{

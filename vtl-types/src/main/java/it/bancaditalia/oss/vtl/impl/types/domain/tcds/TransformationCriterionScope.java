@@ -102,7 +102,7 @@ public class TransformationCriterionScope<V extends ScalarValue<?, ?, S, D>, S e
 	}
 
 	@Override
-	public HierarchicalRuleSet<?, ?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
+	public HierarchicalRuleSet findHierarchicalRuleset(VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}

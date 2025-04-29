@@ -33,9 +33,14 @@
 	<xs:complexType name="parserconfig">
 		<xs:sequence>
 			<xs:element name="package" type="xs:string" minOccurs="1" />
+			<xs:element name="lexerclass" type="xs:string" minOccurs="1" />
 			<xs:element name="parserclass" type="xs:string" minOccurs="1" />
+			<xs:element name="roletokens" type="roletokens" minOccurs="1" />
+			<xs:element name="valuecontexts" type="valuecontexts" minOccurs="1" />
+			<xs:element name="parametertypes" type="parametertypes" minOccurs="1" />
 			<xs:element name="tokenset" type="tokenset" maxOccurs="unbounded" minOccurs="0" />
 			<xs:element name="recursivecontexts" type="recursivecontexts" minOccurs="0" />
+			<xs:element name="statementdef" type="statementdef" maxOccurs="unbounded" minOccurs="0" />
 			<xs:element name="mapping" type="mapping" maxOccurs="unbounded" minOccurs="0" />
 		</xs:sequence>
 	</xs:complexType>
@@ -46,6 +51,73 @@
 		</xs:sequence>
 	</xs:complexType>
 
+	<xs:complexType name="roletokens">
+		<xs:sequence>
+			<xs:element name="component" type="xs:string" minOccurs="1" maxOccurs="1" />
+			<xs:element name="identifier" type="xs:string" minOccurs="1" maxOccurs="1" />
+			<xs:element name="measure" type="xs:string" minOccurs="1" maxOccurs="1" />
+			<xs:element name="attribute" type="xs:string" minOccurs="1" maxOccurs="1" />
+			<xs:element name="viralattribute" type="xs:string" minOccurs="1" maxOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="valuecontexts">
+		<xs:sequence>
+			<xs:element name="integer" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+			<xs:element name="boolean" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+			<xs:element name="string" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+			<xs:element name="number" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+			<xs:element name="null" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="parametertypes">
+		<xs:sequence>
+			<xs:element name="scalar" type="scalarparamtype" minOccurs="1" />
+			<xs:element name="component" type="componentparamtype" minOccurs="1" />
+			<xs:element name="dataset" type="datasetparamtype" minOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="paramtype">
+		<xs:attribute name="from" type="xs:string" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="scalarparamtype">
+		<xs:complexContent>
+			<xs:extension base="paramtype">
+				<xs:sequence>
+					<xs:element name="typerule" type="aliasparam" maxOccurs="1" minOccurs="1" />
+					<xs:element name="defaultrule" type="valueparam" maxOccurs="1" minOccurs="1" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="componentparamtype">
+		<xs:complexContent>
+			<xs:extension base="paramtype">
+				<xs:sequence>
+					<xs:element name="rolerule" type="roleparam" maxOccurs="1" minOccurs="1" />
+					<xs:element name="scalarrule" type="typeparam" maxOccurs="1" minOccurs="1" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="datasetparamtype">
+		<xs:complexContent>
+			<xs:extension base="paramtype">
+				<xs:sequence>
+					<xs:element name="namerule" type="aliasparam" maxOccurs="1" minOccurs="1" />
+					<xs:element name="quantifierrule" type="nonnullparam" maxOccurs="1" minOccurs="1" />
+					<xs:element name="componentrule" type="typeparam" maxOccurs="1" minOccurs="1" />
+				</xs:sequence>
+				<xs:attribute name="listrule" type="xs:string" use="required" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
 	<xs:complexType name="context">
 		<xs:attribute name="name" type="xs:string" use="required" />
 	</xs:complexType>
@@ -66,6 +138,15 @@
 			</xs:choice>
 		</xs:choice>
 	</xs:group>
+
+	<xs:complexType name="statementdef">
+		<xs:sequence>
+			<xs:element name="from" type="xs:string" maxOccurs="unbounded" minOccurs="1" />
+			<xs:group ref="checks" minOccurs="0" maxOccurs="1" />
+			<xs:group ref="params" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="to" type="xs:string" use="required" />
+	</xs:complexType>
 
 	<xs:complexType name="mapping">
 		<xs:sequence>
@@ -132,6 +213,8 @@
 				<xs:element name="tokensetparam" type="tokensetparam" />
 				<xs:element name="listparam" type="listparam" />
 				<xs:element name="mapparam" type="mapparam" />
+				<xs:element name="paramparam" type="paramparam" />
+				<xs:element name="typeparam" type="typeparam" />
 				<xs:element name="customparam" type="customparam" />
 				<xs:element name="nestedparam" type="nestedparam" />
 			</xs:choice>
@@ -153,9 +236,26 @@
 		</xs:complexContent>
 	</xs:complexType>
 
+	<xs:complexType name="typeparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam" />
+		</xs:complexContent>
+	</xs:complexType>
+
 	<xs:complexType name="stringparam">
 		<xs:complexContent>
 			<xs:extension base="nonnullparam" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="paramparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam">
+				<xs:sequence>
+					<xs:element name="paramname" type="aliasparam" minOccurs="1" />
+					<xs:element name="paramtype" type="typeparam" minOccurs="1" />
+				</xs:sequence>
+			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
 

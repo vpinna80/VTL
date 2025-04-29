@@ -28,6 +28,6 @@ public class VTLParameterMismatchException extends VTLException
 
 	public VTLParameterMismatchException(Parameter param, VTLValueMetadata metadata)
 	{
-		super("The argument " + metadata + " does not match parameter " + param.getAlias() + ": " + param.getDefinitionString());
+		super("The argument " + metadata + " does not match parameter " + param.getAlias() + ": " + param);
 	}
 }

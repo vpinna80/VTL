@@ -117,7 +117,7 @@ public class RepeatedParameterizedTestExtension implements TestTemplateInvocatio
 		{
 			return ((Stream<?>) context.getRequiredTestClass().getDeclaredMethod(methodName, new Class<?>[0]).invoke(null)).map(Arguments.class::cast);
 		}
-		catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+		catch (NoClassDefFoundError | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
 		{
 			throw new ParameterResolutionException("Could not invoke method source: " + methodName, e);
 		}

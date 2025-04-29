@@ -19,61 +19,96 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine;
 
+import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
+import static java.lang.Thread.currentThread;
 import static org.antlr.v4.runtime.atn.PredictionMode.LL_EXACT_AMBIG_DETECTION;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.stream.Stream;
 
-import org.antlr.v4.runtime.BaseErrorListener;
+import javax.xml.transform.stream.StreamSource;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.RuleNode;
-import org.sdmx.vtl.VtlLexer;
-import org.sdmx.vtl.VtlParser;
-import org.sdmx.vtl.VtlParser.StartContext;
-import org.sdmx.vtl.VtlParser.StatementContext;
-import org.sdmx.vtl.VtlParserBaseVisitor;
+import org.sdmx.vtl.Vtl;
+import org.sdmx.vtl.Vtl.StartContext;
+import org.sdmx.vtl.Vtl.StatementContext;
+import org.sdmx.vtl.VtlTokens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.impl.engine.statement.StatementFactory;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.OpsFactory;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.ObjectFactory;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Parserconfig;
+import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 
-public class JavaVTLEngine extends VtlParserBaseVisitor<Stream<Statement>> implements Engine, Serializable
+public class JavaVTLEngine extends AbstractParseTreeVisitor<Stream<Statement>> implements Engine, Serializable
 {
 	private static final long serialVersionUID = 1L;
-	
-	private final StatementFactory statementFactory;
-	@SuppressWarnings("unused")
 	private final static Logger LOGGER = LoggerFactory.getLogger(JavaVTLEngine.class);
+	private static final String MAPPING_FILENAME = OpsFactory.class.getName().replaceAll("\\.", "/") + ".xml";
 	
-	public JavaVTLEngine() throws ClassNotFoundException, JAXBException, IOException 
-	{
-		statementFactory = new StatementFactory();
-	}
+	private final OpsFactory opsFactory;
+	private final Class<? extends Parser> parserClass;
+	private final Class<? extends Lexer> lexerClass;
 	
-	public static class ThrowingErrorListener extends BaseErrorListener
+	public JavaVTLEngine() throws ClassNotFoundException, JAXBException, IOException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException 
 	{
-		public static final ThrowingErrorListener INSTANCE = new ThrowingErrorListener();
-
-		@Override
-		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e)
-				throws ParseCancellationException
+		JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
+		Enumeration<URL> files = Thread.currentThread().getContextClassLoader().getResources(MAPPING_FILENAME);
+		if (!files.hasMoreElements())
 		{
-			throw new ParseCancellationException("line " + line + ":" + charPositionInLine + " " + msg, e);
+			IllegalStateException ex = new IllegalStateException("Cannot find VTL mapping file, " + MAPPING_FILENAME);
+			LOGGER.error("Cannot find any mapping files. Forgot to add an implementation to your classpath?");
+			throw ex;
 		}
-	}
 
+		boolean first = true;
+		URL file = null;
+		while (files.hasMoreElements())
+			if (first)
+			{
+				file = files.nextElement();
+				first = false;
+				LOGGER.info("Using VTL configuration file: {}", file);
+			}
+			else
+			{
+				files.nextElement();
+				LOGGER.warn("Ignored additional VTL configuration file: {}", file);
+				if (!files.hasMoreElements())
+					LOGGER.warn("Multiple configurations detected: you may have multiple implementations in your classpath!");
+			}
+		
+		if (file == null)
+			throw new FileNotFoundException("VTL mapping configuration file not found in classpath.");
+
+		StreamSource xmlConfig = new StreamSource(file.openStream());
+		Parserconfig config = jc.createUnmarshaller().unmarshal(xmlConfig, Parserconfig.class).getValue();
+		
+		parserClass = Class.forName(config.getParserclass(), true, currentThread().getContextClassLoader()).asSubclass(Parser.class);
+		lexerClass = Class.forName(config.getLexerclass(), true, currentThread().getContextClassLoader()).asSubclass(Lexer.class);
+
+		opsFactory = new OpsFactory(config, parserClass, lexerClass);
+	}
+	
 	public Statement buildStatement(StatementContext ctx) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException
 	{
-		return statementFactory.createStatement(ctx);
+		return opsFactory.createStatement(ctx);
 	}
 
 	@Override
@@ -81,10 +116,10 @@ public class JavaVTLEngine extends VtlParserBaseVisitor<Stream<Statement>> imple
 	{
 		if (node instanceof StartContext)
 		{
-			Stream<Statement> result = Stream.empty();
+			List<Stream<Statement>> result = new ArrayList<>();
 			for (StatementContext ctx: ((StartContext)node).getRuleContexts(StatementContext.class))
-				result = Stream.concat(result, ctx.accept(this));
-			return result;
+				result.add(ctx.accept(this));
+			return result.stream().flatMap(identity());
 		}
 		else if (node instanceof StatementContext)
 			try
@@ -103,7 +138,7 @@ public class JavaVTLEngine extends VtlParserBaseVisitor<Stream<Statement>> imple
 	@Override
 	public Stream<Statement> parseRules(String statements)
 	{
-		VtlParser parser = new VtlParser(new CommonTokenStream(new VtlLexer(CharStreams.fromString(statements))));
+		Vtl parser = new Vtl(new CommonTokenStream(new VtlTokens(CharStreams.fromString(statements))));
 		parser.removeErrorListeners();
 		parser.addErrorListener(ThrowingErrorListener.INSTANCE);
 		parser.getInterpreter().setPredictionMode(LL_EXACT_AMBIG_DETECTION);

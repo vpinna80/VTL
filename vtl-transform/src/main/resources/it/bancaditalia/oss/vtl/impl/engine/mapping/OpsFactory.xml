@@ -20,10 +20,55 @@
     permissions and limitations under the License.
 
 -->
-<parserconfig xmlns="http://oss.bancaditalia.it/vtl">
+<parserconfig xmlns="http://oss.bancaditalia.it/vtl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	
 	<package>it.bancaditalia.oss.vtl.impl.transform</package>
-	<parserclass>org.sdmx.vtl.VtlParser</parserclass>
+	<lexerclass>org.sdmx.vtl.VtlTokens</lexerclass>
+	<parserclass>org.sdmx.vtl.Vtl</parserclass>
+	
+	<roletokens>
+		<component>COMPONENT</component>
+		<identifier>DIMENSION</identifier>
+		<measure>MEASURE</measure>
+		<attribute>ATTRIBUTE</attribute>
+		<viralattribute>VIRAL</viralattribute>
+	</roletokens>
+	
+	<valuecontexts>
+		<integer>SignedInteger,IntegerLiteral</integer>
+		<boolean>BooleanLiteral</boolean>
+		<string>StringLiteral</string>
+		<number>NumberLiteral</number>
+		<null>NullLiteral</null>
+	</valuecontexts>
+	
+	<parametertypes>
+		<scalar from="ScalarType">
+			<typerule name="basicScalarType|valueDomainName" />
+			<defaultrule name="scalarItem" />
+		</scalar>
+		<component from="ComponentType">
+			<rolerule name="componentRole" />
+			<scalarrule name="scalarType" />
+		</component>
+		<dataset from="DatasetType" listrule="compConstraint">
+			<namerule name="componentID" />
+			<quantifierrule xsi:type="nestedparam" name="multModifier">
+				<tokensetparam ordinal="2" tokenset="ParamMultiplicity" />
+			</quantifierrule>
+			<componentrule name="componentType" />
+		</dataset>
+	</parametertypes>
+
+	<tokenset name="ParamMultiplicity" class="it.bancaditalia.oss.vtl.impl.types.statement.QuantifiedComponent$Multiplicity">
+		<tokenmapping name="PLUS" value="AT_LEAST_ONE" />
+		<tokenmapping name="MUL" value="ANY" />
+	</tokenset>
+	
+	<tokenset name="AssignmentType" class="it.bancaditalia.oss.vtl.impl.types.statement.AssignmentType">
+		<tokenmapping name="PUT_SYMBOL" value="PERSISTENT" />
+		<tokenmapping name="ASSIGN" value="TEMPORARY" />
+	</tokenset>
 	
 	<tokenset name="Duration" class="it.bancaditalia.oss.vtl.impl.types.data.Frequency">
 		<tokenmapping name="A" value="A" />
@@ -176,6 +221,14 @@
 		<tokenmapping name="NEQ" value="NE" />
 	</tokenset>
 
+	<tokenset name="RulesetMode" class="it.bancaditalia.oss.vtl.model.rules.RuleSet$RuleType">
+		<tokenmapping name="MT" value="GT" />
+		<tokenmapping name="ME" value="GE" />
+		<tokenmapping name="LE" value="LE" />
+		<tokenmapping name="LT" value="LT" />
+		<tokenmapping name="EQ" value="EQ" />
+	</tokenset>
+
 	<tokenset name="SetOperator" class="it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation$SetOperator">
 		<tokenmapping name="UNION" value="UNION" />
 		<tokenmapping name="INTERSECT" value="INTERSECT" />
@@ -238,6 +291,16 @@
 		<tokenmapping name="ALL_MEASURES" value="ALL_MEASURES" />
 	</tokenset>
 	
+	<tokenset name="RuleSetType" class="it.bancaditalia.oss.vtl.model.rules.RuleSet$RuleSetType">
+		<tokenmapping name="VALUE_DOMAIN" value="VALUE_DOMAIN" />
+		<tokenmapping name="VARIABLE" value="VARIABLE" />
+	</tokenset>
+	
+	<tokenset name="RuleSetSign" class="it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet$HierarchicalRuleSign">
+		<tokenmapping name="PLUS" value="PLUS" />
+		<tokenmapping name="MINUS" value="MINUS" />
+	</tokenset>
+	
 	<recursivecontexts>
 		<context name="AggregateFunctionsContext" />
 		<context name="AggregateFunctionsComponentsContext" />
@@ -249,16 +312,21 @@
 		<context name="ConditionalFunctionsContext" />
 		<context name="ConditionalFunctionsComponentsContext" />
 		<context name="DatasetClauseContext" />
+		<context name="DefineExpressionContext" />
+		<context name="ErCodeContext" />
+		<context name="ErLevelContext" />
 		<context name="FunctionsExpressionContext" />
 		<context name="FunctionsExpressionCompContext" />
 		<context name="GenericFunctionsContext" />
 		<context name="GenericFunctionsComponentsContext" />
 		<context name="HavingClauseContext" />
 		<context name="ImbalanceExprContext" />
+		<context name="InputParameterTypeContext" />
 		<context name="JoinFunctionsContext" />
 		<context name="JoinApplyClauseContext" />
 		<context name="NumericFunctionsContext" />
 		<context name="NumericFunctionsComponentsContext" />
+		<context name="OutputParameterTypeContext" />
 		<context name="ParameterContext" />
 		<context name="ParameterComponentContext" />
 		<context name="ParenthesisExprCompContext" />
@@ -274,6 +342,92 @@
 		<context name="VarIdExprContext" />
 	</recursivecontexts>
 	
+	<statementdef to="statement.AssignStatement">
+		<from>TemporaryAssignment</from>
+		<from>PersistAssignment</from>
+		<tokensetparam ordinal="2" tokenset="AssignmentType" />
+		<aliasparam ordinal="1" />
+		<exprparam ordinal="3" />
+	</statementdef>
+
+	<statementdef to="statement.DefineOperatorStatement">
+		<from>DefOperator</from>
+		<aliasparam name="operatorID" />
+		<listparam name="parameterItem">
+			<paramparam>
+				<paramname name="varID" />
+				<paramtype name="inputParameterType" />
+			</paramparam>
+		</listparam>
+		<typeparam name="outputParameterType" />
+		<exprparam name="expr" />
+	</statementdef>	
+
+	<statementdef to="statement.DefineDataPointStatement">
+		<from>DefDatapointRuleset</from>
+		<aliasparam name="rulesetID" />
+		<nestedparam name="rulesetSignature">
+			<tokensetparam tokenset="RuleSetType" ordinal="1" />
+			<listparam name="signature">
+				<aliasparam name="varID" />
+			</listparam>
+			<listparam name="signature">
+				<aliasparam name="alias" />
+			</listparam>
+		</nestedparam>
+		<nestedparam name="ruleClauseDatapoint">
+			<listparam name="ruleItemDatapoint">
+				<customparam class="it.bancaditalia.oss.vtl.impl.types.statement.DataPointRuleImpl">
+					<aliasparam name="ruleName" />
+					<exprparam name="antecedentContiditon" />
+					<exprparam name="consequentCondition" />
+					<valueparam name="erCode" />
+					<valueparam name="erLevel" />
+				</customparam>
+			</listparam>
+		</nestedparam>
+	</statementdef>	
+
+	<statementdef to="statement.DefineHierarchyStatement">
+		<from>DefHierarchical</from>
+		<aliasparam name="rulesetID" />
+		<nestedparam name="hierRuleSignature">
+			<tokensetparam tokenset="RuleSetType" ordinal="1" />
+			<aliasparam name="IDENTIFIER" />
+			<nestedparam name="valueDomainSignature">
+				<listparam name="signature">
+					<aliasparam name="varID" />
+				</listparam>
+				<listparam name="signature">
+					<aliasparam name="alias" />
+				</listparam>
+			</nestedparam>
+		</nestedparam>
+		<nestedparam name="ruleClauseHierarchical">
+			<listparam name="ruleItemHierarchical">
+				<customparam class="it.bancaditalia.oss.vtl.impl.types.statement.HierarchicalRuleImpl">
+					<aliasparam name="ruleName" />
+					<nestedparam name="codeItemRelation">
+						<exprparam name="exprComponent" />
+						<stringparam name="codetemRef" />
+						<tokensetparam tokenset="RulesetMode" name="comparisonOperand" />
+						<listparam name="codeItemRelationClause">
+							<stringparam name="rightCodeItem" />
+						</listparam>
+						<listparam name="codeItemRelationClause">
+							<tokensetparam tokenset="RuleSetSign" name="opAdd" />
+						</listparam>
+						<listparam name="codeItemRelationClause">
+							<exprparam name="rightCondition" />
+						</listparam>
+					</nestedparam>
+					<valueparam name="erCode" />
+					<valueparam name="erLevel" />
+				</customparam>
+			</listparam>
+		</nestedparam>
+	</statementdef>	
+
 	<mapping to="time.CurrentDateOperand">
 		<from>CurrentDateAtom</from>
 	</mapping>

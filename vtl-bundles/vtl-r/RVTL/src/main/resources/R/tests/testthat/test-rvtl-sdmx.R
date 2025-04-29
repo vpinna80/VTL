@@ -23,7 +23,7 @@ testthat::test_that("SDMX env + SDMX repo", {
     
     tryCatch({
     set_vtl_sdmx_properties()
-    vtlAddStatements("test4", "ds_sdmx:='BIS:WS_EER(1.0)/D.N.B.IT';")
+    vtlAddStatements("test4", "ds_sdmx:=BIS:WS_EER(1.0):D.N.B.IT;")
     vtlCompile("test4")
     ds_sdmx <- vtlEvalNodes("test4", "ds_sdmx")[["ds_sdmx"]]
 

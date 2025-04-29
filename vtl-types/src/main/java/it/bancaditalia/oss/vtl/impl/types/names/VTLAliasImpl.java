@@ -19,8 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.names;
 
+import static java.util.regex.Pattern.compile;
+
 import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.util.function.Predicate;
 
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
@@ -31,15 +34,14 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 public class VTLAliasImpl implements VTLAlias, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Predicate<String> PATTERN = compile("^[A-Za-z_][A-Za-z0-9_.]*|[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_.]*(?:\\([0-9._+*~]+\\))?(?::(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+)?$").asMatchPredicate();
 
 	public static VTLAlias of(String alias)
 	{
 		if (alias == null)
 			return null;
-		else if (alias.startsWith("'") && alias.endsWith("'"))
-			return VTLAliasImpl.of(true, alias);
 		else
-			return VTLAliasImpl.of(false, alias);
+			return VTLAliasImpl.of(alias.startsWith("'") && alias.endsWith("'"), alias);
 	}
 
 	public static VTLAlias of(boolean isQuoted, String alias)
@@ -57,8 +59,8 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 		this.name = isQuoted && alias.startsWith("'") && alias.endsWith("'") ? alias.substring(1, alias.length() - 1) : alias;
 		this.hash = this.name.toLowerCase().hashCode();
 		
-		if (!isQuoted && !this.name.matches("^[a-zA-Z0-9_]+$"))
-			throw new InvalidParameterException("Trying to create an unquoted alias with illegal characters: " + this.name);
+		if (!isQuoted && !PATTERN.test(this.name))
+			throw new InvalidParameterException("Trying to create an unquoted illegal alias: " + this.name);
 	}
 
 	@Override

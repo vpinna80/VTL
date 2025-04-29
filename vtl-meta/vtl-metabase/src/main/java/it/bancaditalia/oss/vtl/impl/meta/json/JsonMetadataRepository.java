@@ -160,7 +160,6 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			if (getStructureDefinition(e.getKey()).isEmpty())
 				structures.put(e.getKey(), ScalarValueMetadata.of(getDomain(e.getKey()).orElseThrow(() -> new VTLUndefinedObjectException("Structure or domain", e.getKey()))));
 		});
-		
 	}
 	
 	@Override

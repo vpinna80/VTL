@@ -110,7 +110,7 @@ public class IntegrationTestSuite
 			METADATA_REPOSITORY.setValue(JsonMetadataRepository.class);
 			ENGINE = new JavaVTLEngine();
 		}
-		catch (URISyntaxException | ClassNotFoundException | JAXBException | IOException e)
+		catch (NoClassDefFoundError | URISyntaxException | ClassNotFoundException | JAXBException | IOException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e)
 		{
 			throw new ExceptionInInitializerError(e);
 		}

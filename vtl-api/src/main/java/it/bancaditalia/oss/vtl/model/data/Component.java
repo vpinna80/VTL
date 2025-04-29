@@ -42,6 +42,7 @@ public interface Component
 		
 		static
 		{
+			ENUM_TAGS.put(Component.class, COMPONENT);
 			ENUM_TAGS.put(Identifier.class, IDENTIFIER);
 			ENUM_TAGS.put(Measure.class, MEASURE);
 			ENUM_TAGS.put(Attribute.class, ATTRIBUTE);

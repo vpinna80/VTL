@@ -20,35 +20,36 @@
     permissions and limitations under the License.
 
 -->
-<Configuration status="info" strict="true" name="it.bancaditalia.oss.vtl"  
-	xmlns="http://logging.apache.org/log4j/2.0/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://logging.apache.org/log4j/2.0/config log4j2.xsd">
-               
+<Configuration xmlns="https://logging.apache.org/xml/ns"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://logging.apache.org/xml/ns https://logging.apache.org/xml/ns/log4j-config-2.xsd"
+    status="INFO"
+    strict="true"
+    name="it.bancaditalia.oss.vtl">
+                   
 	<Appenders>
-		<Appender name="STDERR1" type="Console">
-			<Layout type="PatternLayout" pattern="%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n" />
+		<Console name="STDERR1">
 			<Filters>
- 				<Filter type="ThresholdFilter" level="TRACE"/>
-    			<Filter type="ThresholdFilter" level="INFO" onMatch="DENY" onMismatch="NEUTRAL"/>
+ 				<ThresholdFilter level="TRACE"/>
+    			<ThresholdFilter level="INFO" onMatch="DENY" onMismatch="NEUTRAL"/>
    			</Filters>
-		</Appender>
-		<Appender name="STDERR2" type="Console" target="SYSTEM_ERR">
-			<Layout type="PatternLayout">
-				<Pattern>%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%t] - %m%n</Pattern>
-			</Layout>
+			<PatternLayout pattern="%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%L/%t] - %m%n" />
+		</Console>
+		<Console name="STDERR2" target="SYSTEM_ERR">
 			<Filters>
- 				<Filter type="ThresholdFilter" level="INFO"/>
+ 				<ThresholdFilter level="INFO"/>
    			</Filters>
-		</Appender>
+			<PatternLayout pattern="%-5p %d{dd/MM/yyyy HH:mm:ss} [%c{-3}/%t] - %m%n" />
+		</Console>
 	</Appenders>
 
 	<Loggers>
-		<Logger name="it.bancaditalia.oss.vtl" level="trace" additivity="false">
+		<Logger name="it.bancaditalia.oss.vtl" level="DEBUG">
 			<AppenderRef ref="STDERR1" />
 			<AppenderRef ref="STDERR2" />
 		</Logger>
 
-		<Root level="warn">
+		<Root level="WARN">
 			<AppenderRef ref="STDERR1" />
 			<AppenderRef ref="STDERR2" />
 		</Root>

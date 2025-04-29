@@ -47,8 +47,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
@@ -304,10 +306,7 @@ public abstract class AbstractDataSet implements DataSet
 				try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
 				{
 					Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Entry<T, List<Lineage>>> result = stream.collect(
-							groupingByConcurrent(dp -> {
-								Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = dp.getValues(keys, Identifier.class);
-								return keyValues;
-							}, teeing(groupCollector, mapping(DataPoint::getLineage, toList()), SimpleEntry::new)));
+							groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), teeing(groupCollector, mapping(DataPoint::getLineage, toList()), SimpleEntry::new)));
 					
 					return Utils.getStream(result)
 						.map(splitting((k, e) -> (DataPoint) finisher.apply(e.getKey(), e.getValue(), k)));
@@ -409,25 +408,41 @@ public abstract class AbstractDataSet implements DataSet
 		if (LOGGER.isTraceEnabled() && (!(this instanceof NamedDataSet) || !((NamedDataSet) this).getAlias().getName().startsWith("csv:")))
 		{
 			AtomicBoolean dontpeek = new AtomicBoolean(false);
-			Map<Map<?, ?>, Integer> seen = new HashMap<>();
-			stream = stream.peek(dp -> {
-					if (!dontpeek.get() && !dp.getLineage().toString().startsWith("csv:"))
-					{
-						if (this instanceof NamedDataSet)
-							LOGGER.trace("Dataset {} output datapoint {}", ((NamedDataSet) this).getAlias(),  dp);
-						else
-							LOGGER.trace("Dataset {} output datapoint {}", dp.getLineage(), dp);
-						Map<?, ?> keyVals = dp.getValues(Identifier.class);
-						int times = seen.merge(keyVals, 1, Integer::sum);
-						if (times > 1)
-							throw new IllegalStateException("Keys " + keyVals + " appear " + times + " times.");
-					}
-					else
-						dontpeek.set(true);
-				});
+			Map<Map<?, ?>, DataPoint> seen = new ConcurrentHashMap<>() {
+				private static final long serialVersionUID = 1L;
+				
+				private final String id = UUID.randomUUID().toString();
+				
+				public DataPoint put(Map<?, ?> key, DataPoint value)
+				{
+					LOGGER.error("UUID: {}; Hash: {} dp: {}", id, Objects.hashCode(value), value);
+					return super.put(key, value);
+				};
+			};
+			stream = stream.peek(dp -> checkDuplicates(dontpeek, seen, dp));
 		}
 		
 		return stream.onClose(() -> LOGGER.trace("Closing stream for {}", this));
+	}
+
+	private void checkDuplicates(AtomicBoolean dontpeek, Map<Map<?, ?>, DataPoint> seen, DataPoint dp)
+	{
+		if (!dontpeek.get() && !dp.getLineage().toString().startsWith("csv:"))
+		{
+			if (this instanceof NamedDataSet)
+				LOGGER.trace("Dataset {} output datapoint {}", ((NamedDataSet) this).getAlias(),  dp);
+			else
+				LOGGER.trace("Dataset {} output datapoint {}", dp.getLineage(), dp);
+			Map<?, ?> keyVals = dp.getValues(Identifier.class);
+			DataPoint prev = seen.put(keyVals, dp);
+			if (prev != null)
+			{
+				LOGGER.error("Duplicated datapoints with key {}:\n    1)  {}\n    2)  {}", keyVals, dp, prev);
+				throw new IllegalStateException("Duplicated datapoints with hashcodes: " + dp.hashCode() + " - " + prev.hashCode());
+			}
+		}
+		else
+			dontpeek.set(true);
 	}
 
 	protected abstract Stream<DataPoint> streamDataPoints();

@@ -79,6 +79,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
+import it.bancaditalia.oss.vtl.model.rules.RuleSet;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -194,12 +195,12 @@ public class VTLSessionImpl implements VTLSession
 		return code;
 	}
 	
-	private <T> T findRuleset(VTLAlias alias, Class<T> c)
+	private <T extends RuleSet> T findRuleset(VTLAlias alias, Class<T> c)
 	{
 		return workspace.getRule(alias)
 				.filter(RulesetStatement.class::isInstance)
 				.map(RulesetStatement.class::cast)
-				.map(r -> r.getRuleSet(this))
+				.map(RulesetStatement::getRuleSet)
 				.filter(c::isInstance)
 				.map(c::cast)
 				.orElseThrow(() -> new VTLUnboundAliasException(alias));
@@ -212,7 +213,7 @@ public class VTLSessionImpl implements VTLSession
 	}
 	
 	@Override
-	public HierarchicalRuleSet<?, ?, ?, ?> findHierarchicalRuleset(VTLAlias alias)
+	public HierarchicalRuleSet findHierarchicalRuleset(VTLAlias alias)
 	{
 		return findRuleset(alias, HierarchicalRuleSet.class);
 	}

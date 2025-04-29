@@ -20,7 +20,10 @@
     permissions and limitations under the License.
 
 -->
-<bindings xmlns="https://jakarta.ee/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" version="3.0">
+<bindings xmlns="https://jakarta.ee/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+ 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="https://jakarta.ee/xml/ns/jaxb https://jakarta.ee/xml/ns/jaxb/bindingschema_3_0.xsd
+        http://java.sun.com/xml/ns/jaxb/xjc http://java.sun.com/xml/ns/jaxb/xjc.xsd" version="3.0">
 	<globalBindings choiceContentProperty="true">
 		<xjc:serializable uid="1"/>
 	</globalBindings>

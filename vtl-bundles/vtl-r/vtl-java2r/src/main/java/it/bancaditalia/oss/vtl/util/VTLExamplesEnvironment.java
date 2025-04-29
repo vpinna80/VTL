@@ -156,7 +156,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 				}
 			});
 		}
-		catch (IOException | ClassNotFoundException | JAXBException | URISyntaxException e)
+		catch (IOException | ClassNotFoundException | JAXBException | URISyntaxException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e)
 		{
 			throw new RuntimeException(e);
 		}

@@ -20,11 +20,11 @@
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.HierarchicalRuleSign.PLUS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
-import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
-import static java.lang.Boolean.TRUE;
-import static java.util.stream.Collectors.toMap;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static java.util.Collections.nCopies;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -34,17 +34,18 @@ import java.util.Map;
 
 import io.sdmx.api.sdmx.model.beans.codelist.CodeBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
-import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet;
-import it.bancaditalia.oss.vtl.impl.types.data.StringHierarchicalRuleSet.StringRule;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
+import it.bancaditalia.oss.vtl.impl.types.statement.HierarchicalRuleImpl;
+import it.bancaditalia.oss.vtl.impl.types.statement.HierarchicalRuleSetImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRule;
 
 public class SdmxCodeList extends StringCodeList implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final StringHierarchicalRuleSet defaultRuleSet;
+	private final HierarchicalRuleSetImpl defaultRuleSet;
 	private final String agency;
 	
 	public SdmxCodeList(CodelistBean codelist)
@@ -61,11 +62,19 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 		for (CodeBean codeBean: codelist.getRootCodes())
 			addChildren(codelist, hierarchy, new StringCodeItem(codeBean.getId(), this));
 
-		List<StringRule> rules = new ArrayList<>(); 
-		for (StringCodeItem ruleComp: hierarchy.keySet())
-			rules.add(new StringRule(VTLAliasImpl.of(ruleComp.get()), ruleComp, EQ, null, hierarchy.get(ruleComp).stream().collect(toMap(identity(), k -> TRUE)), null, null));
+		List<HierarchicalRule> rules = new ArrayList<>();
 		
-		defaultRuleSet = rules.isEmpty() ? null : new StringHierarchicalRuleSet(clAlias, clAlias, this, VALUE_DOMAIN, rules);
+//		public HierarchicalRuleImpl(VTLAlias name, Transformation when, String leftCodeItem, RuleType operator, List<String> rightCodes, 
+//				List<HierarchicalRuleSign> signs, List<Transformation> rightConds, ScalarValue<?, ?, ?, ?> errorCode, ScalarValue<?, ?, ?, ?> errorLevel)
+
+		for (StringCodeItem ruleComp: hierarchy.keySet())
+		{
+			VTLAlias ruleName = VTLAliasImpl.of(ruleComp.get());
+			List<String> list = hierarchy.get(ruleComp).stream().map(StringCodeItem::get).collect(toList());
+			rules.add(new HierarchicalRuleImpl(ruleName, null, ruleComp.get(), EQ, list, nCopies(list.size(), PLUS), List.of(), null, null));
+		}
+		
+		defaultRuleSet = rules.isEmpty() ? null : new HierarchicalRuleSetImpl(clAlias, VALUE_DOMAIN, clAlias, List.of(), rules);
 
 		hashCode = 31 + clAlias.hashCode() + this.items.hashCode();
 	}
@@ -85,7 +94,7 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 			hierarchy.put(parent, children);
 	}
 
-	public StringHierarchicalRuleSet getDefaultRuleSet()
+	public HierarchicalRuleSetImpl getDefaultRuleSet()
 	{
 		return defaultRuleSet;
 	}
