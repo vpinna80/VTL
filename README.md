@@ -107,51 +107,57 @@ and some have to be implemented yet.
 
 The following table shows the current implementation status:
 
-| operator | scalar  | dataset-level | component-level |
-| -------- | ------- | ------------- | --------------- |
-| define datapoint ruleset    |           |           | &#10008;  |
-| define hierarchical ruleset | &#10004;  |           |           |
-| define operator             | &#10004;  | &#10004;  | &#10004;  |
-| call defined operator       | &#10004;  | &#10004;  | &#10004;  |
-| persistent assignment       | &#10004;  | &#10004;  | &#10004;  |
-| membership (#)              |           | &#10004;  |           |
-| eval                        | &#10008;  | &#10008;  | &#10008;  |
-| cast                        | &#10004;  |           | &#10004;  |
-| inner_join                  |           | &#10004;  |           |
-| left_join                   |           | &#10004;  |           |
-| full_join                   |           | &#10008;  |           |
-| cross_join                  |           | &#10004;  |           |
-| concat (&#124;&#124;)       | &#10004;  | &#10004;  | &#10004;  |
-| l-r-trim                    | &#10004;  | &#10004;  | &#10004;  |
-| upper,lower                 | &#10004;  | &#10004;  | &#10004;  |
-| substr                      | &#10004;  | &#10004;  | &#10004;  |
-| replace                     | &#10004;  | &#10004;  | &#10004;  |
-| instr                       | &#10004;  | &#10004;  | &#10004;  |
-| length                      | &#10004;  | &#10004;  | &#10004;  |
-| arithmetic                  | &#10004;  | &#10004;  | &#10004;  |
-| mod                         | &#10004;  | &#10004;  | &#10004;  |
-| round                       | &#10004;  | &#10004;  | &#10004;  |
-| trunc                       | &#10004;  | &#10004;  | &#10004;  |
-| ceil                        | &#10004;  | &#10004;  | &#10004;  |
-| floor                       | &#10004;  | &#10004;  | &#10004;  |
-| abs                         | &#10004;  | &#10004;  | &#10004;  |
-| exp                         | &#10004;  | &#10004;  | &#10004;  |
-| ln                          | &#10004;  | &#10004;  | &#10004;  |
-| power                       | &#10004;  | &#10004;  | &#10004;  |
-| log                         | &#10004;  | &#10004;  | &#10004;  |
-| sqrt                        | &#10004;  | &#10004;  | &#10004;  |
-| comparisons (=, >, <, <>)   | &#10004;  | &#10004;  | &#10004;  |
-| between                     | &#10004;  | &#10004;  | &#10004;  |
-| in/not_in                   | &#10008;  |           | &#10004;  |
-| match_characters            | &#10004;  | &#10008;  | &#10004;  |
-| isnull                      | &#10004;  | &#10004;  | &#10004;  |
-| exists_in                   |           | &#10004;  |           |
-| boolean operators           | &#10004;  | &#10004;  | &#10004;  |
-| period_indicator            | &#10004;  | &#10004;  | &#10004;  |
-| fill_time_series            |           | &#10004;  |           |
-| flow_to_stock               |           | &#10004;  |           |
-| stock_to_flow               |           | &#10004;  |           |
-| timeshift                   |           | &#10004;  |           |
-| timeagg                     | &#10004;  | &#10004;  | &#10004;  |
-| current_date                | &#10004;  |           | &#10004;  |
-| union                       |           | &#10004;  |           |
+| operator | scalar | dataset-level | component-level |
+| -------- | ------ | ------------- | --------------- |
+| define datapoint ruleset    |     |     | ❌  |
+| define hierarchical ruleset | ✅  |     |     |
+| define operator             | ✅  | ✅  | ✅  |
+| call defined operator       | ✅  | ✅  | ✅  |
+| persistent assignment       | ✅  | ✅  | ✅  |
+| membership (#)              |     | ✅  |     |
+| eval                        | ❌  | ❌  | ❌  |
+| cast                        | ✅  |     | ✅  |
+| pivot/unpivot               |     | ✅  |     |
+| filter, sub                 |     | ✅  |     |
+| keep, drop, rename          |     | ✅  |     |
+| calc, aggr                  |     | ✅  |     |
+| inner_join                  |     | ✅  |     |
+| left_join                   |     | ✅  |     |
+| full_join                   |     | ✅  |     |
+| cross_join                  |     | ✅  |     |
+| check                       | ✅  |     |     |
+| check_datapoint             | ✅  |     |     |
+| check_hierarchy             | ✅  |     |     |
+| hierarchy                   | ✅  |     |     |
+| set operations              | ✅  |     |     |
+| if-then-else                | ✅  | ✅  | ✅  |
+| case when                   | ✅  | ✅  | ✅  |
+| l-r-trim                    | ✅  | ✅  | ✅  |
+| upper,lower                 | ✅  | ✅  | ✅  |
+| substr                      | ✅  | ✅  | ✅  |
+| replace                     | ✅  | ✅  | ✅  |
+| instr                       | ✅  | ✅  | ✅  |
+| match_characters            | ✅  | ❌  | ✅  |
+| length                      | ✅  | ✅  | ✅  |
+| arithmetic (+, -, *, /)     | ✅  | ✅  | ✅  |
+| mod                         | ✅  | ✅  | ✅  |
+| boolean operators           | ✅  | ✅  | ✅  |
+| rounding functions          | ✅  | ✅  | ✅  |
+| math functions              | ✅  | ✅  | ✅  |
+| comparisons (=, >, <, <>)   | ✅  | ✅  | ✅  |
+| between                     | ✅  | ✅  | ✅  |
+| in/not_in                   | ❌  |     | ✅  |
+| isnull                      | ✅  | ✅  | ✅  |
+| nvl                         | ✅  | ✅  | ✅  |
+| exists_in                   |     | ✅  |     |
+| period_indicator            | ✅  | ✅  | ✅  |
+| fill_time_series            |     | ✅  |     |
+| flow_to_stock               |     | ✅  |     |
+| stock_to_flow               |     | ✅  |     |
+| timeshift                   |     | ✅  |     |
+| timeagg                     | ✅  | ✅  | ✅  |
+| current_date                | ✅  |     | ✅  |
+| dateadd, datediff           |     | ✅  |     |
+| yeartoday, daytoyear        |     | ❌  |     |
+| monthtoday, daytomonth      |     | ❌  |     |
+| getyear, getmonth, getday   |     | ✅  |     |
