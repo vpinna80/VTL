@@ -91,12 +91,12 @@ public class SerCollectors
 	{
 		EnumSet<Characteristics> characteristics = EnumSet.copyOf(downstream.characteristics());
 		characteristics.remove(IDENTITY_FINISH);
-		return new SerCollector<>(downstream.supplier(), downstream.accumulator(), downstream.combiner(), downstream.finisher().andThen(finisher), characteristics);
+		return SerCollector.of(downstream.supplier(), downstream.accumulator(), downstream.combiner(), downstream.finisher().andThen(finisher), characteristics);
 	}
 	
     public static <T> SerCollector<T, ?, Set<T>> toSet()
     {
-        return new SerCollector<>(HashSet::new, Set::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(UNORDERED, IDENTITY_FINISH));
+        return SerCollector.of(HashSet::new, Set::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(UNORDERED, IDENTITY_FINISH));
     }
 
     public static <T, C extends Collection<T>> SerCollector<T, C, C> toCollection(SerSupplier<C> collectionFactory)
@@ -112,7 +112,7 @@ public class SerCollectors
     public static <T, U, A, R> SerCollector<T, ?, R> mapping(SerFunction<? super T, ? extends U> mapper, SerCollector<? super U, A, R> downstream)
     {
         SerBiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
-        return new SerCollector<>(downstream.supplier(), (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
+        return SerCollector.of(downstream.supplier(), (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
         		downstream.combiner(), downstream.finisher(), downstream.characteristics());
     }
 
@@ -123,13 +123,13 @@ public class SerCollectors
 
     public static <T, L extends List<T>> SerCollector<T, ?, L> toList(SerSupplier<? extends L> supplier)
     {
-        return new SerCollector<>(supplier::get, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH));
+        return SerCollector.of(supplier::get, List::add, (left, right) -> { left.addAll(right); return left; }, identity(), EnumSet.of(IDENTITY_FINISH));
     }
 
     public static <T> SerCollector<T, ?, T[]> toArray(T[] result)
     {
     	AtomicInteger index = new AtomicInteger(0);
-        return new SerCollector<>(() -> result, (a, v) -> a[index.getAndIncrement()] = v, (a, b) -> a, identity(), EnumSet.of(CONCURRENT, IDENTITY_FINISH));
+        return SerCollector.of(() -> result, (a, v) -> a[index.getAndIncrement()] = v, (a, b) -> a, identity(), EnumSet.of(CONCURRENT, IDENTITY_FINISH));
     }
 
 	public static <T, A, R> SerCollector<T, A, R> filtering(SerPredicate<? super T> predicate, SerCollector<? super T, A, R> downstream)
@@ -139,7 +139,7 @@ public class SerCollectors
 					downstream.accumulator().accept(r, t);
 			};
 		
-		return new SerCollector<>(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
+		return SerCollector.of(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
 	}
 
 	public static <T, A, R> SerCollector<T, A, R> peeking(SerConsumer<? super T> action, SerCollector<? super T, A, R> downstream)
@@ -149,7 +149,7 @@ public class SerCollectors
 			downstream.accumulator().accept(r, t);
 		};
 		
-		return new SerCollector<>(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
+		return SerCollector.of(downstream.supplier(), biConsumer, downstream.combiner(), downstream.finisher(), downstream.characteristics());
 	}
 
     public static <T, C extends Comparator<? super T> & Serializable> SerCollector<T, ?, Optional<T>> minBy(Class<?> repr, C comparator)

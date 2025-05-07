@@ -77,8 +77,6 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CachedJupyterDataSet extends NamedDataSet
 {
-	private static final long serialVersionUID = 1L;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedJupyterDataSet.class);
 	private static final WeakHashMap<VTLSession, Map<VTLAlias, CacheWaiter>> SESSION_CACHES = new WeakHashMap<>(); 
 	private static final ReferenceQueue<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> REF_QUEUE = new ReferenceQueue<>();
@@ -304,8 +302,6 @@ public class CachedJupyterDataSet extends NamedDataSet
 		
 		return new AbstractDataSet(metadata)
 		{
-			private static final long serialVersionUID = 1L;
-
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{

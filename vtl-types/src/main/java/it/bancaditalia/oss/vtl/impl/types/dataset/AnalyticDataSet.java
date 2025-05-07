@@ -69,7 +69,6 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 {
-	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticDataSet.class);
 	
 	private static final Map<Entry<Set<? extends DataStructureComponent<?, ?, ?>>, List<SortCriterion>>, WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>>> CACHES = new ConcurrentHashMap<>();

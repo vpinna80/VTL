@@ -144,8 +144,6 @@ public enum SampleDataSets implements DataSet
 		
 		return new AbstractDataSet(newMetadata)
 		{
-			private static final long serialVersionUID = 1L;
-
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{

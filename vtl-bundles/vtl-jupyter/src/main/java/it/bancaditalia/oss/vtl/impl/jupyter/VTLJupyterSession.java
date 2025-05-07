@@ -44,7 +44,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
 public class VTLJupyterSession extends VTLSessionImpl
 {
-	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
 	
 	public VTLJupyterSession(String code)

@@ -19,14 +19,12 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
-import java.io.Serializable;
-
 /**
  * A basic placeholder interface implemented by all the value types defined by VTL specification. 
  * 
  * @author Valentino Pinna
  */
-public interface VTLValue extends Serializable
+public interface VTLValue
 {
 	/**
 	 * @return the metadata describing this value

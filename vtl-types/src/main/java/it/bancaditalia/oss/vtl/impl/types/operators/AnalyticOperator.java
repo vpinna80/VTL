@@ -49,8 +49,8 @@ import it.bancaditalia.oss.vtl.util.SerFunction;
 public enum AnalyticOperator  
 {
 	COUNT(domain -> collectingAndThen(counting(), IntegerValue::of)),
-	SUM(domain -> getSummingCollector()), 
-	AVG(domain -> getAveragingCollector()),
+	SUM(domain -> getSummingCollector(domain)), 
+	AVG(domain -> getAveragingCollector(domain)),
 	MEDIAN(domain -> collectingAndThen(filtering(not(NullValue.class::isInstance), medianCollector(domain.getValueClass())), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
 	MIN(domain -> collectingAndThen(minBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
 	MAX(domain -> collectingAndThen(maxBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),

@@ -48,17 +48,20 @@ public class LineageNode extends LineageImpl
 
 	public static SerUnaryOperator<Lineage> lineageEnricher(Transformation transformation)
 	{
-		return lineage -> LineageNode.of(transformation.toString(), LineageCall.of(lineage));
+		String trString = transformation.toString();
+		return lineage -> LineageNode.of(trString, LineageCall.of(lineage));
 	}
 	
 	public static SerFunction<Collection<Lineage>, Lineage> lineagesEnricher(Transformation transformation)
 	{
-		return lineages -> LineageNode.of(transformation.toString(), LineageCall.of(lineages));
+		String trString = transformation.toString();
+		return lineages -> LineageNode.of(trString, LineageCall.of(lineages));
 	}
 	
 	public static SerBinaryOperator<Lineage> lineage2Enricher(Transformation transformation)
 	{
-		return (linLeft, linRight)-> LineageNode.of(transformation.toString(), LineageCall.of(linLeft, linRight));
+		String trString = transformation.toString();
+		return (linLeft, linRight)-> LineageNode.of(trString, LineageCall.of(linLeft, linRight));
 	}
 	
 	public static LineageNode of(Transformation transformation)

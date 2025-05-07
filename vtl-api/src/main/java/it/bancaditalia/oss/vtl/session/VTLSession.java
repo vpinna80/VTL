@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.session;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +36,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
  * @author Valentino Pinna
  *
  */
-public interface VTLSession extends TransformationScheme, Serializable
+public interface VTLSession extends TransformationScheme
 {
 	/**
 	 * @return the computing {@link Engine} used by this session

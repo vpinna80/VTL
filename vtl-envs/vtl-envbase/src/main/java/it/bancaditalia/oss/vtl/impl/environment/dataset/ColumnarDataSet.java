@@ -39,8 +39,6 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ColumnarDataSet extends AbstractDataSet
 {
-	private static final long serialVersionUID = 1L;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(ColumnarDataSet.class);
 	
 	private final Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns;

@@ -27,7 +27,6 @@ import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 
 public class StreamWrapperDataSet extends AbstractDataSet
 {
-	private static final long serialVersionUID = 1L;
 	private final Supplier<? extends Stream<DataPoint>> supplier;
 	private final boolean cacheable;
 

@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
@@ -43,23 +44,23 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
-import it.bancaditalia.oss.vtl.util.SerSupplier;
 
 public enum AggregateOperator  
 {
-	COUNT(() -> collectingAndThen(counting(), IntegerValue::of)),
-	SUM(() -> getSummingCollector()), 
-	AVG(() -> getAveragingCollector()),
-	MEDIAN(() -> collectingAndThen(filtering(not(NullValue.class::isInstance), new MedianCollector(getSVClass())), opt -> opt.orElse(NullValue.instance(NULLDS)))),
-	MIN(() -> collectingAndThen(minBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
-	MAX(() -> collectingAndThen(maxBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
-	VAR_POP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / acu[0])), NumberValueImpl::createNumberValue)),
-	VAR_SAMP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acc -> acc[2] / (acc[0] - 1))), NumberValueImpl::createNumberValue)),
-	STDDEV_POP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> sqrt(acu[2] / acu[0]))), NumberValueImpl::createNumberValue)),
-	STDDEV_SAMP(() -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acc -> sqrt(acc[2] / (acc[0] - 1)))), NumberValueImpl::createNumberValue));
+	COUNT(domain -> collectingAndThen(counting(), IntegerValue::of)),
+	SUM(domain -> getSummingCollector(domain)), 
+	AVG(domain -> getAveragingCollector(domain)),
+	MEDIAN(domain -> collectingAndThen(filtering(not(NullValue.class::isInstance), new MedianCollector(getSVClass())), opt -> opt.orElse(NullValue.instance(NULLDS)))),
+	MIN(domain -> collectingAndThen(minBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
+	MAX(domain -> collectingAndThen(maxBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),
+	VAR_POP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / acu[0])), NumberValueImpl::createNumberValue)),
+	VAR_SAMP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acc -> acc[2] / (acc[0] - 1))), NumberValueImpl::createNumberValue)),
+	STDDEV_POP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> sqrt(acu[2] / acu[0]))), NumberValueImpl::createNumberValue)),
+	STDDEV_SAMP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acc -> sqrt(acc[2] / (acc[0] - 1)))), NumberValueImpl::createNumberValue));
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static final Class<ScalarValue<?, ?, ?, ?>> CLASS = (Class<ScalarValue<?, ?, ?, ?>>) (Class<? extends ScalarValue>) ScalarValue.class;
@@ -89,26 +90,26 @@ public enum AggregateOperator
 	        }, finalizer, EnumSet.of(UNORDERED));
 	}
 	
-	private final SerSupplier<SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> reducerSupplier;
+	private final SerFunction<ValueDomainSubset<?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> reducerSupplier;
 	
-	private AggregateOperator(SerSupplier<SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> reducerSupplier)
+	private AggregateOperator(SerFunction<ValueDomainSubset<?, ?>, SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>>> reducerSupplier)
 	{
 		this.reducerSupplier = reducerSupplier;
 	}
 	
-	static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getSummingCollector()
+	static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getSummingCollector(ValueDomainSubset<? ,?> targetDomain)
 	{
-		return SerCollector.of(SerDoubleSumAvgCount::new, SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::sum, EnumSet.of(UNORDERED, CONCURRENT));
+		return SerCollector.of(() -> new SerDoubleSumAvgCount(INTEGERDS.isAssignableFrom(targetDomain)), SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::sum, EnumSet.of(UNORDERED, CONCURRENT));
 	}
 
-	static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector()
+	static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector(ValueDomainSubset<? ,?> targetDomain)
 	{
-		return SerCollector.of(SerDoubleSumAvgCount::new, SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::avg, EnumSet.of(UNORDERED, CONCURRENT));
+		return SerCollector.of(() -> new SerDoubleSumAvgCount(INTEGERDS.isAssignableFrom(targetDomain)), SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::avg, EnumSet.of(UNORDERED, CONCURRENT));
 	}
 
-	public SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer()
+	public SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer(ValueDomainSubset<?, ?> domain)
 	{
-		return reducerSupplier.get();
+		return reducerSupplier.apply(domain);
 	}
 
 	@Override
@@ -119,14 +120,16 @@ public enum AggregateOperator
     
 	private static ScalarValue<?, ?, ?, ?> sum(SerDoubleSumAvgCount count)
 	{
+		boolean isIntegerResult = count.isIntegerResult();
+		
 		if (count.getCount() == 0)
-			return IntegerValue.of((Long) null);
-		else if (count.getCountDouble() == 0)
+			return isIntegerResult ? IntegerValue.of((Long) null) : createNumberValue((Number) null);
+		else if (isIntegerResult && count.getCountDouble() == 0)
 			return IntegerValue.of(count.getLongSum());
-		else if (isUseBigDecimal())
-			return BigDecimalValue.of(count.getBigDecimalSum().add(new BigDecimal(count.getLongSum())));
-		else
-			return DoubleValue.of(count.getDoubleSum() + count.getLongSum(), NUMBERDS);
+		else 
+			return createNumberValue(isUseBigDecimal() 
+					? count.getBigDecimalSum().add(new BigDecimal(count.getLongSum())) 
+					: count.getDoubleSum() + count.getLongSum(), NUMBERDS);
 	}
 	
 	private static ScalarValue<?, ?, ?, ?> avg(SerDoubleSumAvgCount count)

@@ -40,8 +40,14 @@ public class SerDoubleSumAvgCount implements Serializable
 	private final DoubleAdder doubleSum = new DoubleAdder();
 	private final LongAdder longSum = new LongAdder(); 
 	private final AtomicReference<BigDecimal> bigDecimalSum = new AtomicReference<>(ZERO);
+	private final boolean isIntegerResult;
 
-    public void accumulate(Double d)
+    public SerDoubleSumAvgCount(boolean isIntegerResult)
+    {
+		this.isIntegerResult = isIntegerResult;
+	}
+
+	public void accumulate(Double d)
     {
 		count.incrementAndGet();
 		countDouble.incrementAndGet();
@@ -103,5 +109,10 @@ public class SerDoubleSumAvgCount implements Serializable
 	public double getDoubleSum()
 	{
 		return doubleSum.sum();
+	}
+
+	public boolean isIntegerResult()
+	{
+		return isIntegerResult;
 	}
 }

@@ -90,7 +90,6 @@ import it.bancaditalia.oss.vtl.util.Utils;
 
 public abstract class AbstractDataSet implements DataSet
 {
-	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
 	protected final DataSetMetadata dataStructure;
@@ -103,8 +102,6 @@ public abstract class AbstractDataSet implements DataSet
 	private static AbstractDataSet ofLambda(DataSetMetadata metadata, SerSupplier<Stream<DataPoint>> supplier)
 	{
 		return new AbstractDataSet(metadata) {
-			private static final long serialVersionUID = 1L;
-			
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
@@ -208,9 +205,6 @@ public abstract class AbstractDataSet implements DataSet
 		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
 		return new AbstractDataSet(metadata) {
-			
-			private static final long serialVersionUID = 1L;
-
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{

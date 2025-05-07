@@ -68,8 +68,6 @@ public class TestUtils
 	public static DataSet concat(DataSet... samples)
 	{
 		return new AbstractDataSet(samples[0].getMetadata()) {
-			private static final long serialVersionUID = 1L;
-	
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{

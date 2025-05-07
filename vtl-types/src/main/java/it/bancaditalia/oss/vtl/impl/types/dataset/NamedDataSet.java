@@ -31,8 +31,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 public class NamedDataSet extends AbstractDataSet
 {
-	private static final long serialVersionUID = 1L;
-
 	private final DataSet delegate;
 	private final VTLAlias alias;
 

@@ -28,7 +28,6 @@ import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public class FunctionDataSet<P> extends StreamWrapperDataSet
 {
-	private static final long serialVersionUID = 1L;
 	private final Function<? super P, ? extends Stream<DataPoint>> function;
 	private final P param;
 
