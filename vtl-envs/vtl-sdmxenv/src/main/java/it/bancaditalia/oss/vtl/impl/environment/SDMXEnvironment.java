@@ -56,7 +56,6 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -412,19 +411,11 @@ public class SDMXEnvironment implements Environment, Serializable
 		SdmxBeanRetrievalManager brm = null;
 		try
 		{
-			MetadataRepository current = repo;
-			while (brm == null && current != null)
-			{
-				Optional<Field> field = Arrays.stream(repo.getClass().getFields())
-			            .filter(f -> f.getName().equals("rbrm"))
-			            .findFirst();
-				if (field.isPresent())
-					brm = (SdmxBeanRetrievalManager) field.get().get(repo);
-				else
-					repo = repo.getLinkedRepository();
-			}
+			// This is a field present only in SDMXMetadataRepository and SDMXJsonMetadataRepository classes 
+			Field field = repo.getClass().getField("rbrm");
+			brm = (SdmxBeanRetrievalManager) field.get(repo);
 		}
-		catch (SecurityException | IllegalAccessException | IllegalArgumentException e)
+		catch (SecurityException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException e)
 		{
 			throw new IllegalStateException("The SDMX Environment must be used with a SDMX Metadata Repository.");
 		}
