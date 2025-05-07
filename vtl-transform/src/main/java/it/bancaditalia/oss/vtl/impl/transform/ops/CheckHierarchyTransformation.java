@@ -148,7 +148,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		DataSet dataset = (DataSet) operand.eval(scheme);
 
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getSingleton(Measure.class);
-		DataSetMetadata newStructure = (DataSetMetadata) this.getMetadata(scheme);
+		DataSetMetadata newStructure = (DataSetMetadata) getMetadata(scheme);
 		
 		// Store code values that can be computed, to determine the input behavior 
 		HierarchicalRuleSet ruleset = (HierarchicalRuleSetImpl) scheme.findHierarchicalRuleset(rulesetID);
@@ -176,7 +176,8 @@ public class CheckHierarchyTransformation extends TransformationImpl
 			Map<? extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Map<CodeItem<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>>> grouped;
 			try (Stream<DataPoint> stream = dataset.stream())
 			{
-				grouped = stream.collect(groupingByConcurrent(dp -> dp.getValues(noCodeIds), toConcurrentMap(dp -> (CodeItem<?, ?, ?, ?>) dp.get(codeId), dp -> dp.get(measure))));
+				grouped = stream.collect(groupingByConcurrent(dp -> dp.getValues(noCodeIds), 
+						toConcurrentMap(dp -> resolved.cast(dp.get(codeId)), dp -> dp.get(measure))));
 			}
 			
 			// Examine each group separately. A group may also produce an empty stream if no rule was computed.

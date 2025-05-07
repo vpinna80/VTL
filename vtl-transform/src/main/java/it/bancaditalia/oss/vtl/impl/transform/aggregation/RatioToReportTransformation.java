@@ -55,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerCollector;
 
 public class RatioToReportTransformation extends UnaryTransformation implements AnalyticTransformation
 {
@@ -82,19 +83,22 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
 		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
-		
 		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
-		SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher = (newV, oldV) -> {
-			if (newV.isNull() || oldV.isNull())
-				return singleton(newV.isNull() ? newV : oldV);
-			else if (newV instanceof NumberValue && oldV instanceof NumberValue)
-				return singleton(createNumberValue(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
-			else
-				throw new UnsupportedOperationException();
-		};
-
+		
 		for (DataStructureComponent<Measure, ?, ?> measure: measures)
-			dataset = dataset.analytic(lineageEnricher(this), measure, measure, clause, null, SUM.getReducer(measure.getVariable().getDomain()), finisher);
+		{
+			SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher = (newV, oldV) -> {
+				if (newV.isNull() || oldV.isNull())
+					return singleton(newV.isNull() ? newV : oldV);
+				else if (newV instanceof NumberValue && oldV instanceof NumberValue)
+					return singleton(createNumberValue(((NumberValue<?, ?, ?, ?>) oldV).get().doubleValue() / ((NumberValue<?, ?, ?, ?>) newV).get().doubleValue()));
+				else
+					throw new UnsupportedOperationException();
+			};
+
+			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer = SUM.getReducer(measure.getVariable().getDomain());
+			dataset = dataset.analytic(lineageEnricher(this), measure, measure, clause, null, reducer, finisher);
+		}
 		
 		return dataset;
 	}

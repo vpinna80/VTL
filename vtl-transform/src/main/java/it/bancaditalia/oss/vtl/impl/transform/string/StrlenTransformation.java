@@ -55,10 +55,15 @@ public class StrlenTransformation extends UnaryTransformation
 		super(operand);
 	}
 
+	private static ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> staticEvalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	{
+		return scalar.isNull() ? NullValue.instance(INTEGERDS) : IntegerValue.of((long) ((StringValue<?, ?>) scalar).get().length());
+	}
+
 	@Override
 	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		return scalar.isNull() ? NullValue.instance(INTEGERDS) : IntegerValue.of((long) ((StringValue<?, ?>) scalar).get().length());
+		return staticEvalOnScalar(repo, scalar, metadata);
 	}
 
 	@Override
@@ -70,7 +75,7 @@ public class StrlenTransformation extends UnaryTransformation
 				.addComponent(LEN_MEASURE)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(LEN_MEASURE, evalOnScalar(repo, dp.get(originalMeasure), metadata, scheme)));
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(LEN_MEASURE, staticEvalOnScalar(repo, dp.get(originalMeasure), metadata)));
 	}
 
 	@Override

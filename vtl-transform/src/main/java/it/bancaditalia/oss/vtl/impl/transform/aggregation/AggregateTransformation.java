@@ -146,7 +146,10 @@ public class AggregateTransformation extends TransformationImpl
 	{
 		VTLValue opMeta = operand == null ? scheme.resolve(THIS) : operand.eval(scheme);
 		if (!opMeta.isDataSet())
-			return Stream.of((ScalarValue<?, ?, ?, ?>) opMeta).collect(aggregation.getReducer());
+		{
+			ScalarValue<?, ?, ?, ?> scalar = (ScalarValue<?, ?, ?, ?>) opMeta;
+			return Stream.of(scalar).collect(aggregation.getReducer(scalar.getDomain()));
+		}
 
 		DataSet dataset = (DataSet) opMeta;
 		SerCollector<DataPoint, ?, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> combined = null;
@@ -160,9 +163,9 @@ public class AggregateTransformation extends TransformationImpl
 			// Create a single collector that combines each collector that aggregates a measure into one
 			for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
 				if (combined == null)
-					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(), v -> new HashMap<>(Map.of(measure, v)))));
+					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getVariable().getDomain()), v -> new HashMap<>(Map.of(measure, v)))));
 				else
-					combined = teeing(mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(), v -> new SimpleEntry<>(measure, v)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
+					combined = teeing(mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getVariable().getDomain()), v -> new SimpleEntry<>(measure, v)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 

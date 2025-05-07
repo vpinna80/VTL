@@ -115,20 +115,21 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		
 		WindowClause window = new WindowClauseImpl(partitionIDs, ordering, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		DataSetMetadata structure = dataset.getMetadata();
 		SerCollector<DataPoint, ?, RankedPartition> collector = 
-				collectingAndThen(toList(PartitionToRank::new), l -> rankPartition(dataset.getMetadata(), orderByAliases, l));
+				collectingAndThen(toList(PartitionToRank::new), l -> rankPartition(structure, orderByAliases, l));
 
 		return dataset.analytic(lineageEnricher(this), measure, 
-				INTEGERDS.getDefaultVariable().as(Measure.class), window, identity(), collector, (r, dp) -> finisher(r, dp))
+				INTEGERDS.getDefaultVariable().as(Measure.class), window, identity(), collector, RankTransformation::finisher)
 			.membership(INTEGERDS.getDefaultVariable().getAlias(), identity());
 	}
 	
-	private Collection<ScalarValue<?, ?, ?, ?>> finisher(RankedPartition ranks, DataPoint dp)
+	private static Collection<ScalarValue<?, ?, ?, ?>> finisher(RankedPartition ranks, DataPoint dp)
 	{
 		return singleton(IntegerValue.of(ranks.get(dp)));
 	}
 
-	private RankedPartition rankPartition(DataSetMetadata metadata, Set<VTLAlias> orderByAliases, PartitionToRank partition)
+	private static RankedPartition rankPartition(DataSetMetadata metadata, Set<VTLAlias> orderByAliases, PartitionToRank partition)
 	{
 		long rank = 1, position = 1;
 		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, orderByValues = emptyMap();

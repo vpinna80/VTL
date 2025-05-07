@@ -23,6 +23,8 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createSt
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toArray;
+import static org.apache.spark.sql.catalyst.util.ArrayData.toArrayData;
+import static org.apache.spark.sql.types.DataTypes.createArrayType;
 import static org.apache.spark.sql.types.DataTypes.createStructType;
 
 import java.util.Arrays;
@@ -32,7 +34,6 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.UserDefinedType;
 
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
@@ -46,13 +47,14 @@ public class PartitionToRankUDT extends UserDefinedType<PartitionToRank>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final StructType sqlType;
+	private final DataType sqlType;
 
 	public PartitionToRankUDT(DataSetMetadata structure)
 	{
 		List<StructField> structFromComponents = createStructFromComponents(structure);
 		structFromComponents.add(new StructField("$lineage$", LineageSparkUDT, false, Metadata.empty()));
-		sqlType = createStructType(structFromComponents);
+		sqlType = createStructType(List.of(new StructField("udtfield", 
+				createArrayType(createStructType(structFromComponents)), true, Metadata.empty())));
 	}
 	
 	@Override
@@ -87,7 +89,7 @@ public class PartitionToRankUDT extends UserDefinedType<PartitionToRank>
 			rows[j++] = new GenericInternalRow(vals);
 		}
 		
-		return rows;
+		return new GenericInternalRow(new Object[] { toArrayData(rows) });
 	}
 
 	@Override

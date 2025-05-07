@@ -162,20 +162,16 @@ public class SparkUtils
 		return repo.getVariable(VTLAliasImpl.of(field.name())).orElseThrow(() -> new NullPointerException("Variable " + field.name() + " is not defined")).as(role);
 	}
 
-	public static MapFunction<Row, Row> parseCSVStrings(DataSetMetadata structure, Lineage lineage, DataPointEncoder encoder)
+	public static MapFunction<Row, Row> parseCSVStrings(DataSetMetadata structure, Lineage lineage,
+			String[] compNames, ValueDomainSubset<?,?>[] domains)
 	{
-		DataStructureComponent<?, ?, ?>[] comps = encoder.components;
-		ValueDomainSubset<?,?>[] domains = encoder.domains;
-		String[] names = new String[comps.length];
-		for (int i = 0; i < names.length; i++)
-			names[i] = comps[i].getVariable().getAlias().getName();
-		
 		return srcRow -> {
 			int size = srcRow.size() + 1;
 			Serializable[] newCols = new Serializable[size];
 			for (int i = 0; i < size - 1; i++)
 			{
-				newCols[i] = mapValue(domains[i], srcRow.getAs(names[i]), null);
+				String stringValue = srcRow.getAs(compNames[i]);
+				newCols[i] = mapValue(domains[i], stringValue, null);
 				if (((ScalarValue<?, ?, ?, ?>) newCols[i]).isNull())
 					newCols[i] = null;
 			}

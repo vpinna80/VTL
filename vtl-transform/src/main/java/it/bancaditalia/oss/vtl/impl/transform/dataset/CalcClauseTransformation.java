@@ -184,10 +184,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
 		DataSet operand = (DataSet) getThisValue(scheme);
 
-		final Map<Boolean, List<CalcClauseItem>> partitionedClauses = calcClauses.stream()
+		Map<Boolean, List<CalcClauseItem>> partitionedClauses = calcClauses.stream()
 			.collect(partitioningBy(CalcClauseItem::isAnalytic));
-		final List<CalcClauseItem> nonAnalyticClauses = partitionedClauses.get(false);
-		final List<CalcClauseItem> analyticClauses = partitionedClauses.get(true);
+		List<CalcClauseItem> nonAnalyticClauses = partitionedClauses.get(false);
+		List<CalcClauseItem> analyticClauses = partitionedClauses.get(true);
 		
 		DataSetMetadata nonAnalyticResultMetadata = new DataStructureBuilder(metadata)
 				.removeComponents(analyticClauses.stream().map(CalcClauseItem::getAlias).collect(toSet()))
@@ -200,10 +200,11 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		
 		MetadataRepository repo = scheme.getRepository();
 		// preserve original dataset if no nonAnalyticsClauses are present
+		DataSetMetadata opMeta = operand.getMetadata();
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
 			: operand.mapKeepingKeys(nonAnalyticResultMetadata, lineageEnricher(this), dp -> {
-					DatapointScope dpSession = new DatapointScope(repo, dp, operand.getMetadata(), timeId);
+					DatapointScope dpSession = new DatapointScope(repo, dp, opMeta, timeId);
 					
 					// place calculated components (eventually overriding existing ones) 
 					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
@@ -213,7 +214,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 								clause -> clause.eval(dpSession))
 							);
 					
-					HashMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 					map.keySet().removeAll(calcValues.keySet());
 					map.putAll(calcValues);
 					return map;

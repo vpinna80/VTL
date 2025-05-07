@@ -189,7 +189,8 @@ public class HierarchyTransformation extends TransformationImpl
 				Stream<DataPoint> stream2 = stream;
 				if (output == ALL)
 					stream2 = stream.peek(dp -> results.put(dp.getValues(Identifier.class), dp));
-				grouped = stream2.collect(groupingByConcurrent(dp -> dp.getValues(noCodeIds), toMapWithKeys(dp -> (CodeItem<?, ?, ?, ?>) dp.get(codeId))));
+				grouped = stream2.collect(groupingByConcurrent(dp -> dp.getValues(noCodeIds), 
+						toMapWithKeys(dp -> resolved.cast(dp.get(codeId)))));
 			}
 
 			// group computations are independent of each other.

@@ -26,6 +26,9 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.singletonMap;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
@@ -48,6 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -118,11 +122,21 @@ public class ConcatTransformation extends BinaryTransformation
 			// must remember which is the left operand because some operators are not commutative
 			BinaryOperator<ScalarValue<?, ?, ?, ?>> finalOperator = CONCAT.reverseIf(!leftHasMoreIdentifiers);  
 	
+			// Keep the map of components from the result and the two operands
+			Map<DataStructureComponent<?, ?, ?>, Entry<DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>>> measuresMap = new HashMap<>();
+			for (DataStructureComponent<?, ?, ?> resultMeasure: resultMeasures)
+			{
+				VTLAlias rmAlias = resultMeasure.getVariable().getAlias();
+				measuresMap.put(resultMeasure, new SimpleEntry<>(
+						streamed.getMetadata().getComponent(rmAlias).get(),
+						indexed.getMetadata().getComponent(rmAlias).get()));
+			}
+			
 			// Scan the dataset with less identifiers and find the matches
 			return streamed.mappedJoin((DataSetMetadata) metadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
-						.map(rm -> new SimpleEntry<>(rm, finalOperator
-								.apply(STRINGDS.cast(dpi.get(indexed.getComponent(rm.getVariable().getAlias()).get())), 
-										STRINGDS.cast(dps.get(streamed.getComponent(rm.getVariable().getAlias()).get())))))
+						.map(rm -> new SimpleEntry<>(rm, finalOperator.apply(
+								STRINGDS.cast(dpi.get(measuresMap.get(rm).getKey())), 
+								STRINGDS.cast(dps.get(measuresMap.get(rm).getValue())))))
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))

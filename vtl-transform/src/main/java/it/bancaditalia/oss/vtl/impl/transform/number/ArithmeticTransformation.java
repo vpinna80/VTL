@@ -142,6 +142,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		boolean swap = left.getMetadata().getIDs().containsAll(right.getMetadata().getIDs());
 		DataSet streamed = swap ? right : left;
 		DataSet indexed = swap ? left : right;
+		ArithmeticOperator operator = this.operator;
 
 		if (metadata == null)
 		{
@@ -160,7 +161,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			boolean intResult = INTEGERDS.isAssignableFrom(resultComp.getVariable().getDomain());
 			return streamed.mappedJoin(newStructure, indexed,  
 					(dpl, dpr) -> new DataPointBuilder()
-						.add(resultComp, compute(swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
+						.add(resultComp, compute(operator, swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
 						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), newStructure), false);
@@ -181,28 +182,36 @@ public class ArithmeticTransformation extends BinaryTransformation
 						ScalarValue<?, ?, ?, ?> leftVal = dpl.get(streamedMeasure);
 						ScalarValue<?, ?, ?, ?> rightVal = dpr.get(indexedMeasure);
 						return new DataPointBuilder()
-								.add(resultMeasure, compute(swap, isResultInt, leftVal, rightVal))
+								.add(resultMeasure, compute(operator, swap, isResultInt, leftVal, rightVal))
 								.addAll(dpl.getValues(Identifier.class))
 								.addAll(dpr.getValues(Identifier.class))
 								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata);						
 					}, false);
 			}
 			else
+			{
 				// Scan the dataset with less identifiers and find the matches
+				DataSetMetadata streamedStructure = streamed.getMetadata();
+				DataSetMetadata indexedStructure = indexed.getMetadata();
 				return streamed.mappedJoin((DataSetMetadata) metadata, indexed, 
-					(dpl, dpr) -> new DataPointBuilder(resultMeasures.stream()
-							.map(toEntryWithValue(compToCalc -> compute(swap, INTEGERDS.isAssignableFrom(compToCalc.getVariable().getDomain()), 
-									dpl.get(streamed.getComponent(compToCalc.getVariable().getAlias()).get()), 
-									dpr.get(indexed.getComponent(compToCalc.getVariable().getAlias()).get()))
-							)).collect(entriesToMap()))		
-						.addAll(dpl.getValues(Identifier.class))
-						.addAll(dpr.getValues(Identifier.class))
-						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata), false);
+					(dpl, dpr) -> {
+						return new DataPointBuilder(resultMeasures.stream()
+								.map(toEntryWithValue(compToCalc -> {
+									Variable<?, ?> varToCalc = compToCalc.getVariable();
+									return compute(operator, swap, INTEGERDS.isAssignableFrom(varToCalc.getDomain()), 
+											dpl.get(streamedStructure.getComponent(varToCalc.getAlias()).get()), 
+											dpr.get(indexedStructure.getComponent(varToCalc.getAlias()).get()));
+								})).collect(entriesToMap()))		
+							.addAll(dpl.getValues(Identifier.class))
+							.addAll(dpr.getValues(Identifier.class))
+							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata);
+					}, false);
+			}
 		}
 	}
 
 	// take account of the order of parameters because some operators are not commutative 
-	private ScalarValue<?, ?, ?, ?> compute(boolean swap, boolean intResult, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	private static ScalarValue<?, ?, ?, ?> compute(ArithmeticOperator operator, boolean swap, boolean intResult, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left.isNull() || right.isNull())
 			return intResult ? NullValue.instance(INTEGERDS) : NullValue.instance(NUMBERDS);

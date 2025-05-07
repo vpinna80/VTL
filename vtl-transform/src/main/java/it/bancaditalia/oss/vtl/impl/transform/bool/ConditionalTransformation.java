@@ -121,19 +121,23 @@ public class ConditionalTransformation extends TransformationImpl
 			VTLValue elseV = elseExpr.eval(session);
 			DataStructureComponent<Measure, ?, ?> booleanConditionMeasure = condD.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
+			SerUnaryOperator<Lineage> enricher = LineageNode.lineageEnricher(condition);
 			if (thenV.isDataSet() && elseV.isDataSet()) // Two datasets
 				return evalTwoDatasets((DataSetMetadata) metadata, condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
 			else // One dataset and one scalar
 			{
-				DataSet dataset = thenV.isDataSet() ? (DataSet) thenV : (DataSet) elseV;
+				boolean isThenDataset = thenV.isDataSet();
+				DataSet dataset = isThenDataset ? (DataSet) thenV : (DataSet) elseV;
 				ScalarValue<?, ?, ?, ?> scalar = !thenV.isDataSet() ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
 				return condD.mappedJoin((DataSetMetadata) metadata, dataset, (dpCond, dp) -> 
-						evalDatasetAndScalar((DataSetMetadata) metadata, thenV == dataset ^ checkCondition(dpCond.get(booleanConditionMeasure)), dp, scalar, booleanConditionMeasure), false);
+						evalDatasetAndScalar((DataSetMetadata) metadata, isThenDataset ^ checkCondition(dpCond.get(booleanConditionMeasure)),
+								enricher, dp, scalar, booleanConditionMeasure), false);
 			}
 		}
 	}
 
-	private DataPoint evalDatasetAndScalar(DataSetMetadata metadata, boolean cond, DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, DataStructureComponent<Measure, ?, ?> booleanConditionMeasure)
+	private static DataPoint evalDatasetAndScalar(DataSetMetadata metadata, boolean cond, SerUnaryOperator<Lineage> enricher, 
+			DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, DataStructureComponent<Measure, ?, ?> booleanConditionMeasure)
 	{
 		if (cond)
 		{
@@ -143,7 +147,6 @@ public class ConditionalTransformation extends TransformationImpl
 			// replace all measures values in the datapoint with the scalar casted to the component domain
 			nonIdValues.replaceAll((c, v) -> c.getVariable().getDomain().cast(scalar));
 			
-			SerUnaryOperator<Lineage> enricher = LineageNode.lineageEnricher(condition);
 			return new DataPointBuilder(dp.getValues(Identifier.class))
 					.addAll(dp.getValues(Attribute.class))
 					.addAll(nonIdValues)
@@ -175,7 +178,7 @@ public class ConditionalTransformation extends TransformationImpl
 			.union(singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), identity())), identity());
 	}
 
-	private boolean checkCondition(ScalarValue<?, ?, ?, ?> value)
+	private static boolean checkCondition(ScalarValue<?, ?, ?, ?> value)
 	{
 		return value instanceof BooleanValue && ((BooleanValue<?>) value).get();
 	}

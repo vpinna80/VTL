@@ -115,12 +115,15 @@ public class CheckDataPointTransformation extends TransformationImpl
 		Variable<?,?> variable = repo.getVariable(VTLAliasImpl.of("ruleid")).orElseThrow(() -> new NullPointerException("Variable ruleid is not defined."));
 		DataStructureComponent<Identifier, ?, ?> ruleid = variable.as(Identifier.class);
 		
+		Output output = this.output;
+		DataSetMetadata metadata = dataset.getMetadata();
 		return dataset.flatmapKeepingKeys(structure, identity(), dp -> rules.stream()
-			.map(rule -> evalRule(new DatapointScope(repo, dp, dataset.getMetadata(), null), type, bool_var, ruleid, dp, rule))
+			.map(rule -> evalRule(new DatapointScope(repo, dp, metadata, null), type, output, bool_var, ruleid, dp, rule))
 			.filter(Objects::nonNull));
 	}
 
-	private Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> evalRule(TransformationScheme scope, RuleSetType type,
+	private static Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> evalRule(TransformationScheme scope,
+			RuleSetType type, Output output,
 			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var, 
 			DataStructureComponent<Identifier, ?, ?> ruleid, DataPoint dp, DataPointRule rule)
 	{

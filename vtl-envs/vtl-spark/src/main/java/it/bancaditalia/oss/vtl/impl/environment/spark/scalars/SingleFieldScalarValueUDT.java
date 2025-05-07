@@ -28,11 +28,13 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.types.DataType;
 
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 public abstract class SingleFieldScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends ScalarValueUDT<T>
 {
 	private static final long serialVersionUID = 1L;
+	private static final InternalRow NULL_SCALAR = new GenericInternalRow(new Object[] { null });
 	
 	private final DataType scalarType;
 
@@ -47,13 +49,13 @@ public abstract class SingleFieldScalarValueUDT<T extends ScalarValue<?, ?, ?, ?
 	public final T deserialize(Object datum)
 	{
 		InternalRow row = (InternalRow) datum;
-		return row == null ? null : deserializeInternal(row.isNullAt(0) ? null : row.get(0, scalarType));
+		return row == null || row.isNullAt(0) ? null : deserializeInternal(row.get(0, scalarType));
 	}
 	
 	@Override
 	public final InternalRow serialize(T obj)
 	{
-		return new GenericInternalRow(new Object[] { serializeInternal(obj) }); 
+		return obj instanceof NullValue ? NULL_SCALAR : new GenericInternalRow(new Object[] { serializeInternal(obj) }); 
 	}
 
 	protected abstract T deserializeInternal(Object object);

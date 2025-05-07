@@ -44,16 +44,15 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 public class DataPointEncoder implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-	public final DataStructureComponent<?, ?, ?>[] components;
-	public final ValueDomainSubset<?, ?>[] domains;
-	public final StructType schema;
-	public final Encoder<Row> rowEncoder;
-	public final Encoder<Row> rowEncoderNoLineage;
+	
+	private final DataStructureComponent<?, ?, ?>[] components;
+	private final StructType schema;
+	private final Encoder<Row> rowEncoder;
+	private final Encoder<Row> rowEncoderNoLineage;
 	
 	public DataPointEncoder(SparkSession session, Set<? extends DataStructureComponent<?, ?, ?>> structure)
 	{
@@ -63,9 +62,6 @@ public class DataPointEncoder implements Serializable
 		
 		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
 		Arrays.sort(components, DataStructureComponent::byNameAndRole);
-		domains = new ValueDomainSubset<?, ?>[components.length];
-		for (int i = 0; i < components.length; i++)
-			domains[i] = components[i].getVariable().getDomain();
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(structure));
 		StructType schemaNoLineage = createStructType(new ArrayList<>(fields));
 		rowEncoderNoLineage = Encoders.row(schemaNoLineage);
@@ -84,6 +80,10 @@ public class DataPointEncoder implements Serializable
 				vals[i] = null;
 		}
 		
+		for (int i = 0; i < vals.length; i++)
+			if (vals[i] instanceof NullValue)
+				throw new NullPointerException();
+		
 		vals[components.length] = dp.getLineage();
 		return new GenericRowWithSchema(vals, schema);
 	}
@@ -93,8 +93,12 @@ public class DataPointEncoder implements Serializable
 		Lineage lineage = row.getAs(components.length + start);
 		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length]; 
 		for (int i = 0; i < components.length; i++)
-			vals[i] = row.isNullAt(i + start) ? NullValue.instance(domains[i]) : row.getAs(i + start);
-		
+			vals[i] = row.isNullAt(i + start) ? NullValue.instance(components[i].getVariable().getDomain()) : row.getAs(i + start);
+
+		for (int i = 0; i < components.length; i++)
+			if (vals[i] == null)
+				throw new NullPointerException();
+
 		return new SparkDataPoint(components, vals, lineage);
 	}
 

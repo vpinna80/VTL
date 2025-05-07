@@ -97,7 +97,10 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.put(freqComp, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).getFrequency());
 				return map;
-			}).analytic(lineageEnricher(this), timeID, freqComp, clause, null, timesToFreq, null);
+			});
+		dataset.forEach(System.out::println);
+		
+		dataset = dataset.analytic(lineageEnricher(this), timeID, freqComp, clause, null, timesToFreq, null);
 
 		DataSetMetadata structure = (DataSetMetadata) metadata;
 		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);

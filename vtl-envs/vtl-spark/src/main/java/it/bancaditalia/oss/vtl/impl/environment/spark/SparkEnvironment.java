@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.serializer.KryoRegistrator;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.DataFrameReader;
@@ -89,6 +90,7 @@ import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.IntegerValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.RankedPartitionUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
@@ -108,12 +110,15 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
+import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
+import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SparkEnvironment implements Environment
@@ -154,6 +159,7 @@ public class SparkEnvironment implements Environment
 			UDTRegistration.register(TimePeriodValue.class.getName(), TimePeriodValueUDT.class.getName());
 			UDTRegistration.register(DurationValue.class.getName(), DurationValueUDT.class.getName());
 			UDTRegistration.register(TimeWithFreq.class.getName(), TimeWithFreqUDT.class.getName());
+			UDTRegistration.register(RankedPartition.class.getName(), RankedPartitionUDT.class.getName());
 		}
 	}
 
@@ -193,9 +199,9 @@ public class SparkEnvironment implements Environment
 		  .set("spark.sql.catalyst.dateType", "Instant");
 
 		return conf
-		  // enable for debugging
-		  .set("spark.sql.codegen.wholeStage", "false")
-		  .set("spark.sql.codegen", "false")
+		  // Uncomment for debugging
+//		  .set("spark.sql.codegen.wholeStage", "false")
+//		  .set("spark.sql.codegen", "false")
 //		  .set("spark.sql.codegen.factoryMode", "NO_CODEGEN")
 		  .setAppName("Spark SQL Environment for VTL Engine");
 	}
@@ -293,10 +299,23 @@ public class SparkEnvironment implements Environment
 		
 		Optional<DataSetMetadata> maybeStructure = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
 		Dataset<Row> sourceDataFrame = formatted.load(file.toString());
+		
 		SparkDataSet dataset = maybeStructure.map(structure -> {
 				DataPointEncoder encoder = new DataPointEncoder(session, structure);
+				
+				DataStructureComponent<?, ?, ?>[] components = encoder.getComponents();
+				ValueDomainSubset<?, ?>[] domains = new ValueDomainSubset<?, ?>[components.length];
+				String[] names = new String[components.length];
+				for (int i = 0; i < components.length; i++)
+				{
+					Variable<?, ?> variable = components[i].getVariable();
+					domains[i] = variable.getDomain();
+					names[i] = components[i].getVariable().getAlias().getName();
+				}
+
 				Lineage lineage = LineageExternal.of("spark:" + alias);
-				Dataset<Row> applied = sourceDataFrame.map(parseCSVStrings(structure, lineage, encoder), encoder.getRowEncoder());
+				MapFunction<Row, Row> stringsToScalars = parseCSVStrings(structure, lineage, names, domains);
+				Dataset<Row> applied = sourceDataFrame.map(stringsToScalars, encoder.getRowEncoder());
 				return new SparkDataSet(session, structure, encoder, applied);
 			}).orElseGet(() -> inferSchema(repo, sourceDataFrame, alias)); 
 		frames.put(alias, dataset);

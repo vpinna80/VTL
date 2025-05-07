@@ -39,6 +39,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
@@ -104,6 +105,11 @@ public class ResolvedHierarchicalRuleset implements Serializable
 		return codelist;
 	}
 	
+	public CodeItem<?, ?, ?, ?> cast(ScalarValue<?, ?, ?, ?> code)
+	{
+		return (CodeItem<?, ?, ?, ?>) codelist.cast(code);
+	}
+	
 	public Set<CodeItem<?, ?, ?, ?>> getComputedCodes()
 	{
 		return computedCodes;
@@ -114,9 +120,14 @@ public class ResolvedHierarchicalRuleset implements Serializable
 		return leafCodes;
 	}
 	
-	public CodeItem<?, ?, ?, ?> mapCode(String code)
+	public CodeItem<?, ?, ?, ?> mapCode(String codeString)
 	{
-		return codesMap.get(code);
+		CodeItem<?, ?, ?, ?> code = codesMap.get(codeString);
+
+		if (code == null)
+			throw new NullPointerException("Code '" + codeString + "' does not map to a rule in: " + codesMap.keySet());
+		
+		return code;
 	}
 
 	public List<HierarchicalRule> getComputingRulesFor(CodeItem<?, ?, ?, ?> code)
