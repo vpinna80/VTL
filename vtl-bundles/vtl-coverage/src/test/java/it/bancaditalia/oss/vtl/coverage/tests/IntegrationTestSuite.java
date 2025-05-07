@@ -92,10 +92,10 @@ public class IntegrationTestSuite
 		T, E, TS, ES
 	}
 	
-	private static final int REPETITIONS = 1;
+	private static final int REPETITIONS = 5;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_RUN = Set.of(T, E/*, TS, ES*/);
+	private static final Set<TestType> TO_RUN = Set.of(T, E, /*TS, */ES);
 	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
 	private static final Engine ENGINE;
 	private static final boolean TOTAL_REPORT = true;
@@ -104,6 +104,17 @@ public class IntegrationTestSuite
 	{
 		try
 		{
+			System.setProperty("spark.sql.shuffle.partitions", "5");
+			System.setProperty("spark.shuffle.compress", "false");
+			System.setProperty("spark.shuffle.spill.compress", "false");
+			System.setProperty("spark.broadcast.compress", "false");
+			System.setProperty("spark.broadcast.compress", "false");
+			System.setProperty("spark.kryo.registrationRequired", "true");
+			System.setProperty("spark.kryoserializer.buffer", "1m");
+			System.setProperty("spark.memory.fraction", "0.7");
+			System.setProperty("spark.memory.storageFraction", "0.2");
+			System.setProperty("spark.cleaner.periodicGC.interval", "30s");
+			
 			System.setProperty("vtl.double.epsilon", "5");
 			TEST_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../tests").toURI());
 			EXAMPLES_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../examples").toURI());
@@ -154,7 +165,7 @@ public class IntegrationTestSuite
 						testCode.setLength(0);
 					}
 				}
-
+		
 		return tests.parallelStream();
 	}
 	

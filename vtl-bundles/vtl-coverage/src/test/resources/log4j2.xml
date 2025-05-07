@@ -48,6 +48,21 @@
             <AppenderRef ref="STDERR2"/>
         </Logger>
 
+		<!-- Logger name="org.apache.spark.sql.catalyst.expressions.codegen" level="DEBUG" additivity="false">
+            <AppenderRef ref="STDERR1"/>
+            <AppenderRef ref="STDERR2"/>
+	    </Logger>
+	
+	    <Logger name="org.apache.spark.sql.execution.WholeStageCodegenExec" level="DEBUG" additivity="false">
+            <AppenderRef ref="STDERR1"/>
+            <AppenderRef ref="STDERR2"/>
+	    </Logger>
+	
+	    <Logger name="org.apache.spark.sql.execution.debug" level="DEBUG" additivity="false">
+            <AppenderRef ref="STDERR1"/>
+            <AppenderRef ref="STDERR2"/>
+	    </Logger -->
+    
         <Root level="OFF">
             <AppenderRef ref="STDERR1"/>
             <AppenderRef ref="STDERR2"/>
