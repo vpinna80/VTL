@@ -39,10 +39,6 @@
         {
           "name": "m1",
           "role": "Measure"
-        },
-        {
-          "name": "att1",
-          "role": "Attribute"
         }
       ]
     }

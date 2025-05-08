@@ -46,13 +46,6 @@ public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain>
 		return nullValue;
 	}
 
-	public static NullValue<?, ?> unqualifiedInstance(ValueDomainSubset<?, ?> domain)
-	{
-		@SuppressWarnings("rawtypes")
-		NullValue<?, ?> nullValue = INSTANCES.computeIfAbsent(domain, n -> new NullValue<>((ValueDomainSubset) domain));
-		return nullValue;
-	}
-
 	public static <K extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instanceFrom(DataStructureComponent<K, S, D> component)
 	{
 		return instance(component.getVariable().getDomain());

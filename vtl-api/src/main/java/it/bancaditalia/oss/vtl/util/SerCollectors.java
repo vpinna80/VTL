@@ -169,7 +169,16 @@ public class SerCollectors
 
     public static <T> SerCollector<T, ?, Optional<T>> firstValue(Class<?> repr)
     {
-    	return SerCollector.of(() -> new Holder<T>(repr), (r, v) -> r.compareAndSet(null, v), (a, b) -> a, r -> Optional.ofNullable(r.get()), EnumSet.of(CONCURRENT));
+    	@SuppressWarnings("unchecked")
+		T nullHolder = (T) new Object[0];
+    	return SerCollector.of(() -> {
+    		Holder<T> holder = new Holder<T>(repr);
+    		holder.set(nullHolder);
+    		return holder;
+    	}, (holder, v) -> holder.compareAndSet(nullHolder, v), (holderA, holderB) -> holderA, r -> { 
+    		T value = r.get();
+			return Optional.ofNullable(value == nullHolder ? null : value);
+    	}, EnumSet.of(CONCURRENT));
     }
     
     public static <T> SerCollector<T, ?, Optional<T>> lastValue(Class<?> repr)

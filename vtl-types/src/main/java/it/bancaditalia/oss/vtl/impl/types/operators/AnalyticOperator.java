@@ -51,15 +51,15 @@ public enum AnalyticOperator
 	COUNT(domain -> collectingAndThen(counting(), IntegerValue::of)),
 	SUM(domain -> getSummingCollector(domain)), 
 	AVG(domain -> getAveragingCollector(domain)),
-	MEDIAN(domain -> collectingAndThen(filtering(not(NullValue.class::isInstance), medianCollector(domain.getValueClass())), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
-	MIN(domain -> collectingAndThen(minBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
-	MAX(domain -> collectingAndThen(maxBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
+	MEDIAN(domain -> collectingAndThen(filtering(not(NullValue.class::isInstance), medianCollector(domain.getValueClass())), opt -> opt.orElse(NullValue.instance(domain)))),
+	MIN(domain -> collectingAndThen(minBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(domain)))),
+	MAX(domain -> collectingAndThen(maxBy(domain.getValueClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(domain)))),
 	VAR_POP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / (acu[0] + 1))), NumberValueImpl::createNumberValue)),
 	VAR_SAMP(domain -> collectingAndThen(mapping(v -> (Number) v.get(), varianceCollector(acu -> acu[2] / acu[0])), NumberValueImpl::createNumberValue)),
 	STDDEV_POP(domain -> collectingAndThen(VAR_POP.getReducer(NUMBERDS), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),
 	STDDEV_SAMP(domain -> collectingAndThen(VAR_SAMP.getReducer(domain), dv -> createNumberValue(Math.sqrt((Double) dv.get())))),
-	FIRST_VALUE(domain -> collectingAndThen(firstValue(domain.getValueClass()), opt -> opt.orElse(NullValue.unqualifiedInstance(domain)))),
-	LAST_VALUE(domain -> collectingAndThen(lastValue(domain.getValueClass()), opt -> opt.orElse(NullValue.unqualifiedInstance(domain))));
+	FIRST_VALUE(domain -> collectingAndThen(firstValue(domain.getValueClass()), opt -> opt.orElse(NullValue.instance(domain)))),
+	LAST_VALUE(domain -> collectingAndThen(lastValue(domain.getValueClass()), opt -> opt.orElse(NullValue.instance(domain))));
 
 	private static SerCollector<Number, ?, Double> varianceCollector(SerFunction<double[], Double> finalizer)
 	{
