@@ -74,7 +74,7 @@ public class ThisScope extends AbstractScope
 			if (thisMetadata.getComponent(alias).isPresent())
 				return thisMetadata.membership(alias);
 			else 
-				throw new VTLMissingComponentsException(alias, (DataSetMetadata) thisMetadata);
+				throw new VTLMissingComponentsException((DataSetMetadata) thisMetadata, alias);
 		}
 	}
 
@@ -88,7 +88,7 @@ public class ThisScope extends AbstractScope
 			if (thisValue.getComponent(alias).isPresent())
 				return thisValue.membership(alias, identity());
 			else 
-				throw new VTLMissingComponentsException(alias, thisMetadata);
+				throw new VTLMissingComponentsException(thisMetadata, alias);
 		}
 	}
 

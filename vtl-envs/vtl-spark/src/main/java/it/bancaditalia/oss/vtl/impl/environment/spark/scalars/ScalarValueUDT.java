@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.UserDefinedType;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
-public abstract class ScalarValueUDT<T> extends UserDefinedType<T>
+public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends UserDefinedType<T>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Map<Class<?>, Entry<Integer, ScalarValueUDT<?>>> TAGS = new HashMap<>();
@@ -65,6 +65,7 @@ public abstract class ScalarValueUDT<T> extends UserDefinedType<T>
 	}
 
 	private final StructType sqlType;
+	private final String name = getClass().getSimpleName();
 	
 	public ScalarValueUDT(StructType sqlType)
 	{
@@ -93,5 +94,11 @@ public abstract class ScalarValueUDT<T> extends UserDefinedType<T>
 		@SuppressWarnings("unchecked")
 		Class<? extends ScalarValueUDT<T>> udtClass = (Class<? extends ScalarValueUDT<T>>) this.getClass();
 		return new UDTEncoder<>(this, udtClass);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name;
 	}
 }

@@ -222,7 +222,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 			return new HashSet<>(getIDs());
 		
 		return names.stream()
-			.peek(n -> { if (!contains(n)) throw new VTLMissingComponentsException(n, this); })
+			.peek(n -> { if (!contains(n)) throw new VTLMissingComponentsException(this, n); })
 			.map(this::getComponent)
 			.map(Optional::get)
 			.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException(operation, c, Identifier.class); })

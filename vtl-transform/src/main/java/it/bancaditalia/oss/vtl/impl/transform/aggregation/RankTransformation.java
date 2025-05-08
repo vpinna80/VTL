@@ -171,7 +171,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		if (partitionBy != null)
 			partitionBy.stream()
 				.map(toEntryWithValue(dataset::getComponent))
-				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(e.getKey(), dataset)))
+				.map(e -> e.getValue().orElseThrow(() -> new VTLMissingComponentsException(dataset, e.getKey())))
 				.peek(c -> { if (!c.is(Identifier.class)) throw new VTLIncompatibleRolesException("partition by", c, Identifier.class); })
 				.peek(c -> { if (ordering.containsKey(c)) throw new VTLException("Partitioning component " + c + " cannot be used in order by"); })
 				.map(c -> c.asRole(Identifier.class))

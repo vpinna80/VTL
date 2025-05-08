@@ -26,7 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getCompo
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.parseCSVStrings;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT.LineageSparkUDT;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.model.data.VTLAlias.byName;
@@ -47,10 +47,12 @@ import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -80,6 +82,7 @@ import com.esotericsoftware.kryo.Kryo;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BigDecimalValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BooleanValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DateValueUDT;
@@ -89,7 +92,7 @@ import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.GenericTimeValueUD
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.IntegerValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.RankedPartitionUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
@@ -148,7 +151,7 @@ public class SparkEnvironment implements Environment
 		{
 			List<Class<?>> lClasses = List.of(LineageExternal.class, LineageCall.class, LineageNode.class, LineageImpl.class, LineageSet.class, Lineage.class);
 			for (Class<?> lineageClass: lClasses)
-				UDTRegistration.register(lineageClass.getName(), LineageSparkUDT.class.getName());
+				UDTRegistration.register(lineageClass.getName(), LineageUDT.class.getName());
 			UDTRegistration.register(IntegerValue.class.getName(), IntegerValueUDT.class.getName());
 			UDTRegistration.register(StringValue.class.getName(), StringValueUDT.class.getName());
 			UDTRegistration.register(DoubleValue.class.getName(), DoubleValueUDT.class.getName());
@@ -300,9 +303,22 @@ public class SparkEnvironment implements Environment
 		Optional<DataSetMetadata> maybeStructure = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
 		Dataset<Row> sourceDataFrame = formatted.load(file.toString());
 		
+		// If structure is defined in metadata match the columns to the structure components
 		SparkDataSet dataset = maybeStructure.map(structure -> {
 				DataPointEncoder encoder = new DataPointEncoder(session, structure);
-				
+
+				Set<DataStructureComponent<?, ?, ?>> toMatch = new HashSet<>(structure);
+				for (String sourceName: sourceDataFrame.columns())
+				{
+					VTLAlias compAlias = VTLAliasImpl.of(sourceName);
+					Optional<DataStructureComponent<?, ?, ?>> maybeComponent = structure.getComponent(compAlias);
+					if (maybeComponent.isEmpty())
+						throw new VTLMissingComponentsException(structure, compAlias);
+					toMatch.remove(maybeComponent.get());
+				}
+				if (!toMatch.isEmpty())
+					throw new IllegalStateException("Cannot match csv columns " + Arrays.toString(sourceDataFrame.columns()) + " to components " + toMatch);
+
 				DataStructureComponent<?, ?, ?>[] components = encoder.getComponents();
 				ValueDomainSubset<?, ?>[] domains = new ValueDomainSubset<?, ?>[components.length];
 				String[] names = new String[components.length];
@@ -312,7 +328,7 @@ public class SparkEnvironment implements Environment
 					domains[i] = variable.getDomain();
 					names[i] = components[i].getVariable().getAlias().getName();
 				}
-
+				
 				Lineage lineage = LineageExternal.of("spark:" + alias);
 				MapFunction<Row, Row> stringsToScalars = parseCSVStrings(structure, lineage, names, domains);
 				Dataset<Row> applied = sourceDataFrame.map(stringsToScalars, encoder.getRowEncoder());

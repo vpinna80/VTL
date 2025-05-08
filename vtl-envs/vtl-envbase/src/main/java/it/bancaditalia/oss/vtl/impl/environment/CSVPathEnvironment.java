@@ -176,7 +176,7 @@ public class CSVPathEnvironment implements Environment
 				metadata.add(structure.getComponent(VTLAliasImpl.of(field)).orElseThrow(() -> new IllegalStateException("Unknown CSV field " + field + " for structure " + structure)));
 			for (DataStructureComponent<?, ?, ?> comp: structure)
 				if (!metadata.contains(comp))
-					throw new VTLMissingComponentsException(comp, metadata);
+					throw new VTLMissingComponentsException(metadata, comp);
 			
 			if (!metadata.containsAll(structure) || !structure.containsAll(metadata))
 				throw new VTLIncompatibleStructuresException("Reading csv", structure, metadata);

@@ -21,7 +21,7 @@ package it.bancaditalia.oss.vtl.impl.environment.spark.udts;
 
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createStructFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT.getUDTForClass;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT.LineageSparkUDT;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT.LineageSparkUDT;
 import static org.apache.spark.sql.catalyst.util.ArrayData.toArrayData;
 import static org.apache.spark.sql.types.DataTypes.BinaryType;
 import static org.apache.spark.sql.types.DataTypes.IntegerType;

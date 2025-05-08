@@ -159,7 +159,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		// All ids excluding the code id
 		Set<DataStructureComponent<Identifier, ?, ?>> noCodeIds = new HashSet<>(dataset.getMetadata().getIDs());
 		DataStructureComponent<?, ?, ?> codeId = (ruleset.getType() == VALUE_DOMAIN ? dataset.getComponent(id) : dataset.getComponent(ruleset.getRuleComponent()))
-				.orElseThrow(() -> new VTLMissingComponentsException(id, noCodeIds));
+				.orElseThrow(() -> new VTLMissingComponentsException(noCodeIds, id));
 		noCodeIds.remove(codeId);
 
 		// Determine which missing value to use
@@ -367,7 +367,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 					throw new VTLException("Rule component is mandatory when using a valuedomain hierarchical ruleset.");
 				
 				DataStructureComponent<?, ?, ?> idComp = opMeta.getComponent(idCompAlias)
-						.orElseThrow(() -> new VTLMissingComponentsException(ruleset.getRuleComponent(), opMeta.getIDs()));
+						.orElseThrow(() -> new VTLMissingComponentsException(opMeta.getIDs(), ruleset.getRuleComponent()));
 				
 				ResolvedHierarchicalRuleset resolved = new ResolvedHierarchicalRuleset(scheme.getRepository(), ruleset);
 				EnumeratedDomainSubset<?, ?, ?> domain = resolved.getDomain();

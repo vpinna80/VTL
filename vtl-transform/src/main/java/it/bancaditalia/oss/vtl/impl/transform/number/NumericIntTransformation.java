@@ -93,7 +93,7 @@ public class NumericIntTransformation extends BinaryTransformation
 				for (VTLAlias name: measureNames)
 				{
 					DataStructureComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
-							.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())).asRole(Measure.class);
+							.orElseThrow(() -> new VTLMissingComponentsException(dp.keySet(), name)).asRole(Measure.class);
 					result.put(comp, operator.apply(dp.get(comp), integer));
 				}
 				return result;

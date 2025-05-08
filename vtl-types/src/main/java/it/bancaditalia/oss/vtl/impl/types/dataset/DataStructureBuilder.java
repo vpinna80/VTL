@@ -213,7 +213,7 @@ public class DataStructureBuilder
 			DataStructureComponent<?, ?, ?> component = byName.get(alias);
 
 			if (component == null)
-				throw new VTLMissingComponentsException(alias, byName.values());
+				throw new VTLMissingComponentsException(byName.values(), alias);
 
 			DataStructureBuilder commonComponents = new DataStructureBuilder()
 					.addComponents(getIDs())

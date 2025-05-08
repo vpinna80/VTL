@@ -78,7 +78,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
 				.map(toEntryWithValue(dataset::getComponent))
 				.map(e -> e.getValue().orElseThrow(() -> { 
-					return new VTLMissingComponentsException(e.getKey(), dataset); 
+					return new VTLMissingComponentsException(dataset, e.getKey()); 
 				} ))
 				.peek(c -> { if (c.is(Identifier.class)) throw new VTLInvariantIdentifiersException("keep", singleton(c.asRole(Identifier.class))); })
 				.map(c -> c.asRole(NonIdentifier.class))

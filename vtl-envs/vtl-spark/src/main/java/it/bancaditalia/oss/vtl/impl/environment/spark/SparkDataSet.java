@@ -27,7 +27,7 @@ import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getEncod
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getNamesFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getScalarFor;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageSparkUDT.LineageSparkUDT;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT.LineageSparkUDT;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
@@ -50,7 +50,6 @@ import static org.apache.spark.sql.expressions.Window.partitionBy;
 import static org.apache.spark.sql.functions.broadcast;
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.explode;
-import static org.apache.spark.sql.functions.first;
 import static org.apache.spark.sql.functions.lit;
 import static org.apache.spark.sql.functions.row_number;
 import static org.apache.spark.sql.functions.struct;
@@ -221,15 +220,6 @@ public class SparkDataSet extends AbstractDataSet
 		this.session = session;
 		this.encoder = encoder;
 		this.dataFrame = dataFrame.cache();
-
-		try
-		{
-			this.dataFrame.collectAsList();
-		}
-		catch (Exception e)
-		{
-			throw new IllegalStateException(e);
-		}
 		
 		SPARK_CACHE.put(ref, this.dataFrame);
 		logInfo(toString());
@@ -547,21 +537,22 @@ public class SparkDataSet extends AbstractDataSet
 		
 		String destName = destComp.getVariable().getAlias().getName();
 		VTLSparkAggregator<T, ?, TT, ScalarValue<?, ?, ?, ?>> vtlAggr = new VTLSparkAggregator<>(collector, accEncoder, ttEncoder);
-		Dataset<Row> analyticResult = dataFrame.withColumn(destName, udaf(vtlAggr, inputEncoder).apply(columns).over(windowSpec));
+		Dataset<Row> analyticResult = dataFrame.withColumn("$$window$$", udaf(vtlAggr, inputEncoder).apply(columns).over(windowSpec));
 
 		if (finisher != null)
 		{
 			// Check if the extractor is non null, in which case it may be a signal that the finisher takes 
-			// a DataPoint as the second parameter (this is best-effort, it may be the case that the second 
-			// parameter is neither a ScalarValue nor a DataPoint).
+			// the original DataPoint as the second parameter (this is best-effort, it may be the case that 
+			// the second parameter is neither a ScalarValue nor a DataPoint).
 			@SuppressWarnings("unchecked")
 			UDF2<TT, Row, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisherUDF = (toFinish, t) -> {
 				return finisher.apply(toFinish, (T) (extractor != null ? serEncoder.decode(t) : (ScalarValue<?, ?, ?, ?>) t.get(0)));
 			};
 			
-			analyticResult = analyticResult.withColumn(destName, explode(udf(finisherUDF, createArrayType(tttype))
-					.apply(col(destName), struct(columns))));
+			analyticResult = analyticResult.withColumn("$$window$$", explode(udf(finisherUDF, createArrayType(tttype))
+					.apply(col("$$window$$"), struct(columns))));
 		}
+		analyticResult = analyticResult.withColumn(destName, col("$$window$$")).drop(col("$$window$$"));
 		
 		// Structure of the result
 		DataSetMetadata newStructure = sourceComp.equals(destComp) ? structure : new DataStructureBuilder(getMetadata())
@@ -576,7 +567,8 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T, TT> SerCollector<T, ?, TT> patchCollector(SerCollector<T, ?, TT> collector, DataPointEncoder serEncoder) {
+	private <T, TT> SerCollector<T, ?, TT> patchCollector(SerCollector<T, ?, TT> collector, DataPointEncoder serEncoder)
+	{
 		// UGLY; it has to do with the PartitionToRankUDT and the fact that GenericRows are not deserialized by spark.
 		return innerPatchCollector((SerCollector<T, PartitionToRank, TT>) collector, serEncoder);
 	}

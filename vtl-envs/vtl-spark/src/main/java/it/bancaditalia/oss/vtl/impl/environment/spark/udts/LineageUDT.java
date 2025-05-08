@@ -39,10 +39,10 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 
-public class LineageSparkUDT extends UserDefinedType<Lineage>
+public class LineageUDT extends UserDefinedType<Lineage>
 {
 	private static final long serialVersionUID = 1L;
-	public static final LineageSparkUDT LineageSparkUDT = new LineageSparkUDT();
+	public static final LineageUDT LineageSparkUDT = new LineageUDT();
 
     public static final ThreadLocal<Kryo> KRYO = new ThreadLocal<Kryo>() {
 
@@ -97,7 +97,7 @@ public class LineageSparkUDT extends UserDefinedType<Lineage>
 	@Override
 	public String toString()
 	{
-		return "Lineage";
+		return "LineageUDT";
 	}
 	
 	@Override

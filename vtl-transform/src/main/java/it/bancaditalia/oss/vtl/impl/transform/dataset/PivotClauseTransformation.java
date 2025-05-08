@@ -87,9 +87,9 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSet dataset = (DataSet) getThisValue(session);
 		DataSetMetadata structure = dataset.getMetadata();
 		DataStructureComponent<Measure, ?, ?> pivotMeasure = structure.getComponent(measureName, Measure.class)
-				.orElseThrow(() -> new VTLMissingComponentsException(measureName, structure.getMeasures()));
+				.orElseThrow(() -> new VTLMissingComponentsException(structure.getMeasures(), measureName));
 		DataStructureComponent<Identifier, ?, ?> pivotId = structure.getComponent(identifierName, Identifier.class)
-				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, structure.getIDs()));
+				.orElseThrow(() -> new VTLMissingComponentsException(structure.getIDs(), identifierName));
 
 		DataSetMetadata newStructure = createPivotStructure(pivotId, pivotMeasure, structure.getIDs(), session);
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(newStructure.getIDs());
@@ -128,9 +128,9 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 
 		DataSetMetadata dataset = (DataSetMetadata) value;
 		DataStructureComponent<Measure, ?, ?> pivotMeasure = dataset.getComponent(measureName, Measure.class)
-				.orElseThrow(() -> new VTLMissingComponentsException(measureName, dataset.getMeasures()));
+				.orElseThrow(() -> new VTLMissingComponentsException(dataset.getMeasures(), measureName));
 		DataStructureComponent<Identifier, ?, ?> pivotId = dataset.getComponent(identifierName, Identifier.class)
-				.orElseThrow(() -> new VTLMissingComponentsException(identifierName, dataset.getIDs()));
+				.orElseThrow(() -> new VTLMissingComponentsException(dataset.getIDs(), identifierName));
 		
 		ValueDomainSubset<?, ?> idDomain = pivotId.getVariable().getDomain();
 		if (!(idDomain instanceof EnumeratedDomainSubset))

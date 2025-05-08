@@ -70,11 +70,11 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		
 		Map<VTLAlias, ? extends DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
 				.collect(toMapWithValues(name -> oldStructure.getComponent(name)
-						.orElseThrow(() -> new VTLMissingComponentsException(name, oldStructure))));
+						.orElseThrow(() -> new VTLMissingComponentsException(oldStructure, name))));
 
 		Map<VTLAlias, ? extends DataStructureComponent<?, ?, ?>> newComponents = renames.values().stream()
 				.collect(toMapWithValues(name -> metadata.getComponent(name)
-						.orElseThrow(() -> new VTLMissingComponentsException(name, metadata))));
+						.orElseThrow(() -> new VTLMissingComponentsException(metadata, name))));
 
 		if (oldComponents.values().stream().allMatch(c -> c.is(NonIdentifier.class)))
 			return operand.mapKeepingKeys(metadata, lineageEnricher(this), dp -> {
@@ -128,7 +128,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		
 		for (Entry<VTLAlias, VTLAlias> rename: renames.entrySet())
 			if (!renamed.containsKey(rename.getValue()))
-				throw new VTLMissingComponentsException(rename.getKey(), dataset);
+				throw new VTLMissingComponentsException(dataset, rename.getKey());
 		
 		return new DataStructureBuilder(renamed.values()).build();
 	}

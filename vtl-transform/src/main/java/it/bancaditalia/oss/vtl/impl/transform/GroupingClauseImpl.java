@@ -83,7 +83,7 @@ public class GroupingClauseImpl implements GroupingClause, Serializable
 			return dataset.getIDs();
 		
 		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = Arrays.stream(fields)
-				.peek(n -> { if (dataset.getComponent(n).isEmpty()) throw new VTLMissingComponentsException(n, dataset); })
+				.peek(n -> { if (dataset.getComponent(n).isEmpty()) throw new VTLMissingComponentsException(dataset, n); })
 				.map(dataset::getComponent)
 				.map(Optional::get)
 				.peek(component -> { if (!component.is(Identifier.class)) throw new VTLIncompatibleRolesException("aggregation group by", component, Identifier.class); })

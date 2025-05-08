@@ -117,7 +117,7 @@ public abstract class AbstractDataSet implements DataSet
 		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
 		
 		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
-				.orElseThrow((Supplier<? extends RuntimeException> & Serializable) () -> new VTLMissingComponentsException(alias, dataStructure));
+				.orElseThrow((Supplier<? extends RuntimeException> & Serializable) () -> new VTLMissingComponentsException(dataStructure, alias));
 		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getMeasures().iterator().next();
 
 		SerFunction<DataPoint, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = dp -> {

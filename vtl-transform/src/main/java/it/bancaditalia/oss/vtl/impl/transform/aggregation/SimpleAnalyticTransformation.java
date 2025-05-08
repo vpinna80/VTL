@@ -137,7 +137,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)
 		{
-			DataStructureComponent<?, ?, ?> component = dataset.getComponent(orderByComponent.getAlias()).orElseThrow(() -> new VTLMissingComponentsException(orderByComponent.getAlias(), dataset));
+			DataStructureComponent<?, ?, ?> component = dataset.getComponent(orderByComponent.getAlias()).orElseThrow(() -> new VTLMissingComponentsException(dataset, orderByComponent.getAlias()));
 			ordering.put(component, DESC != orderByComponent.getMethod());
 		}
 

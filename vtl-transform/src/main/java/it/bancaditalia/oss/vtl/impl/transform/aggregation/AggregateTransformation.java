@@ -174,7 +174,7 @@ public class AggregateTransformation extends TransformationImpl
 			DataStructureComponent<Identifier, ?, ?> timeID = groupIDs.stream()
 					.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
 					.findAny()
-					.orElseThrow(() -> new VTLMissingComponentsException("A time identifier", groupIDs));
+					.orElseThrow(() -> new IllegalStateException("A time identifier is missing in structure " + groupIDs));
 			
 			// remap the time id onto a specified duration
 			dataset = new FunctionDataSet<>(origStructure, ds -> ds.stream().map(dp -> {
@@ -254,7 +254,7 @@ public class AggregateTransformation extends TransformationImpl
 		else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 			dest = INTEGERDS.isAssignableFrom(src.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : src;
 		else if (targetName != null)
-			dest = metadata.getComponent(targetName).orElseThrow(() -> new VTLMissingComponentsException(targetName, metadata));
+			dest = metadata.getComponent(targetName).orElseThrow(() -> new VTLMissingComponentsException(metadata, targetName));
 		else
 			dest = src;
 		return dest;

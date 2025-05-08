@@ -91,7 +91,7 @@ public class NotTransformation extends UnaryTransformation
 			
 			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 			if (measures.size() == 0)
-				throw new VTLMissingComponentsException(VTLAliasImpl.of("a measure"), dataset);
+				throw new VTLMissingComponentsException(dataset, VTLAliasImpl.of("a measure"));
 			
 			measures.stream().forEach(m -> {
 				if (!BOOLEANDS.isAssignableFrom(m.getVariable().getDomain()))

@@ -167,7 +167,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 				{
 					VTLAlias varName = vars.get(i).getKey();
 					if (structure.getComponent(varName).isEmpty())
-						throw new VTLMissingComponentsException(varName, structure);
+						throw new VTLMissingComponentsException(structure, varName);
 					if (repo.getVariable(varName).isEmpty())
 						throw new VTLUndefinedObjectException("Variable", varName);
 				}
@@ -177,7 +177,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 					VTLAlias alias = vars.get(i).getKey();
 					ValueDomainSubset<?, ?> domain = repo.getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
 					VTLAlias compName = components.get(i);
-					DataStructureComponent<?, ?, ?> component = structure.getComponent(compName).orElseThrow(() -> new VTLMissingComponentsException(compName, structure));
+					DataStructureComponent<?, ?, ?> component = structure.getComponent(compName).orElseThrow(() -> new VTLMissingComponentsException(structure, compName));
 					
 					if (!component.getVariable().getDomain().equals(domain))
 						throw new VTLIncompatibleTypesException("check_datapoints", component, domain);

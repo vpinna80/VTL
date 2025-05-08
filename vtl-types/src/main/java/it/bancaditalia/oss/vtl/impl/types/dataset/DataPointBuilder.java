@@ -233,13 +233,13 @@ public class DataPointBuilder implements Serializable
 					.filter(c -> !structure.contains(c))
 					.findAny()
 					.ifPresent(nonExistingComp -> {
-						throw new VTLMissingComponentsException(nonExistingComp, structure);
+						throw new VTLMissingComponentsException(structure, nonExistingComp);
 					});
 	
 				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
 				missing.removeAll(values.keySet());
 				if (missing.size() > 0)
-					throw new VTLMissingComponentsException(missing, values);
+					throw new VTLMissingComponentsException(values, missing);
 //			}
 			
 			this.values = values;
@@ -305,7 +305,7 @@ public class DataPointBuilder implements Serializable
 				if (containsKey(component))
 					oper.put(component, get(component));
 				else
-					throw new VTLMissingComponentsException(component, keySet());
+					throw new VTLMissingComponentsException(keySet(), component);
 
 			return new DataPointImpl(getLineage() ,new DataStructureBuilder(oper.keySet()).build(), oper);
 		}
@@ -314,7 +314,7 @@ public class DataPointBuilder implements Serializable
 		public DataPoint rename(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
 		{
 			if (!containsKey(oldComponent))
-				throw new VTLMissingComponentsException(oldComponent, keySet());
+				throw new VTLMissingComponentsException(keySet(), oldComponent);
 
 			if (newComponent == null)
 				throw new VTLException("rename: new omponent cannot be null");
@@ -355,7 +355,7 @@ public class DataPointBuilder implements Serializable
 			if (values.containsKey(key))
 				return values.get(key);
 			else
-				throw new VTLMissingComponentsException(Objects.toString(key), values.keySet());
+				throw new VTLMissingComponentsException(values.keySet(), (DataStructureComponent<?, ?, ?>) key);
 		}
 
 		@Override

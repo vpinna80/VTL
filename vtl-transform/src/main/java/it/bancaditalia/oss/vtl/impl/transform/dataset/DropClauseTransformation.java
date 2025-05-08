@@ -86,7 +86,7 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 
 		for (VTLAlias name: names)
 		{
-			DataStructureComponent<?, ?, ?> c = dataset.getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(name, dataset));
+			DataStructureComponent<?, ?, ?> c = dataset.getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(dataset, name));
 			if (c.is(Identifier.class))
 				throw new VTLInvariantIdentifiersException("drop", singleton(c.asRole(Identifier.class)));
 			builder.removeComponent(c);

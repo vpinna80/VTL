@@ -209,11 +209,11 @@ public class FlowStockTransformation extends UnaryTransformation
 					.collect(toSet());
 			
 			if (ids.size() == 0)
-				throw new VTLMissingComponentsException(VTLAliasImpl.of("Time identifier"), ids);
+				throw new VTLMissingComponentsException(ids, VTLAliasImpl.of("Time identifier"));
 			
 			Set<? extends DataStructureComponent<Measure, ?, ?>> measures = dsmeta.getMeasures();
 			if (measures.size() == 0)
-				throw new VTLMissingComponentsException(VTLAliasImpl.of("At least one numeric measure"), dsmeta);
+				throw new VTLMissingComponentsException(dsmeta, VTLAliasImpl.of("At least one numeric measure"));
 			
 			for (DataStructureComponent<Measure, ?, ?> measure: measures)
 				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))

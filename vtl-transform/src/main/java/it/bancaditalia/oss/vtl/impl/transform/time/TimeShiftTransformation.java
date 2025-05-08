@@ -98,8 +98,6 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 				map.put(freqComp, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).getFrequency());
 				return map;
 			});
-		dataset.forEach(System.out::println);
-		
 		dataset = dataset.analytic(lineageEnricher(this), timeID, freqComp, clause, null, timesToFreq, null);
 
 		DataSetMetadata structure = (DataSetMetadata) metadata;

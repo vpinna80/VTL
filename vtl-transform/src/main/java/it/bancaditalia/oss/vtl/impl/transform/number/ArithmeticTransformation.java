@@ -128,7 +128,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				for (VTLAlias name: measureNames)
 				{
 					DataStructureComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
-							.orElseThrow(() -> new VTLMissingComponentsException(name, dp.keySet())).asRole(Measure.class);
+							.orElseThrow(() -> new VTLMissingComponentsException(dp.keySet(), name)).asRole(Measure.class);
 					result.put(comp, finisher.apply(dp, comp));
 				}
 				return result;
@@ -299,9 +299,9 @@ public class ArithmeticTransformation extends BinaryTransformation
 				.peek(splittingConsumer((lm, rm) -> 
 					{
 						if (lm == null)
-							throw new VTLMissingComponentsException(rm, leftMeasures);
+							throw new VTLMissingComponentsException(leftMeasures, rm);
 						if (rm == null)
-							throw new VTLMissingComponentsException(lm, rightMeasures);
+							throw new VTLMissingComponentsException(rightMeasures, lm);
 						if (!NUMBERDS.isAssignableFrom(lm.getVariable().getDomain()))
 							throw new UnsupportedOperationException("Expected numeric measure but found: " + lm);
 						if (!NUMBERDS.isAssignableFrom(rm.getVariable().getDomain()))

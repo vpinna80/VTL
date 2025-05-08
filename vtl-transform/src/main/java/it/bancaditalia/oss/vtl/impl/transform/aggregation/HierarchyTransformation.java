@@ -167,7 +167,7 @@ public class HierarchyTransformation extends TransformationImpl
 		// All ids excluding the code id
 		Set<DataStructureComponent<Identifier, ?, ?>> noCodeIds = new HashSet<>(dataset.getMetadata().getIDs());
 		DataStructureComponent<?, ?, ?> codeId = (ruleset.getType() == VALUE_DOMAIN ? dataset.getComponent(id) : dataset.getComponent(ruleset.getRuleComponent()))
-				.orElseThrow(() -> new VTLMissingComponentsException(id, noCodeIds));
+				.orElseThrow(() -> new VTLMissingComponentsException(noCodeIds, id));
 		noCodeIds.remove(codeId);
 		
 		ScalarValue<?, ?, ?, ?> missingValue;
@@ -383,7 +383,7 @@ public class HierarchyTransformation extends TransformationImpl
 					throw new VTLException("A rule variable is required when using a ruleset defined on a valuedomain.");
 				
 				DataStructureComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? opMeta.getComponent(id) : opMeta.getComponent(ruleset.getRuleComponent()))
-						.orElseThrow(() -> new VTLMissingComponentsException(id, opMeta.getIDs()));
+						.orElseThrow(() -> new VTLMissingComponentsException(opMeta.getIDs(), id));
 				
 				Set<String> uniqueLeft = new HashSet<>();
 				for (HierarchicalRule rule: ruleset.getRules())
