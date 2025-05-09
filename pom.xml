@@ -596,6 +596,9 @@
 							</goals>
 							<configuration>
 								<destFile>${jacoco.ut.file}</destFile>
+								<includes>
+									<include>it/bancaditalia/oss/vtl/**</include>
+								</includes>
 							</configuration>
 						</execution>
 						<execution>
@@ -606,6 +609,9 @@
 							</goals>
 							<configuration>
 								<destFile>${jacoco.it.file}</destFile>
+								<includes>
+									<include>it/bancaditalia/oss/vtl/**</include>
+								</includes>
 							</configuration>
 						</execution>
 					</executions>
