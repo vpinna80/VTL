@@ -179,6 +179,7 @@
 		<enforcer.version>3.4.0</enforcer.version>
 		<reporting.version>3.7.0</reporting.version>
 		<gpg.version>3.1.0</gpg.version>
+		<central-publishing.version>0.7.0</central-publishing.version>
 		
 		<jaxb2-maven-plugin.version>3.3.0</jaxb2-maven-plugin.version>
 		<immutable-xjc-plugin.version>2.0.4</immutable-xjc-plugin.version>
@@ -705,14 +706,12 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.sonatype.plugins</groupId>
-					<artifactId>nexus-staging-maven-plugin</artifactId>
-					<version>1.6.13</version>
+					<groupId>org.sonatype.central</groupId>
+					<artifactId>central-publishing-maven-plugin</artifactId>
+					<version>${central-publishing.version}</version>
 					<extensions>true</extensions>
 					<configuration>
-						<serverId>ossrh</serverId>
-						<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-						<autoReleaseAfterClose>true</autoReleaseAfterClose>
+						<publishingServerId>central</publishingServerId>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -809,8 +808,8 @@
 				<artifactId>maven-gpg-plugin</artifactId>
 			</plugin>
 			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<groupId>org.sonatype.central</groupId>
+				<artifactId>central-publishing-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<groupId>com.github.github</groupId>
