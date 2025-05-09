@@ -36,6 +36,65 @@
 	<name>vtl-coverage</name>
 	<description>Coverage report aggregator</description>
 
+	<profiles>
+		<profile>
+			<id>with-spark</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-spark</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.spark</groupId>
+					<artifactId>spark-sql_${scala.compat.version}</artifactId>
+					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>with-r</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>with-sdmx</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-metasdmx</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-sdmxenv</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault></activeByDefault>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-confman</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
@@ -45,11 +104,6 @@
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-sql_${scala.compat.version}</artifactId>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -75,18 +129,28 @@
 	</dependencies>
 
 	<reporting>
+		<excludeDefaults>true</excludeDefaults>
 		<plugins>
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.13</version>
 				<reportSets>
 					<reportSet>
+						<id>jacoco-aggregate</id>
+						<inherited>false</inherited>
 						<reports>
 							<report>report-aggregate</report>
 						</reports>
 						<configuration>
-							<outputDirectory>${project.basedir}/../../target/site/jacoco-aggregate</outputDirectory>
-							<includeCurrentProject>true</includeCurrentProject>
+							<fileSets>
+								<fileSet>
+									<directory>${project.basedir}/../..</directory>
+									<includes>
+										<include>**/target/*.exec</include>
+									</includes>
+								</fileSet>
+							</fileSets>
 						</configuration>
 					</reportSet>
 				</reportSets>
@@ -96,10 +160,6 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>flatten-maven-plugin</artifactId>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
@@ -116,17 +176,12 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>aggregate</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>report-aggregate</goal>
-						</goals>
-					</execution>
-				</executions>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
