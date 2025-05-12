@@ -32,9 +32,7 @@ environments <- list(
 #  , `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
 )
 
-currentEnvironments <- function() {
-  sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
-}
+currentEnvironments <- \() sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
 
 activeEnvs <- function(active) {
   items <- names(environments[xor(!active, environments %in% currentEnvironments())])
@@ -145,6 +143,7 @@ vtlServer <- function(input, output, session) {
     }
   )
 
+  # Toggle demo mode
   observe({
   	VTLSessionManager$clear()
   	if (isTRUE(input$demomode)) {
@@ -175,6 +174,16 @@ vtlServer <- function(input, output, session) {
     # Single execution only when VTL Studio starts
     envlistdone$destroy()
   })
+
+  # Apply configuration to the active session
+  observe({
+	currentSession()$refresh()
+  }) |> bindEvent(input$applyConfAll, ignoreInit = T)
+
+  # Apply configuration to all active sessions
+  observe({
+    VTLSessionManager$reload()
+  }) |> bindEvent(input$applyConfAll, ignoreInit = T)
 
   # Environment properties list
   observe({
@@ -343,12 +352,11 @@ vtlServer <- function(input, output, session) {
     session$sendCustomMessage("editor-theme", input$editorTheme)
   }) |> bindEvent(input$editorTheme)
   
+  # Reload the active anvironments from the current session
   observe({
     if (input$navtab == "Engine settings") {
+      loadedenvs <- sapply(VTLSessionManager$getOrCreate(req(input$sessionID))$getEnvs(), \(cenv) cenv$getClass()$getName())
       output$sortableEnvs <- renderUI({
-        loadedenvs <- sapply(VTLSessionManager$getOrCreate(req(input$sessionID))$getEnvs(), function (i) {
-          i$getClass()$getName()
-        })
         active <- names(environments[unlist(environments) %in% loadedenvs])
         inactive <- names(environments[!(unlist(environments) %in% loadedenvs)])
         sortable::bucket_list(header = NULL, orientation = 'horizontal',
@@ -374,9 +382,9 @@ vtlServer <- function(input, output, session) {
     session$sendCustomMessage("editor-focus", message = '')
   })
 
+  # Update active environments
   observe({
     vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(paste0(unlist(environments[req(input$envs)]), collapse = ","))
-
     tryCatch({
       writer <- .jnew("java.io.StringWriter")
       configManager$newManager()$saveConfiguration(writer)

@@ -167,10 +167,13 @@ vtlUI <- page_sidebar(
             card_header('Configuration Management', makeButton('card_confman')),
             card_body(id = 'card_confman', class = 'collapse show',
               fluidRow(
-                column(width = 6, downloadButton('saveconfas', labels$saveconfas)),
-                column(width = 6, actionButton('reload', 'Apply current configuration')),
+                column(width = 6, actionButton('applyConfOne', 'Apply to this session')),
+                column(width = 6, actionButton('applyConfAll', 'Apply to all sessions'))
               ),
-              fileInput("uploadconf", NULL, buttonLabel = "Upload configuration", width = "100%")
+              fluidRow(
+                column(width = 6, downloadButton('saveconfas', labels$saveconfas)),
+                column(width = 6, fileInput("uploadconf", NULL, buttonLabel = "Upload configuration", width = "100%"))
+              )
             )
           ),
           card(
