@@ -88,6 +88,7 @@ import java.util.stream.StreamSupport;
 
 import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.MapGroupsFunction;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
@@ -205,12 +206,11 @@ public class SparkDataSet extends AbstractDataSet
 			dataFrame = dataFrame.withColumn(name.getName(), dataFrame.col(name.getName()), getMetadataFor(component));
 		}
 		dataFrame = dataFrame.withColumn("$lineage$", dataFrame.col("$lineage$"), Metadata.empty());
-
+		
 		if (LOGGER.isTraceEnabled())
 			try
 			{
-				List<Row> list = dataFrame.collectAsList();
-				list.stream().map(encoder::decode).forEach(System.out::println);
+				dataFrame.foreach((ForeachFunction<Row>) row -> LOGGER.trace(encoder.decode(row).toString()) );
 			}
 			catch (Exception e)
 			{

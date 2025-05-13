@@ -21,11 +21,12 @@ package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static org.apache.spark.sql.types.DataTypes.StringType;
 
+import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.unsafe.types.UTF8String;
 
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 
-public class StringValueUDT extends SingleFieldScalarValueUDT<StringValue<?, ?>>
+public class StringValueUDT extends ScalarValueUDT<StringValue<?, ?>>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -35,15 +36,15 @@ public class StringValueUDT extends SingleFieldScalarValueUDT<StringValue<?, ?>>
 	}
 	
 	@Override
-	public StringValue<?, ?> deserializeInternal(Object datum)
+	protected StringValue<?, ?> deserializeFrom(InternalRow row, int start)
 	{
-		return (StringValue<?, ?>) StringValue.of(((UTF8String) datum).toString());
+		return (StringValue<?, ?>) StringValue.of(row.getUTF8String(start).toString());
 	}
-
+	
 	@Override
-	public Object serializeInternal(StringValue<?, ?> obj)
+	protected void serializeTo(StringValue<?, ?> obj, InternalRow row, int start)
 	{
-		return UTF8String.fromString(obj.get());
+		row.update(start, UTF8String.fromString(obj.get()));
 	}
 
 	@SuppressWarnings("unchecked")

@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark.udts;
 
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createStructFromComponents;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT.getUDTForClass;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT.getTagAndUDTForClass;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT.LineageSparkUDT;
 import static org.apache.spark.sql.catalyst.util.ArrayData.toArrayData;
 import static org.apache.spark.sql.types.DataTypes.BinaryType;
@@ -125,9 +125,9 @@ public class RankedPartitionUDT extends UserDefinedType<RankedPartition>
 					}
 					else
 					{
-						Entry<Integer, ScalarValueUDT<?>> entry = getUDTForClass(val.getClass());
+						Entry<Integer, ScalarValueUDT<?>> entry = getTagAndUDTForClass(val.getClass());
 						vals[i * 2] = entry.getKey();
-						vals[i * 2 + 1] = entry.getValue().serializeScalar(val);
+						vals[i * 2 + 1] = entry.getValue().serializeUnchecked(val);
 					}
 				}
 					

@@ -19,31 +19,33 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
-import static org.apache.spark.sql.types.DataTypes.IntegerType;
+import static org.apache.spark.sql.types.DataTypes.LongType;
 
 import java.time.LocalDate;
 
+import org.apache.spark.sql.catalyst.InternalRow;
+
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 
-public class DateValueUDT extends SingleFieldScalarValueUDT<DateValue<?>>
+public class DateValueUDT extends ScalarValueUDT<DateValue<?>>
 {
 	private static final long serialVersionUID = 1L;
 
 	public DateValueUDT()
 	{
-		super(IntegerType);
+		super(LongType);
 	}
 
 	@Override
-	public DateValue<?> deserializeInternal(Object datum)
+	protected DateValue<?> deserializeFrom(InternalRow row, int start)
 	{
-		return (DateValue<?>) DateValue.of(LocalDate.ofEpochDay((Integer) datum));
+		return (DateValue<?>) DateValue.of(LocalDate.ofEpochDay(row.getLong(start)));
 	}
-
+	
 	@Override
-	public Object serializeInternal(DateValue<?> obj)
+	protected void serializeTo(DateValue<?> obj, InternalRow row, int start)
 	{
-		return (int) obj.get().toEpochDay();
+		row.setLong(start, obj.get().toEpochDay());
 	}
 
 	@SuppressWarnings("unchecked")

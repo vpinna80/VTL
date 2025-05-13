@@ -276,7 +276,7 @@ public class SparkUtils
 	 */
 	public static <T> AgnosticEncoder<T> getEncoderFor(Serializable instance, DataSetMetadata structure)
 	{
-		AgnosticEncoder<?> resultEncoder; 
+		AgnosticEncoder<?> resultEncoder = null; 
 		
 		Class<? extends Serializable> clazz = instance.getClass();
 		if (instance instanceof BaseScalarValue)
@@ -285,14 +285,26 @@ public class SparkUtils
 			{
 				ValueDomainSubset<?, ?> domain = ((ScalarValue<?, ?, ?, ?>) instance).getMetadata().getDomain();
 				ScalarValueUDT<?> type = DOMAIN_DATATYPES.get(domain);
+				while (type == null && domain != null)
+				{
+					type = DOMAIN_DATATYPES.get(domain);
+					domain = (ValueDomainSubset<?, ?>) domain.getParentDomain();
+				}
+				
 				if (type == null)
 					throw new UnsupportedOperationException(domain.toString());
+				
 				resultEncoder = type.getEncoder();
 			}
 			else
 			{
-				resultEncoder = SCALAR_ENCODERS.get(clazz);
-				if (resultEncoder == null)
+				while (resultEncoder == null && clazz != null)
+				{
+					resultEncoder = SCALAR_ENCODERS.get(clazz);
+					clazz = clazz.getSuperclass().asSubclass(Serializable.class);
+				}
+				
+				if (resultEncoder == null) 
 					throw new UnsupportedOperationException(clazz.getSimpleName());
 			}
 		}

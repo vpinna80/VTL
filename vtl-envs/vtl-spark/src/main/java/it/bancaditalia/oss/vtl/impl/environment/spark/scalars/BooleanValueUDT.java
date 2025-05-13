@@ -21,9 +21,11 @@ package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static org.apache.spark.sql.types.DataTypes.BooleanType;
 
+import org.apache.spark.sql.catalyst.InternalRow;
+
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 
-public class BooleanValueUDT extends SingleFieldScalarValueUDT<BooleanValue<?>> 
+public class BooleanValueUDT extends ScalarValueUDT<BooleanValue<?>> 
 {
 	private static final long serialVersionUID = 1L;
 
@@ -33,15 +35,15 @@ public class BooleanValueUDT extends SingleFieldScalarValueUDT<BooleanValue<?>>
 	}
 	
 	@Override
-	public BooleanValue<?> deserializeInternal(Object datum)
+	protected BooleanValue<?> deserializeFrom(InternalRow row, int start)
 	{
-		return (BooleanValue<?>) BooleanValue.of((Boolean) datum);
+		return (BooleanValue<?>) BooleanValue.of(row.getBoolean(start));
 	}
-
+	
 	@Override
-	public Object serializeInternal(BooleanValue<?> obj)
+	protected void serializeTo(BooleanValue<?> obj, InternalRow row, int start)
 	{
-		return obj.get();
+		row.setBoolean(start, obj == BooleanValue.TRUE);
 	}
 
 	@SuppressWarnings("unchecked")

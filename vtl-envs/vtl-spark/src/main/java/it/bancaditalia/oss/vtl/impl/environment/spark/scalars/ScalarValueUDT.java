@@ -20,38 +20,47 @@
 package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static java.util.Objects.requireNonNull;
+import static org.apache.spark.sql.types.DataTypes.createStructField;
+import static org.apache.spark.sql.types.DataTypes.createStructType;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.IntStream;
 
+import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.UDTEncoder;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.UserDefinedType;
 
+import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends UserDefinedType<T>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Map<Class<?>, Entry<Integer, ScalarValueUDT<?>>> TAGS = new HashMap<>();
-	private static final ScalarValueUDT<?>[] UDTS = new ScalarValueUDT<?>[] {
-		new BooleanValueUDT(),
-		new StringValueUDT(),
-		new IntegerValueUDT(),
-		new DoubleValueUDT(),
-		new BigDecimalValueUDT(),
-		new DurationValueUDT(),
-		new GenericTimeValueUDT(),
-		new DateValueUDT(),
-		new TimePeriodValueUDT()
-	};
+	private static final ScalarValueUDT<?>[] UDTS;
 	
 	static
 	{
-		for (int i = 0; i < UDTS.length; i++)
-			TAGS.put(UDTS[i].userClass(), new SimpleEntry<>(i, UDTS[i]));
+		UDTS = new ScalarValueUDT<?>[] {
+			new BooleanValueUDT(),
+			new StringValueUDT(),
+			new IntegerValueUDT(),
+			new DoubleValueUDT(),
+			new BigDecimalValueUDT(),
+			new DurationValueUDT(),
+			new GenericTimeValueUDT(),
+			new DateValueUDT(),
+			new TimePeriodValueUDT()
+		};
+		
+		IntStream.range(0, UDTS.length).forEach(i -> TAGS.put(UDTS[i].userClass(), new SimpleEntry<>(i, UDTS[i])));
 	}
 
 	public static final ScalarValueUDT<?> getUDTforTag(Integer tag)
@@ -59,7 +68,7 @@ public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends 
 		return UDTS[tag];
 	}
 	
-	public static final Entry<Integer, ScalarValueUDT<?>> getUDTForClass(Class<?> clazz)
+	public static final Entry<Integer, ScalarValueUDT<?>> getTagAndUDTForClass(Class<?> clazz)
 	{
 		return requireNonNull(TAGS.get(clazz));
 	}
@@ -67,13 +76,37 @@ public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends 
 	private final StructType sqlType;
 	private final String name = getClass().getSimpleName();
 	
-	public ScalarValueUDT(StructType sqlType)
+	public ScalarValueUDT(DataType sqlType)
 	{
-		this.sqlType = sqlType;
+		this.sqlType = sqlType instanceof StructType ? (StructType) sqlType : createStructType(List.of(createStructField("value", sqlType, true)));
 	}
 
+	@Override
+	public final T deserialize(Object datum)
+	{
+		InternalRow row = (InternalRow) datum;
+		return row == null ? null : deserializeFrom(row, 0);
+	}
+	
+	@Override
+	public final InternalRow serialize(T obj)
+	{
+		if (obj instanceof NullValue)
+			return null;
+		else
+		{
+			InternalRow row = new GenericInternalRow(sqlType.size());
+			serializeTo(obj, row, 0);
+			return row;
+		}
+	}
+
+	protected abstract T deserializeFrom(InternalRow row, int start);
+
+	protected abstract void serializeTo(T obj, InternalRow row, int start);
+	
 	@SuppressWarnings("unchecked")
-	public final Object serializeScalar(ScalarValue<?, ?, ?, ?> obj)
+	public final Object serializeUnchecked(ScalarValue<?, ?, ?, ?> obj)
 	{
 		return serialize((T) obj);
 	}

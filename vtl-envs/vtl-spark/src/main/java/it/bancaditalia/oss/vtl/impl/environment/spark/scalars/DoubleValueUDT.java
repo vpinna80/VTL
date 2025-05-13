@@ -21,10 +21,12 @@ package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static org.apache.spark.sql.types.DataTypes.DoubleType;
 
+import org.apache.spark.sql.catalyst.InternalRow;
+
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 
-public class DoubleValueUDT extends SingleFieldScalarValueUDT<DoubleValue<?>>
+public class DoubleValueUDT extends ScalarValueUDT<DoubleValue<?>>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -34,15 +36,15 @@ public class DoubleValueUDT extends SingleFieldScalarValueUDT<DoubleValue<?>>
 	}
 	
 	@Override
-	public DoubleValue<?> deserializeInternal(Object datum)
+	protected DoubleValue<?> deserializeFrom(InternalRow row, int start)
 	{
-		return (DoubleValue<?>) DoubleValue.of((Double) datum, Domains.NUMBERDS);
+		return (DoubleValue<?>) DoubleValue.of(row.getDouble(start), Domains.NUMBERDS);
 	}
-
+	
 	@Override
-	public Object serializeInternal(DoubleValue<?> obj)
+	protected void serializeTo(DoubleValue<?> obj, InternalRow row, int start)
 	{
-		return obj.get();
+		row.setDouble(start, obj.get().doubleValue());
 	}
 
 	@SuppressWarnings("unchecked")

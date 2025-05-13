@@ -257,6 +257,11 @@ public class SparkEnvironment implements Environment
 		reader = session.read();
 	}
 	
+	public SparkSession getSession()
+	{
+		return session;
+	}
+
 	static void ensureConf(SparkSession session)
 	{
 		if (CONFS.get() != Boolean.TRUE)

@@ -21,9 +21,11 @@ package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static org.apache.spark.sql.types.DataTypes.LongType;
 
+import org.apache.spark.sql.catalyst.InternalRow;
+
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 
-public class IntegerValueUDT extends SingleFieldScalarValueUDT<IntegerValue<?, ?>>
+public class IntegerValueUDT extends ScalarValueUDT<IntegerValue<?, ?>>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -33,15 +35,15 @@ public class IntegerValueUDT extends SingleFieldScalarValueUDT<IntegerValue<?, ?
 	}
 	
 	@Override
-	public IntegerValue<?, ?> deserializeInternal(Object datum)
+	protected IntegerValue<?, ?> deserializeFrom(InternalRow row, int start)
 	{
-		return (IntegerValue<?, ?>) IntegerValue.of((Long) datum);
+		return (IntegerValue<?, ?>) IntegerValue.of(row.getLong(start));
 	}
-
+	
 	@Override
-	public Object serializeInternal(IntegerValue<?, ?> obj)
+	protected void serializeTo(IntegerValue<?, ?> obj, InternalRow row, int start)
 	{
-		return obj.get();
+		row.setLong(start, obj.get());
 	}
 
 	@SuppressWarnings("unchecked")

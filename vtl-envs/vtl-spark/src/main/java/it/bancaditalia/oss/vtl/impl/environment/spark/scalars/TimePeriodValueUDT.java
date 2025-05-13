@@ -34,7 +34,6 @@ import java.time.YearMonth;
 import java.util.List;
 
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.SpecificInternalRow;
 import org.apache.spark.sql.types.StructType;
 import org.threeten.extra.YearHalf;
 import org.threeten.extra.YearQuarter;
@@ -61,56 +60,49 @@ public class TimePeriodValueUDT extends ScalarValueUDT<TimePeriodValue<?>>
 	}
 	
 	@Override
-	public TimePeriodValue<?> deserialize(Object datum)
+	protected TimePeriodValue<?> deserializeFrom(InternalRow row, int start)
 	{
-		InternalRow row = (InternalRow) datum;
-		int year = row.getInt(0);
-		int tag = row.getInt(1); 
-		
 		PeriodHolder<?> holder;
+		int year = row.getInt(start);
 		
-		switch (tag)
+		switch (row.getInt(start + 1))
 		{
 			case 0: holder = new YearPeriodHolder(Year.of(year)); break;
-			case 1: holder = new SemesterPeriodHolder(YearHalf.of(year, (int) row.getLong(2))); break;
-			case 2: holder = new QuarterPeriodHolder(YearQuarter.of(year, (int) row.getLong(2))); break;
-			case 3: holder = new MonthPeriodHolder(YearMonth.of(year, (int) row.getLong(2))); break;
+			case 1: holder = new SemesterPeriodHolder(YearHalf.of(year, (int) row.getLong(start + 2))); break;
+			case 2: holder = new QuarterPeriodHolder(YearQuarter.of(year, (int) row.getLong(start + 2))); break;
+			case 3: holder = new MonthPeriodHolder(YearMonth.of(year, (int) row.getLong(start + 2))); break;
 			default: throw new InvalidParameterException("deserialize - bad period");
 		}; 
 		
 		return TimePeriodValue.of(holder);
 	}
-
+	
 	@Override
-	public InternalRow serialize(TimePeriodValue<?> value)
+	protected void serializeTo(TimePeriodValue<?> obj, InternalRow row, int start)
 	{
-		SpecificInternalRow row = new SpecificInternalRow(SQL_TYPE);
-		
-		PeriodHolder<?> holder = value.get();
+		PeriodHolder<?> holder = obj.get();
 		Class<?> objClass = holder.getClass();
 		
-		row.setInt(0, holder.get(YEAR));
+		row.setInt(start, holder.get(YEAR));
 		if (objClass == YearPeriodHolder.class)
-			row.setInt(1, 0);
+			row.setInt(start + 1, 0);
 		else if (objClass == SemesterPeriodHolder.class)
 		{
-			row.setInt(1, 1);
-			row.setLong(2, holder.getLong(HALF_OF_YEAR));
+			row.setInt(start + 1, 1);
+			row.setLong(start + 2, holder.getLong(HALF_OF_YEAR));
 		}
 		else if (objClass == QuarterPeriodHolder.class)
 		{
-			row.setInt(1, 2);
-			row.setLong(2, holder.getLong(QUARTER_OF_YEAR));
+			row.setInt(start + 1, 2);
+			row.setLong(start + 2, holder.getLong(QUARTER_OF_YEAR));
 		}
 		else if (objClass == MonthPeriodHolder.class)
 		{
-			row.setInt(1, 3);
-			row.setLong(2, holder.getLong(MONTH_OF_YEAR));
+			row.setInt(start + 1, 3);
+			row.setLong(start + 2, holder.getLong(MONTH_OF_YEAR));
 		}
 		else
 			throw new UnsupportedOperationException("Spark serialization not implemented for " + objClass);
-		
-		return row;
 	}
 
 	@SuppressWarnings("unchecked")

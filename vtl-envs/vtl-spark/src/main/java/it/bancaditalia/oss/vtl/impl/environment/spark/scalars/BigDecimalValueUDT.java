@@ -19,35 +19,53 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
+import static java.math.RoundingMode.UNNECESSARY;
+import static org.apache.spark.sql.types.DataTypes.IntegerType;
 import static org.apache.spark.sql.types.DataTypes.createDecimalType;
+import static org.apache.spark.sql.types.DataTypes.createStructField;
+import static org.apache.spark.sql.types.DataTypes.createStructType;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-import org.apache.spark.sql.types.DecimalType;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.StructType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 
-public class BigDecimalValueUDT extends SingleFieldScalarValueUDT<BigDecimalValue<?>>
+public class BigDecimalValueUDT extends ScalarValueUDT<BigDecimalValue<?>>
 {
 	private static final long serialVersionUID = 1L;
 
-	private static final DecimalType DECIMAL_TYPE = createDecimalType();
+	private static final StructType SQL_TYPE = createStructType(List.of(
+			createStructField("scale", IntegerType, false),
+			createStructField("value", createDecimalType(38, 19), false)
+		));
 
 	public BigDecimalValueUDT()
 	{
-		super(DECIMAL_TYPE);
+		super(SQL_TYPE);
 	}
 	
 	@Override
-	public BigDecimalValue<?> deserializeInternal(Object datum)
+	protected BigDecimalValue<?> deserializeFrom(InternalRow row, int start)
 	{
-		return (BigDecimalValue<?>) BigDecimalValue.of((BigDecimal) datum);
+	    int scale = row.getInt(start);
+		BigDecimal bigDecimal = (row.getDecimal(start + 1, 38, 19)).toJavaBigDecimal().setScale(scale);
+		return (BigDecimalValue<?>) BigDecimalValue.of(bigDecimal);
 	}
 
 	@Override
-	public Object serializeInternal(BigDecimalValue<?> obj)
+	protected void serializeTo(BigDecimalValue<?> obj, InternalRow row, int start) 
 	{
-		return obj.get();
+		BigDecimal original = obj.get();
+		BigDecimal scaled = original.setScale(19, UNNECESSARY);
+	    if (scaled.precision() > 38)
+	        throw new ArithmeticException("BigDecimal can have a maximum of 19 digits both at the left and at the right of decimal point: " + obj);
+
+	    row.setInt(start, original.scale());
+	    row.setDecimal(start + 1, Decimal.apply(obj.get(), 38, 19), 38);
 	}
 
 	@SuppressWarnings("unchecked")

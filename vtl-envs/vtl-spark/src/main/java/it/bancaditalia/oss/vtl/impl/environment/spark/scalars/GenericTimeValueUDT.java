@@ -19,14 +19,14 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
-import static java.util.Objects.requireNonNull;
+import static org.apache.spark.sql.types.DataTypes.IntegerType;
+import static org.apache.spark.sql.types.DataTypes.LongType;
 import static org.apache.spark.sql.types.DataTypes.createStructField;
 import static org.apache.spark.sql.types.DataTypes.createStructType;
 
 import java.util.List;
 
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.types.StructType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
@@ -41,10 +41,14 @@ public class GenericTimeValueUDT extends ScalarValueUDT<GenericTimeValue<?>>
 	private static final DateValueUDT DV_UDT = new DateValueUDT();
 	private static final TimePeriodValueUDT TPV_UDT = new TimePeriodValueUDT();
 	private static final StructType SQL_TYPE = createStructType(List.of(
-			createStructField("start1", DV_UDT, true),
-			createStructField("start2", DV_UDT, true),
-			createStructField("end1", TPV_UDT, true),
-			createStructField("end2", TPV_UDT, true)
+			createStructField("startdate", LongType, true),
+			createStructField("startyear", IntegerType, true),
+			createStructField("startfreq", IntegerType, true),
+			createStructField("startsubyear", LongType, true),
+			createStructField("enddate", LongType, true),
+			createStructField("endyear", IntegerType, true),
+			createStructField("endfreq", IntegerType, true),
+			createStructField("endsubyear", LongType, true)
 		));
 
 	public GenericTimeValueUDT()
@@ -53,51 +57,49 @@ public class GenericTimeValueUDT extends ScalarValueUDT<GenericTimeValue<?>>
 	}
 	
 	@Override
-	public GenericTimeValue<?> deserialize(Object datum)
+	protected GenericTimeValue<?> deserializeFrom(InternalRow row, int start)
 	{
-		InternalRow row = (InternalRow) datum;
-		TimeValue<?, ?, ?, ?> start, end;
+		TimeValue<?, ?, ?, ?> startTime, endTime;
 		
-		if (!row.isNullAt(0))
+		if (!row.isNullAt(start))
 		{
-			start = requireNonNull(DV_UDT.deserialize(row.get(0, DV_UDT)));
-			end = requireNonNull(DV_UDT.deserialize(row.get(2, DV_UDT)));
-		}
-		else if (!row.isNullAt(1))
-		{
-			start = requireNonNull(TPV_UDT.deserialize(row.get(1, TPV_UDT)));
-			end = requireNonNull(TPV_UDT.deserialize(row.get(3, TPV_UDT)));
+			startTime = DV_UDT.deserializeFrom(row, start);
+			endTime = DV_UDT.deserializeFrom(row, start + 4);
 		}
 		else
-			return null;
+		{
+			startTime = TPV_UDT.deserializeFrom(row, start + 1);
+			endTime = TPV_UDT.deserializeFrom(row, start + 5);
+		}
 
-		return (GenericTimeValue<?>) GenericTimeValue.of(start, end);
+		return (GenericTimeValue<?>) GenericTimeValue.of(startTime, endTime);
 	}
 
 	@Override
-	public Object serialize(GenericTimeValue<?> obj)
+	protected void serializeTo(GenericTimeValue<?> obj, InternalRow row, int start)
 	{
 		TimeRangeHolder range = obj.get();
-		TimeValue<?, ?, ?, ?> start = range.getStartTime();
-		TimeValue<?, ?, ?, ?> end = range.getEndTime();
+		TimeValue<?, ?, ?, ?> startTime = range.getStartTime();
+		TimeValue<?, ?, ?, ?> endTime = range.getEndTime();
 
-		InternalRow row = new GenericInternalRow(4);
-		if (start instanceof DateValue)
+		if (startTime instanceof DateValue)
 		{
-			row.update(0, DV_UDT.serialize((DateValue<?>) start));
+			DV_UDT.serializeTo((DateValue<?>) startTime, row, start);
 			row.setNullAt(1);
-			row.update(2, DV_UDT.serialize((DateValue<?>) end));
+			row.setNullAt(2);
 			row.setNullAt(3);
+			DV_UDT.serializeTo((DateValue<?>) endTime, row, start + 4);
+			row.setNullAt(5);
+			row.setNullAt(6);
+			row.setNullAt(7);
 		}
 		else
 		{
 			row.setNullAt(0);
-			row.update(1, TPV_UDT.serialize((TimePeriodValue<?>) start));
-			row.setNullAt(2);
-			row.update(3, TPV_UDT.serialize((TimePeriodValue<?>) end));
+			TPV_UDT.serializeTo((TimePeriodValue<?>) endTime, row, start + 1);
+			row.setNullAt(4);
+			TPV_UDT.serializeTo((TimePeriodValue<?>) endTime, row, start + 5);
 		}
-
-		return row;
 	}
 
 	@SuppressWarnings("unchecked")

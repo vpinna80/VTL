@@ -21,10 +21,12 @@ package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 
 import static org.apache.spark.sql.types.DataTypes.IntegerType;
 
+import org.apache.spark.sql.catalyst.InternalRow;
+
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 
-public class DurationValueUDT extends SingleFieldScalarValueUDT<DurationValue>
+public class DurationValueUDT extends ScalarValueUDT<DurationValue>
 {
 	private static final long serialVersionUID = 1L;
 	private static final Frequency[] FREQS = Frequency.values();
@@ -35,16 +37,15 @@ public class DurationValueUDT extends SingleFieldScalarValueUDT<DurationValue>
 	}
 
 	@Override
-	public DurationValue deserializeInternal(Object datum)
+	protected DurationValue deserializeFrom(InternalRow row, int start)
 	{
-		int tag = (Integer) datum;
-		return tag >= 0 ? FREQS[tag].get() : null;
+		return FREQS[row.getInt(start)].get();
 	}
-
+	
 	@Override
-	public Object serializeInternal(DurationValue value)
+	protected void serializeTo(DurationValue obj, InternalRow row, int start)
 	{
-		return value != null ? value.get().ordinal() : -1;
+		row.setInt(start, obj.get().ordinal());
 	}
 
 	@Override
