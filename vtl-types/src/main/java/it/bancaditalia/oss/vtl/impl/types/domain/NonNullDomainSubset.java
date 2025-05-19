@@ -55,12 +55,6 @@ public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends Va
 	}
 
 	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return subsetWithNull.isComparableWith(other);
-	}
-
-	@Override
 	public D getParentDomain()
 	{
 		return subsetWithNull.getParentDomain(); 

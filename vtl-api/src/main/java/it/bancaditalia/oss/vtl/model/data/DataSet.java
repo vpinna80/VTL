@@ -25,12 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -145,76 +142,12 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
 	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
-	 * @param filter a {@link BiPredicate} used to select only a subset of the joined {@link DataPoint}s.
+	 * @param where a {@link SerBiPredicate} used to select only a subset of the joined {@link DataPoint}s.
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @param leftJoin true if a left outer join is to be performed, false for inner join
 	 * @return The new DataSet.
 	 */
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> filter, SerBinaryOperator<DataPoint> merge, boolean leftJoin);
-
-	/**
-	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
-	 * The same as {@code filteredMappedJoin(metadata, other, filter, merge, false)}.
-	 * 
-	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
-	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
-	 * @param filter a {@link BiPredicate} used to select only a subset of the joined {@link DataPoint}s.
-	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
-	 * @return The new DataSet.
-	 */
-	public default DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> filter, SerBinaryOperator<DataPoint> merge)
-	{
-		return filteredMappedJoin(metadata, indexed, filter, merge, false);
-	}
-
-	/**
-	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
-	 * The same as {@code filteredMappedJoin(metadata, other, (a,  b) -> true, merge, leftJoin)}.
-	 * 
-	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
-	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
-	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
-	 * @param leftJoin true if a left outer join is to be performed, false for inner join
-	 * @return The new DataSet.
-	 */
-	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, SerBinaryOperator<DataPoint> merge, boolean leftJoin)
-	{
-		return filteredMappedJoin(metadata, indexed, ALL, merge, leftJoin);
-	}
-
-	/**
-	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of 
-	 * another DataSet by matching the common identifiers. The matching pairs are merged with a binary 
-	 * operator whose first and second arguments are datapoints coming from this DataSet and datapoints 
-	 * coming from the indexed DataSet respectively. 
-	 * The same as {@code filteredMappedJoin(metadata, other, (a,  b) -> true, merge)}.
-	 * 
-	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
-	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
-	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
-	 * @return The new DataSet.
-	 */
-	public default DataSet mappedJoin(DataSetMetadata metadata, DataSet indexed, SerBinaryOperator<DataPoint> merge)
-	{
-		return filteredMappedJoin(metadata, indexed, ALL, merge);
-	}
-
-	/**
-	 * Groups all the datapoints of this DataSet having the same values for the specified identifiers, 
-	 * and performs a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#MutableReduction">mutable reduction</a>
-	 * over each of a chosen subset of the groups, and applying a final transformation.
-	 * 
-	 * @param <T> the type of the result of the computation.
-	 * @param keys the {@link Identifier}s used to group the datapoints
-	 * @param filter a {@code Map} of {@link Identifier}'s values used to exclude matching groups
-	 * @param groupCollector a {@link Collector} applied to each group to produce the result
-	 * @param finisher a {@link BiFunction} to apply to the group key and result to produce the final result
-	 * @return a {@link Stream} of {@code <T>} objects containing the result of the computation for each group. 
-	 */
-	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-			SerCollector<DataPoint, A, TT> groupCollector,
-			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher);
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> merge, boolean leftJoin);
 	
 	/**
 	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers.

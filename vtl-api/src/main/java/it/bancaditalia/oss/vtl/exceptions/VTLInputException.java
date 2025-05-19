@@ -17,9 +17,7 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.exceptions;
-
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
+package it.bancaditalia.oss.vtl.exceptions;
 
 public class VTLInputException extends VTLException
 {

@@ -55,12 +55,6 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	}
 
 	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return other instanceof DurationDomain;
-	}
-
-	@Override
 	public ScalarValue<?, ?, EntireDurationDomainSubset, DurationDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value.isNull())

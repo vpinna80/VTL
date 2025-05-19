@@ -163,7 +163,7 @@ public class BooleanTransformation extends BinaryTransformation
 		
 		// Scan the dataset with less identifiers and find the matches
 		SerBinaryOperator<Lineage> enricher = lineage2Enricher(this);
-		return streamed.mappedJoin((DataSetMetadata) metadata, indexed,
+		return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed, DataSet.ALL,
 				(dps, dpi) -> new DataPointBuilder()
 					.addAll(dps.getValues(Identifier.class))
 					.addAll(dpi.getValues(Identifier.class))

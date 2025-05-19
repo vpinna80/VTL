@@ -30,10 +30,7 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
-import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static java.util.EnumSet.copyOf;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
-import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
@@ -41,7 +38,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +52,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
-import java.util.stream.Collector.Characteristics;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -155,7 +150,7 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
 		Set<DataStructureComponent<Identifier, ?, ?>> ids = getMetadata().getIDs();
 		Set<DataStructureComponent<Identifier, ?, ?>> otherIds = other.getMetadata().getIDs();
@@ -173,7 +168,7 @@ public abstract class AbstractDataSet implements DataSet
 		}
 		
 		return ofLambda(metadata, () -> stream()
-				.map(dpThis -> flatMapDataPoint(predicate, mergeOp, commonIds, index, leftJoin, dpThis))
+				.map(dpThis -> flatMapDataPoint(where, mergeOp, commonIds, index, leftJoin, dpThis))
 				.collect(concatenating(ORDERED)));
 	}
 
@@ -187,7 +182,7 @@ public abstract class AbstractDataSet implements DataSet
 			if (leftJoin)
 				return Stream.of(mergeOp.apply(dpThis, null));
 			else
-				return Stream.<DataPoint>empty();
+				return Stream.empty();
 		else
 			return otherSubGroup.stream()
 				.filter(dpOther -> predicate.test(dpThis, dpOther))
@@ -209,13 +204,6 @@ public abstract class AbstractDataSet implements DataSet
 			protected Stream<DataPoint> streamDataPoints()
 			{
 				return AbstractDataSet.this.stream().map(this::mapper);
-			}
-			
-			@Override
-			public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-					SerCollector<DataPoint, A, TT> groupCollector, SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
-			{
-				return AbstractDataSet.this.streamByKeys(keys, filter, mapping(this::mapper, groupCollector), finisher);			
 			}
 			
 			private DataPoint mapper(DataPoint dp)
@@ -244,49 +232,6 @@ public abstract class AbstractDataSet implements DataSet
 				return operator.apply(dp)
 					.map(map -> new DataPointBuilder(nonIDValues).addAll(map).build(lineageOp.apply(dp.getLineage()), metadata));
 			}));
-	}
-	
-	@Override
-	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys, 
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter,
-			SerCollector<DataPoint, A, TT> groupCollector,
-			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
-	{
-		// key group holder
-		final Map<A, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> keyValues = new ConcurrentHashMap<>();
-		
-		// Decorated collector that keeps track of grouping key values for the finisher
-		EnumSet<Characteristics> characteristics = copyOf(groupCollector.characteristics());
-		characteristics.remove(IDENTITY_FINISH);
-		SerCollector<Entry<DataPoint, Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>>, A, T> decoratedCollector = SerCollector.of(
-				// supplier
-				groupCollector.supplier(),
-				// accumulator
-				(acc, entry) -> {
-					groupCollector.accumulator().accept(acc, entry.getKey());
-					keyValues.putIfAbsent(acc, entry.getValue());
-				}, // combiner
-				(accLeft, accRight) -> {
-					A combinedAcc = groupCollector.combiner().apply(accLeft, accRight);
-					keyValues.putIfAbsent(combinedAcc, keyValues.get(accLeft));
-					keyValues.putIfAbsent(combinedAcc, keyValues.get(accRight));
-					return combinedAcc;
-				}, // finisher
-				acc -> groupCollector.finisher().andThen(tt -> finisher.apply(tt, keyValues.get(acc))).apply(acc),
-				// characteristics
-				characteristics);
-		
-		Collection<T> result;
-		try (Stream<DataPoint> stream = stream())
-		{
-			result = stream
-					.filter(dp -> dp.matches(filter))
-					.map(toEntryWithValue(dp -> dp.getValues(keys, Identifier.class)))
-					.collect(groupingByConcurrent(Entry::getValue, decoratedCollector))
-					.values();
-		}
-			
-		return Utils.getStream(result);
 	}
 
 	@Override

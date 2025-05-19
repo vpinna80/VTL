@@ -53,6 +53,12 @@ public class LimitClause implements LimitCriterion, Serializable
 		this(direction, limitCount.get().intValue());
 	}
 
+	// Unbounded
+	public LimitClause(LimitDirection direction)
+	{
+		this(direction, Integer.MAX_VALUE);
+	}
+
 	public LimitClause(LimitDirection direction, int count)
 	{
 		if (count < 0)

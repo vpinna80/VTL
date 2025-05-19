@@ -179,16 +179,6 @@ public class VTLSessionImpl implements VTLSession
 		return new VTLUnboundAliasException(alias);
 	}
 	
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		Optional<? extends Statement> rule = workspace.getRule(alias);
-		if (rule.isPresent())
-			return true;
-		else
-			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getValueMetadata).orElse(null)) != null;
-	}
-	
 	public String getOriginalCode()
 	{
 		return code;

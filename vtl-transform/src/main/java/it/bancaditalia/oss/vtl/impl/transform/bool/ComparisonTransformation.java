@@ -136,7 +136,7 @@ public class ComparisonTransformation extends BinaryTransformation
 			casted = (l, r) -> operator.apply(rDomain.cast(l), r);
 		
 		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
-		return left.mappedJoin((DataSetMetadata) metadata, right,
+		return left.filteredMappedJoin((DataSetMetadata) metadata, right, DataSet.ALL,
 				(dpl, dpr) -> new DataPointBuilder()
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))

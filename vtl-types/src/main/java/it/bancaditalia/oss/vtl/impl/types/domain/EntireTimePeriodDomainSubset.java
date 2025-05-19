@@ -41,12 +41,6 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 		super(TIME_PERIODDS);
 	}
 
-	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		throw new UnsupportedOperationException();
-	}
-
 	public ScalarValue<?, ?, EntireTimePeriodDomainSubset, TimePeriodDomain> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value.isNull())

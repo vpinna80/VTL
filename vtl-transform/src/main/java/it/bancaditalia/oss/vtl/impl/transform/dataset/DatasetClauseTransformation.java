@@ -38,7 +38,7 @@ public abstract class DatasetClauseTransformation extends TransformationImpl
 	private transient DataSetMetadata operandMetadata = null;
 
 	@Override
-	public boolean isTerminal()
+	public final boolean isTerminal()
 	{
 		return false;
 	}

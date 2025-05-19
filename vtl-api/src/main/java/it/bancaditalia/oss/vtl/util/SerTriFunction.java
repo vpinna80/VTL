@@ -25,9 +25,4 @@ import java.io.Serializable;
 public interface SerTriFunction<A, B, C, R> extends Serializable
 {
 	public R apply(A a, B b, C c);
-	
-	public default R apply(Triple<? extends A, ? extends B, ? extends C> triple)
-	{
-		return apply(triple.getFirst(), triple.getSecond(), triple.getThird());
-	}
 }

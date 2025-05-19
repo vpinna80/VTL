@@ -99,12 +99,6 @@ public class JoinApplyScope extends AbstractScope
 		else
 			return parent.getMetadata(node);
 	}
-
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		throw new UnsupportedOperationException();
-	}
 	
 	@Override
 	public Statement getRule(VTLAlias node)

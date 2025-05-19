@@ -184,10 +184,10 @@ public enum SampleDataSets implements DataSet
 		return dataset.getMatching(keyValues);
 	}
 
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet rightDataset, SerBiPredicate<DataPoint, DataPoint> filter,
+	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet rightDataset, SerBiPredicate<DataPoint, DataPoint> having,
 			SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
-		return dataset.filteredMappedJoin(metadata, rightDataset, filter, mergeOp, false);
+		return dataset.filteredMappedJoin(metadata, rightDataset, having, mergeOp, leftJoin);
 	}
 
 	@Override
@@ -200,14 +200,6 @@ public enum SampleDataSets implements DataSet
 			SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		return dataset.mapKeepingKeys(metadata, lineageOperator, operator);
-	}
-
-	@Override
-	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, SerCollector<DataPoint, A, TT> groupCollector,
-			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
-	{
-		return dataset.streamByKeys(keys, filter, groupCollector, finisher);
 	}
 
 	@Override

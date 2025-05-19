@@ -190,9 +190,8 @@ public class AggregateTransformation extends TransformationImpl
 
 			// Add collectors for Viral Attributes when the aggregation produces a dataset 
 			for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
-			{
-				combined = teeing(mapping(dp -> dp.get(viral), collectingAndThen(toList(), vals -> new SimpleEntry<>(viral, computeViral(vals)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
-			}
+				combined = teeing(mapping(dp -> dp.get(viral), collectingAndThen(toList(), vals -> 
+				new SimpleEntry<>(viral, computeViral(vals)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
 			
 			DataSet result = (DataSet) dataset.aggregate(structure, groupIDs, combined, (map, lineages, keyValues) -> {
 				DataPointBuilder builder = new DataPointBuilder(keyValues);
@@ -218,7 +217,7 @@ public class AggregateTransformation extends TransformationImpl
 			{
 				DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
 				result = result.filteredMappedJoin(structure, dsHaving, (dp, having) -> 
-						having.getValue(HAVING_COMP) == BooleanValue.TRUE, (dp, havingCond) -> dp);
+						having.getValue(HAVING_COMP) == BooleanValue.TRUE, (dp, havingCond) -> dp, false);
 			}
 			
 			return result;

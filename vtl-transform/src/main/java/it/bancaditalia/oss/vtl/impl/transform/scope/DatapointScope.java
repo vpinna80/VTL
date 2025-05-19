@@ -64,15 +64,6 @@ public class DatapointScope extends AbstractScope
 	}
 
 	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))
-			return true;
-		
-		return structure.getComponent(alias).isPresent();
-	}
-
-	@Override
 	public VTLValue resolve(VTLAlias alias) 
 	{
 		if (THIS.equals(requireNonNull(alias, "The name to resolve cannot be null.")))

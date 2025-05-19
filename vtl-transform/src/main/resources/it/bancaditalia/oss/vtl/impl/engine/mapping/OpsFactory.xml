@@ -492,12 +492,30 @@
 		<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl">
 			<tokensetparam tokenset="WindowRangeType" />
 			<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
-				<tokensetparam name="dir" tokenset="WindowDirection" />
-				<valueparam />
+				<case>
+					<context context="SignedInteger" ordinal="1" />
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam ordinal="1" />
+				</case>
+				<case>
+					<tokens ordinal="1">
+						<value>UNBOUNDED</value>
+					</tokens>
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+				</case>
 			</customparam>
 			<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
-				<tokensetparam name="dir" tokenset="WindowDirection" />
-				<valueparam />
+				<case>
+					<context context="SignedInteger" ordinal="1" />
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam ordinal="1" />
+				</case>
+				<case>
+					<tokens ordinal="1">
+						<value>UNBOUNDED</value>
+					</tokens>
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+				</case>
 			</customparam>
 		</customparam>
 	</mapping>

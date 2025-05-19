@@ -21,9 +21,6 @@ package it.bancaditalia.oss.vtl.impl.session;
 
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
-import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
-import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
-import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -38,7 +35,6 @@ import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +65,8 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.session.VTLSession;
-import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
-import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class CachedDataSet extends NamedDataSet
 {
@@ -222,44 +215,6 @@ public class CachedDataSet extends NamedDataSet
 	public CachedDataSet(VTLSessionImpl session, NamedDataSet delegate)
 	{
 		this(session, delegate.getAlias(), delegate.getDelegate());
-	}
-
-	@Override
-	public <A, T, TT> Stream<T> streamByKeys(Set<DataStructureComponent<Identifier, ?, ?>> keys,
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filter, SerCollector<DataPoint, A, TT> groupCollector,
-			SerBiFunction<? super TT, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, T> finisher)
-	{
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> value = waiter.getCache(keys);
-		if (value == null)
-		{
-			if (!lock())
-				return Stream.empty();
-			
-			value = waiter.getCache(keys);
-			if (value == null)
-				value = createCache(keys);
-			else
-			{
-				LOGGER.debug("Cache waited hit for {}.", getAlias());
-				waiter.done();
-			}
-		}
-		else
-		{
-			LOGGER.debug("Cache hit for {}.", getAlias());
-			waiter.done();
-		}
-			
-		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> filterOutsideKeys = new HashMap<>(filter);
-		filterOutsideKeys.keySet().retainAll(keys);
-		boolean noFilter = filterOutsideKeys.isEmpty();
-		
-		return Utils.getStream(value)
-			.filter(entryByKey(idVals -> idVals.entrySet().containsAll(filter.entrySet())))
-			.map(keepingKey(Set::stream))
-			.map(keepingKey(s -> s.filter(dp -> noFilter || dp.matches(filter))))
-			.map(keepingKey(s -> s.collect(groupCollector)))
-			.map(splitting((k, v) -> finisher.apply(v, k)));
 	}
 	
 	@Override

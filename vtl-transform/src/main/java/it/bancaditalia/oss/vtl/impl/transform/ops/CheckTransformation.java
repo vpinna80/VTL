@@ -110,7 +110,7 @@ public class CheckTransformation extends TransformationImpl
 			DataStructureComponent<Measure, ?, ?> imbalanceMeasure = imbalanceDataset.getMetadata().getSingleton(Measure.class);
 			
 			SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
-			dataset = dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> {
+			dataset = dataset.filteredMappedJoin(metadata, imbalanceDataset, DataSet.ALL, (dp1, dp2) -> {
 				return new DataPointBuilder()
 					.addAll(dp1.getValues(Identifier.class))
 					.add(BOOL_VAR, function.apply(BOOLEANDS.cast(dp1.get(BOOL_VAR))))

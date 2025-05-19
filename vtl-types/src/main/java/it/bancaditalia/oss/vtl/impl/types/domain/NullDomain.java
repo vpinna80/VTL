@@ -37,12 +37,6 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	}
 
 	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return false;
-	}
-
-	@Override
 	public ValueDomain getParentDomain()
 	{
 		return null;

@@ -44,14 +44,6 @@ public interface ValueDomain extends Serializable
 	public VTLAlias getAlias();
 	
 	/**
-	 * Check if a value of a given ValueDomain can be compared to a value of this ValueDomain
-	 *  
-	 * @param other the other {@link ValueDomain}
-	 * @return true if the comparison is possible
-	 */
-	public boolean isComparableWith(ValueDomain other);
-	
-	/**
 	 * 
 	 * @return the representation type for this domain
 	 */

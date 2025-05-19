@@ -57,12 +57,6 @@ public class ThisScope extends AbstractScope
 		this.repo = repo;
 		this.parent = parent;
 	}
-
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		throw new UnsupportedOperationException();
-	}
 	
 	@Override
 	public VTLValueMetadata getMetadata(VTLAlias alias)

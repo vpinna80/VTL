@@ -163,7 +163,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			DataSet other = resultList.get(i);
 			DataSetMetadata otherStructure = other.getMetadata();
 			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
-			result = result.mappedJoin(currentStructure, other, (dp1, dp2) -> {
+			result = result.filteredMappedJoin(currentStructure, other, DataSet.ALL, (dp1, dp2) -> {
 				return dp1.combine(dp2, (d1, d2) -> enricher.apply(dp1.getLineage(), dp2.getLineage()));
 			}, false);
 		}
@@ -173,7 +173,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		{
 			DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
 			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> condMeasure = dsHaving.getMetadata().getSingleton(Measure.class, BOOLEANDS);
-			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a);
+			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a, false);
 		}
 
 		return result.mapKeepingKeys(metadata, lineageEnricher(this), identity());

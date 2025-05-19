@@ -129,7 +129,7 @@ public class ConditionalTransformation extends TransformationImpl
 				boolean isThenDataset = thenV.isDataSet();
 				DataSet dataset = isThenDataset ? (DataSet) thenV : (DataSet) elseV;
 				ScalarValue<?, ?, ?, ?> scalar = !thenV.isDataSet() ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
-				return condD.mappedJoin((DataSetMetadata) metadata, dataset, (dpCond, dp) -> 
+				return condD.filteredMappedJoin((DataSetMetadata) metadata, dataset, DataSet.ALL, (dpCond, dp) -> 
 						evalDatasetAndScalar((DataSetMetadata) metadata, isThenDataset ^ checkCondition(dpCond.get(booleanConditionMeasure)),
 								enricher, dp, scalar, booleanConditionMeasure), false);
 			}
@@ -174,8 +174,8 @@ public class ConditionalTransformation extends TransformationImpl
 			return result;	
 		});
 		
-		return condResolved.mappedJoin(enriched, thenResolved, (a, b) -> b).subspace(singletonMap(COND_ID, TRUE), identity())
-			.union(singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), identity())), identity());
+		return condResolved.filteredMappedJoin(enriched, thenResolved, DataSet.ALL, (a, b) -> b, false).subspace(singletonMap(COND_ID, TRUE), identity())
+			.union(singletonList(condResolved.filteredMappedJoin(enriched, elseResolved, DataSet.ALL, (a, b) -> b, false).subspace(singletonMap(COND_ID, FALSE), identity())), identity());
 	}
 
 	private static boolean checkCondition(ScalarValue<?, ?, ?, ?> value)

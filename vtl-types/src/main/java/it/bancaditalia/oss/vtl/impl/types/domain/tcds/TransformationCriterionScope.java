@@ -112,10 +112,4 @@ public class TransformationCriterionScope<V extends ScalarValue<?, ?, S, D>, S e
 	{
 		throw new UnsupportedOperationException();
 	}
-
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		return X.equals(alias);
-	}
 }

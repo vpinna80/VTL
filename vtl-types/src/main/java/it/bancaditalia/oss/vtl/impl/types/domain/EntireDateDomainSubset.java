@@ -64,12 +64,6 @@ public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainS
 			throw new UnsupportedOperationException("Cast to date from " + value.getDomain());
 	}
 
-	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return other instanceof DateDomain;
-	}
-
 	public static EntireDateDomainSubset getInstance()
 	{
 		return INSTANCE;

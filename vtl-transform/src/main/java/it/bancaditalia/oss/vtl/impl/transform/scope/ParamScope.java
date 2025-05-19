@@ -97,10 +97,4 @@ public class ParamScope extends AbstractScope
 	{
 		return parent;
 	}
-
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		return parametersMeta.containsKey(alias);
-	}
 }

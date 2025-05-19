@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
-import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -73,16 +72,6 @@ public class VTLJupyterSession extends VTLSessionImpl
 		else
 			return acquireValue(alias, Environment::getValueMetadata)
 					.orElseThrow(() -> new VTLUnboundAliasException(alias));
-	}
-
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		Optional<? extends Statement> rule = getWorkspace().getRule(alias);
-		if (rule.isPresent())
-			return true;
-		else
-			return acquireValue(alias, Environment::getValueMetadata).isPresent();
 	}
 
 	private <T> Optional<T> acquireValue(VTLAlias alias, BiFunction<? super Environment, ? super VTLAlias, ? extends Optional<T>> mapper)

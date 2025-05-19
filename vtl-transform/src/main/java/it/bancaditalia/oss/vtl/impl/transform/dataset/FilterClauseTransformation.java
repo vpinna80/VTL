@@ -70,9 +70,9 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 
 		MetadataRepository repo = scheme.getRepository();
 		return operand.filter(dp -> {
-			final DatapointScope dpScope = new DatapointScope(repo, dp, metadata, null);
-			final ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
-			return (TRUE.equals(BOOLEANDS.cast(filterValue)));
+			DatapointScope dpScope = new DatapointScope(repo, dp, metadata, null);
+			ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
+			return TRUE.equals(BOOLEANDS.cast(filterValue));
 		}, lineageEnricher(this));
 	}
 
@@ -87,7 +87,6 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 		}
 		else
 			((DataSetMetadata) filterMetadata).getSingleton(Measure.class, BOOLEANDS);
-			
 		
 		return getThisMetadata(scheme);
 	}

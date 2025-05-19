@@ -66,12 +66,6 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 	{
 		return parent.isAssignableFrom(other);
 	}
-
-	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return parent.isComparableWith(other);  
-	}
 	
 	@Override
 	public VTLAlias getAlias()

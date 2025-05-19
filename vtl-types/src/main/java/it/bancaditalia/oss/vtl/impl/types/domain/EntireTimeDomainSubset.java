@@ -62,12 +62,6 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 	}
 
 	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return other instanceof TimeDomain;
-	}
-
-	@Override
 	public Class<? extends Serializable> getRepresentation()
 	{
 		// TODO Auto-generated method stub

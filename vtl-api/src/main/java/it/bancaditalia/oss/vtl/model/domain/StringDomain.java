@@ -26,9 +26,5 @@ package it.bancaditalia.oss.vtl.model.domain;
  */
 public interface StringDomain extends ValueDomain
 {
-	@Override
-	default boolean isComparableWith(ValueDomain other)
-	{
-		return other instanceof StringDomain;
-	}
+
 }

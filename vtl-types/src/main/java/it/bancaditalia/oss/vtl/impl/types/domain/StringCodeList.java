@@ -106,12 +106,6 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 		return parent;
 	}
 
-	@Override
-	public final boolean isComparableWith(ValueDomain other)
-	{
-		return STRINGDS.isComparableWith(other);
-	}
-
 	public final int hashCode()
 	{
 		return hashCode;
