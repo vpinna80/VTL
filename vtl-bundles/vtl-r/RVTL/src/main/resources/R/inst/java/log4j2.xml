@@ -44,7 +44,7 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="it.bancaditalia.oss.vtl" level="TRACE" additivity="false">
+        <Logger name="it.bancaditalia.oss.vtl" level="INFO" additivity="false">
             <AppenderRef ref="STDERR1"/>
             <AppenderRef ref="STDERR2"/>
         </Logger>
