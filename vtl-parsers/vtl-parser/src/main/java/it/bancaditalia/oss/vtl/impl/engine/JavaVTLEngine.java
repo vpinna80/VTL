@@ -39,11 +39,10 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.sdmx.vtl.Vtl;
-import org.sdmx.vtl.Vtl.StartContext;
-import org.sdmx.vtl.Vtl.StatementContext;
 import org.sdmx.vtl.VtlTokens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +105,7 @@ public class JavaVTLEngine extends AbstractParseTreeVisitor<Stream<Statement>> i
 		opsFactory = new OpsFactory(config, parserClass, lexerClass);
 	}
 	
-	public Statement buildStatement(StatementContext ctx) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException
+	public Statement buildStatement(ParserRuleContext ctx) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException
 	{
 		return opsFactory.createStatement(ctx);
 	}
@@ -114,25 +113,24 @@ public class JavaVTLEngine extends AbstractParseTreeVisitor<Stream<Statement>> i
 	@Override
 	public Stream<Statement> visitChildren(RuleNode node)
 	{
-		if (node instanceof StartContext)
+		if (node instanceof ParserRuleContext && node.getParent() == null)
 		{
 			List<Stream<Statement>> result = new ArrayList<>();
-			for (StatementContext ctx: ((StartContext)node).getRuleContexts(StatementContext.class))
+			for (ParserRuleContext ctx: ((ParserRuleContext) node).getRuleContexts(ParserRuleContext.class))
 				result.add(ctx.accept(this));
+			
 			return result.stream().flatMap(identity());
 		}
-		else if (node instanceof StatementContext)
+		else 
 			try
 			{
-				return Stream.of(buildStatement((StatementContext) node));
+				return Stream.of(buildStatement((ParserRuleContext) node));
 			}
 			catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException 
 					| InvocationTargetException | NoSuchMethodException | ClassNotFoundException | InstantiationException cause)
 			{
 				throw new RuntimeException(cause);
 			}
-		else
-			return null;
 	}
 
 	@Override

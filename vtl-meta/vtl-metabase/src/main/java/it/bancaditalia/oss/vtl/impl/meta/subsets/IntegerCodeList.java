@@ -110,12 +110,6 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	}
 
 	@Override
-	public boolean isComparableWith(ValueDomain other)
-	{
-		return INTEGERDS.isComparableWith(other);
-	}
-
-	@Override
 	public Set<IntegerCodeItem> getCodeItems()
 	{
 		return items;

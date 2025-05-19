@@ -102,10 +102,6 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-engine</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-envbase</artifactId>
 		</dependency>
 		<dependency>

@@ -38,11 +38,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-types</artifactId>
+			<artifactId>vtl-parser</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -51,11 +47,6 @@
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-samples</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-engine</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

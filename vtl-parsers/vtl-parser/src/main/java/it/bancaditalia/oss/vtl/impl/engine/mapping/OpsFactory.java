@@ -58,7 +58,6 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.sdmx.vtl.Vtl.LimitClauseItemContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,7 +160,8 @@ public class OpsFactory implements Serializable
 	private final Datasetparamtype datasetParam;
 	private final Componentparamtype componentParam;
 
-	public OpsFactory(Parserconfig config, Class<? extends Parser> parserClass, Class<? extends Lexer> lexerClass) throws JAXBException, ClassNotFoundException, IOException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException
+	public OpsFactory(Parserconfig config, Class<? extends Parser> parserClass, Class<? extends Lexer> lexerClass)
+		throws JAXBException, ClassNotFoundException, IOException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException
 	{
 		this.parserClass = parserClass;
 		
@@ -307,102 +307,6 @@ public class OpsFactory implements Serializable
 			}
 
 		throw new VTLUnmappedContextException(statementCtx);
-
-//		if (ctx instanceof DefineExpressionContext)
-//		{
-//			DefOperatorsContext defineContext = ((DefineExpressionContext) ctx).defOperators();
-//			if (defineContext instanceof DefOperatorContext)
-//			{
-//				DefOperatorContext defineOp = (DefOperatorContext) defineContext;
-//				List<Parameter> params = coalesce(defineOp.parameterItem(), emptyList()).stream()
-//						.map(this::buildParam)
-//						.collect(toList());
-//				OutputParameterTypeContext type = defineOp.outputParameterType();
-//				BaseParameter outputType = type == null ? null : buildType(type, null, type.scalarType(), type.componentType(), type.datasetType());
-//				
-//				return new DefineOperatorStatement(VTLAliasImpl.of(defineOp.operatorID().getText()), params, outputType, buildExpr(defineOp.expr()));
-//			}
-//			else if (defineContext instanceof DefHierarchicalContext)
-//			{
-//				DefHierarchicalContext defineHier = (DefHierarchicalContext) defineContext;
-//				VTLAlias alias = VTLAliasImpl.of(defineHier.rulesetID().getText());
-//				RuleSetType rulesetType = defineHier.hierRuleSignature().VALUE_DOMAIN() != null ? VALUE_DOMAIN : VARIABLE;
-//				VTLAlias ruleID = defineHier.hierRuleSignature().IDENTIFIER() != null ? VTLAliasImpl.of(defineHier.hierRuleSignature().IDENTIFIER().getText()) : null;
-//				
-//				List<VTLAlias> names = new ArrayList<>();
-//				List<String> leftOps = new ArrayList<>();
-//				List<Transformation> whenOps = new ArrayList<>();
-//				List<RuleType> compOps = new ArrayList<>();
-//				List<Map<String, Boolean>> rightOps = new ArrayList<>();
-//				List<String> ercodes = new ArrayList<>();
-//				List<Long> erlevels = new ArrayList<>();
-//				
-//				for (int i = 0; defineHier.ruleClauseHierarchical().ruleItemHierarchical(i) != null; i++)
-//				{
-//					RuleItemHierarchicalContext rule = defineHier.ruleClauseHierarchical().ruleItemHierarchical(i);
-//					names.add(rule.ruleName != null ? VTLAliasImpl.of(rule.ruleName.getText()) : null);
-//					String erCode = null;
-//					if (rule.erCode() != null)
-//					{
-//						erCode = rule.erCode().constant().getText();
-//						erCode = erCode.substring(1, erCode.length() - 1);
-//					}
-//					ercodes.add(erCode);
-//					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
-//
-//					CodeItemRelationContext relation = rule.codeItemRelation();
-//					switch (relation.comparisonOperand().getStart().getType())
-//					{
-//						case Vtl.EQ: compOps.add(RuleType.EQ); break;
-//						case Vtl.LT: compOps.add(RuleType.LT); break;
-//						case Vtl.LE: compOps.add(RuleType.LE); break;
-//						case Vtl.MT: compOps.add(RuleType.GT); break;
-//						case Vtl.ME: compOps.add(RuleType.GE); break;
-//						default: throw new UnsupportedOperationException("Invalid operand in ruleset rule " + rule.ruleName.getText() + ": " + relation.comparisonOperand().getText());
-//					}
-//					
-//					ExprComponentContext when = relation.exprComponent();
-//					
-//					leftOps.add(relation.codetemRef.getText());
-//					whenOps.add(when != null ? buildExpr(when): null);
-//					rightOps.add(relation.codeItemRelationClause().stream()
-//						.collect(toMap(r -> r.rightCodeItem.getText(), r -> r.opAdd == null || r.opAdd.getType() == Vtl.PLUS)));
-//				}
-//				
-//				return new DefineHierarchyStatement(alias, rulesetType, ruleID, names, leftOps, compOps, whenOps, rightOps, ercodes, erlevels);
-//			}
-//			else if (defineContext instanceof DefDatapointRulesetContext)
-//			{
-//				DefDatapointRulesetContext defineDatapoint = (DefDatapointRulesetContext) defineContext;
-//
-//				VTLAlias alias = VTLAliasImpl.of(defineDatapoint.rulesetID().getText());
-//				RuleSetType rulesetType = defineDatapoint.rulesetSignature().VALUE_DOMAIN() != null ? VALUE_DOMAIN : VARIABLE;
-//				List<Entry<VTLAlias, VTLAlias>> vars = defineDatapoint.rulesetSignature().signature().stream()
-//						.map(s -> new SimpleEntry<VTLAlias, VTLAlias>(VTLAliasImpl.of(s.varID().getText()), s.alias() != null ? VTLAliasImpl.of(s.alias().getText()) : null))
-//						.collect(toList());
-//				
-//				List<VTLAlias> ruleIDs = new ArrayList<>();
-//				List<Transformation> conds = new ArrayList<>();
-//				List<Transformation> exprs = new ArrayList<>();
-//				List<String> ercodes = new ArrayList<>();
-//				List<Long> erlevels = new ArrayList<>();
-//
-//				for (RuleItemDatapointContext rule: defineDatapoint.ruleClauseDatapoint().ruleItemDatapoint())
-//				{
-//					ruleIDs.add(rule.ruleName != null ? VTLAliasImpl.of(rule.ruleName.getText()) : null);
-//					conds.add(rule.antecedentContiditon != null ? buildExpr(rule.antecedentContiditon) : null);
-//					exprs.add(buildExpr(rule.consequentCondition));
-//					ercodes.add(rule.erCode() != null ? rule.erCode().constant().getText() : null);
-//					erlevels.add(rule.erLevel() != null ? Long.parseLong(rule.erLevel().constant().getText()) : null);
-//				}
-//
-//				return new DefineDataPointStatement(alias, rulesetType, vars, ruleIDs, conds, exprs, ercodes, erlevels);
-//			}
-//			else
-//				throw new VTLUnmappedContextException(defineContext);
-//		}
-//		else
-//			throw new VTLUnmappedContextException(ctx);
 	}
 
 	private Class<? extends ParserRuleContext> getContextClass(String contextName) throws ClassNotFoundException
@@ -563,9 +467,12 @@ public class OpsFactory implements Serializable
 				else if (check instanceof Contextcheck)
 				{
 					Contextcheck context = (Contextcheck) check;
-					Class<? extends ParserRuleContext> target = Class.forName(parserClass.getName() + "$" + context.getContext())
-							.asSubclass(ParserRuleContext.class);
-					Class<? extends Object> childruleclass = ctxClass.getField(context.getName()).get(ctx).getClass();
+					Class<? extends ParserRuleContext> target = getContextClass(context.getContext());
+					Class<?> childruleclass;
+					if (context.getName() != null)
+						childruleclass = ctxClass.getField(context.getName()).get(ctx).getClass();
+					else
+						childruleclass = ctx.getChild(context.getOrdinal() - 1).getClass();
 					if (target == childruleclass)
 						checkIsValid = true;
 				}
@@ -806,7 +713,7 @@ public class OpsFactory implements Serializable
 						return ctor.newInstance(args.toArray());
 				}
 			
-			throw new NoSuchMethodException(customParam.getMethod());
+			throw new NoSuchMethodException("Method not found for " + ctx.getClass().getSimpleName() + ": " + customParam.getMethod());
 		}
 		catch (Exception e)
 		{
@@ -958,15 +865,6 @@ public class OpsFactory implements Serializable
 			return builder.apply(text);
 		else if (element instanceof TerminalNode)
 			return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
-		else if (element instanceof LimitClauseItemContext)
-		{
-			if (((LimitClauseItemContext) element).UNBOUNDED() != null) 
-				return IntegerValue.of((long) (Integer.MAX_VALUE));
-			if (((LimitClauseItemContext) element).CURRENT() != null) 
-				return IntegerValue.of(0L);
-
-			return IntegerValue.of(Long.parseLong(element.getChild(0).getText()));
-		}
 		else
 			throw new IllegalStateException("Invalid context for valueparam: " + element.getClass());
 	}

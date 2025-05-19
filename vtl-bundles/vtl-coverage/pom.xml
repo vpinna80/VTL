@@ -106,10 +106,6 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-engine</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-envbase</artifactId>
 		</dependency>
 		<dependency>
@@ -145,7 +141,6 @@
 		<dependency>
 			<groupId>org.hamcrest</groupId>
 			<artifactId>hamcrest</artifactId>
-			<version>2.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -166,7 +161,6 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.13</version>
 				<reportSets>
 					<reportSet>
 						<id>jacoco-aggregate</id>
@@ -193,19 +187,12 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>integration-test</phase>
-						<goals>
-							<goal>integration-test</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<test>**/IntegrationTestSuite</test>
-				</configuration>
+				<artifactId>maven-surefire-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>

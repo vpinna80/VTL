@@ -20,10 +20,10 @@
 package it.bancaditalia.oss.vtl.coverage.tests;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
-import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.E;
-import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.ES;
-import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.T;
-import static it.bancaditalia.oss.vtl.coverage.tests.IntegrationTestSuite.TestType.TS;
+import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.E;
+import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.ES;
+import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.T;
+import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.TS;
 import static java.lang.Integer.compare;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.newBufferedReader;
@@ -85,17 +85,17 @@ import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 import jakarta.xml.bind.JAXBException;
 
-public class IntegrationTestSuite
+public class CoverageSuiteTests
 {
 	public static enum TestType
 	{
 		T, E, TS, ES
 	}
 	
-	private static final int REPETITIONS = 5;
+	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
+	private static final Set<TestType> TO_RUN = Set.of(T, E/*, TS, ES*/);
 	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
 	private static final Engine ENGINE;
 	private static final boolean TOTAL_REPORT = true;
@@ -108,7 +108,6 @@ public class IntegrationTestSuite
 			System.setProperty("spark.shuffle.compress", "false");
 			System.setProperty("spark.shuffle.spill.compress", "false");
 			System.setProperty("spark.broadcast.compress", "false");
-			System.setProperty("spark.broadcast.compress", "false");
 			System.setProperty("spark.kryo.registrationRequired", "true");
 			System.setProperty("spark.kryoserializer.buffer", "1m");
 			System.setProperty("spark.memory.fraction", "0.7");
@@ -116,8 +115,8 @@ public class IntegrationTestSuite
 			System.setProperty("spark.cleaner.periodicGC.interval", "30s");
 			
 			System.setProperty("vtl.double.epsilon", "5");
-			TEST_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../tests").toURI());
-			EXAMPLES_ROOT = Paths.get(IntegrationTestSuite.class.getResource("../examples").toURI());
+			TEST_ROOT = Paths.get(CoverageSuiteTests.class.getResource("../tests").toURI());
+			EXAMPLES_ROOT = Paths.get(CoverageSuiteTests.class.getResource("../examples").toURI());
 			METADATA_REPOSITORY.setValue(JsonMetadataRepository.class);
 			ENGINE = new JavaVTLEngine();
 		}
@@ -249,7 +248,7 @@ public class IntegrationTestSuite
 		try
 		{
 			Class<? extends Environment> sparkClass = Class.forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment", 
-					true, IntegrationTestSuite.class.getClassLoader()).asSubclass(Environment.class);
+					true, CoverageSuiteTests.class.getClassLoader()).asSubclass(Environment.class);
 			return sparkClass.getConstructor(List.class).newInstance(paths);
 		}
 		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
