@@ -92,10 +92,10 @@ public class CoverageSuiteTests
 		T, E, TS, ES
 	}
 	
-	private static final int REPETITIONS = 1;
+	private static final int REPETITIONS = 5;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_RUN = Set.of(T, E/*, TS, ES*/);
+	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
 	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
 	private static final Engine ENGINE;
 	private static final boolean TOTAL_REPORT = true;
@@ -126,17 +126,17 @@ public class CoverageSuiteTests
 		}
 	}
 	
-	public static Stream<Arguments> test() throws IOException
+	public static List<Arguments> test() throws IOException
 	{
 		return getStream(TEST_ROOT, ".");
 	}
 
-	public static Stream<Arguments> examples() throws IOException
+	public static List<Arguments> examples() throws IOException
 	{
 		return getStream(EXAMPLES_ROOT, "examples");
 	}
 
-	private static Stream<Arguments> getStream(Path root, String suffix) throws IOException
+	private static List<Arguments> getStream(Path root, String suffix) throws IOException
 	{
 		StringBuilder testCode = new StringBuilder();
 		List<Arguments> tests = new ArrayList<>();
@@ -165,7 +165,7 @@ public class CoverageSuiteTests
 					}
 				}
 		
-		return tests.parallelStream();
+		return tests;
 	}
 	
 	private static JsonMetadataRepository getJsonMetaRepo(URL jsonURL) throws IOException

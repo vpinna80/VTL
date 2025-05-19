@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.coverage.utils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -115,9 +114,10 @@ public class RepeatedParameterizedTestExtension implements TestTemplateInvocatio
 
 		try
 		{
-			return ((Stream<?>) context.getRequiredTestClass().getDeclaredMethod(methodName, new Class<?>[0]).invoke(null)).map(Arguments.class::cast);
+			List<?>invoke = (List<?>) context.getRequiredTestClass().getDeclaredMethod(methodName, new Class<?>[0]).invoke(null);
+			return invoke.parallelStream().map(Arguments.class::cast);
 		}
-		catch (NoClassDefFoundError | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+		catch (Exception e)
 		{
 			throw new ParameterResolutionException("Could not invoke method source: " + methodName, e);
 		}

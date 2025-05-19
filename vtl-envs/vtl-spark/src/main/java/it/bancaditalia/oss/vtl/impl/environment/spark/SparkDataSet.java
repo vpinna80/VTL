@@ -61,7 +61,6 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -77,7 +76,6 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.MapGroupsFunction;
-import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
@@ -192,20 +190,10 @@ public class SparkDataSet extends AbstractDataSet
 		}
 		dataFrame = dataFrame.withColumn("$lineage$", dataFrame.col("$lineage$"), Metadata.empty());
 		
-		if (LOGGER.isTraceEnabled())
-			try
-			{
-				dataFrame.foreach((ForeachFunction<Row>) row -> LOGGER.trace(encoder.decode(row).toString()) );
-			}
-			catch (Exception e)
-			{
-				throw new IllegalStateException(e);
-			}
-		
 		this.session = session;
 		this.encoder = encoder;
 		this.dataFrame = dataFrame.cache();
-		
+
 		SPARK_CACHE.put(ref, this.dataFrame);
 		logInfo(toString());
 	}
@@ -310,7 +298,8 @@ public class SparkDataSet extends AbstractDataSet
 		for (Entry<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> e: keyValues.entrySet())
 		{
 			String name = e.getKey().getVariable().getAlias().getName();
-			subbed = subbed.withColumn(name + "$$SUB$$", new Column(Literal.create(e.getValue(), getDataTypeFor(e.getKey()))))
+			ScalarValueUDT<?> dataType = (ScalarValueUDT<?>) getDataTypeFor(e.getKey());
+			subbed = subbed.withColumn(name + "$$SUB$$", new Column(Literal.create(dataType.serializeUnchecked(e.getValue()), dataType)))
 					.where(col(name).equalTo(col(name + "$$SUB$$")))
 					.drop(name, name + "$$SUB$$");
 		}
@@ -346,7 +335,11 @@ public class SparkDataSet extends AbstractDataSet
 			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> newComps = operator.apply(original);
 			for (int i = 0; i < destComps.length; i++)
 				if (newRow[i] == null)
-					newRow[i] = newComps.get(destComps[i]);
+				{
+					ScalarValue<?, ?, ?, ?> newVal = newComps.get(destComps[i]);
+					if (newVal != null &!newVal.isNull())
+						newRow[i] = newVal;
+				}
 			
 			newRow[newRow.length - 1] = lineageOperator.apply(original.getLineage());
 			return new GenericRow(newRow);

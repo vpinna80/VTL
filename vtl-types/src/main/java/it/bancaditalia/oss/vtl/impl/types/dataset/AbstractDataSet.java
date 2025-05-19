@@ -109,7 +109,7 @@ public abstract class AbstractDataSet implements DataSet
 	public DataSet membership(VTLAlias alias, SerUnaryOperator<Lineage> lineageOperator)
 	{
 		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
-		LOGGER.trace("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
+		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
 		
 		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
 				.orElseThrow((Supplier<? extends RuntimeException> & Serializable) () -> new VTLMissingComponentsException(dataStructure, alias));
@@ -197,7 +197,7 @@ public abstract class AbstractDataSet implements DataSet
 		if (!metadata.getIDs().containsAll(identifiers))
 			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getIDs());
 		
-		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
+		LOGGER.debug("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
 		return new AbstractDataSet(metadata) {
 			@Override
@@ -223,7 +223,7 @@ public abstract class AbstractDataSet implements DataSet
 		if (!metadata.getIDs().containsAll(identifiers))
 			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getIDs());
 		
-		LOGGER.trace("Creating dataset by mapping from {} to {}", dataStructure, metadata);
+		LOGGER.debug("Creating dataset by mapping from {} to {}", dataStructure, metadata);
 		
 		// TODO: check why map/reduce doesn't work and flatmap is mandatory
 		return ofLambda(metadata, () -> stream()
@@ -344,35 +344,37 @@ public abstract class AbstractDataSet implements DataSet
 		LOGGER.debug("Requested streaming of {}", this);
 		
 		Stream<DataPoint> stream = streamDataPoints();
-		if (LOGGER.isTraceEnabled() && (!(this instanceof NamedDataSet) || !((NamedDataSet) this).getAlias().getName().startsWith("csv:")))
+		if (LOGGER.isTraceEnabled())
 		{
 			AtomicBoolean dontpeek = new AtomicBoolean(false);
-			Map<Map<?, ?>, DataPoint> seen = new ConcurrentHashMap<>() {
+			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> seen = new ConcurrentHashMap<>() {
 				private static final long serialVersionUID = 1L;
 				
 				private final String id = UUID.randomUUID().toString();
 				
-				public DataPoint put(Map<?, ?> key, DataPoint value)
+				public DataPoint put(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> key, DataPoint value)
 				{
 					LOGGER.error("UUID: {}; Hash: {} dp: {}", id, Objects.hashCode(value), value);
 					return super.put(key, value);
 				};
 			};
-			stream = stream.peek(dp -> checkDuplicates(dontpeek, seen, dp));
+			stream = stream.peek(dp -> checkDuplicates(dontpeek, seen, dp))
+				.onClose(() -> LOGGER.trace("Closing stream for {}", this))
+				.onClose(() -> seen.clear());
 		}
 		
-		return stream.onClose(() -> LOGGER.trace("Closing stream for {}", this));
+		return stream;
 	}
 
-	private void checkDuplicates(AtomicBoolean dontpeek, Map<Map<?, ?>, DataPoint> seen, DataPoint dp)
+	private void checkDuplicates(AtomicBoolean dontpeek, Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> seen, DataPoint dp)
 	{
-		if (!dontpeek.get() && !dp.getLineage().toString().startsWith("csv:"))
+		if (!dontpeek.get())
 		{
 			if (this instanceof NamedDataSet)
 				LOGGER.trace("Dataset {} output datapoint {}", ((NamedDataSet) this).getAlias(),  dp);
 			else
 				LOGGER.trace("Dataset {} output datapoint {}", dp.getLineage(), dp);
-			Map<?, ?> keyVals = dp.getValues(Identifier.class);
+			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyVals = dp.getValues(Identifier.class);
 			DataPoint prev = seen.put(keyVals, dp);
 			if (prev != null)
 			{
@@ -381,7 +383,10 @@ public abstract class AbstractDataSet implements DataSet
 			}
 		}
 		else
+		{
 			dontpeek.set(true);
+			seen.clear();
+		}
 	}
 
 	protected abstract Stream<DataPoint> streamDataPoints();

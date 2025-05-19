@@ -37,7 +37,6 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.UserDefinedType;
 
-import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends UserDefinedType<T>
@@ -91,7 +90,7 @@ public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends 
 	@Override
 	public final InternalRow serialize(T obj)
 	{
-		if (obj instanceof NullValue)
+		if (obj == null || obj.isNull())
 			return null;
 		else
 		{
