@@ -520,6 +520,14 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-source-plugin</artifactId>
 					<version>${source.version}</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>jar-no-fork</goal>
+								<goal>test-jar-no-fork</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -664,6 +672,8 @@
 					<extensions>true</extensions>
 					<configuration>
 						<publishingServerId>central</publishingServerId>
+						<waitUntil>published</waitUntil>
+						<autoPublish>true</autoPublish>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -706,6 +716,7 @@
 									<exclude>/R</exclude>
 									<exclude>**/.externalToolBuilders/**</exclude>
 									<exclude>**/*.Rdata</exclude>
+									<exclude>**/.flattened-pom.xml</exclude>
 								</excludes>
 							</licenseSet>
 						</licenseSets>
