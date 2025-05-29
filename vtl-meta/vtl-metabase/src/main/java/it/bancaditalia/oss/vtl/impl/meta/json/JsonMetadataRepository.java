@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.json;
 
+import static com.fasterxml.jackson.core.StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -45,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
@@ -132,22 +134,30 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	{
 		super(chained);
 		
-		Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
-		Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
-		Map<VTLAlias, VTLAlias> varDefs;
+		final Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
+		final Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
+		final Map<VTLAlias, VTLAlias> varDefs;
 		
-		try (InputStream source = jsonURL.openStream())
+		try (InputStream source = jsonURL.openStream(); JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source))
 		{
-			Map<?, ?> json;
-			try (JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source))
-			{
-				json = parser.readValueAs(Map.class);
-			}
+			Map<?, ?> json = parser.readValueAs(Map.class);
 			
 			iterate(json, "domain", (a, d) -> createDomain(a, d, requireNonNull(engine)));
 			varDefs = iterate(json, "variable", JsonMetadataRepository::createVariable);
 			strDefs = iterate(json, "structure", JsonMetadataRepository::createMetadata);
 			dsDefs = iterate(json, "dataset", JsonMetadataRepository::createData);
+		}
+		catch (JsonParseException e)
+		{
+			try (InputStream source = jsonURL.openStream(); JsonParser parser = JsonFactory.builder().enable(INCLUDE_SOURCE_IN_LOCATION).build().setCodec(new JsonMapper()).createParser(source))
+			{
+				parser.readValueAs(Map.class);
+				throw e;
+			}
+			catch (JsonParseException e1)
+			{
+				throw e1;
+			}
 		}
 
 		varDefs.forEach((alias, d) -> variables.put(alias, VariableImpl.of(alias, getDomain(d).orElseThrow(() -> new VTLUndefinedObjectException("Domain", d)))));
