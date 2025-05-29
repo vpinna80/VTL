@@ -18,7 +18,7 @@
 /// permissions and limitations under the License.
 ///
 
-import { Compartment, SelectionRange } from "@codemirror/state"
+import { Compartment, SelectionRange, EditorState } from "@codemirror/state"
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, crosshairCursor, highlightActiveLine } from "@codemirror/view"
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands"
 import { linter, lintKeymap, Diagnostic, Action } from "@codemirror/lint"
@@ -261,7 +261,7 @@ let vtlLinter = linter((view: EditorView) => {
 					break
 				}
 				case "VTL_TOKEN_MISMATCH": {
-					msg = `Expected: <code>${tree.prop(expectedProp)}</code>`
+ 					msg = `Expected: <code>${tree.prop(expectedProp)}</code>`
 					break
 				}
 			}
@@ -275,49 +275,77 @@ let vtlLinter = linter((view: EditorView) => {
 	return diagnostics
 })
 
-let themeCompartment = new Compartment
-let keymapCompartment = new Compartment
-let keyBindings = [
-	        ...closeBracketsKeymap,
-	        ...defaultKeymap,
-	        ...searchKeymap,
-	        ...historyKeymap,
-	        ...foldKeymap,
-	        ...completionKeymap,
-	        ...lintKeymap
-	    ]
-export let view = new EditorView({
-	extensions: [
-	    keymapCompartment.of(keymap.of(keyBindings)),
-	    lineNumbers(),
-	    highlightActiveLineGutter(),
-	    highlightSpecialChars(),
-	    history(),
-	    foldGutter(),
-	    drawSelection(),
-	    dropCursor(),
-	    indentOnInput(),
-	    bracketMatching(),
-	    search(),
-	    closeBrackets(),
-	    autocompletion(),
-	    crosshairCursor(),
-	    highlightActiveLine(),
-	    highlightSelectionMatches(),
-    	themeCompartment.of(th.material),
-		VTLLang.extension,
-		vtlLinter
-	]
-})
+let baseKeyBindings = [
+	...closeBracketsKeymap,
+	...defaultKeymap,
+	...searchKeymap,
+	...historyKeymap,
+	...foldKeymap,
+	...completionKeymap,
+	...lintKeymap
+];
 
-export let themes = Object.getOwnPropertyNames(th).filter(s => !s.match("(^default|Init$)"))
-export let setTheme = function(themeName: string) {
-	view.dispatch({ effects: themeCompartment.reconfigure(th[themeName]) })
+let extensions = [
+	lineNumbers(),
+	highlightActiveLineGutter(),
+	highlightSpecialChars(),
+	history(),
+	foldGutter(),
+	drawSelection(),
+	dropCursor(),
+	indentOnInput(),
+	bracketMatching(),
+	search(),
+	closeBrackets(),
+	autocompletion(),
+	crosshairCursor(),
+	highlightActiveLine(),
+	highlightSelectionMatches(),
+	VTLLang.extension,
+	vtlLinter
+]
+
+const themeCompartment = new Compartment
+const keymapCompartment = new Compartment
+const fontSizeCompartment = new Compartment;
+const createFontSizeTheme = (fontSize: number) => EditorView.theme({ '.cm-scroller': { fontSize: `${fontSize}pt` } })
+export const views: { [name: string]: EditorView } = {}
+export function createEditor(name: string, themeName?: string): EditorView {
+	const theme = th[themeName!] || th.material;
+	const view = new EditorView({
+		state: EditorState.create({
+		    extensions: [
+				...extensions,
+				keymapCompartment.of(keymap.of(baseKeyBindings)),
+				themeCompartment.of(theme),
+				fontSizeCompartment.of(createFontSizeTheme(12))
+			]
+		})
+	})
+	
+	views[name] = view
+	return view
 }
-export let addHotKey = (hotKey: string, command: (target: EditorView) => boolean) => {
+
+export const themes = Object.getOwnPropertyNames(th).filter(s => !s.match("(^default|Init$)"))
+export const setTheme = (themeName: string) => {
+	for (const view of Object.values(views)) {
+		view.dispatch({ effects: themeCompartment.reconfigure(th[themeName]) })
+		view.requestMeasure();
+	}
+}
+
+export const addHotKey = (view: EditorView, hotKey: string, command: (view: EditorView) => boolean) => {
 	view.dispatch({ 
 		effects: keymapCompartment.reconfigure(keymap.of([{
 			key: hotKey, run: command
 		}, ...keymapCompartment.get(view.state).value]))
 	})
+}
+
+export const setFontSize = (fontSize: number) => {
+	for (const view of Object.values(views)) {
+		view.dispatch({ effects: fontSizeCompartment.reconfigure(createFontSizeTheme(fontSize)) })
+		view.requestMeasure();
+	}
 }

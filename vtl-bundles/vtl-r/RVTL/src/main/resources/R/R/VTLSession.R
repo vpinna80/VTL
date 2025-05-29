@@ -54,7 +54,6 @@ VTLSession <- R6Class("VTLSession",
             exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
             private$instance <- exampleEnv$createSession(category, name)
             self$text <- private$instance$getOriginalCode()
-            private$updateInstance()$compile()
           }, error = function(e) {
             if (!is.null(e$jobj)) {
               e$jobj$printStackTrace()

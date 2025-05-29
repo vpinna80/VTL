@@ -33,7 +33,7 @@ list_to_dot_vtl_properties_file <- function(filepath, vtl_list) {
 }
 
 path_to_file_url <- function(path) {
-  sprintf("file\\://%s", file.path(path))
+  sprintf("file\\:///%s", file.path(path))
 }
 
 set_vtl_properties <- function() {

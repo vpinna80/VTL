@@ -18,6 +18,8 @@
 # permissions and limitations under the License.
 #
 
+library(RVTL)
+
 repoImpls <- c(
   `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
   `Json URL repository` = 'it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository',
@@ -32,6 +34,10 @@ environments <- list(
 #  , `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
 )
 
+configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
+vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
+exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
+
 currentEnvironments <- \() sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
 
 activeEnvs <- function(active) {
@@ -39,89 +45,183 @@ activeEnvs <- function(active) {
   if (length(items) > 0) items else NULL
 }
 
-vtlServer <- function(input, output, session) {
+makeButton <- \(id) tags$button(
+  class = "btn btn-sm btn-link float-end",
+  `data-bs-toggle` = "collapse",
+  `data-bs-target` = paste0('#', id),
+  icon('minus')
+)
 
-  configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
-  vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
+makeUIElemName <- \(vtlSession) \(name) sprintf("%s_%s", gsub("[^A-Za-z0-9_-]", "_", vtlSession), gsub("[^A-Za-z0-9_-]", "_", name))
 
-  currentSession <- reactive(VTLSessionManager$getOrCreate(input$sessionID)) |> bindEvent(input$sessionID)
-  evalNode <- reactive(currentSession()$getValues(input$selectDatasets)) |> bindEvent(input$selectDatasets)
-  isCompiled <- reactiveVal(F)
-  
-  controlsGen <- function(javaclass) {
-    renderUI({
-      ctrls <- lapply(configManager$getSupportedProperties(J(javaclass)@jobj), function (prop) {
-        val <- prop$getValue()
-        if (val == 'null')
-          val <- ''
-        
-        if (prop$isPassword()) {
-          passwordInput(prop$getName(), prop$getDescription(), val)
-        } else if (prop$isFolder()) {
-          
-        } else {
-          textInput(prop$getName(), prop$getDescription(), val, placeholder = prop$getPlaceholder())
-        }
-      })
-
-      do.call(tagList, ctrls)
-    })
-  }
-  
-  observers <- list()
-  observerGen <- function(prop) {
-    if (is.null(observers[[prop$getName()]])) {
-      observers[[prop$getName()]] <- observe({
-        val <- input[[prop$getName()]]
-        if (prop$getValue() != val) {
-          prop$setValue(val)
-          output$eng_conf_output <- renderPrint({
-            if (prop$isPassword()) {
-              cat("Set property", prop$getDescription(), "to <masked value>\n")
-            } else {
-              cat("Set property", prop$getDescription(), "to", val, "\n")
-            }
-          })
-          
-          tryCatch({
-            writer <- .jnew("java.io.StringWriter")
-            configManager$newManager()$saveConfiguration(writer)
-            string <- .jstrVal(writer$toString())
-            propfile <- file.path(J("java.lang.System")$getProperty("user.home"), '.vtlStudio.properties')
-            writeLines(string, propfile)
-          }, error = function(e) {
-            if (!is.null(e$jobj)) {
-              e$jobj$printStackTrace()
-            }
-            stop(e)
-          })
-        }
-      }) |> bindEvent(input[[prop$getName()]], ignoreInit = T)
-    }
-  }
-
-  output$proxyControls <- renderUI({
-    ctrls <- lapply(c('Host', 'Port', 'User', 'Password'), function (prop) {
-      inputId <- paste0("proxy", prop)
-      label <- paste0(prop, ':') 
-      value <- J("java.lang.System")$getProperty(paste0("https.proxy", prop))
-      if (is.null(value))
-        value <- ''
-      
-      (if (prop == 'Password') passwordInput else textInput)(inputId, label, value)
-    })
+# Generate controls for VTL properties possibly with id manipulation
+controlsGen <- function(javaclass, makeName = identity()) {
+  ctrls <- lapply(configManager$getSupportedProperties(J(javaclass)@jobj), function (prop) {
+    val <- prop$getValue()
+    if (val == 'null')
+      val <- ''
     
-    do.call(tagList, ctrls)
+    if (prop$isPassword()) {
+      passwordInput(makeName(prop$getName()), prop$getDescription(), val)
+    } else if (prop$isFolder()) {
+      
+    } else {
+      textInput(makeName(prop$getName()), prop$getDescription(), val, placeholder = prop$getPlaceholder())
+    }
   })
   
-  # Proxy controls
+  do.call(tagList, ctrls)
+}
+
+makeProxyControls <- function() {
+  lapply(c('Host', 'Port', 'User', 'Password'), function (prop) {
+    inputId <- paste0("proxy", prop)
+    label <- paste0(prop, ':')
+    value <- J("java.lang.System")$getProperty(paste0("https.proxy", prop))
+    if (is.null(value))
+      value <- ''
+    
+    (if (prop == 'Password') passwordInput else textInput)(inputId, label, value)
+  })
+}
+
+createPanel <- function(vtlSession) {
+  makeID <- makeUIElemName(isolate(vtlSession))
+  newEditorID <- makeID("editor")
+  theme <- getCurrentTheme()
+  bslib::nav_panel(value = vtlSession, 
+    title = tags$span(onclick = "addEditorMenu(this, event)",
+      vtlSession, class = "with-editor", id = makeID("pane")
+    ), bslib::navset_hidden(id = makeID('sheets'),
+      bslib::nav_panel_hidden(value = "editor",
+        tags$div(id = newEditorID, class = 'vtlwell'),
+        verbatimTextOutput(makeID('output'), placeholder = T),
+        tags$script(HTML(sprintf("createEditorPanel('%s')", newEditorID)))
+      ), bslib::nav_panel_hidden(value = "structures",
+        fluidRow(
+          column(width=5, selectInput(makeID('structName'), 'Select structure:', c(''), ''))
+        ),
+        DT::dataTableOutput(makeID('dsStr'))
+      ), bslib::nav_panel_hidden(value = "datasets",
+        fluidRow(class = 'g-0',
+          column(width=12, selectInput(makeID('datasetName'), 'Select dataset:', c(''), ''))
+        ),
+        hr(),
+        tabsetPanel(id = makeID("dataview"), type = "tabs",
+          tabPanel("Data points", value = "dptable",
+            fluidRow(
+              tags$span('Max Lines:'),
+              numericInput(makeID('maxlines'), NULL, 1000, 1, 10000, 1),
+              checkboxInput(makeID('showAttrs'), "Show Attributes", T)
+            ),
+            fluidRow(class = 'g-0',
+              textOutput(makeID("datasetsInfo"))
+            ),
+            DT::dataTableOutput(makeID("dptable"))
+          ),
+          tabPanel("Lineage", value = "lineage", networkD3::sankeyNetworkOutput(makeID("lineage"), height = "100%"))
+        )
+      ), bslib::nav_panel_hidden(value = "graph",
+        sliderInput(makeID('distance'), label = "Nodes distance", min=50, max=500, step=10, value=100),
+        fillPage(networkD3::forceNetworkOutput(makeID('topology'), height = '90vh'))
+      ), bslib::nav_panel_hidden(value = "settings",
+        bslib::layout_column_wrap(width = 1/2,
+          bslib::card(
+            bslib::card_header('VTL Environments', makeButton(makeID('card_envs'))),
+            bslib::card_body(id = makeID('card_envs'), class = 'collapse show', 
+              sortable::bucket_list(header = NULL, orientation = 'horizontal',
+                sortable::add_rank_list("Available", activeEnvs(F)),
+                sortable::add_rank_list("Active", activeEnvs(T), makeID("envs"))
+              )
+            )
+          ),
+          bslib::card(
+            bslib::card_header('Environment Properties', makeButton(makeID('card_envprops'))),
+            bslib::card_body(id = makeID('card_envprops'), class = 'collapse show',
+              selectInput(makeID('selectEnv'), NULL, c("Select an environment..." = "")),
+              uiOutput(makeID("envprops"))
+            )
+          ),
+          bslib::card(
+            bslib::card_header('Metadata Repository', makeButton(makeID('card_meta'))),
+            bslib::card_body(id = makeID('card_meta'), class = 'collapse show',
+              selectInput(makeID('repoClass'), NULL, c("Select a repository..." = "")),
+              uiOutput(makeID("repoProperties"))
+            )
+          ),
+          bslib::card(
+            bslib::card_header('Status', makeButton(makeID('card_status'))),
+            bslib::card_body(id = makeID('card_status'), class = 'collapse show',
+              verbatimTextOutput(makeID("eng_conf_output"), placeholder = T)
+            )
+          )
+        )
+      )
+    )
+  )
+}
+
+# Patch for bslib losing theme version after prependTab
+unlockBinding("getCurrentThemeVersion", asNamespace("bslib"))
+assign("getCurrentThemeVersion", \() 5, envir = asNamespace("bslib"))
+lockBinding("getCurrentThemeVersion", asNamespace("bslib"))
+
+vtlServer <- function(input, output, session) {
+  
+  vtlSessions <- reactiveVal(NULL)
+  isCompiled <- reactiveVal(F)
+  currentSession <- reactiveVal(NULL)
+  tabs <- reactiveVal(NULL)
+  
+  # Create startup tabs for each active session
+  inittabs <- observe({
+    vtlSessions(VTLSessionManager$list())
+    inittabs$destroy()
+  })
+  
+  # Monitor switching tabs to determine current session
+  observe({
+    if (input$navtab != "Global settings") {
+      currentSession(VTLSessionManager$getOrCreate(input$navtab))
+    }
+  }) |> bindEvent(input$navtab)
+
+  # Controls when running on shinyapps
+  output$shinyapps <- renderUI({
+    if (grepl("shinyapps.io$", session$clientData$url_hostname)) {
+      tagList(
+        fileInput(inputId = 'datafile', label = 'Load CSV', accept = 'csv'),
+        tags$hr()
+      )
+    }
+  })
+    
+  # Generate observers for a property of a VTL engine class
+  # in a given VTL session or for global settings
+  observerGen <- function(prop, makeName = identity()) {
+    output[[makeName('eng_conf_output')]] <- renderPrint({
+      val <- req(input[[makeName(prop$getName())]])
+      if (prop$getValue() != val) {
+        prop$setValue(val)
+        cat(
+          "Set property", prop$getDescription(), "to ", 
+          if (prop$isPassword()) "<masked value>" else val, "\n"
+        )
+      }
+    }) |> bindEvent(input[[makeName(prop$getName())]], ignoreInit = T)
+  }
+
+  # General settings proxy controls
+  output$proxyControls <- renderUI({ do.call(tagList, makeProxyControls()) })
+
+  # Proxy controls observers
   lapply(c('Host', 'Port', 'User', 'Password'), function (prop) {
     inputId <- paste0('proxy', prop)
     observe({
       value <- input[[inputId]]
       output$eng_conf_output <- renderPrint({
         cat(paste('Setting Proxy', prop, 'to', value, '\n'))
-        
+
         if (value == '') {
           J("java.lang.System")$clearProperty(paste0("http.proxy", prop))
           J("java.lang.System")$clearProperty(paste0("https.proxy", prop))
@@ -133,11 +233,175 @@ vtlServer <- function(input, output, session) {
     }) |> bindEvent(input[[inputId]], ignoreInit = T)
   })
 
+  # Completes new tab creation
+  observe({
+    vtlSessions <- setdiff(unlist(vtlSessions()), tabs())
+    req(length(vtlSessions) > 0)
+    vtlSession <- vtlSessions[[1]]
+    tabs(c(tabs(), vtlSession))
+    makeID <- makeUIElemName(vtlSession)
+
+    # Compilation status box
+    output[[makeID('output')]] <- renderPrint(cat(' '))
+    
+    # Controls and observers for properties of selected environment 
+    output[[makeID('envprops')]] <- renderUI({
+      env <- isolate(req(input[[makeID('selectEnv')]]))
+      lapply(configManager$getSupportedProperties(J(req(input[[makeID('selectEnv')]]))@jobj), observerGen, makeID)
+      controlsGen(env, makeID)
+    }) |> bindEvent(input[[makeID('selectEnv')]], ignoreInit = T)
+    
+    # Controls and observers for properties of selected repository
+    output[[makeID('repoProperties')]] <- renderUI({
+      repoClass <- isolate(req(input[[makeID('repoClass')]]))
+      output[[makeID('eng_conf_output')]] <- renderPrint({
+        vtlProperties$METADATA_REPOSITORY$setValue(repoClass)
+        cat("Set metadata repository to", repoClass, "\n")
+      })
+      lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observerGen, makeID)
+      controlsGen(repoClass, makeID)
+    }) |> bindEvent(input[[makeID('repoClass')]], ignoreInit = T)
+    
+    # Update active environments for this session
+    output[[makeID('eng_conf_output')]] <- renderPrint({
+      envs <- req(input[[makeID('envs')]])
+      makeActive <- paste0(unlist(environments[envs]), collapse = "\n    - ")
+      vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(makeActive)
+      cat("Set active environments to:\n    - ", makeActive, "\n")
+    }) |> bindEvent(input[[makeID('envs')]], ignoreInit = T)
+    
+    # dataset table display
+    output[[makeID('datasetsInfo')]] <- renderPrint({
+      datasetName <- req(input[[makeID('datasetName')]])
+      session <- VTLSessionManager$getOrCreate(vtlSession)
+      statements <- sapply(session$getStatements()$entrySet(), function (x) {
+        stats::setNames(list(x$getValue()), x$getKey()$getName())
+      })
+      ddf <- session$getValues(datasetName)[[1]]
+      formula <- get0(datasetName, as.environment(statements), ifnotfound = 'Source data')
+      cat(datasetName, " := ", formula, " (", nrow(ddf), "by", ncol(ddf), ")")
+    }) |> bindEvent(input[[makeID('datasetName')]])
+    
+    # Lineage display
+    output[[makeID('lineage')]] <- networkD3::renderSankeyNetwork({
+      browser()
+      datasetName <- req(input[[makeID('datasetName')]])
+      session <- VTLSessionManager$getOrCreate(vtlSession)
+      links <- tryCatch({
+        session$getLineage(datasetName)
+      }, error = function(e) {
+          if (is.null(e$jboj))
+            e$jobj$printStackTrace()
+          signalCondition(e)
+        }
+      )
+      if (nrow(links) > 0) {
+        nodes <- data.frame(name = unique(c(as.character(links[,'source']), as.character(links[,'target']))), stringsAsFactors = F)
+        links[, 'source'] <- match(links[, 'source'], nodes[, 'name']) - 1
+        links[, 'target'] <- match(links[, 'target'], nodes[, 'name']) - 1
+        networkD3::sankeyNetwork(
+          links, nodes, 'source', 'target', 'value', 'name',
+          nodeWidth = 40, nodePadding = 20, fontSize = 10
+        )
+      }
+      else
+        shinyjs::alert(paste("Node", datasetName, "is a scalar or a source node."))
+    }) |> bindEvent(input[[makeID('datasetName')]])
+
+    output[[makeID('dptable')]] <- DT::renderDataTable({
+      maxlines = as.integer(isolate(req(input[[makeID('maxlines')]])))
+      selected <- req(input[[makeID('datasetName')]])
+      ddf = VTLSessionManager$getOrCreate(vtlSession)$getValues(selected)[[1]]
+      if (ncol(ddf) <= 1 || names(ddf)[1] == 'Scalar') {
+        return (ddf)
+      } else {
+        linesLimit = ifelse(nrow(ddf) > maxlines , yes = maxlines, no = nrow(ddf))
+        ddf = ddf[1:linesLimit,]
+        # not a scalar, order columns and add component role
+        neworder = which(names(ddf) %in% attr(ddf, 'measures'))
+        neworder = c(neworder, which(names(ddf) %in% attr(ddf, 'identifiers')))
+        if (input[[makeID('showAttrs')]]) {
+          neworder = c(neworder, which(!(1:ncol(ddf) %in% neworder)))
+        }
+        
+        names(ddf) = sapply(names(ddf), \(x) {
+          if (x %in% attr(ddf, 'identifiers')) {
+            return(paste0(x, ' (I)'))
+          } else if (x %in% attr(ddf, 'measures')) {
+            return(paste0(x, ' (M)'))
+          } else {
+            return(paste0(x, ' (A)'))
+          }
+        })
+        
+        if (ncol(ddf) > 1) {
+          result = ddf[, neworder]
+        }
+      }
+    }, options = list(
+      lengthMenu = list(c(50, 1000, -1), c('50', '1000', 'All')),
+      pageLength = 10
+    )) |> bindEvent(input[[makeID('datasetName')]])
+    
+    # View data, structures and transformation graph for this session
+    observe({
+      switch (
+        req(input[[makeID('sheets')]]),
+        'structures' = {
+          output[[makeID('dsStr')]] <- DT::renderDataTable({
+            structure <- req(input[[makeID('structName')]])
+            jstr = VTLSessionManager$getOrCreate(vtlSession)$getMetadata(structure)
+            if (jstr %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata") {
+              df <- data.table::transpose(data.frame(c(jstr$getDomain()$toString()), check.names = FALSE))
+              colnames(df) <- c("Domain")
+              df
+            } else if (jstr %instanceof% "it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder$DataStructureImpl") {
+              df <- data.table::transpose(data.frame(lapply(jstr, function(x) {
+                c(x$getVariable()$getAlias()$getName(), x$getVariable()$getDomain()$toString(), x$getRole()$getSimpleName())
+              } ), check.names = FALSE))
+              colnames(df) <- c("Name", "Domain", "Role")
+              df
+            } else {
+              data.frame(c("ERROR", check.names = FALSE))
+            }
+          })
+        }, 'graph' = {
+          output[[makeID('topology')]] <- networkD3::renderForceNetwork({
+            VTLSessionManager$getOrCreate(vtlSession)$getTopology(distance = input[[makeID('distance')]])
+          })
+        } |> bindEvent(input[[makeID('selectDatasets')]])
+      )
+    }) |> bindEvent(input[[makeID('sheets')]], ignoreInit = T)
+    
+    # Populate environments and repositories lists in session settings
+    envlistdone <- observe({
+      defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
+      updateSelectInput(session, makeID('selectEnv'), NULL, unlist(environments))
+      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, defaultRepository)
+      # Single execution only when the tab is first created
+      envlistdone$destroy()
+    })
+
+    panel <- createPanel(vtlSession)
+    prependTab("navtab", panel, T)
+  }) |> bindEvent(vtlSessions(), tabs())
+
+  # contextual menus for session tabs
+  observe({
+    json <- req(input$sessionMenu)
+    vtlSession <- json$session
+    if (json$menu == 'close') {
+      VTLSessionManager$kill(vtlSession)
+      removeTab("navtab", vtlSession)
+    } else {
+      bslib::nav_select(makeUIElemName(vtlSession)('sheets'), json$menu)
+    }
+  }) |> bindEvent(input$sessionMenu, ignoreInit = TRUE)
+  
   # Download vtl script button
   output$saveas <- downloadHandler(
     filename = function() {
-      req(input$sessionID)
-      paste0(isolate(input$sessionID), ".vtl")
+      paste0(isolate(req(currentSession())), ".vtl")
     }, content = function (file) {
       writeLines(currentSession()$text, file)
     }
@@ -145,16 +409,60 @@ vtlServer <- function(input, output, session) {
 
   # Toggle demo mode
   observe({
+    demoindex <- as.numeric(isTruthy(input$demomode))
+    fun <- list(shinyjs::addCssClass, shinyjs::removeCssClass)
+    fun[[1 + demoindex]]('democtrl', 'd-none')
+    fun[[2 - demoindex]]('normalctrl', 'd-none')
+    
   	VTLSessionManager$clear()
+  	for (tab in tabs())
+  	  removeTab('navtab', tab)
+	  tabs(NULL)
+  	
   	if (isTRUE(input$demomode)) {
       VTLSessionManager$kill('test')
-      name <- VTLSessionManager$initExampleSessions()
+  	  vtlSessions(NULL)
+	    categories <- c(
+	      list(list(label = 'Select category...', value = '', categ = '')),
+	      lapply(sapply(exampleEnv$getCategories(), .jstrVal), \(categ) list(label = categ, value = categ, categ = ''))
+	    )
+	    updateSelectizeInput(session, 'excat', 'Categories', NULL, options = list(
+        render = I('{ option: generateLabel }'),
+        options = categories
+      ))
   	} else {
-  	  name <- 'test'
+  	  sList <- VTLSessionManager$list()
+  	  vtlSessions(sList)
   	}
-  	updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = name)
   }) |> bindEvent(input$demomode)
   
+  # Populate demo mode operators when selecting a category
+  observe({
+    operators <- c(
+      list(list(label = 'Select operator...', value = '', categ = '')),
+      lapply(sapply(exampleEnv$getOperators(isolate(req(input$excat))), .jstrVal), 
+             \(categ) list(label = categ, value = categ, categ = input$excat))
+    )
+    updateSelectizeInput(session, 'exoper', 'Operators', NULL, options = list(
+      render = I('{ option: generateLabel }'),
+      options = operators
+    ))
+  }) |> bindEvent(input$excat)
+  
+  # TODO: examples for each operator are joined together in a single session
+  # Update demo mode example number when selecting an operator
+  observe({
+    shinyjs::toggleState('exopen', isTruthy(input$exoper))
+  }) |> bindEvent(input$exoper)
+  
+  observe({
+    category <- isolate(req(input$excat))
+    operator <- isolate(req(input$exoper))
+    vtlSession <- VTLSessionManager$openExample(category, operator)
+    vtlSessions(VTLSessionManager$list())
+    session$sendCustomMessage("editor-text", list(panel = makeUIElemName(operator)('editor'), text = vtlSession$text))
+  }) |> bindEvent(input$exopen)
+
   # load theme list
   observe({
     updateSelectInput(inputId = 'editorTheme', choices = input$themeNames)
@@ -177,28 +485,32 @@ vtlServer <- function(input, output, session) {
 
   # Apply configuration to the active session
   observe({
-	currentSession()$refresh()
+	  currentSession()$refresh()
   }) |> bindEvent(input$applyConfAll, ignoreInit = T)
 
-  # Apply configuration to all active sessions
+  # Apply configuration to all active vtlSessions
   observe({
     VTLSessionManager$reload()
   }) |> bindEvent(input$applyConfAll, ignoreInit = T)
 
   # Environment properties list
   observe({
-    output$envprops <- controlsGen(input$selectEnv)
-    lapply(configManager$getSupportedProperties(J(input$selectEnv)@jobj), observerGen)
+    env <- isolate(req(input$selectEnv))
+    controls <- controlsGen(env)
+    output$envprops <- renderUI(controls)
+    lapply(configManager$getSupportedProperties(J(req(input$selectEnv))@jobj), observerGen)
   }) |> bindEvent(input$selectEnv, ignoreInit = T)
 
   # Repository properties list
   observe({
-    output$repoProperties <- controlsGen(input$repoClass)
-    lapply(configManager$getSupportedProperties(J(input$repoClass)@jobj), observerGen)
+    repoClass <- isolate(req(input$repoClass))
+    controls <- controlsGen(req(repoClass))
+    output$repoProperties <- renderUI(controls)
+    lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observerGen)
 
     output$eng_conf_output <- renderPrint({
-      vtlProperties$METADATA_REPOSITORY$setValue(req(input$repoClass))
-      cat("Set metadata repository to", input$repoClass, "\n")
+      vtlProperties$METADATA_REPOSITORY$setValue(req(repoClass))
+      cat("Set metadata repository to", repoClass, "\n")
     })
   }) |> bindEvent(input$repoClass, ignoreInit = T)
 
@@ -220,107 +532,7 @@ vtlServer <- function(input, output, session) {
     }
   )
 
-  # Select dataset to browse
-  output$dsNames<- renderUI({
-    selectInput(inputId = 'selectDatasets', label = 'Select Node', multiple = F, 
-                choices = c('', sort(unlist(currentSession()$getNodes()))), selected ='')
-  })
-
-  # render the structure of a dataset
-  output$dsStr<- DT::renderDataTable({
-    req(input$sessionID)
-    req(input$structureSelection)
-    jstr = currentSession()$getMetadata(req(input$structureSelection))
-    if (jstr %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata") {
-      df <- data.table::transpose(data.frame(c(jstr$getDomain()$toString()), check.names = FALSE))
-      colnames(df) <- c("Domain")
-      df
-    } else if (jstr %instanceof% "it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder$DataStructureImpl") {
-      df <- data.table::transpose(data.frame(lapply(jstr, function(x) {
-        c(x$getVariable()$getAlias()$getName(), x$getVariable()$getDomain()$toString(), x$getRole()$getSimpleName()) 
-      } ), check.names = FALSE))
-      colnames(df) <- c("Name", "Domain", "Role")
-      df
-    } else {
-      data.frame(c("ERROR", check.names = FALSE))
-    }
-  })
-  
-  # output dataset lineage 
-  output$lineage <- networkD3::renderSankeyNetwork({
-    req(input$sessionID)
-    req(input$selectDatasets)
-    edges <- tryCatch({
-        currentSession()$getLineage(input$selectDatasets) 
-      }, error = function(e) {
-        if (is.null(e$jboj))
-          e$jobj$printStackTrace()
-        signalCondition(e)
-      }
-    )
-    if (nrow(edges) > 0) {
-      vertices <- data.frame(name = unique(c(as.character(edges[,'source']), as.character(edges[,'target']))), stringsAsFactors = F)
-      edges[, 'source'] <- match(edges[, 'source'], vertices[, 'name']) - 1
-      edges[, 'target'] <- match(edges[, 'target'], vertices[, 'name']) - 1
-      graph <- networkD3::sankeyNetwork(Links = edges, Nodes = vertices, Source = 'source', 
-                                        Target = 'target', Value = 'value', NodeID = 'name', 
-                                        nodeWidth = 40, nodePadding = 20, fontSize = 10)
-      return(graph)
-    }
-    else
-      shinyjs::alert(paste("Node", input$selectDatasets, "is a scalar or a source node."))
-    
-    return(invisible())
-  })
-  
-  # output VTL result  
-  output$datasets <- DT::renderDataTable({
-    req(input$sessionID)
-    req(input$selectDatasets)
-    req(input$maxlines)
-    maxlines = as.integer(input$maxlines)
-    result = NULL
-    nodes = evalNode()
-    if(length(nodes) > 0){
-      ddf = nodes[[1]]
-      if(ncol(ddf) >= 1 && names(ddf)[1] != 'Scalar'){
-        linesLimit = ifelse(nrow(ddf) > maxlines , yes = maxlines, no = nrow(ddf))
-        ddf = ddf[1:linesLimit,]
-        #not a scalar, order columns and add component role
-        neworder = which(names(ddf) %in% attr(ddf, 'measures'))
-        neworder = c(neworder, which(names(ddf) %in% attr(ddf, 'identifiers')))
-        if(input$showAttrs){
-          neworder = c(neworder, which(!(1:ncol(ddf) %in% neworder)))
-        }
-        
-        names(ddf) = sapply(names(ddf), function(x, ddf) {
-          if(x %in% attr(ddf, 'identifiers')){
-            return(paste0(x, ' (', 'I', ') '))
-          }
-          else if(x %in% attr(ddf, 'measures')){
-            return(paste0(x, ' (', 'M', ') '))
-          }
-          else{
-            return(x)
-          }
-        }, ddf)
-        
-        if(ncol(ddf) > 1){
-          result = ddf[,neworder]
-        }
-        
-      }
-      else{
-        result = ddf
-      }
-    }
-    return(result)
-  }, options = list(
-    lengthMenu = list(c(50, 1000, -1), c('50', '1000', 'All')),
-    pageLength = 10
-  ))
-
-  # Disable buttons to create sessions
+  # Disable buttons to create vtlSessions
   observe({
     shinyjs::toggleState("createSession", isTruthy(input$newSession))
     shinyjs::toggleState("dupSession", isTruthy(input$newSession))
@@ -331,42 +543,11 @@ vtlServer <- function(input, output, session) {
     shinyjs::toggleState("setProxy", isTruthy(input$proxyHost) && isTruthy(input$proxyPort))
   })
   
-  # Disable navigator and graph if the session was not compiled
-  observe({
-    shinyjs::toggleCssClass(selector = ".nav-tabs li:nth-child(2)", class = "tab-disabled", condition = !isCompiled())
-    shinyjs::toggleCssClass(selector = ".nav-tabs li:nth-child(3)", class = "tab-disabled", condition = !isCompiled())
-    if (isCompiled()) {
-      vtlSession <- currentSession()
-      output$topology <- networkD3::renderForceNetwork({
-        vtlSession$getTopology(distance = input$distance)
-      })
-      #update list of datasets to be explored
-      updateSelectInput(session, 'selectDatasets', 'Select Node', c('', vtlSession$getNodes()), '')
-      #update list of dataset structures
-      updateSelectInput(session, 'structureSelection', 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
-    } 
-  })
-
   # Change editor theme
   observe({
     session$sendCustomMessage("editor-theme", input$editorTheme)
-  }) |> bindEvent(input$editorTheme)
-  
-  # Reload the active anvironments from the current session
-  observe({
-    if (input$navtab == "Engine settings") {
-      loadedenvs <- sapply(VTLSessionManager$getOrCreate(req(input$sessionID))$getEnvs(), \(cenv) cenv$getClass()$getName())
-      output$sortableEnvs <- renderUI({
-        active <- names(environments[unlist(environments) %in% loadedenvs])
-        inactive <- names(environments[!(unlist(environments) %in% loadedenvs)])
-        sortable::bucket_list(header = NULL, orientation = 'horizontal',
-          sortable::add_rank_list(text = "Available", labels = inactive),
-          sortable::add_rank_list(input_id = "envs", text = "Active", labels = active),
-        )
-      })
-    }
-  }) |> bindEvent(input$navtab)
-  
+  }) |> bindEvent(input$editorTheme, ignoreInit = T)
+
   # Change editor font size
   observe({
     session$sendCustomMessage("editor-fontsize", input$editorFontSize)
@@ -375,12 +556,9 @@ vtlServer <- function(input, output, session) {
   # switch VTL session
   observe({
     vtlSession <- currentSession()
-    name <- vtlSession$name
     isCompiled(vtlSession$isCompiled())
-    #update list of datasets to be explored
-    session$sendCustomMessage("editor-text", vtlSession$text)
-    session$sendCustomMessage("editor-focus", message = '')
-  })
+    session$sendCustomMessage("editor-focus", makeUIElemName(vtlSession$name)('editor'))
+  }) |> bindEvent(currentSession())
 
   # Update active environments
   observe({
@@ -399,14 +577,13 @@ vtlServer <- function(input, output, session) {
     })
   }) |> bindEvent(input$envs, ignoreInit = T)
     
-  # load vtl script
+  # load vtl script into current session
   observe({
-    lines = suppressWarnings(readLines(input$scriptFile$datapath))
-    lines = paste0(lines, collapse = '\n')
-    vtlSession <- VTLSessionManager$getOrCreate(input$scriptFile$name)$setText(lines)
-    isCompiled(vtlSession$isCompiled())
-    #update current session
-    updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = input$scriptFile$name)
+    vtlSession <- isolate(req(currentSession()))
+    dataPath <- isolate(req(input$scriptFile))$datapath
+    text <- suppressWarnings(paste0(readLines(dataPath), collapse = '\n'))
+    panel <- makeUIElemName(vtlSession)('editor')
+    session$sendCustomMessage("editor-text", list(panel = panel, text = text))
   }) |> bindEvent(input$scriptFile)
   
   # upload CSV file to GlobalEnv
@@ -419,19 +596,15 @@ vtlServer <- function(input, output, session) {
       ids2 = which(!startsWith(header, prefix = '#') & !grepl(x = header, pattern = '=', fixed = T))
       ids = c(ids1, ids2)
       measures = which(!startsWith(header, prefix = '#') & !startsWith(header, prefix = '$') & grepl(x = header, pattern = '=', fixed = T))
-      names = sub(x=
-                    sub(x = 
-                          sub(x = header, pattern = '\\#', replacement = '')
-                    , pattern = '\\$', replacement = '')
-              , pattern = '\\=.*', replacement = '')
+      names = sub('[=].*|[$#]', '', header)
       body = utils::read.csv(text = data[-1], header = F, stringsAsFactors = F)
       body = stats::setNames(object = body, nm = names)
-      
+
       #type handling very raw for now, to be refined
       # force strings (some cols could be cast to numeric by R)
       stringTypes = which(grepl(x = header, pattern = 'String', fixed = T))
       body[, stringTypes] = as.character(body[, stringTypes])
-      
+
       attr(x = body, which = 'identifiers') = names[ids]
       attr(x = body, which = 'measures') = names[measures]
       assign(x = datasetName, value = body, envir = .GlobalEnv)
@@ -451,39 +624,40 @@ vtlServer <- function(input, output, session) {
     name <- req(input$newSession)
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
-    updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = name)
-    updateTextInput(session = session, inputId = 'newSession', value = '')
+    updateSelectInput(session, 'sessionID', choices = VTLSessionManager$list(), selected = name)
+    updateTextInput(session, 'newSession', value = '')
+    # Triggers the tab creation for this session
+    vtlSessions(VTLSessionManager$list())
   }) |> bindEvent(input$createSession)
   
   # duplicate session
   observe({
     newName <- req(input$newSession)
-    text <- currentSession()$text
+    text <- isolate(currentSession())$text
     newSession <- VTLSessionManager$getOrCreate(newName)
-    newSession$setText(text)
     isCompiled(newSession$isCompiled())
-    updateTextInput(session = session, inputId = 'newSession', value = '')
-    updateSelectInput(session = session, inputId = 'sessionID', choices = VTLSessionManager$list(), selected = newName)
+    updateTextInput(session, 'newSession', value = '')
+    vtlSessions(VTLSessionManager$list())
+    session$sendCustomMessage("editor-text", list(panel = makeUIElemName(newName)('editor'), text = text))
   }) |> bindEvent(input$dupSession)
   
   # compile VTL code
   observe({
     shinyjs::disable("compile")
-    vtlSession <- currentSession()
+    vtlSession <- isolate(currentSession())
+    makeID <- makeUIElemName(isolate(vtlSession$name))
     statements <- input$vtlStatements
-    withProgress(message = 'Compiling...', value = 0, tryCatch({ 
-      vtlSession$setText(statements) 
+    withProgress(message = 'Compiling...', value = 0, tryCatch({
+      vtlSession$setText(statements)
       setProgress(value = 0.5)
       vtlSession$compile()
       isCompiled(T)
-      shinyjs::html("vtl_output", cat("Compilation successful.\n"))
-      # Update force network
-      output$topology <- networkD3::renderForceNetwork(vtlSession$getTopology(distance = input$distance))
-      #update list of datasets to be explored
-      updateSelectInput(session, 'selectDatasets', 'Select Node', c('', vtlSession$getNodes()), '')
-      #update list of dataset structures
-      updateSelectInput(session, 'structureSelection', 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
+      shinyjs::addClass(makeID('pane'), 'compiled')
+      shinyjs::html(makeID('output'), cat("Compilation successful.\n"))
+      updateSelectInput(session, makeID('structName'), 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
+      updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
     }, error = function(e) {
+      isCompiled(vtlSession$isCompiled())
       msg <- conditionMessage(e)
       trace <- NULL
       if (is.list(e) && !is.null(e[['jobj']]))
@@ -493,7 +667,7 @@ vtlServer <- function(input, output, session) {
         trace <- writer$toString()
         msg <- e$jobj$getLocalizedMessage()
       }
-      shinyjs::html("vtl_output", paste0('<span style="color: red">Error during compilation: ', 
+      shinyjs::html(makeID('output'), paste0('<span style="color: red">Error during compilation: ',
         msg, '\n', if (is.null(trace)) '' else trace, '\n</span>')
       )
     }, finally = {
@@ -502,28 +676,14 @@ vtlServer <- function(input, output, session) {
     }))
   }) |> bindEvent(input$compile)
   
+  # Sync code from the editor to the session
   observeEvent(input$editorText, {
     currentSession()$setText(req(input$editorText))
   })
 
-  output$datasetsInfo <- renderUI({
-    req(input$selectDatasets)
-    statements <- currentSession()$getStatements()
-    statements <- sapply(statements$entrySet(), function (x) {
-      stats::setNames(list(x$getValue()), x$getKey()$getName())
-    })
-    ddf = evalNode()[[1]]
-    formula <- statements[[input$selectDatasets]]
-    
-    return(tags$div(
-      tags$p(tags$span("Node"), tags$span(input$selectDatasets), tags$span(paste("(", nrow(ddf), "by", ncol(ddf), ")"))),
-      tags$p(tags$span("Rule:"), ifelse(test = is.null(formula), no = formula, yes = 'Source data'))
-    ))
-  })
-
   observe({
     conf = readLines(con = input$uploadconf$datapath)
-    
+
     reader <- NULL
     tryCatch({
       reader <- .jnew("java.io.StringReader", conf)

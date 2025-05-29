@@ -73,23 +73,19 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             },
 
             #' @description
-            #' Initializes all VTL example sessions.
+            #' Opens an example VTL session for a given operator.
+            #' @param category The name of the category of the operator
+            #' @param operator The name of the operator in the category
+            #' @returns The example session
             #' @details
-            #' All examples from the VTL documentation are compiled and added to the list of active sessions
-            initExampleSessions = function() {
-              tryCatch({
-                exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
-                
-                categories <- lapply(exampleEnv$getCategories(), .jstrVal)
-                for (category in categories) {
-                  operators <- lapply(exampleEnv$getOperators(category), .jstrVal)
-                  for (operator in operators) {
-                    example <- VTLSession$new(operator, category)
-                    assign(operator, example, envir = private$sessions)
-                  }
-                }
-              
-                return(ls(envir = private$sessions)[[1]])
+            #' A new VTL session is created and pre-configured with examples for the given operator.
+            #' If the session was already created and alive, it is returned as-is.
+            openExample = function(category, operator) {
+              example <- get0(operator, envir = private$sessions)
+              if (!is.null(example)) example else tryCatch({
+                example <- VTLSession$new(operator, category)
+                assign(operator, example, envir = private$sessions)
+                return(example)
               }, error = function(e) {
                 if (!is.null(e$jobj)) {
                   e$jobj$printStackTrace()

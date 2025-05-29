@@ -19,55 +19,60 @@
 #
 
 labels <- list(
-  sessionID = 'Active VTL session:',
   compile = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
-  saveas = HTML('<span style="margin-right: 1em">Save as...</span><span style="font-family: monospace">(Ctrl+S)</span>'),
+  saveas = HTML('<span style="margin-right: 1em">Export code as...</span><span style="font-family: monospace">(Ctrl+S)</span>'),
   saveconfas = HTML('<span style="margin-right: 1em">Save current configuration as...</span>'),
   newSession = HTML('<span style="margin-right: 1em">New session:</span><span style="font-family: monospace">(Ctrl+N)</span>'), 
   createSession = HTML('<span style="margin-right: 1em">Create new</span><span style="font-family: monospace">(Enter)</span>'), 
   dupSession = 'Duplicate session',
-  scriptFile = HTML('<span style="margin-right: 1em">Open...</span><span style="font-family: monospace">(Ctrl+O)</span>'),
+  scriptFile = HTML('<span style="margin-right: 1em">Replace editor content...</span><span style="font-family: monospace">(Ctrl+O)</span>'),
   editorTheme = 'Select editor theme:'
 )
 
-defaultProxy <- function() {
-  return(list(host = J("java.lang.System")$getProperty("https.proxyHost"), port = J("java.lang.System")$getProperty("https.proxyPort"), user = ''))
-}
+defaultProxy <- \() list(
+  host = J("java.lang.System")$getProperty("https.proxyHost"), 
+  port = J("java.lang.System")$getProperty("https.proxyPort"), 
+  user = ''
+)
 
-makeButton <- function(id) {
-  tags$button(
-    class = "btn btn-sm btn-link float-end",
-    `data-bs-toggle` = "collapse",
-    `data-bs-target` = paste0('#', id),
-    icon('minus')
-  )
-}
+makeButton <- \(id) tags$button(
+  class = "btn btn-sm btn-link float-end",
+  `data-bs-toggle` = "collapse",
+  `data-bs-target` = paste0('#', id),
+  icon('minus')
+)
 
-vtlUI <- page_sidebar(
+vtlUI <- bslib::page_sidebar(
     window_title = 'VTL Studio!',
-    theme = bs_theme(version = 5, preset = 'cosmo') 
-      |> bs_add_variables(bslib_spacer = "0.5rem"),
-    sidebar = sidebar(
+    theme = bslib::bs_theme(version = 5, preset = 'cosmo', `bs5icons` = TRUE)
+      |> bslib::bs_add_variables(bslib_spacer = "0.5rem"),
+    sidebar = bslib::sidebar(
       width = 350,
       div(style = "text-align: center",
         img(src="static/logo.svg", class="vtlLogo"),
         div(style="display:inline-block; vertical-align: bottom",
           h2(style="margin-bottom: 0", "VTL Studio!"),
-          div(style = "text-align: right", "${r.package.version}")       
+          div(style = "text-align: right", "1.2.1")       
         )
       ),
+      uiOutput("shinyapps"),
       hr(),
-      fileInput(inputId = 'datafile', label = 'Load CSV', accept = 'csv'),
-      input_switch(id = 'demomode', label = 'Demo mode'),
-      selectInput(inputId = 'sessionID', label = labels$sessionID, multiple = F, choices = c()),
-      actionButton(inputId = 'compile', label = labels$compile, 
-        onClick='Shiny.setInputValue("vtlStatements", VTLEditor.view.state.doc.toString());'),
+      bslib::input_switch(id = 'demomode', label = 'Demo mode'),
+      tags$div(id = "normalctrl", class="bslib-gap-spacing d-flex flex-column",
+        textInput(inputId = 'newSession', label = labels$newSession), 
+        actionButton(inputId = 'createSession', label = labels$createSession), 
+        actionButton(inputId = 'dupSession', label = 'Duplicate session'),
+        fileInput(inputId = 'scriptFile', label = NULL, accept = 'vtl', buttonLabel = labels$scriptFile)
+      ),
+      tags$div(id = "democtrl", class="bslib-gap-spacing d-flex flex-column",
+        selectizeInput('excat', 'Categories', multiple = F, choices = ''),
+        selectizeInput('exoper', 'Operators', multiple = F, choices = ''),
+        # numericInput('exnum', 'Select exanple number:', 1, min = 1, max = 1, step = 1),
+        actionButton('exopen', 'Open operator examples', disabled = TRUE)
+      ),
+      hr(),
+      actionButton(inputId = 'compile', label = labels$compile, onClick='updateSessionText()'),
       downloadButton(outputId = 'saveas', label = labels$saveas),
-      hr(),
-      textInput(inputId = 'newSession', label = labels$newSession), 
-      actionButton(inputId = 'createSession', label = labels$createSession), 
-      actionButton(inputId = 'dupSession', label = 'Duplicate session'),
-      fileInput(inputId = 'scriptFile', label = NULL, accept = 'vtl', buttonLabel = labels$scriptFile),
       hr(),
       selectInput(inputId = 'editorTheme', label = labels$editorTheme, multiple = F, choices = ''),
       numericInput('editorFontSize', 'Select font size:', 12, min = 8, max = 40, step = 1)
@@ -75,97 +80,38 @@ vtlUI <- page_sidebar(
 
     shinyjs::useShinyjs(),
     tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "static/vtl-editor.css")
-    ), navset_tab(id = "navtab",
-      nav_panel("VTL Editor", id = "editor-pane",
-        tags$div(id = 'vtlwell'),
-        verbatimTextOutput(outputId = "vtl_output", placeholder = T),
-        tags$script(src="static/bundle.js", type="text/javascript"),
-        tags$script(HTML('
-          document.getElementById("vtlwell").appendChild(VTLEditor.view.dom)
-          
-          $(document).on("shiny:connected", () => {
-            Shiny.setInputValue("themeNames", VTLEditor.themes)
-            Shiny.addCustomMessageHandler("editor-text", text => VTLEditor.view.dispatch({changes: {from: 0, to: VTLEditor.view.state.doc.length, insert: text}}))
-            Shiny.addCustomMessageHandler("editor-theme", theme => VTLEditor.setTheme(theme))
-            Shiny.addCustomMessageHandler("editor-fontsize", fontsize => { document.getElementsByClassName("cm-scroller")[0].style.fontSize = fontsize + "pt"; VTLEditor.view.requestMeasure() })
-            Shiny.addCustomMessageHandler("editor-focus", discard => VTLEditor.view.contentDOM.focus())
-          })
-
-          $(document).ready(function () {
-            $("#newSession").keyup(function(e) {
-              if (e.keyCode === 13) {
-                e.preventDefault()
-                $("#createSession").click()
-              }
-            })
-
-            VTLEditor.view.dom.onblur = () => Shiny.setInputValue("editorText", VTLEditor.view.state.doc.toString())
-            VTLEditor.addHotKey("Ctrl-Enter", () => { $("#compile").click(); return true })
-            VTLEditor.addHotKey("Ctrl-n", () => { $("#newSession")[0].focus(); $("#newSession")[0].select(); return true })
-            VTLEditor.addHotKey("Ctrl-o", () => { $("#scriptFile")[0].click(); return true })
-            VTLEditor.addHotKey("Ctrl-s", () => { $("#saveas")[0].click(); return true })
-          })')
-        )
-      ),
-      nav_panel("Structure Explorer",
-        fluidRow(
-          column(width=5,
-            selectInput('structureSelection', 'Structure selection:', c(''), '')
-          )
-        ),
-        DT::dataTableOutput(outputId = 'dsStr')
-      ),
-      nav_panel("Dataset Explorer",
-        fluidRow(
-          column(width=5,
-            uiOutput(outputId = "dsNames")
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/vtl-editor.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "static/bootstrap-icons.css"),
+      tags$script(src = "static/vtl-editor.js"),
+      tags$script(src = "static/bundle.js")
+    ), bslib::navset_tab(id = "navtab",
+      bslib::nav_panel("Global settings",
+        bslib::layout_column_wrap(width = 1/2,
+          bslib::card(
+            bslib::card_header('Network Proxy', makeButton('card_proxy')),
+            bslib::card_body(id = 'card_proxy', class = 'collapse show', uiOutput(outputId = "proxyControls"))
           ),
-          column(width=5,
-            textInput(inputId = 'maxlines', label = 'Max Lines', value = 1000)
-          )
-        ),
-        checkboxInput(inputId = 'showAttrs', label = "Show Attributes", value = T),
-        hr(),
-        tabsetPanel(id = "dataview", type = "tabs",
-          tabPanel("Data points", 
-            uiOutput(outputId = "datasetsInfo"),
-            DT::dataTableOutput(outputId = "datasets")
-          ),
-          tabPanel("Lineage", networkD3::sankeyNetworkOutput("lineage", height = "100%"))
-        )
-      ),
-      nav_panel("Graph Explorer",
-        sliderInput(inputId = 'distance', label = "Nodes distance", min=50, max=500, step=10, value=100),
-        fillPage(networkD3::forceNetworkOutput("topology", height = '90vh'))
-      ),
-      nav_panel("Engine settings",
-        layout_column_wrap(width = 1/2,
-          card(
-            card_header('Network Proxy', makeButton('card_proxy')),
-            card_body(id = 'card_proxy', class = 'collapse show', uiOutput(outputId = "proxyControls"))
-          ),
-          card(
-            card_header('Metadata Repository', makeButton('card_meta')),
-            card_body(id = 'card_meta', class = 'collapse show',
+          bslib::card(
+            bslib::card_header('Metadata Repository', makeButton('card_meta')),
+            bslib::card_body(id = 'card_meta', class = 'collapse show',
               selectInput(inputId = 'repoClass', label = NULL, choices = c("Select a repository..." = "")),
               uiOutput(outputId = "repoProperties")
             )
           ),
-          card(
-            card_header('VTL Environments', makeButton('card_envs')),
-            card_body(id = 'card_envs', class = 'collapse show', uiOutput(outputId = "sortableEnvs"))
+          bslib::card(
+            bslib::card_header('VTL Environments', makeButton('card_envs')),
+            bslib::card_body(id = 'card_envs', class = 'collapse show', uiOutput(outputId = "sortableEnvs"))
           ),
-          card(
-            card_header('Environment Properties', makeButton('card_envprops')),
-            card_body(id = 'card_envprops', class = 'collapse show',
+          bslib::card(
+            bslib::card_header('Environment Properties', makeButton('card_envprops')),
+            bslib::card_body(id = 'card_envprops', class = 'collapse show',
               selectInput(inputId = 'selectEnv', label = NULL, choices = c("Select an environment..." = "")),
               uiOutput(outputId = "envprops")
             )
           ),
-          card(
-            card_header('Configuration Management', makeButton('card_confman')),
-            card_body(id = 'card_confman', class = 'collapse show',
+          bslib::card(
+            bslib::card_header('Configuration Management', makeButton('card_confman')),
+            bslib::card_body(id = 'card_confman', class = 'collapse show',
               fluidRow(
                 column(width = 6, actionButton('applyConfOne', 'Apply to this session')),
                 column(width = 6, actionButton('applyConfAll', 'Apply to all sessions'))
@@ -176,9 +122,9 @@ vtlUI <- page_sidebar(
               )
             )
           ),
-          card(
-            card_header('Status', makeButton('card_status')),
-            card_body(id = 'card_status', class = 'collapse show',
+          bslib::card(
+            bslib::card_header('Status', makeButton('card_status')),
+            bslib::card_body(id = 'card_status', class = 'collapse show',
               verbatimTextOutput(outputId = "eng_conf_output", placeholder = T)
             )
           )
