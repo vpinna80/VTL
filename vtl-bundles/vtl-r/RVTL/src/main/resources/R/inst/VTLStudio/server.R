@@ -55,7 +55,7 @@ makeButton <- \(id) tags$button(
 makeUIElemName <- \(vtlSession) \(name) sprintf("%s_%s", gsub("[^A-Za-z0-9_-]", "_", vtlSession), gsub("[^A-Za-z0-9_-]", "_", name))
 
 # Generate controls for VTL properties possibly with id manipulation
-controlsGen <- function(javaclass, makeName = identity()) {
+controlsGen <- function(javaclass, makeName = identity) {
   ctrls <- lapply(configManager$getSupportedProperties(J(javaclass)@jobj), function (prop) {
     val <- prop$getValue()
     if (val == 'null')
@@ -198,11 +198,18 @@ vtlServer <- function(input, output, session) {
     
   # Generate observers for a property of a VTL engine class
   # in a given VTL session or for global settings
-  observerGen <- function(prop, makeName = identity()) {
-    output[[makeName('eng_conf_output')]] <- renderPrint({
-      val <- req(input[[makeName(prop$getName())]])
+  observerGen <- function(prop, makeID = identity) {
+    output[[makeID('eng_conf_output')]] <- renderPrint({
+      val <- req(input[[makeID(prop$getName())]])
       if (prop$getValue() != val) {
-        prop$setValue(val)
+        if (makeID == identity) {
+          # Global configuration property
+          prop$setValue(val)
+        } else {
+          # Session configuration property
+          vtlSession <- as.list(environment(makeID))[[1]]
+          VTLSessionManager$getOrCreate(vtlSession)$updateConfig(prop, value)
+        }
         cat(
           "Set property", prop$getDescription(), "to ", 
           if (prop$isPassword()) "<masked value>" else val, "\n"
@@ -244,14 +251,14 @@ vtlServer <- function(input, output, session) {
     # Compilation status box
     output[[makeID('output')]] <- renderPrint(cat(' '))
     
-    # Controls and observers for properties of selected environment 
+    # Controls and observers for properties of selected environment in active session
     output[[makeID('envprops')]] <- renderUI({
       env <- isolate(req(input[[makeID('selectEnv')]]))
       lapply(configManager$getSupportedProperties(J(req(input[[makeID('selectEnv')]]))@jobj), observerGen, makeID)
       controlsGen(env, makeID)
     }) |> bindEvent(input[[makeID('selectEnv')]], ignoreInit = T)
     
-    # Controls and observers for properties of selected repository
+    # Controls and observers for properties of selected repository in active session
     output[[makeID('repoProperties')]] <- renderUI({
       repoClass <- isolate(req(input[[makeID('repoClass')]]))
       output[[makeID('eng_conf_output')]] <- renderPrint({
@@ -262,7 +269,7 @@ vtlServer <- function(input, output, session) {
       controlsGen(repoClass, makeID)
     }) |> bindEvent(input[[makeID('repoClass')]], ignoreInit = T)
     
-    # Update active environments for this session
+    # Update active environments in active session
     output[[makeID('eng_conf_output')]] <- renderPrint({
       envs <- req(input[[makeID('envs')]])
       makeActive <- paste0(unlist(environments[envs]), collapse = "\n    - ")
@@ -520,7 +527,7 @@ vtlServer <- function(input, output, session) {
     content = function (file) {
       tryCatch({
         writer <- .jnew("java.io.StringWriter")
-        configManager$newManager()$saveConfiguration(writer)
+        configManager$saveConfiguration(writer)
         string <- .jstrVal(writer$toString())
         writeLines(string, file)
       }, error = function(e) {
@@ -565,7 +572,7 @@ vtlServer <- function(input, output, session) {
     vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(paste0(unlist(environments[req(input$envs)]), collapse = ","))
     tryCatch({
       writer <- .jnew("java.io.StringWriter")
-      configManager$newManager()$saveConfiguration(writer)
+      configManager$saveConfiguration(writer)
       string <- .jstrVal(writer$toString())
       propfile <- file.path(J("java.lang.System")$getProperty("user.home"), '.vtlStudio.properties')
       writeLines(string, propfile)

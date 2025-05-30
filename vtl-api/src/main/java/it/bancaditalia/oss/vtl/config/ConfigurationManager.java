@@ -25,7 +25,6 @@ import static java.util.stream.Collectors.joining;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Writer;
 import java.util.List;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
@@ -86,16 +85,4 @@ public interface ConfigurationManager
 	 * @return The newly created {@link Workspace} instance
 	 */
 	public Workspace createWorkspace();
-	
-	/**
-	 * Saves the current configuration to the provided Writer as a list of Java properties.
-	 * 
-	 * @param output The stream to write the properties to.
-	 * @throws IOException if a i/o problem arises while saving properties.
-	 * @throws UnsupportedOperationException in case the operation is not supported by this ConfigurationManager.
-	 */
-	public default void saveConfiguration(Writer output) throws IOException
-	{
-		throw new UnsupportedOperationException("Saving properties not supported.");
-	}
 }

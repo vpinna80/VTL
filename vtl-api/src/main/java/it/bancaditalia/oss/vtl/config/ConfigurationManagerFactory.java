@@ -20,10 +20,14 @@
 package it.bancaditalia.oss.vtl.config;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.CONFIG_MANAGER;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,6 +75,52 @@ public class ConfigurationManagerFactory
 					System.setProperty(k.toString(), v.toString());
 			}
 		});
+	}
+
+	/**
+	 * Saves the current configuration to the provided Writer as a list of Java properties.
+	 * 
+	 * @param output The stream to write the properties to.
+	 * @throws IOException if a i/o problem arises while saving properties.
+	 * @throws UnsupportedOperationException in case the operation is not supported by this ConfigurationManager.
+	 */
+	public static void saveConfiguration(Writer output) throws IOException
+	{
+		Properties props = new Properties();
+		for (VTLGeneralProperties prop: VTLGeneralProperties.values())
+			props.setProperty(prop.getName(), prop.getValue());
+		
+		List<VTLProperty> vtlProps = new ArrayList<>();
+		for (String envName: ENVIRONMENT_IMPLEMENTATION.getValues())
+			try
+			{
+				vtlProps.addAll(getSupportedProperties(Class.forName(envName, true, Thread.currentThread().getContextClassLoader())));
+			}
+			catch (ClassNotFoundException e)
+			{
+				throw new VTLNestedException("Error loading class " + envName, e);
+			}
+		
+		try
+		{
+			vtlProps.addAll(ConfigurationManagerFactory.getSupportedProperties(Class.forName(METADATA_REPOSITORY.getValue(), true, Thread.currentThread().getContextClassLoader())));
+		}
+		catch (ClassNotFoundException e)
+		{
+			throw new VTLNestedException("Error loading class " + METADATA_REPOSITORY.getValue(), e);
+		}
+		
+		for (VTLProperty prop: vtlProps)
+			props.setProperty(prop.getName(), prop.getValue());
+
+		for (String proxyProp: List.of("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort"))
+		{
+			String proxyValue = System.getProperty(proxyProp);
+			if (proxyValue != null)
+				props.put(proxyProp, proxyValue);
+		}
+		
+		props.store(output, null);
 	}
 
 	/**

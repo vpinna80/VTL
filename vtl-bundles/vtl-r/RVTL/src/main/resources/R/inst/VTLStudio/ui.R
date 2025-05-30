@@ -48,13 +48,8 @@ vtlUI <- bslib::page_sidebar(
       |> bslib::bs_add_variables(bslib_spacer = "0.5rem"),
     sidebar = bslib::sidebar(
       width = 350,
-      div(style = "text-align: center",
-        img(src="static/logo.svg", class="vtlLogo"),
-        div(style="display:inline-block; vertical-align: bottom",
-          h2(style="margin-bottom: 0", "VTL Studio!"),
-          div(style = "text-align: right", "1.2.1")       
-        )
-      ),
+      img(src = "static/logo.svg", class = "vtlLogo"),
+      tags$div(style = "text-align: right; width: 98%", "${r.package.version}"),
       uiOutput("shinyapps"),
       hr(),
       bslib::input_switch(id = 'demomode', label = 'Demo mode'),

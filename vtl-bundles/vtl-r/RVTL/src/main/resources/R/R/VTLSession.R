@@ -246,6 +246,23 @@ VTLSession <- R6Class("VTLSession",
       #' Returns the environments used by this VTLSession
       getEnvs = function() {
         private$checkInstance()$getEnvironments()
+      },
+
+      #' @description
+      #' Update a VTL property for this session
+      updateConfig = function(property, value) {
+        propertyList <- private$configuration[[property$hashCode()]]
+        found <- 0
+        for (i in seq_along(propertyList))
+          if (J("java.util.Objects")$equals(property, propertyList[[i]]$key))
+            found <- i
+        if (found < 1) {
+          propertyList <- c(list(list(key = property, value = value)), propertyList)
+        } else {
+          propertyList[[i]]$value <- value
+        }
+        private$configuration[[property$hashCode()]] <- propertyList
+        private$clearInstance()
       }
     ),
     
@@ -253,6 +270,7 @@ VTLSession <- R6Class("VTLSession",
       instance = NULL,
       env = NULL,
       finalized = F,
+      configuration = list(),
       
       finalize = function() { 
         finalized <- T
@@ -264,14 +282,39 @@ VTLSession <- R6Class("VTLSession",
         if (private$finalized)
           stop('Session ', self$name, ' was finalized')
         else if (is.null(private$instance)) {
-          private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
+          if (length(private$configuration) > 0) {
+            manager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
+            writer <- .jnew("java.io.StringWriter")
+            manager$saveConfiguration(writer)
+            writer$close()
+            lapply(private$configuration, lapply, \(entry) entry$key$setValue(entry$value))
+            private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
+            reader <- .jnew("java.io.StringReader", writer$toString())
+            manager$loadConfiguration(reader)
+            private$configuration <- list()
+          } else if (is.null(private$instance)) {
+            private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
+          }
         }
+        
         return(invisible(private$instance))
       },
 
       updateInstance = function() {
         if (private$finalized) {
           stop('Session ', self$name, ' was already finalized')
+        } 
+        
+        if (length(private$configuration) > 0) {
+          manager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
+          writer <- .jnew("java.io.StringWriter")
+          manager$saveConfiguration(writer)
+          writer$close()
+          lapply(private$configuration, lapply, \(entry) entry$key$setValue(entry$value))
+          private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
+          reader <- .jnew("java.io.StringReader", writer$toString())
+          manager$loadConfiguration(reader)
+          private$configuration <- list()
         } else if (is.null(private$instance)) {
           private$instance <- .jnew("it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl", self$text)
         } else {
@@ -285,6 +328,7 @@ VTLSession <- R6Class("VTLSession",
       
       clearInstance = function() {
         private$instance <- NULL
+        private$configuration <- list()
         private$env <- new.env(parent = emptyenv())
         .jgc()
       }

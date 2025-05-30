@@ -19,7 +19,6 @@
  */
 package it.bancaditalia.oss.vtl.impl.config;
 
-import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.getSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.instanceOfClass;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
@@ -27,20 +26,14 @@ import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOS
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
 import static java.util.stream.Collectors.joining;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
-import it.bancaditalia.oss.vtl.config.VTLGeneralProperties;
-import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.environment.Workspace;
@@ -112,45 +105,5 @@ public class ConfigurationManagerImpl implements ConfigurationManager
 	public Workspace createWorkspace()
 	{
 		return new WorkspaceImpl();
-	}
-	
-	@Override
-	public void saveConfiguration(Writer output) throws IOException
-	{
-		Properties props = new Properties();
-		for (VTLGeneralProperties prop: VTLGeneralProperties.values())
-			props.setProperty(prop.getName(), prop.getValue());
-		
-		List<VTLProperty> vtlProps = new ArrayList<>();
-		for (String envName: ENVIRONMENT_IMPLEMENTATION.getValues())
-			try
-			{
-				vtlProps.addAll(getSupportedProperties(Class.forName(envName, true, Thread.currentThread().getContextClassLoader())));
-			}
-			catch (ClassNotFoundException e)
-			{
-				LOGGER.error("Error loading environment class " + envName, e.getCause());
-			}
-		
-		try
-		{
-			vtlProps.addAll(ConfigurationManagerFactory.getSupportedProperties(Class.forName(METADATA_REPOSITORY.getValue(), true, Thread.currentThread().getContextClassLoader())));
-		}
-		catch (ClassNotFoundException e)
-		{
-			LOGGER.error("Error loading metadata repository class " + METADATA_REPOSITORY.getValue(), e);
-		}
-		
-		for (VTLProperty prop: vtlProps)
-			props.setProperty(prop.getName(), prop.getValue());
-
-		for (String proxyProp: List.of("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort"))
-		{
-			String proxyValue = System.getProperty(proxyProp);
-			if (proxyValue != null)
-				props.put(proxyProp, proxyValue);
-		}
-		
-		props.store(output, null);
 	}
 }
