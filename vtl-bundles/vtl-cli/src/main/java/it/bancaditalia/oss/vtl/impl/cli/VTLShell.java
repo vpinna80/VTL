@@ -34,8 +34,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -75,15 +75,13 @@ public class VTLShell implements Callable<Void>
 		
 		try (BufferedReader reader = Files.newBufferedReader(properties))
 		{
-			ConfigurationManagerFactory.loadConfiguration(reader);
+			ConfigurationManager.loadGlobalConfiguration(reader);
 		}
-		
-		ConfigurationManager manager = ConfigurationManagerFactory.newManager();
 		
 		VTLSession session;
 		try (Reader reader = file != null ? Files.newBufferedReader(file.toPath(), UTF_8) : new BufferedReader(new InputStreamReader(System.in, UTF_8)))
 		{
-			session = manager.createSession(reader);
+			session = new VTLSessionImpl(reader);
 			session.compile();
 		}
 			
@@ -91,7 +89,7 @@ public class VTLShell implements Callable<Void>
 		if (names != null)
 			outNames = Arrays.stream(names).map(VTLAliasImpl::of).collect(toList());
 		else
-			outNames = session.getWorkspace().getRules().stream().map(Statement::getAlias).collect(toList());
+			outNames = session.getRules().stream().map(Statement::getAlias).collect(toList());
 			
 		for (VTLAlias name: outNames)
 		{

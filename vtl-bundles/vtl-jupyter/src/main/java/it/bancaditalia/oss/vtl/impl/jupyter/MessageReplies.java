@@ -44,7 +44,6 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.impl.jupyter.VTLJupyterKernel.MessageChannel;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -63,7 +62,6 @@ public class MessageReplies
 	private static final Map<String, VTLSession> SESSIONS = new ConcurrentHashMap<>();
 	private static final TemplateEngine THYMELEAF = new TemplateEngine();
 	private static final Map<Class<? extends Component>, String> ROLES = new HashMap<>(); 
-//	private static final JsonFactory FACTORY = JsonFactory.builder().build().setCodec(new JsonMapper());
 	
 	static
 	{
@@ -186,14 +184,9 @@ public class MessageReplies
 	private static void compile(MessageChannel iopub, JupyterMessage request, JupyterMessage reply, String code, int count)
 	{
 		String sessionName = reply.getParentHeader().get("session").toString();
-		VTLSession oldSession = SESSIONS.get(sessionName);
-		VTLSession vtlSession = SESSIONS.compute(sessionName, (n, v) -> {
-			String mergedCode = v == null ? code : v.getOriginalCode() + "\n\n" + code;
-			return ConfigurationManagerFactory.newManager().createSession(mergedCode);
-		});
-		
+		VTLSession vtlSession = SESSIONS.get(sessionName);
+		vtlSession.updateCode(vtlSession.getOriginalCode() + "\n\n" + code);
 		Map<Statement, VTLValueMetadata> compiled = new HashMap<>(vtlSession.compile());
-		compiled.keySet().removeAll(oldSession.getWorkspace().getRules());
 		
 		Map<Boolean, List<Entry<Statement, VTLValueMetadata>>> partitioned = compiled.entrySet().stream().collect(partitioningBy(entryByValue(ScalarValueMetadata.class::isInstance)));
 		

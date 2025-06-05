@@ -19,11 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.jupyter;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.loadGlobalConfiguration;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.util.function.Predicate.not;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -40,15 +39,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
-import it.bancaditalia.oss.vtl.environment.Workspace;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -110,26 +106,11 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 		if (conf == null)
 			conf = Paths.get(System.getProperty("user.home") + "/.vtlStudio.properties");
 		if (Files.exists(conf) && Files.isRegularFile(conf) && Files.isReadable(conf));
-			ConfigurationManagerFactory.loadConfiguration(Files.newBufferedReader(conf));
+			loadGlobalConfiguration(Files.newBufferedReader(conf));
 
 		// Change the session implementation with the Jupyter specific one
-		SESSION_IMPLEMENTATION.setValue(VTLJupyterSession.class.getName());
+		System.setProperty(SESSION_IMPLEMENTATION.getName(), VTLJupyterSession.class.getName());
 		
-		// Change the standard Workspace implementation class with the Jupyter specific one
-		ENVIRONMENT_IMPLEMENTATION.setValues(
-				Stream.concat(ENVIRONMENT_IMPLEMENTATION.getValues().stream()
-					.filter(not(cls -> {
-						try
-						{
-							return Workspace.class.isAssignableFrom(Class.forName(cls, true, Thread.currentThread().getContextClassLoader()));
-						}
-						catch (ClassNotFoundException e)
-						{
-							throw new ExceptionInInitializerError(e);
-						}
-					})),
-					Stream.of(JupyterWorkspace.class.getName())).toArray(String[]::new));
-
 		new VTLJupyterKernel(connInfo);
 	}
 
@@ -168,7 +149,7 @@ public class VTLKernelLauncher implements Runnable, IVersionProvider
 		if (conf == null)
 			conf = Paths.get(System.getProperty("user.home") + "/.vtlStudio.properties");
 		if (!Files.exists(conf) || !Files.isRegularFile(conf) || !Files.isReadable(conf));
-			ConfigurationManagerFactory.loadConfiguration(Files.newBufferedReader(conf));
+			loadGlobalConfiguration(Files.newBufferedReader(conf));
 		
 		try (FileWriter writer = new FileWriter(kernelPath.resolve("kernel.json").toFile());
 				JsonGenerator generator = JsonFactory.builder().build().setCodec(new JsonMapper()).createGenerator(writer))

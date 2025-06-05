@@ -19,17 +19,19 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.newConfiguration;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
-import static java.lang.System.lineSeparator;
+import static it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository.JSON_METADATA_URL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,21 +45,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.engine.Statement;
+import it.bancaditalia.oss.vtl.config.VTLConfiguration;
 import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingValueException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
-import it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
@@ -73,7 +72,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.session.VTLSession;
-import jakarta.xml.bind.JAXBException;
 
 public class VTLExamplesEnvironment implements Environment, Serializable
 {
@@ -122,49 +120,36 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	{
 		return SESSIONS.computeIfAbsent(new SimpleEntry<>(category, operator), k -> createExample(category, operator));
 	}
+	
+	private static URL computeJsonURL(String category, String operator)
+	{
+		return VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.json");
+	}
+	
+	private static Reader retrieveCode(String category, String operator) throws IOException
+	{
+		return new InputStreamReader(computeJsonURL(category, operator).openStream(), UTF_8);
+	}
 
 	private static VTLSession createExample(String category, String operator)
 	{
 		try
 		{
-			VTLExamplesEnvironment env = new VTLExamplesEnvironment(category, operator);
-
 			LOGGER.info("Initializing metadata for {}", operator);
-			JsonMetadataRepository repo = new JsonMetadataRepository(env.jsonURL, new JavaVTLEngine());
-			return new VTLSessionImpl(env.code, repo, new JavaVTLEngine(), List.of(env), new Workspace() {
-				private static final long serialVersionUID = 1L;
-				
-				private final Map<VTLAlias, Statement> rules = new ConcurrentHashMap<>(); 
-				
-				@Override
-				public Workspace addRule(Statement statement)
-				{
-					rules.put(statement.getAlias(), statement);
-					return this;
-				}
-				
-				@Override
-				public Optional<Statement> getRule(VTLAlias name)
-				{
-					return Optional.ofNullable(rules.get(name));
-				}
-				
-				@Override
-				public List<Statement> getRules()
-				{
-					return new ArrayList<>(rules.values());
-				}
-			});
+			VTLConfiguration config = newConfiguration();
+			config.setPropertyValue(METADATA_REPOSITORY, JsonMetadataRepository.class);
+			config.setPropertyValue(JSON_METADATA_URL, computeJsonURL(category, operator));
+			config.setPropertyValue(ENVIRONMENT_IMPLEMENTATION, VTLExamplesEnvironment.class);
+			
+			return new VTLSessionImpl(retrieveCode(category, operator), config);
 		}
-		catch (IOException | ClassNotFoundException | JAXBException | URISyntaxException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e)
+		catch (IOException | ClassNotFoundException | SecurityException | IllegalArgumentException e)
 		{
 			throw new RuntimeException(e);
 		}
 	}
 
 	private final String[][] inputs;
-	private final String code;
-	private final URL jsonURL;
 	
 	private VTLExamplesEnvironment(String category, String operator) throws IOException, URISyntaxException
 	{
@@ -183,17 +168,6 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		}
 		inputs = csv_lines.toArray(String[][]::new);
 		LOGGER.info("Loaded {} datasets for {}", inputs.length, operator);
-		
-		URL vtl = VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.vtl");
-		if (vtl == null)
-			throw new FileNotFoundException("Cannot find examples/" + category + "/" + operator + "/examples.vtl");
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(vtl.openStream(), UTF_8)))
-		{
-			code = reader.lines().collect(joining(lineSeparator()));
-		}
-		LOGGER.info("Loaded vtl code for {}", operator);
-		
-		jsonURL = VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.json");
 	}
 	
 	@Override
@@ -212,7 +186,8 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		for (int i = 0; i < inputs.length; i++)
 			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
 			{
-				DataSetMetadata structure = repo.getMetadata(alias).map(DataSetMetadata.class::cast).orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
+				DataSetMetadata structure = repo.getMetadata(alias).map(DataSetMetadata.class::cast)
+					.orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
 				
 				return Optional.of(streamInput(inputs[i], structure));
 			}

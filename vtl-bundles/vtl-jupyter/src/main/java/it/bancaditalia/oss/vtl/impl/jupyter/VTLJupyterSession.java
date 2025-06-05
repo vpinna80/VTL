@@ -19,104 +19,15 @@
  */
 package it.bancaditalia.oss.vtl.impl.jupyter;
 
-import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
-import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
+import java.io.IOException;
 
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Optional;
-import java.util.function.BiFunction;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import it.bancaditalia.oss.vtl.engine.DMLStatement;
-import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
-import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
-import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
-import it.bancaditalia.oss.vtl.impl.session.CachedDataSet;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
-import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 
 public class VTLJupyterSession extends VTLSessionImpl
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(VTLSessionImpl.class);
-	
-	public VTLJupyterSession(String code)
+	public VTLJupyterSession(String code) throws IOException, ClassNotFoundException
 	{
 		super(code);
-	}
-	
-	@Override
-	public VTLValue resolve(VTLAlias alias)
-	{
-		LOGGER.info("Retrieving value for {}", alias);
-
-		Optional<DMLStatement> rule = getWorkspace().getRule(alias).map(DMLStatement.class::cast);
-		if (rule.isPresent())
-			return acquireResult(rule.get(), alias);
-		else
-			return acquireValue(alias, (env, a) -> env.getValue(getRepository(), a))
-					.orElseThrow(() -> new VTLUnboundAliasException(alias));
-	}
-	
-	@Override
-	public VTLValueMetadata getMetadata(VTLAlias alias)
-	{
-		Optional<DMLStatement> rule = getWorkspace().getRule(alias).map(DMLStatement.class::cast);
-		if (rule.isPresent())
-			return rule.get().getMetadata(this);
-		else
-			return acquireValue(alias, Environment::getValueMetadata)
-					.orElseThrow(() -> new VTLUnboundAliasException(alias));
-	}
-
-	private <T> Optional<T> acquireValue(VTLAlias alias, BiFunction<? super Environment, ? super VTLAlias, ? extends Optional<T>> mapper)
-	{
-		LOGGER.info("Resolving value of {}", alias);
-
-		Optional<T> maybeResult = getEnvironments().stream()
-				.map(env -> new SimpleEntry<>(env, mapper.apply(env, alias)))
-				.filter(entryByValue(Optional::isPresent))
-				.map(keepingKey(Optional::get))
-				.findAny()
-				.map(e -> {
-					LOGGER.info("{} is bound to {}", alias, e.getKey().getClass().getSimpleName());
-					T result = e.getValue();
-					if (result instanceof DataSet && ((DataSet) result).isCacheable())
-					{
-						@SuppressWarnings("unchecked")
-						T tempResult = (T) new CachedDataSet(this, alias, (DataSet) result);
-						return tempResult;
-					}
-					else
-						return result;
-				});
-		
-
-		LOGGER.trace("Finished resolving {}", alias);
-		return maybeResult;
-	}
-	
-	private VTLValue acquireResult(DMLStatement statement, VTLAlias alias)
-	{
-		LOGGER.info("Applying {}", statement);
-
-		try
-		{
-			VTLValue result = statement.eval(this);
-			if (result.isDataSet() && ((DataSet) result).isCacheable())
-				result = new CachedDataSet(this, alias, (DataSet) result);
-
-			return result;
-		}
-		catch (VTLException e)
-		{
-			throw new VTLNestedException("Caught exception while evaluating " + statement, e);
-		}
 	}
 }
 
