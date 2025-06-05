@@ -87,7 +87,6 @@
 			<modules>
 				<module>vtl-api</module>
 				<module>vtl-bundles</module>
-				<module>vtl-conf</module>
 				<module>vtl-envs</module>
 				<module>vtl-meta</module>
 				<module>vtl-parsers</module>
@@ -115,7 +114,7 @@
 	</profiles>
 
 	<properties>
-		<revision>1.2.1</revision>
+		<revision>1.2.2-SNAPSHOT</revision>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -201,16 +200,6 @@
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-types</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-conf</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-confman</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
