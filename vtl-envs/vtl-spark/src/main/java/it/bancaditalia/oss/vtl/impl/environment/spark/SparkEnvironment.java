@@ -19,7 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.registerSupportedProperties;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValues;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.registerSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getColumnsFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getComponentsFromStruct;
@@ -93,7 +95,6 @@ import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.IntegerValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.udts.RankedPartitionUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
@@ -113,7 +114,6 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
-import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
@@ -143,7 +143,7 @@ public class SparkEnvironment implements Environment
 
 	private static final AtomicReference<SQLConf> MASTER_CONF = new AtomicReference<>();
 	private static final ThreadLocal<Boolean> CONFS = new ThreadLocal<>();
-	
+
 	static
 	{
 		registerSupportedProperties(SparkEnvironment.class, VTL_SPARK_MASTER_CONNECTION, VTL_SPARK_UI_ENABLED, VTL_SPARK_UI_PORT, VTL_SPARK_PAGE_SIZE, VTL_SPARK_SEARCH_PATH);
@@ -162,7 +162,6 @@ public class SparkEnvironment implements Environment
 			UDTRegistration.register(TimePeriodValue.class.getName(), TimePeriodValueUDT.class.getName());
 			UDTRegistration.register(DurationValue.class.getName(), DurationValueUDT.class.getName());
 			UDTRegistration.register(TimeWithFreq.class.getName(), TimeWithFreqUDT.class.getName());
-			UDTRegistration.register(RankedPartition.class.getName(), RankedPartitionUDT.class.getName());
 		}
 	}
 
@@ -190,6 +189,7 @@ public class SparkEnvironment implements Environment
 	private final Map<VTLAlias, SparkDataSet> frames = new ConcurrentHashMap<>();
 	private final DataFrameReader reader;
 	private final List<Path> paths;
+	private final int exportSize;	
 
 	private static SparkConf getConf()
 	{
@@ -211,15 +211,15 @@ public class SparkEnvironment implements Environment
 	
 	public SparkEnvironment()
 	{
-		String master = VTL_SPARK_MASTER_CONNECTION.getValue();
+		String master = getLocalPropertyValue(VTL_SPARK_MASTER_CONNECTION);
 		LOGGER.info("Connecting to Spark master {}", master);
 		SparkConf conf = getConf()
 			  .setMaster(master)
-			  .set("spark.ui.enabled", Boolean.valueOf(VTL_SPARK_UI_ENABLED.getValue()).toString())
-			  .set("spark.ui.port", Integer.valueOf(VTL_SPARK_UI_PORT.getValue()).toString());
+			  .set("spark.ui.enabled", Boolean.valueOf(getLocalPropertyValue(VTL_SPARK_UI_ENABLED)).toString())
+			  .set("spark.ui.port", Integer.valueOf(getLocalPropertyValue(VTL_SPARK_UI_PORT)).toString());
 		
 		// Set SEQUENTIAL to avoid creating new threads while inside the executor
-		paths = VTL_SPARK_SEARCH_PATH.getValues().stream().map(Paths::get).collect(toList());
+		paths = getLocalPropertyValues(VTL_SPARK_SEARCH_PATH).stream().map(Paths::get).collect(toList());
 		
 		session = SparkSession
 			  .builder()
@@ -231,29 +231,7 @@ public class SparkEnvironment implements Environment
 		if (MASTER_CONF.compareAndSet(null, sqlConf))
 			CONFS.set(true);
 		
-		reader = session.read();
-	}
-	
-	public SparkEnvironment(List<Path> paths)
-	{
-		LOGGER.info("Connecting to Spark master {}", "local[*]");
-		SparkConf conf = getConf()
-			  .setMaster("local[*]")
-			  .set("spark.ui.enabled", "true");
-		
-		// Set SEQUENTIAL to avoid creating new threads while inside the executor
-		this.paths = paths;
-		
-		session = SparkSession
-			  .builder()
-			  .config(conf)
-			  .master("local[4]")
-			  .getOrCreate();
-		
-		SQLConf sqlConf = session.sessionState().conf();
-		if (MASTER_CONF.compareAndSet(null, sqlConf))
-			CONFS.set(true);
-		
+		exportSize = Integer.parseInt(getLocalPropertyValue(VTL_SPARK_PAGE_SIZE));
 		reader = session.read();
 	}
 	
@@ -337,7 +315,7 @@ public class SparkEnvironment implements Environment
 				Lineage lineage = LineageExternal.of("spark:" + alias);
 				MapFunction<Row, Row> stringsToScalars = parseCSVStrings(structure, lineage, names, domains);
 				Dataset<Row> applied = sourceDataFrame.map(stringsToScalars, encoder.getRowEncoder());
-				return new SparkDataSet(session, structure, encoder, applied);
+				return new SparkDataSet(exportSize, session, structure, encoder, applied);
 			}).orElseGet(() -> inferSchema(repo, sourceDataFrame, alias)); 
 		frames.put(alias, dataset);
 		return Optional.of(dataset);
@@ -354,7 +332,7 @@ public class SparkEnvironment implements Environment
 			return false;
 		
 		final DataSetMetadata metadata = ((DataSet) value).getMetadata();
-		final SparkDataSet dataSet = value instanceof SparkDataSet ? (SparkDataSet) value : new SparkDataSet(session, metadata, (DataSet) value);
+		final SparkDataSet dataSet = value instanceof SparkDataSet ? (SparkDataSet) value : new SparkDataSet(exportSize, session, metadata, (DataSet) value);
 		Dataset<Row> dataFrame = dataSet.getDataFrame();
 		
 		try
@@ -396,7 +374,7 @@ public class SparkEnvironment implements Environment
 			// infer structure from the schema metadata
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, schema)).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
-			return new SparkDataSet(session, structure, new DataPointEncoder(session, structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
+			return new SparkDataSet(exportSize, session, structure, new DataPointEncoder(session, structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
 		}
 		else if (!schema.forall(field -> field.dataType() instanceof StringType))
 		{
@@ -413,7 +391,7 @@ public class SparkEnvironment implements Environment
 			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, sourceDataFrame2.schema())).build();
 			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
 			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
-			return new SparkDataSet(session, structure, new DataPointEncoder(session, structure), enriched);
+			return new SparkDataSet(exportSize, session, structure, new DataPointEncoder(session, structure), enriched);
 		}
 		else
 		{
@@ -453,7 +431,7 @@ public class SparkEnvironment implements Environment
 	
 			Dataset<Row> converted = sourceDataFrame.select(converters);
 			Column[] ids = getColumnsFromComponents(structure.getIDs()).toArray(new Column[0]);
-			return new SparkDataSet(session, structure, converted.repartition(ids));
+			return new SparkDataSet(exportSize, session, structure, converted.repartition(ids));
 		}
 	}
 }

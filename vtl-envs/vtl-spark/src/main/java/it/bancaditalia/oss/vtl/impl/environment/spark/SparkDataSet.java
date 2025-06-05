@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.VTL_SPARK_PAGE_SIZE;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createFieldFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getColumnsFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getEncoderFor;
@@ -49,18 +49,18 @@ import static org.apache.spark.sql.functions.udaf;
 import static org.apache.spark.sql.functions.udf;
 import static org.apache.spark.sql.types.DataTypes.createArrayType;
 import static org.apache.spark.sql.types.DataTypes.createStructType;
+import static scala.collection.JavaConverters.asJava;
+import static scala.collection.JavaConverters.asScala;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -73,7 +73,6 @@ import java.util.stream.StreamSupport;
 
 import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.MapGroupsFunction;
 import org.apache.spark.sql.Column;
@@ -84,6 +83,11 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.api.java.UDF2;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ArrayEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.RowEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.UDTEncoder;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
@@ -100,6 +104,7 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -133,6 +138,8 @@ import it.bancaditalia.oss.vtl.util.SerSupplier;
 import it.bancaditalia.oss.vtl.util.SerTriFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
+import scala.Option;
+import scala.collection.immutable.ArraySeq;
 
 public class SparkDataSet extends AbstractDataSet
 {
@@ -143,7 +150,6 @@ public class SparkDataSet extends AbstractDataSet
 
 	static {
 		new Thread() {
-			
 			{
 				setName("SparkDataSet gc watcher");
 				setDaemon(true);
@@ -170,16 +176,16 @@ public class SparkDataSet extends AbstractDataSet
 						Thread.currentThread().interrupt();
 					}
 			}
-			
 		}.start();
 	}
 	
 	private final SparkSession session;
 	private final DataPointEncoder encoder;
 	private final Dataset<Row> dataFrame;
+	private final int exportSize;
 	private transient final WeakReference<SparkDataSet> ref = new WeakReference<SparkDataSet>(this, REF_QUEUE);
 	
-	public SparkDataSet(SparkSession session, DataSetMetadata structure, DataPointEncoder encoder, Dataset<Row> dataFrame)
+	public SparkDataSet(int exportSize, SparkSession session, DataSetMetadata structure, DataPointEncoder encoder, Dataset<Row> dataFrame)
 	{
 		super(structure);
 		
@@ -190,6 +196,7 @@ public class SparkDataSet extends AbstractDataSet
 		}
 		dataFrame = dataFrame.withColumn("$lineage$", dataFrame.col("$lineage$"), Metadata.empty());
 		
+		this.exportSize = exportSize;
 		this.session = session;
 		this.encoder = encoder;
 		this.dataFrame = dataFrame.cache();
@@ -198,16 +205,16 @@ public class SparkDataSet extends AbstractDataSet
 		logInfo(toString());
 	}
 
-	public SparkDataSet(SparkSession session, DataSetMetadata structure, Dataset<Row> dataFrame)
+	public SparkDataSet(int exportSize, SparkSession session, DataSetMetadata structure, Dataset<Row> dataFrame)
 	{
-		this(session, structure, new DataPointEncoder(session, structure), dataFrame);
+		this(exportSize, session, structure, new DataPointEncoder(session, structure), dataFrame);
 
 		logInfo(toString());
 	}
 
-	public SparkDataSet(SparkSession session, DataSetMetadata dataStructure, DataSet toWrap)
+	public SparkDataSet(int exportSize, SparkSession session, DataSetMetadata dataStructure, DataSet toWrap)
 	{
-		this(session, dataStructure, loadIntoSpark(session, toWrap).cache());
+		this(exportSize, session, dataStructure, loadIntoSpark(session, toWrap).cache());
 
 		logInfo(toString());
 	}
@@ -229,10 +236,9 @@ public class SparkDataSet extends AbstractDataSet
 	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
-		int bufferSize = Integer.parseInt(VTL_SPARK_PAGE_SIZE.getValue());
 		LOGGER.warn("Streaming datapoints into the driver from Spark dataset {}", getMetadata());
 
-		return StreamSupport.stream(new SparkSpliterator(dataFrame.toLocalIterator(), bufferSize), !SEQUENTIAL).map(encoder::decode);
+		return StreamSupport.stream(new SparkSpliterator(dataFrame.toLocalIterator(), exportSize), !SEQUENTIAL).map(encoder::decode);
 	}
 	
 	@Override
@@ -263,7 +269,7 @@ public class SparkDataSet extends AbstractDataSet
 		
 		Row lineageRow = new GenericRow(new Object[] { LineageExternal.of("#" + alias) });
 		Dataset<Row> lineageDF = session.createDataFrame(List.of(lineageRow), createStructType(List.of(new StructField("$lineage$", LineageSparkUDT, false, Metadata.empty()))));
-		return new SparkDataSet(session, membershipStructure, newDF.drop("$lineage$").crossJoin(lineageDF));
+		return new SparkDataSet(exportSize, session, membershipStructure, newDF.drop("$lineage$").crossJoin(lineageDF));
 	}
 
 	@Override
@@ -272,7 +278,7 @@ public class SparkDataSet extends AbstractDataSet
 		DataPointEncoder serEncoder = encoder;
 		FilterFunction<Row> func = row -> predicate.test(serEncoder.decode(row));
 		Column lineageCol = dataFrame.col("$lineage$");
-		return new SparkDataSet(session, getMetadata(), dataFrame.filter(func)
+		return new SparkDataSet(exportSize, session, getMetadata(), dataFrame.filter(func)
 				.withColumn("$lineage$", udf((UDF1<Lineage, Lineage>) lineageOperator::apply, LineageSparkUDT).apply(lineageCol)));
 	}
 	
@@ -306,7 +312,7 @@ public class SparkDataSet extends AbstractDataSet
 		
 		subbed = subbed.withColumn("$lineage$", udf((UDF1<Lineage, Lineage>) lineageOperator::apply, LineageSparkUDT).apply(col("$lineage$")));
 		
-		return new SparkDataSet(session, newMetadata, newEncoder, subbed);
+		return new SparkDataSet(exportSize, session, newMetadata, newEncoder, subbed);
 	}
 	
 	@Override
@@ -345,7 +351,7 @@ public class SparkDataSet extends AbstractDataSet
 			return new GenericRow(newRow);
 		}, resultEncoder.getRowEncoder());
 
-		return new SparkDataSet(session, metadata, resultEncoder, result);
+		return new SparkDataSet(exportSize, session, metadata, resultEncoder, result);
 	}
 	
 	@Override
@@ -383,13 +389,13 @@ public class SparkDataSet extends AbstractDataSet
 		};
 		Dataset<Row> flattenedDf = dataFrame.flatMap(flatMapper, resultEncoder.getRowEncoder());
 		
-		return new SparkDataSet(session, metadata, resultEncoder, flattenedDf);
+		return new SparkDataSet(exportSize, session, metadata, resultEncoder, flattenedDf);
 	}
 	
 	@Override
 	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
-		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other);
+		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(exportSize, session, other.getMetadata(), other);
 
 		List<String> commonIDs = getMetadata().getIDs().stream()
 				.filter(other.getMetadata()::contains)
@@ -400,7 +406,6 @@ public class SparkDataSet extends AbstractDataSet
 		Dataset<Row> rightDataframe = sparkOther.dataFrame.as("b");
 		int leftSize = getMetadata().size();
 		
-		// TODO: Try to execute filter with a null datapoint?
 		DataPointEncoder serEncoder = encoder;
 		DataPointEncoder otherEncoder = sparkOther.encoder;
 		
@@ -429,7 +434,7 @@ public class SparkDataSet extends AbstractDataSet
 			return resultEncoder.encode(mergeOp.apply(serEncoder.decode(row), right));
 		};
 		joined = joined.map(sparkMerge, resultEncoder.getRowEncoder());
-		return new SparkDataSet(session, metadata, joined);
+		return new SparkDataSet(exportSize, session, metadata, joined);
 	}
 	
 	@Override
@@ -474,36 +479,59 @@ public class SparkDataSet extends AbstractDataSet
 		DataSetMetadata structure = getMetadata();
 		Serializable accum = (Serializable) collector.supplier().get();
 		Encoder<?> accEncoder = ExpressionEncoder.apply(getEncoderFor(accum, structure));
+		DataPointEncoder serEncoder = encoder;
+
 		@SuppressWarnings("unchecked")
 		Serializable tag = ((SerFunction<Object, Serializable>) collector.finisher()).apply(accum);
-		ScalarValueUDT<?> tttype = (ScalarValueUDT<?>) getDataTypeFor(destComp);
-		Encoder<TT> ttEncoder = ExpressionEncoder.apply(getEncoderFor(tag, structure));
+		ScalarValueUDT<?> tttype;
+		tttype = (ScalarValueUDT<?>) getDataTypeFor(destComp);
+		Encoder<TT> ttEncoder;
+		SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> patchedFinisher;
+		if (tag instanceof RankedPartition)
+		{
+			// patch the collector's finisher so that GenericRows in PartitionToRank are correctly decoded to data points
+			collector = patchCollector(collector, serEncoder);
+			patchedFinisher = patchFinisher(finisher, serEncoder);
+			
+			List<EncoderField> dpFields = new ArrayList<>(createFieldFromComponents(structure));
+			dpFields.add(new EncoderField("$lineage$", new UDTEncoder<>(LineageSparkUDT, LineageUDT.class), false, Metadata.empty(), Option.empty(), Option.empty()));
+			
+			RowEncoder rankEncoder = new RowEncoder(asScala(List.of(
+				new EncoderField("rank", AgnosticEncoders.PrimitiveLongEncoder$.MODULE$, false, Metadata.empty(), Option.empty(), Option.empty()),
+				new EncoderField("datapoint", new RowEncoder(asScala(dpFields.iterator()).toSeq()), false, Metadata.empty(), Option.empty(), Option.empty())
+			).iterator()).toSeq());
+			
+			@SuppressWarnings("unchecked")
+			Encoder<TT> ttUncheckedEncoder = (Encoder<TT>) ExpressionEncoder.apply(new ArrayEncoder<Row>(rankEncoder, false));
+				
+			ttEncoder = ttUncheckedEncoder;
+		}
+		else
+		{
+			ttEncoder = ExpressionEncoder.apply(getEncoderFor(tag, structure));
+			patchedFinisher = finisher;
+		}
 		
 		@SuppressWarnings("unchecked")
 		Encoder<T> inputEncoder = (Encoder<T>) (extractor == null 
 				? ExpressionEncoder.apply(getEncoderFor(NullValue.instanceFrom(sourceComp), null)) 
 				: encoder.getRowEncoder());
 		
-		DataPointEncoder serEncoder = encoder;
 		Column[] allColumns = Arrays.stream(dataFrame.columns()).map(functions::col).toArray(Column[]::new);
 		Column[] columns = extractor != null ? allColumns : new Column[] { col(sourceComp.getVariable().getAlias().getName()) };
-		
-		// patch the collector's finisher so that GenericRows in PartitionToRank are correctly decoded to data points
-		if (tag instanceof RankedPartition)
-			collector = patchCollector(collector, serEncoder);
 		
 		String destName = destComp.getVariable().getAlias().getName();
 		VTLSparkAggregator<T, ?, TT, ScalarValue<?, ?, ?, ?>> vtlAggr = new VTLSparkAggregator<>(collector, accEncoder, ttEncoder);
 		Dataset<Row> analyticResult = dataFrame.withColumn("$$window$$", udaf(vtlAggr, inputEncoder).apply(columns).over(windowSpec));
 
-		if (finisher != null)
+		if (patchedFinisher != null)
 		{
 			// Check if the extractor is non null, in which case it may be a signal that the finisher takes 
 			// the original DataPoint as the second parameter (this is best-effort, it may be the case that 
 			// the second parameter is neither a ScalarValue nor a DataPoint).
 			@SuppressWarnings("unchecked")
 			UDF2<TT, Row, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisherUDF = (toFinish, t) -> {
-				return finisher.apply(toFinish, (T) (extractor != null ? serEncoder.decode(t) : (ScalarValue<?, ?, ?, ?>) t.get(0)));
+				return patchedFinisher.apply(toFinish, (T) (extractor != null ? serEncoder.decode(t) : (ScalarValue<?, ?, ?, ?>) t.get(0)));
 			};
 			
 			analyticResult = analyticResult.withColumn("$$window$$", explode(udf(finisherUDF, createArrayType(tttype))
@@ -520,17 +548,11 @@ public class SparkDataSet extends AbstractDataSet
 		Column[] cols = getColumnsFromComponents(newStructure).toArray(new Column[newStructure.size() + 1]);
 		cols[cols.length - 1] = analyticResult.col("$lineage$");
 		
-		return new SparkDataSet(session, newStructure, resultEncoder, analyticResult.select(cols));
+		return new SparkDataSet(exportSize, session, newStructure, resultEncoder, analyticResult.select(cols));
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T, TT> SerCollector<T, ?, TT> patchCollector(SerCollector<T, ?, TT> collector, DataPointEncoder serEncoder)
-	{
-		// UGLY; it has to do with the PartitionToRankUDT and the fact that GenericRows are not deserialized by spark.
-		return innerPatchCollector((SerCollector<T, PartitionToRank, TT>) collector, serEncoder);
-	}
-	
-	private <T, TT> SerCollector<T, ?, TT> innerPatchCollector(SerCollector<T, PartitionToRank, TT> collector, DataPointEncoder serEncoder)
+	private <T, I, TT> SerCollector<T, ?, TT> patchCollector(SerCollector<?, ?, ?> collector, DataPointEncoder serEncoder)
 	{
 		SerSupplier<PartitionToRank> supplier = (SerSupplier<PartitionToRank>) collector.supplier();
 		SerBiConsumer<PartitionToRank, T> accumulator = (SerBiConsumer<PartitionToRank, T>) collector.accumulator();
@@ -540,8 +562,42 @@ public class SparkDataSet extends AbstractDataSet
 			while (iter.hasNext())
 				iter.set(serEncoder.decode((Row) iter.next()));
 			return ptr;
-		}).andThen((SerFunction<PartitionToRank, TT>) collector.finisher());
+		}).andThen((SerFunction<PartitionToRank, TT>) collector.finisher().andThen(ranked -> {
+			Set<Entry<DataPoint, Long>> ranks = ((RankedPartition) ranked).entrySet();
+			Iterator<Entry<DataPoint, Long>> it = ranks.iterator();
+			Row[] rows = new Row[ranks.size()];
+			for (int i = 0; i < rows.length; i++)
+			{
+				Entry<DataPoint, Long> rank = it.next();
+				rows[i] = new GenericRow(new Object[] { rank.getValue(), serEncoder.encode(rank.getKey()) });
+			}
+			return (TT) rows;
+		}));
 		return SerCollector.of(supplier, accumulator, combiner, patchedFinisher, collector.characteristics());
+	}
+
+	private <T, TT, TTT> SerBiFunction<TTT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> patchFinisher(
+		SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher, DataPointEncoder serEncoder)
+	{
+		return finisher
+			.before(ttRows -> {
+				try
+				{
+					@SuppressWarnings("unchecked")
+					List<Row> rowArray = asJava(((ArraySeq.ofRef<Row>) ttRows));
+					RankedPartition ranked = new RankedPartition(rowArray.size());
+					for (Row row: rowArray)
+						ranked.put(serEncoder.decode(row.getAs(1)), row.getLong(0));
+					@SuppressWarnings("unchecked")
+					TT res = (TT) ranked;
+					return res;
+				}
+				catch (ClassCastException e)
+				{
+					e.printStackTrace();
+					throw e;
+				}
+			}, identity());
 	}
 
 	@Override
@@ -554,15 +610,16 @@ public class SparkDataSet extends AbstractDataSet
 			structure = (DataSetMetadata) metadata;
 		else
 			structure = new DataStructureBuilder(((ScalarValueMetadata<?, ?>) metadata).getDomain().getDefaultVariable().as(Measure.class)).build();
+
 		DataPointEncoder resultEncoder = new DataPointEncoder(session, structure);
-		int bufferSize = Integer.parseInt(VTL_SPARK_PAGE_SIZE.getValue());
+		DataPointEncoder serEncoder = encoder;
 		Dataset<Row> aggred;
 		
-		DataPointEncoder serEncoder = encoder;
+		int exportSize = this.exportSize;
 		if (keys.isEmpty())
 		{
 			MapGroupsFunction<Integer, Row, Row> aggregator = (i, s) -> 
-				StreamSupport.stream(new SparkSpliterator(s, bufferSize), !SEQUENTIAL)
+				StreamSupport.stream(new SparkSpliterator(s, exportSize), !SEQUENTIAL)
 					.map(serEncoder::decode)
 					.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> {
 						TT finished = finisher.apply(aggr, l, emptyMap());
@@ -572,7 +629,7 @@ public class SparkDataSet extends AbstractDataSet
 						ScalarValue<?, ?, ?, ?>[] result = new ScalarValue<?, ?, ?, ?>[] { (ScalarValue<?, ?, ?, ?>) finished };
 						return resultEncoder.encode(new SparkDataPoint(resultEncoder.getComponents(), result, IGNORED_LINEAGE));
 					}));
-			
+
 			aggred = dataFrame.groupBy(lit(1))
 					.as(INT(), serEncoder.getRowEncoder())
 					.mapGroups(aggregator, resultEncoder.getRowEncoder());
@@ -585,18 +642,18 @@ public class SparkDataSet extends AbstractDataSet
 				keyNames[i] = dataFrame.col(keyEncoder.getComponents()[i].getVariable().getAlias().getName());
 			
 			MapGroupsFunction<Row, Row, Row> aggregator = (keyRow, s) -> {
-					Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = new HashMap<>();
-					for (DataStructureComponent<Identifier, ?, ?> key: keys)
-					{
-						Variable<?, ?> v = key.getVariable();
-						keyValues.put(key, getScalarFor(v.getDomain(), keyRow.getAs(v.getAlias().getName())));
-					}
-					
-					return StreamSupport.stream(new SparkSpliterator(s, bufferSize), !Utils.SEQUENTIAL)
-							.map(serEncoder::decode)
-							.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> 
-								resultEncoder.encode((DataPoint) finisher.apply(aggr, l, keyValues))));
-				};
+				Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = new HashMap<>();
+				for (DataStructureComponent<Identifier, ?, ?> key: keys)
+				{
+					Variable<?, ?> v = key.getVariable();
+					keyValues.put(key, getScalarFor(v.getDomain(), keyRow.getAs(v.getAlias().getName())));
+				}
+				
+				return StreamSupport.stream(new SparkSpliterator(s, exportSize), !Utils.SEQUENTIAL)
+						.map(serEncoder::decode)
+						.collect(teeing(mapping(DataPoint::getLineage, toList()), groupCollector, (l, aggr) -> 
+							resultEncoder.encode((DataPoint) finisher.apply(aggr, l, keyValues))));
+			};
 			
 			aggred = dataFrame.groupBy(keyNames)
 					.as(keyEncoder.getRowEncoderNoLineage(), serEncoder.getRowEncoder())
@@ -604,7 +661,7 @@ public class SparkDataSet extends AbstractDataSet
 		}
 		
 		if (metadata.isDataSet())
-			return new SparkDataSet(session, structure, aggred);
+			return new SparkDataSet(exportSize, session, structure, aggred);
 		else
 		{
 			List<Row> results = aggred.collectAsList();
@@ -623,7 +680,7 @@ public class SparkDataSet extends AbstractDataSet
 	public DataSet union(List<DataSet> others, SerUnaryOperator<Lineage> lineageOp)
 	{
 		List<Dataset<Row>> allSparkDs = Stream.concat(Stream.of(this), others.stream())
-				.map(other -> other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(session, other.getMetadata(), other))
+				.map(other -> other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(exportSize, session, other.getMetadata(), other))
 				.map(sds -> sds.dataFrame)
 				.collect(toList());
 		
@@ -656,24 +713,12 @@ public class SparkDataSet extends AbstractDataSet
 				.select(cols)
 				.join(session.createDataFrame(List.of(lineageRow), lineageType));
 		
-		return new SparkDataSet(session, getMetadata(), encoder, result);
+		return new SparkDataSet(exportSize, session, getMetadata(), encoder, result);
 	}
 
 	private void logInfo(String description)
 	{
 		LOGGER.info("Spark execution plan prepared for {}", description);
 		LOGGER.trace("{}", dataFrame.queryExecution().explainString(ExplainMode.fromString("formatted")));
-	}
-
-	private static void checkSerializable(Object obj)
-	{
-	    try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream out = new ObjectOutputStream(bos))
-	    {
-	        out.writeObject(obj);
-	    }
-	    catch (IOException e)
-	    {
-	        throw new UncheckedIOException("Not serializable: " + obj.getClass().getName(), e);
-	    }
 	}
 }

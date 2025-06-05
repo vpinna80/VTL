@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
@@ -31,6 +31,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static org.apache.spark.sql.functions.col;
+import static org.apache.spark.sql.types.DataTypes.createStructField;
 import static scala.jdk.javaapi.CollectionConverters.asScala;
 
 import java.io.Serializable;
@@ -72,7 +73,6 @@ import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.PartitionToRankUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.udts.RankedPartitionUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.data.BaseScalarValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
@@ -87,7 +87,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
-import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -213,7 +212,7 @@ public class SparkUtils
 		DataType type = getDataTypeFor(component);
 		Metadata metadata = getMetadataFor(component);
 		
-		return new StructField(component.getVariable().getAlias().getName(), type, component.is(NonIdentifier.class), metadata);
+		return createStructField(component.getVariable().getAlias().getName(), type, component.is(NonIdentifier.class), metadata);
 	}
 
 	public static DataType getDataTypeFor(DataStructureComponent<?, ?, ?> component)
@@ -311,10 +310,6 @@ public class SparkUtils
 		else if (clazz == PartitionToRank.class)
 		{
 			resultEncoder = new UDTEncoder<>(new PartitionToRankUDT(structure), PartitionToRankUDT.class);
-		}
-		else if (clazz == RankedPartition.class)
-		{
-			resultEncoder = new UDTEncoder<>(new RankedPartitionUDT(structure), RankedPartitionUDT.class);
 		}
 		else if (clazz == SerDoubleSumAvgCount.class)
 		{
