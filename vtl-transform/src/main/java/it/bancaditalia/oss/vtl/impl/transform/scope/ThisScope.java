@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.transform.scope;
 
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 
+import java.util.Optional;
+
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -87,7 +89,7 @@ public class ThisScope extends AbstractScope
 	}
 
 	@Override
-	public Statement getRule(VTLAlias node)
+	public Optional<Statement> getRule(VTLAlias node)
 	{
 		return parent.getRule(node);
 	}

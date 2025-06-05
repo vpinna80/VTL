@@ -131,7 +131,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	{
 		this.operand = operand;
 		this.rulesetID = requireNonNull(rulesetID);
-		this.conditions = coalesce(conditions, new ArrayList<>()).stream().collect(toList());
+		this.conditions = coalesce(conditions, new ArrayList<VTLAlias>()).stream().collect(toList());
 		
 		this.id = id;
 		this.mode = coalesce(mode, NON_NULL);

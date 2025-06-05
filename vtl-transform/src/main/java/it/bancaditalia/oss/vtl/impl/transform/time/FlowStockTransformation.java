@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.transform.time.FlowStockTransformation.DatasetOperator.STOCK_TO_FLOW;
 import static it.bancaditalia.oss.vtl.impl.transform.util.LimitClause.CURRENT_DATA_POINT;
 import static it.bancaditalia.oss.vtl.impl.transform.util.LimitClause.preceding;

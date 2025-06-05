@@ -82,7 +82,7 @@ public class ParamScope extends AbstractScope
 	}
 
 	@Override
-	public Statement getRule(VTLAlias node)
+	public Optional<Statement> getRule(VTLAlias node)
 	{
 		return getParent().getRule(node);
 	}

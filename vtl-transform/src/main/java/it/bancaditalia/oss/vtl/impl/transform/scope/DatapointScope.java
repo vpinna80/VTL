@@ -28,7 +28,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.engine.DMLStatement;
+import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -85,9 +85,9 @@ public class DatapointScope extends AbstractScope
 	}
 
 	@Override
-	public DMLStatement getRule(VTLAlias node)
+	public Optional<Statement> getRule(VTLAlias node)
 	{
-		return null;
+		return Optional.empty();
 	}
 
 	@Override

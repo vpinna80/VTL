@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -101,7 +102,7 @@ public class JoinApplyScope extends AbstractScope
 	}
 	
 	@Override
-	public Statement getRule(VTLAlias node)
+	public Optional<Statement> getRule(VTLAlias node)
 	{
 		return parent.getRule(node);
 	}

@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -69,10 +70,10 @@ public class CallTransformation extends TransformationImpl
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		Statement statement = scheme.getRule(operator);
-		if (statement instanceof UserOperatorStatement)
+		Optional<Statement> statement = scheme.getRule(operator);
+		if (statement.isPresent() && statement.get() instanceof UserOperatorStatement)
 		{
-			UserOperatorStatement op = (UserOperatorStatement) statement;
+			UserOperatorStatement op = (UserOperatorStatement) statement.get();
 			List<Parameter> parNames = op.getParameters();
 			Map<VTLAlias, Transformation> paramValues = IntStream.range(0, args.size()).boxed()
 				.collect(toMap(i -> parNames.get(i).getAlias(), i -> args.get(i)));
@@ -85,10 +86,10 @@ public class CallTransformation extends TransformationImpl
 	@Override
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
-		Statement statement = scheme.getRule(operator);
-		if (statement instanceof UserOperatorStatement)
+		Optional<Statement> statement = scheme.getRule(operator);
+		if (statement.isPresent() && statement.get() instanceof UserOperatorStatement)
 		{
-			UserOperatorStatement op = (UserOperatorStatement) statement;
+			UserOperatorStatement op = (UserOperatorStatement) statement.get();
 			List<Parameter> params = op.getParameters();
 			
 			if (args.size() != params.size())
