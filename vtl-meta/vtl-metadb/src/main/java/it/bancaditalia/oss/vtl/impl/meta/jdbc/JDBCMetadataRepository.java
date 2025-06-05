@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.jdbc;
 
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
@@ -52,7 +53,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList;
@@ -88,9 +89,9 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_URL);
-		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_JNDI_POOL);
-		ConfigurationManagerFactory.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_SIZE_REGEX);
+		ConfigurationManager.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_URL);
+		ConfigurationManager.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_JNDI_POOL);
+		ConfigurationManager.registerSupportedProperties(JDBCMetadataRepository.class, METADATA_JDBC_SIZE_REGEX);
 	}
 
 	private final SerThrowingSupplier<Connection, SQLException> pool;
@@ -99,17 +100,17 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 	
 	public JDBCMetadataRepository() throws NamingException
 	{
-		sizePattern = Pattern.compile(METADATA_JDBC_SIZE_REGEX.getValue());
+		sizePattern = Pattern.compile(getLocalPropertyValue(METADATA_JDBC_SIZE_REGEX));
 		
-		if (METADATA_JDBC_JNDI_POOL.hasValue())
+		if (getLocalPropertyValue(METADATA_JDBC_JNDI_POOL) == null)
 		{
-			String dsName = METADATA_JDBC_JNDI_POOL.getValue();
+			String dsName = getLocalPropertyValue(METADATA_JDBC_JNDI_POOL);
 			DataSource dataSource = (DataSource) new InitialContext().lookup(dsName);
 			pool = dataSource::getConnection;
 		}
 		else
 		{
-			String url = Objects.requireNonNull(METADATA_JDBC_URL.getValue(), "JDBC URL must not be null");
+			String url = Objects.requireNonNull(getLocalPropertyValue(METADATA_JDBC_URL), "JDBC URL must not be null");
 			pool = () -> DriverManager.getConnection(url);
 		}
 	}
@@ -224,7 +225,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 				domain = NUMBERDS;
 		else
 			if (sized)
-				domain = new StrlenDomainSubset<>(STRINGDS, OptionalInt.empty(), OptionalInt.of(l));
+				domain = new StrlenDomainSubset(STRINGDS, OptionalInt.empty(), OptionalInt.of(l));
 			else
 				domain = STRINGDS;
 		

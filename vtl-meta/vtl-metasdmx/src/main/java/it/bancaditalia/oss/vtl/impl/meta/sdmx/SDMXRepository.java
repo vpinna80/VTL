@@ -20,6 +20,10 @@
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static io.sdmx.api.sdmx.constants.TEXT_TYPE.STRING;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getGlobalPropertyValue;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.instanceOfClass;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
@@ -92,14 +96,14 @@ import io.sdmx.utils.core.application.SingletonStore;
 import io.sdmx.utils.http.api.model.IHttpProxy;
 import io.sdmx.utils.http.broker.RestMessageBroker;
 import io.sdmx.utils.sdmx.xs.MaintainableRefBeanImpl;
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.NonNullDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeNumberDomainSubset;
@@ -120,6 +124,7 @@ import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class SDMXRepository extends InMemoryMetadataRepository
 {
@@ -139,7 +144,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(SDMXRepository.class, SDMX_REGISTRY_ENDPOINT, SDMX_API_VERSION, SDMX_META_USERNAME, SDMX_META_PASSWORD);
+		ConfigurationManager.registerSupportedProperties(SDMXRepository.class, SDMX_REGISTRY_ENDPOINT, SDMX_API_VERSION, SDMX_META_USERNAME, SDMX_META_PASSWORD);
 
 		// sdmx.io singletons initialization
 		SingletonStore.registerInstance(new RESTQueryBrokerEngineImpl());
@@ -158,12 +163,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		this(null, SDMX_REGISTRY_ENDPOINT.getValue(), SDMX_META_USERNAME.getValue(), SDMX_META_PASSWORD.getValue());
-	}
-	
-	public SDMXRepository(MetadataRepository chained) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
-	{
-		this(chained, SDMX_REGISTRY_ENDPOINT.getValue(), SDMX_META_USERNAME.getValue(), SDMX_META_PASSWORD.getValue());
+		this(null, getLocalPropertyValue(SDMX_REGISTRY_ENDPOINT), getLocalPropertyValue(SDMX_META_USERNAME), getLocalPropertyValue(SDMX_META_PASSWORD));
 	}
 
 	public SDMXRepository(String endpoint, String username, String password) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
@@ -202,7 +202,8 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		
 		LOGGER.info("Loading metadata from {}", endpoint);
 
-		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, REST_API_VERSION.parseVersion(SDMX_API_VERSION.getValue())));
+		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, 
+			REST_API_VERSION.parseVersion(getLocalPropertyValue(SDMX_API_VERSION))));
 		
 		// Load codelists
 		for (CodelistBean codelist: rbrm.getMaintainableBeans(CodelistBean.class, new MaintainableRefBeanImpl(null, null, "*")))
@@ -387,7 +388,11 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	public TransformationScheme getTransformationScheme(VTLAlias alias)
 	{
 		return Optional.ofNullable(schemes.get(alias))
-			.map(ConfigurationManagerFactory.newManager()::createSession)
+			.map(code -> {
+				VTLSession session = instanceOfClass(getGlobalPropertyValue(SESSION_IMPLEMENTATION), VTLSession.class);
+				session.updateCode(code);
+				return session;
+			})
 			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
 	}
 	
@@ -441,7 +446,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			{
 				OptionalInt minLen = Stream.ofNullable(format.getMinLength()).mapToInt(BigInteger::intValueExact).findAny();
 				OptionalInt maxLen = Stream.ofNullable(format.getMaxLength()).mapToInt(BigInteger::intValueExact).findAny();
-				domain = new StrlenDomainSubset<>(STRINGDS, minLen, maxLen);
+				domain = new StrlenDomainSubset(STRINGDS, minLen, maxLen);
 			}
 			else if (INTEGERDS.isAssignableFrom(domain))
 			{

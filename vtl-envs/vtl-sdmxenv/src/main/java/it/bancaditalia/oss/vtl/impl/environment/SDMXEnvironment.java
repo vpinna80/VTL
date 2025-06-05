@@ -19,7 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
-import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.registerSupportedProperties;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.registerSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.MONTH_PERIOD_FORMATTER;
@@ -157,7 +158,7 @@ public class SDMXEnvironment implements Environment, Serializable
 
 	public SDMXEnvironment() throws URISyntaxException
 	{
-		this(SDMX_DATA_ENDPOINT.getValue(), SDMX_DATA_USERNAME.getValue(), SDMX_DATA_PASSWORD.getValue());
+		this(getLocalPropertyValue(SDMX_DATA_ENDPOINT), getLocalPropertyValue(SDMX_DATA_USERNAME), getLocalPropertyValue(SDMX_DATA_PASSWORD));
 	}
 
 	public SDMXEnvironment(String endpoint, String username, String password) throws URISyntaxException

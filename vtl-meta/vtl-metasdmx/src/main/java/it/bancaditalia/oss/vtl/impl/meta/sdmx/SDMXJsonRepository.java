@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
-import static it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory.getSupportedProperties;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getSupportedProperties;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -32,7 +32,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
 import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
@@ -51,9 +51,9 @@ public class SDMXJsonRepository extends JsonMetadataRepository
 	static
 	{
 		Set<VTLProperty> props = new HashSet<>(getSupportedProperties(SDMXRepository.class));
-		props.addAll(ConfigurationManagerFactory.getSupportedProperties(JsonMetadataRepository.class));
+		props.addAll(ConfigurationManager.getSupportedProperties(JsonMetadataRepository.class));
 		
-		ConfigurationManagerFactory.registerSupportedProperties(SDMXJsonRepository.class, props.toArray(VTLProperty[]::new));
+		ConfigurationManager.registerSupportedProperties(SDMXJsonRepository.class, props.toArray(VTLProperty[]::new));
 	}
 	
 	public SDMXJsonRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException

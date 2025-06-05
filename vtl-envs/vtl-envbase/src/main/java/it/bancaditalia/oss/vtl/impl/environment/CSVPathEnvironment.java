@@ -19,10 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValues;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static java.lang.Long.parseLong;
 import static java.util.Objects.isNull;
 
 import java.io.BufferedReader;
@@ -45,7 +48,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -54,7 +57,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingValueException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
-import it.bancaditalia.oss.vtl.impl.environment.util.ProgressWindow;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
@@ -76,25 +78,31 @@ public class CSVPathEnvironment implements Environment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVPathEnvironment.class);
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
-
-	public static final VTLProperty VTL_CSV_ENVIRONMENT_SEARCH_PATH = 
-			new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), EnumSet.of(IS_REQUIRED), System.getenv("VTL_PATH"));
+	public static final VTLProperty CSV_ENV_SEARCH_PATH = new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), EnumSet.of(IS_REQUIRED), System.getenv("VTL_PATH"));
+	public static final VTLProperty CSV_ENV_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", EnumSet.of(IS_REQUIRED), "1000");
 
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(CSVPathEnvironment.class, VTL_CSV_ENVIRONMENT_SEARCH_PATH);
+		ConfigurationManager.registerSupportedProperties(CSVPathEnvironment.class, CSV_ENV_SEARCH_PATH, CSV_ENV_THRESHOLD);
 	}
 	
-	private List<Path> paths;
+	private final List<Path> paths;
+	private final long threshold;
 	
 	public CSVPathEnvironment()
 	{
-		this(VTL_CSV_ENVIRONMENT_SEARCH_PATH.getValues().stream().map(Paths::get).collect(toList()));
+		this(getLocalPropertyValues(CSV_ENV_SEARCH_PATH).stream().map(Paths::get).collect(toList()));
 	}
 	
 	public CSVPathEnvironment(List<Path> paths)
 	{
+		this(paths, parseLong(getLocalPropertyValue(CSV_ENV_THRESHOLD)));
+	}
+	
+	public CSVPathEnvironment(List<Path> paths, long threshold)
+	{
 		this.paths = paths;
+		this.threshold = threshold;
 	}
 	
 	@Override
@@ -203,7 +211,7 @@ public class CSVPathEnvironment implements Environment
 			throw new VTLNestedException("Exception while reading " + path, e);
 		}
 		
-		return ProgressWindow.of("Loading CSV", lineCount, innerReader.lines())
+		return ProgressWindow.of("Loading CSV", lineCount, threshold, innerReader.lines())
 			// Skip empty lines
 			.filter(line -> !line.trim().isEmpty())
 			.peek(line -> LOGGER.trace("Parsing line from CSV: {}", line))

@@ -20,6 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.meta.json;
 
 import static com.fasterxml.jackson.core.StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalConfigurationObject;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -50,7 +52,8 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory;
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.VTLConfiguration;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -58,8 +61,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLDuplicatedObjectException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
-import it.bancaditalia.oss.vtl.impl.meta.subsets.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.tcds.StringTransformationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.tcds.TransformationCriterionScope;
@@ -89,7 +92,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	static
 	{
-		ConfigurationManagerFactory.registerSupportedProperties(JsonMetadataRepository.class, JSON_METADATA_URL);
+		ConfigurationManager.registerSupportedProperties(JsonMetadataRepository.class, JSON_METADATA_URL);
 		
 		ROLES.put("Identifier", Identifier.class);
 		ROLES.put("Measure", Measure.class);
@@ -107,22 +110,22 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	public JsonMetadataRepository() throws IOException
 	{
-		this(new URL(JSON_METADATA_URL.getValue()));
+		this(new URL(getLocalPropertyValue(JSON_METADATA_URL)));
 	}
 	
 	public JsonMetadataRepository(MetadataRepository chained) throws IOException
 	{
-		this(chained, new URL(JSON_METADATA_URL.getValue()));
+		this(chained, new URL(getLocalPropertyValue(JSON_METADATA_URL)));
 	}
 	
 	public JsonMetadataRepository(URL jsonURL) throws IOException
 	{
-		this(null, jsonURL, ConfigurationManagerFactory.newManager().getEngine());
+		this(null, jsonURL, getLocalConfigurationObject(VTLConfiguration::getEngine));
 	}
 	
 	public JsonMetadataRepository(MetadataRepository chained, URL jsonURL) throws IOException
 	{
-		this(chained, jsonURL, ConfigurationManagerFactory.newManager().getEngine());
+		this(chained, jsonURL, getLocalConfigurationObject(VTLConfiguration::getEngine));
 	}
 
 	public JsonMetadataRepository(URL jsonURL, Engine engine) throws IOException
@@ -134,9 +137,9 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	{
 		super(chained);
 		
-		final Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
-		final Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
-		final Map<VTLAlias, VTLAlias> varDefs;
+		Map<VTLAlias, Entry<VTLAlias, String>> dsDefs;
+		Map<VTLAlias, Map<VTLAlias, Class<? extends Component>>> strDefs;
+		Map<VTLAlias, VTLAlias> varDefs;
 		
 		try (InputStream source = jsonURL.openStream(); JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source))
 		{
@@ -311,7 +314,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				if (!(((ScalarValueMetadata<?, ?>) meta).getDomain() instanceof BooleanDomainSubset))
 					throw new InvalidParameterException("Invalid domain definition expression: " + code);
 				
-				ValueDomainSubset<?, ?> domain = new StringTransformationDomainSubset<>(name, STRINGDS, (Transformation) statement);
+				ValueDomainSubset<?, ?> domain = new StringTransformationDomainSubset(name, STRINGDS, (Transformation) statement);
 				domains.put(name, domain);
 				return domain;
 			}
