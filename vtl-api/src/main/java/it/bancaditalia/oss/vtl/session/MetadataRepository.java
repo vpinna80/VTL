@@ -95,7 +95,7 @@ public interface MetadataRepository
 	 * Creates a temporary variable with provided alias and domain. An error is raised if a persistent variable with a different domain is already defined in metadata.
 	 * 
 	 * @param alias the alias of the variable
-	 * @param alias the domain of the variable
+	 * @param domain the domain of the variable
 	 * @return a {@link Variable} instance.
 	 */
 	public Variable<?, ?> createTempVariable(VTLAlias alias, ValueDomainSubset<?, ?> domain);

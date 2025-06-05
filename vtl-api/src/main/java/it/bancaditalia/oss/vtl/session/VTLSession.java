@@ -22,10 +22,11 @@ package it.bancaditalia.oss.vtl.session;
 import java.util.List;
 import java.util.Map;
 
+import it.bancaditalia.oss.vtl.config.VTLConfiguration;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Engine;
+import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.environment.Workspace;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -39,19 +40,14 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public interface VTLSession extends TransformationScheme
 {
 	/**
-	 * @return the computing {@link Engine} used by this session
+	 * @return The list of environment instances configured for this session
 	 */
-	public Engine getEngine();
-	
-	/**
-	 * @return The list of environment instances configured for this TransformationScheme
-	 */
-	public List<Environment> getEnvironments();
+	public Environment[] getEnvironments();
 
 	/**
-	 * @return the {@link Workspace} used by this session
+	 * @return The VTL engine used in this session.
 	 */
-	public Workspace getWorkspace();
+	public Engine getEngine();
 
 	/**
 	 * Compile all the VTL code submitted to this session, and returns the metadata of
@@ -66,4 +62,21 @@ public interface VTLSession extends TransformationScheme
 	 * @return The original code submitted when the session was created.
 	 */
 	public String getOriginalCode();
+
+	/**
+	 * Replace the code on this session with the provided code
+	 * 
+	 * @param code The new code.
+	 */
+	public void updateCode(String code);
+
+	/**
+	 * @return A list of all the statements resulting from the last compilation of this {@link VTLSession}
+	 */
+	public List<Statement> getRules();
+
+	/**
+	 * @return A copy of this {@link VTLSession}'s current configuration.
+	 */
+	public VTLConfiguration getConfiguration();
 }

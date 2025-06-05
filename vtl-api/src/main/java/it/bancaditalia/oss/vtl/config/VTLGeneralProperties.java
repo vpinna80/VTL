@@ -25,7 +25,6 @@ import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.Objects;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.engine.Engine;
@@ -43,13 +42,6 @@ import it.bancaditalia.oss.vtl.session.VTLSession;
  */
 public enum VTLGeneralProperties implements VTLProperty  
 {
-	/**
-	 * This property allows to choose how to manage the VTL configuration.
-	 * 
-	 * The default value may be changed by using the {@code vtl.config.impl.class} system property. 
-	 */
-	CONFIG_MANAGER("vtl.config.impl.class", false, "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl"),
-
 	/**
 	 * This property allows to choose which {@link MetadataRepository metadata repository} should be used by the Engine.
 	 * 
@@ -77,9 +69,7 @@ public enum VTLGeneralProperties implements VTLProperty
 	 * The default value may be changed by using the {@code vtl.environment.implementation.classes} system property to
 	 * a sequence of class names separated by comma. 
 	 */
-	ENVIRONMENT_IMPLEMENTATION("vtl.environment.implementation.classes", true, 
-			"it.bancaditalia.oss.vtl.impl.environment.CSVFileEnvironment",
-			"it.bancaditalia.oss.vtl.impl.environment.WorkspaceImpl"),
+	ENVIRONMENT_IMPLEMENTATION("vtl.environment.implementation.classes", true, ""),
 
 	/**
 	 * This property allows to choose whether to use BigDecimal as the internal java representation of values of domain Number.
@@ -87,23 +77,15 @@ public enum VTLGeneralProperties implements VTLProperty
 	 * The default value may be changed by using the {@code vtl.config.use.bigdecimal} system property. 
 	 */
 	USE_BIG_DECIMAL("vtl.config.use.bigdecimal", false, "false");
-
-	public static boolean isUseBigDecimal()
-	{
-		return Boolean.valueOf(USE_BIG_DECIMAL.getValue());
-	}
 	
 	private final String name;
 	private final Set<Options> options;
 	private final String defaultValue;
-	
-	private String value = null;
 
 	private VTLGeneralProperties(String name, boolean multiple, String... defaultValue)
 	{
 		this.name = name;
 		this.options = multiple ? EnumSet.of(IS_MULTIPLE) : emptySet();
-		
 		this.defaultValue = Arrays.stream(defaultValue).collect(joining(","));
 	}
 
@@ -111,18 +93,6 @@ public enum VTLGeneralProperties implements VTLProperty
 	public String getName()
 	{
 		return name;
-	}
-	
-	@Override
-	public String getValue()
-	{
-		return value == null || value.isEmpty() ? System.getProperty(name, defaultValue) : value;
-	}
-
-	@Override
-	public void setValue(Object newValue)
-	{
-		value = Objects.toString(newValue);
 	}
 	
 	public Set<Options> getOptions()
@@ -141,10 +111,10 @@ public enum VTLGeneralProperties implements VTLProperty
 	{
 		return "";
 	}
-	
+
 	@Override
-	public boolean hasValue()
+	public String getDefaultValue()
 	{
-		return true;
+		return defaultValue;
 	}
 }

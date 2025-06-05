@@ -45,19 +45,6 @@
 					<groupId>it.bancaditalia.oss.vtl</groupId>
 					<artifactId>vtl-spark</artifactId>
 				</dependency>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>with-r</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
-				</dependency>
 			</dependencies>
 		</profile>
 		<profile>
@@ -70,22 +57,6 @@
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
 					<artifactId>vtl-sdmxenv</artifactId>
-				</dependency>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>default</id>
-			<activation>
-				<activeByDefault></activeByDefault>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
 				</dependency>
 			</dependencies>
 		</profile>

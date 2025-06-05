@@ -45,22 +45,9 @@
 					<artifactId>vtl-spark</artifactId>
 				</dependency>
 				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
-				</dependency>
-				<dependency>
 					<groupId>org.apache.spark</groupId>
 					<artifactId>spark-sql_${scala.compat.version}</artifactId>
 					<scope>provided</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>with-r</id>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
 				</dependency>
 			</dependencies>
 		</profile>
@@ -74,22 +61,6 @@
 				<dependency>
 					<groupId>it.bancaditalia.oss.vtl</groupId>
 					<artifactId>vtl-sdmxenv</artifactId>
-				</dependency>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>default</id>
-			<activation>
-				<activeByDefault></activeByDefault>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>it.bancaditalia.oss.vtl</groupId>
-					<artifactId>vtl-confman</artifactId>
 				</dependency>
 			</dependencies>
 		</profile>

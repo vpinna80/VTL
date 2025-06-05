@@ -23,12 +23,7 @@ import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_FOLDER;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_MULTIPLE;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -50,18 +45,18 @@ public interface VTLProperty
 	 */
 	public String getName();
 
-	/**
-	 * @return The current value for this property
-	 */
-	public String getValue();
-
-	/**
-	 * Change the value for this property. {@link Objects#toString()} is used to determine the object representation.
-	 * 
-	 * @param newValue The new value for this property.
-	 */
-	public void setValue(Object newValue);
-
+//	/**
+//	 * @return The current value for this property
+//	 */
+//	public String getValue();
+//
+//	/**
+//	 * Change the value for this property. {@link Objects#toString()} is used to determine the object representation.
+//	 * 
+//	 * @param newValue The new value for this property.
+//	 */
+//	public void setValue(Object newValue);
+//
 	/**
 	 * @return A description of the property
 	 */
@@ -71,6 +66,11 @@ public interface VTLProperty
 	 * @return A placeholder for the property that can be used as a hint for the property contents
 	 */
 	public String getPlaceholder();
+
+	/**
+	 * @return The default value for this property
+	 */
+	public String getDefaultValue();
 
 	/**
 	 * @return the set of configured options for this VTLProperty.
@@ -109,70 +109,58 @@ public interface VTLProperty
 		return getOptions().contains(IS_FOLDER);
 	}
 	
-	/**
-	 * @return If the property {@link #isMultiple()}, a {@link List} where the elements 
-	 * 		match each of this property's values
-	 */
-	public default List<String> getValues()
-	{
-		return getValue() == null ? null : isMultiple() ? Arrays.asList(getValue().split(",")) : singletonList(getValue());
-	}
-
-	/**
-	 * Change the value for this property
-	 * 
-	 * @param newValue The new value for this property
-	 */
-	public default void setValue(Class<?> newValue)
-	{
-		setValue(newValue.getName());
-	}
-	
-	/**
-	 * Change the values for this property. If the property is not multiple, behaviour is undefined
-	 * 
-	 * @param newValues The new values for this property
-	 */
-	public default void setValues(String... newValues)
-	{
-		setValue(Arrays.stream(newValues).collect(joining(",")));
-	}
-
-	/**
-	 * Change the values for this property. If the property is not multiple, behaviour is undefined
-	 * 
-	 * @param newValues The new values for this property
-	 */
-	public default void setValues(Class<?>... newValues)
-	{
-		setValue(Arrays.stream(newValues).map(Class::getName).collect(joining(",")));
-	}
-
-	/**
-	 * @return {@code true} if a value was set for this property or it has a default value 
-	 */
-	public boolean hasValue();
-
-	/**
-	 * Add new values to this property. If the property is not multiple, behaviour is undefined
-	 * 
-	 * @param newValues The new values to add to existing values of this property
-	 */
-	public default void addValues(String... newValues)
-	{
-		String beginning = hasValue() ? getValue() + "," : "";
-		setValue(Arrays.stream(newValues).collect(joining(",", beginning, "")));
-	}
-	
-	/**
-	 * Verifies if this and/or other properties match a custom rule.
-	 * By default this method returns true.
-	 * Implementers should override this method to check if the value satisfies a speficic rule.
-	 * 
-	 * @return true if this property value satisfies a speficic rule.
-	 */
-	public default boolean validate() 
-	{
-		return true;
-	}
+//	/**
+//	 * @return If the property {@link #isMultiple()}, a {@link List} where the elements 
+//	 * 		match each of this property's values
+//	 */
+//	public default List<String> getValues()
+//	{
+//		return getValue() == null ? null : isMultiple() ? Arrays.asList(getValue().split(",")) : singletonList(getValue());
+//	}
+//
+//	/**
+//	 * Change the value for this property
+//	 * 
+//	 * @param newValue The new value for this property
+//	 */
+//	public default void setValue(Class<?> newValue)
+//	{
+//		setValue(newValue.getName());
+//	}
+//	
+//	/**
+//	 * Change the values for this property. If the property is not multiple, behaviour is undefined
+//	 * 
+//	 * @param newValues The new values for this property
+//	 */
+//	public default void setValues(String... newValues)
+//	{
+//		setValue(Arrays.stream(newValues).collect(joining(",")));
+//	}
+//
+//	/**
+//	 * Change the values for this property. If the property is not multiple, behaviour is undefined
+//	 * 
+//	 * @param newValues The new values for this property
+//	 */
+//	public default void setValues(Class<?>... newValues)
+//	{
+//		setValue(Arrays.stream(newValues).map(Class::getName).collect(joining(",")));
+//	}
+//
+//	/**
+//	 * @return {@code true} if a value was set for this property or it has a default value 
+//	 */
+//	public boolean hasValue();
+//
+//	/**
+//	 * Add new values to this property. If the property is not multiple, behaviour is undefined
+//	 * 
+//	 * @param newValues The new values to add to existing values of this property
+//	 */
+//	public default void addValues(String... newValues)
+//	{
+//		String beginning = hasValue() ? getValue() + "," : "";
+//		setValue(Arrays.stream(newValues).collect(joining(",", beginning, "")));
+//	}
 }

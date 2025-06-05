@@ -19,70 +19,240 @@
  */
 package it.bancaditalia.oss.vtl.config;
 
-import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 
-import it.bancaditalia.oss.vtl.engine.Engine;
-import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.environment.Workspace;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.session.VTLSession;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
+import it.bancaditalia.oss.vtl.util.SerFunction;
+import it.bancaditalia.oss.vtl.util.SerSupplier;
 
 /**
- * Interface for the service used by the application to load and provide implementations
- * for the various VTL Engine components.
- * 
- * Instances of this interface are provided by {@link ConfigurationManagerFactory#newManager()}.
+ * Used by the application to obtain implementing instances of {@link VTLConfiguration},
+ * and by various classes implementing components to register properties.
  * 
  * @author Valentino Pinna
+ *
+ * @see VTLConfiguration
+ * @see VTLGeneralProperties
  */
-public interface ConfigurationManager
+public class ConfigurationManager
 {
-	/**
-	 * Creates a VTL session from the passed VTL code. 
-	 * 
-	 * @param code The VTL code to base to this session on.
-	 * @return The {@link VTLSession} instance.
-	 */
-	public VTLSession createSession(String code);
-
-	/**
-	 * Creates a VTL session from the passed VTL code.
-	 * 
-	 * @param reader the {@link Reader} instance to read the VTL code from. It will be closed when the script is read.
-	 * @return The {@link VTLSession} instance.
-	 */
-	public default VTLSession createSession(Reader reader) throws IOException
-	{
-		try (BufferedReader br = new BufferedReader(reader))
+	private static final Map<Class<?>, List<VTLProperty>> PROPERTIES = new HashMap<>();
+	private static final ThreadLocal<VTLConfiguration> LOCAL = new ThreadLocal<>();
+	private static final VTLConfiguration GLOBAL = new VTLConfiguration() {
+		
+		private static final long serialVersionUID = 1L;
+		
+		@Override
+		public String getPropertyValue(VTLProperty property)
 		{
-			return createSession(br.lines().collect(joining(lineSeparator(), "", lineSeparator())));
+			String value = values.get(property);
+			return value == null || value.trim().isEmpty() ? System.getProperty(property.getName(), property.getDefaultValue()) : value;
 		}
+	};
+	
+	private ConfigurationManager() {}
+	
+	/**
+	 * Initialize the configuration reading VTL properties 
+	 * @param input The reader used to initialize a {@link Properties} object
+	 * @throws IOException if the load fails
+	 */
+	public static void loadGlobalConfiguration(Reader input) throws IOException
+	{
+		Properties props = new Properties();
+		props.load(input);
+		props.forEach((k, v) -> {
+			if (k != null && v != null && k instanceof String && ((String) k).startsWith("vtl."))
+				System.setProperty(k.toString(), v.toString());
+			
+			if (List.of("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort").contains(k))
+			{
+				// Set proxy only if not already set (i.e. by command line parameters)
+				String proxyValue = System.getProperty(k.toString());
+				if (proxyValue == null)
+					System.setProperty(k.toString(), v.toString());
+			}
+		});
 	}
 
 	/**
-	 * @return The {@link MetadataRepository} instance
+	 * Saves the current configuration to the provided Writer as a list of Java properties.
+	 * 
+	 * @param output The stream to write the properties to.
+	 * @throws IOException if a i/o problem arises while saving properties.
+	 * @throws UnsupportedOperationException in case the operation is not supported by this ConfigurationManager.
 	 */
-	public MetadataRepository getMetadataRepository();
+	public static void saveGlobalConfiguration(Writer output) throws IOException
+	{
+		Properties props = new Properties();
+		for (VTLGeneralProperties prop: VTLGeneralProperties.values())
+			props.setProperty(prop.getName(), GLOBAL.getPropertyValue(prop));
+		
+		List<VTLProperty> vtlProps = new ArrayList<>();
+		for (String envName: GLOBAL.getPropertyValues(ENVIRONMENT_IMPLEMENTATION))
+			try
+			{
+				vtlProps.addAll(getSupportedProperties(Class.forName(envName, true, Thread.currentThread().getContextClassLoader())));
+			}
+			catch (ClassNotFoundException e)
+			{
+				throw new VTLNestedException("Error loading class " + envName, e);
+			}
+		
+		try
+		{
+			vtlProps.addAll(ConfigurationManager.getSupportedProperties(Class.forName(GLOBAL.getPropertyValue(METADATA_REPOSITORY), true, Thread.currentThread().getContextClassLoader())));
+		}
+		catch (ClassNotFoundException e)
+		{
+			throw new VTLNestedException("Error loading class " + GLOBAL.getPropertyValue(METADATA_REPOSITORY), e);
+		}
+		
+		for (VTLProperty prop: vtlProps)
+			props.setProperty(prop.getName(), GLOBAL.getPropertyValue(prop));
+
+		for (String proxyProp: List.of("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort"))
+		{
+			String proxyValue = System.getProperty(proxyProp);
+			if (proxyValue != null)
+				props.put(proxyProp, proxyValue);
+		}
+		
+		props.store(output, null);
+	}
 
 	/**
-	 * @return The {@link Engine} instance
+	 * Allows you to retrieve the properties registered by the given implementation class.
+	 * 
+	 * @param implementationClass The implementation class to query.
+	 * @return The list of exposed properties, empty if the class does not expose any property.
 	 */
-	public Engine getEngine();
+	public static List<VTLProperty> getSupportedProperties(Class<?> implementationClass)
+	{
+		if (PROPERTIES.containsKey(implementationClass))
+			return PROPERTIES.get(implementationClass);
+		
+		try 
+		{
+	        Class.forName(implementationClass.getName(), true, Thread.currentThread().getContextClassLoader());
+	    } 
+		catch (ClassNotFoundException e) 
+		{
+	        throw new AssertionError(e); // Can't happen
+	    }
+
+		List<VTLProperty> list = PROPERTIES.get(implementationClass);
+		if (list == null)
+			PROPERTIES.put(implementationClass, Collections.emptyList());
+			
+		return PROPERTIES.get(implementationClass);
+	}
 
 	/**
-	 * @return The {@link List} of {@link Environment} instances
+	 * Query for a specific property by name, if supported by given class.
+	 *  
+	 * @param implementationClass The implementation class to query.
+	 * @param name The name of the queried property.
+	 * @return The requested {@link VTLProperty} instance, or an empty {@link Optional} if none was found.
 	 */
-	public List<Environment> getEnvironments();
+	public static Optional<VTLProperty> findSupportedProperty(Class<?> implementationClass, String name)
+	{
+		return getSupportedProperties(implementationClass).stream().filter(p -> p.getName().equals(name)).findAny();
+	}
+
+	public static void registerSupportedProperties(Class<?> implementationClass, VTLProperty... classProperties)
+	{
+		PROPERTIES.put(implementationClass, Arrays.asList(classProperties));
+	}
 	
-	/**
-	 * Creates a new, empty workspace.
-	 * @return The newly created {@link Workspace} instance
-	 */
-	public Workspace createWorkspace();
+	public static <T> T instanceOfClass(String className, Class<T> instanceClass)
+	{
+		try
+		{
+			return Class.forName(className, true, Thread.currentThread().getContextClassLoader()).asSubclass(instanceClass).getDeclaredConstructor().newInstance();
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
+		{
+			throw new VTLNestedException("Error requesting instance of " + className, e);
+		}
+	}
+	
+	public static String getGlobalPropertyValue(VTLProperty property)
+	{
+		return GLOBAL.getPropertyValue(property);
+	}
+	
+	public static List<String> getGlobalPropertyValues(VTLProperty property)
+	{
+		return GLOBAL.getPropertyValues(property);
+	}
+	
+	public static void setGlobalPropertyValue(VTLProperty property, String newValue)
+	{
+		GLOBAL.setPropertyValue(property, newValue);
+	}
+	
+	public static boolean isUseBigDecimal()
+	{
+		return GLOBAL.isUseBigDecimal();
+	}
+	
+	public static <T> T withConfig(VTLConfiguration config, SerSupplier<T> callback)
+	{
+		try
+		{
+			LOCAL.set(config);
+			return callback.get();
+		}
+		finally
+		{
+			LOCAL.remove();
+		}
+	}
+
+	public static String getLocalPropertyValue(VTLProperty property)
+	{
+		VTLConfiguration config = LOCAL.get();
+		if (config == null)
+			throw new IllegalStateException("Configuration not available outside session initialization");
+		
+		return config.getPropertyValue(property);
+	}
+
+	public static <T> T getLocalConfigurationObject(SerFunction<VTLConfiguration, T> objectMapper)
+	{
+		VTLConfiguration config = LOCAL.get();
+		if (config == null)
+			throw new IllegalStateException("Configuration not available outside session initialization");
+		
+		return objectMapper.apply(config);
+	}
+
+	public static List<String> getLocalPropertyValues(VTLProperty property)
+	{
+		VTLConfiguration config = LOCAL.get();
+		if (config == null)
+			throw new IllegalStateException("Configuration not available outside session initialization");
+		
+		return config.getPropertyValues(property);
+	}
+
+	public static VTLConfiguration newConfiguration() throws ClassNotFoundException
+	{
+		return new VTLConfiguration(GLOBAL);
+	}
 }

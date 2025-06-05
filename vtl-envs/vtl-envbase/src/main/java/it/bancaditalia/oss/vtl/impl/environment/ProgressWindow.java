@@ -17,9 +17,8 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.util;
+package it.bancaditalia.oss.vtl.impl.environment;
 
-import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static java.awt.EventQueue.invokeLater;
@@ -30,7 +29,6 @@ import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,55 +38,50 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.Timer;
 
-import it.bancaditalia.oss.vtl.config.VTLProperty;
-import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class ProgressWindow
 {
-	public static final VTLProperty CSV_PROGRESS_BAR_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", EnumSet.of(IS_REQUIRED), "1000");
-
 	private final JFrame window;
 	private final Timer timer;
 	
 	private volatile int progress = 0;
 
-	private static <T, K> Stream<T> streamHelper(String title, long maxValue, K source, Function<? super K, ? extends Stream<T>> streamProducer)
+	private static <T, K> Stream<T> streamHelper(String title, long maxValue, long threshold, K source, Function<? super K, ? extends Stream<T>> streamProducer)
 	{
-		ProgressWindow window = new ProgressWindow(title, maxValue);
+		ProgressWindow window = new ProgressWindow(title, maxValue, threshold);
 		return Stream.of(source)
 				.map(streamProducer.andThen(s -> s.onClose(window::dispose).peek(i -> window.progress())))
 				.collect(concatenating(ORDERED));
 	}
 
-	private static <K> IntStream intStreamHelper(String title, long maxValue, K source, Function<? super K, ? extends IntStream> streamProducer)
+	private static <K> IntStream intStreamHelper(String title, long maxValue, long threshold, K source, Function<? super K, ? extends IntStream> streamProducer)
 	{
-		ProgressWindow window = new ProgressWindow(title, maxValue);
+		ProgressWindow window = new ProgressWindow(title, maxValue, threshold);
 		try (IntStream watchedStream = streamProducer.apply(source).onClose(window::dispose))
 		{
 			return watchedStream.peek(i -> window.progress());
 		}
 	}
 
-	public static <T> Stream<T> of(String title, Collection<T> source)
+	public static <T> Stream<T> of(String title, Collection<T> source, long threshold)
 	{
-		return streamHelper(title, source.size(), source, Utils::getStream);
+		return streamHelper(title, source.size(), threshold, source, Utils::getStream);
 	}
 
-	public static <T> Stream<T> of(String title, long maxValue, Stream<T> source)
+	public static <T> Stream<T> of(String title, long maxValue, long threshold, Stream<T> source)
 	{
-		
-		return streamHelper(title, maxValue, source, identity());
+		return streamHelper(title, maxValue, threshold, source, identity());
 	}
 
-	public static IntStream of(String title, int maxValue)
+	public static IntStream of(String title, int maxValue, long threshold)
 	{
-		return intStreamHelper(title, maxValue, maxValue, Utils::getStream);
+		return intStreamHelper(title, maxValue, threshold, maxValue, Utils::getStream);
 	}
 
-	private ProgressWindow(String title, long maxValue)
+	private ProgressWindow(String title, long maxValue, long threshold)
 	{
-		if (maxValue > Long.parseLong(CSV_PROGRESS_BAR_THRESHOLD.getValue()))
+		if (maxValue > threshold)
 		{
 			window = new JFrame();
 			JProgressBar progressBar = new JProgressBar();

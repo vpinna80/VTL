@@ -25,7 +25,6 @@ import static java.util.stream.Collectors.joining;
 
 import java.security.InvalidParameterException;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
@@ -37,9 +36,6 @@ public class VTLPropertyImpl implements VTLProperty
 	private final String placeholder;
 	private final String defaultValue;
 	private final Set<Options> options;
-
-	private String value;
-	private boolean hasValue;
 	
 	public VTLPropertyImpl(String name, String description, String placeholder, Set<Options> options, String... defaultValue)
 	{
@@ -55,27 +51,12 @@ public class VTLPropertyImpl implements VTLProperty
 		this.placeholder = placeholder;
 
 		this.defaultValue = Arrays.stream(defaultValue).collect(joining(","));
-		this.value = null;
-		this.hasValue = !this.defaultValue.isEmpty();
 	}
 
 	@Override
 	public String getName()
 	{
 		return name;
-	}
-
-	@Override
-	public String getValue()
-	{
-		return value == null || value.isEmpty() ? System.getProperty(name, defaultValue) : value;
-	}
-
-	@Override
-	public void setValue(Object newValue)
-	{
-		value = Objects.toString(newValue);
-		hasValue = true;
 	}
 	
 	@Override
@@ -97,8 +78,8 @@ public class VTLPropertyImpl implements VTLProperty
 	}
 	
 	@Override
-	public boolean hasValue()
+	public String getDefaultValue()
 	{
-		return hasValue || (getValue() != null && !getValue().isEmpty());
+		return defaultValue;
 	}
 }

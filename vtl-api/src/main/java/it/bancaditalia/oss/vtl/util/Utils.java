@@ -27,10 +27,8 @@ import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -60,24 +58,9 @@ public final class Utils
 		return e -> new SimpleEntry<>(e.getKey(), valueMapper.apply(e.getValue()));
 	}
 
-	public static <K, V> SerConsumer<Entry<K, V>> atKey(SerConsumer<? super K> valueMapper)
-	{
-		return e -> valueMapper.accept(e.getKey());
-	}
-
-	public static <K, V> SerConsumer<Entry<K, V>> atValue(SerConsumer<? super V> valueMapper)
-	{
-		return e -> valueMapper.accept(e.getValue());
-	}
-
 	public static <R> SerUnaryOperator<R> applyIf(SerPredicate<? super R> condition, SerUnaryOperator<R> mapper)
 	{
 		return v -> condition.test(v) ? mapper.apply(v) : v;
-	}
-
-	public static <T, R> SerPredicate<T> afterMapping(SerFunction<? super T, ? extends R> mapper, SerPredicate<? super R> condition)
-	{
-		return t -> condition.test(mapper.apply(t));
 	}
 	
 	public static <K1, K2, V> SerFunction<Entry<K1, V>, Entry<K2, V>> keepingValue(SerFunction<? super K1, ? extends K2> keyMapper)
@@ -103,38 +86,6 @@ public final class Utils
 	public static <K, V> SerFunction<V, Entry<K, V>> toEntryWithKey(SerFunction<? super V, ? extends K> valueToKeyMapper)
 	{
 		return v -> new SimpleEntry<>(valueToKeyMapper.apply(v), v);
-	}
-
-	public static <T, R> R folding(R accumulator, Stream<T> stream, SerBiFunction<? super R, ? super T, ? extends R> aggregator)
-	{
-		for (T object : (Iterable<T>) () -> stream.iterator())
-			accumulator = aggregator.apply(accumulator, object);
-		return accumulator;
-	}
-
-	public static <T, R> R fold(R accumulator, Iterable<T> iterable, SerBiFunction<? super R, ? super T, ? extends R> aggregator)
-	{
-		for (T object : iterable)
-			accumulator = aggregator.apply(accumulator, object);
-
-		return accumulator;
-	}
-
-	public static <T> SerBinaryOperator<T> mergeError()
-	{
-		return (a, b) -> { 
-			throw new UnsupportedOperationException("Found duplicated entries with same key: [" + a + ", " + b + "]");
-		};
-	}
-
-	public static <T> SerBinaryOperator<T> mergeLeft()
-	{
-		return (a, b) -> a;
-	}
-
-	public static <T> SerBinaryOperator<T> mergeRight()
-	{
-		return (a, b) -> b;
 	}
 
 	public static <K, V> SerPredicate<Entry<K, V>> entryByValue(SerPredicate<V> valuePredicate)
@@ -222,44 +173,15 @@ public final class Utils
 		stream = SEQUENTIAL ? stream.sequential() : stream.parallel();
 		return ORDERED ? stream : stream.unordered();
 	}
-
-	public static int[] catArrays(int[] a, int[] b) 
-	{
-	    int[] c = new int[a.length + b.length];
-	    System.arraycopy(a, 0, c, 0, a.length);
-	    System.arraycopy(b, 0, c, a.length, b.length);
-	    return c;
-	}
-
-	public static <K, V> Map<K, V> retainOnly(Map<? extends K, ? extends V> originalMap, Set<? extends K> askedKeys)
-	{
-		Map<K, V> classifierMap = new HashMap<>(originalMap);
-		classifierMap.keySet().retainAll(askedKeys);
-		return classifierMap;
-	}
 	
 	public static <T> T coalesce(T value, T defaultValue)
 	{
 		return value != null ? value : defaultValue;
 	}
 
-	// added so that Eclipse won't complain
-	public static <T, C extends Collection<T>> C coalesce(C value, C defaultValue)
+	public static <T> T coalesce(T value, SerSupplier<? extends T> defaultValue)
 	{
-		return value != null ? value : defaultValue;
-	}
-	
-	public static <T> T coalesceSwapped(T defaultValue, T value)
-	{
-		return value != null ? value : defaultValue;
-	}
-	
-	public static <T> void tryWith(SerSupplier<? extends Stream<T>> supplier, SerConsumer<? super Stream<T>> consumer)
-	{
-		try (Stream<T> stream = supplier.get())
-		{
-			consumer.accept(stream);
-		}
+		return value != null ? value : defaultValue.get();
 	}
 
 	public static <T, R> R tryWith(SerSupplier<? extends Stream<T>> supplier, SerFunction<? super Stream<T>, R> consumer)
@@ -268,10 +190,5 @@ public final class Utils
 		{
 			return consumer.apply(stream);
 		}
-	}
-	
-	public static <T, R> R ifNonNull(T operand, SerFunction<T, R> operator)
-	{
-		return operand == null ? (R) null : operator.apply(operand);
 	}
 }
