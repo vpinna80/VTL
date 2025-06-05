@@ -28,21 +28,19 @@ import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V, S, D>, V extends ScalarValue<?, ?, ? extends S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> 
-		implements DescribedDomainSubset<C, V, S, D>
+public abstract class CriterionDomainSubset<S extends CriterionDomainSubset<S, D>, D extends ValueDomain> implements DescribedDomainSubset<S, D>
 {
 	private static final long serialVersionUID = 1L;
 
 	private final VTLAlias alias;
-	private final S parent;
+	private final D parent;
 	
- 	public CriterionDomainSubset(VTLAlias alias, S parent)
+ 	public CriterionDomainSubset(VTLAlias alias, D parent)
 	{
 		this.alias = alias;
 		this.parent = parent;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public D getParentDomain()
 	{
@@ -51,15 +49,15 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final ScalarValue<?, ?, C, D> cast(ScalarValue<?, ?, ?, ?> value)
+	public final ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value.isNull())
-			return NullValue.instance((C) this);
+			return NullValue.instance((S) this);
 		
-		return castCasted((V) parent.cast(value));
+		return castCasted((ScalarValue<?, ?, S, D>) ((ValueDomainSubset<?, ?>) parent).cast(value));
 	}
 
-	protected abstract ScalarValue<?, ?, C, D> castCasted(V casted);
+	protected abstract ScalarValue<?, ?, S, D> castCasted(ScalarValue<?, ?, S, D> casted);
 
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
@@ -96,7 +94,7 @@ public abstract class CriterionDomainSubset<C extends CriterionDomainSubset<C, V
 			return true;
 		if (!(obj instanceof CriterionDomainSubset))
 			return false;
-		CriterionDomainSubset<?, ?, ?, ?> other = (CriterionDomainSubset<?, ?, ?, ?>) obj;
+		CriterionDomainSubset<?, 	?> other = (CriterionDomainSubset<?, ?>) obj;
 		if (alias == null)
 		{
 			if (other.alias != null)

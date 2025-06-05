@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.domain;
 
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.isUseBigDecimal;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 
@@ -36,7 +36,7 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDomainSubset, NumberValue<?, ?, EntireNumberDomainSubset, NumberDomain>, EntireNumberDomainSubset, NumberDomain> implements NumberDomainSubset<EntireNumberDomainSubset, NumberDomain>, Serializable
+public class EntireNumberDomainSubset extends EntireDomainSubset<EntireNumberDomainSubset, NumberDomain> implements NumberDomainSubset<EntireNumberDomainSubset, NumberDomain>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 

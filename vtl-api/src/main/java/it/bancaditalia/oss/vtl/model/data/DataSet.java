@@ -105,9 +105,10 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * Creates a new DataSet by retaining only the datapoints in this DataSet which match a given {@link Predicate}.
 	 * 
 	 * @param predicate The {@link Predicate} to be applied.
+	 * @param enricher the lineage enricher
 	 * @return A new filtered DataSet. 
 	 */
-	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOp);
+	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> enricher);
 
 	/**
 	 * Creates a new DataSet that represents the subspace of this DataSet with given identifiers having specific values
@@ -153,6 +154,8 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers.
 	 * If no grouping identifiers are specified, the dataset is aggregated to a scalar.
 	 * 
+	 * @param <T> The type of elements fed into the aggregation
+	 * @param <TT> The type of the result produced by the aggregation
 	 * @param resultMetadata the metadata of the result value produced
 	 * @param keys the identifiers on whose values datapoints should be grouped 
 	 * @param groupCollector the aggregator that performs the reduction
@@ -228,6 +231,8 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * Checks if a DataPoint is contained in this DataSet.
 	 * 
 	 * <b>NOTE</b>: The default implementation performs a linear search, potentially traversing this DataSet entirely.
+	 * @param datapoint the datapoint to check
+	 * @return true if the DataPoint is contained in this DataSet
 	 */
 	public default boolean contains(DataPoint datapoint)
 	{
@@ -238,6 +243,8 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * Checks if a DataPoint is not contained in this DataSet.
 	 * 
 	 * <b>NOTE</b>: The default implementation performs a linear search, potentially traversing this DataSet entirely.
+	 * @param datapoint the datapoint to check
+	 * @return true if the DataPoint is contained in this DataSet
 	 */
 	public default boolean notContains(DataPoint datapoint)
 	{

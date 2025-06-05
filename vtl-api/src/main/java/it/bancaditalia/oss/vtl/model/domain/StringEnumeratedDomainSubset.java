@@ -25,6 +25,8 @@ import it.bancaditalia.oss.vtl.model.data.CodeItem;
  * Representation of a finite enumerated subset of the VTL "String" domain (essentially, a code list).
  * 
  * @author Valentino Pinna
+ * @param <S> The {@link StringEnumeratedDomainSubset} subtype
+ * @param <C> The {@link CodeItem} subtype
  */
 public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C>, C extends CodeItem<C, String, S, StringDomain>> extends EnumeratedDomainSubset<S, C, StringDomain>, StringDomainSubset<S>
 {

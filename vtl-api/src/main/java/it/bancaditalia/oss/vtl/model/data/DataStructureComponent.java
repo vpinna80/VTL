@@ -82,6 +82,7 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 	/**
 	 * Convencience method that narrows the role of this {@link DataStructureComponent} to the specified role if possible.
 	 * 
+	 * @param <R2> The narrowed role 
 	 * @param role the role to narrow to
 	 * @return this component with the narrowed role.
 	 * @throws ClassCastException if the role cannot be narrowed.

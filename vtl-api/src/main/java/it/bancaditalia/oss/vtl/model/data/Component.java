@@ -61,6 +61,11 @@ public interface Component
 			return clazz;
 		}
 		
+		public boolean matchesComponent(DataStructureComponent<?, ?, ?> component)
+		{
+			return clazz.isAssignableFrom(component.getRole());
+		}
+		
 		public static Role from(Class<? extends Component> clazz)
 		{
 			return ENUM_TAGS.get(clazz);

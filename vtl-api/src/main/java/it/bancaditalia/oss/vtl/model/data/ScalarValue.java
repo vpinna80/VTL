@@ -30,6 +30,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
  * 
  * @author Valentino Pinna
  *
+ * @param <C> The {@link ScalarValue} subtype
  * @param <R> the Java class that is used to hold the effective value of this ScalarValue for computational 
  * 			purposes. Usually hidden as an implementation detail.
  * @param <S> the {@link ValueDomainSubset} of this value. 

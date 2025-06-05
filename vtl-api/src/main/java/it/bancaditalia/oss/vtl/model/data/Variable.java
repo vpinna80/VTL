@@ -28,9 +28,11 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
 /**
- * Representation of a VTL variable.
+ * Representation of a VTL Represented Variable, that provides a name and a domain subset.
  * 
  * @author Valentino Pinna
+ * @param <S> The {@link ValueDomainSubset} type
+ * @param <D> The {@link ValueDomain} type of the domain subset
  */
 public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends ScalarValueMetadata<S, D>
 {
@@ -38,9 +40,11 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	 * A Comparator to lexically sort Variables by their name.
 	 * @see Comparator#compare(Object, Object)
 	 *  
-	 * @param v1
-	 * @param v2
-	 * @return 
+	 * @param v1 first variable
+	 * @param v2 second variable
+	 * @return a negative integer, zero, or a positive integer as the
+     *         first argument is less than, equal to, or greater than the
+     *         second
 	 */
 	public static int byName(Variable<?, ?> v1, Variable<?, ?> v2)
 	{

@@ -26,7 +26,7 @@ import it.bancaditalia.oss.vtl.model.data.Variable;
  * A subset of a {@link ValueDomain} as defined by VTL specification.
  * 
  * @author Valentino Pinna
- *
+ * @param <S> The actual {@link ValueDomainSubset} subtype
  * @param <D> The parent {@link ValueDomain}
  */
 public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends ValueDomain

@@ -28,12 +28,12 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
  * 
  * @author Valentino Pinna
  *
- * @param <V> the type representing a scalar value of this domain
- * @param <S> the parent domain
+ * @param <S> the {@link DescribedDomainSubset} subtype
+ * @param <D> the parent {@link ValueDomain} type
  */
-public interface DescribedDomainSubset<DS extends DescribedDomainSubset<DS, V, S, D>, V extends ScalarValue<?, ?, ? extends S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<DS, D>
+public interface DescribedDomainSubset<S extends DescribedDomainSubset<S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
 {
 	public Transformation getCriterion();
 	
-	public boolean test(V value);
+	public boolean test(ScalarValue<?, ?, S, D> value);
 }

@@ -31,7 +31,7 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class RangeNumberDomainSubset<S extends NumberDomainSubset<S, NumberDomain>> extends CriterionDomainSubset<RangeNumberDomainSubset<S>, DoubleValue<S>, S, NumberDomain> implements NumberDomainSubset<RangeNumberDomainSubset<S>, NumberDomain>
+public class RangeNumberDomainSubset<S extends RangeNumberDomainSubset<S>> extends CriterionDomainSubset<S, NumberDomain> implements NumberDomainSubset<S, NumberDomain>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -39,7 +39,7 @@ public class RangeNumberDomainSubset<S extends NumberDomainSubset<S, NumberDomai
 	private final OptionalDouble max;
 	private final boolean inclusive;
 	
- 	public RangeNumberDomainSubset(VTLAlias name, S parent, OptionalDouble min, OptionalDouble max, boolean inclusive)
+ 	public RangeNumberDomainSubset(VTLAlias name, NumberDomain parent, OptionalDouble min, OptionalDouble max, boolean inclusive)
 	{
  		super(VTLAliasImpl.of(parent.getAlias() + (min.isPresent() ? ">=" + min.getAsDouble() : "") + (max.isPresent() ? (inclusive ? "<=" : "<") + max.getAsDouble() : "")), parent);
 
@@ -55,26 +55,28 @@ public class RangeNumberDomainSubset<S extends NumberDomainSubset<S, NumberDomai
 	}
 
 	@Override
-	public boolean test(DoubleValue<S> value)
+	public boolean test(ScalarValue<?, ?, S, NumberDomain> value)
 	{
-		Double val = value.get();
+		Double val = (Double) value.get();
 		
 		return (min.isEmpty() || min.getAsDouble() < val) && (max.isEmpty() || (inclusive ? max.getAsDouble() > val : max.getAsDouble() >= val));
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	protected ScalarValue<?, ?, RangeNumberDomainSubset<S>, NumberDomain> castCasted(DoubleValue<S> value)
+	protected ScalarValue<?, ?, S, NumberDomain> castCasted(ScalarValue<?, ?, S, NumberDomain> value)
 	{
 		if (test(value))
-			return DoubleValue.of(value.get(), (RangeNumberDomainSubset<S>) this);
+			return DoubleValue.of((Double) value.get(), (S) this);
 		else
 			throw new VTLCastException(this, value);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Variable<RangeNumberDomainSubset<S>, NumberDomain> getDefaultVariable()
+	public Variable<S, NumberDomain> getDefaultVariable()
 	{
-		return new DefaultVariable<>(this);
+		return new DefaultVariable<>((S) this);
 	}
 
 	@Override

@@ -28,10 +28,9 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public abstract class TransformationCriterionDomainSubset<T extends TransformationCriterionDomainSubset<T, V, S, D>, V extends ScalarValue<?, ?, S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends CriterionDomainSubset<T, V, S, D>
+public abstract class TransformationCriterionDomainSubset<S extends TransformationCriterionDomainSubset<S, D>, D extends ValueDomain> extends CriterionDomainSubset<S, D>
 {
 	public static final VTLAlias TEST_ALIAS = VTLAliasImpl.of("'#TEST_ALIAS#'");
 	
@@ -39,7 +38,7 @@ public abstract class TransformationCriterionDomainSubset<T extends Transformati
 
 	private final Transformation transformation;
 
-	public TransformationCriterionDomainSubset(VTLAlias alias, S parent, Transformation expression)
+	public TransformationCriterionDomainSubset(VTLAlias alias, D parent, Transformation expression)
 	{
 		super(alias, parent);
 
@@ -53,17 +52,17 @@ public abstract class TransformationCriterionDomainSubset<T extends Transformati
 	}
 
 	@Override
-	public boolean test(V value)
+	public boolean test(ScalarValue<?, ?, S, D> value)
 	{
 		VTLValue result = transformation.eval(new TransformationCriterionScope<>(value));
 		return result instanceof BooleanValue && result == BooleanValue.TRUE; 
 	}
 
 	@Override
-	public Variable<T, D> getDefaultVariable()
+	public Variable<S, D> getDefaultVariable()
 	{
 		@SuppressWarnings("unchecked")
-		T domain = (T) this;
+		S domain = (S) this;
 		return new DefaultVariable<>(domain);
 	}
 }

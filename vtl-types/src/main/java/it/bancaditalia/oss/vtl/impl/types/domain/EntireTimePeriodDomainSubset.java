@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimePeriodDomainSubset, TimePeriodValue<EntireTimePeriodDomainSubset>, EntireTimePeriodDomainSubset, TimePeriodDomain> implements TimePeriodDomainSubset<EntireTimePeriodDomainSubset>
+public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimePeriodDomainSubset, TimePeriodDomain> implements TimePeriodDomainSubset<EntireTimePeriodDomainSubset>
 {
 	private static final long serialVersionUID = 1L;
 

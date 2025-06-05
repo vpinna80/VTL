@@ -54,8 +54,7 @@ public class ParameterImpl implements Parameter, Serializable
 	@Override
 	public boolean matches(TransformationScheme scheme, Transformation argument)
 	{
-		// TODO Auto-generated method stub
-		return false;
+		return type.matches(scheme, argument);
 	}
 
 	@Override

@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  * 
  * @author Valentino Pinna
  *
- * @param <T>
+ * @param <T> The {@link Spliterator} type
  */
 public class ConcatSpliterator<T> implements Spliterator<T>
 {

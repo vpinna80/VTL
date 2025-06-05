@@ -81,9 +81,11 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * 
 	 * The returned set should not be altered in any way.
 	 * 
-	 * @param <R> the role type
-	 * @param role the role to query
-	 * @param domain the domain to query
+	 * @param <S> The {@link ValueDomainSubset} type
+	 * @param <D> The {@link ValueDomain} type of the domain subset
+	 * @param <R> The role type
+	 * @param role The role to query
+	 * @param domain The domain to query
 	 * @return A set of the queried components.
 	 */
 	@SuppressWarnings("unchecked")
@@ -204,7 +206,7 @@ public interface DataSetMetadata extends Set<DataStructureComponent<?, ?, ?>>, V
 	 * @param <S> the domain subset type of the component
 	 * @param <D> the domain type of the component
 	 * @param role The class representing the role
-	 * @param role The valuedomain subset which the component must be assignable to
+	 * @param domain The valuedomain subset which the component must be assignable to
 	 * @return the singleton component
 	 */
 	public default <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureComponent<R, S, D> getSingleton(Class<R> role, S domain)

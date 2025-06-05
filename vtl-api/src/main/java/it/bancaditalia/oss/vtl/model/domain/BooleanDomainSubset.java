@@ -25,6 +25,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * Representation of a subset of the VTL "Boolean" domain.
  * 
  * @author Valentino Pinna
+ * @param <S>  The {@link BooleanDomainSubset} subtype
  */
 public interface BooleanDomainSubset<S extends BooleanDomainSubset<S>> extends ValueDomainSubset<S, BooleanDomain>, BooleanDomain
 {

@@ -20,9 +20,9 @@
 package it.bancaditalia.oss.vtl.model.transform;
 
 import java.util.Map;
+import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -54,7 +54,15 @@ public interface TransformationScheme
 	public VTLValue resolve(VTLAlias alias);
 
 	/**
-	 * The same as {@code expected.cast(resolve(alias))} 
+	 * Searches and retrieves a value, referred by an alias defined in this TransformationScheme;
+	 * then casts the value to the given expected subclass of VTLValue.
+	 *  
+	 * @param <T> the expected class type
+	 * @param alias The alias whose value is to be retrieved.
+	 * @param expected The expected class of the retrieved value.
+	 * @return The {@link VTLValue} if the alias is found.
+	 * @throws VTLUnboundAliasException if the alias is not defined.
+	 * @throws ClassCastException if the retrieved VTLValue is not an instance of T
 	 */
 	public default <T extends VTLValue> T resolve(VTLAlias alias, Class<T> expected)
 	{
@@ -87,9 +95,8 @@ public interface TransformationScheme
 	 * 
 	 * @param alias the alias of the rule whose structure is to be retrieved.
 	 * @return a {@link Statement} instance describing the rule if found.
-	 * @throws VTLUnboundAliasException if the alias is not defined.
 	 */
-	public Statement getRule(VTLAlias alias);
+	public Optional<Statement> getRule(VTLAlias alias);
 
 	/**
 	 * Returns a holder map for computed values of type T
@@ -124,7 +131,7 @@ public interface TransformationScheme
 	 * @param value The value to persist
 	 * @param alias The alias under which the value must be persisted
 	 */
-	public default void persist(VTLValue value, VTLAlias alias) throws VTLException
+	public default void persist(VTLValue value, VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}

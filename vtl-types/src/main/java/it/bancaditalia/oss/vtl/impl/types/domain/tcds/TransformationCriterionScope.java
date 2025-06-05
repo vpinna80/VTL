@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.domain.tcds;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
@@ -71,7 +72,7 @@ public class TransformationCriterionScope<V extends ScalarValue<?, ?, S, D>, S e
 	}
 
 	@Override
-	public Statement getRule(VTLAlias alias)
+	public Optional<Statement> getRule(VTLAlias alias)
 	{
 		throw new UnsupportedOperationException();
 	}

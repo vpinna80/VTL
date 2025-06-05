@@ -31,7 +31,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends CriterionDomainSubset<RangeIntegerDomainSubset<S>, IntegerValue<?, S>, S, IntegerDomain> implements IntegerDomainSubset<RangeIntegerDomainSubset<S>>
+public class RangeIntegerDomainSubset<S extends RangeIntegerDomainSubset<S>> extends CriterionDomainSubset<RangeIntegerDomainSubset<S>, IntegerDomain> implements IntegerDomainSubset<RangeIntegerDomainSubset<S>>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -39,7 +39,7 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 	private final OptionalLong max;
 	private final boolean inclusive;
 	
- 	public RangeIntegerDomainSubset(VTLAlias name, S parent, OptionalLong min, OptionalLong max, boolean inclusive)
+ 	public RangeIntegerDomainSubset(VTLAlias name, IntegerDomainSubset<?> parent, OptionalLong min, OptionalLong max, boolean inclusive)
 	{
  		super(VTLAliasImpl.of(parent.getAlias().getName() + (min.isPresent() ? ">=" + min.getAsLong() : "") + (max.isPresent() ? (inclusive ? "<=" : "<") + max.getAsLong() : "")), parent);
 
@@ -55,18 +55,18 @@ public class RangeIntegerDomainSubset<S extends IntegerDomainSubset<S>> extends 
 	}
 
 	@Override
-	public boolean test(IntegerValue<?, S> value)
+	public boolean test(ScalarValue<?, ?, RangeIntegerDomainSubset<S>, IntegerDomain> value)
 	{
-		Long val = value.get();
+		Long val = (Long) value.get();
 		
 		return (min.isEmpty() || min.getAsLong() < val) && (max.isEmpty() || (inclusive ? max.getAsLong() > val : max.getAsLong() >= val));
 	}
 	
 	@Override
-	protected ScalarValue<?, ?, RangeIntegerDomainSubset<S>, IntegerDomain> castCasted(IntegerValue<?, S> value)
+	protected ScalarValue<?, ?, RangeIntegerDomainSubset<S>, IntegerDomain> castCasted(ScalarValue<?, ?, RangeIntegerDomainSubset<S>, IntegerDomain> value)
 	{
 		if (test(value))
-			return IntegerValue.of(value.get(), this);
+			return IntegerValue.of((Long) value.get(), this);
 		else
 			throw new VTLCastException(this, value);
 	}

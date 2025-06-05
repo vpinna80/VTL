@@ -34,14 +34,14 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends CriterionDomainSubset<StrlenDomainSubset<S>, StringValue<?, S>, S, StringDomain> implements StringDomainSubset<StrlenDomainSubset<S>>, Serializable
+public class StrlenDomainSubset extends CriterionDomainSubset<StrlenDomainSubset, StringDomain> implements StringDomainSubset<StrlenDomainSubset>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
 	private final OptionalInt minLenInclusive;
 	private final OptionalInt maxLenInclusive;
 	
-	public StrlenDomainSubset(S parent, OptionalInt minLenInclusive, OptionalInt maxLenInclusive)
+	public StrlenDomainSubset(StringDomain parent, OptionalInt minLenInclusive, OptionalInt maxLenInclusive)
 	{
 		super(VTLAliasImpl.of(true, parent.getAlias() + (minLenInclusive.isPresent() ? ">=" + minLenInclusive.getAsInt() : "") + (maxLenInclusive.isPresent() ? "<=" + maxLenInclusive.getAsInt() : "")), parent);
 		
@@ -56,10 +56,21 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	}
 
 	@Override
-	protected ScalarValue<?, ?, StrlenDomainSubset<S>, StringDomain> castCasted(StringValue<?, S> casted)
+	public boolean test(ScalarValue<?, ?, StrlenDomainSubset, StringDomain> value)
+	{
+		int len = ((String) value.get()).length();
+		if (minLenInclusive.isPresent() && len < minLenInclusive.getAsInt())
+			return false;
+		if (maxLenInclusive.isPresent() && len > maxLenInclusive.getAsInt())
+			return false;
+		return true;
+	}
+
+	@Override
+	protected ScalarValue<?, ?, StrlenDomainSubset, StringDomain> castCasted(ScalarValue<?, ?, StrlenDomainSubset, StringDomain> casted)
 	{
 		if (test(casted))
-			return StringValue.of(casted.get(), this);
+			return StringValue.of((String) casted.get(), this);
 		else
 			throw new VTLCastException(this, casted); 
 	}
@@ -71,18 +82,7 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 	}
 
 	@Override
-	public boolean test(StringValue<?, S> value)
-	{
-		int len = ((String) value.get()).length();
-		if (minLenInclusive.isPresent() && len < minLenInclusive.getAsInt())
-			return false;
-		if (maxLenInclusive.isPresent() && len > maxLenInclusive.getAsInt())
-			return false;
-		return true;
-	}
-
-	@Override
-	public Variable<StrlenDomainSubset<S>, StringDomain> getDefaultVariable()
+	public Variable<StrlenDomainSubset, StringDomain> getDefaultVariable()
 	{
 		return new DefaultVariable<>(this);
 	}
@@ -106,7 +106,7 @@ public class StrlenDomainSubset<S extends StringDomainSubset<S>> extends Criteri
 			return false;
 		if (!(obj instanceof StrlenDomainSubset))
 			return false;
-		StrlenDomainSubset<?> other = (StrlenDomainSubset<?>) obj;
+		StrlenDomainSubset other = (StrlenDomainSubset) obj;
 		if (!maxLenInclusive.equals(other.maxLenInclusive))
 			return false;
 		if (!minLenInclusive.equals(other.minLenInclusive))

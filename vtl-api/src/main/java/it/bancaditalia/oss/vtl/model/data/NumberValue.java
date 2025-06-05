@@ -27,9 +27,10 @@ import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
  * 
  * @author Valentino Pinna
  *
- * @param <R>
- * @param <S>
- * @param <D>
+ * @param <T> The {@link NumberValue} subtype 
+ * @param <R> The internal representation type
+ * @param <S> The {@link NumberDomainSubset} subtype
+ * @param <D> The {@link NumberDomain} parent type 
  */
 public interface NumberValue<T extends NumberValue<T, R, S, D>, R extends Number & Comparable<? super R>, S extends NumberDomainSubset<S, D>, D extends NumberDomain> extends ScalarValue<T, R, S, D> 
 {

@@ -30,6 +30,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
  * @author Valentino Pinna
  *
  * @param <S> the enumerated domain subset
+ * @param <C> The {@link CodeItem} subtype
  * @param <D> the base domain
  */
 public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, C, D>, C extends CodeItem<?, ?, S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>

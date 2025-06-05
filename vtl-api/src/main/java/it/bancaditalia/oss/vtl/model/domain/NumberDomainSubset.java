@@ -25,6 +25,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * Representation of a subset of the VTL "Number" domain.
  * 
  * @author Valentino Pinna
+ * @param <S> The actual {@link NumberDomainSubset} subtype
+ * @param <D> The parent {@link NumberDomain} parent domain subtype
  */
 public interface NumberDomainSubset<S extends NumberDomainSubset<S, D>, D extends NumberDomain> extends ValueDomainSubset<S, D>, NumberDomain
 {

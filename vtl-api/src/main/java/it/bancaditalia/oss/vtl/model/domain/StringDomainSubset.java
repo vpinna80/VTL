@@ -25,6 +25,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
  * Representation of a subset of the VTL "String" domain.
  * 
  * @author Valentino Pinna
+ * @param <S> The {@link StringDomainSubset} subtype
  */
 public interface StringDomainSubset<S extends StringDomainSubset<S>> extends ValueDomainSubset<S, StringDomain>, StringDomain
 {

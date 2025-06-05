@@ -23,6 +23,7 @@ package it.bancaditalia.oss.vtl.model.domain;
  * Representation of a subset of the VTL "Time Period" domain.
  * 
  * @author Valentino Pinna
+ * @param <S> the {@link TimePeriodDomainSubset} subclass
  */
 public interface TimePeriodDomainSubset<S extends TimePeriodDomainSubset<S>> extends TimePeriodDomain, TimeDomainSubset<S, TimePeriodDomain>
 {

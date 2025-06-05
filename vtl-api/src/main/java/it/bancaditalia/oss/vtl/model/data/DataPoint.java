@@ -59,16 +59,14 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the component whose values are used for the ordering
 	 * @return the Comparator instance
 	 */
-	public static <S extends ValueDomainSubset<S, D>, D extends ValueDomain> SerComparator<DataPoint> compareBy(List<DataStructureComponent<?, ?, ?>> components)
+	public static SerComparator<DataPoint> compareBy(List<DataStructureComponent<?, ?, ?>> components)
 	{
 		SerToIntBiFunction<DataPoint, DataPoint> comparator = null;
 		for (DataStructureComponent<?, ?, ?> component: components)
 		{
-			@SuppressWarnings("unchecked")
-			DataStructureComponent<Identifier, S, D> c = (DataStructureComponent<Identifier, S, D>) component;
 			if (comparator == null)
 				comparator = (dp1, dp2) -> {
-					return dp1.getValue(c).compareTo(dp2.getValue(c));
+					return dp1.get(component).compareTo(dp2.get(component));
 				};
 			else
 			{
@@ -76,7 +74,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 				comparator = (dp1, dp2) -> {
 					int r = prevComparator.applyAsInt(dp1, dp2);
 					if (r == 0)
-						return dp1.getValue(c).compareTo(dp2.getValue(c));
+						return dp1.get(component).compareTo(dp2.get(component));
 					else
 						return r;
 				};
@@ -130,7 +128,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 
 	/**
 	 * Create a new DataPoint by enriching its lineage information with the provided function.
-	 * 
+	 * @param enricher The lineage enricher
 	 * @return the new enriched datapoint 
 	 */
 	public DataPoint enrichLineage(SerUnaryOperator<Lineage> enricher);

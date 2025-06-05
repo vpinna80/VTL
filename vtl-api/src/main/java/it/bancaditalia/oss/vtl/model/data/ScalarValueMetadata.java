@@ -29,7 +29,8 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
  * 
  * @author Valentino Pinna
  *
- * @param <S> The {@link ValueDomainSubset} type.
+ * @param <S> The {@link ValueDomainSubset} type
+ * @param <D> The {@link ValueDomain} type of the domain subset
  */
 @FunctionalInterface
 public interface ScalarValueMetadata<S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends VTLValueMetadata, Serializable
@@ -42,6 +43,8 @@ public interface ScalarValueMetadata<S extends ValueDomainSubset<S, D>, D extend
 	/**
 	 * Creates a ScalarValueMetadata from a given domain subset.
 	 * 
+	 * @param <S> The {@link ValueDomainSubset} type
+	 * @param <D> The {@link ValueDomain} type of the domain subset
 	 * @param domain the domain to create a metadata object from
 	 * @return the new metadata instance
 	 */

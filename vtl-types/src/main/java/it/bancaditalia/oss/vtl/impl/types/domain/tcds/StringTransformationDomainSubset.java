@@ -28,13 +28,12 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
-public class StringTransformationDomainSubset<V extends StringValue<?, S>, S extends StringDomainSubset<S>> 
-		extends TransformationCriterionDomainSubset<StringTransformationDomainSubset<V, S>, V, S, StringDomain> 
-		implements StringDomainSubset<StringTransformationDomainSubset<V, S>>
+public class StringTransformationDomainSubset extends TransformationCriterionDomainSubset<StringTransformationDomainSubset, StringDomain> 
+		implements StringDomainSubset<StringTransformationDomainSubset>
 {
 	private static final long serialVersionUID = 1L;
 
-	public StringTransformationDomainSubset(VTLAlias alias, S parent, Transformation expression)
+	public StringTransformationDomainSubset(VTLAlias alias, StringDomain parent, Transformation expression)
 	{
 		super(alias, parent, expression);
 		
@@ -42,8 +41,9 @@ public class StringTransformationDomainSubset<V extends StringValue<?, S>, S ext
 	}
 
 	@Override
-	protected ScalarValue<?, ?, StringTransformationDomainSubset<V, S>, StringDomain> castCasted(V casted)
+	protected ScalarValue<?, ?, StringTransformationDomainSubset, StringDomain> castCasted(
+		ScalarValue<?, ?, StringTransformationDomainSubset, StringDomain> casted)
 	{
-		return StringValue.of(casted.get(), this);
+		return StringValue.of((String) casted.get(), this);
 	}
 }
