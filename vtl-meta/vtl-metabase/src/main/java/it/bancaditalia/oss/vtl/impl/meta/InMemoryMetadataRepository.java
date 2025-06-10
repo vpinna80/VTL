@@ -25,6 +25,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
@@ -126,7 +127,19 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	@Override
 	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias)
 	{
-		return Optional.ofNullable(chained).flatMap(chained -> chained.getStructureDefinition(alias));
+		return chained == null ? Optional.empty() : chained.getStructureDefinition(alias);
+	}
+
+	@Override
+	public Optional<String> getTransformationScheme(VTLAlias alias)
+	{
+		return chained == null ? Optional.empty() : chained.getTransformationScheme(alias);
+	}
+	
+	@Override
+	public Set<VTLAlias> getAvailableSchemeAliases()
+	{
+		return chained == null ? Set.of() : chained.getAvailableSchemeAliases();
 	}
 	
 	@Override

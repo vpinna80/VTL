@@ -21,7 +21,6 @@
 #' @import rJava
 #' @import R6
 .onAttach <- function(libname, pkgname) {
-
   spark <- Sys.getenv('SPARK_HOME')
   jars = c("log4j2.xml", system.file("java/log4j2.xml", package = pkgname), list.files(system.file("java", package = pkgname), ".*\\.jar"))
   files <- if (spark != '') list.files(paste0(spark, '/jars'), full.names = T) else ''
@@ -47,7 +46,7 @@
     if (file.exists(propfile)) {
       reader = .jnew("java.io.FileReader", propfile)
       tryCatch({
-        J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
+        J("it.bancaditalia.oss.vtl.config.ConfigurationManager")$loadGlobalConfiguration(reader)
         packageStartupMessage("VTL settings loaded from ", propfile, ".")
       }, finally = {
         reader$close()

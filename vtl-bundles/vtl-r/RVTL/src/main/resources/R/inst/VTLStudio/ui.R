@@ -18,6 +18,8 @@
 # permissions and limitations under the License.
 #
 
+library(RVTL)
+
 labels <- list(
   compile = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
   saveas = HTML('<span style="margin-right: 1em">Export code as...</span><span style="font-family: monospace">(Ctrl+S)</span>'),
@@ -41,6 +43,21 @@ makeButton <- \(id) tags$button(
   `data-bs-target` = paste0('#', id),
   icon('minus')
 )
+
+environments <- list(
+  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
+  , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
+  , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
+  #  , `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
+)
+
+activeEnvs <- function(active) {
+  configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")
+  ENVIRONMENT_IMPLEMENTATION <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION
+  envs <- sapply(configManager$getGlobalPropertyValues(ENVIRONMENT_IMPLEMENTATION), .jstrVal)
+  items <- names(environments[xor(!active, environments %in% envs)])
+  if (length(items) > 0) items else NULL
+}
 
 vtlUI <- bslib::page_sidebar(
     window_title = 'VTL Studio!',
@@ -84,7 +101,14 @@ vtlUI <- bslib::page_sidebar(
         bslib::layout_column_wrap(width = 1/2,
           bslib::card(
             bslib::card_header('Network Proxy', makeButton('card_proxy')),
-            bslib::card_body(id = 'card_proxy', class = 'collapse show', uiOutput(outputId = "proxyControls"))
+            bslib::card_body(id = 'card_proxy', class = 'collapse show',
+              bslib::layout_column_wrap(width = 1/2, gap = "1em",
+                textInput('proxyHost', 'Host:', J("java.lang.System")$getProperty("https.proxyHost")),
+                textInput('proxyPort', 'Port:', J("java.lang.System")$getProperty("https.proxyPort")),
+                textInput('proxyUser', 'User:', J("java.lang.System")$getProperty("https.proxyUser")),
+                passwordInput('proxyPassword', 'Password:', J("java.lang.System")$getProperty("https.proxyPassword"))
+              )
+            )
           ),
           bslib::card(
             bslib::card_header('Metadata Repository', makeButton('card_meta')),
@@ -95,7 +119,12 @@ vtlUI <- bslib::page_sidebar(
           ),
           bslib::card(
             bslib::card_header('VTL Environments', makeButton('card_envs')),
-            bslib::card_body(id = 'card_envs', class = 'collapse show', uiOutput(outputId = "sortableEnvs"))
+            bslib::card_body(id = 'card_envs', class = 'collapse show', 
+              sortable::bucket_list(header = NULL, orientation = 'horizontal',
+                sortable::add_rank_list(text = "Available", labels = activeEnvs(F)),
+                sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T))
+              )
+            )
           ),
           bslib::card(
             bslib::card_header('Environment Properties', makeButton('card_envprops')),
@@ -115,12 +144,12 @@ vtlUI <- bslib::page_sidebar(
                 column(width = 6, downloadButton('saveconfas', labels$saveconfas)),
                 column(width = 6, fileInput("uploadconf", NULL, buttonLabel = "Upload configuration", width = "100%"))
               )
-            )
+            ),
           ),
           bslib::card(
             bslib::card_header('Status', makeButton('card_status')),
             bslib::card_body(id = 'card_status', class = 'collapse show',
-              verbatimTextOutput(outputId = "eng_conf_output", placeholder = T)
+              verbatimTextOutput(outputId = "confOutput", placeholder = T)
             )
           )
         )

@@ -20,10 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static io.sdmx.api.sdmx.constants.TEXT_TYPE.STRING;
-import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getGlobalPropertyValue;
-import static it.bancaditalia.oss.vtl.config.ConfigurationManager.instanceOfClass;
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.SESSION_IMPLEMENTATION;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
@@ -98,7 +96,6 @@ import io.sdmx.utils.http.broker.RestMessageBroker;
 import io.sdmx.utils.sdmx.xs.MaintainableRefBeanImpl;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
@@ -122,9 +119,7 @@ import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
-import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class SDMXRepository extends InMemoryMetadataRepository
 {
@@ -160,6 +155,66 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private final Map<VTLAlias, Map<String, Variable<?, ?>>> variables = new HashMap<>();
 	private final Map<VTLAlias, String> schemes = new HashMap<>();
 	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new HashMap<>();
+
+	/* Only used to load transformation schemes from a registry */
+	public SDMXRepository(boolean ignored) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	{
+		String endpoint = getGlobalPropertyValue(SDMX_REGISTRY_ENDPOINT);
+		String username = getGlobalPropertyValue(SDMX_META_USERNAME);
+		String password = getGlobalPropertyValue(SDMX_META_PASSWORD);
+		
+		if (endpoint == null || endpoint.isEmpty())
+			throw new IllegalStateException("No endpoint configured for SDMX REST service.");
+
+		URI uri = new URI(endpoint);
+		Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
+		if (proxy.type() == Type.HTTP)
+		{
+			String proxyHost = ((InetSocketAddress) proxy.address()).getHostName();
+			LOGGER.info("Fetching SDMX data through proxy {}", proxyHost);
+			RestMessageBroker.setProxies(singletonMap(uri.getHost(), 
+			new IHttpProxy() {
+				@Override public String getProxyUser() { return null; }
+				@Override public String getProxyUrl() { return proxyHost; }
+				@Override public Integer getProxyPort() { return ((InetSocketAddress) proxy.address()).getPort(); }
+				@Override public String getProxyPassword() { return null; }
+				@Override public String getDomain() { return null; }
+				@Override public String getDecryptedPassword() { return null; }
+			}));
+		}
+		else
+			RestMessageBroker.setProxies(emptyMap());
+		
+		if (username != null && !username.isEmpty() && password != null && !password.isEmpty())
+			RestMessageBroker.storeGlobalAuthorization(username, password);
+		
+		LOGGER.info("Loading metadata from {}", endpoint);
+
+		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, 
+			REST_API_VERSION.parseVersion(getLocalPropertyValue(SDMX_API_VERSION))));
+		
+		// Load transformation schemes
+		try
+		{
+			for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
+			{
+				VTLAlias tsName = sdmxRef2VtlName(scheme.asReference());
+				LOGGER.info("Loading transformation scheme {}", tsName);
+				String code = scheme.getItems().stream()
+					.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
+					.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
+				LOGGER.debug("Loaded transformation scheme {} with code:\n{}\n", tsName, code);
+				schemes.put(tsName, code);
+			}
+		}
+		catch (RuntimeException e)
+		{
+			if (e.getCause() instanceof SdmxNoResultsException)
+				LOGGER.info("No VTL transformation schemes found in SDMX registry.");
+			else
+				LOGGER.error("Error accessing transformation schemes in registry", e);
+		}
+	}
 
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
@@ -277,7 +332,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			LOGGER.info("Loading dataflow {} with structure {}", dataflowName, dsdName);
 			dataflows.put(dataflowName, new SimpleEntry<>(dsdName, enumIDMap.get(dsdName)));
 		}
-		
+
 		// Load transformation schemes
 		try
 		{
@@ -295,7 +350,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		catch (RuntimeException e)
 		{
 			if (e.getCause() instanceof SdmxNoResultsException)
-				LOGGER.warn("No transformation schemes found.");
+				LOGGER.info("No VTL transformation schemes found in SDMX registry.");
 			else
 				LOGGER.error("Error accessing transformation schemes in registry", e);
 		}
@@ -384,19 +439,15 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		
 		return Optional.<Variable<?, ?>>ofNullable(variable).or(() -> super.getVariable(alias));
 	}
-	
-	public TransformationScheme getTransformationScheme(VTLAlias alias)
+
+	@Override
+	public Optional<String> getTransformationScheme(VTLAlias alias)
 	{
-		return Optional.ofNullable(schemes.get(alias))
-			.map(code -> {
-				VTLSession session = instanceOfClass(getGlobalPropertyValue(SESSION_IMPLEMENTATION), VTLSession.class);
-				session.updateCode(code);
-				return session;
-			})
-			.orElseThrow(() -> new VTLException("Transformation scheme " + alias + " not found."));
+		return Optional.ofNullable(schemes.get(alias));
 	}
-	
-	public Set<VTLAlias> getAvailableSchemes()
+
+	@Override
+	public Set<VTLAlias> getAvailableSchemeAliases()
 	{
 		return schemes.keySet();
 	}

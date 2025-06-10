@@ -27,21 +27,37 @@ repoImpls <- c(
   `SDMX REST & Json combined repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository'
 )
 
-environments <- list(
+environments <- c(
   `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
   , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
   , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
 #  , `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
 )
 
-configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")
-vtlProperties <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
+configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")
 exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
 
-currentEnvironments <- \() sapply(J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION$getValues(), .jstrVal)
+vtlProps <- list(
+  ENVIRONMENT_IMPLEMENTATION = J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION,
+  METADATA_REPOSITORY = J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY
+)
+
+globalEnvs <- function(newenvs = NULL) {
+  if (is.null(newenvs))
+    return(sapply(configManager$getGlobalPropertyValues(vtlProps$ENVIRONMENT_IMPLEMENTATION), .jstrVal))
+  else
+    configManager$setGlobalPropertyValue(vtlProps$ENVIRONMENT_IMPLEMENTATION, newenvs)
+}
+
+globalRepo <- function(newrepo = NULL) {
+  if (is.null(newrepo))
+    return(configManager$getGlobalPropertyValue(vtlProps$METADATA_REPOSITORY))
+  else
+    configManager$setGlobalPropertyValue(vtlProps$METADATA_REPOSITORY, newrepo)
+}
 
 activeEnvs <- function(active) {
-  items <- names(environments[xor(!active, environments %in% currentEnvironments())])
+  items <- names(environments[xor(!active, environments %in% globalEnvs())])
   if (length(items) > 0) items else NULL
 }
 
@@ -52,37 +68,36 @@ makeButton <- \(id) tags$button(
   icon('minus')
 )
 
-makeUIElemName <- \(vtlSession) \(name) sprintf("%s_%s", gsub("[^A-Za-z0-9_-]", "_", vtlSession), gsub("[^A-Za-z0-9_-]", "_", name))
+sanitize <- \(x) gsub("[^A-Za-z0-9_]", "_", x)
+
+volumeRoots <- shinyFiles::getVolumes()()
+
+makeUIElemName <- \(vtlSession) \(name) sanitize(paste(vtlSession, name, sep = '_'))
 
 # Generate controls for VTL properties possibly with id manipulation
-controlsGen <- function(javaclass, makeName = identity) {
+controlsGen <- function(javaclass, getValue = configManager$getGlobalPropertyValue, makeID = sanitize) {
   ctrls <- lapply(configManager$getSupportedProperties(J(javaclass)@jobj), function (prop) {
-    val <- prop$getValue()
+    val <- getValue(prop)
     if (val == 'null')
       val <- ''
+    inputID <- makeID(prop$getName())
     
     if (prop$isPassword()) {
-      passwordInput(makeName(prop$getName()), prop$getDescription(), val)
-    } else if (prop$isFolder()) {
-      
+      passwordInput(inputID, prop$getDescription(), val)
+    } else if (grepl('path', inputID)) {
+      inputIDf <- paste0(inputID, '_f')
+      tags$div(style = "display: flex; gap: 6px; align-items: flex-end;",
+        textInput(inputID, prop$getDescription(), val, placeholder = prop$getPlaceholder()),
+        tags$div(class = 'form-group shiny-input-container', style = "align-self: end;",
+          shinyFiles::shinyDirButton(inputIDf, '', "Folder chooser", icon = icon('folder-open'), style = "color: yellow")
+        )
+      )
     } else {
-      textInput(makeName(prop$getName()), prop$getDescription(), val, placeholder = prop$getPlaceholder())
+      textInput(inputID, prop$getDescription(), val, placeholder = prop$getPlaceholder())
     }
   })
   
   do.call(tagList, ctrls)
-}
-
-makeProxyControls <- function() {
-  lapply(c('Host', 'Port', 'User', 'Password'), function (prop) {
-    inputId <- paste0("proxy", prop)
-    label <- paste0(prop, ':')
-    value <- J("java.lang.System")$getProperty(paste0("https.proxy", prop))
-    if (is.null(value))
-      value <- ''
-    
-    (if (prop == 'Password') passwordInput else textInput)(inputId, label, value)
-  })
 }
 
 createPanel <- function(vtlSession) {
@@ -152,7 +167,7 @@ createPanel <- function(vtlSession) {
           bslib::card(
             bslib::card_header('Status', makeButton(makeID('card_status'))),
             bslib::card_body(id = makeID('card_status'), class = 'collapse show',
-              verbatimTextOutput(makeID("eng_conf_output"), placeholder = T)
+              verbatimTextOutput(makeID("confOutput"), placeholder = T)
             )
           )
         )
@@ -198,46 +213,50 @@ vtlServer <- function(input, output, session) {
     
   # Generate observers for a property of a VTL engine class
   # in a given VTL session or for global settings
-  observerGen <- function(prop, makeID = identity) {
-    output[[makeID('eng_conf_output')]] <- renderPrint({
-      val <- req(input[[makeID(prop$getName())]])
-      if (prop$getValue() != val) {
-        if (makeID == identity) {
-          # Global configuration property
-          prop$setValue(val)
-        } else {
-          # Session configuration property
-          vtlSession <- as.list(environment(makeID))[[1]]
-          VTLSessionManager$getOrCreate(vtlSession)$updateConfig(prop, value)
-        }
-        cat(
-          "Set property", prop$getDescription(), "to ", 
-          if (prop$isPassword()) "<masked value>" else val, "\n"
-        )
-      }
-    }) |> bindEvent(input[[makeName(prop$getName())]], ignoreInit = T)
+  observersGen <- function(prop, makeID = sanitize, getValue = configManager$getGlobalPropertyValue, 
+                          setValue = configManager$setGlobalPropertyValue) {
+    inputID <- makeID(prop$getName())
+    if (grepl('path', prop$getName())) {
+      inputIDf <- paste0(inputID, '_f')
+      # attach the navigator
+      observe({
+        shinyFiles::shinyDirChoose(input, inputIDf, roots = volumeRoots)
+      }) |> bindEvent(T, once = T)
+      # insert the chosen folder
+      observe({
+        dirPath <- shinyFiles::parseDirPath(volumeRoots, req(input[[inputIDf]]))
+        updateTextInput(inputId = inputID, value = dirPath)
+      }) |> bindEvent(input[[inputIDf]], ignoreInit = T)
+    }
+    observe({
+      value <- req(input[[inputID]])
+      setValue(prop, value)
+      printValue <- if (prop$isPassword()) "<masked value>" else value
+      output[[makeID('confOutput')]] <- renderPrint({
+        cat("Set property", prop$getDescription(), "to", printValue, "\n")
+      }) |> bindEvent(input[[inputID]])
+    }) |> bindEvent(input[[inputID]])
   }
-
-  # General settings proxy controls
-  output$proxyControls <- renderUI({ do.call(tagList, makeProxyControls()) })
 
   # Proxy controls observers
   lapply(c('Host', 'Port', 'User', 'Password'), function (prop) {
     inputId <- paste0('proxy', prop)
-    observe({
-      value <- input[[inputId]]
-      output$eng_conf_output <- renderPrint({
-        cat(paste('Setting Proxy', prop, 'to', value, '\n'))
-
-        if (value == '') {
-          J("java.lang.System")$clearProperty(paste0("http.proxy", prop))
-          J("java.lang.System")$clearProperty(paste0("https.proxy", prop))
+    output$confOutput <- renderPrint({
+      value <- req(input[[inputId]])
+      if (value == '') {
+        J("java.lang.System")$clearProperty(paste0("http.proxy", prop))
+        J("java.lang.System")$clearProperty(paste0("https.proxy", prop))
+        cat(paste('Unsetting Proxy', prop))
+      } else {
+        J("java.lang.System")$setProperty(paste0("http.proxy", prop), value)
+        J("java.lang.System")$setProperty(paste0("https.proxy", prop), value)
+        if (prop == 'Password') {
+          cat(paste('Setting Proxy Password to <masked value>\n'))
         } else {
-          J("java.lang.System")$setProperty(paste0("http.proxy", prop), value)
-          J("java.lang.System")$setProperty(paste0("https.proxy", prop), value)
+          cat(paste('Setting Proxy', prop, 'to', value, '\n'))
         }
-      })
-    }) |> bindEvent(input[[inputId]], ignoreInit = T)
+      }
+    }) |> bindEvent(input[[inputId]])
   })
 
   # Completes new tab creation
@@ -253,29 +272,34 @@ vtlServer <- function(input, output, session) {
     
     # Controls and observers for properties of selected environment in active session
     output[[makeID('envprops')]] <- renderUI({
-      env <- isolate(req(input[[makeID('selectEnv')]]))
-      lapply(configManager$getSupportedProperties(J(req(input[[makeID('selectEnv')]]))@jobj), observerGen, makeID)
-      controlsGen(env, makeID)
+      getValue <- VTLSessionManager$getOrCreate(vtlSession)$getProperty
+      setValue <- VTLSessionManager$getOrCreate(vtlSession)$setProperty
+      envClasses <- isolate(req(input[[makeID('selectEnv')]]))
+      lapply(configManager$getSupportedProperties(J(req(input[[makeID('selectEnv')]]))@jobj), observersGen, 
+             getValue = getValue, setValue = setValue, makeID = makeID)
+      controlsGen(envClasses, getValue, makeID)
     }) |> bindEvent(input[[makeID('selectEnv')]], ignoreInit = T)
     
     # Controls and observers for properties of selected repository in active session
     output[[makeID('repoProperties')]] <- renderUI({
+      getValue <- VTLSessionManager$getOrCreate(vtlSession)$getProperty
+      setValue <- VTLSessionManager$getOrCreate(vtlSession)$setProperty
       repoClass <- isolate(req(input[[makeID('repoClass')]]))
-      output[[makeID('eng_conf_output')]] <- renderPrint({
-        vtlProperties$METADATA_REPOSITORY$setValue(repoClass)
+      output[[makeID('confOutput')]] <- renderPrint({
+        setValue(vtlProps$METADATA_REPOSITORY, repoClass)
         cat("Set metadata repository to", repoClass, "\n")
       })
-      lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observerGen, makeID)
-      controlsGen(repoClass, makeID)
+      lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observersGen,
+             getValue = getValue, setValue = setValue, makeID = makeID)
+      controlsGen(repoClass, getValue, makeID)
     }) |> bindEvent(input[[makeID('repoClass')]], ignoreInit = T)
     
     # Update active environments in active session
-    output[[makeID('eng_conf_output')]] <- renderPrint({
-      envs <- req(input[[makeID('envs')]])
-      makeActive <- paste0(unlist(environments[envs]), collapse = "\n    - ")
-      vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(makeActive)
-      cat("Set active environments to:\n    - ", makeActive, "\n")
-    }) |> bindEvent(input[[makeID('envs')]], ignoreInit = T)
+    output[[makeID('confOutput')]] <- renderPrint({
+      envs <- req(input$envs)
+      VTLSessionManager$getOrCreate(vtlSession)$setProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION, paste0(environments[envs], collapse = ","))
+      cat("Set active environments to:\n    - ", paste0(envs, collapse = "\n    - "), "\n")
+    }) |> bindEvent(input[[makeID('envs')]])
     
     # dataset table display
     output[[makeID('datasetsInfo')]] <- renderPrint({
@@ -297,7 +321,7 @@ vtlServer <- function(input, output, session) {
       links <- tryCatch({
         session$getLineage(datasetName)
       }, error = function(e) {
-          if (is.null(e$jboj))
+          if (is.null(e$jobj))
             e$jobj$printStackTrace()
           signalCondition(e)
         }
@@ -382,9 +406,8 @@ vtlServer <- function(input, output, session) {
     
     # Populate environments and repositories lists in session settings
     envlistdone <- observe({
-      defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
-      updateSelectInput(session, makeID('selectEnv'), NULL, unlist(environments))
-      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, defaultRepository)
+      updateSelectInput(session, makeID('selectEnv'), NULL, environments)
+      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, globalRepo())
       # Single execution only when the tab is first created
       envlistdone$destroy()
     })
@@ -392,6 +415,15 @@ vtlServer <- function(input, output, session) {
     panel <- createPanel(vtlSession)
     prependTab("navtab", panel, T)
   }) |> bindEvent(vtlSessions(), tabs())
+  
+  # Update global active environments
+  observe({
+    output$confOutput <- renderPrint({
+      envs <- req(input$envs)
+      globalEnvs(paste0(environments[envs], collapse = ","))
+      cat("Set active environments to:\n    -", paste0(envs, collapse = "\n    - "), "\n")
+    }) |> bindEvent(input$envs)
+  }) |> bindEvent(input$envs)
 
   # contextual menus for session tabs
   observe({
@@ -427,7 +459,6 @@ vtlServer <- function(input, output, session) {
 	  tabs(NULL)
   	
   	if (isTRUE(input$demomode)) {
-      VTLSessionManager$kill('test')
   	  vtlSessions(NULL)
 	    categories <- c(
 	      list(list(label = 'Select category...', value = '', categ = '')),
@@ -477,15 +508,8 @@ vtlServer <- function(input, output, session) {
   
   # Initially populate environment list and load properties
   envlistdone <- observe({
-    defaultRepository <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY$getValue()
-    updateSelectInput(inputId = 'selectEnv', choices = unlist(environments))
-    updateSelectInput(inputId = 'repoClass', choices = repoImpls, selected = defaultRepository)
-    output$sortableEnvs <- renderUI({
-      sortable::bucket_list(header = NULL, orientation = 'horizontal',
-        sortable::add_rank_list(text = "Available", labels = activeEnvs(F)),
-        sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T))
-      )
-    })
+    updateSelectInput(inputId = 'selectEnv', choices = environments)
+    updateSelectInput(inputId = 'repoClass', choices = repoImpls, selected = globalRepo())
     # Single execution only when VTL Studio starts
     envlistdone$destroy()
   })
@@ -505,18 +529,18 @@ vtlServer <- function(input, output, session) {
     env <- isolate(req(input$selectEnv))
     controls <- controlsGen(env)
     output$envprops <- renderUI(controls)
-    lapply(configManager$getSupportedProperties(J(req(input$selectEnv))@jobj), observerGen)
+    lapply(configManager$getSupportedProperties(J(req(input$selectEnv))@jobj), observersGen)
   }) |> bindEvent(input$selectEnv, ignoreInit = T)
 
   # Repository properties list
   observe({
     repoClass <- isolate(req(input$repoClass))
-    controls <- controlsGen(req(repoClass))
+    controls <- controlsGen(repoClass)
     output$repoProperties <- renderUI(controls)
-    lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observerGen)
+    lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observersGen)
 
-    output$eng_conf_output <- renderPrint({
-      vtlProperties$METADATA_REPOSITORY$setValue(req(repoClass))
+    output$confOutput <- renderPrint({
+      globalRepo(req(repoClass))
       cat("Set metadata repository to", repoClass, "\n")
     })
   }) |> bindEvent(input$repoClass, ignoreInit = T)
@@ -527,7 +551,7 @@ vtlServer <- function(input, output, session) {
     content = function (file) {
       tryCatch({
         writer <- .jnew("java.io.StringWriter")
-        configManager$saveConfiguration(writer)
+        configManager$saveGlobalConfiguration(writer)
         string <- .jstrVal(writer$toString())
         writeLines(string, file)
       }, error = function(e) {
@@ -566,24 +590,7 @@ vtlServer <- function(input, output, session) {
     isCompiled(vtlSession$isCompiled())
     session$sendCustomMessage("editor-focus", makeUIElemName(vtlSession$name)('editor'))
   }) |> bindEvent(currentSession())
-
-  # Update active environments
-  observe({
-    vtlProperties$ENVIRONMENT_IMPLEMENTATION$setValue(paste0(unlist(environments[req(input$envs)]), collapse = ","))
-    tryCatch({
-      writer <- .jnew("java.io.StringWriter")
-      configManager$saveConfiguration(writer)
-      string <- .jstrVal(writer$toString())
-      propfile <- file.path(J("java.lang.System")$getProperty("user.home"), '.vtlStudio.properties')
-      writeLines(string, propfile)
-    }, error = function(e) {
-      if (!is.null(e$jobj)) {
-        e$jobj$printStackTrace()
-      }
-      stop(e)
-    })
-  }) |> bindEvent(input$envs, ignoreInit = T)
-    
+  
   # load vtl script into current session
   observe({
     vtlSession <- isolate(req(currentSession()))
@@ -594,7 +601,7 @@ vtlServer <- function(input, output, session) {
   }) |> bindEvent(input$scriptFile)
   
   # upload CSV file to GlobalEnv
-  observeEvent(input$datafile, {
+  observe({
     datasetName = basename(input$datafile$name)
     data = readLines(con = input$datafile$datapath)
     if(length(data > 1)){
@@ -607,7 +614,7 @@ vtlServer <- function(input, output, session) {
       body = utils::read.csv(text = data[-1], header = F, stringsAsFactors = F)
       body = stats::setNames(object = body, nm = names)
 
-      #type handling very raw for now, to be refined
+      # Type handling very raw for now, to be refined
       # force strings (some cols could be cast to numeric by R)
       stringTypes = which(grepl(x = header, pattern = 'String', fixed = T))
       body[, stringTypes] = as.character(body[, stringTypes])
@@ -624,11 +631,12 @@ vtlServer <- function(input, output, session) {
         message('Error: file ', input$datafile$name, ' is malformed.\n')
       })
     }
-  })
+  }) |> bindEvent(input$datafile)
   
   # create new session
   observe({
     name <- req(input$newSession)
+    browser()
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
     updateSelectInput(session, 'sessionID', choices = VTLSessionManager$list(), selected = name)

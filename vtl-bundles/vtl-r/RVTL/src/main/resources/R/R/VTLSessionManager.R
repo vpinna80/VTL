@@ -32,19 +32,21 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             #' @details 
             #' This method should not be called by the application.
             initialize = function() {
-              assign('test', VTLSession$new('test'), envir = private$sessions)
+              
             },
             
             #' @description
             #' List all active named VTL sessions.
             #' @details
-            #' If an active SDMX metadata repository is active, also load Transformation schemes from it
+            #' If the active metadata repository is using an SDMX Registry, also load transformation schemes from it
             list = function() { 
               tryCatch({
                 sessions <- list()
-                metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
-                if (metaRepo$getClass()$getName() == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository') {
-                  sessions <- sapply(metaRepo$getAvailableSchemes(), .jstrVal)
+                metaProp <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY
+                metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")$getGlobalPropertyValue(metaProp)
+                if (metaRepo == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' 
+                    || metaRepo == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository') {
+                  sessions <- sapply(.jnew('it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository', TRUE)$getAvailableSchemes(), .jstrVal)
                 }
                 unique(c(ls(private$sessions), sessions))
               }, error = function(e) {
@@ -55,10 +57,9 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             },
             
             #' @description
-            #' All active VTL sessions are killed and a new VTL session named 'test' is created.
+            #' All active VTL sessions are killed.
             clear = function() { 
               private$sessions <- new.env(parent = emptyenv())
-              assign('test', VTLSession$new('test'), envir = private$sessions)
               gc(verbose = F, full = T)
               return(invisible()) 
             },
@@ -100,24 +101,12 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             #' @details
             #' If the named VTL session exists, return it, otherwise create a new VTL session with the given name and possibly code.
             getOrCreate = function(sessionID) {
+              browser
               if (is.character(sessionID) && length(sessionID) == 1)
               result <- get0(req(sessionID), envir = private$sessions)
               
               if (is.null(result)) {
                 result <- assign(sessionID, VTLSession$new(name = sessionID), envir = private$sessions)
-                
-                tryCatch({
-                  metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$newManager()$getMetadataRepository()
-              	  if (metaRepo$getClass()$getName() == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' 
-              	      && sessionID %in% sapply(metaRepo$getAvailableSchemes(), .jstrVal)) {
-                    code <- metaRepo$getTransformationScheme(sessionID)$getOriginalCode()
-                    result$setText(code)
-                  }
-                }, error = function(e) {
-                  if (!is.null(e$jobj)) {
-                    e$jobj$printStackTrace()
-                  }
-                })
               }
               
               result
@@ -130,12 +119,12 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
             },
 
             #' @description
-            #' Load a VTL configuration file
+            #' Load a VTL configuration file into the VTL global configuration
             #' @param propfile the property file path
             #' @details
-            #' load_config will read the VTL configuration from a specified .properties file. if the file
-            #' is not specified, a default file named vtlStudio.properties from the user home directory will be opened.
-            load_config = function(propfile = NULL) {
+            #' loadGlobalConfig will read the VTL configuration from a specified .properties file. if the file
+            #' is not specified, a default file named .vtlStudio.properties from the Java user home directory will be opened.
+            loadGlobalConfig = function(propfile = NULL) {
               if (is.null(propfile)) {
                 propfile = paste0(J("java.lang.System")$getProperty("user.home"), '/.vtlStudio.properties')
               }
@@ -143,8 +132,8 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager", public = list(
               if (file.exists(propfile)) {
                 reader = .jnew("java.io.FileReader", propfile)
                 tryCatch({
-                  J("it.bancaditalia.oss.vtl.config.ConfigurationManagerFactory")$loadConfiguration(reader)
-                  packageStartupMessage("VTL settings loaded from ", propfile, ".")
+                  J("it.bancaditalia.oss.vtl.config.ConfigurationManager")$loadGlobalConfiguration(reader)
+                  message("VTL settings loaded from ", propfile, ".")
                 }, finally = {
                   reader$close()
                 })

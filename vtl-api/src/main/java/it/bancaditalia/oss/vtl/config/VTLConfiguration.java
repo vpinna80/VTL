@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.config;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getGlobalPropertyValue;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.instanceOfClass;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
@@ -66,8 +67,8 @@ public class VTLConfiguration implements Serializable
 			setPropertyValue(prop, source.getPropertyValue(prop));
 
 		for (VTLGeneralProperties topProp: EnumSet.of(ENVIRONMENT_IMPLEMENTATION, METADATA_REPOSITORY, SESSION_IMPLEMENTATION, ENGINE_IMPLEMENTATION))
-			source.getPropertyClasses(topProp).forEach(clazz -> ConfigurationManager.getSupportedProperties(clazz)
-						.forEach(prop -> setPropertyValue(prop, source.getPropertyValue(prop))));
+			source.getPropertyClasses(topProp).forEach(clazz -> 
+				getSupportedProperties(clazz).forEach(prop -> setPropertyValue(prop, source.getPropertyValue(prop))));
 	}
 
 	/**

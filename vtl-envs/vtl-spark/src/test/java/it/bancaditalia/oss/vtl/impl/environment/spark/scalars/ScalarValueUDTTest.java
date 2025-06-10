@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.environment.spark.scalars;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT.getTagAndUDTForClass;
 import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mockStatic;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -38,7 +39,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.MockedStatic;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
@@ -69,7 +73,18 @@ public class ScalarValueUDTTest
 		System.setProperty("spark.memory.storageFraction", "0.2");
 		System.setProperty("spark.cleaner.periodicGC.interval", "30s");
 
-		session = new SparkEnvironment().getSession();
+		try (MockedStatic<ConfigurationManager> cmMock = mockStatic(ConfigurationManager.class, call -> {
+				String method = call.getMethod().getName();
+				switch (method)
+				{
+					case "getLocalPropertyValue": return call.getArgument(0, VTLProperty.class).getDefaultValue();
+					case "getLocalPropertyValues": return List.of();
+					default: return null;
+				}
+			}))
+		{
+			session = new SparkEnvironment().getSession();
+		}
 	}
 	
 	public static Stream<Arguments> testScalar()

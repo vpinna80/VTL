@@ -93,11 +93,6 @@
   box-sizing: border-box;
 }
 
-.vtlLogo {
-  max-height: 20%;
-  max-width: 20%;
-}
-
 .tab-content, 
 .content, 
 .content > div {

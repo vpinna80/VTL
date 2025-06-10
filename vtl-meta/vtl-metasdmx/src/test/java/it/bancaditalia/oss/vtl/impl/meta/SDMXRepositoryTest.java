@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockserver.matchers.Times.exactly;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -33,6 +34,7 @@ import static org.mockserver.model.HttpResponse.response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,12 +42,15 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.StringBody;
 import org.xml.sax.SAXException;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
@@ -75,7 +80,18 @@ public class SDMXRepositoryTest
 				client.when(request().withPath(entry[1]), exactly(1)).respond(response().withBody(new StringBody(IOUtils.toString(resource, "UTF-8"))));
 			}
 
-		repo = new SDMXRepository("http://localhost:" + client.getPort(), null, null);
+		try (MockedStatic<ConfigurationManager> cmMock = mockStatic(ConfigurationManager.class, call -> {
+				String method = call.getMethod().getName();
+				switch (method)
+				{
+					case "getLocalPropertyValue": return call.getArgument(0, VTLProperty.class).getDefaultValue();
+					case "getLocalPropertyValues": return List.of();
+					default: return null;
+				}
+			}))
+		{
+			repo = new SDMXRepository("http://localhost:" + client.getPort(), null, null);
+		}
 	}
 
 	@Test

@@ -45,18 +45,6 @@ public interface VTLProperty
 	 */
 	public String getName();
 
-//	/**
-//	 * @return The current value for this property
-//	 */
-//	public String getValue();
-//
-//	/**
-//	 * Change the value for this property. {@link Objects#toString()} is used to determine the object representation.
-//	 * 
-//	 * @param newValue The new value for this property.
-//	 */
-//	public void setValue(Object newValue);
-//
 	/**
 	 * @return A description of the property
 	 */
@@ -108,59 +96,4 @@ public interface VTLProperty
 	{
 		return getOptions().contains(IS_FOLDER);
 	}
-	
-//	/**
-//	 * @return If the property {@link #isMultiple()}, a {@link List} where the elements 
-//	 * 		match each of this property's values
-//	 */
-//	public default List<String> getValues()
-//	{
-//		return getValue() == null ? null : isMultiple() ? Arrays.asList(getValue().split(",")) : singletonList(getValue());
-//	}
-//
-//	/**
-//	 * Change the value for this property
-//	 * 
-//	 * @param newValue The new value for this property
-//	 */
-//	public default void setValue(Class<?> newValue)
-//	{
-//		setValue(newValue.getName());
-//	}
-//	
-//	/**
-//	 * Change the values for this property. If the property is not multiple, behaviour is undefined
-//	 * 
-//	 * @param newValues The new values for this property
-//	 */
-//	public default void setValues(String... newValues)
-//	{
-//		setValue(Arrays.stream(newValues).collect(joining(",")));
-//	}
-//
-//	/**
-//	 * Change the values for this property. If the property is not multiple, behaviour is undefined
-//	 * 
-//	 * @param newValues The new values for this property
-//	 */
-//	public default void setValues(Class<?>... newValues)
-//	{
-//		setValue(Arrays.stream(newValues).map(Class::getName).collect(joining(",")));
-//	}
-//
-//	/**
-//	 * @return {@code true} if a value was set for this property or it has a default value 
-//	 */
-//	public boolean hasValue();
-//
-//	/**
-//	 * Add new values to this property. If the property is not multiple, behaviour is undefined
-//	 * 
-//	 * @param newValues The new values to add to existing values of this property
-//	 */
-//	public default void addValues(String... newValues)
-//	{
-//		String beginning = hasValue() ? getValue() + "," : "";
-//		setValue(Arrays.stream(newValues).collect(joining(",", beginning, "")));
-//	}
 }

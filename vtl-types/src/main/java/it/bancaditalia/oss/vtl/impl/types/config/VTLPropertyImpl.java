@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.joining;
 
 import java.security.InvalidParameterException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.config.VTLProperty;
@@ -41,9 +42,10 @@ public class VTLPropertyImpl implements VTLProperty
 	{
 		if (options.contains(IS_PASSWORD) && defaultValue.length > 0)
 			throw new InvalidParameterException("VTLProperty cannot have a default value if it is a password.");
-
 		if (options.contains(IS_MULTIPLE) && defaultValue.length > 0)
 			throw new InvalidParameterException("VTLProperty cannot have multiple values if it is a password.");
+		if (name == null || name.isBlank())
+			throw new InvalidParameterException("VTL Property name not specified.");
 		
 		this.name = name;
 		this.options = options;
@@ -81,5 +83,30 @@ public class VTLPropertyImpl implements VTLProperty
 	public String getDefaultValue()
 	{
 		return defaultValue;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return name;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(name);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		VTLPropertyImpl other = (VTLPropertyImpl) obj;
+		return Objects.equals(name, other.name);
 	}
 }

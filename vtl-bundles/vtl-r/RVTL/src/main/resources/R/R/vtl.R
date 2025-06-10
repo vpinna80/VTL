@@ -55,7 +55,6 @@ vtlStudio <- function(launch.browser = T, ...) {
 #'                                   test := a * b + c / a;')
 #'   }
 vtlAddStatements <- function(sessionID, statements) {
-  VTLSessionManager$kill(sessionID)
   session = VTLSessionManager$getOrCreate(sessionID)$setText(statements)
   return(T)
 }

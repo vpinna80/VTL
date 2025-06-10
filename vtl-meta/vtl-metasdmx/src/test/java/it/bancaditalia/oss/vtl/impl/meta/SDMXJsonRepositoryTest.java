@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockserver.matchers.Times.exactly;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -44,12 +46,15 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.StringBody;
 import org.xml.sax.SAXException;
 
+import it.bancaditalia.oss.vtl.config.ConfigurationManager;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
@@ -86,7 +91,20 @@ public class SDMXJsonRepositoryTest
 			}
 
 		URL jsonURL = requireNonNull(SDMXJsonRepositoryTest.class.getResource("test.json"));
-		repo = new SDMXJsonRepository("http://localhost:" + client.getPort(), null, null, jsonURL, mock(Engine.class));
+		
+		try (MockedStatic<ConfigurationManager> cmMock = mockStatic(ConfigurationManager.class, call -> {
+				String method = call.getMethod().getName();
+				switch (method)
+				{
+					case "getLocalPropertyValue": return call.getArgument(0, VTLProperty.class).getDefaultValue();
+					case "getLocalPropertyValues": return List.of();
+					case "getSupportedProperties": return List.of();
+					default: return null;
+				}
+			}))
+		{
+			repo = new SDMXJsonRepository("http://localhost:" + client.getPort(), null, null, jsonURL, mock(Engine.class));
+		}
 	}
 
 	@Test

@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.session;
 
 import java.util.Optional;
+import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -27,6 +28,7 @@ import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 /**
  * A repository to contain and query all the defined domains.
@@ -104,4 +106,17 @@ public interface MetadataRepository
 	 * @return A repository linked to this if there's one, or null
 	 */
 	public MetadataRepository getLinkedRepository();
+
+	/**
+	 * @return A set of aliases of each available {@link TransformationScheme} in this MetadataRepository.
+	 */
+	public Set<VTLAlias> getAvailableSchemeAliases();
+
+	/**
+	 * If this MetadataRepository supports storage of {@link TransformationScheme}s, try to retrieve one.
+	 *   
+	 * @param alias The alias of the TransformationScheme to retrieve
+	 * @return The code associated to the given TransformationScheme
+	 */
+	public Optional<String> getTransformationScheme(VTLAlias alias);
 }

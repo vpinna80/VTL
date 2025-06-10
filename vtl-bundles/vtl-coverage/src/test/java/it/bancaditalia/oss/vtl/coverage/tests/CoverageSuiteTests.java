@@ -19,11 +19,17 @@
  */
 package it.bancaditalia.oss.vtl.coverage.tests;
 
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.newConfiguration;
+import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.E;
 import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.ES;
 import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.T;
 import static it.bancaditalia.oss.vtl.coverage.tests.CoverageSuiteTests.TestType.TS;
+import static it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment.CSV_ENV_SEARCH_PATH;
+import static it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment.CSV_ENV_THRESHOLD;
+import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment.VTL_SPARK_SEARCH_PATH;
+import static it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository.JSON_METADATA_URL;
 import static java.lang.Integer.compare;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.newBufferedReader;
@@ -34,16 +40,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static org.mockito.Answers.RETURNS_SMART_NULLS;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -51,11 +53,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -65,14 +66,11 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import it.bancaditalia.oss.vtl.config.VTLConfiguration;
 import it.bancaditalia.oss.vtl.coverage.utils.RepeatedParameterizedTest;
 import it.bancaditalia.oss.vtl.coverage.utils.TestEnvironment;
-import it.bancaditalia.oss.vtl.engine.Engine;
-import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.environment.Workspace;
-import it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine;
 import it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment;
+import it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -80,10 +78,8 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
-import jakarta.xml.bind.JAXBException;
 
 public class CoverageSuiteTests
 {
@@ -97,7 +93,6 @@ public class CoverageSuiteTests
 	private static final Path EXAMPLES_ROOT;
 	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
 	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
-	private static final Engine ENGINE;
 	private static final boolean TOTAL_REPORT = true;
 	
 	static 
@@ -113,14 +108,19 @@ public class CoverageSuiteTests
 			System.setProperty("spark.memory.fraction", "0.7");
 			System.setProperty("spark.memory.storageFraction", "0.2");
 			System.setProperty("spark.cleaner.periodicGC.interval", "30s");
+			System.setProperty("spark.storage.replication.maxAttempts", "1");
+			System.setProperty("spark.storage.replication.proactive", "false");
+			System.setProperty("spark.storage.blockManagerSlaveTimeoutMs", "60000");
+			System.setProperty("spark.rpc.numRetries", "3");
+			System.setProperty("spark.rpc.lookupTimeout", "120s");
+			System.setProperty("spark.rpc.askTimeout", "60s");
+
 			
 			System.setProperty("vtl.double.epsilon", "5");
 			TEST_ROOT = Paths.get(CoverageSuiteTests.class.getResource("../tests").toURI());
 			EXAMPLES_ROOT = Paths.get(CoverageSuiteTests.class.getResource("../examples").toURI());
-			METADATA_REPOSITORY.setValue(JsonMetadataRepository.class);
-			ENGINE = new JavaVTLEngine();
 		}
-		catch (NoClassDefFoundError | URISyntaxException | ClassNotFoundException | JAXBException | IOException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e)
+		catch (NoClassDefFoundError | URISyntaxException | SecurityException | IllegalArgumentException e)
 		{
 			throw new ExceptionInInitializerError(e);
 		}
@@ -135,7 +135,7 @@ public class CoverageSuiteTests
 	{
 		return getStream(EXAMPLES_ROOT, "examples");
 	}
-
+	
 	private static List<Arguments> getStream(Path root, String suffix) throws IOException
 	{
 		StringBuilder testCode = new StringBuilder();
@@ -167,12 +167,7 @@ public class CoverageSuiteTests
 		
 		return tests;
 	}
-	
-	private static JsonMetadataRepository getJsonMetaRepo(URL jsonURL) throws IOException
-	{
-		return new JsonMetadataRepository(jsonURL, ENGINE);
-	}
-	
+
 	@RepeatedParameterizedTest(value = REPETITIONS, name = "{1} test {2} rep {currentRepetition}/{totalRepetitions}")
 	@MethodSource("test")
 	public void test(Path categ, Path operator, String number, String testCode) throws Throwable 
@@ -181,9 +176,7 @@ public class CoverageSuiteTests
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve(String.format("ex_%s.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
-				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator))), getMockWorkspace());
-		doTest(number, session);
+		doTest(number, testCode, false, jsonURL, operator);
 	}
 
 	@RepeatedParameterizedTest(value = REPETITIONS, name = "{0}: Test {2} of {1} rep {currentRepetition}/{totalRepetitions}")
@@ -194,9 +187,7 @@ public class CoverageSuiteTests
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
-				List.of(new TestEnvironment(), new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
-		doTest(number, session);
+		doTest(number, testCode, false, jsonURL, operator.resolve("examples"));
 	}
 
 	@RepeatedParameterizedTest(value = REPETITIONS, name = "{1} test {2} rep {currentRepetition}/{totalRepetitions}")
@@ -206,11 +197,8 @@ public class CoverageSuiteTests
 		assumeTrue(TO_RUN.contains(TS));
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 
-		Environment sparkEnv = getSparkEnv(List.of(operator));
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
-				List.of(new TestEnvironment(), sparkEnv, new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
-		doTest(number, session);
+		doTest(number, testCode, true, jsonURL, operator);
 	}
 
 	@RepeatedParameterizedTest(value = REPETITIONS, name = "{0}: Test {2} of {1} rep {currentRepetition}/{totalRepetitions}")
@@ -220,46 +208,26 @@ public class CoverageSuiteTests
 		assumeTrue(TO_RUN.contains(ES));
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
 		
-		Environment sparkEnv = getSparkEnv(List.of(operator.resolve("examples")));
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
-		VTLSession session = new VTLSessionImpl(testCode, getJsonMetaRepo(jsonURL), ENGINE, 
-				List.of(new TestEnvironment(), sparkEnv, new CSVPathEnvironment(List.of(operator.resolve("examples")))), getMockWorkspace());
-		doTest(number, session);
+		doTest(number, testCode, true, jsonURL, operator.resolve("examples"));
 	}
 
-	public static Workspace getMockWorkspace()
+	private static void doTest(String number, String testCode, boolean hasSpark, URL jsonURL, Path dataPath) throws IOException, ClassNotFoundException
 	{
-		Map<VTLAlias, Statement> stats = new HashMap<>();
-		Workspace workspace = mock(Workspace.class, RETURNS_SMART_NULLS);
+		StringJoiner joiner = new StringJoiner(",");
+		joiner.add(TestEnvironment.class.getName());
+		if (hasSpark)
+			joiner.add(SparkEnvironment.class.getName());
+		joiner.add(CSVPathEnvironment.class.getName());
 		
-		when(workspace.addRule(any())).thenAnswer(ctx -> {
-			Statement stat = ctx.getArgument(0);
-			stats.put(stat.getAlias(), stat);
-			return ctx.getMock();
-		});
-		
-		when(workspace.getRule(any())).thenAnswer(ctx -> Optional.ofNullable(stats.get(ctx.getArgument(0))));
-		
-		return workspace;
-	}
-	
-	public static Environment getSparkEnv(List<Path> paths) throws InstantiationException, IllegalAccessException, InvocationTargetException
-	{
-		try
-		{
-			Class<? extends Environment> sparkClass = Class.forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment", 
-					true, CoverageSuiteTests.class.getClassLoader()).asSubclass(Environment.class);
-			return sparkClass.getConstructor(List.class).newInstance(paths);
-		}
-		catch (ClassNotFoundException | IllegalArgumentException | NoSuchMethodException | SecurityException e)
-		{
-			fail("Spark not available", e);
-			return null;
-		}
-	}
-
-	public static void doTest(String number, VTLSession session)
-	{
+		VTLConfiguration config = newConfiguration();
+		config.setPropertyValue(METADATA_REPOSITORY, JsonMetadataRepository.class);
+		config.setPropertyValue(CSV_ENV_THRESHOLD, Long.MAX_VALUE);
+		config.setPropertyValue(JSON_METADATA_URL, jsonURL);
+		config.setPropertyValue(ENVIRONMENT_IMPLEMENTATION, joiner);
+		config.setPropertyValue(CSV_ENV_SEARCH_PATH, dataPath);
+		config.setPropertyValue(VTL_SPARK_SEARCH_PATH, dataPath);
+		VTLSession session = new VTLSessionImpl(new StringReader(testCode), config);
 		session.compile();
 		
 		VTLValue expectedV = session.resolve(VTLAliasImpl.of("ex_" + number));

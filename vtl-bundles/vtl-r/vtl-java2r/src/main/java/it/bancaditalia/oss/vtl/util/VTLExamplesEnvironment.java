@@ -19,7 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.util;
 
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.newConfiguration;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.registerSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
@@ -35,6 +37,7 @@ import java.io.Reader;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +55,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.config.VTLConfiguration;
+import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
@@ -59,6 +63,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingValueException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
+import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -83,8 +88,13 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	private static final Set<String> EXCLUDED_OPERATORS = Set.of("Pivoting", "Random", "Hierarchical roll-up", "Check datapoint", 
 			"Check hierarchy", "Persistent assignment", "Duration to number days", "Fill time series", "Number days to duration");
 	
+	public static final VTLProperty EXAMPLES_CATEGORY = new VTLPropertyImpl("vtl.examples.category", "", "", Set.of());
+	public static final VTLProperty EXAMPLES_OPERATOR = new VTLPropertyImpl("vtl.examples.operator", "", "", Set.of());
+	
 	static
 	{
+		registerSupportedProperties(VTLExamplesEnvironment.class, EXAMPLES_CATEGORY, EXAMPLES_OPERATOR);
+		
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(VTLExamplesEnvironment.class.getResourceAsStream("exampleslist.txt"), UTF_8)))
 		{
 			reader.lines().forEach(line -> {
@@ -126,9 +136,14 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		return VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.json");
 	}
 	
+	private static URL computeCodeURL(String category, String operator)
+	{
+		return VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.vtl");
+	}
+	
 	private static Reader retrieveCode(String category, String operator) throws IOException
 	{
-		return new InputStreamReader(computeJsonURL(category, operator).openStream(), UTF_8);
+		return new InputStreamReader(computeCodeURL(category, operator).openStream(), UTF_8);
 	}
 
 	private static VTLSession createExample(String category, String operator)
@@ -140,6 +155,8 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 			config.setPropertyValue(METADATA_REPOSITORY, JsonMetadataRepository.class);
 			config.setPropertyValue(JSON_METADATA_URL, computeJsonURL(category, operator));
 			config.setPropertyValue(ENVIRONMENT_IMPLEMENTATION, VTLExamplesEnvironment.class);
+			config.setPropertyValue(EXAMPLES_CATEGORY, category);
+			config.setPropertyValue(EXAMPLES_OPERATOR, operator);
 			
 			return new VTLSessionImpl(retrieveCode(category, operator), config);
 		}
@@ -151,8 +168,18 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 
 	private final String[][] inputs;
 	
+	public VTLExamplesEnvironment() throws IOException, URISyntaxException
+	{
+		this(getLocalPropertyValue(EXAMPLES_CATEGORY), getLocalPropertyValue(EXAMPLES_OPERATOR));
+	}
+	
 	private VTLExamplesEnvironment(String category, String operator) throws IOException, URISyntaxException
 	{
+		if (category == null || category.isBlank())
+			throw new InvalidParameterException("Example category not specified.");
+		if (operator == null || operator.isBlank())
+			throw new InvalidParameterException("Example operator not specified.");
+		
 		LOGGER.info("Initializing example for operator {}", operator);
 		List<String[]> csv_lines = new ArrayList<>();
 		for(int i = 1; true; i++)
