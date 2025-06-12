@@ -18,141 +18,178 @@
 # permissions and limitations under the License.
 #
 
-list_to_dot_vtl_properties_file <- function(filepath, vtl_list) {
-  if (is.null(filepath)) {
-    filepath <- ".vtlProperties.config"
-  }
-  if (is.null(vtl_list)) {
-    vtl_list <- list()
-  }
-  cat("", file = filepath) # overwrite file if exists
-  for (prop in names(vtl_list)) {
-    cat(sprintf("%s=%s\n", prop, vtl_list[[prop]]), file = filepath, append = TRUE)
-  }
-  return(filepath)
+
+# vtl classes for setting global properties
+CONFIGURATION_MANAGER <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")
+VTL_GENERAL_PROPERTIES <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")
+
+# set global properties for default metadata and default environment
+set_default_vtl_properties <- function() {
+  CONFIGURATION_MANAGER$setGlobalPropertyValue(
+    VTL_GENERAL_PROPERTIES$METADATA_REPOSITORY,
+    "it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository"
+  )
+  CONFIGURATION_MANAGER$setGlobalPropertyValue(
+    VTL_GENERAL_PROPERTIES$ENVIRONMENT_IMPLEMENTATION,
+    ""
+  )
 }
 
+# in input session set property inside class
+set_vtl_property_for_session <- function(session, class, property) {
+  VTLSessionManager$getOrCreate(session)$setProperty(class, property)
+  session
+}
+
+
+# if error is from java exception print it, otherwise print R error message
+handle_error <- function(e) {
+  if (!is.null(e$jobj)) {
+    e$jobj$printStackTrace()
+    testthat::fail(message = "failure caused by java exception.")
+  } else {
+    testthat::fail(message = e$message)
+  }
+}
+
+# convert path to file://path
 path_to_file_url <- function(path) {
-  sprintf("file\\:///%s", file.path(path))
+  sprintf("file:///%s", file.path(path))
 }
 
-set_vtl_properties <- function() {
-  vtlprop_conf <- list(
-    "vtl.config.use.bigdecimal" = "false",
-    "vtl.engine.implementation.class" = "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine",
-    "vtl.config.impl.class" = "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl",
-    "vtl.session.implementation.class" = "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl"
+
+set_vtl_r_properties <- function(session) {
+  inMemoryMetadataRepository <- "it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository"
+  rEnvironment <- "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
+  set_vtl_property_for_session(
+    session,
+    VTL_GENERAL_PROPERTIES$METADATA_REPOSITORY,
+    inMemoryMetadataRepository
   )
-  propfile <- list_to_dot_vtl_properties_file(filepath = tempfile(), vtlprop_conf)
-  RVTL::VTLSessionManager$load_config(propfile = propfile)
-}
-
-set_vtl_r_json_properties <- function() {
-  vtl_prop <- list(
-    "vtl.metadatarepository.class" = "it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository",
-    "vtl.environment.implementation.classes" = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
-    "vtl.engine.implementation.class" = "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine",
-    "vtl.config.impl.class" = "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl",
-    "vtl.json.metadata.url" = path_to_file_url(system.file("tests", "testthat", "data", "ex_r_json.json", package = "RVTL")),
-    "vtl.session.implementation.class" = "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl",
-    "vtl.config.use.bigdecimal" = "false"
+  set_vtl_property_for_session(
+    session,
+    VTL_GENERAL_PROPERTIES$ENVIRONMENT_IMPLEMENTATION,
+    rEnvironment
   )
-  propfile <- list_to_dot_vtl_properties_file(filepath = tempfile(), vtl_list = vtl_prop)
-  RVTL::VTLSessionManager$load_config(propfile = propfile)
+  session
 }
 
-set_vtl_csv_json_properties <- function() {
-  vtl_prop <- list(
-    "vtl.metadatarepository.class" = "it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository",
-    "vtl.environment.implementation.classes" = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
-    "vtl.engine.implementation.class" = "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine",
-    "vtl.config.impl.class" = "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl",
-    "vtl.json.metadata.url" = path_to_file_url(system.file("tests", "testthat", "data", "ex_csv.json", package = "RVTL")),
-    "vtl.csv.search.path" = system.file("tests", "testthat", "data", package = "RVTL"),
-    "vtl.session.implementation.class" = "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl",
-    "vtl.config.use.bigdecimal" = "false"
+set_vtl_r_json_properties <- function(session) {
+  jsonMetadataRepository <- "it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository"
+  rEnvironment <- "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$METADATA_REPOSITORY, jsonMetadataRepository)
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$ENVIRONMENT_IMPLEMENTATION, rEnvironment)
+  set_vtl_property_for_session(
+    session,
+    J(jsonMetadataRepository)$JSON_METADATA_URL,
+    path_to_file_url(system.file("tests", "testthat", "data", "ex_r_json.json", package = "RVTL"))
   )
-  propfile <- list_to_dot_vtl_properties_file(filepath = tempfile(), vtl_list = vtl_prop)
-  RVTL::VTLSessionManager$load_config(propfile = propfile)
+  session
 }
 
-proxy_to_vtl_properties <- function() {
+set_vtl_csv_json_properties <- function(session) {
+  jsonMetadataRepository <- "it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository"
+  csvPathEnvironment <- "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$METADATA_REPOSITORY, jsonMetadataRepository)
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$ENVIRONMENT_IMPLEMENTATION, csvPathEnvironment)
+  set_vtl_property_for_session(
+    session,
+    J(jsonMetadataRepository)$JSON_METADATA_URL,
+    path_to_file_url(system.file("tests", "testthat", "data", "ex_csv.json", package = "RVTL"))
+  )
+  set_vtl_property_for_session(
+    session,
+    J(csvPathEnvironment)$CSV_ENV_SEARCH_PATH,
+    system.file("tests", "testthat", "data", package = "RVTL")
+  )
+  session
+}
+
+set_proxy <- function() {
   proxy_host <- Sys.getenv("RVTL_TEST_PROXY_HOST")
   proxy_port <- Sys.getenv("RVTL_TEST_PROXY_PORT")
-  proxy_prop <- list()
+  jsystem <- J("java.lang.System")
   if (proxy_host != "") {
-    proxy_prop[["http.proxyHost"]] <- proxy_host
-    proxy_prop[["https.proxyHost"]] <- proxy_host
+    jsystem$setProperty("http.proxyHost", proxy_host)
+    jsystem$setProperty("https.proxyHost", proxy_host)
   }
-
   if (proxy_port != "") {
-    proxy_prop[["http.proxyPort"]] <- proxy_port
-    proxy_prop[["https.proxyPort"]] <- proxy_port
+    jsystem$setProperty("http.proxyPort", proxy_port)
+    jsystem$setProperty("https.proxyPort", proxy_port)
   }
-
-  return(proxy_prop)
 }
 
-set_vtl_sdmx_properties <- function() {
-  vtl_prop <- list(
-    "vtl.metadatarepository.class" = "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository",
-    "vtl.sdmx.meta.version" = "1.5.0",
-    "vtl.sdmx.meta.password" = "",
-    "vtl.engine.implementation.class" = "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine",
-    "vtl.config.impl.class" = "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl",
-    "vtl.session.implementation.class" = "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl",
-    "vtl.sdmx.data.user" = "",
-    "vtl.environment.implementation.classes" = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment",
-    "vtl.sdmx.data.endpoint" = "https\\://stats.bis.org/api/v1",
-    "vtl.sdmx.meta.user" = "",
-    "vtl.sdmx.meta.endpoint" = "https\\://stats.bis.org/api/v1",
-    "vtl.config.use.bigdecimal" = "false",
-    "vtl.sdmx.data.password" = ""
+set_vtl_sdmx_properties <- function(session) {
+  sdmx_metadata_repository <- "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository"
+  sdmx_environment <- "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$METADATA_REPOSITORY, sdmx_metadata_repository)
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$ENVIRONMENT_IMPLEMENTATION, sdmx_environment)
+  set_vtl_property_for_session(
+    session,
+    J(sdmx_metadata_repository)$SDMX_REGISTRY_ENDPOINT,
+    "https://stats.bis.org/api/v1"
   )
-  proxy_prop <- proxy_to_vtl_properties()
-  vtl_prop <- c(vtl_prop, proxy_prop)
-  propfile <- list_to_dot_vtl_properties_file(filepath = tempfile(), vtl_list = vtl_prop)
-  RVTL::VTLSessionManager$load_config(propfile = propfile)
+  set_vtl_property_for_session(
+    session,
+    J(sdmx_environment)$SDMX_DATA_ENDPOINT,
+    "https://stats.bis.org/api/v1"
+  )
+  set_proxy()
+  session
 }
 
-set_vtl_sdmx_csv_properties <- function() {
-  vtl_prop <- list(
-    "vtl.metadatarepository.class" = "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository",
-    "vtl.sdmx.meta.version" = "1.5.0",
-    "vtl.sdmx.meta.password" = "",
-    "vtl.engine.implementation.class" = "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine",
-    "vtl.config.impl.class" = "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl",
-    "vtl.session.implementation.class" = "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl",
-    "vtl.environment.implementation.classes" = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment",
-    "vtl.sdmx.meta.user" = "",
-    "vtl.sdmx.meta.endpoint" = "https\\://stats.bis.org/api/v1",
-    "vtl.config.use.bigdecimal" = "false",
-    "vtl.sdmx.data.password" = "",
-    "vtl.json.metadata.url" = path_to_file_url(system.file("tests", "testthat", "data", "ex_csv.json", package = "RVTL")),
-    "vtl.csv.search.path" = system.file("tests", "testthat", "data", package = "RVTL")
+set_vtl_sdmx_csv_properties <- function(session) {
+  csvPathEnvironment <- "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
+  sdmxJsonRepository <- "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository"
+  sdmxRepository <- "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository"
+
+  sdmx_metadata_repository <- paste(sdmxRepository, sdmxJsonRepository, sep = ",")
+
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$METADATA_REPOSITORY, sdmxJsonRepository)
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$ENVIRONMENT_IMPLEMENTATION, csvPathEnvironment)
+
+  set_vtl_property_for_session(
+    session,
+    J(sdmxRepository)$SDMX_REGISTRY_ENDPOINT,
+    "https://stats.bis.org/api/v1"
   )
-  proxy_prop <- proxy_to_vtl_properties()
-  vtl_prop <- c(vtl_prop, proxy_prop)
-  propfile <- list_to_dot_vtl_properties_file(filepath = tempfile(), vtl_list = vtl_prop)
-  RVTL::VTLSessionManager$load_config(propfile = propfile)
+
+  set_vtl_property_for_session(
+    session,
+    J(sdmxJsonRepository)$JSON_METADATA_URL,
+    path_to_file_url(system.file("tests", "testthat", "data", "ex_csv.json", package = "RVTL"))
+  )
+
+  set_vtl_property_for_session(
+    session,
+    J(csvPathEnvironment)$CSV_ENV_SEARCH_PATH,
+    system.file("tests", "testthat", "data", package = "RVTL")
+  )
+  set_proxy()
+  session
 }
 
-set_vtl_sdmx_dsd_properties <- function() {
-  vtl_prop <- list(
-    "vtl.metadatarepository.class" = "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository",
-    "vtl.sdmx.meta.version" = "1.5.0",
-    "vtl.sdmx.meta.password" = "",
-    "vtl.engine.implementation.class" = "it.bancaditalia.oss.vtl.impl.engine.JavaVTLEngine",
-    "vtl.config.impl.class" = "it.bancaditalia.oss.vtl.impl.config.ConfigurationManagerImpl",
-    "vtl.session.implementation.class" = "it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl",
-    "vtl.environment.implementation.classes" = "it.bancaditalia.oss.vtl.impl.environment.REnvironment",
-    "vtl.sdmx.meta.user" = "",
-    "vtl.json.metadata.url" = path_to_file_url(system.file("tests", "testthat", "data", "ex_sdmx_dsd.json", package = "RVTL")),
-    "vtl.sdmx.meta.endpoint" = "https\\://stats.bis.org/api/v1",
-    "vtl.config.use.bigdecimal" = "false"
+set_vtl_sdmx_dsd_properties <- function(session) {
+  sdmxJsonRepository <- "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository"
+  sdmxRepository <- "it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository"
+  sdmxEnvironment <- "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
+  rEnvironment <- "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
+
+  sdmx_metadata_repository <- paste(sdmxRepository, sdmxJsonRepository, sep = ",")
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$METADATA_REPOSITORY, sdmxJsonRepository)
+  set_vtl_property_for_session(session, VTL_GENERAL_PROPERTIES$ENVIRONMENT_IMPLEMENTATION, rEnvironment)
+
+
+  set_vtl_property_for_session(
+    session,
+    J(sdmxJsonRepository)$JSON_METADATA_URL,
+    path_to_file_url(system.file("tests", "testthat", "data", "ex_sdmx_dsd.json", package = "RVTL"))
   )
-  proxy_prop <- proxy_to_vtl_properties()
-  vtl_prop <- c(vtl_prop, proxy_prop)
-  propfile <- list_to_dot_vtl_properties_file(filepath = tempfile(), vtl_list = vtl_prop)
-  RVTL::VTLSessionManager$load_config(propfile = propfile)
+  set_vtl_property_for_session(
+    session,
+    J(sdmxRepository)$SDMX_REGISTRY_ENDPOINT,
+    "https://stats.bis.org/api/v1"
+  )
+  set_proxy()
+  session
 }

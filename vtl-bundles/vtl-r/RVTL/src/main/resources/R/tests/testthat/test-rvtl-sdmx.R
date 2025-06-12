@@ -19,67 +19,64 @@
 #
 
 testthat::test_that("SDMX env + SDMX repo", {
-    vtlLogLevel('off')
-    
-    tryCatch({
-    set_vtl_sdmx_properties()
-    vtlAddStatements("test4", "ds_sdmx:=BIS:WS_EER(1.0):D.N.B.IT;")
-    vtlCompile("test4")
-    ds_sdmx <- vtlEvalNodes("test4", "ds_sdmx")[["ds_sdmx"]]
+    vtlLogLevel("off")
 
-    !is.null(ds_sdmx) & nrow(ds_sdmx) > 0 & ncol(ds_sdmx) > 0
+    tryCatch(
+        {
+            session <- "sdmx"
+            set_vtl_sdmx_properties(session)
+            vtlAddStatements(session, "ds_sdmx:=BIS:WS_EER(1.0):D.N.B.IT;")
+            vtlCompile(session)
+            ds_sdmx <- vtlEvalNodes(session, "ds_sdmx")[["ds_sdmx"]]
 
-    testthat::expect_false(is.null(ds_sdmx), label = "first check")
-    testthat::expect_gt(nrow(ds_sdmx), 0, label = "second check")
-    testthat::expect_gt(ncol(ds_sdmx), 0, label = "third check")
-    }, error = function(e) {
-            if (!is.null(e$jobj)) {
-                e$jobj$printStackTrace()
-            }
-            testthat::fail()
-        }
+            !is.null(ds_sdmx) & nrow(ds_sdmx) > 0 & ncol(ds_sdmx) > 0
+
+            testthat::expect_false(is.null(ds_sdmx), label = "first check")
+            testthat::expect_gt(nrow(ds_sdmx), 0, label = "second check")
+            testthat::expect_gt(ncol(ds_sdmx), 0, label = "third check")
+        },
+        error = handle_error
     )
 })
 
 testthat::test_that("CSV env + json and SDMX CL repo", {
-    vtlLogLevel('off')
-    
-    tryCatch({
-    set_vtl_sdmx_csv_properties()
-    vtlAddStatements("test5", "ds_csv_sdmx:=ds_csv;")
-    vtlCompile("test5")
-    ds_sdmx <- vtlEvalNodes("test5", "ds_csv_sdmx")[["ds_csv_sdmx"]]
-    ds_csv <- vtlEvalNodes("test5", "ds_csv")[["ds_csv"]]
+    vtlLogLevel("off")
 
-    ds_csv[ds_csv$Id_2 == "A" & ds_csv$Id_1 == 11, "Me_1"] == ds_sdmx[ds_sdmx$Id_2 == "A" & ds_sdmx$Id_1 == 11, "Me_1"]
+    tryCatch(
+        {
+            session <- "csvenvsdmxjson"
+            set_vtl_sdmx_csv_properties(session)
+            vtlAddStatements(session, "ds_csv_sdmx:=ds_csv;")
+            vtlCompile(session)
+            ds_sdmx <- vtlEvalNodes(session, "ds_csv_sdmx")[["ds_csv_sdmx"]]
+            ds_csv <- vtlEvalNodes(session, "ds_csv")[["ds_csv"]]
+
+            ds_csv[ds_csv$Id_2 == "A" & ds_csv$Id_1 == 11, "Me_1"] == ds_sdmx[ds_sdmx$Id_2 == "A" & ds_sdmx$Id_1 == 11, "Me_1"]
 
 
-    testthat::expect_equal(
-        ds_csv[ds_csv$Id_2 == "A" & ds_csv$Id_1 == 11, "Me_1"],
-        ds_sdmx[ds_sdmx$Id_2 == "A" & ds_sdmx$Id_1 == 11, "Me_1"],
-        label = "first check"
-    )
-    }, error = function(e) {
-            if (!is.null(e$jobj)) {
-                e$jobj$printStackTrace()
-            }
-            testthat::fail()
-        }
+            testthat::expect_equal(
+                ds_csv[ds_csv$Id_2 == "A" & ds_csv$Id_1 == 11, "Me_1"],
+                ds_sdmx[ds_sdmx$Id_2 == "A" & ds_sdmx$Id_1 == 11, "Me_1"],
+                label = "first check"
+            )
+        },
+        error = handle_error
     )
 })
 
 testthat::test_that("R env + json and SDMX DSD repo", {
-    vtlLogLevel('off')
-    
+    vtlLogLevel("off")
+
     tryCatch(
         {
-            set_vtl_sdmx_dsd_properties()
+            session <- "renv+json+sdmx-dsd"
+            set_vtl_sdmx_dsd_properties(session)
             # ds_r <<- RJSDMX::getTimeSeriesTable('BIS_PUBLIC', 'WS_EER/D.N.B.IT')
             ds_local <- readRDS(testthat::test_path("data", "ds_r.Rdata"))
             ds_r <<- ds_local # fix R global env
-            vtlAddStatements("test6", "ds_sdmx:=ds_r;")
-            vtlCompile("test6")
-            ds_sdmx <- vtlEvalNodes("test6", "ds_sdmx")[["ds_sdmx"]]
+            vtlAddStatements(session, "ds_sdmx:=ds_r;")
+            vtlCompile(session)
+            ds_sdmx <- vtlEvalNodes(session, "ds_sdmx")[["ds_sdmx"]]
 
             ds_sdmx[ds_sdmx$TIME_PERIOD == "2005-04-15", "OBS_VALUE"] == ds_r[ds_r$TIME_PERIOD == "2005-04-15", "OBS_VALUE"]
 
@@ -89,11 +86,6 @@ testthat::test_that("R env + json and SDMX DSD repo", {
                 label = "first check"
             )
         },
-        error = function(e) {
-            if (!is.null(e$jobj)) {
-                e$jobj$printStackTrace()
-            }
-            testthat::fail()
-        }
+        error = handle_error
     )
 })
