@@ -315,7 +315,6 @@ vtlServer <- function(input, output, session) {
     
     # Lineage display
     output[[makeID('lineage')]] <- networkD3::renderSankeyNetwork({
-      browser()
       datasetName <- req(input[[makeID('datasetName')]])
       session <- VTLSessionManager$getOrCreate(vtlSession)
       links <- tryCatch({
@@ -636,7 +635,6 @@ vtlServer <- function(input, output, session) {
   # create new session
   observe({
     name <- req(input$newSession)
-    browser()
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
     updateSelectInput(session, 'sessionID', choices = VTLSessionManager$list(), selected = name)

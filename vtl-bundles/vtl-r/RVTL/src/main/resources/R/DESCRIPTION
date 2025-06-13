@@ -6,7 +6,7 @@ Maintainer: Valentino Pinna <valentino.pinna@bancaditalia.it>
 Description: R wrapper for VTL Engine
     This package contains functions and a shiny UI for dealing with the Validation and Transformation Language.
 Depends: R (>= 4.4), rJava (>= 1.0-6), R6, shiny 
-Imports: bslib, igraph, networkD3, shinyjs, sortable, DT, data.table
+Imports: bslib, igraph, networkD3, shinyjs, sortable, DT, data.table, shinyFiles
 Suggests: testthat
 SystemRequirements: Java (>= 11)
 License: EUPL
