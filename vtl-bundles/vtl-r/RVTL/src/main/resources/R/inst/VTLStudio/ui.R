@@ -24,6 +24,7 @@ labels <- list(
   compile = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
   saveas = HTML('<span style="margin-right: 1em">Export code as...</span><span style="font-family: monospace">(Ctrl+S)</span>'),
   saveconfas = HTML('<span style="margin-right: 1em">Save current configuration as...</span>'),
+  loadconf = HTML('<i class="fas fa-upload" style="margin-right: 0.2em"></i><span>Upload configuration...</span>'),
   newSession = HTML('<span style="margin-right: 1em">New session:</span><span style="font-family: monospace">(Ctrl+N)</span>'), 
   createSession = HTML('<span style="margin-right: 1em">Create new</span><span style="font-family: monospace">(Enter)</span>'), 
   dupSession = 'Duplicate session',
@@ -66,7 +67,7 @@ vtlUI <- bslib::page_sidebar(
     sidebar = bslib::sidebar(
       width = 350,
       img(src = "static/logo.svg", class = "vtlLogo"),
-      tags$div(style = "text-align: right; width: 98%", "${r.package.version}"),
+      tags$div(style = "text-align: right; width: 98%", "1.2.2-20250613132022"),
       uiOutput("shinyapps"),
       hr(),
       bslib::input_switch(id = 'demomode', label = 'Demo mode'),
@@ -76,7 +77,7 @@ vtlUI <- bslib::page_sidebar(
         actionButton(inputId = 'dupSession', label = 'Duplicate session'),
         fileInput(inputId = 'scriptFile', label = NULL, accept = 'vtl', buttonLabel = labels$scriptFile)
       ),
-      tags$div(id = "democtrl", class="bslib-gap-spacing d-flex flex-column",
+      tags$div(id = "democtrl", class="bslib-gap-spacing d-flex flex-column d-none",
         selectizeInput('excat', 'Categories', multiple = F, choices = ''),
         selectizeInput('exoper', 'Operators', multiple = F, choices = ''),
         # numericInput('exnum', 'Select exanple number:', 1, min = 1, max = 1, step = 1),
@@ -137,12 +138,11 @@ vtlUI <- bslib::page_sidebar(
             bslib::card_header('Configuration Management', makeButton('card_confman')),
             bslib::card_body(id = 'card_confman', class = 'collapse show',
               fluidRow(
-                column(width = 6, actionButton('applyConfOne', 'Apply to this session')),
-                column(width = 6, actionButton('applyConfAll', 'Apply to all sessions'))
+                column(width = 6, actionButton('applyConfAll', 'Apply to all sessions')),
+                column(width = 6, downloadButton('saveconfas', labels$saveconfas))
               ),
               fluidRow(
-                column(width = 6, downloadButton('saveconfas', labels$saveconfas)),
-                column(width = 6, fileInput("uploadconf", NULL, buttonLabel = "Upload configuration", width = "100%"))
+                column(width = 12, fileInput("uploadconf", NULL, buttonLabel = labels$loadconf, width = "100%"))
               )
             ),
           ),

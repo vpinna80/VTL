@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.config;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getGlobalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.instanceOfClass;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.newConfiguration;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
@@ -63,12 +64,7 @@ public class VTLConfiguration implements Serializable
 	 */
 	public VTLConfiguration(VTLConfiguration source) throws ClassNotFoundException
 	{
-		for (VTLGeneralProperties prop: EnumSet.allOf(VTLGeneralProperties.class))
-			setPropertyValue(prop, source.getPropertyValue(prop));
-
-		for (VTLGeneralProperties topProp: EnumSet.of(ENVIRONMENT_IMPLEMENTATION, METADATA_REPOSITORY, SESSION_IMPLEMENTATION, ENGINE_IMPLEMENTATION))
-			source.getPropertyClasses(topProp).forEach(clazz -> 
-				getSupportedProperties(clazz).forEach(prop -> setPropertyValue(prop, source.getPropertyValue(prop))));
+		reset(source);
 	}
 
 	/**
@@ -174,9 +170,32 @@ public class VTLConfiguration implements Serializable
 	{
 		return Boolean.parseBoolean(getPropertyValue(USE_BIG_DECIMAL));
 	}
+	
+	/**
+	 * Resets this configuration to the same values as the global configration.
+	 * @throws ClassNotFoundException if a class mentioned in the global configuration cannot be found
+	 * 
+	 * NOTE: This method is not thread-safe.
+	 */
+	public void reset() throws ClassNotFoundException
+	{
+		reset(newConfiguration());
+	}
 
 	protected VTLConfiguration()
 	{
 
+	}
+
+	private void reset(VTLConfiguration source) throws ClassNotFoundException
+	{
+		values.clear();
+		
+		for (VTLGeneralProperties prop: EnumSet.allOf(VTLGeneralProperties.class))
+			setPropertyValue(prop, source.getPropertyValue(prop));
+
+		for (VTLGeneralProperties topProp: EnumSet.of(ENVIRONMENT_IMPLEMENTATION, METADATA_REPOSITORY, SESSION_IMPLEMENTATION, ENGINE_IMPLEMENTATION))
+			source.getPropertyClasses(topProp).forEach(clazz -> 
+				getSupportedProperties(clazz).forEach(prop -> setPropertyValue(prop, source.getPropertyValue(prop))));
 	}
 }

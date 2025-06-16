@@ -23,7 +23,9 @@ const vtlEditorItems = [
   { label: 'Structures',           action: "structures", isdisabled: true },
   { label: 'Data & Lineage',       action: "datasets",   isdisabled: true },
   { label: 'Transformation Graph', action: "graph",      isdisabled: true },
-  { label: 'Settings',             action: "settings",   isdisabled: false }
+  { label: 'Settings',             action: "settings",   isdisabled: false },
+  { label: 'hr',                   action: "",           isdisabled: false },
+  { label: 'Close',                action: "close",      isdisabled: false }
 ]
 
 function createEditorPanel(panelName) {
@@ -58,21 +60,21 @@ function addEditorMenu(span, event) {
   menu.setAttribute('data-tab', tab)
 
   vtlEditorItems.forEach(({ label, action, isdisabled }) => {
-    debugger
-    const iscompiled = span.classList.contains('compiled')
-    const disabledClass = (!iscompiled && isdisabled) && " disabled" || ""
-    const html = `<a href="#" class="dropdown-item menu-item ${disabledClass}" data-action="${action}">${label}</a>`
-    const fragment = document.createRange().createContextualFragment(html)
-    const menuitem = fragment.firstElementChild
-    
-    menuitem.addEventListener('click', function (e) {
-      e.preventDefault()
-      document.querySelectorAll('.injected-vtl-editor-tab').forEach(el => el.remove())
-      document.querySelectorAll('.with-editor.open').forEach(el => el.classList.remove('open'))
-      Shiny.setInputValue('sessionMenu', { session: tab, menu: action }, { priority: 'event' })
-    })
-    
-    menu.appendChild(menuitem)
+    if (action) {
+      const disabledClass = (!span.classList.contains('compiled') && isdisabled) && " disabled" || ""
+      const html = `<a href="#" class="dropdown-item menu-item ${disabledClass}" data-action="${action}">${label}</a>`
+      const menuitem = document.createRange().createContextualFragment(html).firstElementChild
+
+      menuitem.addEventListener('click', function (e) {
+        e.preventDefault()
+        document.querySelectorAll('.injected-vtl-editor-tab').forEach(el => el.remove())
+        document.querySelectorAll('.with-editor.open').forEach(el => el.classList.remove('open'))
+        Shiny.setInputValue('sessionMenu', { session: tab, menu: action }, { priority: 'event' })
+      })
+      menu.appendChild(menuitem)
+    } else {
+      menu.appendChild(document.createRange().createContextualFragment('<div class="dropdown-divider"></div>').firstElementChild)
+    }
   })
 
   // Position and inject
@@ -110,6 +112,11 @@ function updateEditorText({ panel, text }) {
   }
 }
 
+function updateSessionText() {
+  const activeTab = document.querySelector('.active .vtlwell').id;
+  Shiny.setInputValue('vtlStatements', VTLEditor.views[activeTab].state.doc.toString(), { priority: 'event' });
+}
+
 $(document).ready(function () {
   $("#newSession").keyup(function(e) {
     if (e.keyCode === 13) {
@@ -119,7 +126,17 @@ $(document).ready(function () {
   })
 })
 
-function updateSessionText() {
-  const activeTab = document.querySelector('.active .vtlwell').id;
-  Shiny.setInputValue('vtlStatements', VTLEditor.views[activeTab].state.doc.toString(), { priority: 'event' });
+function generateLabel(input, escape) {
+  return `<div class="d-flex flex-row flex-nowrap align-items-center"><div class="btn">` + (input.value 
+    ? `<i class='bi bi-box-arrow-up-right text-primary' ` +
+      `onmousedown='openLink(event, "${ escape(input.label) }", "${ escape(input.categ) }")'></div>` +
+      `</i><span>${ escape(input.label) }</span></div>`
+    : `<i class='bi bi-box-arrow-up-right invisible'></i><span>${ escape(input.label) }</span></div>`
+  )
+}
+
+function openLink(event, label, categ) {
+  event.stopImmediatePropagation()
+  url = 'https://sdmx-twg.github.io/vtl/2.2/html/reference_manual/operators'
+  window.open(categ ? `${ url }/${ categ }/${ label }` : `${ url }/${ label }`, '_vtl_help_')
 }

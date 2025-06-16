@@ -104,9 +104,10 @@ createPanel <- function(vtlSession) {
   makeID <- makeUIElemName(isolate(vtlSession))
   newEditorID <- makeID("editor")
   theme <- getCurrentTheme()
+  isCompiled <- VTLSessionManager$getOrCreate(vtlSession)$isCompiled()
   bslib::nav_panel(value = vtlSession, 
     title = tags$span(onclick = "addEditorMenu(this, event)",
-      vtlSession, class = "with-editor", id = makeID("pane")
+      vtlSession, class = paste("with-editor", if (isCompiled) "compiled" else ""), id = makeID("pane")
     ), bslib::navset_hidden(id = makeID('sheets'),
       bslib::nav_panel_hidden(value = "editor",
         tags$div(id = newEditorID, class = 'vtlwell'),
@@ -270,6 +271,22 @@ vtlServer <- function(input, output, session) {
     # Compilation status box
     output[[makeID('output')]] <- renderPrint(cat(' '))
     
+    # Populate environments and repositories lists in session settings
+    envlistdone <- observe({
+      currentSession <- VTLSessionManager$getOrCreate(vtlSession)
+      updateSelectInput(session, makeID('selectEnv'), NULL, environments)
+      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, globalRepo())
+      session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = currentSession$text))
+
+      if (currentSession$isCompiled()) {
+        updateSelectInput(session, makeID('structName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
+        updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
+      }
+      
+      # Single execution only when the tab is first created
+      envlistdone$destroy()
+    })
+    
     # Controls and observers for properties of selected environment in active session
     output[[makeID('envprops')]] <- renderUI({
       getValue <- VTLSessionManager$getOrCreate(vtlSession)$getProperty
@@ -401,15 +418,7 @@ vtlServer <- function(input, output, session) {
           })
         } |> bindEvent(input[[makeID('selectDatasets')]])
       )
-    }) |> bindEvent(input[[makeID('sheets')]], ignoreInit = T)
-    
-    # Populate environments and repositories lists in session settings
-    envlistdone <- observe({
-      updateSelectInput(session, makeID('selectEnv'), NULL, environments)
-      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, globalRepo())
-      # Single execution only when the tab is first created
-      envlistdone$destroy()
-    })
+    }) |> bindEvent(input[[makeID('sheets')]])
 
     panel <- createPanel(vtlSession)
     prependTab("navtab", panel, T)
@@ -471,7 +480,7 @@ vtlServer <- function(input, output, session) {
   	  sList <- VTLSessionManager$list()
   	  vtlSessions(sList)
   	}
-  }) |> bindEvent(input$demomode)
+  }) |> bindEvent(input$demomode, ignoreInit = T)
   
   # Populate demo mode operators when selecting a category
   observe({
@@ -512,11 +521,6 @@ vtlServer <- function(input, output, session) {
     # Single execution only when VTL Studio starts
     envlistdone$destroy()
   })
-
-  # Apply configuration to the active session
-  observe({
-	  currentSession()$refresh()
-  }) |> bindEvent(input$applyConfAll, ignoreInit = T)
 
   # Apply configuration to all active vtlSessions
   observe({
