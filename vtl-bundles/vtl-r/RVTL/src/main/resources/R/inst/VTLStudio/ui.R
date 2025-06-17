@@ -32,12 +32,6 @@ labels <- list(
   editorTheme = 'Select editor theme:'
 )
 
-defaultProxy <- \() list(
-  host = J("java.lang.System")$getProperty("https.proxyHost"), 
-  port = J("java.lang.System")$getProperty("https.proxyPort"), 
-  user = ''
-)
-
 makeButton <- \(id) tags$button(
   class = "btn btn-sm btn-link float-end",
   `data-bs-toggle` = "collapse",
@@ -67,7 +61,7 @@ vtlUI <- bslib::page_sidebar(
     sidebar = bslib::sidebar(
       width = 350,
       img(src = "static/logo.svg", class = "vtlLogo"),
-      tags$div(style = "text-align: right; width: 98%", "1.2.2-20250613132022"),
+      tags$div(style = "text-align: right; width: 98%", "${r.package.version}"),
       uiOutput("shinyapps"),
       hr(),
       bslib::input_switch(id = 'demomode', label = 'Demo mode'),

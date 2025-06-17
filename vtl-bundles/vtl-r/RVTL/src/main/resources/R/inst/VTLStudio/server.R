@@ -56,11 +56,6 @@ globalRepo <- function(newrepo = NULL) {
     configManager$setGlobalPropertyValue(vtlProps$METADATA_REPOSITORY, newrepo)
 }
 
-activeEnvs <- function(active) {
-  items <- names(environments[xor(!active, environments %in% globalEnvs())])
-  if (length(items) > 0) items else NULL
-}
-
 makeButton <- \(id) tags$button(
   class = "btn btn-sm btn-link float-end",
   `data-bs-toggle` = "collapse",
@@ -104,7 +99,14 @@ createPanel <- function(vtlSession) {
   makeID <- makeUIElemName(isolate(vtlSession))
   newEditorID <- makeID("editor")
   theme <- getCurrentTheme()
-  isCompiled <- VTLSessionManager$getOrCreate(vtlSession)$isCompiled()
+  sessionInstance <- VTLSessionManager$getOrCreate(vtlSession)
+  isCompiled <- sessionInstance$isCompiled()
+  sessionEnvs <- unlist(strsplit(sessionInstance$getProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION), ","))
+  activeSessionEnvs <- function(active) {
+    items <- names(environments[xor(!active, environments %in% sessionEnvs)])
+    if (length(items) > 0) items else NULL
+  }
+
   bslib::nav_panel(value = vtlSession, 
     title = tags$span(onclick = "addEditorMenu(this, event)",
       vtlSession, class = paste("with-editor", if (isCompiled) "compiled" else ""), id = makeID("pane")
@@ -146,8 +148,8 @@ createPanel <- function(vtlSession) {
             bslib::card_header('VTL Environments', makeButton(makeID('card_envs'))),
             bslib::card_body(id = makeID('card_envs'), class = 'collapse show', 
               sortable::bucket_list(header = NULL, orientation = 'horizontal',
-                sortable::add_rank_list("Available", activeEnvs(F)),
-                sortable::add_rank_list("Active", activeEnvs(T), makeID("envs"))
+                sortable::add_rank_list("Available", activeSessionEnvs(F), makeID("envs_inactive")),
+                sortable::add_rank_list("Active", activeSessionEnvs(T), makeID("envs"))
               )
             )
           ),
@@ -313,9 +315,9 @@ vtlServer <- function(input, output, session) {
     
     # Update active environments in active session
     output[[makeID('confOutput')]] <- renderPrint({
-      envs <- req(input$envs)
+      envs <- req(input[[makeID('envs')]])
       VTLSessionManager$getOrCreate(vtlSession)$setProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION, paste0(environments[envs], collapse = ","))
-      cat("Set active environments to:\n    - ", paste0(envs, collapse = "\n    - "), "\n")
+      cat("Set active environments to:\n    -", paste0(envs, collapse = "\n    - "), "\n")
     }) |> bindEvent(input[[makeID('envs')]])
     
     # dataset table display
@@ -358,7 +360,11 @@ vtlServer <- function(input, output, session) {
     output[[makeID('dptable')]] <- DT::renderDataTable({
       maxlines = as.integer(isolate(req(input[[makeID('maxlines')]])))
       selected <- req(input[[makeID('datasetName')]])
-      ddf = VTLSessionManager$getOrCreate(vtlSession)$getValues(selected)[[1]]
+      ddf = tryCatch({
+        VTLSessionManager$getOrCreate(vtlSession)$getValues(selected)[[1]]
+      }, error = function(e) {
+        stop('Error retriveing data for ', selected, ': ', e)
+      })
       if (ncol(ddf) <= 1 || names(ddf)[1] == 'Scalar') {
         return (ddf)
       } else {
@@ -525,6 +531,15 @@ vtlServer <- function(input, output, session) {
   # Apply configuration to all active vtlSessions
   observe({
     VTLSessionManager$reload()
+    for (vtlSession in VTLSessionManager$list()) {
+      makeID <- makeUIElemName(vtlSession)
+      activeEnvs <- strsplit(VTLSessionManager$getOrCreate(vtlSession)$getProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION), ',')
+      activeEnvs <- names(environments)[match(unlist(activeEnvs), environments)]
+      session$sendCustomMessage('update-envs', list(rank = makeID('envs'), active = c('', activeEnvs)))
+      activeRepo <- VTLSessionManager$getOrCreate(vtlSession)$getProperty(vtlProps$METADATA_REPOSITORY)
+      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, activeRepo)
+      updateSelectInput(session, makeID('selectEnv'), NULL, environments, "it.bancaditalia.oss.vtl.impl.environment.REnvironment")
+    }
   }) |> bindEvent(input$applyConfAll, ignoreInit = T)
 
   # Environment properties list
@@ -641,7 +656,6 @@ vtlServer <- function(input, output, session) {
     name <- req(input$newSession)
     vtlSession <- VTLSessionManager$getOrCreate(name)
     isCompiled(vtlSession$isCompiled())
-    updateSelectInput(session, 'sessionID', choices = VTLSessionManager$list(), selected = name)
     updateTextInput(session, 'newSession', value = '')
     # Triggers the tab creation for this session
     vtlSessions(VTLSessionManager$list())

@@ -100,6 +100,7 @@ $(document).on("shiny:connected", () => {
   Shiny.addCustomMessageHandler('editor-theme', VTLEditor.setTheme)
   Shiny.addCustomMessageHandler('editor-fontsize', VTLEditor.setFontSize)
   Shiny.addCustomMessageHandler('editor-text', updateEditorText)
+  Shiny.addCustomMessageHandler('update-envs', updateSessionEnvs)
 })
 
 // Replace the text of a given editor view
@@ -138,5 +139,12 @@ function generateLabel(input, escape) {
 function openLink(event, label, categ) {
   event.stopImmediatePropagation()
   url = 'https://sdmx-twg.github.io/vtl/2.2/html/reference_manual/operators'
-  window.open(categ ? `${ url }/${ categ }/${ label }` : `${ url }/${ label }`, '_vtl_help_')
+  window.open(categ ? `${ url }/${ categ }/${ label }` : `${ url }/${ label }`, '_blank')
+}
+
+function updateSessionEnvs({ rank, active }) {
+  const allNodes = Array.from(document.querySelectorAll(`#${rank} *, #${rank}_inactive *`))
+  const activeNodes = active.flatMap(a => allNodes.find(e => e.textContent === a) || [])
+  activeNodes.forEach(e => document.querySelector(`#${rank}`).appendChild(e))
+  allNodes.filter(node => !activeNodes.includes(node)).forEach(e => document.querySelector(`#${rank}_inactive`).appendChild(e))
 }
