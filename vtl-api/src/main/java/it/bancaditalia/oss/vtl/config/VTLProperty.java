@@ -37,7 +37,7 @@ import java.util.Set;
 public interface VTLProperty
 {
 	public enum Options {
-		IS_PASSWORD, IS_REQUIRED, IS_MULTIPLE, IS_FOLDER
+		IS_PASSWORD, IS_REQUIRED, IS_MULTIPLE, IS_FOLDER, IS_URL
 	}
 	
 	/**

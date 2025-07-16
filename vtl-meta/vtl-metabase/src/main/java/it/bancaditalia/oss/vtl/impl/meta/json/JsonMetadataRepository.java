@@ -23,6 +23,7 @@ import static com.fasterxml.jackson.core.StreamReadFeature.INCLUDE_SOURCE_IN_LOC
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalConfigurationObject;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_URL;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder.toDataStructure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.tcds.TransformationCriterionDomainSubset.TEST_ALIAS;
@@ -84,7 +85,7 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
 {
-	public static final VTLProperty JSON_METADATA_URL = new VTLPropertyImpl("vtl.json.metadata.url", "Json url providing structures and domains", "file://", EnumSet.of(IS_REQUIRED));
+	public static final VTLProperty JSON_METADATA_URL = new VTLPropertyImpl("vtl.json.metadata.url", "Json url providing structures and domains", "file://", EnumSet.of(IS_REQUIRED, IS_URL));
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(JsonMetadataRepository.class);

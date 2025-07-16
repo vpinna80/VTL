@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getGlobalPrope
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_URL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
@@ -132,7 +133,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of(true, "ALPHA_NUMERIC"), "(?U)^\\p{Alnum}*$", STRINGDS);
 	private static final RegExpDomainSubset VTL_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of(true, "NUMERIC"), "(?U)^\\p{Digit}*$", STRINGDS);
 
-	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(IS_REQUIRED));
+	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(IS_REQUIRED, IS_URL));
 	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(IS_REQUIRED), "1.5.0");
 	public static final VTLProperty SDMX_META_USERNAME = new VTLPropertyImpl("vtl.sdmx.meta.user", "SDMX REST user name", "", emptySet());
 	public static final VTLProperty SDMX_META_PASSWORD = new VTLPropertyImpl("vtl.sdmx.meta.password", "SDMX REST password", "", EnumSet.of(IS_PASSWORD));

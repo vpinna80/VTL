@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalProper
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.registerSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_URL;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.MONTH_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.QUARTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
@@ -128,7 +129,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SDMXEnvironment implements Environment, Serializable
 {
-	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX REST data base URL", "https://www.myurl.com/service", EnumSet.of(IS_REQUIRED));
+	public static final VTLProperty SDMX_DATA_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.data.endpoint", "SDMX REST data base URL", "https://www.myurl.com/service", EnumSet.of(IS_REQUIRED, IS_URL));
 	public static final VTLProperty SDMX_DATA_USERNAME = new VTLPropertyImpl("vtl.sdmx.data.user", "SDMX Data Provider user name", "", emptySet());
 	public static final VTLProperty SDMX_DATA_PASSWORD = new VTLPropertyImpl("vtl.sdmx.data.password", "SDMX Data Provider password", "", EnumSet.of(IS_PASSWORD));
 

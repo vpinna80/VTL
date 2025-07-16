@@ -52,7 +52,7 @@ import it.bancaditalia.oss.vtl.util.SerFunction;
 public enum AggregateOperator  
 {
 	COUNT(domain -> collectingAndThen(counting(), IntegerValue::of)),
-	SUM(domain -> getSummingCollector(domain)), 
+	SUM(domain -> getSummingCollector(domain)),
 	AVG(domain -> getAveragingCollector(domain)),
 	MEDIAN(domain -> collectingAndThen(filtering(not(NullValue.class::isInstance), new MedianCollector(getSVClass())), opt -> opt.orElse(NullValue.instance(NULLDS)))),
 	MIN(domain -> collectingAndThen(minBy(getSVClass(), ScalarValue::compareTo), opt -> opt.orElse(NullValue.instance(NULLDS)))),

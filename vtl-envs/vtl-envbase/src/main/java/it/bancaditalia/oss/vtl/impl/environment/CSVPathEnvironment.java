@@ -21,6 +21,8 @@ package it.bancaditalia.oss.vtl.impl.environment;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValues;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_FOLDER;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_MULTIPLE;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
@@ -78,7 +80,8 @@ public class CSVPathEnvironment implements Environment
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CSVPathEnvironment.class);
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
-	public static final VTLProperty CSV_ENV_SEARCH_PATH = new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), EnumSet.of(IS_REQUIRED), System.getenv("VTL_PATH"));
+
+	public static final VTLProperty CSV_ENV_SEARCH_PATH = new VTLPropertyImpl("vtl.csv.search.path", "Path to search for CSV files", System.getenv("VTL_PATH"), EnumSet.of(IS_REQUIRED, IS_FOLDER, IS_MULTIPLE), System.getenv("VTL_PATH"));
 	public static final VTLProperty CSV_ENV_THRESHOLD = new VTLPropertyImpl("vtl.csv.progress.threshold", "Limit of rows to show progress bar", "1000", EnumSet.of(IS_REQUIRED), "1000");
 
 	static

@@ -68,11 +68,11 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 		DataSetMetadata metadata = (DataSetMetadata) getMetadata(session);
 		DataSetMetadata oldStructure = operand.getMetadata();
 		
-		Map<VTLAlias, ? extends DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
+		Map<VTLAlias, DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
 				.collect(toMapWithValues(name -> oldStructure.getComponent(name)
 						.orElseThrow(() -> new VTLMissingComponentsException(oldStructure, name))));
 
-		Map<VTLAlias, ? extends DataStructureComponent<?, ?, ?>> newComponents = renames.values().stream()
+		Map<VTLAlias, DataStructureComponent<?, ?, ?>> newComponents = renames.values().stream()
 				.collect(toMapWithValues(name -> metadata.getComponent(name)
 						.orElseThrow(() -> new VTLMissingComponentsException(metadata, name))));
 
