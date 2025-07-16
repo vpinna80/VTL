@@ -36,10 +36,10 @@ function createEditorPanel(panelName) {
       const themeName = document.querySelector('#editorTheme-selectized')?.parentElement?.querySelector('.item')?.textContent
       view = VTLEditor.createEditor(panelName, themeName)
       view.dom.onblur = () => Shiny.setInputValue('editorText', view.state.doc.toString())
-      VTLEditor.addHotKey(view, 'Ctrl-Enter', () => { $('#compile').click(); return true })
-      VTLEditor.addHotKey(view, 'Ctrl-n', () => { $('#newSession')[0].focus(); $('#newSession')[0].select(); return true })
-      VTLEditor.addHotKey(view, 'Ctrl-o', () => { $('#scriptFile')[0].click(); return true })
-      VTLEditor.addHotKey(view, 'Ctrl-s', () => { $('#saveas')[0].click(); return true })
+      VTLEditor.addHotKey(view, 'Ctrl-Enter', () => { jQuery('#compile').click(); return true })
+      VTLEditor.addHotKey(view, 'Ctrl-n', () => { jQuery('#newSession')[0].focus(); jQuery('#newSession')[0].select(); return true })
+      VTLEditor.addHotKey(view, 'Ctrl-o', () => { jQuery('#scriptFile')[0].click(); return true })
+      VTLEditor.addHotKey(view, 'Ctrl-s', () => { jQuery('#saveas')[0].click(); return true })
       Shiny.addCustomMessageHandler('editor-focus', panel => panel == panelName && view.contentDOM.focus())
     }
     vtlwell.appendChild(view.dom)
@@ -95,14 +95,6 @@ document.addEventListener('click', e => {
   }
 })
 
-$(document).on("shiny:connected", () => {
-  Shiny.setInputValue("themeNames", VTLEditor.themes)
-  Shiny.addCustomMessageHandler('editor-theme', VTLEditor.setTheme)
-  Shiny.addCustomMessageHandler('editor-fontsize', VTLEditor.setFontSize)
-  Shiny.addCustomMessageHandler('editor-text', updateEditorText)
-  Shiny.addCustomMessageHandler('update-envs', updateSessionEnvs)
-})
-
 // Replace the text of a given editor view
 function updateEditorText({ panel, text }) {
   const view = VTLEditor.views[panel]
@@ -118,13 +110,15 @@ function updateSessionText() {
   Shiny.setInputValue('vtlStatements', VTLEditor.views[activeTab].state.doc.toString(), { priority: 'event' });
 }
 
-$(document).ready(function () {
-  $("#newSession").keyup(function(e) {
+jQuery(document).ready(function () {
+  jQuery("#newSession").keyup(function(e) {
     if (e.keyCode === 13) {
       e.preventDefault()
-      $("#createSession").click()
+      jQuery("#createSession").click()
     }
   })
+
+  jQuery('.add-modal').draggable({ handle: '.modal-header' })
 })
 
 function generateLabel(input, escape) {
@@ -148,3 +142,24 @@ function updateSessionEnvs({ rank, active }) {
   activeNodes.forEach(e => document.querySelector(`#${rank}`).appendChild(e))
   allNodes.filter(node => !activeNodes.includes(node)).forEach(e => document.querySelector(`#${rank}_inactive`).appendChild(e))
 }
+
+jQuery(document).on("shiny:connected", () => {
+  Shiny.setInputValue("themeNames", VTLEditor.themes)
+  Shiny.addCustomMessageHandler('editor-theme', VTLEditor.setTheme)
+  Shiny.addCustomMessageHandler('editor-fontsize', VTLEditor.setFontSize)
+  Shiny.addCustomMessageHandler('editor-text', updateEditorText)
+  Shiny.addCustomMessageHandler('update-envs', updateSessionEnvs)
+  Shiny.addCustomMessageHandler('dict-editor', msg => createEditDictWindow(JSON.parse(msg)))
+
+  document.querySelectorAll('.dict-filter').forEach(input => {
+    input.addEventListener('input', function () {
+      const listId = this.getAttribute('data-target')
+      const list = document.getElementById(listId)
+      const filter = this.value.toLowerCase()
+      list.querySelectorAll('.list-group-item').forEach(item => {
+        const text = item.textContent.toLowerCase()
+        item.style.display = text.includes(filter) ? '' : 'none'
+      })
+    })
+  })
+})

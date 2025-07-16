@@ -61,7 +61,7 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager",
     clear = function() {
       private$sessions <- new.env(parent = emptyenv())
       gc(verbose = F, full = T)
-      return(invisible()) 
+      return(invisible(self)) 
     },
     
     #' @description
@@ -70,7 +70,7 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager",
     kill = function (sessionID) { 
       if (exists(sessionID, envir = private$sessions))
       rm(list = sessionID, envir = private$sessions)
-      return(invisible())
+      return(invisible(self))
     },
 
     #' @description
@@ -116,6 +116,7 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager",
     #' Reload the configuration of all active VTL sessions from the global configuration.
     reload = function() {
       sapply(ls(private$sessions), \(n) VTLSessionManager$getOrCreate(n)$reset())
+      return(invisible(self))
     },
 
     #' @description
@@ -138,7 +139,7 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager",
           reader$close()
         })
       }
-      VTLSessionManager$reload()
+      return(self$reload())
     }
   ), private = list(
     sessions = new.env(parent = emptyenv()),

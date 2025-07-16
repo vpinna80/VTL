@@ -87,6 +87,14 @@ controlsGen <- function(javaclass, getValue = configManager$getGlobalPropertyVal
           shinyFiles::shinyDirButton(inputIDf, '', "Folder chooser", icon = icon('folder-open'), style = "color: yellow")
         )
       )
+    } else if (grepl('json.metadata.url', inputID)) {
+      inputIDj <- paste0(inputID, '_j')
+      tags$div(style = "display: flex; gap: 6px; align-items: flex-end;",
+        textInput(inputID, prop$getDescription(), val, placeholder = prop$getPlaceholder()),
+        tags$div(class = 'form-group shiny-input-container', style = "align-self: end;",
+          actionButton(inputIDj, '', tags$i(class = 'bi bi-pencil-square'), class = 'disabled')
+        )
+      )
     } else {
       textInput(inputID, prop$getDescription(), val, placeholder = prop$getPlaceholder())
     }
@@ -185,7 +193,7 @@ assign("getCurrentThemeVersion", \() 5, envir = asNamespace("bslib"))
 lockBinding("getCurrentThemeVersion", asNamespace("bslib"))
 
 vtlServer <- function(input, output, session) {
-  
+
   vtlSessions <- reactiveVal(NULL)
   isCompiled <- reactiveVal(F)
   currentSession <- reactiveVal(NULL)
@@ -219,6 +227,8 @@ vtlServer <- function(input, output, session) {
   observersGen <- function(prop, makeID = sanitize, getValue = configManager$getGlobalPropertyValue, 
                           setValue = configManager$setGlobalPropertyValue) {
     inputID <- makeID(prop$getName())
+    
+    # React to "choose a path" for path-like properties
     if (grepl('path', prop$getName())) {
       inputIDf <- paste0(inputID, '_f')
       # attach the navigator
@@ -231,6 +241,44 @@ vtlServer <- function(input, output, session) {
         updateTextInput(inputId = inputID, value = dirPath)
       }) |> bindEvent(input[[inputIDf]], ignoreInit = T)
     }
+
+    # React to change url with enabling/disabling edit button
+    if (grepl('json.metadata.url', inputID)) {
+      debounced <- debounce(reactive(input[[inputID]]), 2000)
+      inputIDj <- paste0(inputID, '_j')
+      observe({
+        jsonUrl = req(debounced())
+        con <- NULL
+        allOK <- tryCatch({
+            con <- url(jsonUrl, 'rt')
+            # test read first line
+            readLines(con, 1, T, F)
+            shinyjs::removeClass(inputIDj, 'disabled')
+          },
+          warning = \(w) shinyjs::addClass(inputIDj, 'disabled'),
+          error = \(e) shinyjs::addClass(inputIDj, 'disabled'),
+          finally = { if (!is.null(con)) close(con) }
+        )
+      }) |> bindEvent(debounced(), ignoreInit = T)
+      
+      observe({
+        jsonUrl = req(debounced())
+        con <- NULL
+        jsonFile <- tryCatch({
+            con <- url(jsonUrl, 'rt')
+            paste0(readLines(con, warn = F), collapse = '\n')
+          }, error = \(e) {
+            invisible(NULL)
+          }, finally = {
+            if (!is.null(con)) close(con)
+          }
+        )
+        if (!is.null(jsonFile)) {
+          session$sendCustomMessage('dict-editor', jsonFile)
+        }
+      }) |> bindEvent(input[[inputIDj]], ignoreInit = T)
+    }
+
     observe({
       value <- req(input[[inputID]])
       setValue(prop, value)

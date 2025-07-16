@@ -155,3 +155,88 @@ border-radius: 0;
   max-height: 30%;
   overflow-y: auto;
 }
+
+.scroll-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .scroll-list {
+    max-height: 30vh;
+  }
+}
+
+@media (min-width: 1200px) {
+  .scroll-list {
+    max-height: 70vh;
+  }
+}
+
+.modal-backdrop ~ .modal-backdrop {
+  z-index: 1055;
+}
+
+.modal.show ~ .modal.show {
+  z-index: 1060;
+}
+
+.modal.show .selectize-dropdown, body > .selectize-dropdown.form-control {
+  z-index: 1065;
+}
+
+td .selectize-input {
+  padding: inherit 2 inherit 2;
+}
+
+.resizable-table i.handle, .resizable-table > .handle {
+  cursor: grab;
+}
+
+.resizable-table > .handle {
+  position: absolute;
+  bottom: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  user-select: none;
+  pointer-events: auto;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.06em;
+  width: 100%;
+}
+
+.resizable-table > .handle > i {
+  background: transparent;
+  margin-top: -0.25rem;
+}
+
+.modal-dialog .dataTables_scrollHeadInner, .modal-dialog .dataTables_scrollFootInner,
+.modal-dialog .dataTables_scrollHeadInner table, .modal-dialog .dataTables_scrollFootInner table {
+  width: 100% !important;
+  padding-right: 0 !important;
+}
+
+.add-row {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  margin-top: -0.5rem;
+}
+
+.resizable-table {
+  position: relative;
+}
+
+.flex-breaker {
+  height: 0;
+  overflow: hidden;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.resizable-table td input.form-control-sm {
+  border: none;
+}

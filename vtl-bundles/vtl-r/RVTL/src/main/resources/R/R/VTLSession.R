@@ -93,6 +93,7 @@ VTLSession <- R6Class("VTLSession",
     #' Compiles the VTL statements submitted for this session.
     compile = function () {
       private$updateInstance()$compile()
+      return(invisible(self))
     },
 
     #' @description
@@ -265,6 +266,7 @@ VTLSession <- R6Class("VTLSession",
     #' A string containing the value of the property
     setProperty = function(prop, value) {
       private$checkInstance()$getConfiguration()$setPropertyValue(prop, value)
+      return(invisible(self))
     },
      
     #' @description
@@ -277,6 +279,7 @@ VTLSession <- R6Class("VTLSession",
     #' Reset the configuration of this VTLSession to the global configuration.
     reset = function() {
       private$checkInstance()$getConfiguration()$reset()
+      return(invisible(self))
     }
   ), private = list(
     instance = NULL,
