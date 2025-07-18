@@ -58,7 +58,8 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -66,8 +67,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -128,13 +129,13 @@ public class SDMXJsonRepositoryTest
 	{
 		assertTrue(repo instanceof SDMXJsonRepository);
 		VTLValueMetadata actual = repo.getMetadata(VTLAliasImpl.of(true, "ECB:EXR(1.0)")).orElseThrow(() -> new NullPointerException());
-		DataSetMetadata expected = new DataStructureBuilder()
+		DataSetStructure expected = new DataSetStructureBuilder()
 				.addComponents(TIME_PERIOD)
 				.addComponents(allOf(TestComponents.class).stream().map(c -> c.get(repo)).collect(toList()))
 				.build();
 		
-		assertInstanceOf(DataSetMetadata.class, actual);
-		for (DataStructureComponent<?, ?, ?> c: (DataSetMetadata) actual)
+		assertInstanceOf(DataSetStructure.class, actual);
+		for (DataSetComponent<?, ?, ?> c: (DataSetStructure) actual)
 			if (!expected.contains(c))
 				assertTrue(expected.contains(c), c + " not found in " + expected);
 		assertEquals(expected, actual);
@@ -145,15 +146,15 @@ public class SDMXJsonRepositoryTest
 	{
 		assertTrue(repo instanceof SDMXJsonRepository);
 		VTLValueMetadata actual = repo.getMetadata(VTLAliasImpl.of(true, "DS_1")).orElseThrow(() -> new NullPointerException());
-		DataSetMetadata expected = new DataStructureBuilder()
-				.addComponent(repo.createTempVariable(VTLAliasImpl.of("Id_1"), STRINGDS).as(Identifier.class))
-				.addComponent(repo.createTempVariable(VTLAliasImpl.of("Me_1"), NUMBERDS).as(Measure.class))
-				.addComponent(repo.createTempVariable(VTLAliasImpl.of("At_1"), repo.getDomain(VTLAliasImpl.of("'ECB:CL_CURRENCY(1.0)'")).get()).as(Attribute.class))
-				.addComponent(repo.createTempVariable(VTLAliasImpl.of("Va_1"), repo.getDomain(VTLAliasImpl.of("VD_1")).get()).as(ViralAttribute.class))
+		DataSetStructure expected = new DataSetStructureBuilder()
+				.addComponent(DataSetComponentImpl.of(VTLAliasImpl.of("Id_1"), STRINGDS, Identifier.class))
+				.addComponent(DataSetComponentImpl.of(VTLAliasImpl.of("Me_1"), NUMBERDS, Measure.class))
+				.addComponent(DataSetComponentImpl.of(VTLAliasImpl.of("At_1"), repo.getDomain(VTLAliasImpl.of("'ECB:CL_CURRENCY(1.0)'")).get(), Attribute.class))
+				.addComponent(DataSetComponentImpl.of(VTLAliasImpl.of("Va_1"), repo.getDomain(VTLAliasImpl.of("VD_1")).get(), ViralAttribute.class))
 				.build();
 		
-		assertInstanceOf(DataSetMetadata.class, actual);
-		for (DataStructureComponent<?, ?, ?> c: (DataSetMetadata) actual)
+		assertInstanceOf(DataSetStructure.class, actual);
+		for (DataSetComponent<?, ?, ?> c: (DataSetStructure) actual)
 			if (!expected.contains(c))
 				assertTrue(expected.contains(c), c + " not found in " + expected);
 		assertEquals(expected, actual);

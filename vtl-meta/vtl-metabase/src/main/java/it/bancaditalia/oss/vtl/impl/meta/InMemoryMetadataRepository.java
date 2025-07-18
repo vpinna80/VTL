@@ -20,18 +20,20 @@
 package it.bancaditalia.oss.vtl.impl.meta;
 
 import java.io.Serializable;
-import java.security.InvalidParameterException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
+import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataStructureDefinition;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -53,8 +55,9 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 			{
 				ValueDomainSubset<?, ?> d = domain.getDomain();
 				DOMAINS.put(VTLAliasImpl.of(domain.name()), d);
-				Variable<?, ?> defaultVariable = d.getDefaultVariable();
-				DEFAULT_VARS.put(defaultVariable.getAlias(), d.getDefaultVariable());
+				DataSetComponent<Measure, ?, ?> comp = DataSetComponentImpl.getDefaultMeasure(d);
+				Variable<?, ?> defaultVariable = VariableImpl.of(comp.getAlias(), d);
+				DEFAULT_VARS.put(defaultVariable.getAlias(), defaultVariable);
 			}
 	}
 	
@@ -103,20 +106,6 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 		return Optional.<Variable<?, ?>>ofNullable(DEFAULT_VARS.get(alias))
 				.or(() -> Optional.ofNullable(chained).flatMap(chained -> chained.getVariable(alias)));
 	}
-	
-	@Override
-	public Variable<?, ?> createTempVariable(VTLAlias alias, ValueDomainSubset<?, ?> domain)
-	{
-		Variable<?, ?> variable = DEFAULT_VARS.get(alias);
-		if (variable != null && domain != null && !domain.equals(variable.getDomain()))
-			throw new VTLCastException(variable.getDomain(), domain);
-		else if (variable != null)
-			return variable;
-		else if (domain != null)
-			return VariableImpl.of(alias, domain);
-		else
-			throw new InvalidParameterException("Variable " + alias + " must be defined or the domain must be non-null");
-	}
 
 	@Override
 	public String getDataSource(VTLAlias alias)
@@ -125,7 +114,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 
 	@Override
-	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias)
+	public Optional<DataStructureDefinition> getStructureDefinition(VTLAlias alias)
 	{
 		return chained == null ? Optional.empty() : chained.getStructureDefinition(alias);
 	}

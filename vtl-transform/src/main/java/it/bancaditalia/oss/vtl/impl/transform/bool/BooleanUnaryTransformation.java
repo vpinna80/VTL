@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -86,10 +86,10 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
+		Set<DataSetComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 
 		return dataset.mapKeepingKeys(dataset.getMetadata(), lineageEnricher(this), dp -> {
-			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+			Map<DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 			map.replaceAll((c, v) -> function.apply(BOOLEANDS.cast(v)));
 			return map;
 		});
@@ -107,9 +107,9 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 				throw new VTLIncompatibleTypesException(function.toString(), BOOLEANDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
 		else
 		{
-			DataSetMetadata dataset = (DataSetMetadata) meta;
+			DataSetStructure dataset = (DataSetStructure) meta;
 
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
+			Set<? extends DataSetComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 			if (dataset.getMeasures().size() == 0)
 				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
 

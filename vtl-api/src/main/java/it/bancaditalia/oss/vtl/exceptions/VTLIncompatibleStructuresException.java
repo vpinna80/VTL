@@ -24,21 +24,21 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 
 public class VTLIncompatibleStructuresException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLIncompatibleStructuresException(String description, Collection<? extends DataStructureComponent<?, ?, ?>> expected, Collection<? extends DataStructureComponent<?, ?, ?>> actual)
+	public VTLIncompatibleStructuresException(String description, Collection<? extends DataSetComponent<?, ?, ?>> expected, Collection<? extends DataSetComponent<?, ?, ?>> actual)
 	{
 		super(description + ": expected " + expected + ", but was " + actual);
 	}
 
-	public VTLIncompatibleStructuresException(String description, Collection<Collection<? extends DataStructureComponent<?, ?, ?>>> structures)
+	public VTLIncompatibleStructuresException(String description, Collection<Collection<? extends DataSetComponent<?, ?, ?>>> structures)
 	{
 		super(description + ": " + structures.stream()
-			.map(str -> str.stream().sorted(DataStructureComponent::byNameAndRole).collect(toList()).toString())
+			.map(str -> str.stream().sorted(DataSetComponent::byNameAndRole).collect(toList()).toString())
 			.map(s -> "                    " + s).collect(joining("\n", "\n", "")));
 	}
 }

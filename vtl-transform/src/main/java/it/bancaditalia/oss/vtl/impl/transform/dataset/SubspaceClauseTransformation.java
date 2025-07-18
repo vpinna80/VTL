@@ -35,8 +35,8 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -57,7 +57,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
-		Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = subspace.entrySet().stream()
+		Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> subspaceKeyValues = subspace.entrySet().stream()
 				.map(keepingValue(operand::getComponent))
 				.map(keepingValue(Optional::get))
 				.collect(toConcurrentMap(e -> e.getKey().asRole(Identifier.class), Entry::getValue));
@@ -70,9 +70,9 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		VTLValueMetadata operand = getThisMetadata(scheme);
 		
 		if (!(operand.isDataSet()))
-			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(operand, DataSetStructure.class);
 		
-		DataSetMetadata dataset = (DataSetMetadata) operand;
+		DataSetStructure dataset = (DataSetStructure) operand;
 		
 		Set<VTLAlias> missing = subspace.keySet().stream()
 				.filter(name -> !dataset.getComponent(name, Identifier.class).isPresent())
@@ -81,7 +81,7 @@ public class SubspaceClauseTransformation extends DatasetClauseTransformation
 		if (missing.size() > 0)
 			throw new VTLMissingComponentsException(dataset.getIDs(), missing.toArray(VTLAlias[]::new));
 
-		Set<DataStructureComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "sub");
+		Set<DataSetComponent<Identifier, ?, ?>> keyValues = dataset.matchIdComponents(subspace.keySet(), "sub");
 		
 		return dataset.subspace(keyValues);
 	}

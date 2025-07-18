@@ -44,15 +44,16 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -61,7 +62,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 
@@ -85,32 +85,32 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet dataset = (DataSet) getThisValue(session);
-		DataSetMetadata structure = dataset.getMetadata();
-		DataStructureComponent<Measure, ?, ?> pivotMeasure = structure.getComponent(measureName, Measure.class)
+		DataSetStructure structure = dataset.getMetadata();
+		DataSetComponent<Measure, ?, ?> pivotMeasure = structure.getComponent(measureName, Measure.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(structure.getMeasures(), measureName));
-		DataStructureComponent<Identifier, ?, ?> pivotId = structure.getComponent(identifierName, Identifier.class)
+		DataSetComponent<Identifier, ?, ?> pivotId = structure.getComponent(identifierName, Identifier.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(structure.getIDs(), identifierName));
 
-		DataSetMetadata newStructure = createPivotStructure(pivotId, pivotMeasure, structure.getIDs(), session);
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = new HashSet<>(newStructure.getIDs());
-		Map<VTLAlias, DataStructureComponent<Measure, ?, ?>> measureMap = newStructure.getMeasures().stream()
-				.collect(toConcurrentMap(c -> c.getVariable().getAlias(), identity()));
+		DataSetStructure newStructure = createPivotStructure(pivotId, pivotMeasure, structure.getIDs());
+		Set<DataSetComponent<Identifier, ?, ?>> ids = new HashSet<>(newStructure.getIDs());
+		Map<VTLAlias, DataSetComponent<Measure, ?, ?>> measureMap = newStructure.getMeasures().stream()
+				.collect(toConcurrentMap(c -> c.getAlias(), identity()));
 		
 		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
 		
 		SerCollector<DataPoint, ?, DataPoint> collector = mapping(dp -> {
-				DataStructureComponent<Measure, ?, ?> genMeasure = measureMap.get(VTLAliasImpl.of(true, dp.get(pivotId).get().toString()));
+				DataSetComponent<Measure, ?, ?> genMeasure = measureMap.get(VTLAliasImpl.of(true, dp.get(pivotId).get().toString()));
 				return new SimpleEntry<>(requireNonNull(genMeasure), dp);
 			}, collectingAndThen(entriesToMap(), map -> {
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dp = new HashMap<>();
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dp = new HashMap<>();
 				List<Lineage> lineages = new ArrayList<>();
-				for (DataStructureComponent<Measure, ?, ?> newMeasure: map.keySet())
+				for (DataSetComponent<Measure, ?, ?> newMeasure: map.keySet())
 				{
 					dp.put(newMeasure, map.get(newMeasure).get(pivotMeasure));
 					lineages.add(map.get(newMeasure).getLineage());
 				}
 				
-				return new DataPointBuilder(dp, DONT_SYNC).build(enricher.apply(lineages), new DataStructureBuilder(dp.keySet()).build());
+				return new DataPointBuilder(dp, DONT_SYNC).build(enricher.apply(lineages), new DataSetStructureBuilder(dp.keySet()).build());
 			})); 
 		
 		return dataset.aggregate(newStructure, ids, collector, (dp, lineages, keys) -> new DataPointBuilder(keys)
@@ -124,29 +124,28 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		VTLValueMetadata value = getThisMetadata(scheme);
 
 		if (!(value.isDataSet()))
-			throw new VTLInvalidParameterException(value, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(value, DataSetStructure.class);
 
-		DataSetMetadata dataset = (DataSetMetadata) value;
-		DataStructureComponent<Measure, ?, ?> pivotMeasure = dataset.getComponent(measureName, Measure.class)
+		DataSetStructure dataset = (DataSetStructure) value;
+		DataSetComponent<Measure, ?, ?> pivotMeasure = dataset.getComponent(measureName, Measure.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(dataset.getMeasures(), measureName));
-		DataStructureComponent<Identifier, ?, ?> pivotId = dataset.getComponent(identifierName, Identifier.class)
+		DataSetComponent<Identifier, ?, ?> pivotId = dataset.getComponent(identifierName, Identifier.class)
 				.orElseThrow(() -> new VTLMissingComponentsException(dataset.getIDs(), identifierName));
 		
-		ValueDomainSubset<?, ?> idDomain = pivotId.getVariable().getDomain();
+		ValueDomainSubset<?, ?> idDomain = pivotId.getDomain();
 		if (!(idDomain instanceof EnumeratedDomainSubset))
-			throw new VTLException("The pivot identifier " + pivotId.getVariable().getAlias() + " is defined on the '" + idDomain + " value domain, which is not enumerated.");
+			throw new VTLException("The pivot identifier " + pivotId.getAlias() + " is defined on the '" + idDomain + " value domain, which is not enumerated.");
 		
-		return createPivotStructure(pivotId, pivotMeasure, dataset.getIDs(), scheme);
+		return createPivotStructure(pivotId, pivotMeasure, dataset.getIDs());
 	}
 
-	private DataSetMetadata createPivotStructure(DataStructureComponent<Identifier, ?, ?> pivotId, DataStructureComponent<Measure, ?, ?> pivotMeasure, Set<DataStructureComponent<Identifier, ?, ?>> ids, TransformationScheme scheme)
+	private DataSetStructure createPivotStructure(DataSetComponent<Identifier, ?, ?> pivotId, DataSetComponent<Measure, ?, ?> pivotMeasure, Set<DataSetComponent<Identifier, ?, ?>> ids)
 	{
-		DataStructureBuilder builder = new DataStructureBuilder();
-		MetadataRepository repo = scheme.getRepository();
-		ValueDomainSubset<?, ?> measureDomain = pivotMeasure.getVariable().getDomain();
+		DataSetStructureBuilder builder = new DataSetStructureBuilder();
+		ValueDomainSubset<?, ?> measureDomain = pivotMeasure.getDomain();
 
-		for (CodeItem<?, ?, ?, ?> codeItem: ((EnumeratedDomainSubset<?, ?, ?>) pivotId.getVariable().getDomain()).getCodeItems())
-			builder.addComponent(repo.createTempVariable(VTLAliasImpl.of(true, codeItem.get().toString()), measureDomain).as(Measure.class));
+		for (CodeItem<?, ?, ?, ?> codeItem: ((EnumeratedDomainSubset<?, ?, ?>) pivotId.getDomain()).getCodeItems())
+			builder.addComponent(DataSetComponentImpl.of(VTLAliasImpl.of(true, codeItem.get().toString()), measureDomain, Measure.class));
 		
 		return builder.addComponents(ids)
 				.removeComponent(pivotId)

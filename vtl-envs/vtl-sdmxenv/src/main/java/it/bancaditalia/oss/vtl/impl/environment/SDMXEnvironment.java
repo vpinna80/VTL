@@ -119,8 +119,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -211,11 +211,11 @@ public class SDMXEnvironment implements Environment, Serializable
 		if (!matcher.matches())
 			return Optional.empty();
 		
-		Optional<DataSetMetadata> maybeMeta = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
+		Optional<DataSetStructure> maybeMeta = repo.getMetadata(alias).map(DataSetStructure.class::cast);
 		if (maybeMeta.isEmpty())
 			return Optional.empty();
 		
-		DataSetMetadata structure = maybeMeta.get();
+		DataSetStructure structure = maybeMeta.get();
 		
 		String version = coalesce(matcher.group("version"), "");
 		String dataflow;
@@ -240,15 +240,15 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static class ObsIterator implements Iterator<DataPoint>
 	{
 		private final String[] dims;
-		private final DataSetMetadata structure;
+		private final DataSetStructure structure;
 		private final VTLAlias alias;
 		private final DataReaderEngine dre;
 
 		private boolean more;
-		private Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dmap = new HashMap<>();
+		private Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dmap = new HashMap<>();
 		private Entry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> parser;
 
-		public ObsIterator(VTLAlias alias, DataReaderEngine dre, DataSetMetadata structure, String[] dims)
+		public ObsIterator(VTLAlias alias, DataReaderEngine dre, DataSetStructure structure, String[] dims)
 		{
 			this.dims = dims;
 			this.structure = structure;
@@ -266,7 +266,7 @@ public class SDMXEnvironment implements Environment, Serializable
 				setDims(dre, structure);
 		}
 
-		private void setDims(DataReaderEngine dre, DataSetMetadata structure)
+		private void setDims(DataReaderEngine dre, DataSetStructure structure)
 		{
 			dmap.clear();
 			List<KeyValue> keys = dre.getCurrentKey().getKey();
@@ -274,15 +274,15 @@ public class SDMXEnvironment implements Environment, Serializable
 				if (i >= dims.length || dims[i].isEmpty() || dims[i].indexOf('+') >= 0)
 				{
 					KeyValue k = keys.get(i);
-					DataStructureComponent<Identifier, ?, ?> dim = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Identifier.class)
+					DataSetComponent<Identifier, ?, ?> dim = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Identifier.class)
 							.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
-						dmap.put(dim, dim.getVariable().getDomain().cast(StringValue.of(k.getCode())));
+						dmap.put(dim, dim.getDomain().cast(StringValue.of(k.getCode())));
 				}
 			for (KeyValue k: dre.getCurrentKey().getAttributes())
 			{
-				DataStructureComponent<Attribute, ?, ?> attr = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Attribute.class)
+				DataSetComponent<Attribute, ?, ?> attr = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Attribute.class)
 						.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
-					dmap.put(attr, attr.getVariable().getDomain().cast(StringValue.of(k.getCode())));
+					dmap.put(attr, attr.getDomain().cast(StringValue.of(k.getCode())));
 			}
 		}
 
@@ -303,12 +303,12 @@ public class SDMXEnvironment implements Environment, Serializable
 			
 			for (KeyValue a: obs.getAttributes())
 			{
-				DataStructureComponent<?, ?, ?> c = structure.getComponent(VTLAliasImpl.of(true, a.getConcept())).get();
-				builder.add(c, c.getVariable().getDomain().cast(StringValue.of(a.getCode())));
+				DataSetComponent<?, ?, ?> c = structure.getComponent(VTLAliasImpl.of(true, a.getConcept())).get();
+				builder.add(c, c.getDomain().cast(StringValue.of(a.getCode())));
 			}
 			
-			DataStructureComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
-			List<String> values = obs.getMeasureValues(measure.getVariable().getAlias().getName());
+			DataSetComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
+			List<String> values = obs.getMeasureValues(measure.getAlias().getName());
 			if (values.size() > 1)
 				throw new UnsupportedOperationException("Unsupported measure with multiple values (found " + values.size() + " values).");
 			builder.add(measure, NumberValueImpl.createNumberValue(values.iterator().next()));
@@ -378,7 +378,7 @@ public class SDMXEnvironment implements Environment, Serializable
 		throw last;
 	}
 
-	private synchronized Stream<DataPoint> getData(MetadataRepository repo, VTLAlias alias, DataSetMetadata structure, String dataflow, String resource, String[] dims)
+	private synchronized Stream<DataPoint> getData(MetadataRepository repo, VTLAlias alias, DataSetStructure structure, String dataflow, String resource, String[] dims)
 	{
 		String path = endpoint + "/data/" + dataflow;
 		if (!resource.isEmpty())

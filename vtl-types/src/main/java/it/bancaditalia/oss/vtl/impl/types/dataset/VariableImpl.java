@@ -22,16 +22,7 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -44,7 +35,6 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	private final VTLAlias alias;
 	private final S domain;
 	private final int hashCode;
-	private final Map<Class<? extends Component>, DataStructureComponent<?, ?, ?>> components = new HashMap<>();
 	
 	public VariableImpl(VTLAlias name, S domain)
 	{
@@ -56,9 +46,6 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 		result = prime * result + domain.hashCode();
 		result = prime * result + name.hashCode();
 		hashCode = result;
-		
-		for (Class<? extends Component> role: Set.of(Identifier.class, Measure.class, Attribute.class, ViralAttribute.class))
-			components.put(role, new DataStructureComponentImpl<>(role, this));
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -104,13 +91,6 @@ public class VariableImpl<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	public String toString()
 	{
 		return alias + "[" + domain + "]";
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public <R extends Component> DataStructureComponent<R, S, D> as(Class<R> role)
-	{
-		return requireNonNull((DataStructureComponent<R, S, D>) components.get(role), "Unknown role: " + role.getSimpleName());
 	}
 
 	public Variable<S, D> getRenamed(VTLAlias newName)

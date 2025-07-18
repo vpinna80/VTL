@@ -58,8 +58,8 @@ public class HierarchicalRuleImpl implements HierarchicalRule
 		this.when = when;
 		this.leftCodeItem = leftCodeItem;
 		this.operator = operator;
-		this.errorCode = coalesce(errorCode, NullValue.instance(ERRORCODE.get().getVariable().getDomain()));
-		this.errorLevel = coalesce(errorLevel, NullValue.instance(ERRORLEVEL.get().getVariable().getDomain()));
+		this.errorCode = coalesce(errorCode, NullValue.instance(ERRORCODE.get().getDomain()));
+		this.errorLevel = coalesce(errorLevel, NullValue.instance(ERRORLEVEL.get().getDomain()));
 		
 		for (int i = 0; i < rightCodes.size(); i++)
 		{

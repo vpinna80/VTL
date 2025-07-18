@@ -65,8 +65,8 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -110,9 +110,9 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet ds, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		DataSetMetadata structure = ds.getMetadata();
-		DataStructureComponent<Identifier, EntireTimeDomainSubset, TimeDomain> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
-		Set<DataStructureComponent<Identifier, ?, ?>> nonTimeIDs = new HashSet<>(ds.getMetadata().getIDs());
+		DataSetStructure structure = ds.getMetadata();
+		DataSetComponent<Identifier, EntireTimeDomainSubset, TimeDomain> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();
+		Set<DataSetComponent<Identifier, ?, ?>> nonTimeIDs = new HashSet<>(ds.getMetadata().getIDs());
 		nonTimeIDs.remove(timeID);
 
 		LineageNode filledLineage = LineageNode.of(this);
@@ -121,7 +121,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		{
 			// Index cannot be cached unless early-evaluated.
 			// This will materialize all the datapoints into the Spark driver (cfr. SparkDataSet).
-			Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ConcurrentMap<Class<?>, ConcurrentMap<TimeValue<?, ?, ?, ?>, DataPoint>>> index;
+			Map<Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ConcurrentMap<Class<?>, ConcurrentMap<TimeValue<?, ?, ?, ?>, DataPoint>>> index;
 			try (Stream<DataPoint> stream = ds.stream())
 			{
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(nonTimeIDs), 
@@ -191,7 +191,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		{
 			// Index cannot be cached unless early-evaluated.
 			// This will materialize all the datapoints into the Spark driver (cfr. SparkDataSet).
-			Map<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ConcurrentMap<Class<?>, ConcurrentMap<TimeValue<?, ?, ?, ?>, DataPoint>>> index;
+			Map<Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ConcurrentMap<Class<?>, ConcurrentMap<TimeValue<?, ?, ?, ?>, DataPoint>>> index;
 			try (Stream<DataPoint> stream = ds.stream())
 			{
 				index = stream.collect(groupingByConcurrent(dp -> dp.getValues(nonTimeIDs), 
@@ -208,8 +208,8 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		}
 	}
 
-	private static Stream<DataPoint> fillSingleTimeSeries(DataSetMetadata structure, DataStructureComponent<?, ?, ?> timeID,
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpTemplate, ConcurrentMap<TimeValue<?, ?, ?, ?>, DataPoint> series,
+	private static Stream<DataPoint> fillSingleTimeSeries(DataSetStructure structure, DataSetComponent<?, ?, ?> timeID,
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpTemplate, ConcurrentMap<TimeValue<?, ?, ?, ?>, DataPoint> series,
 			Lineage filledLineage, TimeValue<?, ?, ?, ?> minTime, TimeValue<?, ?, ?, ?> maxTime)
 	{
 		Set<DataPoint> filled = new HashSet<>();
@@ -239,7 +239,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		if (minTime != null)
 			while (last != null && last.compareTo(timeSequence.first()) < 0)
 			{
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dpTemplate);
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dpTemplate);
 				map.put(timeID, last);
 				filled.add(getFilled(map, structure, filledLineage));
 				last = last.add(frequency.getPeriod());
@@ -250,7 +250,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		{
 			while (last != null && last.compareTo(current) < 0)
 			{
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dpTemplate);
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dpTemplate);
 				map.put(timeID, last);
 				filled.add(getFilled(map, structure, filledLineage));
 				last = last.add(frequency.getPeriod());
@@ -263,7 +263,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		if (maxTime != null)
 			while (last != null && last.compareTo(maxTime) <= 0)
 			{
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dpTemplate);
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dpTemplate);
 				map.put(timeID, last);
 				filled.add(getFilled(map, structure, filledLineage));
 				last = last.add(frequency.getPeriod());
@@ -272,7 +272,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		return concat(getStream(filled), getStream(series.values()));
 	}
 
-	private static DataPoint getFilled(Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map, DataSetMetadata structure, Lineage lineage)
+	private static DataPoint getFilled(Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map, DataSetStructure structure, Lineage lineage)
 	{
 		// Sets all the missing measures and attributes in an filled-in datapoint to NULL  
 		return structure.stream()
@@ -288,7 +288,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	}
 
 	@Override
-	protected DataSetMetadata checkIsTimeSeriesDataSet(DataSetMetadata metadata, TransformationScheme scheme)
+	protected DataSetStructure checkIsTimeSeriesDataSet(DataSetStructure metadata, TransformationScheme scheme)
 	{
 		return metadata;
 	}

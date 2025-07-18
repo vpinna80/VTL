@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -89,9 +89,9 @@ public class TimeAggTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		DataStructureComponent<Measure, ?, ?> measure = ((DataSetMetadata) metadata).getComponents(Measure.class).iterator().next();
+		DataSetComponent<Measure, ?, ?> measure = ((DataSetStructure) metadata).getComponents(Measure.class).iterator().next();
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
+		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
 				dp -> singletonMap(measure, evalOnScalar(repo, dp.get(measure), null, scheme)));
 	}
 
@@ -111,13 +111,13 @@ public class TimeAggTransformation extends UnaryTransformation
 		}
 		else
 		{
-			Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) value).getMeasures();
+			Set<DataSetComponent<Measure, ?, ?>> measures = ((DataSetStructure) value).getMeasures();
 				
 			if (measures.size() != 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, TIMEDS, measures);
 			
-			DataStructureComponent<Measure, ?, ?> timeMeasure = measures.iterator().next();
-			if (!TIMEDS.isAssignableFrom(timeMeasure.getVariable().getDomain()))
+			DataSetComponent<Measure, ?, ?> timeMeasure = measures.iterator().next();
+			if (!TIMEDS.isAssignableFrom(timeMeasure.getDomain()))
 				throw new VTLIncompatibleTypesException("time_agg", TIMEDS, timeMeasure);
 			
 			return value;

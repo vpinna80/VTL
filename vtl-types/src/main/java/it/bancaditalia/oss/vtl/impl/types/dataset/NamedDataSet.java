@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
@@ -60,7 +60,7 @@ public class NamedDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
+	public DataSet getMatching(Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		return delegate.getMatching(keyValues);
 	}

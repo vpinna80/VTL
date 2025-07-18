@@ -62,13 +62,13 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.BiFunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -135,7 +135,7 @@ public class CSVPathEnvironment implements Environment
 			.limit(1)
 			.peek(path -> LOGGER.info("Found {} in {}", fileName, path))
 			.map(path -> {
-				Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();
+				Map<DataSetComponent<?, ?, ?>, String> masks = new HashMap<>();
 				
 				VTLValueMetadata repoMeta = repo.getMetadata(alias).orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
 				
@@ -143,8 +143,8 @@ public class CSVPathEnvironment implements Environment
 				if (isNull(repoMeta))
 					try (BufferedReader reader = Files.newBufferedReader(path))
 					{
-						Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metadata = extractMetadata(repo, reader.readLine().split(","));
-						DataSetMetadata structure = new DataStructureBuilder(metadata.getKey()).build();
+						Entry<List<DataSetComponent<?, ?, ?>>, Map<DataSetComponent<?, ?, ?>, String>> metadata = extractMetadata(repo, reader.readLine().split(","));
+						DataSetStructure structure = new DataSetStructureBuilder(metadata.getKey()).build();
 						masks.putAll(metadata.getValue());
 						return (VTLValue) new BiFunctionDataSet<>(structure, (p, s) -> streamFileName(p, s, repo, masks), path, structure);
 					}
@@ -166,15 +166,15 @@ public class CSVPathEnvironment implements Environment
 					}
 				else
 				{
-					DataSetMetadata structure = (DataSetMetadata) repoMeta;
+					DataSetStructure structure = (DataSetStructure) repoMeta;
 					return (VTLValue) new BiFunctionDataSet<>(structure, (p, s) -> streamFileName(p, s, repo, masks), path, structure);
 				}
 			}).findAny();
 	}
 
-	protected Stream<DataPoint> streamFileName(Path path, DataSetMetadata structure, MetadataRepository repo, Map<DataStructureComponent<?, ?, ?>, String> masks)
+	protected Stream<DataPoint> streamFileName(Path path, DataSetStructure structure, MetadataRepository repo, Map<DataSetComponent<?, ?, ?>, String> masks)
 	{
-		List<DataStructureComponent<?, ?, ?>> metadata;
+		List<DataSetComponent<?, ?, ?>> metadata;
 		long lineCount;
 		
 		try (BufferedReader reader = Files.newBufferedReader(path))
@@ -185,7 +185,7 @@ public class CSVPathEnvironment implements Environment
 			
 			for (String field: fields)
 				metadata.add(structure.getComponent(VTLAliasImpl.of(field)).orElseThrow(() -> new IllegalStateException("Unknown CSV field " + field + " for structure " + structure)));
-			for (DataStructureComponent<?, ?, ?> comp: structure)
+			for (DataSetComponent<?, ?, ?> comp: structure)
 				if (!metadata.contains(comp))
 					throw new VTLMissingComponentsException(metadata, comp);
 			
@@ -244,7 +244,7 @@ public class CSVPathEnvironment implements Environment
 			});
 	}
 
-	private DataPointBuilder lineToDPBuilder(String line, List<DataStructureComponent<?, ?, ?>> metadata, Map<DataStructureComponent<?, ?, ?>, String> masks)
+	private DataPointBuilder lineToDPBuilder(String line, List<DataSetComponent<?, ?, ?>> metadata, Map<DataSetComponent<?, ?, ?>, String> masks)
 	{
 		DataPointBuilder builder = new DataPointBuilder();
 
@@ -267,9 +267,9 @@ public class CSVPathEnvironment implements Environment
 						token = token.trim();
 	
 					// parse field value into a VTL scalar 
-					DataStructureComponent<?, ?, ?> component = metadata.get(count);
+					DataSetComponent<?, ?, ?> component = metadata.get(count);
 					LOGGER.trace("Parsing string value {} for component {} with mask {}", token, component, masks.get(component));
-					ScalarValue<?, ?, ?, ?> value = mapValue(component.getVariable().getDomain(), token, masks.get(component));
+					ScalarValue<?, ?, ?, ?> value = mapValue(component.getDomain(), token, masks.get(component));
 					
 					if (value.isNull() && component.is(Identifier.class))
 						throw new NullPointerException("Parsed a null value for identifier " + component + ": " + token);

@@ -1,5 +1,6 @@
 {
-  "datasets": [
+  "schema-version": "2.2.0", 
+  "data": [
     {
       "name": "ds_r_json",
       "structure": "DS_1"

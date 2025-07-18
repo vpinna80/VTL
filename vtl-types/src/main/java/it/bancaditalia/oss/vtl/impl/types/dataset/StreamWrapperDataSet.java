@@ -23,14 +23,14 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 
 public class StreamWrapperDataSet extends AbstractDataSet
 {
 	private final Supplier<? extends Stream<DataPoint>> supplier;
 	private final boolean cacheable;
 
-	public StreamWrapperDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints, boolean cacheable)
+	public StreamWrapperDataSet(DataSetStructure dataStructure, Supplier<? extends Stream<DataPoint>> datapoints, boolean cacheable)
 	{
 		super(dataStructure);
 		
@@ -38,7 +38,7 @@ public class StreamWrapperDataSet extends AbstractDataSet
 		this.cacheable = cacheable;
 	}
 	
-	public StreamWrapperDataSet(DataSetMetadata dataStructure, Supplier<? extends Stream<DataPoint>> datapoints)
+	public StreamWrapperDataSet(DataSetStructure dataStructure, Supplier<? extends Stream<DataPoint>> datapoints)
 	{
 		this(dataStructure, datapoints, true);
 	}

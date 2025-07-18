@@ -23,7 +23,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 
 public class BiFunctionDataSet<P, Q> extends StreamWrapperDataSet
 {
@@ -31,7 +31,7 @@ public class BiFunctionDataSet<P, Q> extends StreamWrapperDataSet
 	private final P p1;
 	private final Q p2;
 
-	public BiFunctionDataSet(DataSetMetadata dataStructure, BiFunction<? super P, ? super Q, Stream<DataPoint>> datapoints, P p1, Q p2)
+	public BiFunctionDataSet(DataSetStructure dataStructure, BiFunction<? super P, ? super Q, Stream<DataPoint>> datapoints, P p1, Q p2)
 	{
 		super(dataStructure, null);
 		this.function = datapoints;

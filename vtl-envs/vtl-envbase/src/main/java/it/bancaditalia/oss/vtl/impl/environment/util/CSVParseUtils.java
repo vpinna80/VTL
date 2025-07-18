@@ -32,7 +32,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
-import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalQuery;
@@ -64,17 +63,16 @@ import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDateDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomainSubset;
@@ -85,7 +83,6 @@ import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
@@ -104,72 +101,6 @@ public class CSVParseUtils
 		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), QuarterPeriodHolder::new);
 		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodHolder::new);
 		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodHolder::new);
-	}
-
-	private static class CSVVar<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>, Serializable
-	{
-		private static final long serialVersionUID = 1L;
-
-		private final VTLAlias name;
-		private final S domain;
-		
-		private transient int hashCode;
-
-		@SuppressWarnings("unchecked")
-		public CSVVar(VTLAlias name, ValueDomainSubset<?, ?> domain)
-		{
-			this.name = name;
-			this.domain = (S) domain;
-		}
-
-		@Override
-		public VTLAlias getAlias()
-		{
-			return name;
-		}
-
-		@Override
-		public S getDomain()
-		{
-			return domain;
-		}
-		
-		@Override
-		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
-		{
-			return new DataStructureComponentImpl<>(role, this);
-		}
-		
-		@Override
-		public int hashCode()
-		{
-			return hashCode == 0 ? hashCode = hashCodeInit() : hashCode;
-		}
-
-		public int hashCodeInit()
-		{
-			int prime = 31;
-			int result = 1;
-			result = prime * result + domain.hashCode();
-			result = prime * result + name.hashCode();
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj)
-		{
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (obj instanceof Variable)
-			{
-				Variable<?, ?> var = (Variable<?, ?>) obj;
-				return name.equals(var.getAlias()) && domain.equals(var.getDomain());
-			}
-			
-			return false;
-		}
 	}
 
 	private CSVParseUtils()
@@ -322,13 +253,13 @@ public class CSVParseUtils
 		throw new VTLException("Unsupported type: " + typeName);
 	}
 
-	public static Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> extractMetadata(MetadataRepository repo, String headers[])
+	public static Entry<List<DataSetComponent<?, ?, ?>>, Map<DataSetComponent<?, ?, ?>, String>> extractMetadata(MetadataRepository repo, String headers[])
 	{
 		// first argument avoids varargs mismatch
 		LOGGER.debug("Processing CSV header: {}{}", "", headers);
 		
-		List<DataStructureComponent<?, ?, ?>> metadata = new ArrayList<>();
-		Map<DataStructureComponent<?, ?, ?>, String> masks = new HashMap<>();
+		List<DataSetComponent<?, ?, ?>> metadata = new ArrayList<>();
+		Map<DataSetComponent<?, ?, ?>, String> masks = new HashMap<>();
 		for (String header: headers)
 		{
 			String cname, typeName;
@@ -346,7 +277,7 @@ public class CSVParseUtils
 			
 			Entry<ValueDomainSubset<?, ?>, String> mappedType = mapVarType(repo, typeName);
 			ValueDomainSubset<?, ?> domain = mappedType.getKey();
-			DataStructureComponent<?, ?, ?> component;
+			DataSetComponent<?, ?, ?> component;
 			Class<? extends Component> role;
 			if (cname.startsWith("$"))
 				role = Identifier.class;
@@ -356,10 +287,7 @@ public class CSVParseUtils
 				role = Measure.class;
 
 			String compName = cname.replaceAll("^[$#]", "");
-			if (repo != null)
-				component = repo.createTempVariable(VTLAliasImpl.of(compName), domain).as(role);
-			else
-				component = new CSVVar<>(VTLAliasImpl.of(compName), domain).as(role);
+			component = DataSetComponentImpl.of(VTLAliasImpl.of(compName), domain, role);
 			metadata.add(component);
 
 			if (domain instanceof DateDomain || domain instanceof TimePeriodDomain)

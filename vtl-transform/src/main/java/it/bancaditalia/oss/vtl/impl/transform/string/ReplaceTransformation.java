@@ -60,8 +60,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -98,8 +98,8 @@ public class ReplaceTransformation extends TransformationImpl
 		if (left.isDataSet())
 		{
 			DataSet dataset = (DataSet) left;
-			DataSetMetadata structure = dataset.getMetadata();
-			Set<DataStructureComponent<Measure,?,?>> measures = dataset.getMetadata().getMeasures();
+			DataSetStructure structure = dataset.getMetadata();
+			Set<DataSetComponent<Measure,?,?>> measures = dataset.getMetadata().getMeasures();
 			
 			return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> measures.stream()
 					.map(measure -> new SimpleEntry<>(measure, replaceSingle(replace, storedPattern, dp.get(measure))))
@@ -135,9 +135,9 @@ public class ReplaceTransformation extends TransformationImpl
 					replace = replaceOperand.getMetadata(session);
 			
 			if (!(!pattern.isDataSet()))
-				throw new VTLInvalidParameterException(pattern, DataSetMetadata.class);
+				throw new VTLInvalidParameterException(pattern, DataSetStructure.class);
 			if (!(!replace.isDataSet()))
-				throw new VTLInvalidParameterException(replace, DataSetMetadata.class);
+				throw new VTLInvalidParameterException(replace, DataSetStructure.class);
 			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) pattern).getDomain()))
 				throw new VTLIncompatibleTypesException("replace: pattern parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) pattern).getDomain());
 			if (!STRINGDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) replace).getDomain()))
@@ -153,10 +153,10 @@ public class ReplaceTransformation extends TransformationImpl
 			}
 			else 
 			{
-				DataSetMetadata metadata = (DataSetMetadata) source;
+				DataSetStructure metadata = (DataSetStructure) source;
 				
-				Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getMeasures().stream()
-					.filter(c -> !(c.getVariable().getDomain() instanceof StringDomain))
+				Set<DataSetComponent<?, ?, ?>> invalid = metadata.getMeasures().stream()
+					.filter(c -> !(c.getDomain() instanceof StringDomain))
 					.collect(toSet());
 				
 				if (!invalid.isEmpty())

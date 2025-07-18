@@ -1,0 +1,55 @@
+{
+	"schema-version": "2.2.0",
+	"data": [{
+		"name": "start_date",
+		"subset": "date"
+	}, {
+		"name": "ds_1",
+		"structure": "str_1",
+		"components": [{
+			"name": "Id1",
+			"subset": "string"
+		}, {
+			"name": "Me1",
+			"subset": "test_desc"
+		}, {
+			"name": "At1",
+			"subset": "number"
+		}]
+	}],
+	"structures": [{
+		"name": "str_1",
+		"components": [{
+			"name": "Id1",
+			"role": "Identifier"
+		}, {
+			"name": "Me1",
+			"role": "Measure"
+		}, {
+			"name": "At1",
+			"role": "Attribute"
+		}, {
+			"name": "Va1",
+			"role": "Viral Attribute"
+		}		
+		]
+	}],
+	"variables": [{
+		"name": "Va1",
+		"domain": "test_desc"
+	}],
+	"domains": [{
+		"name": "test_enum",
+		"parent": "string",
+		"enumerated": [{
+			"name": "A"
+		}, "B", {
+			"name": "C",
+			"description": "third value"
+		}]
+	}, {
+		"name": "test_desc",
+		"parent": "integer",
+		"described": "X > 0"
+	}]
+}

@@ -56,7 +56,8 @@ import it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component;
@@ -64,8 +65,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -143,7 +144,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
+		DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 		DataSet dataset = (DataSet) getThisValue(scheme);
 
 		TransformationScheme thisScope = new ThisScope(scheme.getRepository(), dataset, scheme);
@@ -156,13 +157,13 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		
 		DataSet result = resultList.get(0);
 		
-		DataSetMetadata currentStructure = result.getMetadata();
+		DataSetStructure currentStructure = result.getMetadata();
 		for (int i = 1; i < resultList.size(); i++)
 		{
 			SerBinaryOperator<Lineage> enricher = lineage2Enricher(aggrItems.get(i).getOperand());
 			DataSet other = resultList.get(i);
-			DataSetMetadata otherStructure = other.getMetadata();
-			currentStructure = new DataStructureBuilder(currentStructure).addComponents(otherStructure).build();
+			DataSetStructure otherStructure = other.getMetadata();
+			currentStructure = new DataSetStructureBuilder(currentStructure).addComponents(otherStructure).build();
 			result = result.filteredMappedJoin(currentStructure, other, DataSet.ALL, (dp1, dp2) -> {
 				return dp1.combine(dp2, (d1, d2) -> enricher.apply(dp1.getLineage(), dp2.getLineage()));
 			}, false);
@@ -172,7 +173,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 		if (having != null)
 		{
 			DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
-			DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> condMeasure = dsHaving.getMetadata().getSingleton(Measure.class, BOOLEANDS);
+			DataSetComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> condMeasure = dsHaving.getMetadata().getSingleton(Measure.class, BOOLEANDS);
 			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a, false);
 		}
 
@@ -186,12 +187,12 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 
 		if (meta.isDataSet())
 		{
-			DataSetMetadata operand = (DataSetMetadata) meta;
-			Set<DataStructureComponent<Identifier, ?, ?>> identifiers = emptySet();
+			DataSetStructure operand = (DataSetStructure) meta;
+			Set<DataSetComponent<Identifier, ?, ?>> identifiers = emptySet();
 			if (groupingClause != null)
 				identifiers = groupingClause.getGroupingComponents(operand);
 
-			DataStructureBuilder builder = new DataStructureBuilder(identifiers)
+			DataSetStructureBuilder builder = new DataSetStructureBuilder(identifiers)
 					.addComponents(operand.getComponents(ViralAttribute.class));
 
 			for (AggrClauseItem clause : aggrItems)
@@ -200,27 +201,27 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				
 				if (clauseMeta.isDataSet())
 				{
-					Set<DataStructureComponent<Measure, ?, ?>> measures = ((DataSetMetadata) clauseMeta).getMeasures();
+					Set<DataSetComponent<Measure, ?, ?>> measures = ((DataSetStructure) clauseMeta).getMeasures();
 					if (measures.size() != 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, measures);
-					final DataStructureComponent<Measure, ?, ?> measure = measures.iterator().next();
-					clauseMeta = measure.getVariable();
+					final DataSetComponent<Measure, ?, ?> measure = measures.iterator().next();
+					clauseMeta = ScalarValueMetadata.of(measure.getDomain());
 				}
 
 				if (!(!clauseMeta.isDataSet()) || !NUMBERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) clauseMeta).getDomain()))
 					throw new VTLIncompatibleTypesException("Aggregation", NUMBERDS, ((ScalarValueMetadata<?, ?>) clauseMeta).getDomain());
 
-				Optional<DataStructureComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getName());
+				Optional<DataSetComponent<?,?,?>> maybeExistingComponent = operand.getComponent(clause.getName());
 				Class<? extends Component> requestedRole = clause.getRole() == null ? Measure.class : clause.getRole();
 				if (maybeExistingComponent.isPresent())
 				{
-					DataStructureComponent<?, ?, ?> existingComponent = maybeExistingComponent.get();
+					DataSetComponent<?, ?, ?> existingComponent = maybeExistingComponent.get();
 					if (existingComponent.is(Identifier.class))
 						throw new VTLInvariantIdentifiersException("aggr", existingComponent.asRole(Identifier.class), requestedRole);
 					else if (clause.getRole() == null)
 						builder = builder.addComponent(existingComponent);
 					else
-						builder = builder.addComponent(repo.createTempVariable(clause.getName(), NUMBERDS).as(requestedRole));
+						builder = builder.addComponent(DataSetComponentImpl.of(clause.getName(), NUMBERDS, requestedRole));
 				}
 				else
 				{
@@ -234,14 +235,14 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 						VTLValueMetadata metadata = clause.getOperand().getMetadata(scheme);
 						targetDomain = !metadata.isDataSet() 
 								? ((ScalarValueMetadata<?, ?>) metadata).getDomain() 
-								: ((DataSetMetadata) metadata).getSingleton(Measure.class).getVariable().getDomain();
+								: ((DataSetStructure) metadata).getSingleton(Measure.class).getDomain();
 					}
 					
-					builder = builder.addComponent(repo.createTempVariable(clause.getName(), targetDomain).as(requestedRole));
+					builder = builder.addComponent(DataSetComponentImpl.of(clause.getName(), targetDomain, requestedRole));
 				}
 			}
 
-			DataSetMetadata structure = builder.build();
+			DataSetStructure structure = builder.build();
 			
 			if (having != null)
 			{
@@ -250,7 +251,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 				if (!havingMeta.isDataSet())
 					domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
 				else if (havingMeta.isDataSet())
-					domain = ((DataSetMetadata) havingMeta).getSingleton(Measure.class).getVariable().getDomain();
+					domain = ((DataSetStructure) havingMeta).getSingleton(Measure.class).getDomain();
 				else
 					domain = null;
 					
@@ -261,7 +262,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			return structure;
 		}
 		else
-			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(meta, DataSetStructure.class);
 	}
 
 	@Override

@@ -34,8 +34,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -63,10 +63,10 @@ public class NotTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
+		Set<DataSetComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
 		return dataset.mapKeepingKeys(dataset.getMetadata(), lineageEnricher(this), dp -> {
-					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+					Map<DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 					map.replaceAll((c, v) -> BooleanValue.not(BOOLEANDS.cast(v)));
 					return map;
 				});
@@ -87,15 +87,15 @@ public class NotTransformation extends UnaryTransformation
 		}
 		else
 		{
-			DataSetMetadata dataset = (DataSetMetadata) meta;
+			DataSetStructure dataset = (DataSetStructure) meta;
 			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
+			Set<? extends DataSetComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 			if (measures.size() == 0)
 				throw new VTLMissingComponentsException(dataset, VTLAliasImpl.of("a measure"));
 			
 			measures.stream().forEach(m -> {
-				if (!BOOLEANDS.isAssignableFrom(m.getVariable().getDomain()))
-					throw new VTLIncompatibleTypesException(toString(), BOOLEANDS, m.getVariable().getDomain());
+				if (!BOOLEANDS.isAssignableFrom(m.getDomain()))
+					throw new VTLIncompatibleTypesException(toString(), BOOLEANDS, m.getDomain());
 			});
 			
 			return dataset;

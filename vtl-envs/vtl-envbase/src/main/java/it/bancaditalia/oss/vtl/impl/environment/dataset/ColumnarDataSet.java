@@ -29,10 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -41,13 +41,13 @@ public class ColumnarDataSet extends AbstractDataSet
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ColumnarDataSet.class);
 	
-	private final Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns;
+	private final Map<? extends DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns;
 	private final int nRows;
 	private final VTLAlias alias;
 
-	public ColumnarDataSet(VTLAlias alias, Map<? extends DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns)
+	public ColumnarDataSet(VTLAlias alias, Map<? extends DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> columns)
 	{
-		super(new DataStructureBuilder(columns.keySet()).build());
+		super(new DataSetStructureBuilder(columns.keySet()).build());
 		this.alias = alias;
 		this.columns = columns;
 		nRows = columns.values().iterator().next().length;

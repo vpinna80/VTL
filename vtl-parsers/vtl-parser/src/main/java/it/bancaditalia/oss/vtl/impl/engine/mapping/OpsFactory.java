@@ -600,7 +600,7 @@ public class OpsFactory implements Serializable
 		else if (scalarParamClass.isInstance(typeContext))
 		{
 			VTLAlias domainName = parseAliasParam(typeContext, null, level + 1, scalarParam.getTyperule());
-			ScalarValue<?, ?, ?, ?> defaultValue = parseValueParam(typeContext, null, level + 1, scalarParam.getDefaultrule());
+			ScalarValue<?, ?, ?, ?> defaultValue = parseValueParam(ctx, null, level + 1, scalarParam.getDefaultrule());
 			
 			return new ScalarParameterTypeImpl(domainName, defaultValue);
 		}
@@ -970,7 +970,7 @@ public class OpsFactory implements Serializable
 			
 			if (!found)
 			{
-				IllegalStateException e = new IllegalStateException("No field or method with names in " + names);
+				IllegalStateException e = new IllegalStateException("No field or method with names in " + names + " in context " + ctxClass.getSimpleName());
 				for (Exception e1: suppressed)
 					e.addSuppressed(e1);
 				throw e;

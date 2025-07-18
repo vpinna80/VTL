@@ -37,7 +37,9 @@ import static java.lang.System.lineSeparator;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -100,7 +102,10 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureDefinitionImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.NonNullDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
@@ -112,8 +117,9 @@ import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataStructureDefinition;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -151,8 +157,8 @@ public class SDMXRepository extends InMemoryMetadataRepository
 
 	public final SdmxRestToBeanRetrievalManager rbrm;
 	
-	private final Map<VTLAlias, Entry<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
-	private final Map<VTLAlias, VTLValueMetadata> dsds = new HashMap<>();
+	private final Map<VTLAlias, Entry<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
+	private final Map<VTLAlias, DataSetStructure> dsds = new HashMap<>();
 	private final Map<VTLAlias, Map<String, Variable<?, ?>>> variables = new HashMap<>();
 	private final Map<VTLAlias, String> schemes = new HashMap<>();
 	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new HashMap<>();
@@ -274,13 +280,13 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		domains.put(VTLAliasImpl.of(true, "ALPHA_NUMERIC"), VTL_ALPHA_NUMERIC);
 		
 		// Load dsds
-		Map<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>> enumIDMap = new HashMap<>();
+		Map<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>> enumIDMap = new HashMap<>();
 		for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
 		{
-			DataStructureBuilder builder = new DataStructureBuilder();
+			DataSetStructureBuilder builder = new DataSetStructureBuilder();
 			VTLAlias dsdName = sdmxRef2VtlName(dsd.asReference());
 			LOGGER.info("Loading structure {}", dsdName);
-			Map<Integer, DataStructureComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
+			Map<Integer, DataSetComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
 			
 			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
 			{
@@ -296,7 +302,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				else
 					domain = sdmxRepr2VTLDomain(dimBean);
 
-				DataStructureComponent<Identifier, ?, ?> id = createComponent(dimBean, Identifier.class, domain);
+				DataSetComponent<Identifier, ?, ?> id = createComponent(dimBean, Identifier.class, domain);
 				LOGGER.debug("From dsd {} created identifier {}", dsdName, id);
 				builder.addComponent(id);
 				enumIds.put(dimBean.getPosition() - 1, id);
@@ -316,7 +322,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				else
 					domain = sdmxRepr2VTLDomain(attrBean);
 				
-				DataStructureComponent<Attribute, ?, ?> attr = createComponent(attrBean, Attribute.class, domain);
+				DataSetComponent<Attribute, ?, ?> attr = createComponent(attrBean, Attribute.class, domain);
 				LOGGER.debug("From dsd {} created attribute {}", dsdName, attr);
 				builder.addComponent(attr);
 			}
@@ -381,9 +387,13 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias)
+	public Optional<DataStructureDefinition> getStructureDefinition(VTLAlias alias)
 	{
-		return Optional.ofNullable(dsds.get(alias)).or(() -> super.getStructureDefinition(alias));
+		return Optional.ofNullable(dsds.get(alias))
+			.map(dsd -> dsd.stream()
+					.map(c -> new DataStructureComponentImpl<>(c.getAlias(), c.getRole()))
+					.collect(collectingAndThen(toSet(), comps -> (DataStructureDefinition) new DataStructureDefinitionImpl(alias, comps)))
+			).or(() -> super.getStructureDefinition(alias));
 	}
 	
 	@Override
@@ -400,14 +410,14 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			
 			if (dataflows.containsKey(dsAlias))
 			{
-				Entry<VTLAlias, List<DataStructureComponent<Identifier, ?, ?>>> metadata = dataflows.get(dsAlias);
-				DataSetMetadata structure = (DataSetMetadata) getStructureDefinition(metadata.getKey()).get();
-				List<DataStructureComponent<Identifier, ?, ?>> subbedIDs = metadata.getValue();
+				Entry<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>> metadata = dataflows.get(dsAlias);
+				DataSetStructure structure = dsds.get(metadata.getKey());
+				List<DataSetComponent<Identifier, ?, ?>> subbedIDs = metadata.getValue();
 				
 				// drop identifiers in the query part of the id
 				if (query != null)
 				{
-					DataStructureBuilder builder = new DataStructureBuilder(structure);
+					DataSetStructureBuilder builder = new DataSetStructureBuilder(structure);
 					
 					String[] dims = query.split("\\.");
 					for (int i = 0; i < dims.length; i++)
@@ -526,25 +536,26 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		return domain;
 	}
 	
-	private DataStructureComponent<Measure, ?, ?> createObsValue(PrimaryMeasureBean obs_value)
+	private DataSetComponent<Measure, ?, ?> createObsValue(PrimaryMeasureBean obs_value)
 	{
 		VTLAlias alias = VTLAliasImpl.of(true, obs_value.getId());
-		return variables.computeIfAbsent(alias, id -> new HashMap<>())
-			.computeIfAbsent(obs_value.getMaintainableParent().getAgencyId(), ag -> VariableImpl.of(alias, NUMBERDS))
-			.as(Measure.class);
+		variables.computeIfAbsent(alias, id -> new HashMap<>())
+			.computeIfAbsent(obs_value.getMaintainableParent().getAgencyId(), ag -> VariableImpl.of(alias, NUMBERDS));
+		return new DataSetComponentImpl<>(alias, Measure.class, NUMBERDS);
 	}
 
-	private <R extends Component> DataStructureComponent<R, ?, ?> createComponent(ComponentBean bean, Class<R> role, ValueDomainSubset<?, ?> domain)
+	private <R extends Component> DataSetComponent<R, ?, ?> createComponent(ComponentBean bean, Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
-		VTLAlias name = VTLAliasImpl.of(true, bean.getId());
+		VTLAlias alias = VTLAliasImpl.of(true, bean.getId());
 		
-		variables.putIfAbsent(name, new HashMap<>());
-		Variable<?, ?> variable = variables.get(name).compute(bean.getConceptRef().getAgencyId(), (ag, v) -> VariableImpl.of(name, domain));
-		DataStructureComponent<R, ?, ?> component = variable.as(role);
+		variables.computeIfAbsent(alias, k -> new HashMap<>())
+			.compute(bean.getConceptRef().getAgencyId(), (ag, v) -> VariableImpl.of(alias, domain));
+		
+		DataSetComponent<R, ?, ?> component = DataSetComponentImpl.of(alias, domain, role);
 		
 		String sdmxType = bean.getClass().getSimpleName();
 		sdmxType = sdmxType.substring(0, sdmxType.length() - 8);
-		LOGGER.debug("{} {} converted to component {}", sdmxType, name, component);
+		LOGGER.debug("{} {} converted to component {}", sdmxType, alias, component);
 		
 		return component;
 	}

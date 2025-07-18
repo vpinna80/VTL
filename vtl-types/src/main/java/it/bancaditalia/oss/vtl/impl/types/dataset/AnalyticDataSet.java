@@ -53,8 +53,8 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
@@ -71,23 +71,23 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticDataSet.class);
 	
-	private static final Map<Entry<Set<? extends DataStructureComponent<?, ?, ?>>, List<SortCriterion>>, WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>>> CACHES = new ConcurrentHashMap<>();
+	private static final Map<Entry<Set<? extends DataSetComponent<?, ?, ?>>, List<SortCriterion>>, WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>>> CACHES = new ConcurrentHashMap<>();
 	
 	private final DataSet source;
-	private final Set<? extends DataStructureComponent<?, ?, ?>> partitionIds;
+	private final Set<? extends DataSetComponent<?, ?, ?>> partitionIds;
 	private final Comparator<DataPoint> orderBy;
 	private final int inf;
 	private final int sup;
 	private final SerUnaryOperator<Lineage> lineageOp;
-	private final DataStructureComponent<?, ?, ?> destComponent;
+	private final DataSetComponent<?, ?, ?> destComponent;
 	private final SerFunction<DataPoint, T> extractor;
 	private final SerCollector<T, ?, TT> collector;
 	private final SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher;
 
 	private final transient WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>> cache;
 
-	public AnalyticDataSet(DataSet source, DataSetMetadata structure, SerUnaryOperator<Lineage> lineageOp, WindowClause clause,
-			DataStructureComponent<?, ?, ?> srcComponent, DataStructureComponent<?, ?, ?> destComponent,
+	public AnalyticDataSet(DataSet source, DataSetStructure structure, SerUnaryOperator<Lineage> lineageOp, WindowClause clause,
+			DataSetComponent<?, ?, ?> srcComponent, DataSetComponent<?, ?, ?> destComponent,
 			SerFunction<DataPoint, T> extractor,
 			SerCollector<T, ?, TT> collector, 
 			SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
@@ -105,7 +105,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		this.orderBy = (dp1, dp2) -> {
 				for (SortCriterion criterion: clause.getSortCriteria())
 				{
-					DataStructureComponent<?, ?, ?> comp = criterion.getComponent();
+					DataSetComponent<?, ?, ?> comp = criterion.getComponent();
 					int res = dp1.get(comp).compareTo(dp2.get(comp));
 					if (res != 0)
 						return criterion.getMethod() == ASC ? res : -res;

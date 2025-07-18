@@ -41,16 +41,18 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -67,7 +69,7 @@ import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 public class ConditionalTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Identifier, EntireBooleanDomainSubset, BooleanDomain> COND_ID = BOOLEANDS.getDefaultVariable().as(Identifier.class);
+	private static final DataSetComponent<Identifier, EntireBooleanDomainSubset, BooleanDomain> COND_ID = new DataSetComponentImpl<>(VTLAliasImpl.of("bool_var"), Identifier.class, BOOLEANDS);
 
 	// protected: used by NVL Transformation
 	protected final Transformation condition;
@@ -119,57 +121,57 @@ public class ConditionalTransformation extends TransformationImpl
 			DataSet condD = (DataSet) cond;
 			VTLValue thenV = thenExpr.eval(session);
 			VTLValue elseV = elseExpr.eval(session);
-			DataStructureComponent<Measure, ?, ?> booleanConditionMeasure = condD.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+			DataSetComponent<Measure, ?, ?> booleanConditionMeasure = condD.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 			SerUnaryOperator<Lineage> enricher = LineageNode.lineageEnricher(condition);
 			if (thenV.isDataSet() && elseV.isDataSet()) // Two datasets
-				return evalTwoDatasets((DataSetMetadata) metadata, condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
+				return evalTwoDatasets((DataSetStructure) metadata, condD, (DataSet) thenV, (DataSet) elseV, booleanConditionMeasure);
 			else // One dataset and one scalar
 			{
 				boolean isThenDataset = thenV.isDataSet();
 				DataSet dataset = isThenDataset ? (DataSet) thenV : (DataSet) elseV;
 				ScalarValue<?, ?, ?, ?> scalar = !thenV.isDataSet() ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
-				return condD.filteredMappedJoin((DataSetMetadata) metadata, dataset, DataSet.ALL, (dpCond, dp) -> 
-						evalDatasetAndScalar((DataSetMetadata) metadata, isThenDataset ^ checkCondition(dpCond.get(booleanConditionMeasure)),
+				return condD.filteredMappedJoin((DataSetStructure) metadata, dataset, DataSet.ALL, (dpCond, dp) -> 
+						evalDatasetAndScalar((DataSetStructure) metadata, isThenDataset ^ checkCondition(dpCond.get(booleanConditionMeasure)),
 								enricher, dp, scalar, booleanConditionMeasure), false);
 			}
 		}
 	}
 
-	private static DataPoint evalDatasetAndScalar(DataSetMetadata metadata, boolean cond, SerUnaryOperator<Lineage> enricher, 
-			DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, DataStructureComponent<Measure, ?, ?> booleanConditionMeasure)
+	private static DataPoint evalDatasetAndScalar(DataSetStructure metadata, boolean cond, SerUnaryOperator<Lineage> enricher, 
+			DataPoint dp, ScalarValue<?, ?, ?, ?> scalar, DataSetComponent<Measure, ?, ?> booleanConditionMeasure)
 	{
 		if (cond)
 		{
 			// condition is true and 'then' is the scalar or condition is false and 'else' is the scalar
-			Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIdValues = new ConcurrentHashMap<>(dp.getValues(Measure.class));
+			Map<DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIdValues = new ConcurrentHashMap<>(dp.getValues(Measure.class));
 			
 			// replace all measures values in the datapoint with the scalar casted to the component domain
-			nonIdValues.replaceAll((c, v) -> c.getVariable().getDomain().cast(scalar));
+			nonIdValues.replaceAll((c, v) -> c.getDomain().cast(scalar));
 			
 			return new DataPointBuilder(dp.getValues(Identifier.class))
 					.addAll(dp.getValues(Attribute.class))
 					.addAll(nonIdValues)
-					.build(enricher.apply(dp.getLineage()), (DataSetMetadata) metadata);
+					.build(enricher.apply(dp.getLineage()), (DataSetStructure) metadata);
 		}
 		else
 			// condition is false and 'then' is the scalar or condition is true and 'else' is the scalar
 			return dp;
 	}
 
-	private VTLValue evalTwoDatasets(DataSetMetadata metadata, DataSet condD, DataSet thenD, DataSet elseD, DataStructureComponent<Measure, ?, ?> booleanConditionMeasure)
+	private VTLValue evalTwoDatasets(DataSetStructure metadata, DataSet condD, DataSet thenD, DataSet elseD, DataSetComponent<Measure, ?, ?> booleanConditionMeasure)
 	{
-		DataSetMetadata joinIds = new DataStructureBuilder(condD.getMetadata().getIDs()).addComponent(COND_ID).build();
-		DataSetMetadata enriched = new DataStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();
+		DataSetStructure joinIds = new DataSetStructureBuilder(condD.getMetadata().getIDs()).addComponent(COND_ID).build();
+		DataSetStructure enriched = new DataSetStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();
 		
 		DataSet condResolved = condD.mapKeepingKeys(joinIds, LineageNode.lineageEnricher(thenExpr), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
 		DataSet thenResolved = thenD.mapKeepingKeys(enriched, identity(), dp -> {
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, TRUE);
 			return result;	
 		});
 		DataSet elseResolved = elseD.mapKeepingKeys(enriched, LineageNode.lineageEnricher(elseExpr), dp -> {
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, FALSE);
 			return result;	
 		});
@@ -227,24 +229,24 @@ public class ConditionalTransformation extends TransformationImpl
 				return left;
 			
 			// one is a dataset, first check it
-			((DataSetMetadata) cond).getSingleton(Measure.class, BOOLEANDS);
-			DataSetMetadata dataset = (DataSetMetadata) (left.isDataSet() ? left : right);
+			((DataSetStructure) cond).getSingleton(Measure.class, BOOLEANDS);
+			DataSetStructure dataset = (DataSetStructure) (left.isDataSet() ? left : right);
 			VTLValueMetadata other = left.isDataSet() ? right : left;
 
-			if (!dataset.getIDs().equals(((DataSetMetadata) cond).getIDs()))
-				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getIDs() + " -- " + ((DataSetMetadata) cond).getIDs());
+			if (!dataset.getIDs().equals(((DataSetStructure) cond).getIDs()))
+				throw new UnsupportedOperationException("Condition must have same identifiers as other expressions: " + dataset.getIDs() + " -- " + ((DataSetStructure) cond).getIDs());
 
 			if (other.isDataSet())
 			{
 				// if structures are not equal, each dataset must have only one measure and they must be of compatible domains
 				if (!dataset.equals(other))
 				{
-					DataStructureComponent<Measure, ?, ?> leftMeasure = dataset.getSingleton(Measure.class);
-					DataStructureComponent<Measure, ?, ?> rightMeasure = ((DataSetMetadata) other).getSingleton(Measure.class);
-					if (!leftMeasure.getVariable().getDomain().equals(rightMeasure.getVariable().getDomain()))
-						if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain())
-								&& rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
-							dataset = new DataStructureBuilder(dataset)
+					DataSetComponent<Measure, ?, ?> leftMeasure = dataset.getSingleton(Measure.class);
+					DataSetComponent<Measure, ?, ?> rightMeasure = ((DataSetStructure) other).getSingleton(Measure.class);
+					if (!leftMeasure.getDomain().equals(rightMeasure.getDomain()))
+						if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain())
+								&& rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
+							dataset = new DataSetStructureBuilder(dataset)
 								.removeComponent(leftMeasure)
 								.addComponent(rightMeasure)
 								.build();
@@ -256,7 +258,7 @@ public class ConditionalTransformation extends TransformationImpl
 			{
 				// If other is a scalar check that all measures are compatible with the scalar valuedomain
 				Optional<? extends ValueDomainSubset<?, ?>> wrongMeasure = dataset.getMeasures().stream()
-						.map(c -> c.getVariable().getDomain())
+						.map(c -> c.getDomain())
 						.filter(d -> !d.isAssignableFrom(((ScalarValueMetadata<?, ?>) other).getDomain()))
 						.findAny();
 				if (wrongMeasure.isPresent())

@@ -49,8 +49,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
@@ -80,10 +80,10 @@ public class StringUnaryTransformationTest
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		StringUnaryTransformation sut = new StringUnaryTransformation(operator, left);
-		DataSetMetadata structure = (DataSetMetadata) sut.getMetadata(session);
+		DataSetStructure structure = (DataSetStructure) sut.getMetadata(session);
 		
-		DataStructureComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<Measure, ?, ?>> measure = structure.getComponent(VTLAliasImpl.of("string_2"), Measure.class, STRINGDS);
+		DataSetComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
+		Optional<DataSetComponent<Measure, ?, ?>> measure = structure.getComponent(VTLAliasImpl.of("string_2"), Measure.class, STRINGDS);
 		assertTrue(measure.isPresent(), "measure present in " + structure);
 		
 		try (Stream<DataPoint> stream = ((DataSet) sut.eval(session)).stream())

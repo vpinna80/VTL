@@ -64,8 +64,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -87,14 +87,14 @@ public abstract class AbstractDataSet implements DataSet
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataSet.class);
 
-	protected final DataSetMetadata dataStructure;
+	protected final DataSetStructure dataStructure;
 
-	protected AbstractDataSet(DataSetMetadata dataStructure)
+	protected AbstractDataSet(DataSetStructure dataStructure)
 	{
 		this.dataStructure = dataStructure;
 	}
 
-	private static AbstractDataSet ofLambda(DataSetMetadata metadata, SerSupplier<Stream<DataPoint>> supplier)
+	private static AbstractDataSet ofLambda(DataSetStructure metadata, SerSupplier<Stream<DataPoint>> supplier)
 	{
 		return new AbstractDataSet(metadata) {
 			@Override
@@ -108,15 +108,15 @@ public abstract class AbstractDataSet implements DataSet
 	@Override
 	public DataSet membership(VTLAlias alias, SerUnaryOperator<Lineage> lineageOperator)
 	{
-		final DataSetMetadata membershipStructure = dataStructure.membership(alias);
+		DataSetStructure membershipStructure = dataStructure.membership(alias);
 		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, dataStructure, membershipStructure);
 		
-		DataStructureComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
+		DataSetComponent<?, ?, ?> sourceComponent = dataStructure.getComponent(alias)
 				.orElseThrow((Supplier<? extends RuntimeException> & Serializable) () -> new VTLMissingComponentsException(dataStructure, alias));
-		DataStructureComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getMeasures().iterator().next();
+		DataSetComponent<? extends NonIdentifier, ?, ?> membershipMeasure = membershipStructure.getMeasures().iterator().next();
 
-		SerFunction<DataPoint, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = dp -> {
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(); 
+		SerFunction<DataPoint, Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> operator = dp -> {
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(); 
 				map.put(membershipMeasure, dp.get(sourceComponent));
 				map.putAll(dp.getValues(membershipStructure.getComponents(ViralAttribute.class)));
 				return map;
@@ -126,9 +126,9 @@ public abstract class AbstractDataSet implements DataSet
 	}
 	
 	@Override
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator)
+	public DataSet subspace(Map<? extends DataSetComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator)
 	{
-		DataSetMetadata newMetadata = new DataStructureBuilder(dataStructure).removeComponents(keyValues.keySet()).build();
+		DataSetStructure newMetadata = new DataSetStructureBuilder(dataStructure).removeComponents(keyValues.keySet()).build();
 		
 		return ofLambda(newMetadata, () -> stream()
 			.filter(dp -> dp.matches(keyValues))
@@ -138,26 +138,26 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias name)
+	public Optional<DataSetComponent<?, ?, ?>> getComponent(VTLAlias name)
 	{
 		return dataStructure.getComponent(name);
 	}
 
 	@Override
-	public DataSetMetadata getMetadata()
+	public DataSetStructure getMetadata()
 	{
 		return dataStructure;
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = getMetadata().getIDs();
-		Set<DataStructureComponent<Identifier, ?, ?>> otherIds = other.getMetadata().getIDs();
-		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = new HashSet<>(ids);
+		Set<DataSetComponent<Identifier, ?, ?>> ids = getMetadata().getIDs();
+		Set<DataSetComponent<Identifier, ?, ?>> otherIds = other.getMetadata().getIDs();
+		Set<DataSetComponent<Identifier, ?, ?>> commonIds = new HashSet<>(ids);
 		commonIds.retainAll(otherIds);
 		
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> index;
+		Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> index;
 		try (Stream<DataPoint> stream = other.stream())
 		{
 			if (otherIds.equals(ids))
@@ -173,8 +173,8 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	protected static Stream<DataPoint> flatMapDataPoint(BiPredicate<DataPoint, DataPoint> predicate,
-			BinaryOperator<DataPoint> mergeOp, Set<DataStructureComponent<Identifier, ?, ?>> commonIds,
-			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> indexed,
+			BinaryOperator<DataPoint> mergeOp, Set<DataSetComponent<Identifier, ?, ?>> commonIds,
+			Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> indexed,
 			boolean leftJoin, DataPoint dpThis)
 	{
 		Collection<DataPoint> otherSubGroup = indexed.get(dpThis.getValues(commonIds, Identifier.class));
@@ -190,10 +190,10 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator, 
-			SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+	public DataSet mapKeepingKeys(DataSetStructure metadata, SerUnaryOperator<Lineage> lineageOperator, 
+			SerFunction<? super DataPoint, ? extends Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
-		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
+		final Set<DataSetComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
 		if (!metadata.getIDs().containsAll(identifiers))
 			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getIDs());
 		
@@ -216,10 +216,10 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOp,
-			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
+	public DataSet flatmapKeepingKeys(DataSetStructure metadata, SerUnaryOperator<Lineage> lineageOp,
+			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
 	{
-		final Set<DataStructureComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
+		final Set<DataSetComponent<Identifier, ?, ?>> identifiers = dataStructure.getIDs();
 		if (!metadata.getIDs().containsAll(identifiers))
 			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getIDs());
 		
@@ -228,23 +228,23 @@ public abstract class AbstractDataSet implements DataSet
 		// TODO: check why map/reduce doesn't work and flatmap is mandatory
 		return ofLambda(metadata, () -> stream()
 			.flatMap(dp -> {
-				Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIDValues = dp.getValues(Identifier.class);
+				Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> nonIDValues = dp.getValues(Identifier.class);
 				return operator.apply(dp)
 					.map(map -> new DataPointBuilder(nonIDValues).addAll(map).build(lineageOp.apply(dp.getLineage()), metadata));
 			}));
 	}
 
 	@Override
-	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
-			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
+			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
 		// if the result is a dataset, then we are performing a group by
 		if (metadata.isDataSet())
-			return new StreamWrapperDataSet((DataSetMetadata) metadata, () -> {
+			return new StreamWrapperDataSet((DataSetStructure) metadata, () -> {
 				try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
 				{
-					Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Entry<T, List<Lineage>>> result = stream.collect(
+					Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Entry<T, List<Lineage>>> result = stream.collect(
 							groupingByConcurrent(dp -> dp.getValues(keys, Identifier.class), teeing(groupCollector, mapping(DataPoint::getLineage, toList()), SimpleEntry::new)));
 					
 					return Utils.getStream(result)
@@ -260,13 +260,13 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
+	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataSetComponent<?, ?, ?> sourceComp, DataSetComponent<?, ?, ?> destComp, WindowClause clause,
 			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
 			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
 
-		DataSetMetadata newStructure = new DataStructureBuilder(getMetadata())
+		DataSetStructure newStructure = new DataSetStructureBuilder(getMetadata())
 				.addComponent(destComp)
 				.build();
 		
@@ -282,13 +282,13 @@ public abstract class AbstractDataSet implements DataSet
 					.map(DataSet::stream)
 					.collect(concatenating(ORDERED)));
 		
-		Set<DataStructureComponent<Identifier, ?, ?>> ids = dataStructure.getIDs();
+		Set<DataSetComponent<Identifier, ?, ?>> ids = dataStructure.getIDs();
 		for (DataSet other: others)
 			if (!dataStructure.equals(other.getMetadata()))
 				throw new InvalidParameterException("Union between two datasets with different structures: " + dataStructure + " and " + other.getMetadata()); 
 
 		List<Set<DataPoint>> results = new ArrayList<>();
-		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> seen = newKeySet();
+		Set<Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> seen = newKeySet();
 		LOGGER.info("Evaluating first union operand");
 		try (Stream<DataPoint> stream = stream())
 		{
@@ -347,12 +347,12 @@ public abstract class AbstractDataSet implements DataSet
 		if (LOGGER.isTraceEnabled())
 		{
 			AtomicBoolean dontpeek = new AtomicBoolean(false);
-			Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> seen = new ConcurrentHashMap<>() {
+			Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> seen = new ConcurrentHashMap<>() {
 				private static final long serialVersionUID = 1L;
 				
 				private final String id = UUID.randomUUID().toString();
 				
-				public DataPoint put(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> key, DataPoint value)
+				public DataPoint put(Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> key, DataPoint value)
 				{
 					LOGGER.error("UUID: {}; Hash: {} dp: {}", id, Objects.hashCode(value), value);
 					return super.put(key, value);
@@ -366,7 +366,7 @@ public abstract class AbstractDataSet implements DataSet
 		return stream;
 	}
 
-	private void checkDuplicates(AtomicBoolean dontpeek, Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> seen, DataPoint dp)
+	private void checkDuplicates(AtomicBoolean dontpeek, Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> seen, DataPoint dp)
 	{
 		if (!dontpeek.get())
 		{
@@ -374,7 +374,7 @@ public abstract class AbstractDataSet implements DataSet
 				LOGGER.trace("Dataset {} output datapoint {}", ((NamedDataSet) this).getAlias(),  dp);
 			else
 				LOGGER.trace("Dataset {} output datapoint {}", dp.getLineage(), dp);
-			Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyVals = dp.getValues(Identifier.class);
+			Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyVals = dp.getValues(Identifier.class);
 			DataPoint prev = seen.put(keyVals, dp);
 			if (prev != null)
 			{

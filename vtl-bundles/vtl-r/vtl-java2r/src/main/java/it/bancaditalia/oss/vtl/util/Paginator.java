@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.DateDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
@@ -46,9 +46,9 @@ public class Paginator
 	private static final double R_DOUBLE_NA = Double.longBitsToDouble(0x7ff00000000007a2L);
 	private static final int R_INT_NA = Integer.MIN_VALUE;
 	
-	private final DataSetMetadata dataStructure;
+	private final DataSetStructure dataStructure;
 	private final ArrayBlockingQueue<DataPoint> queue;
-	private final DataStructureComponent<?, ?, ?>[] comps;
+	private final DataSetComponent<?, ?, ?>[] comps;
 	private final int[] types;
 	private final int size;
 	private final Object[] result;
@@ -59,20 +59,20 @@ public class Paginator
 	{
 		this.size = size;
 		dataStructure = dataset.getMetadata();
-		comps = dataStructure.stream().toArray(DataStructureComponent<?, ?, ?>[]::new);
+		comps = dataStructure.stream().toArray(DataSetComponent<?, ?, ?>[]::new);
 		result = new Object[comps.length];
 		types = new int[comps.length];
 		queue = new ArrayBlockingQueue<>(size);
 		
 		for (int i = 0; i < comps.length; i++)
 		{
-			if (comps[i].getVariable().getDomain() instanceof IntegerDomain)
+			if (comps[i].getDomain() instanceof IntegerDomain)
 				types[i] = 5;
-			else if (comps[i].getVariable().getDomain() instanceof NumberDomain)
+			else if (comps[i].getDomain() instanceof NumberDomain)
 				types[i] = 1;
-			else if (comps[i].getVariable().getDomain() instanceof BooleanDomain)
+			else if (comps[i].getDomain() instanceof BooleanDomain)
 				types[i] = 2;
-			else if (comps[i].getVariable().getDomain() instanceof DateDomain)
+			else if (comps[i].getDomain() instanceof DateDomain)
 				types[i] = 3;
 			else // StringDomain, TimeDomain, TimePeriodDomain
 				types[i] = 4;
@@ -102,7 +102,7 @@ public class Paginator
 		t.start();
 	}
 
-	public DataSetMetadata getDataStructure()
+	public DataSetStructure getDataStructure()
 	{
 		return dataStructure;
 	}
@@ -114,7 +114,7 @@ public class Paginator
 
 	public String getName(int i)
 	{
-		return comps[i].getVariable().getAlias().getName();
+		return comps[i].getAlias().getName();
 	}
 
 	public int[] getIntColumn(int i)

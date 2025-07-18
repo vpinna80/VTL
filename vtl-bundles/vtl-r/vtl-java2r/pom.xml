@@ -36,6 +36,24 @@
 	<name>vtl-java2r</name>
 	<description>VTL R/Java Integration</description>
 
+	<profiles>
+		<profile>
+			<id>with-sdmx</id>
+			<dependencies>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-metasdmx</artifactId>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>it.bancaditalia.oss.vtl</groupId>
+					<artifactId>vtl-sdmxenv</artifactId>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 	<properties>
 		<r.runtime.version>4.3.2</r.runtime.version>
 	</properties>

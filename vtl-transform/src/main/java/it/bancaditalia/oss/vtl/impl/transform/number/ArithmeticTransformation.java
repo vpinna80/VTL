@@ -19,6 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.number;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.NUM_VAR;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.getDefaultMeasure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
@@ -48,7 +51,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator;
@@ -58,8 +61,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
@@ -67,7 +70,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -107,27 +109,26 @@ public class ArithmeticTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetMetadata dsMeta = (DataSetMetadata) metadata;
+		DataSetStructure dsMeta = (DataSetStructure) metadata;
 		Set<VTLAlias> measureNames = dataset.getMetadata().getComponents(Measure.class, NUMBERDS).stream()
-				.map(DataStructureComponent::getVariable)
-				.map(Variable::getAlias)
+				.map(DataSetComponent::getAlias)
 				.collect(toSet());
 		
 		// check if both a measure and the scalar are integers
-		SerPredicate<DataStructureComponent<?, ?, ?>> bothIntegers = comp -> INTEGERDS.isAssignableFrom(scalar.getDomain())
-				&& INTEGERDS.isAssignableFrom(comp.getVariable().getDomain());
+		SerPredicate<DataSetComponent<?, ?, ?>> bothIntegers = comp -> INTEGERDS.isAssignableFrom(scalar.getDomain())
+				&& INTEGERDS.isAssignableFrom(comp.getDomain());
 		
 		// must remember which is the left operand because some operators are not commutative
-		SerBiFunction<DataPoint, DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> finisher = (dp, comp) -> 
+		SerBiFunction<DataPoint, DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> finisher = (dp, comp) -> 
 			reverseIf(operator != DIV && bothIntegers.test(comp) ? operator::applyAsInteger : operator::applyAsNumber, !datasetIsLeftOp)
 				.apply(dp.get(comp), scalar);
 		
 		SerUnaryOperator<Lineage> enricher = LineageNode.lineageEnricher(this);
 		return dataset.mapKeepingKeys(dsMeta, lineage -> enricher.apply(LineageCall.of(lineage)), dp -> { 
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>();
 				for (VTLAlias name: measureNames)
 				{
-					DataStructureComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
+					DataSetComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
 							.orElseThrow(() -> new VTLMissingComponentsException(dp.keySet(), name)).asRole(Measure.class);
 					result.put(comp, finisher.apply(dp, comp));
 				}
@@ -146,19 +147,19 @@ public class ArithmeticTransformation extends BinaryTransformation
 
 		if (metadata == null)
 		{
-			DataStructureComponent<Measure, ?, ?> leftMeasure = streamed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
-			DataStructureComponent<Measure, ?, ?> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
-			DataStructureComponent<Measure, ?, ?> resultComp;
-			if (operator != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getVariable().getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getVariable().getDomain()))
-				resultComp = INTEGERDS.getDefaultVariable().as(Measure.class);
+			DataSetComponent<Measure, ?, ?> leftMeasure = streamed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataSetComponent<Measure, ?, ?> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
+			DataSetComponent<Measure, ?, ?> resultComp;
+			if (operator != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getDomain()))
+				resultComp = INT_VAR;
 			else
-				resultComp = NUMBERDS.getDefaultVariable().as(Measure.class);
+				resultComp = NUM_VAR;
 			
-			DataSetMetadata newStructure = new DataStructureBuilder(streamed.getMetadata().getIDs())
+			DataSetStructure newStructure = new DataSetStructureBuilder(streamed.getMetadata().getIDs())
 					.addComponent(resultComp)
 					.build();
 			
-			boolean intResult = INTEGERDS.isAssignableFrom(resultComp.getVariable().getDomain());
+			boolean intResult = INTEGERDS.isAssignableFrom(resultComp.getDomain());
 			return streamed.filteredMappedJoin(newStructure, indexed, DataSet.ALL,  
 					(dpl, dpr) -> new DataPointBuilder()
 						.add(resultComp, compute(operator, swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
@@ -168,43 +169,42 @@ public class ArithmeticTransformation extends BinaryTransformation
 		}
 		else
 		{
-			Set<DataStructureComponent<Measure, ?, ?>> resultMeasures = ((DataSetMetadata) metadata).getMeasures();
+			Set<DataSetComponent<Measure, ?, ?>> resultMeasures = ((DataSetStructure) metadata).getMeasures();
 			
 			if (resultMeasures.size() == 1)
 			{
-				DataStructureComponent<Measure, ?, ?> resultMeasure = resultMeasures.iterator().next(); 
-				DataStructureComponent<Measure, ?, ?> streamedMeasure = streamed.getMetadata().getMeasures().iterator().next(); 
-				DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getMeasures().iterator().next(); 
+				DataSetComponent<Measure, ?, ?> resultMeasure = resultMeasures.iterator().next(); 
+				DataSetComponent<Measure, ?, ?> streamedMeasure = streamed.getMetadata().getMeasures().iterator().next(); 
+				DataSetComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getMeasures().iterator().next(); 
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
-				return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed, DataSet.ALL, (dpl, dpr) -> {
-						boolean isResultInt = operator != DIV && INTEGERDS.isAssignableFrom(resultMeasure.getVariable().getDomain());
+				return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dpl, dpr) -> {
+						boolean isResultInt = operator != DIV && INTEGERDS.isAssignableFrom(resultMeasure.getDomain());
 						ScalarValue<?, ?, ?, ?> leftVal = dpl.get(streamedMeasure);
 						ScalarValue<?, ?, ?, ?> rightVal = dpr.get(indexedMeasure);
 						return new DataPointBuilder()
 								.add(resultMeasure, compute(operator, swap, isResultInt, leftVal, rightVal))
 								.addAll(dpl.getValues(Identifier.class))
 								.addAll(dpr.getValues(Identifier.class))
-								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata);						
+								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata);						
 					}, false);
 			}
 			else
 			{
 				// Scan the dataset with less identifiers and find the matches
-				DataSetMetadata streamedStructure = streamed.getMetadata();
-				DataSetMetadata indexedStructure = indexed.getMetadata();
-				return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed, DataSet.ALL, 
+				DataSetStructure streamedStructure = streamed.getMetadata();
+				DataSetStructure indexedStructure = indexed.getMetadata();
+				return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, 
 					(dpl, dpr) -> {
 						return new DataPointBuilder(resultMeasures.stream()
 								.map(toEntryWithValue(compToCalc -> {
-									Variable<?, ?> varToCalc = compToCalc.getVariable();
-									return compute(operator, swap, INTEGERDS.isAssignableFrom(varToCalc.getDomain()), 
-											dpl.get(streamedStructure.getComponent(varToCalc.getAlias()).get()), 
-											dpr.get(indexedStructure.getComponent(varToCalc.getAlias()).get()));
+									return compute(operator, swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
+											dpl.get(streamedStructure.getComponent(compToCalc.getAlias()).get()), 
+											dpr.get(indexedStructure.getComponent(compToCalc.getAlias()).get()));
 								})).collect(entriesToMap()))		
 							.addAll(dpl.getValues(Identifier.class))
 							.addAll(dpr.getValues(Identifier.class))
-							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata);
+							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata);
 					}, false);
 			}
 		}
@@ -236,13 +236,13 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		if (dataset.getMeasures().size() == 0)
 			throw new VTLExpectedRoleException(Measure.class, dataset);
 		
 		dataset.getMeasures().stream()
-			.filter(c -> !NUMBERDS.isAssignableFrom(c.getVariable().getDomain()))
+			.filter(c -> !NUMBERDS.isAssignableFrom(c.getDomain()))
 			.map(c -> new VTLIncompatibleTypesException(operator.toString().toLowerCase(), c, NUMBERDS))
 			.forEach(e -> { throw e; });
 
@@ -252,22 +252,22 @@ public class ArithmeticTransformation extends BinaryTransformation
 			if (!NUMBERDS.isAssignableFrom(scalarDomain))
 				throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), NUMBERDS, scalarDomain);
 			
-			for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMeasures())
-				if (INTEGERDS.isAssignableFrom(measure.getVariable().getDomain()))
+			for (DataSetComponent<Measure, ?, ?> measure: dataset.getMeasures())
+				if (INTEGERDS.isAssignableFrom(measure.getDomain()))
 					throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), NUMBERDS, measure);
 		}
 		
-		return new DataStructureBuilder(dataset)
+		return new DataSetStructureBuilder(dataset)
 				.removeComponents(dataset.getComponents(Attribute.class))
 				.addComponents(dataset.getComponents(ViralAttribute.class))
 				.build();
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> leftMeasures = left.getMeasures();
-		Set<DataStructureComponent<Measure, ?, ?>> rightMeasures = right.getMeasures();
+		Set<DataSetComponent<Measure, ?, ?>> leftMeasures = left.getMeasures();
+		Set<DataSetComponent<Measure, ?, ?>> rightMeasures = right.getMeasures();
 		
 		if (leftMeasures.size() == 0)
 			throw new VTLExpectedRoleException(Measure.class, NUMBERDS, leftMeasures);
@@ -279,20 +279,20 @@ public class ArithmeticTransformation extends BinaryTransformation
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
 
 		// check if measures are the same, unless we are at component level
-		Set<DataStructureComponent<Measure, ?, ?>> resultMeasures;
+		Set<DataSetComponent<Measure, ?, ?>> resultMeasures;
 		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
 		{
-			ValueDomainSubset<?, ?> leftDomain = leftMeasures.iterator().next().getVariable().getDomain();
-			ValueDomainSubset<?, ?> rightDomain = rightMeasures.iterator().next().getVariable().getDomain();
+			ValueDomainSubset<?, ?> leftDomain = leftMeasures.iterator().next().getDomain();
+			ValueDomainSubset<?, ?> rightDomain = rightMeasures.iterator().next().getDomain();
 			
 			ValueDomainSubset<?, ?> domain = INTEGERDS.isAssignableFrom(leftDomain) && INTEGERDS.isAssignableFrom(rightDomain) ? INTEGERDS : NUMBERDS;
 			
-			resultMeasures = singleton(domain.getDefaultVariable().as(Measure.class));
+			resultMeasures = singleton(getDefaultMeasure(domain));
 		}
 		else
 		{
-			Map<VTLAlias, DataStructureComponent<Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getAlias()));
-			Map<VTLAlias, DataStructureComponent<Measure, ?, ?>> rightMeasuresMap = rightMeasures.stream().collect(toMapWithKeys(m -> m.getVariable().getAlias()));
+			Map<VTLAlias, DataSetComponent<Measure, ?, ?>> leftMeasuresMap = leftMeasures.stream().collect(toMapWithKeys(m -> m.getAlias()));
+			Map<VTLAlias, DataSetComponent<Measure, ?, ?>> rightMeasuresMap = rightMeasures.stream().collect(toMapWithKeys(m -> m.getAlias()));
 			
 			resultMeasures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
 				.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))
@@ -302,19 +302,19 @@ public class ArithmeticTransformation extends BinaryTransformation
 							throw new VTLMissingComponentsException(leftMeasures, rm);
 						if (rm == null)
 							throw new VTLMissingComponentsException(rightMeasures, lm);
-						if (!NUMBERDS.isAssignableFrom(lm.getVariable().getDomain()))
+						if (!NUMBERDS.isAssignableFrom(lm.getDomain()))
 							throw new UnsupportedOperationException("Expected numeric measure but found: " + lm);
-						if (!NUMBERDS.isAssignableFrom(rm.getVariable().getDomain()))
+						if (!NUMBERDS.isAssignableFrom(rm.getDomain()))
 							throw new UnsupportedOperationException("Expected numeric measure but found: " + rm);
 					}))
 				// if at least one components is floating point, use floating point otherwise integer
-				.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getVariable().getDomain()) 
-						? INTEGERDS.isAssignableFrom(rm.getVariable().getDomain())
+				.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
+						? INTEGERDS.isAssignableFrom(rm.getDomain())
 						? lm : rm : lm))
 				.collect(toSet());
 		}
 		
-		return new DataStructureBuilder().addComponents(left.getIDs())
+		return new DataSetStructureBuilder().addComponents(left.getIDs())
 				.addComponents(right.getIDs())
 				.addComponents(resultMeasures)
 				.addComponents(left.getComponents(ViralAttribute.class))

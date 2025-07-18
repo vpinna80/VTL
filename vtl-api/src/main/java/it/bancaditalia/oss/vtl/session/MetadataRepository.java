@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.session;
 import java.util.Optional;
 import java.util.Set;
 
+import it.bancaditalia.oss.vtl.model.data.DataStructureDefinition;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
@@ -67,7 +68,7 @@ public interface MetadataRepository
 	 * @param alias the alias of the structure to retrieve
 	 * @return an optional containing the structure defintion, or empty if none was defined.
 	 */
-	public Optional<VTLValueMetadata> getStructureDefinition(VTLAlias alias);
+	public Optional<DataStructureDefinition> getStructureDefinition(VTLAlias alias);
 
 	/**
 	 * Returns a data point ruleset with the specified name if it exists.
@@ -92,15 +93,6 @@ public interface MetadataRepository
 	 * @return a optional containing the {@link Variable}, or empty if the variable was not defined.
 	 */
 	public Optional<Variable<?, ?>> getVariable(VTLAlias alias);
-
-	/**
-	 * Creates a temporary variable with provided alias and domain. An error is raised if a persistent variable with a different domain is already defined in metadata.
-	 * 
-	 * @param alias the alias of the variable
-	 * @param domain the domain of the variable
-	 * @return a {@link Variable} instance.
-	 */
-	public Variable<?, ?> createTempVariable(VTLAlias alias, ValueDomainSubset<?, ?> domain);
 
 	/**
 	 * @return A repository linked to this if there's one, or null

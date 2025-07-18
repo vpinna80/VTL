@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.RANGE_UNBOUNDED_PRECEDING_TO_CURRENT;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.COUNT;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
@@ -47,13 +47,13 @@ import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -107,20 +107,20 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				.map(splitting(SortClause::new))
 				.collect(toList());
 
-		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
+		Set<DataSetComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
 		partitionIDs.removeAll(ordering.stream().map(SortCriterion::getComponent).collect(toSet()));
 		
-		for (DataStructureComponent<?, ?, ?> orderingComponent: ordering.stream().map(SortCriterion::getComponent).collect(toSet()))
+		for (DataSetComponent<?, ?, ?> orderingComponent: ordering.stream().map(SortCriterion::getComponent).collect(toSet()))
 			if (partitionIDs.contains(orderingComponent))
-				throw new VTLException("Cannot order by " + orderingComponent.getVariable().getAlias() + " because the component is used in partition by " + partitionBy);
+				throw new VTLException("Cannot order by " + orderingComponent.getAlias() + " because the component is used in partition by " + partitionBy);
 
 		WindowCriterion criterion = coalesce(windowCriterion, orderByClause.isEmpty() 
 				? RANGE_UNBOUNDED_PRECEDING_TO_CURRENT : DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, criterion);
 		
-		for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
+		for (DataSetComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
 			dataset = dataset.analytic(lineageEnricher(this), measure, measure, clause, 
-					null, aggregation.getReducer(measure.getVariable().getDomain()), null);
+					null, aggregation.getReducer(measure.getDomain()), null);
 
 		return dataset;
 	}
@@ -130,31 +130,31 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session);
 		if (!opmeta.isDataSet())
-			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(opmeta, DataSetStructure.class);
 		
-		DataSetMetadata dataset = (DataSetMetadata) opmeta;
+		DataSetStructure dataset = (DataSetStructure) opmeta;
 		
-		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
+		LinkedHashMap<DataSetComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)
 		{
-			DataStructureComponent<?, ?, ?> component = dataset.getComponent(orderByComponent.getAlias()).orElseThrow(() -> new VTLMissingComponentsException(dataset, orderByComponent.getAlias()));
+			DataSetComponent<?, ?, ?> component = dataset.getComponent(orderByComponent.getAlias()).orElseThrow(() -> new VTLMissingComponentsException(dataset, orderByComponent.getAlias()));
 			ordering.put(component, DESC != orderByComponent.getMethod());
 		}
 
-		Set<DataStructureComponent<Identifier,?,?>> partitionComponents = dataset.matchIdComponents(partitionBy, "partition by");
+		Set<DataSetComponent<Identifier,?,?>> partitionComponents = dataset.matchIdComponents(partitionBy, "partition by");
 		if (partitionBy.isEmpty())
 			partitionComponents.removeAll(ordering.keySet());
 		partitionComponents.retainAll(ordering.keySet());
 		if (!partitionComponents.isEmpty())
 			throw new VTLException("Partitioning components " + partitionComponents + " cannot be used in order by");
 
-		DataStructureBuilder builder = new DataStructureBuilder(dataset);
+		DataSetStructureBuilder builder = new DataSetStructureBuilder(dataset);
 		if (aggregation == COUNT)
 			if (dataset.getMeasures().size() > 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, dataset.getMeasures());
 			else
 				builder = builder.removeComponent(dataset.getMeasures().iterator().next())
-						.addComponent(INTEGERDS.getDefaultVariable().as(Measure.class));
+						.addComponent(INT_VAR);
 			
 		return builder.build();
 	}

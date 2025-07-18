@@ -52,10 +52,10 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public static final SerBiPredicate<DataPoint, DataPoint> ALL = (a,  b) -> true;
 
 	/**
-	 * @return The {@link DataSetMetadata structure} of this DataSet.
+	 * @return The {@link DataSetStructure structure} of this DataSet.
 	 */
 	@Override
-	public DataSetMetadata getMetadata();
+	public DataSetStructure getMetadata();
 	
 	/**
 	 * @return a {@link Stream} of this dataset's {@link DataPoint}s.
@@ -85,9 +85,9 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * Finds a component with given name
 	 * 
 	 * @param alias The requested component's alias.
-	 * @return an {@link Optional} eventually containing the requested {@link DataStructureComponent} if one was found.
+	 * @return an {@link Optional} eventually containing the requested {@link DataSetComponent} if one was found.
 	 */
-	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias alias);
+	public Optional<DataSetComponent<?, ?, ?>> getComponent(VTLAlias alias);
 
 	/**
 	 * Create a new DataSet by filtering this DataSet's {@link DataPoint}s matching the specified values for some identifiers.
@@ -96,7 +96,7 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 *      If the map is empty, the result is this {@code DataSet}.
 	 * @return A new {@code DataSet} of matching {@link DataPoint}s, eventually empty.
 	 */
-	public default DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
+	public default DataSet getMatching(Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)), SerUnaryOperator.identity());	
 	}
@@ -116,39 +116,39 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * @param lineageOp an operator to enrich the datapoint lineage 
 	 * @return A new DataSet that is a subspace of this DataSet.  
 	 */
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOp);
+	public DataSet subspace(Map<? extends DataSetComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOp);
 	
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
 	 * 
-	 * @param metadata The {@link DataSetMetadata structure} the new dataset must conform to.
+	 * @param metadata The {@link DataSetStructure structure} the new dataset must conform to.
 	 * @param lineageOp TODO
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet mapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOp, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
+	public DataSet mapKeepingKeys(DataSetStructure metadata, SerUnaryOperator<Lineage> lineageOp, SerFunction<? super DataPoint, ? extends Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator);
 
 	/**
 	 * Creates a new DataSet by transforming each of this DataSet's {@link DataPoint} by a given {@link Function}.
 	 * 
-	 * @param metadata The {@link DataSetMetadata structure} the new dataset must conform to.
+	 * @param metadata The {@link DataSetStructure structure} the new dataset must conform to.
 	 * @param lineageOp TODO
 	 * @param operator a {@link Function} that maps each of this DataSet's {@link DataPoint}s.
 	 * @return The new transformed DataSet. 
 	 */
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOp, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
+	public DataSet flatmapKeepingKeys(DataSetStructure metadata, SerUnaryOperator<Lineage> lineageOp, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
 
 	/**
 	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
 	 * 
-	 * @param metadata The {@link DataSetMetadata structure} the new DataSet must conform to.
+	 * @param metadata The {@link DataSetStructure structure} the new DataSet must conform to.
 	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
 	 * @param where a {@link SerBiPredicate} used to select only a subset of the joined {@link DataPoint}s.
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
 	 * @param leftJoin true if a left outer join is to be performed, false for inner join
 	 * @return The new DataSet.
 	 */
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> merge, boolean leftJoin);
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> merge, boolean leftJoin);
 	
 	/**
 	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers.
@@ -163,9 +163,9 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return a new VTL value, either a scalar or a dataset, that is the result of the aggregation.
 	 */
-	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata resultMetadata, 
-			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher);
+	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata resultMetadata, 
+			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher);
 	
 	/**
 	 * Creates a new DataSet by applying a window function over a component of this DataSet.
@@ -186,8 +186,8 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	 * 
 	 * @return A new dataset resulting from the application of the specified window function.
 	 */
-	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp,
-			DataStructureComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor,
+	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataSetComponent<?, ?, ?> sourceComp,
+			DataSetComponent<?, ?, ?> destComp, WindowClause clause, SerFunction<DataPoint, T> extractor,
 			SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher);
 
 	/**

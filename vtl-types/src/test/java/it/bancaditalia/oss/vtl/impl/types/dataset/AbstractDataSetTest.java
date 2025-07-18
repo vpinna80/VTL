@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.STRING_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -52,18 +54,18 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -74,11 +76,11 @@ import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 
 public class AbstractDataSetTest
 {
-	private static final DataStructureComponent<Identifier, EntireStringDomainSubset, StringDomain> STR_ID = new ComponentMock<>("str_id", Identifier.class, Domains.STRINGDS);
-	private static final DataStructureComponent<Identifier, EntireIntegerDomainSubset, IntegerDomain> INT_ID = new ComponentMock<>("int_id", Identifier.class, INTEGERDS);
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_ME = new ComponentMock<>("int_me", Measure.class, INTEGERDS);
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOL_ME = new ComponentMock<>("bol_me", Measure.class, BOOLEANDS);
-	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(Set.of(STR_ID, INT_ID, INT_ME, BOL_ME)).build();
+	private static final DataSetComponent<Identifier, EntireStringDomainSubset, StringDomain> STR_ID = new DataSetComponentImpl<>(VTLAliasImpl.of("str_id"), Identifier.class, STRINGDS);
+	private static final DataSetComponent<Identifier, EntireIntegerDomainSubset, IntegerDomain> INT_ID = new DataSetComponentImpl<>(VTLAliasImpl.of("int_id"), Identifier.class, INTEGERDS);
+	private static final DataSetComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> INT_ME = new DataSetComponentImpl<>(VTLAliasImpl.of("int_me"), Measure.class, INTEGERDS);
+	private static final DataSetComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOL_ME = new DataSetComponentImpl<>(VTLAliasImpl.of("bol_me"), Measure.class, BOOLEANDS);
+	private static final DataSetStructure STRUCTURE = new DataSetStructureBuilder(Set.of(STR_ID, INT_ID, INT_ME, BOL_ME)).build();
 	private static final String STR_ID_VAL[] = { "A", "A", "B", "B", "C" }; 
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 
 	private static final Long INT_ME_VAL[] = { 5L, 7L, null, 8L, 4L }; 
@@ -91,7 +93,7 @@ public class AbstractDataSetTest
 	public static void beforeAll()
 	{
 		System.setProperty("vtl.sequential", "true");
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> values = new HashMap<>();
+		Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> values = new HashMap<>();
 		values.put(STR_ID, Arrays.stream(STR_ID_VAL).map(StringValue::of).collect(toList()).toArray(new StringValue[0]));
 		values.put(INT_ID, Arrays.stream(INT_ID_VAL).map(IntegerValue::of).collect(toList()).toArray(new IntegerValue[0]));
 		values.put(INT_ME, Arrays.stream(INT_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(INTEGERDS) : IntegerValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));
@@ -113,14 +115,14 @@ public class AbstractDataSetTest
 	@Test
 	void testMembership()
 	{
-		Stream<Entry<DataStructureComponent<?, ?, ?>, Stream<DataStructureComponent<?, ?, ?>>>> expected = Stream.of(
-				new SimpleEntry<>(STR_ID, Stream.of(STR_ID, INT_ID, new ComponentMock<>(Measure.class, STRINGDS))),
-				new SimpleEntry<>(INT_ID, Stream.of(STR_ID, INT_ID, new ComponentMock<>(Measure.class, INTEGERDS))), 
+		Stream<Entry<DataSetComponent<?, ?, ?>, Stream<DataSetComponent<?, ?, ?>>>> expected = Stream.of(
+				new SimpleEntry<>(STR_ID, Stream.of(STR_ID, INT_ID, STRING_VAR)),
+				new SimpleEntry<>(INT_ID, Stream.of(STR_ID, INT_ID, INT_VAR)), 
 				new SimpleEntry<>(INT_ME, Stream.of(STR_ID, INT_ID, INT_ME)),
 				new SimpleEntry<>(BOL_ME, Stream.of(STR_ID, INT_ID, BOL_ME)));
 		
-		expected.map(keepingKey(s -> s.reduce(new DataStructureBuilder(), DataStructureBuilder::addComponent, DataStructureBuilder::merge).build()))
-				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getVariable().getAlias(), identity()).getMetadata()))
+		expected.map(keepingKey(s -> s.reduce(new DataSetStructureBuilder(), DataSetStructureBuilder::addComponent, DataSetStructureBuilder::merge).build()))
+				.map(e -> new SimpleEntry<>(e.getValue(), INSTANCE.membership(e.getKey().getAlias(), identity()).getMetadata()))
 				.forEach(e -> assertEquals(e.getKey(), e.getValue(), "Structural mismatch in membership"));
 		
 		verify(INSTANCE, times(4)).membership(any(VTLAlias.class), eq(identity()));

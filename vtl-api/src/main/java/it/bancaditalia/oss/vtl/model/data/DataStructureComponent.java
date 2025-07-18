@@ -21,47 +21,19 @@ package it.bancaditalia.oss.vtl.model.data;
 
 import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
-
 /**
  * The immutable representation of a component of a dataset.
  * 
  * @author Valentino Pinna
  *
  * @param <R> the {@link Component}
- * @param <S> the {@link ValueDomainSubset}
- * @param <D> the {@link ValueDomain}
  */
-public interface DataStructureComponent<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> extends Serializable
+public interface DataStructureComponent<R extends Component> extends Serializable
 {
-	public static int byNameAndRole(DataStructureComponent<?, ?, ?> c1, DataStructureComponent<?, ?, ?> c2)
-	{
-		if (c1.is(Attribute.class) && !c2.is(Attribute.class))
-			return 1;
-		else if (c1.is(Identifier.class) && !c2.is(Identifier.class))
-			return -1;
-		else if (c1.is(Measure.class) && c2.is(Identifier.class))
-			return 1;
-		else if (c1.is(Measure.class) && c2.is(Attribute.class))
-			return -1;
-
-		return Variable.byName(c1.getVariable(), c2.getVariable());
-	}
-
-	public static int byName(DataStructureComponent<?, ?, ?> c1, DataStructureComponent<?, ?, ?> c2)
-	{
-		return Variable.byName(c1.getVariable(), c2.getVariable());
-	}
-
 	/**
-	 * @return The dataset variable for this {@link DataStructureComponent}.
+	 * @return The alias of this component
 	 */
-	public Variable<S, D> getVariable();
+	public VTLAlias getAlias();
 	
 	/**
 	 * @return The role of this {@link DataStructureComponent}.
@@ -88,32 +60,19 @@ public interface DataStructureComponent<R extends Component, S extends ValueDoma
 	 * @throws ClassCastException if the role cannot be narrowed.
 	 */
 	@SuppressWarnings("unchecked")
-	public default <R2 extends Component> DataStructureComponent<R2, S, D> asRole(Class<R2> role)
+	public default <R2 extends Component> DataStructureComponent<R2> asRole(Class<R2> role)
 	{
 		if (is(role))
 			// safe
-			return (DataStructureComponent<R2, S, D>) this;
+			return (DataStructureComponent<R2>) this;
 		else
 			throw new ClassCastException("In component " + this + ", cannot cast " + getRole().getSimpleName() + " to " + role.getSimpleName());
-	}
-	
-	/**
-	 * Convenience method that obtains a renamed component in the given {@link MetadataRepository} the same role and domain of this {@link DataStructureComponent}.
-	 * 
-	 * @param repo The repository
-	 * @param newName the new name to assign to the new component
-	 * @return the renamed component
-	 */
-	@SuppressWarnings("unchecked")
-	public default DataStructureComponent<R, S, D> getRenamed(MetadataRepository repo, VTLAlias newName)
-	{
-		return ((Variable<S, D>) repo.createTempVariable(newName, getVariable().getDomain())).as(getRole());
 	}
 	
 	public default int defaultHashCode()
 	{
 		int prime = 31;
-		int result = prime + getVariable().hashCode();
+		int result = prime + getAlias().hashCode();
 		result = prime * result + getRole().hashCode();
 		return result;
 	}

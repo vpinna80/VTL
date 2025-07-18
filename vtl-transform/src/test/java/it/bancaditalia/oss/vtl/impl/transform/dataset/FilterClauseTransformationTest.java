@@ -44,8 +44,8 @@ import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -85,7 +85,7 @@ public class FilterClauseTransformationTest
 		session = new ThisScope(session.getRepository(), sample, session);
 		FilterClauseTransformation fct = new FilterClauseTransformation(condition);
 		
-		DataSetMetadata metadata = (DataSetMetadata) fct.getMetadata(session);
+		DataSetStructure metadata = (DataSetStructure) fct.getMetadata(session);
 		assertTrue(metadata.contains(VTLAliasImpl.of("boolean_1")));
 		
 		DataSet computedResult = (DataSet) fct.eval(session);
@@ -93,7 +93,7 @@ public class FilterClauseTransformationTest
 		assertEquals(expectedResult.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 
-		DataStructureComponent<Identifier, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS).get();
+		DataSetComponent<Identifier, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS).get();
 		
 		String[] arrayResult = computedResult.stream()
 			.map(dp -> dp.get(id).get())

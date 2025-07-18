@@ -63,15 +63,6 @@ public interface Variable<S extends ValueDomainSubset<S, D>, D extends ValueDoma
 	public VTLAlias getAlias();
 
 	/**
-	 * Returns a {@link DataStructureComponent} referring this variable with the specified {@link Component} role.
-	 * 
-	 * @param <R> The component role type
-	 * @param role The class of the component
-	 * @return the component
-	 */
-	public <R extends Component> DataStructureComponent<R, S, D> as(Class<R> role);
-
-	/**
 	 * @return The domain subset of this {@link Variable}.
 	 */
 	public S getDomain();

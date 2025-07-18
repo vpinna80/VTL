@@ -84,6 +84,11 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 			return new MembershipAlias(dataset, this);
 	}
 
+	public boolean isQuoted()
+	{
+		return isQuoted;
+	}
+	
 	@Override
 	public String toString()
 	{
@@ -107,11 +112,6 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 			return false;
 
 		VTLAliasImpl other = (VTLAliasImpl) obj;
-		if (isQuoted && other.isQuoted)
-			return name.equals(other.name);
-		else if (isQuoted)
-			return other.name.equalsIgnoreCase(name);
-		else // if (other.isQuoted)
-			return name.equalsIgnoreCase(other.name);
+		return isQuoted && other.isQuoted ? name.equals(other.name) : name.equalsIgnoreCase(other.name);
 	}
 }

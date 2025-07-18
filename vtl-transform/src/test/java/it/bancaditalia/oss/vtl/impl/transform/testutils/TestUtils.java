@@ -56,11 +56,7 @@ public class TestUtils
 			return Optional.ofNullable(map.get(name)).orElseThrow(() -> new VTLUnboundAliasException(name));
 		});
 		
-		when(session.getRepository()).then(p -> {
-			MetadataRepository mock = mock(MetadataRepository.class, RETURNS_SMART_NULLS);
-			when(mock.createTempVariable(any(VTLAlias.class), any())).then(i -> new TestComponent<>(i.getArgument(0), null, i.getArgument(1)).getVariable());
-			return mock;
-		});
+		when(session.getRepository()).then(p -> mock(MetadataRepository.class, RETURNS_SMART_NULLS));
 		
 		return session; 
 	}

@@ -26,7 +26,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataStructureDefinition;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
@@ -37,22 +38,27 @@ public class VTLMissingComponentsException extends VTLException
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public VTLMissingComponentsException(Collection<? extends DataStructureComponent<?, ?, ?>> structure, VTLAlias... missing)
+	public VTLMissingComponentsException(Collection<? extends DataSetComponent<?, ?, ?>> structure, VTLAlias... missing)
 	{
 		super("Components " + Arrays.toString(missing) + " not found in " + structure);
 	}
 
-	public VTLMissingComponentsException(Set<? extends DataStructureComponent<?, ?, ?>> missing, Set<? extends DataStructureComponent<?, ?, ?>> structure)
+	public VTLMissingComponentsException(DataStructureDefinition structure, VTLAlias... missing)
 	{
-		super("Components " + missing.stream().map(c -> c.getVariable().toString()).collect(joining(", ", "[", "]")) + " not found in " + structure);
+		super("Components " + Arrays.toString(missing) + " not found in " + structure);
 	}
 
-	public VTLMissingComponentsException(Collection<? extends DataStructureComponent<?, ?, ?>> operand, DataStructureComponent<?, ?, ?> missing)
+	public VTLMissingComponentsException(Set<? extends DataSetComponent<?, ?, ?>> missing, Set<? extends DataSetComponent<?, ?, ?>> structure)
+	{
+		super("Components " + missing.stream().map(c -> c.toString()).collect(joining(", ", "[", "]")) + " not found in " + structure);
+	}
+
+	public VTLMissingComponentsException(Collection<? extends DataSetComponent<?, ?, ?>> operand, DataSetComponent<?, ?, ?> missing)
 	{
 		super("Component " + missing + " not found in " + operand);
 	}
 
-	public VTLMissingComponentsException(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint, Set<? extends DataStructureComponent<?, ?, ?>> missing)
+	public VTLMissingComponentsException(Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> datapoint, Set<? extends DataSetComponent<?, ?, ?>> missing)
 	{
 		super("Component " + missing + " not found in " + datapoint);
 	}

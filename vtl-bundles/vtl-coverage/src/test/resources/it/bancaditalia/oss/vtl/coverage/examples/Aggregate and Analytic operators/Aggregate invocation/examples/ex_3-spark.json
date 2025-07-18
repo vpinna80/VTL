@@ -1,5 +1,6 @@
 {
-  "datasets": [
+  "schema-version": "2.2.0",
+  "data": [
     {
       "name": "ds_1",
       "structure": "DS_1",
@@ -7,7 +8,7 @@
     },
     {
       "name": "ex_3",
-      "structure": "number",
+      "subset": "number",
       "source": "csv:ex_3.csv"
     }
   ],
@@ -34,15 +35,6 @@
         {
           "name": "At_1",
           "role": "Attribute"
-        }
-      ]
-    },
-    {
-      "name": "DS_r",
-      "components": [
-        {
-          "name": "num_var",
-          "role": "measure"
         }
       ]
     }

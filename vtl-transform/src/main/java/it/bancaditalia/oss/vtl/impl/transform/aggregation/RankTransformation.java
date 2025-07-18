@@ -21,7 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
@@ -52,21 +52,19 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
 import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
@@ -76,8 +74,6 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class RankTransformation extends TransformationImpl implements AnalyticTransformation, LeafTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> RANK_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
-//	private final static Logger LOGGER = LoggerFactory.getLogger(RankTransformation.class);
 	
 	private final List<VTLAlias> partitionBy;
 	private final List<OrderByItem> orderByClause;
@@ -97,7 +93,7 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		for (OrderByItem orderByComponent: orderByClause)
 			ordering.add(new SortClause(dataset.getComponent(orderByComponent.getAlias()).get(), orderByComponent.getMethod()));
 
-		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs;
+		Set<DataSetComponent<Identifier, ?, ?>> partitionIDs;
 		if (partitionBy != null)
 			partitionIDs = partitionBy.stream()
 				.map(dataset::getComponent)
@@ -114,14 +110,14 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		Set<VTLAlias> orderByAliases = orderByClause.stream().map(OrderByItem::getAlias).collect(toSet());
 		
 		WindowClause window = new WindowClauseImpl(partitionIDs, ordering, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		DataSetMetadata structure = dataset.getMetadata();
+		DataSetComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		DataSetStructure structure = dataset.getMetadata();
 		SerCollector<DataPoint, ?, RankedPartition> collector = 
 				collectingAndThen(toList(PartitionToRank::new), l -> rankPartition(structure, orderByAliases, l));
 
 		return dataset.analytic(lineageEnricher(this), measure, 
-				INTEGERDS.getDefaultVariable().as(Measure.class), window, identity(), collector, RankTransformation::finisher)
-			.membership(INTEGERDS.getDefaultVariable().getAlias(), identity());
+				INT_VAR, window, identity(), collector, RankTransformation::finisher)
+			.membership(INT_VAR.getAlias(), identity());
 	}
 	
 	private static Collection<ScalarValue<?, ?, ?, ?>> finisher(RankedPartition ranks, DataPoint dp)
@@ -129,10 +125,10 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 		return singleton(IntegerValue.of(ranks.get(dp)));
 	}
 
-	private static RankedPartition rankPartition(DataSetMetadata metadata, Set<VTLAlias> orderByAliases, PartitionToRank partition)
+	private static RankedPartition rankPartition(DataSetStructure metadata, Set<VTLAlias> orderByAliases, PartitionToRank partition)
 	{
 		long rank = 1, position = 1;
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, orderByValues = emptyMap();
+		Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oldValues, orderByValues = emptyMap();
 		// Workaround to allow creating a spark encoder to correctly process the tuple
 		RankedPartition ranks = new RankedPartition(partition.size());
 
@@ -160,11 +156,11 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 	{
 		VTLValueMetadata opmeta = scheme.getMetadata(THIS);
 		if (!opmeta.isDataSet())
-			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(opmeta, DataSetStructure.class);
 		
-		DataSetMetadata dataset = (DataSetMetadata) opmeta;
+		DataSetStructure dataset = (DataSetStructure) opmeta;
 		
-		LinkedHashMap<DataStructureComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
+		LinkedHashMap<DataSetComponent<?, ?, ?>, Boolean> ordering = new LinkedHashMap<>();
 		for (OrderByItem orderByComponent: orderByClause)
 			ordering.put(dataset.getComponent(orderByComponent.getAlias()).get(), DESC != orderByComponent.getMethod());
 
@@ -177,8 +173,8 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.map(c -> c.asRole(Identifier.class))
 				.collect(toSet());
 		
-		return new DataStructureBuilder(dataset.getIDs())
-				.addComponent(RANK_MEASURE)
+		return new DataSetStructureBuilder(dataset.getIDs())
+				.addComponent(INT_VAR)
 				.build();
 	}
 	

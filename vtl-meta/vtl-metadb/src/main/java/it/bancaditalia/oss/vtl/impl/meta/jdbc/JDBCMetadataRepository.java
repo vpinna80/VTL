@@ -58,7 +58,8 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.RangeIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
@@ -67,8 +68,8 @@ import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -122,23 +123,21 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 	}
 
 	@Override
-	public Optional<VTLValueMetadata> getMetadata(VTLAlias name)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
 	{
-		LOGGER.debug("Reading structure for {}", name);
+		LOGGER.debug("Reading structure for {}", alias);
 		try (Connection conn = pool.get();
 			PreparedStatement stat1 = conn.prepareStatement("SELECT VARIABLEID, ROLE, DOMAINID, SETID FROM STRUCTUREITEM WHERE CUBEID = ?"))
 		{
-			stat1.setString(1, name.toString());
+			stat1.setString(1, alias.toString());
 			ResultSet rs = stat1.executeQuery();
 			
-			DataStructureBuilder builder = null;
+			DataSetStructureBuilder builder = null;
 			while (rs.next())
 			{
 				if (builder == null)
-					builder = new DataStructureBuilder();
+					builder = new DataSetStructureBuilder();
 				
-				// get variable attribute
-				VTLAlias varName = VTLAliasImpl.of(rs.getString(1));
 				Class<? extends Component> role = parseRole(rs.getString(2));
 				
 				ValueDomainSubset<?, ?> domain;
@@ -160,18 +159,18 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 							return newDomain;
 						});
 				
-				DataStructureComponent<? extends Component, ?, ?> comp = createTempVariable(varName, domain).as(role);
-				LOGGER.trace("Read component {} for {}", comp, name);
+				DataSetComponent<? extends Component, ?, ?> comp = DataSetComponentImpl.of(alias, domain, role);
+				LOGGER.trace("Read component {} for {}", comp, alias);
 				builder.addComponent(comp);
 			}
 			
-			DataSetMetadata metadata = builder == null ? null : builder.build();
-			LOGGER.debug("Structure for {} is {}", name, metadata);
+			DataSetStructure metadata = builder == null ? null : builder.build();
+			LOGGER.debug("Structure for {} is {}", alias, metadata);
 			return Optional.of(metadata);
 		}
 		catch (SQLException | UncheckedIOException | NumberFormatException e)
 		{
-			LOGGER.error("Error while querying metadata for " + name, e);
+			LOGGER.error("Error while querying metadata for " + alias, e);
 			return Optional.empty();
 		}
 	}

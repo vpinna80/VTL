@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.DURATION_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
@@ -41,15 +41,15 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -78,29 +78,29 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		DataSetMetadata dsMeta = dataset.getMetadata();
-		DataStructureComponent<Identifier, ?, ?> timeID = dsMeta.getComponents(Identifier.class, TIMEDS).iterator().next();
+		DataSetStructure dsMeta = dataset.getMetadata();
+		DataSetComponent<Identifier, ?, ?> timeID = dsMeta.getComponents(Identifier.class, TIMEDS).iterator().next();
 		
 		SerCollector<TimeValue<?, ?, ?, ?>, ?, DurationValue> timesToFreq = SerCollector.of(TimeWithFreq::new, 
 				TimeWithFreq::setTime, TimeWithFreq::combine, TimeWithFreq::getDuration, EnumSet.noneOf(Characteristics.class));
 		
-		DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> freqComp = DURATIONDS.getDefaultVariable().as(Measure.class);
-		Set<DataStructureComponent<?, ?, ?>> idsNoTimeWithFreq = new HashSet<>(dsMeta.getIDs());
+		DataSetComponent<Measure, EntireDurationDomainSubset, DurationDomain> freqComp = DURATION_VAR;
+		Set<DataSetComponent<?, ?, ?>> idsNoTimeWithFreq = new HashSet<>(dsMeta.getIDs());
 		idsNoTimeWithFreq.remove(timeID);
 		idsNoTimeWithFreq.add(freqComp);
 		
 		WindowClause clause = new WindowClauseImpl(idsNoTimeWithFreq, List.of(new SortClause(timeID)), DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
-		DataSetMetadata withFreq = new DataStructureBuilder(dsMeta)
+		DataSetStructure withFreq = new DataSetStructureBuilder(dsMeta)
 				.addComponent(freqComp)
 				.build();
 		dataset = dataset.mapKeepingKeys(withFreq, identity(), dp -> {
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.put(freqComp, ((TimeValue<?, ?, ?, ?>) dp.get(timeID)).getFrequency());
 				return map;
 			});
 		dataset = dataset.analytic(lineageEnricher(this), timeID, freqComp, clause, null, timesToFreq, null);
 
-		DataSetMetadata structure = (DataSetMetadata) metadata;
+		DataSetStructure structure = (DataSetStructure) metadata;
 		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 		return new FunctionDataSet<>(structure, ds -> ds.stream()
 				.map(dp -> new DataPointBuilder(dp)
@@ -112,7 +112,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 	}
 
 	@Override
-	protected DataSetMetadata checkIsTimeSeriesDataSet(DataSetMetadata metadata, TransformationScheme scheme)
+	protected DataSetStructure checkIsTimeSeriesDataSet(DataSetStructure metadata, TransformationScheme scheme)
 	{
 		return metadata;
 	}

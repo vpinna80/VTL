@@ -43,13 +43,13 @@ import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -132,8 +132,8 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), dp -> {
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(Measure.class));
+		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), dp -> {
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(Measure.class));
 				map.replaceAll((k, v) -> operator.apply(v));
 				map.putAll(dp.getValues(ViralAttribute.class));
 				return map;
@@ -154,9 +154,9 @@ public class NumericUnaryTransformation extends UnaryTransformation
 				throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
 		else
 		{
-			DataSetMetadata dataset = (DataSetMetadata) meta;
+			DataSetStructure dataset = (DataSetStructure) meta;
 			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> nonnumeric = new HashSet<>(dataset.getMeasures());
+			Set<? extends DataSetComponent<? extends Measure, ?, ?>> nonnumeric = new HashSet<>(dataset.getMeasures());
 			if (dataset.getMeasures().size() == 0)
 				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
 			
@@ -164,7 +164,7 @@ public class NumericUnaryTransformation extends UnaryTransformation
 			if (nonnumeric.size() > 0) 
 				throw new UnsupportedOperationException("Expected only numeric measures but found: " + nonnumeric);
 			
-			return new DataStructureBuilder(dataset)
+			return new DataSetStructureBuilder(dataset)
 					.removeComponents(dataset.getComponents(Attribute.class))
 					.addComponents(dataset.getComponents(ViralAttribute.class))
 					.build();

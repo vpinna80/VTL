@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineage2Enricher;
@@ -34,14 +35,14 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -137,13 +138,13 @@ public class BooleanTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(!datasetIsLeftOp);
 
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
+		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
 				dp -> singletonMap(resultMeasure, reversedIf.apply(dp.get(datasetMeasure), scalar)));
 	}
 
@@ -154,21 +155,21 @@ public class BooleanTransformation extends BinaryTransformation
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<? extends Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(leftHasMoreIdentifiers);
 		
 		// Scan the dataset with less identifiers and find the matches
 		SerBinaryOperator<Lineage> enricher = lineage2Enricher(this);
-		return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed, DataSet.ALL,
+		return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL,
 				(dps, dpi) -> new DataPointBuilder()
 					.addAll(dps.getValues(Identifier.class))
 					.addAll(dpi.getValues(Identifier.class))
 					.add(resultMeasure, reversedIf.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
+					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata), false);
 	}
 
 	@Override
@@ -183,7 +184,7 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean b, DataSetMetadata dataset, ScalarValueMetadata<?, ?> right)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean b, DataSetStructure dataset, ScalarValueMetadata<?, ?> right)
 	{
 		if (!BOOLEANDS.isAssignableFrom(right.getDomain()))
 			throw new VTLIncompatibleTypesException(operator.toString(), right.getDomain(), BOOLEANDS);
@@ -194,27 +195,27 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
 		if (!left.getIDs().containsAll(right.getIDs()) && !right.getIDs().containsAll(left.getIDs()))
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
 
-		DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getSingleton(Measure.class);
-		DataStructureComponent<? extends Measure, ?, ?> rightMeasure = right.getSingleton(Measure.class);
+		DataSetComponent<? extends Measure, ?, ?> leftMeasure = left.getSingleton(Measure.class);
+		DataSetComponent<? extends Measure, ?, ?> rightMeasure = right.getSingleton(Measure.class);
 
-		if (!BOOLEANDS.isAssignableFrom(leftMeasure.getVariable().getDomain()))
+		if (!BOOLEANDS.isAssignableFrom(leftMeasure.getDomain()))
 			throw new UnsupportedOperationException("Expected boolean measure but found: " + leftMeasure);
-		if (!BOOLEANDS.isAssignableFrom(rightMeasure.getVariable().getDomain()))
+		if (!BOOLEANDS.isAssignableFrom(rightMeasure.getDomain()))
 			throw new UnsupportedOperationException("Expected boolean measure but found: " + rightMeasure);
 
-		DataStructureBuilder builder = new DataStructureBuilder()
+		DataSetStructureBuilder builder = new DataSetStructureBuilder()
 				.addComponents(left.getIDs())
 				.addComponents(right.getIDs());
 		
-		if (leftMeasure.getVariable().getAlias().equals(rightMeasure.getVariable().getAlias()))
+		if (leftMeasure.getAlias().equals(rightMeasure.getAlias()))
 			builder.addComponent(leftMeasure);
 		else
-			builder.addComponent(BOOLEANDS.getDefaultVariable().as(Measure.class));
+			builder.addComponent(BOOL_VAR);
 		
 		return builder.build();
 	}

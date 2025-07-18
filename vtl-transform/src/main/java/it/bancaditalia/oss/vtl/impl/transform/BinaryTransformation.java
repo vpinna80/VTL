@@ -33,7 +33,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.transform.util.ThreadUtils;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
@@ -105,9 +105,9 @@ public abstract class BinaryTransformation extends TransformationImpl
 
 	protected abstract VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right);
 
-	protected abstract VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar);
+	protected abstract VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar);
 
-	protected abstract VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right);
+	protected abstract VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right);
 
 	@Override
 	public Set<LeafTransformation> getTerminals()
@@ -134,11 +134,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 		if (left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
 			return INSTANCE;
 		if (left.isDataSet() && right.isDataSet())
-			return getMetadataTwoDatasets((DataSetMetadata) left, (DataSetMetadata) right);
+			return getMetadataTwoDatasets((DataSetStructure) left, (DataSetStructure) right);
 		else if (left.isDataSet() && !right.isDataSet())
-			return getMetadataDatasetWithScalar(true, (DataSetMetadata) left, (ScalarValueMetadata<?, ?>) right);
+			return getMetadataDatasetWithScalar(true, (DataSetStructure) left, (ScalarValueMetadata<?, ?>) right);
 		else if (!left.isDataSet() && right.isDataSet())
-			return getMetadataDatasetWithScalar(false, (DataSetMetadata) right, (ScalarValueMetadata<?, ?>) left);
+			return getMetadataDatasetWithScalar(false, (DataSetStructure) right, (ScalarValueMetadata<?, ?>) left);
 		else // both scalars
 			return getMetadataTwoScalars((ScalarValueMetadata<?, ?>) left, (ScalarValueMetadata<?, ?>) right);
 	}

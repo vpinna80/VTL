@@ -34,11 +34,11 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -111,12 +111,12 @@ public class StringUnaryTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		Set<DataStructureComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
+		Set<DataSetComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), dp -> {
-					Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
+		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), dp -> {
+					Map<DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 					map.replaceAll((c, v) -> {
-						ValueDomainSubset<?, ?> domain = c.getVariable().getDomain();
+						ValueDomainSubset<?, ?> domain = c.getDomain();
 						ScalarValue<?, ?, ? extends StringDomainSubset<?>, StringDomain> result = operator.apply(STRINGDS.cast(v));
 						return domain.cast(result);
 					});
@@ -136,9 +136,9 @@ public class StringUnaryTransformation extends UnaryTransformation
 				throw new VTLIncompatibleTypesException(operator.toString(), STRINGDS, ((ScalarValueMetadata<?, ?>) meta).getDomain());
 		else
 		{
-			DataSetMetadata dataset = (DataSetMetadata) meta;
+			DataSetStructure dataset = (DataSetStructure) meta;
 			
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> nonstring = new HashSet<>(dataset.getMeasures());
+			Set<? extends DataSetComponent<? extends Measure, ?, ?>> nonstring = new HashSet<>(dataset.getMeasures());
 			if (dataset.getMeasures().size() == 0)
 				throw new UnsupportedOperationException("Expected at least 1 measure but found none.");
 			
@@ -146,18 +146,18 @@ public class StringUnaryTransformation extends UnaryTransformation
 			if (nonstring.size() > 0)
 				throw new UnsupportedOperationException("Expected only string measures but found: " + nonstring);
 			
-			Set<DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures().stream()
+			Set<DataSetComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures().stream()
 //					.map(m -> m.getDomain() instanceof StringEnumeratedDomainSubset
 //							? DataStructureComponentImpl.of(m.getName(), Measure.class, operator.getCodeListMapper().apply((StringEnumeratedDomainSubset<?, ?>) m.getDomain()))
 //							: m
 //					)
 					.collect(toSet());
 			
-			Set<DataStructureComponent<?, ?, ?>> components = new HashSet<>(dataset);
+			Set<DataSetComponent<?, ?, ?>> components = new HashSet<>(dataset);
 			components.removeAll(dataset.getMeasures());
 			components.addAll(measures);
 			
-			return new DataStructureBuilder(components).build();
+			return new DataSetStructureBuilder(components).build();
 		}
 	}
 	

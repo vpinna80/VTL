@@ -70,8 +70,8 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -213,7 +213,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		for (int i = 0; i < inputs.length; i++)
 			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
 			{
-				DataSetMetadata structure = repo.getMetadata(alias).map(DataSetMetadata.class::cast)
+				DataSetStructure structure = repo.getMetadata(alias).map(DataSetStructure.class::cast)
 					.orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
 				
 				return Optional.of(streamInput(inputs[i], structure));
@@ -222,9 +222,9 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		return Optional.empty();
 	}
 
-	private DataSet streamInput(String[] input, DataSetMetadata structure)
+	private DataSet streamInput(String[] input, DataSetStructure structure)
 	{
-		List<DataStructureComponent<?, ?, ?>> metadata;
+		List<DataSetComponent<?, ?, ?>> metadata;
 		
 		// match each column header to a component 
 		String[] fields = input[0].split(",");
@@ -232,7 +232,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		
 		for (String field: fields)
 			metadata.add(structure.getComponent(VTLAliasImpl.of(field)).orElseThrow(() -> new IllegalStateException("Unknown CSV field " + field + " for structure " + structure)));
-		for (DataStructureComponent<?, ?, ?> comp: structure)
+		for (DataSetComponent<?, ?, ?> comp: structure)
 			if (!metadata.contains(comp))
 				throw new VTLMissingComponentsException(metadata, comp);
 		
@@ -246,7 +246,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 			, true);
 	}
 
-	private DataPointBuilder lineToDPBuilder(String line, List<DataStructureComponent<?, ?, ?>> metadata)
+	private DataPointBuilder lineToDPBuilder(String line, List<DataSetComponent<?, ?, ?>> metadata)
 	{
 		DataPointBuilder builder = new DataPointBuilder();
 
@@ -268,8 +268,8 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 					token = token.trim();
 
 				// parse field value into a VTL scalar 
-				DataStructureComponent<?, ?, ?> component = metadata.get(count);
-				ScalarValue<?, ?, ?, ?> value = mapValue(component.getVariable().getDomain(), token, null);
+				DataSetComponent<?, ?, ?> component = metadata.get(count);
+				ScalarValue<?, ?, ?, ?> value = mapValue(component.getDomain(), token, null);
 				
 				if (value.isNull() && component.is(Identifier.class))
 					throw new NullPointerException("Parsed a null value for identifier " + component + ": " + token);

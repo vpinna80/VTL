@@ -29,7 +29,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.DescribedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -124,13 +123,6 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 				return false;
 		else
 			return obj != null && obj.getClass() == getClass();
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public final Variable<S, D> getDefaultVariable()
-	{
-		return new DefaultVariable<>((S) this);
 	}
 	
 	@Override

@@ -51,7 +51,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
  * 
  * @author Valentino Pinna
  */
-public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Serializable
+public interface DataPoint extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, Serializable
 {
 	/**
 	 * Defines a {@link Comparator} that enforces an ordering using the values of given identifiers
@@ -59,10 +59,10 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the component whose values are used for the ordering
 	 * @return the Comparator instance
 	 */
-	public static SerComparator<DataPoint> compareBy(List<DataStructureComponent<?, ?, ?>> components)
+	public static SerComparator<DataPoint> compareBy(List<DataSetComponent<?, ?, ?>> components)
 	{
 		SerToIntBiFunction<DataPoint, DataPoint> comparator = null;
-		for (DataStructureComponent<?, ?, ?> component: components)
+		for (DataSetComponent<?, ?, ?> component: components)
 		{
 			if (comparator == null)
 				comparator = (dp1, dp2) -> {
@@ -89,7 +89,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the components to drop
 	 * @return a new datapoint without the provided components.
 	 */
-	public DataPoint drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components);
+	public DataPoint drop(Collection<? extends DataSetComponent<? extends NonIdentifier, ?, ?>> components);
 
 	/**
 	 * Creates a new datapoint keeping all the identifiers and only the provided non-id components
@@ -97,7 +97,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the components to drop
 	 * @return a new datapoint with all existing ids and the provided components.
 	 */
-	public DataPoint keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components);
+	public DataPoint keep(Collection<? extends DataSetComponent<? extends NonIdentifier, ?, ?>> components);
 
 	/**
 	 * Creates a new datapoint renaming the provided component to another one with the same role.
@@ -106,7 +106,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param newComponent the already renamed component
 	 * @return a new datapoint with the old component renamed.
 	 */
-	public DataPoint rename(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent);
+	public DataPoint rename(DataSetComponent<?, ?, ?> oldComponent, DataSetComponent<?, ?, ?> newComponent);
 
 	/**
 	 * Create a new datapoint combining this and another datapoint.
@@ -142,9 +142,9 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @return the casted value for the component if exists.
 	 * @throws NullPointerException if the component is not found
 	 */
-	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> ScalarValue<?, ?, S, D> getValue(DataStructureComponent<?, S, D> component)
+	public default <S extends ValueDomainSubset<S, D>, D extends ValueDomain> ScalarValue<?, ?, S, D> getValue(DataSetComponent<?, S, D> component)
 	{
-		return component.getVariable().getDomain().cast(get(component));
+		return component.getDomain().cast(get(component));
 	}
 	
 	/**
@@ -153,10 +153,10 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param identifierValues the id values to check
 	 * @return true if this datapoint matches the provided identifiers' values.
 	 */
-	public default boolean matches(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> identifierValues)
+	public default boolean matches(Map<? extends DataSetComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> identifierValues)
 	{
 		return !Utils.getStream(identifierValues)
-				.filter(entryByKeyValue((k, v) -> !get(k).equals(k.getVariable().getDomain().cast(v))))
+				.filter(entryByKeyValue((k, v) -> !get(k).equals(k.getDomain().cast(v))))
 				.findAny()
 				.isPresent();
 	}
@@ -168,7 +168,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param role role of the components
 	 * @return a map with values for each component of the specified role.
 	 */
-	public <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role);
+	public <R extends Component> Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role);
 
 	/**
 	 * Returns the values for multiple components.
@@ -176,7 +176,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components the collection of components to query
 	 * @return a map with the values for the specified components.
 	 */
-	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public default Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataSetComponent<?, ?, ?>> components)
 	{
 		return Utils.getStream(components)
 				.filter(this::containsKey)
@@ -191,10 +191,10 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param names collection of names
 	 * @return a map with the values for all the components having the specified role and matching one of the specified names.
 	 */
-	public default <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role, Collection<VTLAlias> names)
+	public default <R extends Component> Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role, Collection<VTLAlias> names)
 	{
 		return Utils.getStream(keySet())
-				.map(c -> new SimpleEntry<>(c, c.getVariable().getAlias()))
+				.map(c -> new SimpleEntry<>(c, c.getAlias()))
 				.filter(entryByValue(names::contains))
 				.map(Entry::getKey)
 				.filter(c -> c.is(role))
@@ -208,10 +208,10 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param names The names of the component
 	 * @return map with the values for the chosen components
 	 */
-	public default Map<DataStructureComponent<?, ?, ?>, ScalarValue<?,?,?,?>> getValuesByNames(Collection<VTLAlias> names)
+	public default Map<DataSetComponent<?, ?, ?>, ScalarValue<?,?,?,?>> getValuesByNames(Collection<VTLAlias> names)
 	{
 		return Utils.getStream(keySet())
-				.map(c -> new SimpleEntry<>(c.getVariable().getAlias(), c))
+				.map(c -> new SimpleEntry<>(c.getAlias(), c))
 				.filter(entryByKey(names::contains))
 				.collect(Collectors.toMap(Entry::getValue, e -> get(e.getValue())));
 
@@ -225,7 +225,7 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 * @param components collection of components to query
 	 * @return a map with the values for the chosen components having the specified role.
 	 */
-	public default <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<R, ?, ?>> components, Class<R> role)
+	public default <R extends Component> Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataSetComponent<R, ?, ?>> components, Class<R> role)
 	{
 		return Utils.getStream(getValues(role).entrySet())
 				.filter(entryByKey(components::contains))
@@ -243,13 +243,13 @@ public interface DataPoint extends Map<DataStructureComponent<?, ?, ?>, ScalarVa
 	 */
 	public default int getDistance(DataPoint other)
 	{
-		Set<DataStructureComponent<?, ?, ?>> cmp1 = this.keySet();
-		Set<DataStructureComponent<?, ?, ?>> cmp2 = other.keySet();
-		Set<DataStructureComponent<?, ?, ?>> intersect = new HashSet<>(cmp1);
+		Set<DataSetComponent<?, ?, ?>> cmp1 = this.keySet();
+		Set<DataSetComponent<?, ?, ?>> cmp2 = other.keySet();
+		Set<DataSetComponent<?, ?, ?>> intersect = new HashSet<>(cmp1);
 		intersect.retainAll(cmp2);
 		
 		int distance = cmp1.size() + cmp2.size() - intersect.size() * 2;
-		for (DataStructureComponent<?, ?, ?> c: intersect)
+		for (DataSetComponent<?, ?, ?> c: intersect)
 			if (!this.get(c).equals(other.get(c)))
 				distance++;
 		

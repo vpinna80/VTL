@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.model.domain;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 
 /**
  * A subset of a {@link ValueDomain} as defined by VTL specification.
@@ -44,11 +43,4 @@ public interface ValueDomainSubset<S extends ValueDomainSubset<S, D>, D extends 
 	 * @throws NullPointerException if the value is null
 	 */
 	public ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value);
-
-	/**
-	 * Return the {@link Variable} corresponding to this domain with a default name.
-	 * 
-	 * @return the default variable for this domain. 
-	 */
-	public Variable<S, D> getDefaultVariable();
 }

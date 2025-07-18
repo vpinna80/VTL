@@ -26,7 +26,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -69,12 +68,6 @@ public class RangeIntegerDomainSubset<S extends RangeIntegerDomainSubset<S>> ext
 			return IntegerValue.of((Long) value.get(), this);
 		else
 			throw new VTLCastException(this, value);
-	}
-
-	@Override
-	public Variable<RangeIntegerDomainSubset<S>, IntegerDomain> getDefaultVariable()
-	{
-		return new DefaultVariable<>(this);
 	}
 
 	@Override

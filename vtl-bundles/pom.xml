@@ -69,7 +69,6 @@
 		</profile>
 	</profiles>
 
-
 	<modules>
 		<module>vtl-bundle-deps</module>
 		<module>vtl-coverage</module>

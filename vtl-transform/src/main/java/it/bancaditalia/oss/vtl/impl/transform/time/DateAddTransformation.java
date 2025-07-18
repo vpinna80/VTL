@@ -41,8 +41,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -80,8 +80,8 @@ public class DateAddTransformation extends TransformationImpl
 
 		DataSet dataset = (DataSet) op;
 		return dataset.mapKeepingKeys(dataset.getMetadata(), lineageEnricher(this), dp -> {
-				Map<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = dp.getValues(NonIdentifier.class);
-				for (Entry<DataStructureComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> entry: map.entrySet())
+				Map<DataSetComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> map = dp.getValues(NonIdentifier.class);
+				for (Entry<DataSetComponent<NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> entry: map.entrySet())
 					if (entry.getKey().is(Measure.class))
 						map.put(entry.getKey(), evalOnScalar(i, freq, entry.getValue()));
 	
@@ -126,8 +126,8 @@ public class DateAddTransformation extends TransformationImpl
 				throw new VTLIncompatibleTypesException("dateadd", TIMEDS, domain);
 		}
 		else
-			for (DataStructureComponent<Measure, ?, ?> comp: ((DataSetMetadata) meta).getMeasures())
-				if (!(comp.getVariable().getDomain() instanceof TimeDomainSubset))
+			for (DataSetComponent<Measure, ?, ?> comp: ((DataSetStructure) meta).getMeasures())
+				if (!(comp.getDomain() instanceof TimeDomainSubset))
 					throw new VTLIncompatibleTypesException("dateadd", TIMEDS, comp);
 		
 		return meta;

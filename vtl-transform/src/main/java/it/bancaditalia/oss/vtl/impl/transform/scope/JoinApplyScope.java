@@ -29,7 +29,7 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -51,28 +51,28 @@ public class JoinApplyScope extends AbstractScope
 		this.parent = parent;
 		this.joinValues = joinedDataPoint.entrySet().stream()
 				.filter(entryByKey(c -> {
-					VTLAlias cAlias = c.getVariable().getAlias();
+					VTLAlias cAlias = c.getAlias();
 					return measureName.equals(cAlias.isComposed() ? cAlias.split().getValue() : cAlias);
 				})).collect(toConcurrentMap(e -> {
-					VTLAlias alias = e.getKey().getVariable().getAlias();
+					VTLAlias alias = e.getKey().getAlias();
 					return alias.isComposed() ? alias.split().getKey() : null;
 				}, Entry::getValue));
 		this.joinMeta = null;
 	}
 
-	public JoinApplyScope(TransformationScheme parent, VTLAlias measureName, Set<DataStructureComponent<?, ?, ?>> joinedComponents)
+	public JoinApplyScope(TransformationScheme parent, VTLAlias measureName, Set<DataSetComponent<?, ?, ?>> joinedComponents)
 	{
 		this.parent = parent;
 		this.joinValues = null;
 		this.joinMeta = joinedComponents.stream()
 				.filter(c -> {
-					VTLAlias cAlias = c.getVariable().getAlias();
+					VTLAlias cAlias = c.getAlias();
 					return measureName.equals(cAlias.isComposed() ? cAlias.split().getValue() : cAlias);
 				})
 				.collect(toConcurrentMap(c -> {
-					VTLAlias alias = c.getVariable().getAlias();
+					VTLAlias alias = c.getAlias();
 					return alias.isComposed() ? alias.split().getKey() : null;
-				}, DataStructureComponent::getVariable));
+				}, c -> ScalarValueMetadata.of(c.getDomain())));
 	}
 
 	@Override

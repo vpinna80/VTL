@@ -27,7 +27,7 @@ import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -40,7 +40,7 @@ public class ThisScope extends AbstractScope
 	public static final VTLAlias THIS = VTLAliasImpl.of(true, "$$THIS");
 	
 	private final DataSet thisValue;
-	private final DataSetMetadata thisMetadata;
+	private final DataSetStructure thisMetadata;
 	private final MetadataRepository repo;
 	private final TransformationScheme parent;
 	
@@ -52,7 +52,7 @@ public class ThisScope extends AbstractScope
 		this.parent = parent;
 	}
 
-	public ThisScope(MetadataRepository repo, DataSetMetadata thisMetadata, TransformationScheme parent)
+	public ThisScope(MetadataRepository repo, DataSetStructure thisMetadata, TransformationScheme parent)
 	{
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
@@ -70,7 +70,7 @@ public class ThisScope extends AbstractScope
 			if (thisMetadata.getComponent(alias).isPresent())
 				return thisMetadata.membership(alias);
 			else 
-				throw new VTLMissingComponentsException((DataSetMetadata) thisMetadata, alias);
+				throw new VTLMissingComponentsException((DataSetStructure) thisMetadata, alias);
 		}
 	}
 

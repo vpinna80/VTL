@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
@@ -30,11 +31,11 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -48,7 +49,6 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class StrlenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, ? extends IntegerDomainSubset<?>, IntegerDomain> LEN_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
 	
 	public StrlenTransformation(Transformation operand)
 	{
@@ -69,13 +69,13 @@ public class StrlenTransformation extends UnaryTransformation
 	@Override
 	protected DataSet evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		DataStructureComponent<Measure, ?, ?> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
-				.addComponent(LEN_MEASURE)
+		DataSetStructure structure = new DataSetStructureBuilder(dataset.getMetadata().getIDs())
+				.addComponent(INT_VAR)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(LEN_MEASURE, staticEvalOnScalar(repo, dp.get(originalMeasure), metadata)));
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(INT_VAR, staticEvalOnScalar(repo, dp.get(originalMeasure), metadata)));
 	}
 
 	@Override
@@ -86,14 +86,14 @@ public class StrlenTransformation extends UnaryTransformation
 			return INTEGER;
 		else 
 		{
-			DataSetMetadata ds = (DataSetMetadata) op;
+			DataSetStructure ds = (DataSetStructure) op;
 			if (ds.getMeasures().size() != 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, ds.getMeasures());
 			if (ds.getComponents(Measure.class, STRINGDS).size() != 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, STRINGDS, ds.getMeasures());
 			
-			return new DataStructureBuilder(ds.getIDs())
-				.addComponent(LEN_MEASURE)
+			return new DataSetStructureBuilder(ds.getIDs())
+				.addComponent(INT_VAR)
 				.build();
 		}
 	}

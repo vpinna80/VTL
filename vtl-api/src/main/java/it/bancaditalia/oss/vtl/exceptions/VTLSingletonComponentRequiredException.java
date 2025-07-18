@@ -22,19 +22,19 @@ package it.bancaditalia.oss.vtl.exceptions;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class VTLSingletonComponentRequiredException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLSingletonComponentRequiredException(Class<? extends Component> role, Set<? extends DataStructureComponent<?, ?, ?>> components)
+	public VTLSingletonComponentRequiredException(Class<? extends Component> role, Set<? extends DataSetComponent<?, ?, ?>> components)
 	{
 		super("Required exactly one " + role.getSimpleName() + " but found: " + components);
 	}
 
-	public VTLSingletonComponentRequiredException(Class<? extends Component> role, ValueDomain domain, Set<? extends DataStructureComponent<?, ?, ?>> components)
+	public VTLSingletonComponentRequiredException(Class<? extends Component> role, ValueDomain domain, Set<? extends DataSetComponent<?, ?, ?>> components)
 	{
 		super("Required exactly one " + role.getSimpleName() + " of domain " + domain + " but found: " + components);
 	}

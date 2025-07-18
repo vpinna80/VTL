@@ -32,7 +32,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
@@ -40,23 +39,23 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-public class TransformationCriterionScope<V extends ScalarValue<?, ?, S, D>, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements TransformationScheme, Serializable
+public class TransformationCriterionScope implements TransformationScheme, Serializable
 {
 	public static final VTLAlias X = VTLAliasImpl.of("X");
 
 	private static final long serialVersionUID = 1L;
 	
-	private final V value;
-	private final S metadata;
+	private final ScalarValue<?, ?, ?, ?> value;
+	private final ValueDomainSubset<?, ?> metadata;
 	private final Map<Transformation, ?> holder = new ConcurrentHashMap<>();
 
-	public TransformationCriterionScope(V value)
+	public TransformationCriterionScope(ScalarValue<?, ?, ?, ?> value)
 	{
 		this.value = value;
 		this.metadata = value.getMetadata().getDomain();
 	}
 
-	public TransformationCriterionScope(S meta)
+	public TransformationCriterionScope(ValueDomainSubset<?, ?> meta)
 	{
 		this.value = null;
 		this.metadata = meta;
@@ -94,7 +93,7 @@ public class TransformationCriterionScope<V extends ScalarValue<?, ?, S, D>, S e
 	}
 
 	@Override
-	public ScalarValueMetadata<S, D> getMetadata(VTLAlias alias)
+	public ScalarValueMetadata<?, ?> getMetadata(VTLAlias alias)
 	{
 		if (X.equals(alias))
 			return ScalarValueMetadata.of(metadata);

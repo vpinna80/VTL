@@ -22,7 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.ExistsInTransformation.ExistsInMode.ALL;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
@@ -39,13 +39,13 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -85,18 +85,18 @@ public class ExistsInTransformation extends BinaryTransformation
 	@Override
 	protected DataSet evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataStructureComponent<Measure, ?, ?> boolMeasure = BOOLEANDS.getDefaultVariable().as(Measure.class);
+		DataSetComponent<Measure, ?, ?> boolMeasure = BOOL_VAR;
 		
-		Set<DataStructureComponent<Identifier, ?, ?>> commonIDs = new HashSet<>(left.getMetadata().getIDs());
+		Set<DataSetComponent<Identifier, ?, ?>> commonIDs = new HashSet<>(left.getMetadata().getIDs());
 		commonIDs.retainAll(right.getMetadata().getIDs());
 		
-		Set<Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> rightIDValues;
+		Set<Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> rightIDValues;
 		try (Stream<DataPoint> stream = right.stream())
 		{
 			rightIDValues = stream.map(dp -> dp.getValues(commonIDs)).collect(toSet());
 		}
 				
-		DataSet unfiltered = left.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
+		DataSet unfiltered = left.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
 				dp -> singletonMap(boolMeasure, BooleanValue.of(rightIDValues.contains(dp.getValues(commonIDs)))));
 		
 		switch (mode)
@@ -111,26 +111,26 @@ public class ExistsInTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right)
 	{
-		throw new VTLInvalidParameterException(left, DataSetMetadata.class);	
+		throw new VTLInvalidParameterException(left, DataSetStructure.class);	
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar)
 	{
-		throw new VTLInvalidParameterException(scalar, DataSetMetadata.class);
+		throw new VTLInvalidParameterException(scalar, DataSetStructure.class);
 	}
 	
 	@Override
-	protected DataSetMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected DataSetStructure getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> leftIDs = left.getIDs();
-		Set<DataStructureComponent<Identifier, ?, ?>> rightIDs = right.getIDs();
+		Set<DataSetComponent<Identifier, ?, ?>> leftIDs = left.getIDs();
+		Set<DataSetComponent<Identifier, ?, ?>> rightIDs = right.getIDs();
 		
 		if (!rightIDs.containsAll(leftIDs) && !leftIDs.containsAll(rightIDs))
 			throw new VTLIncompatibleStructuresException("exists_in", List.of(leftIDs, rightIDs));
 		
-		return new DataStructureBuilder(leftIDs)
-				.addComponent(BOOLEANDS.getDefaultVariable().as(Measure.class))
+		return new DataSetStructureBuilder(leftIDs)
+				.addComponent(BOOL_VAR)
 				.build();
 	}
 

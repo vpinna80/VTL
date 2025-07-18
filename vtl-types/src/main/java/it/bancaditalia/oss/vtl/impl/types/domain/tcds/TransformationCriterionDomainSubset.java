@@ -21,12 +21,10 @@ package it.bancaditalia.oss.vtl.impl.types.domain.tcds;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.CriterionDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.DefaultVariable;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
@@ -54,15 +52,7 @@ public abstract class TransformationCriterionDomainSubset<S extends Transformati
 	@Override
 	public boolean test(ScalarValue<?, ?, S, D> value)
 	{
-		VTLValue result = transformation.eval(new TransformationCriterionScope<>(value));
+		VTLValue result = transformation.eval(new TransformationCriterionScope(value));
 		return result instanceof BooleanValue && result == BooleanValue.TRUE; 
-	}
-
-	@Override
-	public Variable<S, D> getDefaultVariable()
-	{
-		@SuppressWarnings("unchecked")
-		S domain = (S) this;
-		return new DefaultVariable<>(domain);
 	}
 }

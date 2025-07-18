@@ -20,15 +20,15 @@
 package it.bancaditalia.oss.vtl.exceptions;
 
 import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 
 public class VTLIncompatibleRolesException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLIncompatibleRolesException(String operation, DataStructureComponent<?, ?, ?> component, Class<? extends Component> expectedRole)
+	public VTLIncompatibleRolesException(String operation, DataSetComponent<?, ?, ?> component, Class<? extends Component> expectedRole)
 	{
-		super("In " + operation + ", component " + component.getVariable().getAlias() + " is a " + component.getRole().getSimpleName() 
+		super("In " + operation + ", component " + component.getAlias() + " is a " + component.getRole().getSimpleName() 
 				+ ", but it should be " + expectedRole.getSimpleName() + ".");
 	}
 }

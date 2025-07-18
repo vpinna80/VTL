@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator.CHECK;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.CheckTransformation.CheckOutput.ALL;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCODE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.IMBALANCE;
@@ -42,18 +43,16 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -63,7 +62,6 @@ public class CheckTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
 	private static final BooleanUnaryOperator function = CHECK;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().as(Measure.class); 
 
 	public enum CheckOutput
 	{
@@ -94,11 +92,11 @@ public class CheckTransformation extends TransformationImpl
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet dataset = (DataSet) operand.eval(scheme);
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
+		DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 		
 		if (imbalanceExpr == null)
 			dataset = dataset.mapKeepingKeys(metadata, lineageEnricher(this), dp -> {
-				Map<DataStructureComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
+				Map<DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
 				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
 				result.put(ERRORCODE.get(), NullValue.instance(STRINGDS));
 				result.put(ERRORLEVEL.get(), NullValue.instance(NUMBERDS));
@@ -107,7 +105,7 @@ public class CheckTransformation extends TransformationImpl
 		else
 		{
 			DataSet imbalanceDataset = (DataSet) imbalanceExpr.eval(scheme);
-			DataStructureComponent<Measure, ?, ?> imbalanceMeasure = imbalanceDataset.getMetadata().getSingleton(Measure.class);
+			DataSetComponent<Measure, ?, ?> imbalanceMeasure = imbalanceDataset.getMetadata().getSingleton(Measure.class);
 			
 			SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
 			dataset = dataset.filteredMappedJoin(metadata, imbalanceDataset, DataSet.ALL, (dp1, dp2) -> {
@@ -130,21 +128,21 @@ public class CheckTransformation extends TransformationImpl
 				imbalanceValue = imbalanceExpr != null ? imbalanceExpr.getMetadata(scheme) : null;
 
 		if (!meta.isDataSet())
-			throw new VTLInvalidParameterException(meta, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(meta, DataSetStructure.class);
 		else if (!imbalanceValue.isDataSet())
-			throw new VTLInvalidParameterException(imbalanceValue, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(imbalanceValue, DataSetStructure.class);
 		else
 		{
-			DataSetMetadata dataset = (DataSetMetadata) meta;
+			DataSetStructure dataset = (DataSetStructure) meta;
 			dataset.getSingleton(Measure.class, BOOLEANDS);
 
-			Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> identifiers = dataset.getIDs();
-			DataStructureBuilder metadata = new DataStructureBuilder().addComponents(identifiers);
+			Set<? extends DataSetComponent<? extends Identifier, ?, ?>> identifiers = dataset.getIDs();
+			DataSetStructureBuilder metadata = new DataSetStructureBuilder().addComponents(identifiers);
 			
 			if (imbalanceValue != null)
 			{
-				DataSetMetadata imbalanceDataset = (DataSetMetadata) imbalanceValue;
-				Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> imbalanceIdentifiers = imbalanceDataset.getIDs();
+				DataSetStructure imbalanceDataset = (DataSetStructure) imbalanceValue;
+				Set<? extends DataSetComponent<? extends Identifier, ?, ?>> imbalanceIdentifiers = imbalanceDataset.getIDs();
 
 				if (!identifiers.equals(imbalanceIdentifiers))
 					throw new VTLInvariantIdentifiersException("check imbalance", identifiers, imbalanceIdentifiers);

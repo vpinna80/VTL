@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.STRING_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
@@ -39,22 +40,21 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireStringDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -86,8 +86,8 @@ public class ConcatTransformation extends BinaryTransformation
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = CONCAT.reverseIf(!datasetIsLeftOp);
-		DataSetMetadata structure = dataset.getMetadata();
-		DataStructureComponent<Measure, ?, ?> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
+		DataSetStructure structure = dataset.getMetadata();
+		DataSetComponent<Measure, ?, ?> measure = structure.getComponents(Measure.class, STRINGDS).iterator().next();
 
 		SerUnaryOperator<Lineage> lineageFunc = lineage -> LineageNode.of(this, LineageCall.of(lineage));
 		return dataset.mapKeepingKeys(structure, lineageFunc, dp -> singletonMap(measure, 
@@ -101,21 +101,21 @@ public class ConcatTransformation extends BinaryTransformation
 
 		DataSet streamed = leftHasMoreIdentifiers ? right: left;
 		DataSet indexed = leftHasMoreIdentifiers ? left: right;
-		Set<DataStructureComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = ((DataSetMetadata) metadata).getComponents(Measure.class, STRINGDS);
+		Set<DataSetComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = ((DataSetStructure) metadata).getComponents(Measure.class, STRINGDS);
 		
 		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
 		if (resultMeasures.size() == 1 && (!left.getMetadata().containsAll(resultMeasures) || !right.getMetadata().containsAll(resultMeasures)))
 		{
-			DataStructureComponent<Measure, ?, ?> resultMeasure = resultMeasures.iterator().next();
-			DataStructureComponent<Measure, ?, ?> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
-			DataStructureComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+			DataSetComponent<Measure, ?, ?> resultMeasure = resultMeasures.iterator().next();
+			DataSetComponent<Measure, ?, ?> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+			DataSetComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			BinaryOperator<ScalarValue<?, ?, ?, ?>> finalOperator = CONCAT.reverseIf(!leftHasMoreIdentifiers);
-			return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder()
+			return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder()
 				.add(resultMeasure, finalOperator.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
+				.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata), false);
 		}
 		else
 		{
@@ -123,24 +123,24 @@ public class ConcatTransformation extends BinaryTransformation
 			BinaryOperator<ScalarValue<?, ?, ?, ?>> finalOperator = CONCAT.reverseIf(!leftHasMoreIdentifiers);  
 	
 			// Keep the map of components from the result and the two operands
-			Map<DataStructureComponent<?, ?, ?>, Entry<DataStructureComponent<?, ?, ?>, DataStructureComponent<?, ?, ?>>> measuresMap = new HashMap<>();
-			for (DataStructureComponent<?, ?, ?> resultMeasure: resultMeasures)
+			Map<DataSetComponent<?, ?, ?>, Entry<DataSetComponent<?, ?, ?>, DataSetComponent<?, ?, ?>>> measuresMap = new HashMap<>();
+			for (DataSetComponent<?, ?, ?> resultMeasure: resultMeasures)
 			{
-				VTLAlias rmAlias = resultMeasure.getVariable().getAlias();
+				VTLAlias rmAlias = resultMeasure.getAlias();
 				measuresMap.put(resultMeasure, new SimpleEntry<>(
 						streamed.getMetadata().getComponent(rmAlias).get(),
 						indexed.getMetadata().getComponent(rmAlias).get()));
 			}
 			
 			// Scan the dataset with less identifiers and find the matches
-			return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
+			return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
 						.map(rm -> new SimpleEntry<>(rm, finalOperator.apply(
 								STRINGDS.cast(dpi.get(measuresMap.get(rm).getKey())), 
 								STRINGDS.cast(dps.get(measuresMap.get(rm).getValue())))))
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
+					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata), false);
 		}
 	}
 
@@ -156,14 +156,14 @@ public class ConcatTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		if (!STRINGDS.isAssignableFrom(scalar.getDomain()))
 			throw new VTLIncompatibleTypesException("concat", STRINGDS, scalar.getDomain());
 		
-		final Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
+		final Set<? extends DataSetComponent<? extends Measure, ?, ?>> measures = dataset.getMeasures();
 		Optional<? extends ValueDomainSubset<?, ?>> errorDomain = measures.stream() 
-			.map(DataStructureComponent::getVariable).map(Variable::getDomain)
+			.map(DataSetComponent::getDomain)
 			.filter(d -> !STRINGDS.isAssignableFrom(d))
 			.findAny();
 
@@ -174,32 +174,32 @@ public class ConcatTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
-		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> leftIds = left.getIDs();
-		Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> rightIds = right.getIDs();
+		Set<? extends DataSetComponent<? extends Identifier, ?, ?>> leftIds = left.getIDs();
+		Set<? extends DataSetComponent<? extends Identifier, ?, ?>> rightIds = right.getIDs();
 
 		if (!leftIds.containsAll(rightIds) && !rightIds.containsAll(leftIds))
 			throw new VTLException("One dataset must have at least all the identifiers of the other.");
 		
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> leftMeasures = left.getMeasures();
-		Set<? extends DataStructureComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
+		Set<? extends DataSetComponent<? extends Measure, ?, ?>> leftMeasures = left.getMeasures();
+		Set<? extends DataSetComponent<? extends Measure, ?, ?>> rightMeasures = right.getMeasures();
 		
 		Stream.concat(leftMeasures.stream(), rightMeasures.stream()) 
-			.map(DataStructureComponent::getVariable).map(Variable::getDomain)
+			.map(DataSetComponent::getDomain)
 			.filter(d -> !STRINGDS.isAssignableFrom(d))
 			.forEach(d -> { throw new VTLIncompatibleTypesException("concat", STRINGDS, d); });
 
 		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
-			return new DataStructureBuilder()
+			return new DataSetStructureBuilder()
 				.addComponents(leftIds)
 				.addComponents(rightIds)
-				.addComponent(STRINGDS.getDefaultVariable().as(Measure.class))
+				.addComponent(STRING_VAR)
 				.build();
 		else if (!leftMeasures.equals(rightMeasures))
 			throw new VTLException("The two datasets must have the same measures.");
 		else
-			return new DataStructureBuilder()
+			return new DataSetStructureBuilder()
 				.addComponents(leftIds)
 				.addComponents(rightIds)
 				.addComponents(leftMeasures)

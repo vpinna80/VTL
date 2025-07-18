@@ -19,34 +19,36 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Objects;
+
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
-import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
-public class DataStructureComponentImpl<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements DataStructureComponent<R, S, D>
+public class DataStructureComponentImpl<R extends Component> implements DataStructureComponent<R>
 {
 	private static final long serialVersionUID = 1L;
-	
-	private final Variable<S, D> variable;
+
+	private final VTLAlias alias;
 	private final Class<R> role;
-	private transient int hashCode;
-	
-	public DataStructureComponentImpl(Class<R> role, Variable<S, D> variable)
+	private final int hashCode;
+
+	public DataStructureComponentImpl(VTLAlias alias, Class<R> role)
 	{
-		this.role = role;
-		this.variable = variable;
-		this.hashCode = defaultHashCode();
+		this.alias = requireNonNull(alias);
+		this.role = requireNonNull(role);
+		this.hashCode = Objects.hash(alias, role);
 	}
-	
+
 	@Override
-	public Variable<S, D> getVariable()
+	public VTLAlias getAlias()
 	{
-		return variable;
+		return alias;
 	}
 
 	@Override
@@ -68,19 +70,17 @@ public class DataStructureComponentImpl<R extends Component, S extends ValueDoma
 			return true;
 		if (obj == null)
 			return false;
-		if (obj instanceof DataStructureComponent)
-		{
-			DataStructureComponent<?, ?, ?> other = (DataStructureComponent<?, ?, ?>) obj;
-			if (role == other.getRole() && variable.equals(other.getVariable()))
-				return true;
-		}
+		if (!(obj instanceof DataStructureComponent))
+			return false;
 		
-		return false;
+		DataStructureComponent<?> other = (DataStructureComponent<?>) obj;
+		return role == other.getRole() && alias.equals(other.getAlias());
 	}
-
+	
 	@Override
 	public String toString()
 	{
-		return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? is(ViralAttribute.class) ? "@@" : "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";	
+		return String.format("%s%s", role == Identifier.class ? "$" : role == Attribute.class 
+			? "#" : role == ViralAttribute.class ? "##" : "", alias);
 	}
 }

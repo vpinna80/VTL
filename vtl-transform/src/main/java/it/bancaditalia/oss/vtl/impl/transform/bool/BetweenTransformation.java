@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
@@ -31,12 +32,12 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -50,7 +51,6 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class BetweenTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_VAR = BOOLEANDS.getDefaultVariable().as(Measure.class);
 	
 	private final Transformation from;
 	private final Transformation to;
@@ -78,8 +78,8 @@ public class BetweenTransformation extends UnaryTransformation
 		ScalarValue<?, ?, ?, ?> fromValue = (ScalarValue<?, ?, ?, ?>) from.eval(scheme);
 		ScalarValue<?, ?, ?, ?> toValue = (ScalarValue<?, ?, ?, ?>) to.eval(scheme);
 		
-		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), 
+		DataSetComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
 				dp -> singletonMap(BOOL_VAR, test(dp.get(measure), fromValue, toValue)));
 	}
 
@@ -101,14 +101,14 @@ public class BetweenTransformation extends UnaryTransformation
 
 		if (op.isDataSet())
 		{
-			DataSetMetadata ds = (DataSetMetadata) op;
+			DataSetStructure ds = (DataSetStructure) op;
 
-			Set<? extends DataStructureComponent<? extends Measure, ?, ?>> measures = ds.getMeasures();
+			Set<? extends DataSetComponent<? extends Measure, ?, ?>> measures = ds.getMeasures();
 
 			if (measures.size() != 1)
 				throw new UnsupportedOperationException("Expected single measure but found: " + measures);
 
-			DataStructureComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
+			DataSetComponent<? extends Measure, ?, ?> measure = measures.iterator().next();
 			
 			if (!(fromOp instanceof ScalarValueMetadata))
 				throw new VTLInvalidParameterException(fromOp, ScalarValueMetadata.class);
@@ -118,12 +118,12 @@ public class BetweenTransformation extends UnaryTransformation
 			ValueDomainSubset<?, ?> fromDomain = ((ScalarValueMetadata<?, ?>) fromOp).getDomain();
 			ValueDomainSubset<?, ?> toDomain = ((ScalarValueMetadata<?, ?>) toOp).getDomain();
 
-			if (!measure.getVariable().getDomain().isAssignableFrom(fromDomain))
+			if (!measure.getDomain().isAssignableFrom(fromDomain))
 				throw new VTLIncompatibleTypesException("between", measure, fromDomain);
-			if (!measure.getVariable().getDomain().isAssignableFrom(toDomain))
+			if (!measure.getDomain().isAssignableFrom(toDomain))
 				throw new VTLIncompatibleTypesException("between", measure, toDomain);
 
-			return new DataStructureBuilder()
+			return new DataSetStructureBuilder()
 					.addComponents(ds.getIDs())
 					.addComponent(BOOL_VAR)
 					.build();

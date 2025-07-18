@@ -41,7 +41,7 @@ import org.apache.spark.sql.types.StructType;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
@@ -49,19 +49,19 @@ public class DataPointEncoder implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final DataStructureComponent<?, ?, ?>[] components;
+	private final DataSetComponent<?, ?, ?>[] components;
 	private final StructType schema;
 	private final Encoder<Row> rowEncoder;
 	private final Encoder<Row> rowEncoderNoLineage;
 	
-	public DataPointEncoder(SparkSession session, Set<? extends DataStructureComponent<?, ?, ?>> structure)
+	public DataPointEncoder(SparkSession session, Set<? extends DataSetComponent<?, ?, ?>> structure)
 	{
 		// Ensures that SQL configuration is correct between all threads
 		// Avoids ClassCastException LocalDate -> java.sql.Date
 		SparkEnvironment.ensureConf(requireNonNull(session));
 		
-		components = structure.toArray(new DataStructureComponent<?, ?, ?>[structure.size()]);
-		Arrays.sort(components, DataStructureComponent::byNameAndRole);
+		components = structure.toArray(new DataSetComponent<?, ?, ?>[structure.size()]);
+		Arrays.sort(components, DataSetComponent::byNameAndRole);
 		List<StructField> fields = new ArrayList<>(createStructFromComponents(structure));
 		StructType schemaNoLineage = createStructType(new ArrayList<>(fields));
 		rowEncoderNoLineage = Encoders.row(schemaNoLineage);
@@ -93,7 +93,7 @@ public class DataPointEncoder implements Serializable
 		Lineage lineage = row.getAs(components.length + start);
 		ScalarValue<?, ?, ?, ?>[] vals = new ScalarValue<?, ?, ?, ?>[components.length]; 
 		for (int i = 0; i < components.length; i++)
-			vals[i] = row.isNullAt(i + start) ? NullValue.instance(components[i].getVariable().getDomain()) : row.getAs(i + start);
+			vals[i] = row.isNullAt(i + start) ? NullValue.instance(components[i].getDomain()) : row.getAs(i + start);
 
 		for (int i = 0; i < components.length; i++)
 			if (vals[i] == null)
@@ -117,7 +117,7 @@ public class DataPointEncoder implements Serializable
 		return rowEncoder;
 	}
 	
-	public DataStructureComponent<?, ?, ?>[] getComponents()
+	public DataSetComponent<?, ?, ?>[] getComponents()
 	{
 		return components;
 	}

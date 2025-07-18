@@ -23,7 +23,6 @@ import java.io.Serializable;
 
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -62,12 +61,6 @@ public class NullDomain implements ValueDomainSubset<NullDomain, ValueDomain>
 	
 	@Override
 	public VTLAlias getAlias()
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Variable<NullDomain, ValueDomain> getDefaultVariable()
 	{
 		throw new UnsupportedOperationException();
 	}

@@ -26,7 +26,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -70,13 +69,6 @@ public class RangeNumberDomainSubset<S extends RangeNumberDomainSubset<S>> exten
 			return DoubleValue.of((Double) value.get(), (S) this);
 		else
 			throw new VTLCastException(this, value);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public Variable<S, NumberDomain> getDefaultVariable()
-	{
-		return new DefaultVariable<>((S) this);
 	}
 
 	@Override

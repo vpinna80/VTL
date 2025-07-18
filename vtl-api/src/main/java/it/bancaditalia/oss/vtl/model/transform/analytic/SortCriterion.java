@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.model.transform.analytic;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 
 /**
  * A criterion used to sort the data points inside a window of a VTL analytic invocation 
@@ -34,7 +34,7 @@ public interface SortCriterion
 		ASC, DESC
 	};
 
-	public DataStructureComponent<?, ?, ?> getComponent();
+	public DataSetComponent<?, ?, ?> getComponent();
 
 	public SortingMethod getMethod();
 }

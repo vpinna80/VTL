@@ -23,14 +23,14 @@ import static java.util.stream.Collectors.joining;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
 public class VTLAmbiguousComponentException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLAmbiguousComponentException(VTLAlias name, Set<DataStructureComponent<?, ?, ?>> ambiguousSet)
+	public VTLAmbiguousComponentException(VTLAlias name, Set<DataSetComponent<?, ?, ?>> ambiguousSet)
 	{
 		super(ambiguousSet.stream().map(Object::toString).collect(joining(", ", "Component " + name + " is ambiguous: it appears as ", ".")));
 	}

@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,8 +44,8 @@ import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -99,13 +99,13 @@ public class ComparisonTransformationTest
 
 		ComparisonTransformation coTransformation = new ComparisonTransformation(operator, left, right);
 		
-		DataSetMetadata metadata = (DataSetMetadata) coTransformation.getMetadata(session);
-		assertTrue(metadata.contains(BOOLEANDS.getDefaultVariable().getAlias()), metadata.toString());
+		DataSetStructure metadata = (DataSetStructure) coTransformation.getMetadata(session);
+		assertTrue(metadata.contains(BOOL_VAR), metadata.toString());
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();		
-		DataStructureComponent<?, ?, ?> bool_var = metadata.getComponent(BOOLEANDS.getDefaultVariable().getAlias()).get();		
+		DataSetComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();		
+		DataSetComponent<?, ?, ?> bool_var = metadata.getComponent(BOOL_VAR.getAlias()).get();		
 		
 		DataSet leftD = (DataSet) left.eval(session), 
 				rightD = (DataSet) right.eval(session);

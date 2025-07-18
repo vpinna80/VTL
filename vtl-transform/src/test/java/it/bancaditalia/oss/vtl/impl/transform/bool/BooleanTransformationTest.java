@@ -42,8 +42,8 @@ import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.Boolean
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -81,7 +81,7 @@ public class BooleanTransformationTest
 	{
 		BooleanTransformation bt = new BooleanTransformation(operator, left, right);
 		
-		DataSetMetadata metadata = (DataSetMetadata) bt.getMetadata(session);
+		DataSetStructure metadata = (DataSetStructure) bt.getMetadata(session);
 		assertTrue(metadata.contains(VTLAliasImpl.of("boolean_1")));
 		
 		DataSet computedResult = (DataSet) bt.eval(session);
@@ -89,8 +89,8 @@ public class BooleanTransformationTest
 		assertEquals(booleanResults.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();
-		DataStructureComponent<?, ?, ?> measure = metadata.getComponent(VTLAliasImpl.of("boolean_1")).get();
+		DataSetComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();
+		DataSetComponent<?, ?, ?> measure = metadata.getComponent(VTLAliasImpl.of("boolean_1")).get();
 		
 		computedResult.stream()
 			.map(dp -> new SimpleEntry<>(dp.get(id).get().toString().charAt(0) - 'A', dp.get(measure).get()))

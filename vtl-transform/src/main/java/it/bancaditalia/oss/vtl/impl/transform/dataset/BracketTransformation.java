@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -85,12 +85,12 @@ public class BracketTransformation extends TransformationImpl
 			return INSTANCE;
 		
 		if (!(metadata.isDataSet()))
-			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(metadata, DataSetStructure.class);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope(scheme.getRepository(), (DataSetMetadata) metadata, scheme));
+			return clause.getMetadata(new ThisScope(scheme.getRepository(), (DataSetStructure) metadata, scheme));
 		else
-			return ((DataSetMetadata) metadata).membership(componentName);
+			return ((DataSetStructure) metadata).membership(componentName);
 	}
 	
 	@Override

@@ -17,27 +17,9 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-/*******************************************************************************
-7 * Copyright 2020, Bank Of Italy
- *
- * Licensed under the EUPL, Version 1.2 (the "License");
- * You may not use this work except in compliance with the
- * License.
- * You may obtain a copy of the License at:
- *
- * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
- *
- * Unless required by applicable law or agreed to in
- * writing, software distributed under the License is
- * distributed on an "AS IS" basis,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied.
- *
- * See the License for the specific language governing
- * permissions and limitations under the License.
- *******************************************************************************/
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
@@ -50,23 +32,20 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public class MatchTransformation extends BinaryTransformation
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> BOOL_MEASURE = BOOLEANDS.getDefaultVariable().as(Measure.class);
 
 	public MatchTransformation(Transformation operand, Transformation pattern)
 	{
@@ -85,14 +64,14 @@ public class MatchTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> patternV)
 	{
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
-				.addComponent(BOOL_MEASURE)
+		DataSetStructure structure = new DataSetStructureBuilder(dataset.getMetadata().getIDs())
+				.addComponent(BOOL_VAR)
 				.build();
 
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> measure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		String pattern = patternV.isNull() ? null : STRINGDS.cast(patternV).get().toString();
 		
-		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(BOOL_MEASURE, (pattern == null 
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(BOOL_VAR, (pattern == null 
 						? BOOLEANDS.cast(NullValue.instance(BOOLEANDS))
 						: BooleanValue.of(STRINGDS.cast(dp.get(measure)).get().toString().matches(pattern))))); 
 	}
@@ -118,7 +97,7 @@ public class MatchTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> pattern)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> pattern)
 	{
 		if (!datasetIsLeftOp)
 			throw new VTLInvalidParameterException(pattern, ScalarValueMetadata.class);
@@ -127,13 +106,13 @@ public class MatchTransformation extends BinaryTransformation
 
 		dataset.getSingleton(Measure.class, STRINGDS);
 		
-		return new DataStructureBuilder(dataset.getIDs())
-				.addComponent(BOOL_MEASURE)
+		return new DataSetStructureBuilder(dataset.getIDs())
+				.addComponent(BOOL_VAR)
 				.build();
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
 		throw new VTLInvalidParameterException(left, ScalarValueMetadata.class);
 	}

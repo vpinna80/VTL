@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 
 public class FunctionDataSet<P> extends StreamWrapperDataSet
@@ -31,14 +31,14 @@ public class FunctionDataSet<P> extends StreamWrapperDataSet
 	private final Function<? super P, ? extends Stream<DataPoint>> function;
 	private final P param;
 
-	public FunctionDataSet(DataSetMetadata dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param, boolean cacheable)
+	public FunctionDataSet(DataSetStructure dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param, boolean cacheable)
 	{
 		super(dataStructure, null, cacheable);
 		this.function = datapoints;
 		this.param = param;
 	}
 
-	public FunctionDataSet(DataSetMetadata dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param)
+	public FunctionDataSet(DataSetStructure dataStructure, SerFunction<? super P, ? extends Stream<DataPoint>> datapoints, P param)
 	{
 		this(dataStructure, datapoints, param, true);
 	}

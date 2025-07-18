@@ -25,7 +25,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -67,12 +66,6 @@ public class NonNullDomainSubset<S extends ValueDomainSubset<S, D>, D extends Va
 			throw new VTLCastException(this, value);
 		else
 			return subsetWithNull.cast(value);
-	}
-
-	@Override
-	public Variable<S, D> getDefaultVariable()
-	{
-		return subsetWithNull.getDefaultVariable();
 	}
 	
 	@Override

@@ -28,8 +28,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.UnknownValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.DataSetParameterType;
@@ -61,7 +61,7 @@ public class DataSetParameterTypeImpl implements DataSetParameterType, Serializa
 			
 			// for each component, find which components matches it, and create a "partial matching" tree 
 			// of completed matches, in order to allow backtracking and consider all possible combinations
-			for (DataStructureComponent<?, ?, ?> component: (DataSetMetadata) metadata)
+			for (DataSetComponent<?, ?, ?> component: (DataSetStructure) metadata)
 			{
 				List<List<QuantifiedComponent>> newMatches = new ArrayList<>();
 				

@@ -35,19 +35,19 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class RenameClauseTransformation extends DatasetClauseTransformation
@@ -65,14 +65,14 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme session)
 	{
 		DataSet operand = (DataSet) getThisValue(session);
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata(session);
-		DataSetMetadata oldStructure = operand.getMetadata();
+		DataSetStructure metadata = (DataSetStructure) getMetadata(session);
+		DataSetStructure oldStructure = operand.getMetadata();
 		
-		Map<VTLAlias, DataStructureComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
+		Map<VTLAlias, DataSetComponent<?, ?, ?>> oldComponents = renames.keySet().stream()
 				.collect(toMapWithValues(name -> oldStructure.getComponent(name)
 						.orElseThrow(() -> new VTLMissingComponentsException(oldStructure, name))));
 
-		Map<VTLAlias, DataStructureComponent<?, ?, ?>> newComponents = renames.values().stream()
+		Map<VTLAlias, DataSetComponent<?, ?, ?>> newComponents = renames.values().stream()
 				.collect(toMapWithValues(name -> metadata.getComponent(name)
 						.orElseThrow(() -> new VTLMissingComponentsException(metadata, name))));
 
@@ -99,26 +99,25 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 	}
 
 	@Override
-	public DataSetMetadata computeMetadata(TransformationScheme session)
+	public DataSetStructure computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata operand = getThisMetadata(session);
 		
 		if (!(operand.isDataSet()))
-			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(operand, DataSetStructure.class);
 		
-		DataSetMetadata dataset = (DataSetMetadata) operand;
-		Map<VTLAlias, DataStructureComponent<?, ?, ?>> renamed = new HashMap<>();
-		MetadataRepository repo = session.getRepository();
+		DataSetStructure dataset = (DataSetStructure) operand;
+		Map<VTLAlias, DataSetComponent<?, ?, ?>> renamed = new HashMap<>();
 		
-		for (DataStructureComponent<?, ?, ?> component: dataset)
+		for (DataSetComponent<?, ?, ?> component: dataset)
 		{
-			VTLAlias oldName = component.getVariable().getAlias();
+			VTLAlias oldName = component.getAlias();
 			VTLAlias newName = renames.get(oldName);
 			if (newName != null)
 				if (renamed.containsKey(newName))
 					throw new VTLException("rename from " + oldName + " cannot override existing component " + dataset.getComponent(newName));
 				else
-					renamed.put(newName, repo.createTempVariable(newName, component.getVariable().getDomain()).as(component.getRole()));
+					renamed.put(newName, DataSetComponentImpl.of(newName, component.getDomain(), component.getRole()));
 			else 
 				if (renamed.containsKey(oldName))
 					throw new VTLException("A rename clause overrides existing component " + dataset.getComponent(oldName));
@@ -130,7 +129,7 @@ public class RenameClauseTransformation extends DatasetClauseTransformation
 			if (!renamed.containsKey(rename.getValue()))
 				throw new VTLMissingComponentsException(dataset, rename.getKey());
 		
-		return new DataStructureBuilder(renamed.values()).build();
+		return new DataSetStructureBuilder(renamed.values()).build();
 	}
 	
 	@Override

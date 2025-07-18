@@ -28,11 +28,9 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList.IntegerCodeItem;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.domain.DefaultVariable;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
@@ -143,12 +141,6 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 			return false;
 
 		return true;
-	}
-
-	@Override
-	public Variable<IntegerCodeList, IntegerDomain> getDefaultVariable()
-	{
-		return new DefaultVariable<>(this);
 	}
 
 	@Override

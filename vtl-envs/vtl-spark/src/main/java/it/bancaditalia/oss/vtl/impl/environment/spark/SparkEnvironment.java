@@ -23,59 +23,34 @@ import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalProper
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValues;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.registerSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getColumnsFromComponents;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getComponentsFromStruct;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getDataTypeFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.getMetadataFor;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.parseCSVStrings;
-import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT.LineageSparkUDT;
-import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.extractMetadata;
-import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
-import static it.bancaditalia.oss.vtl.model.data.VTLAlias.byName;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static org.apache.spark.sql.SaveMode.Overwrite;
-import static org.apache.spark.sql.functions.lit;
-import static org.apache.spark.sql.functions.to_date;
-import static org.apache.spark.sql.functions.udf;
-import static org.apache.spark.sql.types.DataTypes.LongType;
 import static scala.collection.JavaConverters.asJava;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.IntStream;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.serializer.KryoRegistrator;
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.expressions.Literal;
 import org.apache.spark.sql.internal.SQLConf;
-import org.apache.spark.sql.types.ArrayType;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.IntegerType;
-import org.apache.spark.sql.types.StringType;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.types.TimestampType;
 import org.apache.spark.sql.types.UDTRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,6 +60,7 @@ import com.esotericsoftware.kryo.Kryo;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BigDecimalValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BooleanValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DateValueUDT;
@@ -107,7 +83,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageImpl;
@@ -115,12 +90,11 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageSet;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
@@ -283,18 +257,18 @@ public class SparkEnvironment implements Environment
 		if ("csv".equals(type))
 			formatted = formatted.option("header", "true");
 		
-		Optional<DataSetMetadata> maybeStructure = repo.getMetadata(alias).map(DataSetMetadata.class::cast);
+		Optional<DataSetStructure> maybeStructure = repo.getMetadata(alias).map(DataSetStructure.class::cast);
 		Dataset<Row> sourceDataFrame = formatted.load(file.toString());
 		
 		// If structure is defined in metadata match the columns to the structure components
 		SparkDataSet dataset = maybeStructure.map(structure -> {
 				DataPointEncoder encoder = new DataPointEncoder(session, structure);
 
-				Set<DataStructureComponent<?, ?, ?>> toMatch = new HashSet<>(structure);
+				Set<DataSetComponent<?, ?, ?>> toMatch = new HashSet<>(structure);
 				for (String sourceName: sourceDataFrame.columns())
 				{
 					VTLAlias compAlias = VTLAliasImpl.of(sourceName);
-					Optional<DataStructureComponent<?, ?, ?>> maybeComponent = structure.getComponent(compAlias);
+					Optional<DataSetComponent<?, ?, ?>> maybeComponent = structure.getComponent(compAlias);
 					if (maybeComponent.isEmpty())
 						throw new VTLMissingComponentsException(structure, compAlias);
 					toMatch.remove(maybeComponent.get());
@@ -302,21 +276,20 @@ public class SparkEnvironment implements Environment
 				if (!toMatch.isEmpty())
 					throw new IllegalStateException("Cannot match csv columns " + Arrays.toString(sourceDataFrame.columns()) + " to components " + toMatch);
 
-				DataStructureComponent<?, ?, ?>[] components = encoder.getComponents();
+				DataSetComponent<?, ?, ?>[] components = encoder.getComponents();
 				ValueDomainSubset<?, ?>[] domains = new ValueDomainSubset<?, ?>[components.length];
 				String[] names = new String[components.length];
 				for (int i = 0; i < components.length; i++)
 				{
-					Variable<?, ?> variable = components[i].getVariable();
-					domains[i] = variable.getDomain();
-					names[i] = components[i].getVariable().getAlias().getName();
+					domains[i] = components[i].getDomain();
+					names[i] = components[i].getAlias().getName();
 				}
 				
 				Lineage lineage = LineageExternal.of("spark:" + alias);
 				MapFunction<Row, Row> stringsToScalars = parseCSVStrings(structure, lineage, names, domains);
 				Dataset<Row> applied = sourceDataFrame.map(stringsToScalars, encoder.getRowEncoder());
 				return new SparkDataSet(exportSize, session, structure, encoder, applied);
-			}).orElseGet(() -> inferSchema(repo, sourceDataFrame, alias)); 
+			}).orElseThrow(() -> new VTLUndefinedObjectException("Dataset", alias)); 
 		frames.put(alias, dataset);
 		return Optional.of(dataset);
 	}
@@ -331,7 +304,7 @@ public class SparkEnvironment implements Environment
 		if (parts.length != 2)
 			return false;
 		
-		final DataSetMetadata metadata = ((DataSet) value).getMetadata();
+		final DataSetStructure metadata = ((DataSet) value).getMetadata();
 		final SparkDataSet dataSet = value instanceof SparkDataSet ? (SparkDataSet) value : new SparkDataSet(exportSize, session, metadata, (DataSet) value);
 		Dataset<Row> dataFrame = dataSet.getDataFrame();
 		
@@ -342,7 +315,7 @@ public class SparkEnvironment implements Environment
 			// Add metadata in case it was lost
 			for (String name: dataFrame.columns())
 			{
-				final Optional<DataStructureComponent<?, ?, ?>> component = metadata.getComponent(VTLAliasImpl.of(name));
+				final Optional<DataSetComponent<?, ?, ?>> component = metadata.getComponent(VTLAliasImpl.of(name));
 				if (component.isPresent())
 					dataFrame = dataFrame.withColumn(name, dataFrame.col(name).as(name, getMetadataFor(component.get())));
 			}
@@ -361,77 +334,6 @@ public class SparkEnvironment implements Environment
 		{
 			LOGGER.error("Error saving Spark dataframe " + alias, e);
 			return false;
-		}
-	}
-	
-	private SparkDataSet inferSchema(MetadataRepository repo, Dataset<Row> sourceDataFrame, VTLAlias alias)
-	{
-		Column lineage = new Column(Literal.create(LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias)), LineageSparkUDT));
-		StructType schema = sourceDataFrame.schema();
-		
-		if (schema.forall(field -> !(field.dataType() instanceof StructType || field.dataType() instanceof ArrayType) && field.metadata().contains("Role")))
-		{
-			// infer structure from the schema metadata
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, schema)).build();
-			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
-			return new SparkDataSet(exportSize, session, structure, new DataPointEncoder(session, structure), sourceDataFrame.select(names).withColumn("$lineage$", lineage));
-		}
-		else if (!schema.forall(field -> field.dataType() instanceof StringType))
-		{
-			// infer structure from the schema field types
-			LOGGER.warn("Reading a non-csv file missing VTL metadata, the inferred schema may not be exact.");
-			Dataset<Row> sourceDataFrame2 = sourceDataFrame;
-			
-			for (StructField field: schema.fields())
-				if (field.dataType() instanceof TimestampType)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), to_date(sourceDataFrame2.col(field.name())));
-				else if (field.dataType() instanceof IntegerType)
-					sourceDataFrame2 = sourceDataFrame2.withColumn(field.name(), sourceDataFrame2.col(field.name()).cast(LongType));
-			
-			DataSetMetadata structure = new DataStructureBuilder().addComponents(getComponentsFromStruct(repo, sourceDataFrame2.schema())).build();
-			Column[] names = getColumnsFromComponents(structure).toArray(new Column[structure.size()]);
-			Dataset<Row> enriched = sourceDataFrame2.select(names).withColumn("$lineage$", lineage);
-			return new SparkDataSet(exportSize, session, structure, new DataPointEncoder(session, structure), enriched);
-		}
-		else
-		{
-			LOGGER.debug("Using CSV header because scheme is missing metadata: {}", schema);
-			// infer structure from the column header names
-	
-			String[] fieldNames = schema.fieldNames();
-			Entry<List<DataStructureComponent<?, ?, ?>>, Map<DataStructureComponent<?, ?, ?>, String>> metaInfo = extractMetadata(null, fieldNames);
-			DataSetMetadata structure = new DataStructureBuilder(metaInfo.getKey()).build();
-			
-			// masks for decoding CSV rows
-			Map<DataStructureComponent<?, ?, ?>, String> masks = metaInfo.getValue();
-			
-			// normalized column names in alphabetical order
-			Map<VTLAlias, String> newToOldNames = IntStream.range(0, fieldNames.length)
-					.mapToObj(i -> new SimpleEntry<>(metaInfo.getKey().get(i).getVariable().getAlias(), fieldNames[i]))
-					.collect(entriesToMap());
-			VTLAlias[] normalizedNames = newToOldNames.keySet().toArray(new VTLAlias[newToOldNames.size()]);
-			Arrays.sort(normalizedNames, 0, normalizedNames.length, byName());
-			
-			// Array of parsers for CSV fields (strings) into scalars
-			Map<DataStructureComponent<?, ?, ?>, DataType> types = structure.stream()
-				.collect(toMapWithValues(c -> getDataTypeFor(c)));
-			Column[] converters = Arrays.stream(normalizedNames, 0, normalizedNames.length)
-					.map(structure::getComponent)
-					.map(Optional::get)
-					.sorted(DataStructureComponent::byNameAndRole)
-					.map(c -> udf(repr -> mapValue(c.getVariable().getDomain(), repr.toString(), masks.get(c)).get(), types.get(c))
-							.apply(sourceDataFrame.col(newToOldNames.get(c.getVariable().getAlias())))
-							.as(c.getVariable().getAlias().getName(), getMetadataFor(c)))
-					.collect(toList())
-					.toArray(new Column[normalizedNames.length + 1]);
-			
-			// add a column and a converter for the lineage
-			byte[] serializedLineage = LineageSparkUDT.serialize(LineageExternal.of("spark:" + alias));
-			converters[converters.length - 1] = lit(serializedLineage).alias("$lineage$");
-	
-			Dataset<Row> converted = sourceDataFrame.select(converters);
-			Column[] ids = getColumnsFromComponents(structure.getIDs()).toArray(new Column[0]);
-			return new SparkDataSet(exportSize, session, structure, converted.repartition(ids));
 		}
 	}
 }

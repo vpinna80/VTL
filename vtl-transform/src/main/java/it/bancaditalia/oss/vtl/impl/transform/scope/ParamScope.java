@@ -26,8 +26,9 @@ import java.util.Map.Entry;
 import java.util.Optional;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -70,12 +71,13 @@ public class ParamScope extends AbstractScope
 			return parametersMeta.get(alias);
 		else
 			return Utils.getStream(parametersMeta.values())
-				.filter(DataSetMetadata.class::isInstance)
-				.map(DataSetMetadata.class::cast)
+				.filter(DataSetStructure.class::isInstance)
+				.map(DataSetStructure.class::cast)
 				.map(dataset -> dataset.getComponent(alias))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.map(DataStructureComponent::getVariable)
+				.map(DataSetComponent::getDomain)
+				.map(ScalarValueMetadata::of)
 				.map(VTLValueMetadata.class::cast)
 				.findAny()
 				.orElseGet(() -> getParent().getMetadata(alias));

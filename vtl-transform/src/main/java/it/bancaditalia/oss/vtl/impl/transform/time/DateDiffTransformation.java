@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
@@ -38,15 +39,15 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -75,15 +76,14 @@ public class DateDiffTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> newMeasure = INTEGERDS.getDefaultVariable().as(Measure.class);
+		DataSetComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> func = datasetIsLeftOp ? DateDiffTransformation::computeScalar : (a, b) -> computeScalar(b, a);
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, lineageEnricher(this), dp -> {
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), dp -> {
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 			map.remove(measure);
-			map.put(newMeasure, func.apply(dp.get(measure), scalar));
+			map.put(INT_VAR, func.apply(dp.get(measure), scalar));
 			return map;
 		});
 	}
@@ -91,10 +91,9 @@ public class DateDiffTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> idsLeft = left.getMetadata().getIDs();
-		Set<DataStructureComponent<Identifier, ?, ?>> idsRight = right.getMetadata().getIDs();
-		DataStructureComponent<Measure, ?, ?> measure = left.getMetadata().getMeasures().iterator().next();
-		DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> newMeasure = INTEGERDS.getDefaultVariable().as(Measure.class);
+		Set<DataSetComponent<Identifier, ?, ?>> idsLeft = left.getMetadata().getIDs();
+		Set<DataSetComponent<Identifier, ?, ?>> idsRight = right.getMetadata().getIDs();
+		DataSetComponent<Measure, ?, ?> measure = left.getMetadata().getMeasures().iterator().next();
 		
 		DataSet streamed = idsLeft.size() >= idsRight.size() ? left : right;
 		DataSet indexed = streamed == left ? right : left;
@@ -102,11 +101,11 @@ public class DateDiffTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> func = streamed == left ? DateDiffTransformation::computeScalar : (a, b) -> computeScalar(b, a);
 		
 		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
-		return streamed.filteredMappedJoin((DataSetMetadata) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder(dps.getValues(Identifier.class), DONT_SYNC)
+		return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder(dps.getValues(Identifier.class), DONT_SYNC)
 			.addAll(dpi.getValues(Identifier.class))
 			.delete(measure)
-			.add(newMeasure, func.apply(dps.get(measure), dps.get(measure)))
-			.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetMetadata) metadata), false);
+			.add(INT_VAR, func.apply(dps.get(measure), dps.get(measure)))
+			.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata), false);
 	}
 
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> computeScalar(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
@@ -131,31 +130,26 @@ public class DateDiffTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		if (!(scalar.getDomain() instanceof TimeDomainSubset))
 			throw new VTLIncompatibleTypesException("datediff", TIMEDS, scalar.getDomain());
 		
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getSingleton(Measure.class);
-		if (!(measure.getVariable().getDomain() instanceof TimeDomainSubset))
+		DataSetComponent<Measure, ?, ?> measure = dataset.getSingleton(Measure.class);
+		if (!(measure.getDomain() instanceof TimeDomainSubset))
 			throw new VTLIncompatibleTypesException("datediff", TIMEDS, measure);
 		
-		return new DataStructureBuilder(dataset)
-				.removeComponent(measure)
-				.addComponent(INTEGERDS.getDefaultVariable().as(Measure.class))
-				.build();
+		return new DataSetStructureBuilder(dataset).removeComponent(measure).addComponent(INT_VAR).build();
 	}
 
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
-		for (DataStructureComponent<Measure, ?, ?> measure: List.of(left.getSingleton(Measure.class), right.getSingleton(Measure.class)))
-			if (!(measure.getVariable().getDomain() instanceof TimeDomainSubset))
+		for (DataSetComponent<Measure, ?, ?> measure: List.of(left.getSingleton(Measure.class), right.getSingleton(Measure.class)))
+			if (!(measure.getDomain() instanceof TimeDomainSubset))
 				throw new VTLIncompatibleTypesException("datediff", TIMEDS, measure);
 		
-		return new DataStructureBuilder(left.getIDs())
-				.addComponent(INTEGERDS.getDefaultVariable().as(Measure.class))
-				.build();
+		return new DataSetStructureBuilder(left.getIDs()).addComponent(INT_VAR).build();
 	}
 	
 	@Override

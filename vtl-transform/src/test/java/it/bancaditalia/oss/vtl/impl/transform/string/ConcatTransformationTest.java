@@ -41,8 +41,8 @@ import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -72,18 +72,18 @@ public class ConcatTransformationTest
 
 		ConcatTransformation coTransformation = new ConcatTransformation(left, right);
 		
-		DataSetMetadata metadata = (DataSetMetadata) coTransformation.getMetadata(session);
+		DataSetStructure metadata = (DataSetStructure) coTransformation.getMetadata(session);
 		assertTrue(metadata.contains(VTLAliasImpl.of("string_2")));
 		
 		DataSet computedResult = (DataSet) coTransformation.eval(session);
-		Optional<DataStructureComponent<Identifier, ?, ?>> oId = metadata.getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS);		
-		Optional<DataStructureComponent<Measure, ?, ?>> oMeasure = metadata.getComponent(VTLAliasImpl.of("string_2"), Measure.class, STRINGDS);
+		Optional<DataSetComponent<Identifier, ?, ?>> oId = metadata.getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS);		
+		Optional<DataSetComponent<Measure, ?, ?>> oMeasure = metadata.getComponent(VTLAliasImpl.of("string_2"), Measure.class, STRINGDS);
 		
 		assertTrue(oId.isPresent(), "String id present");
 		assertTrue(oMeasure.isPresent(), "String measure present");
 		
-		DataStructureComponent<Identifier, ?, ?> id = oId.get();
-		DataStructureComponent<Measure, ?, ?> res = oMeasure.get();
+		DataSetComponent<Identifier, ?, ?> id = oId.get();
+		DataSetComponent<Measure, ?, ?> res = oMeasure.get();
 		
 		DataSet leftD = (DataSet) left.eval(session), 
 				rightD = (DataSet) right.eval(session);

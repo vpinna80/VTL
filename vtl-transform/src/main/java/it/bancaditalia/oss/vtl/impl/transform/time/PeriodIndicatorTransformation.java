@@ -20,8 +20,8 @@
 package it.bancaditalia.oss.vtl.impl.transform.time;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.DURATION_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATION;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
@@ -37,18 +37,15 @@ import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -57,7 +54,6 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 public class PeriodIndicatorTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> DURATION_MEASURE = DURATIONDS.getDefaultVariable().as(Measure.class);
 	
 	private final Transformation operand;
 
@@ -77,13 +73,13 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 		{
 			DataSet dataset = (DataSet) value;
 			
-			DataStructureComponent<?, ?, ?> component = dataset.getMetadata().getIDs().stream()
-					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+			DataSetComponent<?, ?, ?> component = dataset.getMetadata().getIDs().stream()
+					.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 					.findAny()
 					.get();
 
-			return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), lineageEnricher(this), 
-					dp -> singletonMap(DURATION_MEASURE, evalScalar(dp.get(component))));
+			return dataset.mapKeepingKeys((DataSetStructure) getMetadata(scheme), lineageEnricher(this), 
+					dp -> singletonMap(DURATION_VAR, evalScalar(dp.get(component))));
 		}
 	}
 
@@ -100,18 +96,18 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	{
 		if (operand == null)
 		{
-			Set<DataStructureComponent<Identifier, ?, ?>> ids = ((DataSetMetadata) scheme.getMetadata(THIS)).getIDs();
+			Set<DataSetComponent<Identifier, ?, ?>> ids = ((DataSetStructure) scheme.getMetadata(THIS)).getIDs();
 			
-			Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ids.stream()
+			Set<DataSetComponent<Identifier, ?, ?>> timeIDs = ids.stream()
 					.map(c -> c.asRole(Identifier.class))
-					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+					.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 					.collect(toSet());
 			
 			if (timeIDs.size() != 1)
 				throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
 
-			return new DataStructureBuilder(ids)
-					.addComponent(DURATION_MEASURE)
+			return new DataSetStructureBuilder(ids)
+					.addComponent(DURATION_VAR)
 					.build();
 		}
 		else
@@ -128,18 +124,18 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 			}
 			else
 			{
-				Set<DataStructureComponent<Identifier, ?, ?>> ids = ((DataSetMetadata) metadata).getIDs();
+				Set<DataSetComponent<Identifier, ?, ?>> ids = ((DataSetStructure) metadata).getIDs();
 				
-				Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = ids.stream()
+				Set<DataSetComponent<Identifier, ?, ?>> timeIDs = ids.stream()
 						.map(c -> c.asRole(Identifier.class))
-						.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+						.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 						.collect(toSet());
 				
 				if (timeIDs.size() != 1)
 					throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
 			
-				return new DataStructureBuilder(ids)
-						.addComponent(DURATION_MEASURE)
+				return new DataSetStructureBuilder(ids)
+						.addComponent(DURATION_VAR)
 						.build();
 			}
 		}

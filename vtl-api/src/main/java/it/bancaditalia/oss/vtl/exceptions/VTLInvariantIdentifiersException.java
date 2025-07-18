@@ -23,33 +23,33 @@ import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 
 public class VTLInvariantIdentifiersException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLInvariantIdentifiersException(String operation, Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> before)
+	public VTLInvariantIdentifiersException(String operation, Set<? extends DataSetComponent<? extends Identifier, ?, ?>> before)
 	{
 		super(operation + " cannot change identifiers " + before);
 	}
 
-	public VTLInvariantIdentifiersException(String operation, DataStructureComponent<? extends Identifier, ?, ?> before, Class<? extends Component> role)
+	public VTLInvariantIdentifiersException(String operation, DataSetComponent<? extends Identifier, ?, ?> before, Class<? extends Component> role)
 	{
 		super(operation + " cannot change identifier " + before + " to a " + role.getSimpleName());
 	}
 
-	public VTLInvariantIdentifiersException(String operation, DataStructureComponent<?, ?, ?> before)
+	public VTLInvariantIdentifiersException(String operation, DataSetComponent<?, ?, ?> before)
 	{
 		super(operation + " cannot change " + before + " to an identifier.");
 	}
 
-	public VTLInvariantIdentifiersException(String operation, Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> before, Set<? extends DataStructureComponent<? extends Identifier, ?, ?>> after)
+	public VTLInvariantIdentifiersException(String operation, Set<? extends DataSetComponent<? extends Identifier, ?, ?>> before, Set<? extends DataSetComponent<? extends Identifier, ?, ?>> after)
 	{
 		super(operation + " cannot change identifiers from " + before + " to " + after);
 	}
 
-	public VTLInvariantIdentifiersException(String operation, DataStructureComponent<? extends Identifier, ?, ?> before, String after)
+	public VTLInvariantIdentifiersException(String operation, DataSetComponent<? extends Identifier, ?, ?> before, String after)
 	{
 		super(operation + " cannot change identifiers from " + before + " to " + after);
 	}

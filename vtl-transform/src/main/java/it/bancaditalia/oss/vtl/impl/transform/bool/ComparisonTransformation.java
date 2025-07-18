@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
@@ -37,14 +38,14 @@ import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.operators.ComparisonOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -86,18 +87,18 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected DataSet evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
 		boolean castToLeft;
 		if (datasetIsLeftOp)
-			castToLeft = measure.getVariable().getDomain().isAssignableFrom(scalar.getDomain());
+			castToLeft = measure.getDomain().isAssignableFrom(scalar.getDomain());
 		else
-			castToLeft = scalar.getDomain().isAssignableFrom(measure.getVariable().getDomain());
+			castToLeft = scalar.getDomain().isAssignableFrom(measure.getDomain());
 
 		ScalarValue<?, ?, ?, ?> castedScalar;
 		if (castToLeft && datasetIsLeftOp)
-			castedScalar = measure.getVariable().getDomain().cast(scalar);
+			castedScalar = measure.getDomain().cast(scalar);
 		else
 			castedScalar = scalar;
 
@@ -114,7 +115,7 @@ public class ComparisonTransformation extends BinaryTransformation
 				extractor = dp -> operator.apply(castedScalar, dp.get(measure));
 
 		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
-		return dataset.mapKeepingKeys((DataSetMetadata) metadata, 
+		return dataset.mapKeepingKeys((DataSetStructure) metadata, 
 				lineage -> enricher.apply(lineage), 
 				dp -> singletonMap(resultMeasure, extractor.apply(dp)));
 	}
@@ -122,13 +123,13 @@ public class ComparisonTransformation extends BinaryTransformation
 	@Override
 	protected DataSet evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
 	{
-		DataStructureComponent<Measure, ?, ?> resultMeasure = ((DataSetMetadata) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> lMeasure = left.getMetadata().getMeasures().iterator().next();
-		DataStructureComponent<? extends Measure, ?, ?> rMeasure = right.getMetadata().getMeasures().iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<? extends Measure, ?, ?> lMeasure = left.getMetadata().getMeasures().iterator().next();
+		DataSetComponent<? extends Measure, ?, ?> rMeasure = right.getMetadata().getMeasures().iterator().next();
 		
 		// must remember which is the left operand because some operators are not commutative, also cast
-		ValueDomainSubset<?, ?> lDomain = lMeasure.getVariable().getDomain();
-		ValueDomainSubset<?, ?> rDomain = rMeasure.getVariable().getDomain();
+		ValueDomainSubset<?, ?> lDomain = lMeasure.getDomain();
+		ValueDomainSubset<?, ?> rDomain = rMeasure.getDomain();
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> casted;
 		if (lDomain.isAssignableFrom(rDomain))
 			casted = (l, r) -> operator.apply(l, lDomain.cast(r));
@@ -136,12 +137,12 @@ public class ComparisonTransformation extends BinaryTransformation
 			casted = (l, r) -> operator.apply(rDomain.cast(l), r);
 		
 		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
-		return left.filteredMappedJoin((DataSetMetadata) metadata, right, DataSet.ALL,
+		return left.filteredMappedJoin((DataSetStructure) metadata, right, DataSet.ALL,
 				(dpl, dpr) -> new DataPointBuilder()
 						.addAll(dpl.getValues(Identifier.class))
 						.addAll(dpr.getValues(Identifier.class))
 						.add(resultMeasure, casted.apply(dpl.get(lMeasure), dpr.get(rMeasure)))
-						.build(enricher.apply(List.of(dpl.getLineage(), dpr.getLineage())), (DataSetMetadata) metadata), false);
+						.build(enricher.apply(List.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata), false);
 	}
 
 	@Override
@@ -154,27 +155,27 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		ValueDomainSubset<?, ?> scalarDomain = scalar.getDomain();
-		DataStructureComponent<?, ?, ?> measure = dataset.getSingleton(Measure.class);
+		DataSetComponent<?, ?, ?> measure = dataset.getSingleton(Measure.class);
 		
 		boolean castToLeft;
 		if (datasetIsLeftOp)
-			castToLeft = measure.getVariable().getDomain().isAssignableFrom(scalarDomain);
+			castToLeft = measure.getDomain().isAssignableFrom(scalarDomain);
 		else
-			castToLeft = scalarDomain.isAssignableFrom(measure.getVariable().getDomain());
+			castToLeft = scalarDomain.isAssignableFrom(measure.getDomain());
 
-		if (!castToLeft && (datasetIsLeftOp && !scalarDomain.isAssignableFrom(measure.getVariable().getDomain())
-				|| !datasetIsLeftOp && !measure.getVariable().getDomain().isAssignableFrom(scalarDomain)))
+		if (!castToLeft && (datasetIsLeftOp && !scalarDomain.isAssignableFrom(measure.getDomain())
+				|| !datasetIsLeftOp && !measure.getDomain().isAssignableFrom(scalarDomain)))
 			throw new VTLIncompatibleTypesException("comparison condition", measure, scalarDomain);
 		
-		return new DataStructureBuilder().addComponents(dataset.getIDs())
-				.addComponents(BOOLEANDS.getDefaultVariable().as(Measure.class)).build();
+		return new DataSetStructureBuilder().addComponents(dataset.getIDs())
+				.addComponents(BOOL_VAR).build();
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
 		LOGGER.info("Comparing {} to {}", left, right);
 		
@@ -187,17 +188,17 @@ public class ComparisonTransformation extends BinaryTransformation
 				&& !right.getIDs().containsAll(left.getIDs()))
 			throw new UnsupportedOperationException("Identifiers do not match: " + left.getIDs() + " and " + right.getIDs());
 
-		final DataStructureComponent<? extends Measure, ?, ?> leftMeasure = left.getMeasures().iterator().next(),
+		final DataSetComponent<? extends Measure, ?, ?> leftMeasure = left.getMeasures().iterator().next(),
 				rightMeasure = left.getMeasures().iterator().next();
 		
-		if (!leftMeasure.getVariable().getDomain().isAssignableFrom(rightMeasure.getVariable().getDomain()) && 
-				!rightMeasure.getVariable().getDomain().isAssignableFrom(leftMeasure.getVariable().getDomain()))
+		if (!leftMeasure.getDomain().isAssignableFrom(rightMeasure.getDomain()) && 
+				!rightMeasure.getDomain().isAssignableFrom(leftMeasure.getDomain()))
 			throw new VTLIncompatibleTypesException("comparison", leftMeasure, rightMeasure);
 
-		return new DataStructureBuilder()
+		return new DataSetStructureBuilder()
 				.addComponents(left.getIDs())
 				.addComponents(right.getIDs())
-				.addComponents(BOOLEANDS.getDefaultVariable().as(Measure.class))
+				.addComponents(BOOL_VAR)
 				.build();
 	}
 	

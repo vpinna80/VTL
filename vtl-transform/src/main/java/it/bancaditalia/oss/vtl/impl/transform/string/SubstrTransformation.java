@@ -59,8 +59,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -103,8 +103,8 @@ public class SubstrTransformation extends TransformationImpl
 		if (expr.isDataSet())
 		{
 			DataSet dataset = (DataSet) expr;
-			DataSetMetadata structure = dataset.getMetadata();
-			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
+			DataSetStructure structure = dataset.getMetadata();
+			Set<DataSetComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
 			
 			return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> measures.stream()
 					.map(toEntryWithValue(measure -> getSubstring(len, start, STRINGDS.cast(dp.get(measure)))))
@@ -149,9 +149,9 @@ public class SubstrTransformation extends TransformationImpl
 				len = lenOperand.getMetadata(session);
 		
 		if (!(!start.isDataSet()))
-			throw new VTLInvalidParameterException(start, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(start, DataSetStructure.class);
 		if (!(!len.isDataSet()))
-			throw new VTLInvalidParameterException(len, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(len, DataSetStructure.class);
 		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
 			throw new VTLIncompatibleTypesException("substr: start parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) start).getDomain());
 		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) len).getDomain()))
@@ -167,10 +167,10 @@ public class SubstrTransformation extends TransformationImpl
 		}
 		else 
 		{
-			DataSetMetadata metadata = (DataSetMetadata) source;
+			DataSetStructure metadata = (DataSetStructure) source;
 			
-			Set<DataStructureComponent<?, ?, ?>> invalid = metadata.getMeasures().stream()
-				.filter(c -> !(c.getVariable().getDomain() instanceof StringDomain))
+			Set<DataSetComponent<?, ?, ?>> invalid = metadata.getMeasures().stream()
+				.filter(c -> !(c.getDomain() instanceof StringDomain))
 				.collect(toSet());
 			
 			if (!invalid.isEmpty())

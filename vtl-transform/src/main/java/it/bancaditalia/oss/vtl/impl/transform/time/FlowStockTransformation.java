@@ -24,7 +24,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.time.FlowStockTransformatio
 import static it.bancaditalia.oss.vtl.impl.transform.util.LimitClause.CURRENT_DATA_POINT;
 import static it.bancaditalia.oss.vtl.impl.transform.util.LimitClause.preceding;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_CURRENT;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DURATIONDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.DURATION_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
@@ -56,21 +56,19 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -136,30 +134,29 @@ public class FlowStockTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		DataSetMetadata dsMeta = dataset.getMetadata();
-		DataStructureComponent<Measure, EntireDurationDomainSubset, DurationDomain> freq = DURATIONDS.getDefaultVariable().as(Measure.class);
+		DataSetStructure dsMeta = dataset.getMetadata();
 
-		Set<DataStructureComponent<Measure, ?, ?>> measures = dsMeta.getMeasures();
-		DataStructureComponent<Identifier, ?, ?> timeId = dsMeta.getSingleton(Identifier.class, TIMEDS); 
-		Set<DataStructureComponent<?, ?, ?>> ids = new HashSet<>(dsMeta.getIDs());
+		Set<DataSetComponent<Measure, ?, ?>> measures = dsMeta.getMeasures();
+		DataSetComponent<Identifier, ?, ?> timeId = dsMeta.getSingleton(Identifier.class, TIMEDS); 
+		Set<DataSetComponent<?, ?, ?>> ids = new HashSet<>(dsMeta.getIDs());
 		ids.remove(timeId);
-		ids.add(freq);
+		ids.add(DURATION_VAR);
 		
-		DataSetMetadata metaWithFreq = new DataStructureBuilder(dsMeta).addComponent(freq).build(); 
+		DataSetStructure metaWithFreq = new DataSetStructureBuilder(dsMeta).addComponent(DURATION_VAR).build(); 
 		dataset = dataset.mapKeepingKeys(metaWithFreq, identity(), dp -> new DataPointBuilder(dp)
-				.add(freq, ((TimeValue<?, ?, ?, ?>) dp.getValue(timeId)).getFrequency())
+				.add(DURATION_VAR, ((TimeValue<?, ?, ?, ?>) dp.getValue(timeId)).getFrequency())
 				.build(dp.getLineage(), metaWithFreq));
 
 		DataSet partial = dataset;
 		// compute stock or flow one measure at a time
-		for (DataStructureComponent<Measure, ?, ?> measure: measures)
+		for (DataSetComponent<Measure, ?, ?> measure: measures)
 		{
 			SerUnaryOperator<Lineage> lineageOp = lineageEnricher(this);
 			WindowCriterion size = operator == STOCK_TO_FLOW ? new WindowCriterionImpl(DATAPOINTS, preceding(1), CURRENT_DATA_POINT) : DATAPOINTS_UNBOUNDED_PRECEDING_TO_CURRENT;
 			WindowClause window = new WindowClauseImpl(ids, List.of(new SortClause(timeId)), size);
 
 			Class<?> repr;
-			if (Domains.INTEGERDS.isAssignableFrom(measure.getVariable().getDomain())) 
+			if (Domains.INTEGERDS.isAssignableFrom(measure.getDomain())) 
 				repr = Long.class;
 			else if (isUseBigDecimal())
 				repr = BigDecimal.class;
@@ -176,15 +173,15 @@ public class FlowStockTransformation extends UnaryTransformation
 							mapping(v -> (Number) v.get(), 
 								reducing(repr, operator::apply))
 					), create
-				), measure.getVariable().getDomain()::cast);
+				), measure.getDomain()::cast);
 			
 			partial = partial.analytic(lineageOp, measure, measure, window, null, collector, null);
 		}
 		
 		// remove the freq measure
-		return partial.mapKeepingKeys((DataSetMetadata) metadata, identity(), dp -> {
+		return partial.mapKeepingKeys((DataSetStructure) metadata, identity(), dp -> {
 				var map = new HashMap<>(dp.getValues(NonIdentifier.class));
-				map.remove(freq);
+				map.remove(DURATION_VAR);
 				return map;
 			});
 	}
@@ -202,27 +199,27 @@ public class FlowStockTransformation extends UnaryTransformation
 		
 		if (metadata.isDataSet())
 		{
-			DataSetMetadata dsmeta = (DataSetMetadata) metadata;
+			DataSetStructure dsmeta = (DataSetStructure) metadata;
 			
-			Set<? extends DataStructureComponent<Identifier, ?, ?>> ids = dsmeta.getIDs().stream()
-					.filter(c -> c.getVariable().getDomain() instanceof TimeDomainSubset)
+			Set<? extends DataSetComponent<Identifier, ?, ?>> ids = dsmeta.getIDs().stream()
+					.filter(c -> c.getDomain() instanceof TimeDomainSubset)
 					.collect(toSet());
 			
 			if (ids.size() == 0)
 				throw new VTLMissingComponentsException(ids, VTLAliasImpl.of("Time identifier"));
 			
-			Set<? extends DataStructureComponent<Measure, ?, ?>> measures = dsmeta.getMeasures();
+			Set<? extends DataSetComponent<Measure, ?, ?>> measures = dsmeta.getMeasures();
 			if (measures.size() == 0)
 				throw new VTLMissingComponentsException(dsmeta, VTLAliasImpl.of("At least one numeric measure"));
 			
-			for (DataStructureComponent<Measure, ?, ?> measure: measures)
-				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
+			for (DataSetComponent<Measure, ?, ?> measure: measures)
+				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
 					throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, measure);
 
 			return dsmeta;
 		}
 		else
-			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(metadata, DataSetStructure.class);
 	}
 	
 	@Override

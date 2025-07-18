@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -69,7 +69,7 @@ public class ConditionalTransformationTest
 	{
 		ConditionalTransformation arTransformation = new ConditionalTransformation(cond, left, right);
 		
-		DataSetMetadata metadata = (DataSetMetadata) arTransformation.getMetadata(session);
+		DataSetStructure metadata = (DataSetStructure) arTransformation.getMetadata(session);
 		assertTrue(metadata.contains(VTLAliasImpl.of("integer_1")));
 		
 		DataSet computedResult = (DataSet) arTransformation.eval(session);
@@ -77,8 +77,8 @@ public class ConditionalTransformationTest
 		assertEquals(INTEGER_RESULTS.length, computedResult.size());
 		assertEquals(metadata, computedResult.getMetadata());
 		
-		DataStructureComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();
-		DataStructureComponent<?, ?, ?> measure = metadata.getComponent(VTLAliasImpl.of("integer_1")).get();
+		DataSetComponent<?, ?, ?> id = metadata.getComponent(VTLAliasImpl.of("string_1")).get();
+		DataSetComponent<?, ?, ?> measure = metadata.getComponent(VTLAliasImpl.of("integer_1")).get();
 		
 		computedResult.stream()
 			.map(dp -> new SimpleEntry<>(dp.get(id).get().toString().charAt(0) - 'A', dp.get(measure).get()))

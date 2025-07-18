@@ -32,7 +32,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -66,7 +66,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
-		final DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
+		final DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 
 		MetadataRepository repo = scheme.getRepository();
 		return operand.filter(dp -> {
@@ -86,7 +86,7 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 				throw new VTLIncompatibleTypesException("filter", BOOLEANDS, ((ScalarValueMetadata<?, ?>) filterMetadata).getDomain());
 		}
 		else
-			((DataSetMetadata) filterMetadata).getSingleton(Measure.class, BOOLEANDS);
+			((DataSetStructure) filterMetadata).getSingleton(Measure.class, BOOLEANDS);
 		
 		return getThisMetadata(scheme);
 	}

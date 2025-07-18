@@ -64,7 +64,7 @@ import it.bancaditalia.oss.vtl.impl.transform.util.ResolvedHierarchicalRuleset;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -76,8 +76,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -155,8 +155,8 @@ public class HierarchyTransformation extends TransformationImpl
 	{
 		DataSet dataset = (DataSet) operand.eval(scheme);
 		
-		DataSetMetadata structure = (DataSetMetadata) getMetadata(scheme);
-		DataStructureComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
+		DataSetStructure structure = (DataSetStructure) getMetadata(scheme);
+		DataSetComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
 		// Store code values that can be computed, to determine the input behavior 
 		HierarchicalRuleSet ruleset = scheme.findHierarchicalRuleset(rulesetID);
@@ -165,25 +165,25 @@ public class HierarchyTransformation extends TransformationImpl
 		Set<CodeItem<?, ?, ?, ?>> leafCodes = resolved.getLeafCodes();
 		
 		// All ids excluding the code id
-		Set<DataStructureComponent<Identifier, ?, ?>> noCodeIds = new HashSet<>(dataset.getMetadata().getIDs());
-		DataStructureComponent<?, ?, ?> codeId = (ruleset.getType() == VALUE_DOMAIN ? dataset.getComponent(id) : dataset.getComponent(ruleset.getRuleComponent()))
+		Set<DataSetComponent<Identifier, ?, ?>> noCodeIds = new HashSet<>(dataset.getMetadata().getIDs());
+		DataSetComponent<?, ?, ?> codeId = (ruleset.getType() == VALUE_DOMAIN ? dataset.getComponent(id) : dataset.getComponent(ruleset.getRuleComponent()))
 				.orElseThrow(() -> new VTLMissingComponentsException(noCodeIds, id));
 		noCodeIds.remove(codeId);
 		
 		ScalarValue<?, ?, ?, ?> missingValue;
 		if (mode.isZero())
-			missingValue = INTEGERDS.isAssignableFrom(measure.getVariable().getDomain())
+			missingValue = INTEGERDS.isAssignableFrom(measure.getDomain())
 					? IntegerValue.of(0L)
 					: createNumberValue(0.0);
 		else
 			missingValue = NullValue.instanceFrom(measure);
 
 		// Keep here all datapoints that go into the output, for subsequent streaming
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> results = new ConcurrentHashMap<>();
+		Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, DataPoint> results = new ConcurrentHashMap<>();
 		
 		return new FunctionDataSet<DataSet>(structure, ds -> {
 			LOGGER.debug("hierarchy(): classifying source datapoints");
-			Map<? extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Map<CodeItem<?, ?, ?, ?>, DataPoint>> grouped;
+			Map<? extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Map<CodeItem<?, ?, ?, ?>, DataPoint>> grouped;
 			try (Stream<DataPoint> stream = ds.stream())
 			{
 				Stream<DataPoint> stream2 = stream;
@@ -226,7 +226,7 @@ public class HierarchyTransformation extends TransformationImpl
 					HierarchicalRule rule = computingRules.get(0);
 					String[] rightItems = rule.getRightCodeItems().toArray(String[]::new);
 					
-					Map<DataStructureComponent<?, ?, ?>, List<ScalarValue<?, ?, ?, ?>>> virals = new HashMap<>();
+					Map<DataSetComponent<?, ?, ?>, List<ScalarValue<?, ?, ?, ?>>> virals = new HashMap<>();
 					
 					// Retrieve the datapoints corresponding to the right-side codes of the rule
 					Lineage[] lineages = new Lineage[rightItems.length];
@@ -249,7 +249,7 @@ public class HierarchyTransformation extends TransformationImpl
 						
 						lineages[i] = dpRight.getLineage();
 						values[i] = dpRight.get(measure);
-						for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
+						for (DataSetComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
 							virals.computeIfAbsent(viral, k -> new ArrayList<>()).add(dpRight.get(viral));
 					}
 					
@@ -277,14 +277,14 @@ public class HierarchyTransformation extends TransformationImpl
 					if (!allIsNonNull)
 						aggResult = NullValue.instanceFrom(measure);
 					else
-						aggResult = INTEGERDS.isAssignableFrom(measure.getVariable().getDomain())
+						aggResult = INTEGERDS.isAssignableFrom(measure.getDomain())
 								? IntegerValue.of(round(accumulator))
 								: createNumberValue(accumulator);
 					
 					DataPointBuilder builder = new DataPointBuilder(keyValues, DONT_SYNC)
 							.add(codeId, code)
 							.add(measure, aggResult);
-					for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
+					for (DataSetComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
 						builder = builder.add(viral, computeViral(virals.get(viral)));
 					
 					DataPoint dp = builder.build(LineageNode.of(this, LineageCall.of(lineages)), structure);
@@ -334,7 +334,7 @@ public class HierarchyTransformation extends TransformationImpl
 		});
 	}
 
-	private boolean canBeComputedNow(ResolvedHierarchicalRuleset resolved, CodeItem<?, ?, ?, ?> code, HierarchicalRuleSet ruleset, DataStructureComponent<Measure, ?, ?> measure,
+	private boolean canBeComputedNow(ResolvedHierarchicalRuleset resolved, CodeItem<?, ?, ?, ?> code, HierarchicalRuleSet ruleset, DataSetComponent<Measure, ?, ?> measure,
 			Set<CodeItem<?, ?, ?, ?>> computedCodes, Map<CodeItem<?, ?, ?, ?>, DataPoint> originalDpGroup, Map<CodeItem<?, ?, ?, ?>, DataPoint> computedDpGroup)
 	{
 		HierarchicalRule rule = resolved.getComputingRulesFor(code).get(0);
@@ -365,13 +365,13 @@ public class HierarchyTransformation extends TransformationImpl
 		
 		if (metadata.isDataSet())
 		{
-			DataSetMetadata opMeta = (DataSetMetadata) metadata;
+			DataSetStructure opMeta = (DataSetStructure) metadata;
 
 			if (opMeta.getMeasures().size() != 1)
 				throw new VTLSingletonComponentRequiredException(Measure.class, NUMBERDS, opMeta);
 			
-			DataStructureComponent<Measure, ?, ?> measure = opMeta.getMeasures().iterator().next();
-			if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
+			DataSetComponent<Measure, ?, ?> measure = opMeta.getMeasures().iterator().next();
+			if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
 				throw new VTLIncompatibleTypesException("hierarchy", measure, NUMBERDS);
 			
 			HierarchicalRuleSet ruleset = scheme.findHierarchicalRuleset(rulesetID);
@@ -382,7 +382,7 @@ public class HierarchyTransformation extends TransformationImpl
 				if (ruleset.getType() == VALUE_DOMAIN && id == null)
 					throw new VTLException("A rule variable is required when using a ruleset defined on a valuedomain.");
 				
-				DataStructureComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? opMeta.getComponent(id) : opMeta.getComponent(ruleset.getRuleComponent()))
+				DataSetComponent<?, ?, ?> idComp = (ruleset.getType() == VALUE_DOMAIN ? opMeta.getComponent(id) : opMeta.getComponent(ruleset.getRuleComponent()))
 						.orElseThrow(() -> new VTLMissingComponentsException(opMeta.getIDs(), id));
 				
 				Set<String> uniqueLeft = new HashSet<>();
@@ -390,19 +390,19 @@ public class HierarchyTransformation extends TransformationImpl
 					if (!uniqueLeft.add(rule.getLeftCodeItem()))
 						throw new UnsupportedOperationException("Multiple rules for the same code not implemented");
 				
-				if (!resolved.getDomain().isAssignableFrom(idComp.getVariable().getDomain()))
+				if (!resolved.getDomain().isAssignableFrom(idComp.getDomain()))
 					throw new VTLIncompatibleTypesException("hierarchy", idComp, resolved.getDomain());
 			}
 			else
 				throw new VTLException("Hierarchical ruleset " + rulesetID + " not found.");
 			
-			return new DataStructureBuilder(opMeta)
+			return new DataSetStructureBuilder(opMeta)
 					.removeComponents(opMeta.getComponents(Attribute.class))
 					.addComponents(opMeta.getComponents(ViralAttribute.class))
 					.build();
 		}
 		else
-			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(metadata, DataSetStructure.class);
 	}
 	
 	@Override

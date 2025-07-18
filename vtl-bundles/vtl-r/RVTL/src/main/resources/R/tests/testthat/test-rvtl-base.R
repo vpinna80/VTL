@@ -75,7 +75,7 @@ testthat::test_that("R env + json repo", {
       )
       ds_r_json <<- ds_local # fix problem global env
       vtlAddStatements(session, "ds2:=ds_r_json;ds3:=ds_r_json+ds2;")
-      vtlCompile(session)
+      testthat::expect_true(vtlCompile(session), label = "compilation")
       ds2 <- vtlEvalNodes(session, "ds2")[["ds2"]]
       ds3 <- vtlEvalNodes(session, "ds3")[["ds3"]]
 
@@ -103,7 +103,7 @@ testthat::test_that("CSV env + json repo", {
       session <- "csv+json"
       set_vtl_csv_json_properties(session)
       vtlAddStatements(session, "ds2:=ds_csv;ds3:=ds_csv+ds2;")
-      vtlCompile(session)
+      testthat::expect_true(vtlCompile(session), label = "compilation")
       ds_csv <- vtlEvalNodes(session, "ds_csv")[["ds_csv"]]
       ds2 <- vtlEvalNodes(session, "ds2")[["ds2"]]
       ds3 <- vtlEvalNodes(session, "ds3")[["ds3"]]

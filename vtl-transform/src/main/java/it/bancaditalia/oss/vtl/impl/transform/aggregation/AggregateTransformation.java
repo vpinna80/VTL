@@ -20,6 +20,9 @@
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.NUM_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
@@ -70,10 +73,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.FunctionDataSet;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator;
@@ -84,16 +86,13 @@ import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.GroupingClause;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -105,8 +104,6 @@ import it.bancaditalia.oss.vtl.util.SerCollector;
 public class AggregateTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final DataStructureComponent<Measure, EntireIntegerDomainSubset, IntegerDomain> COUNT_MEASURE = INTEGERDS.getDefaultVariable().as(Measure.class);
-	private static final DataStructureComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> HAVING_COMP = BOOLEANDS.getDefaultVariable().as(Measure.class);
 
 	private final Transformation operand;
 	private final AggregateOperator	aggregation;
@@ -152,33 +149,33 @@ public class AggregateTransformation extends TransformationImpl
 		}
 
 		DataSet dataset = (DataSet) opMeta;
-		SerCollector<DataPoint, ?, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> combined = null;
-		DataSetMetadata origStructure = dataset.getMetadata();
+		SerCollector<DataPoint, ?, Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> combined = null;
+		DataSetStructure origStructure = dataset.getMetadata();
 		VTLValueMetadata metadata = getMetadata(scheme);
 		MetadataRepository repo = scheme.getRepository();
 
 		if (aggregation == COUNT)
-			combined = collectingAndThen(counting(), v -> Map.of(COUNT_MEASURE, IntegerValue.of(v)));
+			combined = collectingAndThen(counting(), v -> Map.of(INT_VAR, IntegerValue.of(v)));
 		else
 			// Create a single collector that combines each collector that aggregates a measure into one
-			for (DataStructureComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
+			for (DataSetComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
 				if (combined == null)
-					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getVariable().getDomain()), v -> new HashMap<>(Map.of(measure, v)))));
+					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getDomain()), v -> new HashMap<>(Map.of(measure, v)))));
 				else
-					combined = teeing(mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getVariable().getDomain()), v -> new SimpleEntry<>(measure, v)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
+					combined = teeing(mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getDomain()), v -> new SimpleEntry<>(measure, v)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
 		
-		Set<DataStructureComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
+		Set<DataSetComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 
 		if (groupingClause != null && groupingClause.getFrequency() != null)
 		{
-			DataStructureComponent<Identifier, ?, ?> timeID = groupIDs.stream()
-					.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
+			DataSetComponent<Identifier, ?, ?> timeID = groupIDs.stream()
+					.filter(id -> TIMEDS.isAssignableFrom(id.getDomain()))
 					.findAny()
 					.orElseThrow(() -> new IllegalStateException("A time identifier is missing in structure " + groupIDs));
 			
 			// remap the time id onto a specified duration
 			dataset = new FunctionDataSet<>(origStructure, ds -> ds.stream().map(dp -> {
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> c = new HashMap<>(dp);
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> c = new HashMap<>(dp);
 				c.compute(timeID, (k, v) -> ((Frequency) groupingClause.getFrequency().get()).wrap((TimeValue<?, ?, ?, ?>) v));
 				return new DataPointBuilder(c).build(dp.getLineage(), origStructure);
 			}), dataset);
@@ -186,25 +183,25 @@ public class AggregateTransformation extends TransformationImpl
 
 		if (metadata.isDataSet())
 		{
-			DataSetMetadata structure = (DataSetMetadata) metadata; 
+			DataSetStructure structure = (DataSetStructure) metadata; 
 
 			// Add collectors for Viral Attributes when the aggregation produces a dataset 
-			for (DataStructureComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
+			for (DataSetComponent<ViralAttribute, ?, ?> viral: structure.getComponents(ViralAttribute.class))
 				combined = teeing(mapping(dp -> dp.get(viral), collectingAndThen(toList(), vals -> 
 				new SimpleEntry<>(viral, computeViral(vals)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
 			
 			DataSet result = (DataSet) dataset.aggregate(structure, groupIDs, combined, (map, lineages, keyValues) -> {
 				DataPointBuilder builder = new DataPointBuilder(keyValues);
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> measuresMap = new HashMap<>();
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> viralsMap = new HashMap<>();
-				for (DataStructureComponent<?, ?, ?> comp: map.keySet())
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> measuresMap = new HashMap<>();
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> viralsMap = new HashMap<>();
+				for (DataSetComponent<?, ?, ?> comp: map.keySet())
 					(comp.is(Measure.class) ? measuresMap : viralsMap).put(comp, map.get(comp));
 				if (targetName == null)
-					for (DataStructureComponent<?, ?, ?> measure: measuresMap.keySet())
+					for (DataSetComponent<?, ?, ?> measure: measuresMap.keySet())
 						builder = builder.add(getCompFor(measure, repo, structure), measuresMap.get(measure));
 				else if (measuresMap.size() == 1)
 				{
-					DataStructureComponent<Measure, ?, ?> srcComp = origStructure.getMeasures().iterator().next();
+					DataSetComponent<Measure, ?, ?> srcComp = origStructure.getMeasures().iterator().next();
 					builder = builder.add(getCompFor(srcComp, repo, structure), measuresMap.values().iterator().next());
 				}
 				else
@@ -217,7 +214,7 @@ public class AggregateTransformation extends TransformationImpl
 			{
 				DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
 				result = result.filteredMappedJoin(structure, dsHaving, (dp, having) -> 
-						having.getValue(HAVING_COMP) == BooleanValue.TRUE, (dp, havingCond) -> dp, false);
+						having.getValue(BOOL_VAR) == BooleanValue.TRUE, (dp, havingCond) -> dp, false);
 			}
 			
 			return result;
@@ -243,15 +240,15 @@ public class AggregateTransformation extends TransformationImpl
 		});
 	}
 	
-	private DataStructureComponent<?, ?, ?> getCompFor(DataStructureComponent<?, ?, ?> src, MetadataRepository repo, DataSetMetadata metadata)
+	private DataSetComponent<?, ?, ?> getCompFor(DataSetComponent<?, ?, ?> src, MetadataRepository repo, DataSetStructure metadata)
 	{
-		DataStructureComponent<?, ?, ?> dest;
+		DataSetComponent<?, ?, ?> dest;
 		if (aggregation == COUNT && targetName != null)
-			dest = repo.createTempVariable(targetName, INTEGERDS).as(Measure.class);
+			dest = DataSetComponentImpl.of(targetName, INTEGERDS, Measure.class);
 		else if (aggregation == COUNT)
-			dest = INTEGERDS.getDefaultVariable().as(Measure.class);
+			dest = INT_VAR;
 		else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
-			dest = INTEGERDS.isAssignableFrom(src.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : src;
+			dest = INTEGERDS.isAssignableFrom(src.getDomain()) ? NUM_VAR : src;
 		else if (targetName != null)
 			dest = metadata.getComponent(targetName).orElseThrow(() -> new VTLMissingComponentsException(metadata, targetName));
 		else
@@ -272,8 +269,8 @@ public class AggregateTransformation extends TransformationImpl
 				throw new VTLIncompatibleTypesException(aggregation.toString().toLowerCase(), ((ScalarValueMetadata<?, ?>) opmeta).getDomain(), NUMBERDS);
 		else
 		{
-			DataSetMetadata dataset = (DataSetMetadata) opmeta;
-			Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMeasures();
+			DataSetStructure dataset = (DataSetStructure) opmeta;
+			Set<DataSetComponent<Measure, ?, ?>> measures = dataset.getMeasures();
 
 			if (groupingClause == null)
 			{
@@ -281,58 +278,58 @@ public class AggregateTransformation extends TransformationImpl
 					throw new VTLExpectedRoleException(Measure.class, dataset);
 
 				// Determine which measure will contain the aggregated value
-				Set<DataStructureComponent<Measure, ?, ?>> newMeasures = measures;
+				Set<DataSetComponent<Measure, ?, ?>> newMeasures = measures;
 				if (aggregation == COUNT)
-					newMeasures = singleton(COUNT_MEASURE);
+					newMeasures = singleton(INT_VAR);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					if (newMeasures.size() == 1)
 					{
-						DataStructureComponent<Measure, ?, ?> c = newMeasures.iterator().next();
-						newMeasures = Set.of(INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : c);
+						DataSetComponent<Measure, ?, ?> c = newMeasures.iterator().next();
+						newMeasures = Set.of(INTEGERDS.isAssignableFrom(c.getDomain()) ? NUM_VAR : c);
 					}
-					else if (newMeasures.stream().map(DataStructureComponent::getVariable).map(Variable::getDomain).anyMatch(INTEGERDS::isAssignableFrom))
+					else if (newMeasures.stream().map(DataSetComponent::getDomain).anyMatch(INTEGERDS::isAssignableFrom))
 						throw new UnsupportedOperationException("Only number measures are allowed for " + this);
 
 				if (newMeasures.size() == 1 && operand != null)
-					return newMeasures.iterator().next().getVariable();
+					return ScalarValueMetadata.of(newMeasures.iterator().next().getDomain());
 				else
-					return new DataStructureBuilder(newMeasures).build();
+					return new DataSetStructureBuilder(newMeasures).build();
 			}
 			else
 			{
-				Set<DataStructureComponent<Identifier, ?, ?>> groupComps = groupingClause.getGroupingComponents(dataset);
+				Set<DataSetComponent<Identifier, ?, ?>> groupComps = groupingClause.getGroupingComponents(dataset);
 				
-				Optional<DataStructureComponent<Identifier, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
+				Optional<DataSetComponent<Identifier, ?, ?>> nonID = groupComps.stream().filter(c -> c.is(NonIdentifier.class)).findAny();
 				if (nonID.isPresent())
 					throw new VTLIncompatibleRolesException("aggr with group by", nonID.get(), Identifier.class);
 				
 				if (groupingClause.getFrequency() != null)
 				{
-					Set<DataStructureComponent<Identifier, ?, ?>> timeIDs = groupComps.stream()
-						.filter(id -> TIMEDS.isAssignableFrom(id.getVariable().getDomain()))
+					Set<DataSetComponent<Identifier, ?, ?>> timeIDs = groupComps.stream()
+						.filter(id -> TIMEDS.isAssignableFrom(id.getDomain()))
 						.collect(toSet());
 					
 					if (timeIDs.size() != 1)
 						throw new VTLSingletonComponentRequiredException(Identifier.class, timeIDs);
 				}
 				
-				Set<? extends DataStructureComponent<?, ?, ?>> newComps = dataset.getMeasures();
+				Set<? extends DataSetComponent<?, ?, ?>> newComps = dataset.getMeasures();
 				if (aggregation == COUNT && targetName != null)
-					newComps = singleton(repo.createTempVariable(targetName, INTEGERDS).as(Measure.class));
+					newComps = singleton(DataSetComponentImpl.of(targetName, INTEGERDS, Measure.class));
 				else if (aggregation == COUNT)
-					newComps = singleton(COUNT_MEASURE);
+					newComps = singleton(INT_VAR);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newComps = newComps.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getVariable().getDomain()) ? NUMBERDS.getDefaultVariable().as(Measure.class) : c)
+						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? NUM_VAR : c)
 						.collect(toSet());
 				
 				if (targetName != null)
 					if (measures.size() > 1)
 						throw new VTLSingletonComponentRequiredException(Measure.class, newComps);
 					else
-						newComps = singleton(repo.createTempVariable(targetName, measures.iterator().next().getVariable().getDomain()).as(targetRole));
+						newComps = singleton(DataSetComponentImpl.of(targetName, measures.iterator().next().getDomain(), targetRole));
 
-				DataSetMetadata structure = new DataStructureBuilder(groupComps)
+				DataSetStructure structure = new DataSetStructureBuilder(groupComps)
 						.addComponents(dataset.getComponents(ViralAttribute.class))
 						.addComponents(newComps)
 						.build();
@@ -345,19 +342,19 @@ public class AggregateTransformation extends TransformationImpl
 						domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();
 					else
 					{
-						DataSetMetadata havingStructure = (DataSetMetadata) havingMeta;
+						DataSetStructure havingStructure = (DataSetStructure) havingMeta;
 
-						Set<DataStructureComponent<Identifier, ?, ?>> havingIDs = havingStructure.getIDs(); 
-						Set<DataStructureComponent<Identifier, ?, ?>> resultIDs = structure.getIDs();
+						Set<DataSetComponent<Identifier, ?, ?>> havingIDs = havingStructure.getIDs(); 
+						Set<DataSetComponent<Identifier, ?, ?>> resultIDs = structure.getIDs();
 						if (!resultIDs.equals(havingIDs))
 							throw new VTLIncompatibleStructuresException("having", resultIDs, havingIDs);
 						
-						Set<DataStructureComponent<Measure, ?, ?>> havingMeasures = havingStructure.getMeasures(); 
+						Set<DataSetComponent<Measure, ?, ?>> havingMeasures = havingStructure.getMeasures(); 
 						if (havingMeasures.size() == 1)
 						{
-							DataStructureComponent<?, ?, ?> singleton = havingMeasures.iterator().next();
+							DataSetComponent<?, ?, ?> singleton = havingMeasures.iterator().next();
 							if (singleton.is(Measure.class))
-								domain = singleton.getVariable().getDomain();
+								domain = singleton.getDomain();
 						}
 					}
 					

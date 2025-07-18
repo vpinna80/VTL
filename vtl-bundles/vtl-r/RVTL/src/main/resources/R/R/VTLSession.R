@@ -155,8 +155,8 @@ VTLSession <- R6Class("VTLSession",
             signalCondition(e)
           })
           
-          attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getVariable()$getAlias()$getName() })
-          attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getVariable()$getAlias()$getName() })
+          attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getAlias()$getName() })
+          attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getAlias()$getName() })
         }
         
         if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue" || !is.integer(max.rows) || max.rows <= 0) {

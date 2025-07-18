@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.transform.ops;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseTemporal;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.getDefaultMeasure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
@@ -42,12 +43,12 @@ import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -95,12 +96,12 @@ public class CastTransformation extends UnaryTransformation
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		DataStructureComponent<Measure, ?, ?> oldMeasure = dataset.getMetadata().getMeasures().iterator().next();
-		if (target.getDomain() == oldMeasure.getVariable().getDomain())
+		DataSetComponent<Measure, ?, ?> oldMeasure = dataset.getMetadata().getMeasures().iterator().next();
+		if (target.getDomain() == oldMeasure.getDomain())
 			return dataset;
 		
-		DataStructureComponent<Measure, ?, ?> measure = target.getDomain().getDefaultVariable().as(Measure.class);
-		DataSetMetadata structure = new DataStructureBuilder(dataset.getMetadata().getIDs())
+		DataSetComponent<Measure, ?, ?> measure = getDefaultMeasure(target.getDomain());
+		DataSetStructure structure = new DataSetStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(measure)
 				.build();
 		
@@ -117,9 +118,9 @@ public class CastTransformation extends UnaryTransformation
 			domain = ((ScalarValueMetadata<?, ?>) meta).getDomain();
 		else
 		{
-			DataSetMetadata dataset = (DataSetMetadata) meta;
-			DataStructureComponent<? extends Measure, ?, ?> measure = dataset.getSingleton(Measure.class);
-			domain = measure.getVariable().getDomain();
+			DataSetStructure dataset = (DataSetStructure) meta;
+			DataSetComponent<? extends Measure, ?, ?> measure = dataset.getSingleton(Measure.class);
+			domain = measure.getDomain();
 		}
 
 		if (domain == target.getDomain())

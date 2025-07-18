@@ -38,10 +38,8 @@ import java.io.Serializable;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -58,7 +56,6 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,20 +82,17 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
-import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
-import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Holder;
 import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
 import it.bancaditalia.oss.vtl.util.SerFunction;
@@ -137,31 +131,7 @@ public class SparkUtils
 		DOMAIN_DATATYPES.put(DATEDS, new DateValueUDT());
 	}
 
-	public static Set<DataStructureComponent<?, ?, ?>> getComponentsFromStruct(MetadataRepository repo, StructType schema)
-	{
-		Set<DataStructureComponent<?, ?, ?>> result = new HashSet<>();
-		for (StructField field: schema.fields())
-			result.add(getComponentFor(repo, field));
-		
-		return result;
-	}
-
-	private static DataStructureComponent<? extends Component, ?, ?> getComponentFor(MetadataRepository repo, StructField field)
-	{
-		Class<? extends Component> role;
-		switch ((int) field.metadata().getLong("Role"))
-		{
-			case 1: role = Identifier.class; break;
-			case 2: role = Measure.class; break;
-			case 3: role = Attribute.class; break;
-			case 4: role = ViralAttribute.class; break;
-			default: throw new UnsupportedOperationException("No VTL role corresponding to metadata.");
-		}
-		
-		return repo.getVariable(VTLAliasImpl.of(field.name())).orElseThrow(() -> new NullPointerException("Variable " + field.name() + " is not defined")).as(role);
-	}
-
-	public static MapFunction<Row, Row> parseCSVStrings(DataSetMetadata structure, Lineage lineage,
+	public static MapFunction<Row, Row> parseCSVStrings(DataSetStructure structure, Lineage lineage,
 			String[] compNames, ValueDomainSubset<?,?>[] domains)
 	{
 		return srcRow -> {
@@ -190,7 +160,7 @@ public class SparkUtils
 			throw new UnsupportedOperationException("Cannot determine the scalar value corresponding to " + serialized.getClass());
 	}
 	
-	public static Metadata getMetadataFor(DataStructureComponent<?, ?, ?> component)
+	public static Metadata getMetadataFor(DataSetComponent<?, ?, ?> component)
 	{
 		MetadataBuilder metadataBuilder = new MetadataBuilder();
 		if (component.getRole() == Identifier.class)
@@ -204,20 +174,20 @@ public class SparkUtils
 		else
 			throw new IllegalStateException("Unqualified role class: " + component.getRole());
 		
-		return metadataBuilder.putString("Domain", component.getVariable().getDomain().getAlias().getName()).build();
+		return metadataBuilder.putString("Domain", component.getDomain().getAlias().getName()).build();
 	}
 
-	public static StructField getFieldFor(DataStructureComponent<?, ?, ?> component)
+	public static StructField getFieldFor(DataSetComponent<?, ?, ?> component)
 	{
 		DataType type = getDataTypeFor(component);
 		Metadata metadata = getMetadataFor(component);
 		
-		return createStructField(component.getVariable().getAlias().getName(), type, component.is(NonIdentifier.class), metadata);
+		return createStructField(component.getAlias().getName(), type, component.is(NonIdentifier.class), metadata);
 	}
 
-	public static DataType getDataTypeFor(DataStructureComponent<?, ?, ?> component)
+	public static DataType getDataTypeFor(DataSetComponent<?, ?, ?> component)
 	{
-		ValueDomainSubset<?, ?> domain = component.getVariable().getDomain();
+		ValueDomainSubset<?, ?> domain = component.getDomain();
 		while (!DOMAIN_DATATYPES.containsKey(domain))
 			domain = (ValueDomainSubset<?, ?>) domain.getParentDomain();
 		if (DOMAIN_DATATYPES.containsKey(domain))
@@ -226,37 +196,37 @@ public class SparkUtils
 			throw new UnsupportedOperationException("Domain " + domain + " is not supported on Spark.");
 	}
 
-	public static EncoderField getEncoderFieldFor(DataStructureComponent<?, ?, ?> comp)
+	public static EncoderField getEncoderFieldFor(DataSetComponent<?, ?, ?> comp)
 	{
-		ScalarValueUDT<?> scalarValueUDT = DOMAIN_DATATYPES.get(comp.getVariable().getDomain());
-		return new EncoderField(comp.getVariable().getAlias().getName(), scalarValueUDT.getEncoder(), 
+		ScalarValueUDT<?> scalarValueUDT = DOMAIN_DATATYPES.get(comp.getDomain());
+		return new EncoderField(comp.getAlias().getName(), scalarValueUDT.getEncoder(), 
 				!comp.is(Identifier.class), getMetadataFor(comp), Option.empty(), Option.empty());
 	}
 
-	public static List<EncoderField> createFieldFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public static List<EncoderField> createFieldFromComponents(Collection<? extends DataSetComponent<?, ?, ?>> components)
 	{
 		return structHelper(components.stream(), SparkUtils::getEncoderFieldFor);
 	}
 
-	public static List<StructField> createStructFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public static List<StructField> createStructFromComponents(Collection<? extends DataSetComponent<?, ?, ?>> components)
 	{
 		return structHelper(components.stream(), SparkUtils::getFieldFor);
 	}	
 
-	public static List<String> getNamesFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public static List<String> getNamesFromComponents(Collection<? extends DataSetComponent<?, ?, ?>> components)
 	{
-		return structHelper(components.stream(), c -> c.getVariable().getAlias().getName());
+		return structHelper(components.stream(), c -> c.getAlias().getName());
 	}
 
-	public static List<Column> getColumnsFromComponents(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public static List<Column> getColumnsFromComponents(Collection<? extends DataSetComponent<?, ?, ?>> components)
 	{
-		return structHelper(components.stream(), c -> col(c.getVariable().getAlias().getName()));
+		return structHelper(components.stream(), c -> col(c.getAlias().getName()));
 	}
 
-	public static <F> List<F> structHelper(Stream<? extends DataStructureComponent<?, ?, ?>> stream, SerFunction<? super DataStructureComponent<?, ?, ?>, F> mapper)
+	public static <F> List<F> structHelper(Stream<? extends DataSetComponent<?, ?, ?>> stream, SerFunction<? super DataSetComponent<?, ?, ?>, F> mapper)
 	{
 		return stream
-			.sorted(DataStructureComponent::byNameAndRole)
+			.sorted(DataSetComponent::byNameAndRole)
 			.map(mapper)
 			.collect(toList());
 	}
@@ -273,7 +243,7 @@ public class SparkUtils
 	 * @throws SecurityException 
 	 * @throws IllegalArgumentException 
 	 */
-	public static <T> AgnosticEncoder<T> getEncoderFor(Serializable instance, DataSetMetadata structure)
+	public static <T> AgnosticEncoder<T> getEncoderFor(Serializable instance, DataSetStructure structure)
 	{
 		AgnosticEncoder<?> resultEncoder = null; 
 		

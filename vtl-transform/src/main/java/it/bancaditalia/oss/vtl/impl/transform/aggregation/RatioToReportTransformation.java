@@ -42,12 +42,12 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -83,11 +83,11 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	@Override
 	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
 	{
-		Set<DataStructureComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
-		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
+		Set<DataSetComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
+		Set<DataSetComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
 		WindowClause clause = new WindowClauseImpl(partitionIDs, null, DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
 		
-		for (DataStructureComponent<Measure, ?, ?> measure: measures)
+		for (DataSetComponent<Measure, ?, ?> measure: measures)
 		{
 			SerBiFunction<ScalarValue<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>, Collection<? extends ScalarValue<?, ?, ?, ?>>> divider = (sumValue, measureValue) -> {
 				if (sumValue == null || sumValue.isNull() || measureValue == null || measureValue.isNull())
@@ -106,7 +106,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 				}
 			};
 
-			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer = SUM.getReducer(measure.getVariable().getDomain());
+			SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> reducer = SUM.getReducer(measure.getDomain());
 			dataset = dataset.analytic(lineageEnricher(this), measure, measure, clause, null, reducer, divider);
 		}
 		
@@ -114,18 +114,18 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	}
 
 	@Override
-	public DataSetMetadata computeMetadata(TransformationScheme session)
+	public DataSetStructure computeMetadata(TransformationScheme session)
 	{
 		VTLValueMetadata opmeta = operand == null ? session.getMetadata(THIS) : operand.getMetadata(session);
 		
 		if (!opmeta.isDataSet())
-			throw new VTLInvalidParameterException(opmeta, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(opmeta, DataSetStructure.class);
 		
-		DataSetMetadata dataset = (DataSetMetadata) opmeta;
+		DataSetStructure dataset = (DataSetStructure) opmeta;
 		
 		dataset.matchIdComponents(partitionBy, "partition by");
 		
-		return new DataStructureBuilder(dataset.getIDs())
+		return new DataSetStructureBuilder(dataset.getIDs())
 				.addComponents(dataset.getMeasures())
 				.build();
 	}

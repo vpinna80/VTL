@@ -52,15 +52,16 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AnalyticTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.bool.ConditionalTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
@@ -134,7 +135,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 		{
 			VTLValueMetadata metadata = calcClause.getMetadata(scheme);
-			if (metadata.isDataSet() && ((DataSetMetadata) metadata).getMeasures().size() != 1)
+			if (metadata.isDataSet() && ((DataSetStructure) metadata).getMeasures().size() != 1)
 				throw new VTLInvalidParameterException(metadata, ScalarValueMetadata.class);
 			else
 				return metadata;
@@ -181,7 +182,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
+		DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 		DataSet operand = (DataSet) getThisValue(scheme);
 
 		Map<Boolean, List<CalcClauseItem>> partitionedClauses = calcClauses.stream()
@@ -189,32 +190,32 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		List<CalcClauseItem> nonAnalyticClauses = partitionedClauses.get(false);
 		List<CalcClauseItem> analyticClauses = partitionedClauses.get(true);
 		
-		DataSetMetadata nonAnalyticResultMetadata = new DataStructureBuilder(metadata)
+		DataSetStructure nonAnalyticResultMetadata = new DataSetStructureBuilder(metadata)
 				.removeComponents(analyticClauses.stream().map(CalcClauseItem::getAlias).collect(toSet()))
 				.build();
 		
-		DataStructureComponent<Identifier, ?, ?> timeId = metadata.getIDs().stream()
+		DataSetComponent<Identifier, ?, ?> timeId = metadata.getIDs().stream()
 					.map(c -> c.asRole(Identifier.class))
-					.filter(c -> TIMEDS.isAssignableFrom(c.getVariable().getDomain()))
+					.filter(c -> TIMEDS.isAssignableFrom(c.getDomain()))
 					.collect(collectingAndThen(toSet(), s -> s.isEmpty() || s.size() > 1 ? null : s.iterator().next()));
 		
 		MetadataRepository repo = scheme.getRepository();
 		// preserve original dataset if no nonAnalyticsClauses are present
-		DataSetMetadata opMeta = operand.getMetadata();
+		DataSetStructure opMeta = operand.getMetadata();
 		DataSet nonAnalyticResult = nonAnalyticClauses.size() == 0
 			? operand
 			: operand.mapKeepingKeys(nonAnalyticResultMetadata, lineageEnricher(this), dp -> {
 					DatapointScope dpSession = new DatapointScope(repo, dp, opMeta, timeId);
 					
 					// place calculated components (eventually overriding existing ones) 
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
+					Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> calcValues = 
 						nonAnalyticClauses.stream()
 							.collect(toConcurrentMap(
 								clause -> nonAnalyticResultMetadata.getComponent(clause.getAlias()).get(),
 								clause -> clause.eval(dpSession))
 							);
 					
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
+					Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 					map.keySet().removeAll(calcValues.keySet());
 					map.putAll(calcValues);
 					return map;
@@ -228,24 +229,24 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			.orElse(nonAnalyticResult);
 	}
 	
-	private Function<CalcClauseItem, DataSet> calcAndRename(DataSetMetadata resultStructure, TransformationScheme scheme, SerUnaryOperator<Lineage> lineage)
+	private Function<CalcClauseItem, DataSet> calcAndRename(DataSetStructure resultStructure, TransformationScheme scheme, SerUnaryOperator<Lineage> lineage)
 	{
 		return clause -> {
 			LOGGER.debug("Evaluating calc expression {}", clause.calcClause.toString());
 			DataSet clauseValue = (DataSet) clause.calcClause.eval(scheme);
-			DataStructureComponent<Measure, ?, ?> measure = clauseValue.getMetadata().getMeasures().iterator().next();
+			DataSetComponent<Measure, ?, ?> measure = clauseValue.getMetadata().getMeasures().iterator().next();
 	
-			VTLAlias newName = coalesce(clause.getAlias(), measure.getVariable().getAlias());
-			DataStructureComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
+			VTLAlias newName = coalesce(clause.getAlias(), measure.getAlias());
+			DataSetComponent<?, ?, ?> newComponent = resultStructure.getComponent(newName).get();
 			
-			DataSetMetadata newStructure = new DataStructureBuilder(clauseValue.getMetadata())
+			DataSetStructure newStructure = new DataSetStructureBuilder(clauseValue.getMetadata())
 				.removeComponent(measure)
 				.addComponent(newComponent)
 				.build();
 
 			LOGGER.trace("Creating component {} from expression {}", newComponent, clause.calcClause.toString());
 			return clauseValue.mapKeepingKeys(newStructure, lineage, dp -> {
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values = new HashMap<>(dp);
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values = new HashMap<>(dp);
 				values.remove(measure);
 				values.put(newComponent, dp.get(measure));
 				return values;
@@ -265,11 +266,10 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 		VTLValueMetadata operand = getThisMetadata(scheme);
 
 		if (!(operand.isDataSet()))
-			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(operand, DataSetStructure.class);
 
-		final DataSetMetadata metadata = (DataSetMetadata) operand;
-		DataStructureBuilder builder = new DataStructureBuilder(metadata);
-		MetadataRepository repo = scheme.getRepository();
+		final DataSetStructure metadata = (DataSetStructure) operand;
+		DataSetStructureBuilder builder = new DataSetStructureBuilder(metadata);
 
 		for (CalcClauseItem item : calcClauses)
 		{
@@ -291,31 +291,31 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			else if (itemMeta.isDataSet())
 			{
 				// calc item expression is a component, check for mono-measure dataset
-				DataSetMetadata value = (DataSetMetadata) itemMeta;
-				domain = value.getSingleton(Measure.class).getVariable().getDomain();
+				DataSetStructure value = (DataSetStructure) itemMeta;
+				domain = value.getSingleton(Measure.class).getDomain();
 			} 
 			else
 				domain = ((ScalarValueMetadata<?, ?>) itemMeta).getDomain();
 
-			Optional<DataStructureComponent<?, ?, ?>> maybePresent = metadata.getComponent(item.getAlias());
+			Optional<DataSetComponent<?, ?, ?>> maybePresent = metadata.getComponent(item.getAlias());
 			
 			if (maybePresent.isPresent())
 			{
 				// existing component
-				DataStructureComponent<?, ? extends ValueDomainSubset<?, ?>, ? extends ValueDomain> definedComponent = maybePresent.get();
+				DataSetComponent<?, ? extends ValueDomainSubset<?, ?>, ? extends ValueDomain> definedComponent = maybePresent.get();
 
 				// disallow override of ids
 				if (definedComponent.is(Identifier.class))
 					throw new VTLInvariantIdentifiersException("calc", singleton(definedComponent.asRole(Identifier.class)));
 				else
 				{
-					if (!definedComponent.getVariable().getDomain().isAssignableFrom(domain))
-						throw new VTLIncompatibleTypesException("calc", definedComponent.getVariable().getDomain(), domain);
+					if (!definedComponent.getDomain().isAssignableFrom(domain))
+						throw new VTLIncompatibleTypesException("calc", definedComponent.getDomain(), domain);
 					else if (item.getRole() != null && !definedComponent.is(item.getRole()))
 					{
 						// switch role (from a non-id to any)
 						builder.removeComponent(definedComponent);
-						DataStructureComponent<?, ?, ?> newComponent = repo.createTempVariable(item.getAlias(), domain).as(item.getRole());
+						DataSetComponent<?, ?, ?> newComponent = DataSetComponentImpl.of(item.getAlias(), domain, item.getRole());
 						builder.addComponent(newComponent);
 					}
 				}
@@ -324,7 +324,7 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 			{
 				// new component
 				Class<? extends Component> newComponent = item.getRole() == null ? Measure.class : item.getRole();
-				builder = builder.addComponent(repo.createTempVariable(item.getAlias(), domain).as(newComponent));
+				builder = builder.addComponent(DataSetComponentImpl.of(item.getAlias(), domain, newComponent));
 			}
 		}
 

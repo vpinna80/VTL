@@ -60,8 +60,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.session.VTLSession;
@@ -72,8 +72,8 @@ public class CachedDataSet extends NamedDataSet
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CachedDataSet.class);
 	private static final WeakHashMap<VTLSession, Map<VTLAlias, CacheWaiter>> SESSION_CACHES = new WeakHashMap<>(); 
-	private static final ReferenceQueue<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> REF_QUEUE = new ReferenceQueue<>();
-	private static final Map<Reference<?>, Entry<VTLAlias, Set<DataStructureComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
+	private static final ReferenceQueue<Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> REF_QUEUE = new ReferenceQueue<>();
+	private static final Map<Reference<?>, Entry<VTLAlias, Set<DataSetComponent<Identifier, ?, ?>>>> REF_NAMES = new ConcurrentHashMap<>();
 
 	private final transient CacheWaiter waiter;
 	private transient volatile SoftReference<Set<DataPoint>> unindexed = new SoftReference<>(null);
@@ -92,10 +92,10 @@ public class CachedDataSet extends NamedDataSet
 				while (!Thread.interrupted())
 					try 
 					{
-						Reference<? extends Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> ref;
+						Reference<? extends Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> ref;
 						while ((ref = REF_QUEUE.poll()) != null)
 						{
-							Entry<VTLAlias, Set<DataStructureComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(ref);
+							Entry<VTLAlias, Set<DataSetComponent<Identifier, ?, ?>>> data = REF_NAMES.remove(ref);
 							if (data != null)
 								LOGGER.warn("Cleaned an index of {} over {}", data.getKey(), data.getValue());
 						}
@@ -120,25 +120,25 @@ public class CachedDataSet extends NamedDataSet
 	private static class CacheWaiter implements ManagedBlocker
 	{
 		private final Semaphore semaphore = new Semaphore(1);
-		private final Map<Set<DataStructureComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>> cache = new ConcurrentHashMap<>();
+		private final Map<Set<DataSetComponent<Identifier, ?, ?>>, SoftReference<Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>>> cache = new ConcurrentHashMap<>();
 		
 		private final transient VTLAlias alias;
 		private transient AtomicReference<Thread> lockingRef = new AtomicReference<>();
 
-		public CacheWaiter(VTLAlias alias, Set<DataStructureComponent<Identifier, ?, ?>> ids)
+		public CacheWaiter(VTLAlias alias, Set<DataSetComponent<Identifier, ?, ?>> ids)
 		{
-			List<Set<DataStructureComponent<Identifier, ?, ?>>> accumulator = new ArrayList<>();
+			List<Set<DataSetComponent<Identifier, ?, ?>>> accumulator = new ArrayList<>();
 			this.alias = alias;
 			accumulator.add(emptySet());
 			// build all ids subsets
-			for (DataStructureComponent<Identifier, ?, ?> key: ids)
+			for (DataSetComponent<Identifier, ?, ?> key: ids)
 				accumulator = accumulator.stream()
 					.flatMap(set -> {
-						Set<DataStructureComponent<Identifier, ?, ?>> newSet = new HashSet<>(set);
+						Set<DataSetComponent<Identifier, ?, ?>> newSet = new HashSet<>(set);
 						newSet.add(key);
 						return Stream.of(set, newSet);
 					}).collect(toCollection(ArrayList::new));
-			for (Set<DataStructureComponent<Identifier, ?, ?>> keySet: accumulator)
+			for (Set<DataSetComponent<Identifier, ?, ?>> keySet: accumulator)
 				cache.put(keySet, new SoftReference<>(null));
 		}
 		
@@ -176,14 +176,14 @@ public class CachedDataSet extends NamedDataSet
 		 * @param keys keys to group over
 		 * @param newCache the grouped datapoints
 		 */
-		public void putCache(Set<DataStructureComponent<Identifier, ?, ?>> keys, Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> newCache)
+		public void putCache(Set<DataSetComponent<Identifier, ?, ?>> keys, Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> newCache)
 		{
-			SoftReference<Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> cacheRef = new SoftReference<>(newCache, REF_QUEUE);
+			SoftReference<Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>>> cacheRef = new SoftReference<>(newCache, REF_QUEUE);
 			REF_NAMES.put(cacheRef, new SimpleEntry<>(alias, keys));
 			cache.put(keys, cacheRef);
 		}
 		
-		public Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> getCache(Set<DataStructureComponent<Identifier, ?, ?>> keys)
+		public Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> getCache(Set<DataSetComponent<Identifier, ?, ?>> keys)
 		{
 			return cache.get(keys).get();
 		}
@@ -234,15 +234,15 @@ public class CachedDataSet extends NamedDataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
 		if (!lock())
 			return new StreamWrapperDataSet(metadata, Stream::empty);
 	
-		Set<DataStructureComponent<Identifier, ?, ?>> commonIds = new HashSet<>(getMetadata().getIDs());
+		Set<DataSetComponent<Identifier, ?, ?>> commonIds = new HashSet<>(getMetadata().getIDs());
 		commonIds.retainAll(other.getMetadata().getIDs());
 		
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> value = waiter.getCache(commonIds);
+		Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> value = waiter.getCache(commonIds);
 		if (value == null)
 			value = createCache(commonIds);
 		else
@@ -253,7 +253,7 @@ public class CachedDataSet extends NamedDataSet
 
 		BiPredicate<DataPoint, DataPoint> newPredicate = (a, b) -> predicate.test(b, a);
 		BinaryOperator<DataPoint> newMergeOp = (a, b) -> mergeOp.apply(b, a);
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> finalValue = value;
+		Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> finalValue = value;
 		
 		return new AbstractDataSet(metadata)
 		{
@@ -316,12 +316,12 @@ public class CachedDataSet extends NamedDataSet
 			});
 	}
 
-	protected Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> createCache(Set<DataStructureComponent<Identifier, ?, ?>> keys)
+	protected Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> createCache(Set<DataSetComponent<Identifier, ?, ?>> keys)
 	{
 		VTLAlias alias = getAlias();
 		LOGGER.debug("Index miss for {}, start indexing on {}.", alias, keys);
 
-		Map<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;
+		Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> result;
 		try (Stream<DataPoint> stream = getUnindexedCache(false))
 		{
 			if (getMetadata().getIDs().equals(keys))

@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLNullCompareException;
 import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -46,9 +46,9 @@ public class NullValue<S extends ValueDomainSubset<S, D>, D extends ValueDomain>
 		return nullValue;
 	}
 
-	public static <K extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instanceFrom(DataStructureComponent<K, S, D> component)
+	public static <K extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> NullValue<S, D> instanceFrom(DataSetComponent<K, S, D> component)
 	{
-		return instance(component.getVariable().getDomain());
+		return instance(component.getDomain());
 	}
 
 	@Override

@@ -34,20 +34,20 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
-public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable 
+public class SparkDataPoint extends AbstractMap<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable 
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map;
+	private final Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map;
 	private final Lineage lineage;
 
-	public SparkDataPoint(DataStructureComponent<?, ?, ?>[] comps, ScalarValue<?, ?, ?, ?>[] vals, Lineage lineage)
+	public SparkDataPoint(DataSetComponent<?, ?, ?>[] comps, ScalarValue<?, ?, ?, ?>[] vals, Lineage lineage)
 	{
 		map = new HashMap<>(comps.length);
 		
@@ -56,14 +56,14 @@ public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>,
 		this.lineage = lineage;
 	}
 	
-	public SparkDataPoint(Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map, Lineage lineage)
+	public SparkDataPoint(Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map, Lineage lineage)
 	{
 		this.map = new HashMap<>(map);
 		this.lineage = lineage;
 	}
 	
 	@Override
-	public DataPoint drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> toDrop)
+	public DataPoint drop(Collection<? extends DataSetComponent<? extends NonIdentifier, ?, ?>> toDrop)
 	{
 		SparkDataPoint dp = new SparkDataPoint(this, lineage);
 		dp.map.keySet().removeAll(toDrop);
@@ -71,7 +71,7 @@ public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>,
 	}
 
 	@Override
-	public DataPoint keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> toKeep)
+	public DataPoint keep(Collection<? extends DataSetComponent<? extends NonIdentifier, ?, ?>> toKeep)
 	{
 		SparkDataPoint dp = new SparkDataPoint(this, lineage);
 		dp.map.keySet().retainAll(toKeep);
@@ -79,7 +79,7 @@ public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>,
 	}
 
 	@Override
-	public DataPoint rename(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
+	public DataPoint rename(DataSetComponent<?, ?, ?> oldComponent, DataSetComponent<?, ?, ?> newComponent)
 	{
 		SparkDataPoint dp = new SparkDataPoint(this, lineage);
 		dp.map.put(newComponent, dp.map.remove(oldComponent));
@@ -95,9 +95,9 @@ public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>,
 	}
 
 	@Override
-	public <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
+	public <R extends Component> Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
 	{
-		Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> newMap = getStream(keySet())
+		Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> newMap = getStream(keySet())
 			.filter(c -> c.is(role))
 			.map(c -> c.asRole(role))
 			.collect(toMapWithValues(this::get));
@@ -106,9 +106,9 @@ public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>,
 	}
 
 	@Override
-	public Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataStructureComponent<?, ?, ?>> toGet)
+	public Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Collection<? extends DataSetComponent<?, ?, ?>> toGet)
 	{
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newMap = getStream(keySet())
+		Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newMap = getStream(keySet())
 				.filter(toGet::contains)
 				.collect(toMapWithValues(this::get));
 		
@@ -173,7 +173,7 @@ public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>,
 	}
 
 	@Override
-	public Set<DataStructureComponent<?, ?, ?>> keySet()
+	public Set<DataSetComponent<?, ?, ?>> keySet()
 	{
 		return unmodifiableSet(map.keySet());
 	}
@@ -185,7 +185,7 @@ public class SparkDataPoint extends AbstractMap<DataStructureComponent<?, ?, ?>,
 	}
 
 	@Override
-	public Set<Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
+	public Set<Entry<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
 	{
 		return unmodifiableSet(map.entrySet());
 	}

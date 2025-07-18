@@ -40,7 +40,6 @@ import static org.rosuda.JRI.REXP.XT_DOUBLE;
 import static org.rosuda.JRI.REXP.XT_INT;
 import static org.rosuda.JRI.REXP.XT_STR;
 
-import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -74,24 +73,22 @@ import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
@@ -99,74 +96,6 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class REnvironment implements Environment
 {
 	private final static Logger LOGGER = LoggerFactory.getLogger(REnvironment.class);
-	
-	private static class RVar<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>, Serializable
-	{
-		private static final long serialVersionUID = 1L;
-
-		private final VTLAlias name;
-		private final S domain;
-		
-		private transient int hashCode;
-
-		@SuppressWarnings("unchecked")
-		public RVar(VTLAlias name, ValueDomainSubset<?, ?> domain)
-		{
-			this.name = name;
-			this.domain = (S) domain;
-		}
-		
-		@Override
-		public VTLAlias getAlias()
-		{
-			return name;
-		}
-
-		@Override
-		public S getDomain()
-		{
-			return domain;
-		}
-		
-		@Override
-		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
-		{
-			return new DataStructureComponentImpl<>(role, this);
-		}
-
-		@Override
-		public int hashCode()
-		{
-			return hashCode == 0 ? hashCode = hashCodeInit() : hashCode;
-		}
-
-		public int hashCodeInit()
-		{
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + domain.hashCode();
-			result = prime * result + name.hashCode();
-			hashCode = result;
-
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj)
-		{
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (obj instanceof Variable)
-			{
-				Variable<?, ?> var = (Variable<?, ?>) obj;
-				return name.equals(var.getAlias()) && domain.equals(var.getDomain());
-			}
-			
-			return false;
-		}
-	}
 	
 	private final Rengine engine = RUtils.RENGINE;
 
@@ -201,7 +130,7 @@ public class REnvironment implements Environment
 					identifiers = Arrays.asList(idAttr.asStringArray());
 				}
 				
-				DataStructureBuilder builder = new DataStructureBuilder();
+				DataSetStructureBuilder builder = new DataSetStructureBuilder();
 				for (String key: dataFrame.keys())
 				{
 					REXP columnData = dataFrame.at(key);
@@ -227,7 +156,7 @@ public class REnvironment implements Environment
 							"Unrecognized data.frame column type in " + name + ": " + key + "(" + REXP.xtName(columnData.getType()) + ")");
 					}
  					
-					builder.addComponent(new RVar<>(VTLAliasImpl.of(true, key), domain).as(role));
+					builder.addComponent(DataSetComponentImpl.of(VTLAliasImpl.of(true, key), domain, role));
 				}
 				
 				LOGGER.info("VTL metadata for {} completed.", name);
@@ -262,7 +191,7 @@ public class REnvironment implements Environment
 				if (maybeMeta.isEmpty())
 					return Optional.empty();
 				
-				DataSetMetadata metadata = (DataSetMetadata) maybeMeta.get();
+				DataSetStructure metadata = (DataSetStructure) maybeMeta.get();
 				return Optional.of(parseDataFrame(metadata, name));
 			}
 			else if (reval("is.integer(`???`) || is.numeric(`???`) || is.character(`???`)", name).asBool().isTRUE())
@@ -285,7 +214,7 @@ public class REnvironment implements Environment
 		return Optional.empty();
 	}
 
-	private DataSet parseDataFrame(DataSetMetadata metadata, VTLAlias name)
+	private DataSet parseDataFrame(DataSetStructure metadata, VTLAlias name)
 	{
 		List<String> dateColumns = new ArrayList<>();
  
@@ -301,7 +230,7 @@ public class REnvironment implements Environment
 		RList dataFrame = data.asList();
 		int len = reval("nrow(`???`)", name).asInt();
 
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> dataContainer = new HashMap<>();
+		Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> dataContainer = new HashMap<>();
 		// get column data
 		for (String key: dataFrame.keys())
 		{
@@ -330,18 +259,18 @@ public class REnvironment implements Environment
 							"In node: " + name + " there is a column (" + key + ") of type " + REXP.xtName(columnData.getType()) + ". This is not supported.");
 			}
 			
-			DataStructureComponent<?, ?, ?> comp = metadata.getComponent(VTLAliasImpl.of(true, key)).orElse(null);
+			DataSetComponent<?, ?, ?> comp = metadata.getComponent(VTLAliasImpl.of(true, key)).orElse(null);
 			if (comp == null)
 				continue;
-			if (comp.getVariable().getDomain() instanceof TimeDomainSubset)
+			if (comp.getDomain() instanceof TimeDomainSubset)
 				values = values.map(REnvironment.toTime(comp));
 			else
-				values = values.map(v -> comp.getVariable().getDomain().cast(v));
+				values = values.map(v -> comp.getDomain().cast(v));
 			
 			dataContainer.put(comp, values.toArray(ScalarValue<?, ?, ?, ?>[]::new));
 		}
 		
-		for (DataStructureComponent<Attribute, ?, ?> comp: metadata.getComponents(Attribute.class))
+		for (DataSetComponent<Attribute, ?, ?> comp: metadata.getComponents(Attribute.class))
 			if (!dataContainer.containsKey(comp))
 			{
 				ScalarValue<?, ?, ?, ?>[] array = new ScalarValue<?, ?, ?, ?>[len];
@@ -349,7 +278,7 @@ public class REnvironment implements Environment
 				dataContainer.put(comp, array);
 			}
 		
-		Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(metadata);
+		Set<DataSetComponent<?, ?, ?>> missing = new HashSet<>(metadata);
 		missing.removeAll(dataContainer.keySet());
 		if (missing.size() > 0)
 			throw new VTLMissingComponentsException(metadata, missing);
@@ -368,7 +297,7 @@ public class REnvironment implements Environment
 		return getEngine().eval(format.replace("???", name.getName()));
 	}
 
-	private static UnaryOperator<ScalarValue<?, ?, ?, ?>> toTime(DataStructureComponent<?, ?, ?> comp)
+	private static UnaryOperator<ScalarValue<?, ?, ?, ?>> toTime(DataSetComponent<?, ?, ?> comp)
 	{
 		return value -> {
 			if (value.isNull())
@@ -393,7 +322,7 @@ public class REnvironment implements Environment
 					throw new UnsupportedOperationException("Date format not supported: " + dt);
 			}
 			else
-				throw new VTLCastException(comp.getVariable().getDomain(), value);
+				throw new VTLCastException(comp.getDomain(), value);
 		};
 	}
 }

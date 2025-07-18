@@ -28,7 +28,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
@@ -79,12 +78,6 @@ public class StrlenDomainSubset extends CriterionDomainSubset<StrlenDomainSubset
 	public Transformation getCriterion()
 	{
 		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Variable<StrlenDomainSubset, StringDomain> getDefaultVariable()
-	{
-		return new DefaultVariable<>(this);
 	}
 
 	@Override

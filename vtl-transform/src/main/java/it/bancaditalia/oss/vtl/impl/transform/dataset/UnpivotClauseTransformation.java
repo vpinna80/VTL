@@ -38,20 +38,19 @@ import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class UnpivotClauseTransformation extends DatasetClauseTransformation
 {
@@ -71,17 +70,17 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet dataset = (DataSet) getThisValue(scheme);
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
+		DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 		
-		DataStructureComponent<Identifier, ?, ?> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
-		DataStructureComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
+		DataSetComponent<Identifier, ?, ?> newID = metadata.getComponent(identifierName, Identifier.class, STRINGDS).get();
+		DataSetComponent<Measure, ?, ?> newMeasure = metadata.getComponent(measureName, Measure.class).get();
 
 		return dataset.flatmapKeepingKeys(metadata, lineageEnricher(this), dp -> {
-			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> measureVals = dp.getValues(Measure.class);
+			Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> measureVals = dp.getValues(Measure.class);
 			return measureVals.entrySet().stream()
 				.map(splitting((m, v) -> {
-					Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> res = new HashMap<>();
-					res.put(newID, StringValue.of(m.getVariable().getAlias().toString()));
+					Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> res = new HashMap<>();
+					res.put(newID, StringValue.of(m.getAlias().toString()));
 					res.put(newMeasure, v);
 					return res;
 				}));
@@ -93,16 +92,16 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 		VTLValueMetadata value = getThisMetadata(scheme);
 
 		if (!(value.isDataSet()))
-			throw new VTLInvalidParameterException(value, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(value, DataSetStructure.class);
 
-		DataSetMetadata dataset = (DataSetMetadata) value;
+		DataSetStructure dataset = (DataSetStructure) value;
 
-		Optional<DataStructureComponent<?, ?, ?>> maybeId = dataset.getComponent(identifierName);
+		Optional<DataSetComponent<?, ?, ?>> maybeId = dataset.getComponent(identifierName);
 		if (maybeId.isPresent())
 			throw new VTLInvariantIdentifiersException("unpivot", singleton(maybeId.get().asRole(Identifier.class)));
 		
 		Set<? extends ValueDomainSubset<?, ?>> domains = dataset.getMeasures().stream()
-			.map(DataStructureComponent::getVariable).map(Variable::getDomain)
+			.map(DataSetComponent::getDomain)
 			.distinct()
 			.collect(toSet());
 
@@ -110,11 +109,10 @@ public class UnpivotClauseTransformation extends DatasetClauseTransformation
 			throw new VTLException("For unpivot, all measures must be defined on the same domain, but " + domains + " were found.");
 		
 		ValueDomainSubset<?, ?> domain = domains.iterator().next();
-		MetadataRepository repo = scheme.getRepository();
 
-		return new DataStructureBuilder(dataset.getIDs())
-				.addComponent(repo.createTempVariable(identifierName, STRINGDS).as(Identifier.class))
-				.addComponent(repo.createTempVariable(measureName, domain).as(Measure.class))
+		return new DataSetStructureBuilder(dataset.getIDs())
+				.addComponent(DataSetComponentImpl.of(identifierName, STRINGDS, Identifier.class))
+				.addComponent(DataSetComponentImpl.of(measureName, domain, Measure.class))
 				.build();
 	}
 

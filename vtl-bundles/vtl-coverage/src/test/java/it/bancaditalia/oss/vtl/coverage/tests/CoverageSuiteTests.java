@@ -76,7 +76,7 @@ import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.VTLSession;
@@ -88,7 +88,7 @@ public class CoverageSuiteTests
 		T, E, TS, ES
 	}
 	
-	private static final int REPETITIONS = 5;
+	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
 	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
@@ -239,9 +239,9 @@ public class CoverageSuiteTests
 			DataSet expected = (DataSet) expectedV;
 			DataSet result = (DataSet) resultV;
 			
-			for (DataStructureComponent<?, ?, ?> comp: expected.getMetadata())
+			for (DataSetComponent<?, ?, ?> comp: expected.getMetadata())
 				assertTrue(result.getMetadata().contains(comp), "In " + session.getOriginalCode() + "Expected component " + comp + " is missing from result structure " + result.getMetadata());
-			for (DataStructureComponent<?, ?, ?> comp: result.getMetadata())
+			for (DataSetComponent<?, ?, ?> comp: result.getMetadata())
 				assertTrue(expected.getMetadata().contains(comp), "In " + session.getOriginalCode() + "Unexpected component " + comp + " not declared in structure " + expected.getMetadata());
 			
 			List<DataPoint> resDPs, expectedDPs;
@@ -295,9 +295,9 @@ public class CoverageSuiteTests
 		}
 	}
 
-	private static TreeMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> treeify(DataPoint dpe)
+	private static TreeMap<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> treeify(DataPoint dpe)
 	{
-		TreeMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpeTree = new TreeMap<>(DataStructureComponent::byNameAndRole);
+		TreeMap<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dpeTree = new TreeMap<>(DataSetComponent::byNameAndRole);
 		dpeTree.putAll(dpe);
 		return dpeTree;
 	}

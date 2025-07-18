@@ -22,8 +22,8 @@ package it.bancaditalia.oss.vtl.model.transform;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
@@ -73,11 +73,11 @@ public interface GroupingClause
 	public ScalarValue<?, ?, ? extends DurationDomainSubset<?> , DurationDomain> getFrequency();
 
 	/**
-	 * Projects this clause's mode and field names onto the given {@link DataSetMetadata}, returning a set of 
+	 * Projects this clause's mode and field names onto the given {@link DataSetStructure}, returning a set of 
 	 * identifiers to be used to group the corresponding dataset.
 	 *  
 	 * @param dataset The structure of a dataset.
 	 * @return The set of grouping identifiers.
 	 */
-	public Set<DataStructureComponent<Identifier, ?, ?>> getGroupingComponents(DataSetMetadata dataset);
+	public Set<DataSetComponent<Identifier, ?, ?>> getGroupingComponents(DataSetStructure dataset);
 }

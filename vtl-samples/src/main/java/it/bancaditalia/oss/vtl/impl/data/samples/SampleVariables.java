@@ -25,12 +25,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
@@ -52,9 +53,8 @@ public enum SampleVariables
 	ATTRIB_BOOLEAN_1, ATTRIB_BOOLEAN_2, ATTRIB_BOOLEAN_3, ATTRIB_BOOLEAN_4,
 	ATTRIB_DATE_1, ATTRIB_DATE_2, ATTRIB_DATE_3; 
 
-	private final SampleComponent<?, ?, ?> component;
+	private final DataSetComponent<?, ?, ?> component;
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private SampleVariables()
 	{
 		String elem[] = name().split("_");
@@ -76,12 +76,12 @@ public enum SampleVariables
 			case "DATE": domain = DATEDS; break;
 		}
 
-		component = new SampleComponent(VTLAliasImpl.of(elem[1].toLowerCase() + "_" + elem[2]), role, domain);
+		component = DataSetComponentImpl.of(VTLAliasImpl.of(elem[1].toLowerCase() + "_" + elem[2]), domain, role);
 	}
 	
-	public DataStructureComponent<?, ?, ?> getComponent(int level)
+	public DataSetComponent<?, ?, ?> getComponent(int level)
 	{
-		VTLAlias name = component.getVariable().getAlias();
+		VTLAlias name = component.getAlias();
 		return component.getRenamed(VTLAliasImpl.of(name.getName().split("_")[0].toLowerCase() + "_" + level));
 	}
 	

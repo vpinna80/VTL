@@ -39,8 +39,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.DurationDomain;
@@ -77,12 +77,12 @@ public class GroupingClauseImpl implements GroupingClause, Serializable
 		return frequency;
 	}
 	
-	public Set<DataStructureComponent<Identifier, ?, ?>> getGroupingComponents(DataSetMetadata dataset)
+	public Set<DataSetComponent<Identifier, ?, ?>> getGroupingComponents(DataSetStructure dataset)
 	{
 		if (mode == GROUP_ALL)
 			return dataset.getIDs();
 		
-		Set<DataStructureComponent<Identifier, ?, ?>> groupComps = Arrays.stream(fields)
+		Set<DataSetComponent<Identifier, ?, ?>> groupComps = Arrays.stream(fields)
 				.peek(n -> { if (dataset.getComponent(n).isEmpty()) throw new VTLMissingComponentsException(dataset, n); })
 				.map(dataset::getComponent)
 				.map(Optional::get)
@@ -92,7 +92,7 @@ public class GroupingClauseImpl implements GroupingClause, Serializable
 		
 		if (mode == GROUP_EXCEPT)
 		{
-			Set<DataStructureComponent<Identifier, ?, ?>> exceptComps = new HashSet<>(dataset.getIDs());
+			Set<DataSetComponent<Identifier, ?, ?>> exceptComps = new HashSet<>(dataset.getIDs());
 			exceptComps.removeAll(groupComps);
 			return exceptComps;
 		}

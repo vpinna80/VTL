@@ -33,12 +33,12 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -57,7 +57,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSetMetadata metadata = (DataSetMetadata) getMetadata(scheme);
+		DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 		
 		return ((DataSet) getThisValue(scheme)).mapKeepingKeys(metadata, lineageEnricher(this), dp -> {
 				var map = new HashMap<>(dp.getValues(NonIdentifier.class));
@@ -66,16 +66,16 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 			});
 	}
 	
-	public DataSetMetadata computeMetadata(TransformationScheme scheme)
+	public DataSetStructure computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata operand = getThisMetadata(scheme);
 		
 		if (!(operand.isDataSet()))
-			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(operand, DataSetStructure.class);
 		
-		DataSetMetadata dataset = (DataSetMetadata) operand;
+		DataSetStructure dataset = (DataSetStructure) operand;
 		
-		Set<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
+		Set<? extends DataSetComponent<? extends NonIdentifier, ?, ?>> namedComps = Arrays.stream(names)
 				.map(toEntryWithValue(dataset::getComponent))
 				.map(e -> e.getValue().orElseThrow(() -> { 
 					return new VTLMissingComponentsException(dataset, e.getKey()); 
@@ -84,7 +84,7 @@ public class KeepClauseTransformation extends DatasetClauseTransformation
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
 
-		return new DataStructureBuilder(dataset.getComponents(Identifier.class))
+		return new DataSetStructureBuilder(dataset.getComponents(Identifier.class))
 				.addComponents(namedComps)
 				.build();
 	}

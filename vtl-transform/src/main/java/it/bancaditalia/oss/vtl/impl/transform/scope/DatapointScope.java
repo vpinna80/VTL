@@ -33,13 +33,13 @@ import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class DatapointScope extends AbstractScope
@@ -48,11 +48,11 @@ public class DatapointScope extends AbstractScope
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatapointScope.class); 
 	
 	private final DataPoint dp;
-	private final DataSetMetadata structure;
-	private final DataStructureComponent<Identifier, ?, ?> timeId;
+	private final DataSetStructure structure;
+	private final DataSetComponent<Identifier, ?, ?> timeId;
 	private final MetadataRepository repo;
 	
-	public DatapointScope(MetadataRepository repo, DataPoint dp, DataSetMetadata structure, DataStructureComponent<Identifier, ?, ?> timeId) 
+	public DatapointScope(MetadataRepository repo, DataPoint dp, DataSetStructure structure, DataSetComponent<Identifier, ?, ?> timeId) 
 	{
 		if (!dp.keySet().equals(structure))
 			throw new IllegalStateException(structure  + " != " + dp.keySet());
@@ -80,8 +80,8 @@ public class DatapointScope extends AbstractScope
 			return structure;
 		
 		LOGGER.trace("Querying {} for {}:{}", alias, structure.hashCode(), structure);
-		Optional<Variable<?, ?>> variable = structure.getComponent(alias).map(DataStructureComponent::getVariable);
-		return variable.orElseThrow(() -> new VTLUnboundAliasException(alias));
+		Optional<ScalarValueMetadata<?, ?>> meta = structure.getComponent(alias).map(DataSetComponent::getDomain).map(ScalarValueMetadata::of);
+		return meta.orElseThrow(() -> new VTLUnboundAliasException(alias));
 	}
 
 	@Override

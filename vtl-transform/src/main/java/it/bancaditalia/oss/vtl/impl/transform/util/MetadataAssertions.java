@@ -31,27 +31,27 @@ import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 
-public class MetadataAssertions<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Supplier<Set<? extends DataStructureComponent<R, S, D>>>
+public class MetadataAssertions<R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Supplier<Set<? extends DataSetComponent<R, S, D>>>
 {
-	private final Set<DataStructureComponent<R, S, D>> components;
+	private final Set<DataSetComponent<R, S, D>> components;
 	private final Class<R> role;
 	private final S domain;
 	private final String name;
 
-	public static <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> MetadataAssertions<R, S, D> asserts(String name, Set<DataStructureComponent<R, S, D>> components)
+	public static <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> MetadataAssertions<R, S, D> asserts(String name, Set<DataSetComponent<R, S, D>> components)
 	{
 		return new MetadataAssertions<>(name, components, null, null);
 	}
 	
-	private MetadataAssertions(String name, Set<? extends DataStructureComponent<R, S, D>> components, Class<R> role, S domain)
+	private MetadataAssertions(String name, Set<? extends DataSetComponent<R, S, D>> components, Class<R> role, S domain)
 	{
 		this.components = new HashSet<>(components);
 		this.role = role;
@@ -59,14 +59,14 @@ public class MetadataAssertions<R extends Component, S extends ValueDomainSubset
 		this.name = name;
 	}
 	
-	public Set<? extends DataStructureComponent<R,S,D>> get()
+	public Set<? extends DataSetComponent<R,S,D>> get()
 	{
 		return components;
 	}
 
-	public DataSetMetadata getAsStructure()
+	public DataSetStructure getAsStructure()
 	{
-		return new DataStructureBuilder(get()).build();
+		return new DataSetStructureBuilder(get()).build();
 	}
 
 	public MetadataAssertions<R, S, D> withAtLeastOne()
@@ -101,9 +101,9 @@ public class MetadataAssertions<R extends Component, S extends ValueDomainSubset
 	public <S1 extends ValueDomainSubset<S1, D1>, D1 extends ValueDomain> MetadataAssertions<R, S1, D1> withDomain(S1 domain)
 	{
 		@SuppressWarnings("unchecked")
-		Set<DataStructureComponent<R, S1, D1>> components = this.components.stream()
-			.filter(c -> domain.isAssignableFrom(c.getVariable().getDomain()))
-			.map(c -> (DataStructureComponent<R, S1, D1>) c)
+		Set<DataSetComponent<R, S1, D1>> components = this.components.stream()
+			.filter(c -> domain.isAssignableFrom(c.getDomain()))
+			.map(c -> (DataSetComponent<R, S1, D1>) c)
 			.collect(toSet());
 		
 		return new MetadataAssertions<>(name, components, role, domain);
@@ -126,7 +126,7 @@ public class MetadataAssertions<R extends Component, S extends ValueDomainSubset
 	{
 		return new MetadataAssertions<>(name, names.stream()
 				.flatMap(name -> components.stream()
-						.filter(c -> name.equals(c.getVariable().getAlias().getName()))
+						.filter(c -> name.equals(c.getAlias().getName()))
 						.findAny()
 						.map(Stream::of)
 						.orElse(Stream.empty()))

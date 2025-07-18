@@ -1,5 +1,6 @@
 {
-  "datasets": [
+  "schema-version": "2.2.0",
+  "data": [
     {
       "name": "in_2_data",
       "source": "spark:csv:in_2.csv",

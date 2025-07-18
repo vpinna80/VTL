@@ -39,20 +39,19 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.ConstantOperand;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.operators.NumericIntOperator;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -81,18 +80,17 @@ public class NumericIntTransformation extends BinaryTransformation
 	@Override
 	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetMetadata dsMeta = (DataSetMetadata) metadata;
+		DataSetStructure dsMeta = (DataSetStructure) metadata;
 		Set<VTLAlias> measureNames = dataset.getMetadata().getComponents(Measure.class, NUMBERDS).stream()
-				.map(DataStructureComponent::getVariable)
-				.map(Variable::getAlias)
+				.map(DataSetComponent::getAlias)
 				.collect(toSet());
 		
 		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> integer = INTEGERDS.cast(scalar);
 		return dataset.mapKeepingKeys(dsMeta, lineageEnricher(this), dp -> { 
-				Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp.getValues(Attribute.class));
+				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp.getValues(Attribute.class));
 				for (VTLAlias name: measureNames)
 				{
-					DataStructureComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
+					DataSetComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
 							.orElseThrow(() -> new VTLMissingComponentsException(dp.keySet(), name)).asRole(Measure.class);
 					result.put(comp, operator.apply(dp.get(comp), integer));
 				}
@@ -121,26 +119,26 @@ public class NumericIntTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetMetadata dataset, ScalarValueMetadata<?, ?> scalar)
+	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar)
 	{
 		if (!INTEGERDS.isAssignableFrom(scalar.getDomain()))
 			throw new VTLIncompatibleTypesException(operator.toString(), scalar.getDomain(), INTEGERDS);
 		
-		Set<DataStructureComponent<Measure, ?, ?>> measures = dataset.getMeasures();
+		Set<DataSetComponent<Measure, ?, ?>> measures = dataset.getMeasures();
 		if (measures.size() == 0)
 			throw new VTLExpectedRoleException(Measure.class, dataset);
 		else
 		{
-			for (DataStructureComponent<Measure, ?, ?> measure: measures)
-				if (!NUMBERDS.isAssignableFrom(measure.getVariable().getDomain()))
+			for (DataSetComponent<Measure, ?, ?> measure: measures)
+				if (!NUMBERDS.isAssignableFrom(measure.getDomain()))
 					throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), measure, NUMBERDS);
 			
-			return new DataStructureBuilder(dataset).removeComponents(dataset.getComponents(Attribute.class)).build();
+			return new DataSetStructureBuilder(dataset).removeComponents(dataset.getComponents(Attribute.class)).build();
 		}
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetMetadata left, DataSetMetadata right)
+	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
 	{
 		throw new VTLInvalidParameterException(right, ScalarValueMetadata.class);
 	}

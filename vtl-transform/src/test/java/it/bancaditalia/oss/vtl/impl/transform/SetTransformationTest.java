@@ -43,7 +43,7 @@ import it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -79,7 +79,7 @@ public class SetTransformationTest
 	{
 		SetTransformation setTransformation = new SetTransformation(operator, asList(left, right));
 		
-		DataSetMetadata metadata = (DataSetMetadata) setTransformation.getMetadata(session);
+		DataSetStructure metadata = (DataSetStructure) setTransformation.getMetadata(session);
 		assertTrue(metadata.contains(VTLAliasImpl.of("integer_1")));
 		assertTrue(metadata.contains(VTLAliasImpl.of("string_1")));
 		

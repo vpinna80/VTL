@@ -39,8 +39,8 @@ import org.apache.spark.sql.types.UserDefinedType;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
 import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 public class PartitionToRankUDT extends UserDefinedType<PartitionToRank>
@@ -49,7 +49,7 @@ public class PartitionToRankUDT extends UserDefinedType<PartitionToRank>
 
 	private final DataType sqlType;
 
-	public PartitionToRankUDT(DataSetMetadata structure)
+	public PartitionToRankUDT(DataSetStructure structure)
 	{
 		List<StructField> structFromComponents = createStructFromComponents(structure);
 		structFromComponents.add(new StructField("$lineage$", LineageSparkUDT, false, Metadata.empty()));
@@ -69,8 +69,8 @@ public class PartitionToRankUDT extends UserDefinedType<PartitionToRank>
 		if (obj.isEmpty())
 			return new GenericInternalRow[] { new GenericInternalRow(new Object[] { null }) };
 		
-		DataStructureComponent<?, ?, ?>[] components = obj.iterator().next().keySet().toArray(DataStructureComponent<?, ?, ?>[]::new);
-		Arrays.sort(components, DataStructureComponent::byNameAndRole);
+		DataSetComponent<?, ?, ?>[] components = obj.iterator().next().keySet().toArray(DataSetComponent<?, ?, ?>[]::new);
+		Arrays.sort(components, DataSetComponent::byNameAndRole);
 		@SuppressWarnings("unchecked")
 		ScalarValueUDT<ScalarValue<?, ?, ?, ?>>[] types = (ScalarValueUDT<ScalarValue<?, ?, ?, ?>>[]) Arrays.stream(components).map(c -> (ScalarValueUDT<?>) getDataTypeFor(c)).collect(toArray(new ScalarValueUDT<?>[components.length]));
 		

@@ -19,13 +19,13 @@
  */
 package it.bancaditalia.oss.vtl.exceptions;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 
 public class VTLMissingValueException extends VTLException
 {
 	private static final long serialVersionUID = 1L;
 
-	public VTLMissingValueException(DataStructureComponent<?, ?, ?> component, String where)
+	public VTLMissingValueException(DataSetComponent<?, ?, ?> component, String where)
 	{
 		super("Component " + component + " is missing a value in " + where);
 	}

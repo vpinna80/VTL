@@ -58,7 +58,7 @@ import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -96,8 +96,8 @@ public class FillTimeSeriesTransformationTest
 
 		FillTimeSeriesTransformation ftsTransformation = new FillTimeSeriesTransformation(new VarIDOperand(VTLAliasImpl.of("operand")), mode);
 		DataSet computedResult = (DataSet) ftsTransformation.eval(session);
-		DataStructureComponent<Identifier, ?, ?> time_id = computedResult.getMetadata().getComponent(VTLAliasImpl.of("date_1"), Identifier.class, DATEDS).get();
-		DataStructureComponent<Identifier, ?, ?> string_id = computedResult.getMetadata().getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS).get();
+		DataSetComponent<Identifier, ?, ?> time_id = computedResult.getMetadata().getComponent(VTLAliasImpl.of("date_1"), Identifier.class, DATEDS).get();
+		DataSetComponent<Identifier, ?, ?> string_id = computedResult.getMetadata().getComponent(VTLAliasImpl.of("string_1"), Identifier.class, STRINGDS).get();
 
 		assertEquals(expectedSize, computedResult.size(), "Number of datapoints");
 

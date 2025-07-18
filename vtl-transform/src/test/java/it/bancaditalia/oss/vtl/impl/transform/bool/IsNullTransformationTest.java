@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
 import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE5;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,8 +36,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
@@ -52,9 +52,9 @@ public class IsNullTransformationTest
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		IsNullTransformation isnt = new IsNullTransformation(left);
-		DataSetMetadata structure = (DataSetMetadata) isnt.getMetadata(session);
+		DataSetStructure structure = (DataSetStructure) isnt.getMetadata(session);
 		
-		Optional<DataStructureComponent<?, ?, ?>> component = structure.getComponent(BOOLEANDS.getDefaultVariable().getAlias());
+		Optional<DataSetComponent<?, ?, ?>> component = structure.getComponent(BOOL_VAR.getAlias());
 		assertTrue(component.isPresent() && component.get().is(Measure.class), "bool_var result");
 		
 		long nullCount = ((DataSet) isnt.eval(session)).stream()

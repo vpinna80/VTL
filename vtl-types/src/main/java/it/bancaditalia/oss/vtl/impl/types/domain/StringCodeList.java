@@ -36,14 +36,12 @@ import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
-import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringEnumeratedDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, StringCodeItem, StringDomain>, StringDomainSubset<StringCodeList>, Serializable
+public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeList, StringCodeItem>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(StringCodeList.class);
@@ -168,14 +166,6 @@ public class StringCodeList implements EnumeratedDomainSubset<StringCodeList, St
 	{
 		return other instanceof StringCodeList && alias.equals(((StringCodeList) other).alias);
 	}
-
-
-	@Override
-	public Variable<StringCodeList, StringDomain> getDefaultVariable()
-	{
-		return new DefaultVariable<>(this);
-	}
-
 
 	@Override
 	public Class<? extends Serializable> getRepresentation()

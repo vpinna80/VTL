@@ -53,11 +53,11 @@ import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository;
 import it.bancaditalia.oss.vtl.impl.meta.sdmx.SdmxCodeList;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList.StringCodeItem;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -108,13 +108,13 @@ public class SDMXRepositoryTest
 	public void testGetStructure(MockServerClient client) throws IOException
 	{
 		VTLValueMetadata actual = repo.getMetadata(VTLAliasImpl.of(true, "ECB:EXR(1.0)")).orElseThrow(() -> new NullPointerException());
-		DataSetMetadata expected = new DataStructureBuilder()
+		DataSetStructure expected = new DataSetStructureBuilder()
 				.addComponents(TIME_PERIOD)
 				.addComponents(allOf(TestComponents.class).stream().map(c -> c.get(repo)).collect(toList()))
 				.build();
 		
-		assertInstanceOf(DataSetMetadata.class, actual);
-		for (DataStructureComponent<?, ?, ?> c: (DataSetMetadata) actual)
+		assertInstanceOf(DataSetStructure.class, actual);
+		for (DataSetComponent<?, ?, ?> c: (DataSetStructure) actual)
 			if (!expected.contains(c))
 				assertTrue(expected.contains(c), c + " not found in " + expected);
 		assertEquals(expected, actual);

@@ -34,12 +34,12 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -61,14 +61,14 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet dataset = (DataSet) getThisValue(scheme);
-		Set<DataStructureComponent<NonIdentifier, ?, ?>> toDrop = Arrays.stream(names)
+		Set<DataSetComponent<NonIdentifier, ?, ?>> toDrop = Arrays.stream(names)
 				.map(n -> dataset.getComponent(n))
 				.map(Optional::get)
 				.map(c -> c.asRole(NonIdentifier.class))
 				.collect(toSet());
 		
-		return dataset.mapKeepingKeys((DataSetMetadata) getMetadata(scheme), lineageEnricher(this), dp -> {
-					Map<DataStructureComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(dp.getValues(NonIdentifier.class));
+		return dataset.mapKeepingKeys((DataSetStructure) getMetadata(scheme), lineageEnricher(this), dp -> {
+					Map<DataSetComponent<? extends NonIdentifier, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(dp.getValues(NonIdentifier.class));
 					newVals.keySet().removeAll(toDrop);
 					return newVals;
 				});
@@ -79,14 +79,14 @@ public class DropClauseTransformation extends DatasetClauseTransformation
 		VTLValueMetadata operand = getThisMetadata(scheme);
 		
 		if (!(operand.isDataSet()))
-			throw new VTLInvalidParameterException(operand, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(operand, DataSetStructure.class);
 		
-		DataSetMetadata dataset = (DataSetMetadata) operand;
-		DataStructureBuilder builder = new DataStructureBuilder((DataSetMetadata) operand);
+		DataSetStructure dataset = (DataSetStructure) operand;
+		DataSetStructureBuilder builder = new DataSetStructureBuilder((DataSetStructure) operand);
 
 		for (VTLAlias name: names)
 		{
-			DataStructureComponent<?, ?, ?> c = dataset.getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(dataset, name));
+			DataSetComponent<?, ?, ?> c = dataset.getComponent(name).orElseThrow(() -> new VTLMissingComponentsException(dataset, name));
 			if (c.is(Identifier.class))
 				throw new VTLInvariantIdentifiersException("drop", singleton(c.asRole(Identifier.class)));
 			builder.removeComponent(c);

@@ -1,5 +1,6 @@
 {
-  "datasets": [
+  "schema-version": "2.2.0",
+  "data": [
     {
       "name": "in_5",
       "source": "csv:in_5.csv",

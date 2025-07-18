@@ -21,9 +21,11 @@ package it.bancaditalia.oss.vtl.impl.meta;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.OptionalInt;
 
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.NonNullDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.StrlenDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -31,9 +33,8 @@ import it.bancaditalia.oss.vtl.model.data.Component;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -71,93 +72,6 @@ public enum TestComponents
 	UNIT_INDEX_BASE(Attribute.class, new StrlenDomainSubset(STRINGDS, OptionalInt.empty(), OptionalInt.of(35))),
 	UNIT_MULT(Attribute.class, "ECB:CL_UNIT_MULT(1.0)");
 
-	private static class TestVariable<S extends ValueDomainSubset<S, D>, D extends ValueDomain> implements Variable<S, D>
-	{
-		private static final long serialVersionUID = 1L;
-
-		private class TestComponent<R extends Component> implements DataStructureComponent<R, S, D>
-		{
-			private static final long serialVersionUID = 1L;
-			
-			private final Class<R> role;
-
-			private TestComponent(Class<R> role)
-			{
-				this.role = role;
-			}
-
-			@Override
-			public Variable<S, D> getVariable()
-			{
-				return TestVariable.this;
-			}
-
-			@Override
-			public Class<R> getRole()
-			{
-				return role;
-			}
-
-			@Override
-			public int hashCode()
-			{
-				return defaultHashCode();
-			}
-
-			@Override
-			public boolean equals(Object obj)
-			{
-				if (this == obj)
-					return true;
-
-				if (obj instanceof DataStructureComponent)
-				{
-					DataStructureComponent<?, ?, ?> other = (DataStructureComponent<?, ?, ?>) obj;
-					return role == other.getRole() && TestVariable.this.equals(other.getVariable());
-				}
-				
-				return false;
-			}
-
-			@Override
-			public String toString()
-			{
-				return (is(Identifier.class) ? "$" : "") + (is(Attribute.class) ? "@" : "") + getVariable().getAlias() + "[" + getVariable().getDomain() + "]";
-			}
-		}
-
-		private final VTLAlias name;
-		private final S domain;
-		
-		public TestVariable(VTLAlias name, S domain)
-		{
-			this.name = name;
-			this.domain = domain;
-		}
-		
-		public VTLAlias getAlias()
-		{
-			return name;
-		}
-
-		public S getDomain()
-		{
-			return domain;
-		}
-	
-		@Override
-		public <R1 extends Component> DataStructureComponent<R1, S, D> as(Class<R1> role)
-		{
-			return new TestComponent<>(role);
-		}
-		
-		@Override
-		public int hashCode()
-		{
-			return defaultHashCode();
-		}
-	}
-
 	private final Class<? extends Component> role;
 	private final ValueDomainSubset<?, ?> domain;
 	private final VTLAlias domainStr;
@@ -177,8 +91,9 @@ public enum TestComponents
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataStructureComponent<R, S, D> get(MetadataRepository repo)
+	public <R extends Component, S extends ValueDomainSubset<S, D>, D extends ValueDomain> DataSetComponent<R, S, D> get(MetadataRepository repo)
 	{
-		return (domain != null ? new TestVariable<>(VTLAliasImpl.of(name()), (S) domain) : new TestVariable<>(VTLAliasImpl.of(name()), (S) repo.getDomain(domainStr).get())).as((Class<R>) role);
+		ValueDomainSubset<?, ?> finalDomain = coalesce(domain, () -> repo.getDomain(domainStr).get()); 
+		return (DataSetComponent<R, S, D>) DataSetComponentImpl.of(VTLAliasImpl.of(name()), finalDomain, role);
 	}
 }

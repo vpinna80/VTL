@@ -57,12 +57,11 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
@@ -91,7 +90,7 @@ public class DataPointBuilder implements Serializable
         }
     }
 	
-	private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
+	private final Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> delegate;
 	private boolean isBuilt = false;
 
 	public DataPointBuilder(Option... options)
@@ -99,7 +98,7 @@ public class DataPointBuilder implements Serializable
 		this(Map.of(), options);
 	}
 
-	public DataPointBuilder(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keys, Option... options)
+	public DataPointBuilder(Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keys, Option... options)
 	{
 		EnumSet<Option> optSet = EnumSet.noneOf(Option.class);
 		for (Option option: options)
@@ -115,20 +114,20 @@ public class DataPointBuilder implements Serializable
 		return this;
 	}
 	
-	public static DataPoint dpFromMap(Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map, DataSetMetadata structure, Lineage lineage)
+	public static DataPoint dpFromMap(Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map, DataSetStructure structure, Lineage lineage)
 	{
 		return new DataPointImpl(lineage, structure, map);
 	}
 
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
-			Lineage lineage, DataSetMetadata structure, 
-			Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
+	public static <K extends DataSetComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+			Lineage lineage, DataSetStructure structure, 
+			Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> startingValues)
 	{
 		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.addAll(startingValues).build(lineage, structure), EnumSet.of(CONCURRENT, UNORDERED));
 	}
 
-	public static <K extends DataStructureComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
-			Lineage lineage, DataSetMetadata structure)
+	public static <K extends DataSetComponent<?, ?, ?>, V extends ScalarValue<?, ?, ?, ?>> SerCollector<? super Entry<? extends K, ? extends V>, DataPointBuilder, DataPoint> toDataPoint(
+			Lineage lineage, DataSetStructure structure)
 	{
 		return SerCollector.of(DataPointBuilder::new, DataPointBuilder::add, DataPointBuilder::merge, dpb -> dpb.build(lineage, structure), EnumSet.of(CONCURRENT, UNORDERED));
 	}
@@ -139,13 +138,13 @@ public class DataPointBuilder implements Serializable
 		return left.checkState();
 	}
 	
-	public DataPointBuilder addAll(Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> values)
+	public DataPointBuilder addAll(Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> values)
 	{
 		values.forEach(this::add);
 		return checkState();
 	}
 
-	public DataPointBuilder add(Entry<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> value)
+	public DataPointBuilder add(Entry<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> value)
 	{
 		return add(value.getKey(), value.getValue());
 	}
@@ -155,9 +154,9 @@ public class DataPointBuilder implements Serializable
 		return add(component.get(), value);
 	}
 	
-	public DataPointBuilder add(DataStructureComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
+	public DataPointBuilder add(DataSetComponent<?, ?, ?> component, ScalarValue<?, ?, ?, ?> value)
 	{
-		if (!component.getVariable().getDomain().isAssignableFrom(value.getDomain()))
+		if (!component.getDomain().isAssignableFrom(value.getDomain()))
 			throw new VTLCastException(component, value);
 		
 		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
@@ -171,7 +170,7 @@ public class DataPointBuilder implements Serializable
 		return checkState();
 	}
 
-	public DataPointBuilder delete(Collection<? extends DataStructureComponent<?, ?, ?>> components)
+	public DataPointBuilder delete(Collection<? extends DataSetComponent<?, ?, ?>> components)
 	{
 		delegate.keySet().removeAll(components);
 		return checkState();
@@ -180,18 +179,18 @@ public class DataPointBuilder implements Serializable
 	public DataPointBuilder delete(VTLAlias... names)
 	{
 		Set<VTLAlias> nameSet = Utils.getStream(names).collect(toSet());
-		Set<DataStructureComponent<?, ?, ?>> toDelete = Utils.getStream(delegate.keySet()).filter(c -> nameSet.contains(c.getVariable().getAlias())).collect(toSet());
+		Set<DataSetComponent<?, ?, ?>> toDelete = Utils.getStream(delegate.keySet()).filter(c -> nameSet.contains(c.getAlias())).collect(toSet());
 		delegate.keySet().removeAll(toDelete);
 		return checkState();
 	}
 
-	public DataPointBuilder delete(DataStructureComponent<?, ?, ?>... components)
+	public DataPointBuilder delete(DataSetComponent<?, ?, ?>... components)
 	{
 		delegate.keySet().removeAll(Arrays.asList(components));
 		return checkState();
 	}
 
-	public DataPoint build(Lineage lineage, DataSetMetadata structure)
+	public DataPoint build(Lineage lineage, DataSetStructure structure)
 	{
 		if (!IS_BUILT_HANDLE.compareAndSet(this, false, true))
 			throw new IllegalStateException("DataPoint already built.");
@@ -207,23 +206,23 @@ public class DataPointBuilder implements Serializable
 		return DataPointBuilder.class.getSimpleName() + delegate.toString();
 	}
 
-	private static class DataPointImpl extends AbstractMap<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable
+	private static class DataPointImpl extends AbstractMap<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values;
+		private final Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values;
 		private final Lineage lineage;
 		private final SerUnaryOperator<Lineage> enricher;
 		private final int hashCode; 
 		
-		private transient Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
+		private transient Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> ids = null;
 
-		private DataPointImpl(Lineage lineage, DataSetMetadata structure, Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
+		private DataPointImpl(Lineage lineage, DataSetStructure structure, Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
 			this.lineage = lineage;
 			values.putAll(values);
 
-			for (DataStructureComponent<?, ?, ?> c: structure)
+			for (DataSetComponent<?, ?, ?> c: structure)
 				if (c.is(Attribute.class))
 					values.putIfAbsent(c, NullValue.instanceFrom(c));
 
@@ -236,7 +235,7 @@ public class DataPointBuilder implements Serializable
 						throw new VTLMissingComponentsException(structure, nonExistingComp);
 					});
 	
-				Set<DataStructureComponent<?, ?, ?>> missing = new HashSet<>(structure);
+				Set<DataSetComponent<?, ?, ?>> missing = new HashSet<>(structure);
 				missing.removeAll(values.keySet());
 				if (missing.size() > 0)
 					throw new VTLMissingComponentsException(values, missing);
@@ -256,7 +255,7 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public <R extends Component> Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
+		public <R extends Component> Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> getValues(Class<R> role)
 		{
 			if (role == Identifier.class)
 			{
@@ -264,7 +263,7 @@ public class DataPointBuilder implements Serializable
 					ids = Utils.getStream(values).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.asRole(Identifier.class))).collect(SerCollectors.entriesToMap());
 				// safe cast, R is Identifier
 				@SuppressWarnings({ "unchecked", "rawtypes" })
-				final Map<DataStructureComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map) ids;
+				final Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map) ids;
 				return result;
 			}
 			else
@@ -272,14 +271,14 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public DataPoint drop(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components)
+		public DataPoint drop(Collection<? extends DataSetComponent<? extends NonIdentifier, ?, ?>> components)
 		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(this);
-			for (DataStructureComponent<?, ?, ?> component : components)
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newVals = new HashMap<>(this);
+			for (DataSetComponent<?, ?, ?> component : components)
 				if (!component.is(Identifier.class))
 					newVals.remove(component);
 
-			return new DataPointImpl(getLineage(), new DataStructureBuilder(newVals.keySet()).build(), newVals);
+			return new DataPointImpl(getLineage(), new DataSetStructureBuilder(newVals.keySet()).build(), newVals);
 		}
 
 		@Override
@@ -287,31 +286,31 @@ public class DataPointBuilder implements Serializable
 		{
 			Objects.requireNonNull(other);
 
-			Set<VTLAlias> thisComponentNames = keySet().stream().map(DataStructureComponent::getVariable).map(Variable::getAlias).collect(toSet());
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream()
-					.filter(c -> !thisComponentNames.contains(c.getVariable().getAlias()))
+			Set<VTLAlias> thisComponentNames = keySet().stream().map(DataSetComponent::getAlias).collect(toSet());
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream()
+					.filter(c -> !thisComponentNames.contains(c.getAlias()))
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
-			DataSetMetadata newStructure = new DataStructureBuilder(finalMap.keySet()).build();
+			DataSetStructure newStructure = new DataSetStructureBuilder(finalMap.keySet()).build();
 
 			return new DataPointImpl(lineageCombiner.apply(this, other), newStructure, finalMap);
 		}
 
 		@Override
-		public DataPoint keep(Collection<? extends DataStructureComponent<? extends NonIdentifier, ?, ?>> components) throws VTLMissingComponentsException
+		public DataPoint keep(Collection<? extends DataSetComponent<? extends NonIdentifier, ?, ?>> components) throws VTLMissingComponentsException
 		{
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oper = new HashMap<>(getValues(Identifier.class));
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> oper = new HashMap<>(getValues(Identifier.class));
 
-			for (DataStructureComponent<?, ?, ?> component : components)
+			for (DataSetComponent<?, ?, ?> component : components)
 				if (containsKey(component))
 					oper.put(component, get(component));
 				else
 					throw new VTLMissingComponentsException(keySet(), component);
 
-			return new DataPointImpl(getLineage() ,new DataStructureBuilder(oper.keySet()).build(), oper);
+			return new DataPointImpl(getLineage() ,new DataSetStructureBuilder(oper.keySet()).build(), oper);
 		}
 
 		@Override
-		public DataPoint rename(DataStructureComponent<?, ?, ?> oldComponent, DataStructureComponent<?, ?, ?> newComponent)
+		public DataPoint rename(DataSetComponent<?, ?, ?> oldComponent, DataSetComponent<?, ?, ?> newComponent)
 		{
 			if (!containsKey(oldComponent))
 				throw new VTLMissingComponentsException(keySet(), oldComponent);
@@ -319,10 +318,10 @@ public class DataPointBuilder implements Serializable
 			if (newComponent == null)
 				throw new VTLException("rename: new omponent cannot be null");
 
-			Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newValues = new HashMap<>(this);
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> newValues = new HashMap<>(this);
 			ScalarValue<?, ?, ?, ?> value = newValues.remove(oldComponent);
 			newValues.put(newComponent, value);
-			return new DataPointImpl(getLineage(), new DataStructureBuilder(newValues.keySet()).build(), newValues);
+			return new DataPointImpl(getLineage(), new DataSetStructureBuilder(newValues.keySet()).build(), newValues);
 		}
 
 		@Override
@@ -338,7 +337,7 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public Set<Map.Entry<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
+		public Set<Map.Entry<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>> entrySet()
 		{
 			return values.entrySet();
 		}
@@ -355,7 +354,7 @@ public class DataPointBuilder implements Serializable
 			if (values.containsKey(key))
 				return values.get(key);
 			else
-				throw new VTLMissingComponentsException(values.keySet(), (DataStructureComponent<?, ?, ?>) key);
+				throw new VTLMissingComponentsException(values.keySet(), (DataSetComponent<?, ?, ?>) key);
 		}
 
 		@Override

@@ -20,7 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
 import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE13;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,8 +44,8 @@ import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
@@ -67,10 +67,10 @@ public class StrlenTransformationTest
 		TransformationScheme session = TestUtils.mockSession(map);
 
 		StrlenTransformation st = new StrlenTransformation(left);
-		DataSetMetadata structure = (DataSetMetadata) st.getMetadata(session);
+		DataSetStructure structure = (DataSetStructure) st.getMetadata(session);
 		
-		DataStructureComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
-		Optional<DataStructureComponent<?, ?, ?>> measure = structure.getComponent(INTEGERDS.getDefaultVariable().getAlias());
+		DataSetComponent<Identifier, ?, ?> id = structure.getComponents(Identifier.class, STRINGDS).iterator().next();
+		Optional<DataSetComponent<?, ?, ?>> measure = structure.getComponent(INT_VAR.getAlias());
 		assertTrue(measure.isPresent() && measure.get().is(Measure.class), "integer_var result");
 		
 		DataSet ds = (DataSet) st.eval(session);

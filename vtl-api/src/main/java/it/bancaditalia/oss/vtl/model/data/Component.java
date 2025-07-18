@@ -61,7 +61,7 @@ public interface Component
 			return clazz;
 		}
 		
-		public boolean matchesComponent(DataStructureComponent<?, ?, ?> component)
+		public boolean matchesComponent(DataSetComponent<?, ?, ?> component)
 		{
 			return clazz.isAssignableFrom(component.getRole());
 		}

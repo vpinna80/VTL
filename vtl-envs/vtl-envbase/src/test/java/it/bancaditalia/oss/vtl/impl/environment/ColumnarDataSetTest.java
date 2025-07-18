@@ -44,17 +44,17 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 public class ColumnarDataSetTest
 {
-	private static final DataSetMetadata STRUCTURE = new DataStructureBuilder(STR_ID.get(), INT_ID.get(), INT_ME.get(), BOL_ME.get()).build();
+	private static final DataSetStructure STRUCTURE = new DataSetStructureBuilder(STR_ID.get(), INT_ID.get(), INT_ME.get(), BOL_ME.get()).build();
 	private static final String STR_ID_VAL[] = { "A", "A", "B", "B", "C" }; 
 	private static final Long INT_ID_VAL[] = { 1L, 2L, 1L, 3L, 2L }; 
 	private static final Long INT_ME_VAL[] = { 5L, 7L, null, 8L, 4L }; 
@@ -66,7 +66,7 @@ public class ColumnarDataSetTest
 	@BeforeEach
 	public void beforeEach()
 	{
-		Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> values = new HashMap<>();
+		Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>[]> values = new HashMap<>();
 		values.put(STR_ID.get(), Arrays.stream(STR_ID_VAL).map(StringValue::of).collect(toList()).toArray(new StringValue[0]));
 		values.put(INT_ID.get(), Arrays.stream(INT_ID_VAL).map(IntegerValue::of).collect(toList()).toArray(new IntegerValue[0]));
 		values.put(INT_ME.get(), Arrays.stream(INT_ME_VAL).map(v -> (ScalarValue<?, ?, ?, ?>) (v == null ? NullValue.instance(INTEGERDS) : IntegerValue.of(v))).collect(toList()).toArray(new ScalarValue[0]));

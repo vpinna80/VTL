@@ -29,8 +29,8 @@ import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireTimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -55,20 +55,20 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 	}
 	
 	@Override
-	protected final DataSetMetadata computeMetadata(TransformationScheme scheme)
+	protected final DataSetStructure computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata metadata = operand.getMetadata(scheme);
 		
 		if (!(metadata.isDataSet()))
-			throw new VTLInvalidParameterException(metadata, DataSetMetadata.class);
+			throw new VTLInvalidParameterException(metadata, DataSetStructure.class);
 		
-		DataSetMetadata ds = (DataSetMetadata) metadata;
-		Set<DataStructureComponent<Identifier, EntireTimeDomainSubset, TimeDomain>> timeIDs = ds.getComponents(Identifier.class, TIMEDS);
+		DataSetStructure ds = (DataSetStructure) metadata;
+		Set<DataSetComponent<Identifier, EntireTimeDomainSubset, TimeDomain>> timeIDs = ds.getComponents(Identifier.class, TIMEDS);
 		if (timeIDs.size() != 1)
 			throw new VTLSingletonComponentRequiredException(Identifier.class, TIMEDS, ds);
 		
-		return checkIsTimeSeriesDataSet((DataSetMetadata) metadata, scheme);
+		return checkIsTimeSeriesDataSet((DataSetStructure) metadata, scheme);
 	}
 
-	protected abstract DataSetMetadata checkIsTimeSeriesDataSet(DataSetMetadata metadata, TransformationScheme scheme);
+	protected abstract DataSetStructure checkIsTimeSeriesDataSet(DataSetStructure metadata, TransformationScheme scheme);
 }

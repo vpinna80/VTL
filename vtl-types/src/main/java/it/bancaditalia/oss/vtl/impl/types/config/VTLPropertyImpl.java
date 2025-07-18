@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.config;
 
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_MULTIPLE;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.security.InvalidParameterException;
@@ -42,12 +43,12 @@ public class VTLPropertyImpl implements VTLProperty
 	{
 		if (options.contains(IS_PASSWORD) && defaultValue.length > 0)
 			throw new InvalidParameterException("VTLProperty cannot have a default value if it is a password.");
-		if (options.contains(IS_MULTIPLE) && defaultValue.length > 0)
+		if (options.contains(IS_PASSWORD) && options.contains(IS_MULTIPLE))
 			throw new InvalidParameterException("VTLProperty cannot have multiple values if it is a password.");
 		if (name == null || name.isBlank())
 			throw new InvalidParameterException("VTL Property name not specified.");
 		
-		this.name = name;
+		this.name = requireNonNull(name);
 		this.options = options;
 		this.description = description;
 		this.placeholder = placeholder;

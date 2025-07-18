@@ -26,7 +26,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.util.List;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.Component.Role;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -51,15 +51,15 @@ public class QuantifiedComponent extends ComponentParameterTypeImpl
 		this.altName = altName;
 	}
 
-	public boolean matches(DataStructureComponent<?, ?, ?> component, List<QuantifiedComponent> partialMatch, TransformationScheme scheme)
+	public boolean matches(DataSetComponent<?, ?, ?> component, List<QuantifiedComponent> partialMatch, TransformationScheme scheme)
 	{
 		if (!getRole().roleClass().isAssignableFrom(component.getRole()))
 			return false;
 		else if (quantifier == null && partialMatch.contains(this))
 			return false;
-		else if (altName != null && !altName.equals(component.getVariable().getAlias()))
+		else if (altName != null && !altName.equals(component.getAlias()))
 			return false;
-		else if (getDomainName() != null && !scheme.getRepository().getDomain(getDomainName()).get().isAssignableFrom(component.getVariable().getDomain()))
+		else if (getDomainName() != null && !scheme.getRepository().getDomain(getDomainName()).get().isAssignableFrom(component.getDomain()))
 			return false;
 		else
 			return true;

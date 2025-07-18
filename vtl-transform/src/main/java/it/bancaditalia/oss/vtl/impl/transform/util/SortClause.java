@@ -24,29 +24,29 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.io.Serializable;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 
 public class SortClause implements SortCriterion, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private final DataStructureComponent<?, ?, ?> component;
+	private final DataSetComponent<?, ?, ?> component;
 	private final SortingMethod method;
 
-	public SortClause(DataStructureComponent<?, ?, ?> component)
+	public SortClause(DataSetComponent<?, ?, ?> component)
 	{
 		this(component, ASC);
 	}
 	
-	public SortClause(DataStructureComponent<?, ?, ?> component, SortingMethod method)
+	public SortClause(DataSetComponent<?, ?, ?> component, SortingMethod method)
 	{
 		this.component = component;
 		this.method = coalesce(method, ASC);
 	}
 	
 	@Override
-	public DataStructureComponent<?, ?, ?> getComponent()
+	public DataSetComponent<?, ?, ?> getComponent()
 	{
 		return component;
 	}

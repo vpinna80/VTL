@@ -21,7 +21,7 @@ package it.bancaditalia.oss.vtl.exceptions;
 
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
@@ -34,17 +34,17 @@ public class VTLIncompatibleTypesException extends VTLException
 		super("Incompatible types in " + operation + ": " + left + ", " + right);
 	}
 	
-	public VTLIncompatibleTypesException(String operation, DataStructureComponent<?, ?, ?> left, ValueDomain right)
+	public VTLIncompatibleTypesException(String operation, DataSetComponent<?, ?, ?> left, ValueDomain right)
 	{
 		super("Incompatible types in " + operation + ": " + left + ", " + right);
 	}
 	
-	public VTLIncompatibleTypesException(String operation, DataStructureComponent<?, ?, ?> left, DataStructureComponent<?, ?, ?> right)
+	public VTLIncompatibleTypesException(String operation, DataSetComponent<?, ?, ?> left, DataSetComponent<?, ?, ?> right)
 	{
 		super("Incompatible types in " + operation + ": " + left + ", " + right);
 	}
 	
-	public VTLIncompatibleTypesException(String operation, ValueDomain left, DataStructureComponent<?, ?, ?> right)
+	public VTLIncompatibleTypesException(String operation, ValueDomain left, DataSetComponent<?, ?, ?> right)
 	{
 		super("Incompatible types in " + operation + ": " + left + ", " + right);
 	}
@@ -54,7 +54,7 @@ public class VTLIncompatibleTypesException extends VTLException
 		super("Incompatible types in " + operation + ": " + left.getDomain() + "=" + left + ", " + right.getDomain() + "=" + right);
 	}
 	
-	public VTLIncompatibleTypesException(String operation, Set<? extends DataStructureComponent<?, ?, ?>> invalid, ValueDomain domain)
+	public VTLIncompatibleTypesException(String operation, Set<? extends DataSetComponent<?, ?, ?>> invalid, ValueDomain domain)
 	{
 		super("Incompatible types in " + operation + ": found " + invalid + ", but " + domain + " was expected");
 	}

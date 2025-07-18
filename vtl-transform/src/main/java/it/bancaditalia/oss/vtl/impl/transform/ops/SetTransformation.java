@@ -37,8 +37,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
@@ -114,7 +114,7 @@ public class SetTransformation extends TransformationImpl
 	}
 
 	@Override
-	protected DataSetMetadata computeMetadata(TransformationScheme scheme)
+	protected DataSetStructure computeMetadata(TransformationScheme scheme)
 	{
 		List<VTLValueMetadata> allMetadata = operands.stream()
 				.map(t -> t.getMetadata(scheme))
@@ -126,7 +126,7 @@ public class SetTransformation extends TransformationImpl
 		if (allMetadata.stream().distinct().limit(2).count() != 1)
 			throw new UnsupportedOperationException("In set operation expected all datasets with equal structure but found: " + allMetadata); 
 
-		return (DataSetMetadata) allMetadata.get(0);
+		return (DataSetStructure) allMetadata.get(0);
 	}
 	
 	@Override
@@ -149,7 +149,7 @@ public class SetTransformation extends TransformationImpl
 	
 	private static DataSet setDiff(SerUnaryOperator<Lineage> linOp, DataSet left, DataSet right)
 	{
-		Set<Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
+		Set<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>> index;
 		try (Stream<DataPoint> stream = right.stream())
 		{
 			index = stream.map(dp -> dp.getValues(Identifier.class)).collect(toSet());

@@ -56,14 +56,14 @@ import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder;
+import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetMetadata;
-import it.bancaditalia.oss.vtl.model.data.DataStructureComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
+import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -107,7 +107,7 @@ public enum SampleDataSets implements DataSet
 		dataset = createSample(components);
 	}
 
-	public static DataSetMetadata createStructure(SampleVariables... variables)
+	public static DataSetStructure createStructure(SampleVariables... variables)
 	{
 		Map<String, AtomicInteger> counts = new HashMap<>(); 
 		
@@ -116,12 +116,12 @@ public enum SampleDataSets implements DataSet
 		
 		return Arrays.stream(variables)
 			.map(variable -> variable.getComponent(counts.get(variable.getType()).getAndIncrement()))
-			.collect(DataStructureBuilder.toDataStructure());
+			.collect(DataSetStructureBuilder.toDataStructure());
 	}
 	
 	private static DataSet createSample(SampleVariables variables[])
 	{
-		DataSetMetadata structure = createStructure(variables);
+		DataSetStructure structure = createStructure(variables);
 		
 		return new StreamWrapperDataSet(structure, () -> Utils.getStream(VAR_SAMPLE_LEN)
 				.mapToObj(dpIdx -> {
@@ -138,9 +138,9 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public DataSet subspace(Map<? extends DataStructureComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator)
+	public DataSet subspace(Map<? extends DataSetComponent<? extends Identifier, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>> keyValues, SerUnaryOperator<Lineage> lineageOperator)
 	{
-		DataSetMetadata newMetadata = new DataStructureBuilder(dataset.getMetadata()).removeComponents(keyValues.keySet()).build();
+		DataSetStructure newMetadata = new DataSetStructureBuilder(dataset.getMetadata()).removeComponents(keyValues.keySet()).build();
 		
 		return new AbstractDataSet(newMetadata)
 		{
@@ -164,7 +164,7 @@ public enum SampleDataSets implements DataSet
 		return dataset.stream();
 	}
 
-	public DataSetMetadata getMetadata()
+	public DataSetStructure getMetadata()
 	{
 		return dataset.getMetadata();
 	}
@@ -174,17 +174,17 @@ public enum SampleDataSets implements DataSet
 		return dataset.membership(component, lineageOp);
 	}
 
-	public Optional<DataStructureComponent<?, ?, ?>> getComponent(VTLAlias name)
+	public Optional<DataSetComponent<?, ?, ?>> getComponent(VTLAlias name)
 	{
 		return dataset.getComponent(name);
 	}
 
-	public DataSet getMatching(Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
+	public DataSet getMatching(Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
 	{
 		return dataset.getMatching(keyValues);
 	}
 
-	public DataSet filteredMappedJoin(DataSetMetadata metadata, DataSet rightDataset, SerBiPredicate<DataPoint, DataPoint> having,
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet rightDataset, SerBiPredicate<DataPoint, DataPoint> having,
 			SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
 	{
 		return dataset.filteredMappedJoin(metadata, rightDataset, having, mergeOp, leftJoin);
@@ -196,22 +196,22 @@ public enum SampleDataSets implements DataSet
 		return dataset.filter(predicate, lineageOperator);
 	}
 	
-	public DataSet mapKeepingKeys(DataSetMetadata metadata,
-			SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
+	public DataSet mapKeepingKeys(DataSetStructure metadata,
+			SerUnaryOperator<Lineage> lineageOperator, SerFunction<? super DataPoint, ? extends Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>> operator)
 	{
 		return dataset.mapKeepingKeys(metadata, lineageOperator, operator);
 	}
 
 	@Override
-	public <T extends Map<DataStructureComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
-			Set<DataStructureComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector, 
-			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataStructureComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
+			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector, 
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
 		return dataset.aggregate(metadata, keys, groupCollector, finisher);
 	}
 
 	@Override
-	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataStructureComponent<?, ?, ?> sourceComp, DataStructureComponent<?, ?, ?> destComp, WindowClause clause,
+	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataSetComponent<?, ?, ?> sourceComp, DataSetComponent<?, ?, ?> destComp, WindowClause clause,
 			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
 		return dataset.analytic(lineageOp, sourceComp, destComp, clause, extractor, collector, finisher);
@@ -224,8 +224,8 @@ public enum SampleDataSets implements DataSet
 	}
 	
 	@Override
-	public DataSet flatmapKeepingKeys(DataSetMetadata metadata, SerUnaryOperator<Lineage> lineageOperator,
-			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataStructureComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
+	public DataSet flatmapKeepingKeys(DataSetStructure metadata, SerUnaryOperator<Lineage> lineageOperator,
+			SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator)
 	{
 		throw new UnsupportedOperationException();
 	}

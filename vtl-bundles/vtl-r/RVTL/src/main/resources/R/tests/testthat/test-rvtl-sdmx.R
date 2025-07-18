@@ -26,7 +26,7 @@ testthat::test_that("SDMX env + SDMX repo", {
             session <- "sdmx"
             set_vtl_sdmx_properties(session)
             vtlAddStatements(session, "ds_sdmx:=BIS:WS_EER(1.0):D.N.B.IT;")
-            vtlCompile(session)
+            testthat::expect_true(vtlCompile(session), label = "compilation")
             ds_sdmx <- vtlEvalNodes(session, "ds_sdmx")[["ds_sdmx"]]
 
             !is.null(ds_sdmx) & nrow(ds_sdmx) > 0 & ncol(ds_sdmx) > 0
@@ -47,7 +47,7 @@ testthat::test_that("CSV env + json and SDMX CL repo", {
             session <- "csvenvsdmxjson"
             set_vtl_sdmx_csv_properties(session)
             vtlAddStatements(session, "ds_csv_sdmx:=ds_csv;")
-            vtlCompile(session)
+            testthat::expect_true(vtlCompile(session), label = "compilation")
             ds_sdmx <- vtlEvalNodes(session, "ds_csv_sdmx")[["ds_csv_sdmx"]]
             ds_csv <- vtlEvalNodes(session, "ds_csv")[["ds_csv"]]
 
@@ -75,9 +75,9 @@ testthat::test_that("R env + json and SDMX DSD repo", {
             ds_local <- readRDS(testthat::test_path("data", "ds_r.Rdata"))
             ds_r <<- ds_local # fix R global env
             vtlAddStatements(session, "ds_sdmx:=ds_r;")
-            vtlCompile(session)
+            testthat::expect_true(vtlCompile(session), label = "compilation")
+            
             ds_sdmx <- vtlEvalNodes(session, "ds_sdmx")[["ds_sdmx"]]
-
             ds_sdmx[ds_sdmx$TIME_PERIOD == "2005-04-15", "OBS_VALUE"] == ds_r[ds_r$TIME_PERIOD == "2005-04-15", "OBS_VALUE"]
 
             testthat::expect_equal(
