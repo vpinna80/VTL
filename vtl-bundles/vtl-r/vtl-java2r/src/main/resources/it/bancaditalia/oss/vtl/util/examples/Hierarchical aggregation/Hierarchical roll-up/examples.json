@@ -1,5 +1,5 @@
 {
-  "schema-version": "2.2.0",
+  "vtl-schema-version": "2.2.0",
   "data": [
     {
       "name": "ds_1",
@@ -49,70 +49,6 @@
     }
   ],
   "domains": [
-    {
-      "name": "VD_1",
-      "parent": "string",
-      "enumerated": [
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "F",
-        "G",
-        "H",
-        "I",
-        "J",
-        "K",
-        "L",
-        "M",
-        "N",
-        "O",
-        "P",
-        "Q",
-        "R",
-        "S",
-        "T",
-        "U",
-        "V",
-        "W",
-        "X",
-        "Y",
-        "Z"
-      ]
-    },
-    {
-      "name": "VD_1",
-      "parent": "string",
-      "enumerated": [
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "F",
-        "G",
-        "H",
-        "I",
-        "J",
-        "K",
-        "L",
-        "M",
-        "N",
-        "O",
-        "P",
-        "Q",
-        "R",
-        "S",
-        "T",
-        "U",
-        "V",
-        "W",
-        "X",
-        "Y",
-        "Z"
-      ]
-    },
     {
       "name": "VD_1",
       "parent": "string",

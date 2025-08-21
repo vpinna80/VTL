@@ -1,5 +1,5 @@
 {
-  "schema-version": "2.2.0",
+  "vtl-schema-version": "2.2.0",
   "data": [
     {
       "name": "in_2_data",

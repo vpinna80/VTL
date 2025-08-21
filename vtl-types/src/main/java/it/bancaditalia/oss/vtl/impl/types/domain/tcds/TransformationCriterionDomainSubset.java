@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.types.domain.tcds;
 
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.CriterionDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -30,8 +29,6 @@ import it.bancaditalia.oss.vtl.model.transform.Transformation;
 
 public abstract class TransformationCriterionDomainSubset<S extends TransformationCriterionDomainSubset<S, D>, D extends ValueDomain> extends CriterionDomainSubset<S, D>
 {
-	public static final VTLAlias TEST_ALIAS = VTLAliasImpl.of("'#TEST_ALIAS#'");
-	
 	private static final long serialVersionUID = 1L;
 
 	private final Transformation transformation;
@@ -50,9 +47,10 @@ public abstract class TransformationCriterionDomainSubset<S extends Transformati
 	}
 
 	@Override
-	public boolean test(ScalarValue<?, ?, S, D> value)
+	public boolean test(ScalarValue<?, ?, ?, D> value)
 	{
-		VTLValue result = transformation.eval(new TransformationCriterionScope(value));
+		TransformationCriterionScope scope = new TransformationCriterionScope(getAlias(), value);
+		VTLValue result = transformation.eval(scope);
 		return result instanceof BooleanValue && result == BooleanValue.TRUE; 
 	}
 }

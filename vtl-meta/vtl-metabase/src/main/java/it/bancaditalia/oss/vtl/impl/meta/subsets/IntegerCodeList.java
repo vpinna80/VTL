@@ -23,11 +23,13 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.meta.subsets.IntegerCodeList.IntegerCodeItem;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -36,7 +38,7 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
-public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, IntegerCodeItem, IntegerDomain>, IntegerDomainSubset<IntegerCodeList>, Serializable
+public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, IntegerCodeItem, Long, IntegerDomain>, IntegerDomainSubset<IntegerCodeList>, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -111,6 +113,16 @@ public class IntegerCodeList implements EnumeratedDomainSubset<IntegerCodeList, 
 	public Set<IntegerCodeItem> getCodeItems()
 	{
 		return items;
+	}
+	
+	@Override
+	public Optional<IntegerCodeItem> getCodeItem(Long scalarValue)
+	{
+		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> value = IntegerValue.of(scalarValue);
+		if (getCodeItems().contains(value))
+			return Optional.of(new IntegerCodeItem(scalarValue, this));
+		else
+			return Optional.empty();
 	}
 	
 	@Override

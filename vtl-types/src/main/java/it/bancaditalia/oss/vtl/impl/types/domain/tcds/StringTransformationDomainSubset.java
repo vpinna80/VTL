@@ -37,7 +37,7 @@ public class StringTransformationDomainSubset extends TransformationCriterionDom
 	{
 		super(alias, parent, expression);
 		
-		expression.getMetadata(new TransformationCriterionScope(STRINGDS));
+		expression.getMetadata(new TransformationCriterionScope(alias, STRINGDS));
 	}
 
 	@Override

@@ -19,21 +19,22 @@
  */
 package it.bancaditalia.oss.vtl.impl.meta.json;
 
-import static com.fasterxml.jackson.core.StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION;
+import static com.fasterxml.jackson.core.JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION;
 import static com.github.erosb.jsonsKema.FormatValidationPolicy.ALWAYS;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalConfigurationObject;
-import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValues;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_MULTIPLE;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_URL;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder.toDataStructure;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
-import static it.bancaditalia.oss.vtl.impl.types.domain.tcds.TransformationCriterionDomainSubset.TEST_ALIAS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.entriesToMap;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
+import static java.lang.System.lineSeparator;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
@@ -41,21 +42,25 @@ import java.io.InputStream;
 import java.net.URL;
 import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.MappingJsonFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.erosb.jsonsKema.IJsonValue;
 import com.github.erosb.jsonsKema.Schema;
 import com.github.erosb.jsonsKema.SchemaLoader;
@@ -69,7 +74,7 @@ import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.engine.DMLStatement;
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.engine.Statement;
-import it.bancaditalia.oss.vtl.exceptions.VTLDuplicatedObjectException;
+import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
@@ -81,6 +86,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureDefinitionImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.domain.tcds.IntegerTransformationDomainSubset;
+import it.bancaditalia.oss.vtl.impl.types.domain.tcds.NumberTransformationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.tcds.StringTransformationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.tcds.TransformationCriterionScope;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
@@ -97,6 +104,12 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -104,7 +117,7 @@ import it.bancaditalia.oss.vtl.util.SerBiFunction;
 
 public class JsonMetadataRepository extends InMemoryMetadataRepository
 {
-	public static final VTLProperty JSON_METADATA_URL = new VTLPropertyImpl("vtl.json.metadata.url", "Json url providing structures and domains", "file://", EnumSet.of(IS_REQUIRED, IS_URL));
+	public static final VTLProperty JSON_METADATA_URL = new VTLPropertyImpl("vtl.json.metadata.url", "Json url providing structures and domains", "file://", EnumSet.of(IS_REQUIRED, IS_URL, IS_MULTIPLE));
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(JsonMetadataRepository.class);
@@ -128,82 +141,109 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	
 	public JsonMetadataRepository() throws IOException
 	{
-		this(new URL(getLocalPropertyValue(JSON_METADATA_URL)));
+		this(getLocalPropertyValues(JSON_METADATA_URL));
 	}
 	
 	public JsonMetadataRepository(MetadataRepository chained) throws IOException
 	{
-		this(chained, new URL(getLocalPropertyValue(JSON_METADATA_URL)));
+		this(chained, getLocalPropertyValues(JSON_METADATA_URL));
 	}
 	
-	public JsonMetadataRepository(URL jsonURL) throws IOException
+	public JsonMetadataRepository(List<String> jsonURLs) throws IOException
 	{
-		this(null, jsonURL, getLocalConfigurationObject(VTLConfiguration::getEngine));
+		this(null, jsonURLs, getLocalConfigurationObject(VTLConfiguration::getEngine));
 	}
 	
-	public JsonMetadataRepository(MetadataRepository chained, URL jsonURL) throws IOException
+	public JsonMetadataRepository(MetadataRepository chained, List<String> jsonURLs) throws IOException
 	{
-		this(chained, jsonURL, getLocalConfigurationObject(VTLConfiguration::getEngine));
+		this(chained, jsonURLs, getLocalConfigurationObject(VTLConfiguration::getEngine));
 	}
 
-	public JsonMetadataRepository(URL jsonURL, Engine engine) throws IOException
+	public JsonMetadataRepository(List<String> jsonURLs, Engine engine) throws IOException
 	{
-		this(null, jsonURL, engine);
+		this(null, jsonURLs, engine);
 	}
 
 	public JsonMetadataRepository(MetadataRepository chained, URL jsonURL, Engine engine) throws IOException
 	{
+		this(chained, List.of(jsonURL.toString()), engine);
+	}
+	
+	public JsonMetadataRepository(MetadataRepository chained, List<String> jsonURLs, Engine engine) throws IOException
+	{
 		super(chained);
 
-		try (InputStream schemaIn = JsonMetadataRepository.class.getResourceAsStream("vtl-dict-schema.json");
-			InputStream instanceIn = jsonURL.openStream())
+		try (InputStream schemaIn = JsonMetadataRepository.class.getResourceAsStream("vtl-dict-schema.json"))
 		{
 			IJsonValue schemaJson = new com.github.erosb.jsonsKema.JsonParser(schemaIn).parse();
 			Schema schema = new SchemaLoader(schemaJson).load();
 			Validator validator = Validator.create(schema, new ValidatorConfig(ALWAYS));
-			IJsonValue instanceJson = new com.github.erosb.jsonsKema.JsonParser(instanceIn).parse();
-			ValidationFailure failure = validator.validate(instanceJson);
-			if (failure != null)
-			{
-				Map<?, ?> json = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(failure.toJSON().toString()).readValueAs(Map.class);
-				throw new IllegalStateException("Json validation failed:" + formatFailure(json));
-			}
-		}
-		
-		try (InputStream source = jsonURL.openStream(); JsonParser parser = JsonFactory.builder().build().setCodec(new JsonMapper()).createParser(source))
-		{
-			Map<?, ?> json = parser.readValueAs(Map.class);
 			
+			for (String jsonURL: jsonURLs)
+				try (InputStream instanceIn = new URL(jsonURL).openStream())
+				{
+					IJsonValue instanceJson = new com.github.erosb.jsonsKema.JsonParser(instanceIn).parse();
+					ValidationFailure failure = validator.validate(instanceJson);
+					if (failure != null)
+					{
+						Map<?, ?> json = new MappingJsonFactory().createParser(failure.toJSON().toString()).readValueAs(Map.class);
+						throw new IllegalStateException("Json validation failed:" + formatFailure(json));
+					}
+				}
+		}
+
+		List<Map<String, Object>> gatheredDomains = new ArrayList<>();
+		List<Map<String, Object>> gatheredVariables = new ArrayList<>();
+		List<Map<String, Object>> gatheredStructures = new ArrayList<>();
+		List<Map<String, Object>> gatheredData = new ArrayList<>();
+		
+		for (String jsonURL: jsonURLs)
+			try (InputStream source = new URL(jsonURL).openStream(); JsonParser parser = new MappingJsonFactory().createParser(source))
+			{
+				TypeReference<List<Map<String, Object>>> typeRef = new TypeReference<List<Map<String, Object>>>() {};
+				ObjectNode root = parser.readValueAsTree();
+				
+				gatheredDomains.addAll(coalesce(root.get("domains").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+				gatheredVariables.addAll(coalesce(root.get("variables").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+				gatheredStructures.addAll(coalesce(root.get("structures").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+				gatheredData.addAll(coalesce(root.get("data").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+			}
+			catch (JsonParseException e)
+			{
+				try (InputStream source = new URL(jsonURL).openStream(); JsonParser parser = new MappingJsonFactory().enable(INCLUDE_SOURCE_IN_LOCATION).createParser(source))
+				{
+					parser.readValueAs(Map.class);
+					throw e;
+				}
+				catch (JsonParseException e1)
+				{
+					throw e1;
+				}
+			}
+		
+		try
+		{
 			// Domains entries must be set inside createDomain due to the recursive nature of domains.
 			domains = new HashMap<>();
-			iterate(json, "domain", (a, d) -> createDomain(a, d, requireNonNull(engine)));
-			variables = iterate(json, "variable", this::createVariable);
-			structures = iterate(json, "structure", JsonMetadataRepository::createStructure);
-			data = iterate(json, "data", this::createData);
+			iterate(gatheredDomains, "domain", (a, d) -> createDomain(a, d, requireNonNull(engine)));
+			variables = iterate(gatheredVariables, "variable", this::createVariable);
+			structures = iterate(gatheredStructures, "structure", JsonMetadataRepository::createStructure);
+			data = iterate(gatheredData, "data", this::createData);
 		}
-		catch (JsonParseException e)
+		catch (VTLException e)
 		{
-			try (InputStream source = jsonURL.openStream(); JsonParser parser = JsonFactory.builder().enable(INCLUDE_SOURCE_IN_LOCATION).build().setCodec(new JsonMapper()).createParser(source))
-			{
-				parser.readValueAs(Map.class);
-				throw e;
-			}
-			catch (JsonParseException e1)
-			{
-				throw e1;
-			}
+			String lines = Stream.iterate(e, Throwable::getCause).takeWhile(Objects::nonNull).map(Throwable::getMessage).collect(joining(lineSeparator()));
+			throw new VTLException("An error occurred while initializing JsonMetadataRepository:\n" + lines);
 		}
 	}
 
 	private static String formatFailure(Map<?, ?> failure)
 	{
-//		return failure.toString();
 		return formatFailure(new StringBuilder(), failure, "\t\t").toString();
 	}
 
 	private static StringBuilder formatFailure(StringBuilder sb, Map<?, ?> failure, String indent)
 	{
-		String keyword = (String) failure.get("keyword");
 		String loc = ((String) failure.get("instanceRef")).substring(1);
 		sb = sb.append("\n").append(indent).append("- In ").append(loc).append(": ").append(failure.get("message"));
 
@@ -211,10 +251,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	    if (causes instanceof Iterable)
 	        for (Object cause : (Iterable<?>) causes)
 	            if (cause instanceof Map)
-	            	switch (keyword)
-	            	{
-	            		default: sb = formatFailure(sb, (Map<?, ?>) cause, indent + "\t"); break;
-	            	}
+	            	sb = formatFailure(sb, (Map<?, ?>) cause, indent + "\t");
 
 	    return sb;
 	}
@@ -252,35 +289,22 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return source != null ? source : super.getDataSource(alias);
 	}
 	
-	private <T> Map<VTLAlias, T> iterate(Map<?, ?> json, String element, SerBiFunction<VTLAlias, Map<?, ?>, T> processor)
+	private <T> Map<VTLAlias, T> iterate(List<Map<String, Object>> items, String element, SerBiFunction<VTLAlias, Map<String, Object>, T> processor)
 	{
 		Map<VTLAlias, T> result = new HashMap<>();
-		List<?> list = (List<?>) coalesce(json.get(element), json.get(element + "s"));
 		
-		if (list != null)
-			for (Object entry: list)
-				if (entry instanceof Map)
-				{
-					Map<?, ?> obj = (Map<?, ?>) entry;
-					if (!obj.containsKey("name"))
-						throw new IllegalStateException("missing alias for object");
-					if (!(obj.get("name") instanceof String))
-						throw new IllegalStateException("object alias is not a string");
-					
-					VTLAlias alias = VTLAliasImpl.of((String) obj.get("name"));
-					if (result.containsKey(alias))
-						throw new VTLDuplicatedObjectException(element, alias);
-					T processed = processor.apply(alias, obj);
-					if (processed != null)
-						result.put(alias, processed);
-				}
-				else
-					throw new InvalidParameterException("Expected JSON object but found " + entry.getClass());
+		for (Map<String, Object> entry: items)
+		{
+			VTLAlias alias = VTLAliasImpl.of((String) entry.get("name"));
+			T processed = processor.apply(alias, entry);
+			if (processed != null && result.putIfAbsent(alias, processed) != null)
+				LOGGER.warn("Replaced definition of {} {}", element, alias);
+		}
 		
 		return result;
 	}
 	
-	private VTLValueMetadata createData(VTLAlias alias, Map<?, ?> data)
+	private VTLValueMetadata createData(VTLAlias alias, Map<String, Object> data)
 	{
 		if (data.containsKey("source"))
 			sources.put(alias, (String) data.get("source"));
@@ -329,7 +353,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		}
 	}
 
-	private static DataStructureDefinition createStructure(VTLAlias alias, Map<?, ?> structure)
+	private static DataStructureDefinition createStructure(VTLAlias alias, Map<String, Object> structure)
 	{
 		LOGGER.debug("Found structure {}", alias);
 		Set<DataStructureComponent<?>> comps = ((List<?>) structure.get("components")).stream()
@@ -342,33 +366,40 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		return new DataStructureDefinitionImpl(alias, comps);
 	}
 
-	private Variable<?, ?> createVariable(VTLAlias alias, Map<?, ?> variable)
+	private Variable<?, ?> createVariable(VTLAlias alias, Map<String, Object> variable)
 	{
 		VTLAlias domain = VTLAliasImpl.of(true, (String) variable.get("domain"));
 		return VariableImpl.of(alias, getDomain(domain).orElseThrow(() -> new VTLUndefinedObjectException("Domain", domain)));
 	}
 	
-	private ValueDomainSubset<?, ?> createDomain(VTLAlias alias, Map<?, ?> domainDef, Engine engine)
+	private ValueDomainSubset<?, ?> createDomain(VTLAlias alias, Map<String, Object> domainDef, Engine engine)
 	{
 		Object parent = ((Map<?, ?>) domainDef).get("parent");
 		if (parent == null || !(parent instanceof String))
 			throw new InvalidParameterException("Parent domain invalid or not specified for " + alias + ".");
+		ValueDomainSubset<?, ?> parentDomain = getDomain(VTLAliasImpl.of((String) parent)).get();
+
+		if (domains.containsKey(alias))
+			return domains.get(alias);
 
 		LOGGER.debug("Found domain {}", alias);
 		Object enumerated = domainDef.get("enumerated");
 		Object described = domainDef.get("described");
+		
 		if (enumerated instanceof List)
-			if ("string".equals(parent))
+			if (parentDomain instanceof StringDomainSubset)
 			{
 				Set<String> codes = ((List<?>) enumerated).stream()
 					.map(code -> code instanceof String ? (String) code : (String) ((Map<?, ?>) code).get("name"))
 					.collect(toSet());
+				if (parentDomain instanceof StringCodeList)
+					codes.forEach(c -> ((StringCodeList) parentDomain).getCodeItem(c));
 				LOGGER.debug("Obtained {} codes for {}", codes.size(), alias);
 				
-				domains.put(alias, new StringCodeList(STRINGDS, alias, codes));
+				domains.put(alias, new StringCodeList((StringDomainSubset<?>) parentDomain, alias, codes));
 			}
 			else
-				LOGGER.warn("Ignoring unsupported domain {}[{}].", alias, parent);
+				LOGGER.warn("Ignoring unsupported domain {}[{}].", alias, parentDomain);
 		else if (enumerated != null)
 			throw new InvalidParameterException("Invalid enumerated domain definition for " + alias + ".");
 		else if (described instanceof String)
@@ -378,7 +409,7 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			List<Statement> statements;
 			try
 			{
-				statements = engine.parseRules(TEST_ALIAS + " := " + code + ";").collect(toList());
+				statements = engine.parseRules("described_domain_test := " + code + ";").collect(toList());
 			}
 			catch (RuntimeException e)
 			{
@@ -392,21 +423,35 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 			if (!(statement instanceof DMLStatement))
 				throw new InvalidParameterException("Invalid domain definition expression: " + code);
 			
-			VTLAlias parentAlias = VTLAliasImpl.of(true, (String) parent);
-			ValueDomainSubset<?, ?> parentDomain = getDomain(parentAlias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", parentAlias));
+			VTLValueMetadata meta;
+			try
+			{
+				meta = ((DMLStatement) statement).getMetadata(new TransformationCriterionScope(alias, parentDomain));
+			}
+			catch (VTLException e)
+			{
+				throw new VTLNestedException("Error creating domain " + alias + " with expression " + code, e);
+			}
 			
-			VTLValueMetadata meta = ((DMLStatement) statement).getMetadata(new TransformationCriterionScope(parentDomain));
-			if (!(!meta.isDataSet()))
+			if (meta.isDataSet())
 				throw new InvalidParameterException("Invalid domain definition expression: " + code);
 			
 			if (!(((ScalarValueMetadata<?, ?>) meta).getDomain() instanceof BooleanDomainSubset))
 				throw new InvalidParameterException("Invalid domain definition expression: " + code);
 			
-			domains.put(alias, new StringTransformationDomainSubset(alias, STRINGDS, (Transformation) statement));
+			if (parentDomain instanceof StringDomainSubset)
+				domains.put(alias, new StringTransformationDomainSubset(alias, (StringDomain) parentDomain, (Transformation) statement));
+			else if (parentDomain instanceof IntegerDomainSubset)
+				domains.put(alias, new IntegerTransformationDomainSubset(alias, (IntegerDomain) parentDomain, (Transformation) statement));
+			else if (parentDomain instanceof NumberDomainSubset)
+				domains.put(alias, new NumberTransformationDomainSubset(alias, (NumberDomain) parentDomain, (Transformation) statement));
+			else
+				LOGGER.warn("Ignoring unsupported described domain type {}[{}].", alias, parent);
 		}
 		else
 			LOGGER.warn("Ignoring unsupported domain type {}[{}].", alias, parent);
 		
-		return null;
+		// always return the defined domain, using side effects to directly store the new domain 
+		return domains.get(alias);
 	}
 }

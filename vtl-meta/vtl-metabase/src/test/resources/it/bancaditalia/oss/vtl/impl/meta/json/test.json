@@ -1,5 +1,5 @@
 {
-	"schema-version": "2.2.0",
+	"vtl-schema-version": "2.2.0",
 	"data": [{
 		"name": "start_date",
 		"subset": "date"
@@ -11,7 +11,7 @@
 			"subset": "string"
 		}, {
 			"name": "Me1",
-			"subset": "test_desc"
+			"subset": "test_desc_positive"
 		}, {
 			"name": "At1",
 			"subset": "number"
@@ -31,25 +31,32 @@
 		}, {
 			"name": "Va1",
 			"role": "Viral Attribute"
-		}		
-		]
+		}]
 	}],
 	"variables": [{
 		"name": "Va1",
-		"domain": "test_desc"
+		"domain": "test_desc_positive"
 	}],
 	"domains": [{
-		"name": "test_enum",
+		"name": "test_enum_with_desc",
 		"parent": "string",
 		"enumerated": [{
 			"name": "A"
 		}, "B", {
 			"name": "C",
 			"description": "third value"
-		}]
+		}, "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" ]
 	}, {
-		"name": "test_desc",
+		"name": "test_enum_vocals",
+		"parent": "test_enum_with_desc",
+		"enumerated": [ "A", "E", "I", "O", "U" ]
+	}, {
+		"name": "test_desc_positive",
 		"parent": "integer",
-		"described": "X > 0"
+		"described": "test_desc_positive > 0"
+	}, {
+		"name": "test_desc_perf_squares",
+		"parent": "integer",
+		"described": "floor(sqrt(abs(test_desc_perf_squares))) = sqrt(abs(test_desc_perf_squares))"
 	}]
 }

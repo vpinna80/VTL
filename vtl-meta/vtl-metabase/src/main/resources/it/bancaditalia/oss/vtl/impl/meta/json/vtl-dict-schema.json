@@ -6,70 +6,80 @@
   
   "$defs": {
     "vtl-id": {
+      "$comment": "A VTL identifier, it should be the same as the VTL grammar",
       "type": "string",
       "pattern": "^[A-Za-z_][A-Za-z0-9_.]*$|^'.*'$|^[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_.]*(\\([0-9]+(\\.[0-9]+)*(\\.[_+*~])?\\))?(:(\\.[A-Za-z0-9_])+)?$"
     },
     "identifiable": {
+      "$comment": "Any VTL IM entity that can be identified with a VTL identifier",
       "type": "object",
       "properties": {
         "name": { "$ref": "#/$defs/vtl-id" },
         "description": { "type": "string" }
       },
       "required": [ "name" ]
-    },
-    "has-role": {
-      "type": "object",
-      "properties": {
-        "role": {
-          "type": "string",
-          "enum": [ "Identifier", "Measure", "Attribute", "Viral Attribute" ]
-        }
-      },
-      "required": [ "role" ]
     }
   },
   
   "type": "object",
   "properties": {
-    "schema-version": { "type": "string"},
+    "vtl-schema-version": { "const": "2.2.0" },
     "data": {
+      "$comment": "Array of decriptors of scalars and datasets",
       "type": "array",
       "items": {
         "allOf": [ { "$ref": "#/$defs/identifiable" } ],
-        "properties": {
-          "structure": { "$ref": "#/$defs/vtl-id" },
-          "components": { 
-            "type": "array",
-            "items": {
-              "allOf": [ { "$ref": "#/$defs/identifiable" } ],
-              "properties": {
-                "subset": { "$ref": "#/$defs/vtl-id" },
-                "nullable": { "type": "boolean" }
-              },
-              "required": [ "subset" ]
-            }
-          },
-          "subset": { "$ref": "#/$defs/vtl-id" },
-          "source": { "type": "string" }
-        },
         "oneOf": [
-          { "required": [ "structure" ], "not": { "required": [ "subset" ] } },
-          { "required": [ "subset" ], "not": { "anyOf": [ { "required": [ "structure" ] }, { "required": [ "components" ] } ] } }
+          {
+            "$comment": "A dataset is defined with the structure property, eventually specifying the components' domain",
+            "type": "object", 
+            "properties": {
+              "source": { "type": "string" },
+              "structure": { "$ref": "#/$defs/vtl-id" },
+              "components": { 
+                "type": "array",
+                "items": {
+                  "$comment": "A dataset component specifying the domain when not linked to a represented variable.",
+                  "allOf": [ { "$ref": "#/$defs/identifiable" } ],
+                  "properties": {
+                    "subset": { "$ref": "#/$defs/vtl-id" },
+                    "nullable": { "type": "boolean" }
+                  },
+                  "required": [ "subset" ]
+                }
+              }
+            },
+            "required": [ "structure" ]
+          }, {
+            "$comment": "A scalar is defined by its value domain",
+            "type": "object", 
+            "properties": {
+              "subset": { "$ref": "#/$defs/vtl-id" }
+            },
+            "required": [ "subset" ]
+          }
         ]
       }
     },
     "structures": {
       "type": "array",
       "items": {
+        "$comment": "A datastructure is a identified collection of data structure components",
         "allOf": [ { "$ref": "#/$defs/identifiable" } ],
         "properties": {
           "components": {
             "type": "array",
             "items": {
-              "allOf": [ { "$ref": "#/$defs/identifiable" }, { "$ref": "#/$defs/has-role" } ],
+              "$comment": "A structure component is defined by its name and role",
+              "allOf": [ { "$ref": "#/$defs/identifiable" } ],
               "properties": {
-                "nullable": { "type": "boolean" }
-              }
+                "nullable": { "type": "boolean" },
+                "role": {
+                  "type": "string",
+                  "enum": [ "Identifier", "Measure", "Attribute", "Viral Attribute" ]
+                }
+              },
+              "required": [ "role" ]
             }
           }
         },
@@ -79,6 +89,7 @@
     "variables": {
       "type": "array",
       "items": {
+        "$comment": "A VTL represented variable that may link a data structure component to a dataset component",
         "allOf": [ { "$ref": "#/$defs/identifiable" } ],
         "properties": {
           "domain": { "$ref": "#/$defs/vtl-id" }
@@ -93,36 +104,40 @@
         "unevaluatedProperties": false,
         "oneOf": [
           {
+            "$comment": "A VTL value domain externally specified. The ref string is implementation-dependent",
             "properties": {
               "externalRef": { "type": "string" }
             },
             "required": [ "externalRef" ]
           }, {
+            "$comment": "A VTL value domain subset",
             "properties": {
               "parent": { "$ref": "#/$defs/vtl-id" }
             },
             "required": [ "parent" ],
             "oneOf": [ 
               {
+                "$comment": "An enumerated value domain subset",
                 "properties": {
                   "enumerated": { 
-			        "type": "array",
-			        "uniqueItems": true,
-			        "minItems": 1,
-			        "items": {
-			          "oneOf": [
-			          	{ "type": "string" },
-			          	{ "allOf": [ { "$ref": "#/$defs/identifiable" } ] }
-			          ]
-			        }
+                    "type": "array",
+                    "uniqueItems": true,
+                    "minItems": 1,
+                    "items": {
+                      "$comment": "The items (codes) that should be strings or be identifiable objects themselves.",
+                      "oneOf": [
+                          { "type": "string" },
+                          { "allOf": [ { "$ref": "#/$defs/identifiable" } ] }
+                      ]
+                    }
                   }
                 },
                 "required": [ "enumerated" ]
               },
               {
+                "$comment": "A described value domain subset. The string should be a valid VTL expression describing it.",
                 "properties": {
-                  "described": { "type": "string" },
-                  "mask": { "type": "string" }
+                  "described": { "type": "string" }
                 },
                 "required": [ "described" ]
               }
@@ -132,5 +147,5 @@
       }
     }
   },
-  "required": [ "schema-version" ]
+  "required": [ "vtl-schema-version" ]
 }

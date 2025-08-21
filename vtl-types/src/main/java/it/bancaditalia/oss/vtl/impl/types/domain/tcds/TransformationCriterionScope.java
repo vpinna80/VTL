@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import it.bancaditalia.oss.vtl.engine.Statement;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
-import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -41,22 +40,23 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class TransformationCriterionScope implements TransformationScheme, Serializable
 {
-	public static final VTLAlias X = VTLAliasImpl.of("X");
-
 	private static final long serialVersionUID = 1L;
 	
+	private final VTLAlias domainAlias;
 	private final ScalarValue<?, ?, ?, ?> value;
 	private final ValueDomainSubset<?, ?> metadata;
 	private final Map<Transformation, ?> holder = new ConcurrentHashMap<>();
 
-	public TransformationCriterionScope(ScalarValue<?, ?, ?, ?> value)
+	public TransformationCriterionScope(VTLAlias domainAlias, ScalarValue<?, ?, ?, ?> value)
 	{
+		this.domainAlias = domainAlias;
 		this.value = value;
 		this.metadata = value.getMetadata().getDomain();
 	}
 
-	public TransformationCriterionScope(ValueDomainSubset<?, ?> meta)
+	public TransformationCriterionScope(VTLAlias domainAlias, ValueDomainSubset<?, ?> meta)
 	{
+		this.domainAlias = domainAlias;
 		this.value = null;
 		this.metadata = meta;
 	}
@@ -64,7 +64,7 @@ public class TransformationCriterionScope implements TransformationScheme, Seria
 	@Override
 	public VTLValue resolve(VTLAlias alias)
 	{
-		if (X.equals(alias))
+		if (domainAlias.equals(alias))
 			return value;
 		else
 			throw new VTLUnboundAliasException(alias);
@@ -95,7 +95,7 @@ public class TransformationCriterionScope implements TransformationScheme, Seria
 	@Override
 	public ScalarValueMetadata<?, ?> getMetadata(VTLAlias alias)
 	{
-		if (X.equals(alias))
+		if (domainAlias.equals(alias))
 			return ScalarValueMetadata.of(metadata);
 		else
 			throw new VTLUnboundAliasException(alias);
