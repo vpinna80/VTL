@@ -28,7 +28,7 @@ import it.bancaditalia.oss.vtl.model.data.CodeItem;
  * @param <S> The {@link StringEnumeratedDomainSubset} subtype
  * @param <C> The {@link CodeItem} subtype
  */
-public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C>, C extends CodeItem<C, String, S, StringDomain>> extends EnumeratedDomainSubset<S, C, StringDomain>, StringDomainSubset<S>
+public interface StringEnumeratedDomainSubset<S extends StringEnumeratedDomainSubset<S, C>, C extends CodeItem<C, String, S, StringDomain>> extends EnumeratedDomainSubset<S, C, String, StringDomain>, StringDomainSubset<S>
 {
 	
 }

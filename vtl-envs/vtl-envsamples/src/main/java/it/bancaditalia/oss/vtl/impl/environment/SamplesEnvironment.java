@@ -32,11 +32,6 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class SamplesEnvironment implements Environment
 {
 	private static final Pattern SAMPLE_PATTERN = Pattern.compile("sample(1[0-7]|[1-9])");
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		return getValue(null, alias).isPresent();
-	}
 
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)

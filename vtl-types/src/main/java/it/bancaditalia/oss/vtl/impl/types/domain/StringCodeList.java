@@ -22,7 +22,9 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 
 import java.io.Serializable;
+import java.security.InvalidParameterException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -82,8 +84,16 @@ public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeLi
 		for (String item: items)
 			this.items.add(new StringCodeItem(item, this));
 		hashCode = 31 + alias.hashCode() + this.items.hashCode();
+
+		if (parent instanceof StringEnumeratedDomainSubset)
+		{
+			Set<? extends CodeItem<?, String, ?, StringDomain>> parentCodeItems = ((StringEnumeratedDomainSubset<?, ?>) parent).getCodeItems();
+			for (StringCodeItem item: this.items)
+				if (!parentCodeItems.contains(item))
+					throw new InvalidParameterException("In codelist " + alias + ", code '" + item 
+						+ "' does not belong to the parent domain " + parent.getAlias());
+		}
 	}
-	
 
 	public StringCodeList(StringDomainSubset<?> parent, VTLAlias alias)
 	{
@@ -124,13 +134,13 @@ public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeLi
 		return getCodeItems().equals(other.getCodeItems());
 	}
 	
-	public StringCodeItem getCodeItem(String literal)
+	public Optional<StringCodeItem> getCodeItem(String scalarValue)
 	{
-		final ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> value = StringValue.of(literal);
+		final ScalarValue<?, ?, EntireStringDomainSubset, StringDomain> value = StringValue.of(scalarValue);
 		if (getCodeItems().contains(value))
-			return new StringCodeItem(literal, this);
+			return Optional.of(new StringCodeItem(scalarValue, this));
 		else
-			throw new VTLCastException(this, value);
+			return Optional.empty();
 	}
 
 	@Override

@@ -65,7 +65,7 @@ public class BracketTransformation extends TransformationImpl
 		{
 			if (value.isDataSet())
 				if (clause != null)
-					return clause.eval(new ThisScope(scheme.getRepository(), value, scheme));
+					return clause.eval(new ThisScope(scheme, value));
 				else
 					return value.membership(componentName, lineageEnricher(this));
 			else
@@ -88,7 +88,7 @@ public class BracketTransformation extends TransformationImpl
 			throw new VTLInvalidParameterException(metadata, DataSetStructure.class);
 
 		if (clause != null)
-			return clause.getMetadata(new ThisScope(scheme.getRepository(), (DataSetStructure) metadata, scheme));
+			return clause.getMetadata(new ThisScope(scheme, (DataSetStructure) metadata));
 		else
 			return ((DataSetStructure) metadata).membership(componentName);
 	}

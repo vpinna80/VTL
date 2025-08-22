@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.transform.bool;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -131,9 +132,9 @@ public class ConditionalTransformation extends TransformationImpl
 				boolean isThenDataset = thenV.isDataSet();
 				DataSet dataset = isThenDataset ? (DataSet) thenV : (DataSet) elseV;
 				ScalarValue<?, ?, ?, ?> scalar = !thenV.isDataSet() ? (ScalarValue<?, ?, ?, ?>) thenV : (ScalarValue<?, ?, ?, ?>) elseV;
-				return condD.filteredMappedJoin((DataSetStructure) metadata, dataset, DataSet.ALL, (dpCond, dp) -> 
+				return condD.mappedJoin((DataSetStructure) metadata, dataset, (dpCond, dp) -> 
 						evalDatasetAndScalar((DataSetStructure) metadata, isThenDataset ^ checkCondition(dpCond.get(booleanConditionMeasure)),
-								enricher, dp, scalar, booleanConditionMeasure), false);
+								enricher, dp, scalar, booleanConditionMeasure));
 			}
 		}
 	}
@@ -164,20 +165,20 @@ public class ConditionalTransformation extends TransformationImpl
 		DataSetStructure joinIds = new DataSetStructureBuilder(condD.getMetadata().getIDs()).addComponent(COND_ID).build();
 		DataSetStructure enriched = new DataSetStructureBuilder(thenD.getMetadata()).addComponent(COND_ID).build();
 		
-		DataSet condResolved = condD.mapKeepingKeys(joinIds, LineageNode.lineageEnricher(thenExpr), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
+		DataSet condResolved = condD.mapKeepingKeys(joinIds, lineageEnricher(thenExpr), dp -> singletonMap(COND_ID, BooleanValue.of(checkCondition(dp.get(booleanConditionMeasure)))));
 		DataSet thenResolved = thenD.mapKeepingKeys(enriched, identity(), dp -> {
 			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, TRUE);
 			return result;	
 		});
-		DataSet elseResolved = elseD.mapKeepingKeys(enriched, LineageNode.lineageEnricher(elseExpr), dp -> {
+		DataSet elseResolved = elseD.mapKeepingKeys(enriched, lineageEnricher(elseExpr), dp -> {
 			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp);
 			result.put(COND_ID, FALSE);
 			return result;	
 		});
 		
-		return condResolved.filteredMappedJoin(enriched, thenResolved, DataSet.ALL, (a, b) -> b, false).subspace(singletonMap(COND_ID, TRUE), identity())
-			.union(singletonList(condResolved.filteredMappedJoin(enriched, elseResolved, DataSet.ALL, (a, b) -> b, false).subspace(singletonMap(COND_ID, FALSE), identity())), identity());
+		return condResolved.mappedJoin(enriched, thenResolved, (a, b) -> b).subspace(singletonMap(COND_ID, TRUE), identity())
+			.union(singletonList(condResolved.mappedJoin(enriched, elseResolved, (a, b) -> b).subspace(singletonMap(COND_ID, FALSE), identity())), identity());
 	}
 
 	private static boolean checkCondition(ScalarValue<?, ?, ?, ?> value)

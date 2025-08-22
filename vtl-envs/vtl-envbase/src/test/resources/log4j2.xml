@@ -49,7 +49,7 @@
 			<AppenderRef ref="STDERR2" />
 		</Logger>
 
-		<Root level="WARN">
+		<Root level="DEBUG">
 			<AppenderRef ref="STDERR1" />
 			<AppenderRef ref="STDERR2" />
 		</Root>

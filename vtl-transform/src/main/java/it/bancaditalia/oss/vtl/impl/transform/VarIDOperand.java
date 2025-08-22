@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.transform;
 
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
-import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static java.util.Objects.requireNonNull;
 
 import it.bancaditalia.oss.vtl.model.data.DataSet;
@@ -47,10 +46,7 @@ public class VarIDOperand implements LeafTransformation
 		VTLValue vtlValue = session.resolve(alias);
 		
 		if (vtlValue.isDataSet())
-		{
-			DataSet dataset = (DataSet) vtlValue;
-			vtlValue = dataset.mapKeepingKeys(dataset.getMetadata(), lineageEnricher(this), identity());
-		}
+			vtlValue = ((DataSet) vtlValue).enrichLineage(lineageEnricher(this));
 		
 		return vtlValue;
 	}

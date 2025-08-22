@@ -40,7 +40,6 @@ import java.util.Set;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.transform.bool.BooleanUnaryTransformation.BooleanUnaryOperator;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
@@ -61,7 +60,6 @@ import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 public class CheckTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final BooleanUnaryOperator function = CHECK;
 
 	public enum CheckOutput
 	{
@@ -97,7 +95,7 @@ public class CheckTransformation extends TransformationImpl
 		if (imbalanceExpr == null)
 			dataset = dataset.mapKeepingKeys(metadata, lineageEnricher(this), dp -> {
 				Map<DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(); 
-				result.put(BOOL_VAR, function.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
+				result.put(BOOL_VAR, CHECK.apply(BOOLEANDS.cast(dp.get(BOOL_VAR))));
 				result.put(ERRORCODE.get(), NullValue.instance(STRINGDS));
 				result.put(ERRORLEVEL.get(), NullValue.instance(NUMBERDS));
 				return result;
@@ -108,15 +106,15 @@ public class CheckTransformation extends TransformationImpl
 			DataSetComponent<Measure, ?, ?> imbalanceMeasure = imbalanceDataset.getMetadata().getSingleton(Measure.class);
 			
 			SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
-			dataset = dataset.filteredMappedJoin(metadata, imbalanceDataset, DataSet.ALL, (dp1, dp2) -> {
+			dataset = dataset.mappedJoin(metadata, imbalanceDataset, (dp1, dp2) -> {
 				return new DataPointBuilder()
 					.addAll(dp1.getValues(Identifier.class))
-					.add(BOOL_VAR, function.apply(BOOLEANDS.cast(dp1.get(BOOL_VAR))))
+					.add(BOOL_VAR, CHECK.apply(BOOLEANDS.cast(dp1.get(BOOL_VAR))))
 					.add(IMBALANCE, NUMBERDS.cast(dp2.get(imbalanceMeasure)))
 					.add(ERRORCODE, NullValue.instance(STRINGDS))
 					.add(ERRORLEVEL, NullValue.instance(INTEGERDS))
 					.build(enricher.apply(dp1.getLineage()), metadata);
-			}, false);
+			});
 		}
 		
 		return output == ALL ? dataset : dataset.filter(dp -> dp.getValue(BOOL_VAR) != TRUE, lineageEnricher(this));

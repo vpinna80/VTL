@@ -48,6 +48,7 @@ import static org.apache.spark.sql.functions.row_number;
 import static org.apache.spark.sql.functions.struct;
 import static org.apache.spark.sql.functions.udaf;
 import static org.apache.spark.sql.functions.udf;
+import static org.apache.spark.sql.types.DataTypes.BooleanType;
 import static org.apache.spark.sql.types.DataTypes.createArrayType;
 import static org.apache.spark.sql.types.DataTypes.createStructType;
 import static scala.collection.JavaConverters.asJava;
@@ -106,6 +107,7 @@ import org.slf4j.LoggerFactory;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT;
+import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
@@ -129,9 +131,9 @@ import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiConsumer;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
+import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerSupplier;
@@ -283,12 +285,6 @@ public class SparkDataSet extends AbstractDataSet
 	}
 	
 	@Override
-	public DataSet getMatching(Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues)
-	{
-		return filter(dp -> keyValues.equals(dp.getValues(keyValues.keySet(), Identifier.class)), identity());	
-	}
-	
-	@Override
 	public long size()
 	{
 		return dataFrame.count();
@@ -391,9 +387,9 @@ public class SparkDataSet extends AbstractDataSet
 		
 		return new SparkDataSet(exportSize, session, metadata, resultEncoder, flattenedDf);
 	}
-	
+
 	@Override
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, DataSetComponent<?, ?, ?> having, SerBinaryOperator<Lineage> lineageOp)
 	{
 		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(exportSize, session, other.getMetadata(), other);
 
@@ -404,10 +400,6 @@ public class SparkDataSet extends AbstractDataSet
 
 		Dataset<Row> leftDataframe = dataFrame.as("a");
 		Dataset<Row> rightDataframe = sparkOther.dataFrame.as("b");
-		int leftSize = getMetadata().size();
-		
-		DataPointEncoder serEncoder = encoder;
-		DataPointEncoder otherEncoder = sparkOther.encoder;
 		
 		Column joinKeys = null;
 		for (String commonID: commonIDs)
@@ -420,20 +412,16 @@ public class SparkDataSet extends AbstractDataSet
 		if (commonIDs.isEmpty())
 			joined = leftDataframe.crossJoin(rightDataframe);
 		else
-			joined = leftDataframe.join(rightDataframe, joinKeys, leftJoin ? "left" : "inner");
+			joined = leftDataframe.join(rightDataframe, joinKeys, "inner");
 		
-		if (where != DataSet.ALL)
-			joined = joined.filter((FilterFunction<Row>) row -> {
-				DataPoint right = leftJoin && row.get(leftSize + 1) == null ? null : otherEncoder.decode(row, leftSize + 1);
-				return where.test(serEncoder.decode(row), right);
-			});
+		if (having != DataSet.ALL)
+			joined = joined.filter(udf(v -> v == BooleanValue.TRUE, BooleanType).apply(col(having.getAlias().getName())));
 		
-		DataPointEncoder resultEncoder = new DataPointEncoder(session, metadata);
-		MapFunction<Row, Row> sparkMerge = row -> {
-			DataPoint right = leftJoin && row.get(leftSize + 1) == null ? null : otherEncoder.decode(row, leftSize + 1);
-			return resultEncoder.encode(mergeOp.apply(serEncoder.decode(row), right));
-		};
-		joined = joined.map(sparkMerge, resultEncoder.getRowEncoder());
+		Column[] columns = Arrays.stream(leftDataframe.columns())
+			.map(leftDataframe::col)
+			.collect(SerCollectors.toArray(new Column[leftDataframe.columns().length]));
+
+		joined = joined.select(columns);
 		return new SparkDataSet(exportSize, session, metadata, joined);
 	}
 	
@@ -602,7 +590,7 @@ public class SparkDataSet extends AbstractDataSet
 
 	@Override
 	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata,
-			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
+			Set<DataSetComponent<Identifier, ?, ?>> groupBy, SerCollector<DataPoint, ?, T> groupCollector,
 			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
 		DataSetStructure structure;
@@ -616,7 +604,7 @@ public class SparkDataSet extends AbstractDataSet
 		Dataset<Row> aggred;
 		
 		int exportSize = this.exportSize;
-		if (keys.isEmpty())
+		if (groupBy.isEmpty())
 		{
 			MapGroupsFunction<Integer, Row, Row> aggregator = (i, s) -> 
 				StreamSupport.stream(new SparkSpliterator(s, exportSize), !SEQUENTIAL)
@@ -636,14 +624,14 @@ public class SparkDataSet extends AbstractDataSet
 		}
 		else
 		{
-			DataPointEncoder keyEncoder = new DataPointEncoder(session, keys);
-			Column[] keyNames = new Column[keys.size()];
+			DataPointEncoder keyEncoder = new DataPointEncoder(session, groupBy);
+			Column[] keyNames = new Column[groupBy.size()];
 			for (int i = 0; i < keyNames.length; i++)
 				keyNames[i] = dataFrame.col(keyEncoder.getComponents()[i].getAlias().getName());
 			
 			MapGroupsFunction<Row, Row, Row> aggregator = (keyRow, s) -> {
 				Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyValues = new HashMap<>();
-				for (DataSetComponent<Identifier, ?, ?> key: keys)
+				for (DataSetComponent<Identifier, ?, ?> key: groupBy)
 					keyValues.put(key, getScalarFor(key.getDomain(), keyRow.getAs(key.getAlias().getName())));
 				
 				return StreamSupport.stream(new SparkSpliterator(s, exportSize), !Utils.SEQUENTIAL)

@@ -160,12 +160,11 @@ public class ArithmeticTransformation extends BinaryTransformation
 					.build();
 			
 			boolean intResult = INTEGERDS.isAssignableFrom(resultComp.getDomain());
-			return streamed.filteredMappedJoin(newStructure, indexed, DataSet.ALL,  
-					(dpl, dpr) -> new DataPointBuilder()
-						.add(resultComp, compute(operator, swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
-						.addAll(dpl.getValues(Identifier.class))
-						.addAll(dpr.getValues(Identifier.class))
-						.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), newStructure), false);
+			return streamed.mappedJoin(newStructure, indexed, (dpl, dpr) -> new DataPointBuilder()
+				.add(resultComp, compute(operator, swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
+				.addAll(dpl.getValues(Identifier.class))
+				.addAll(dpr.getValues(Identifier.class))
+				.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), newStructure));
 		}
 		else
 		{
@@ -178,7 +177,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 				DataSetComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getMeasures().iterator().next(); 
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
-				return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dpl, dpr) -> {
+				return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dpl, dpr) -> {
 						boolean isResultInt = operator != DIV && INTEGERDS.isAssignableFrom(resultMeasure.getDomain());
 						ScalarValue<?, ?, ?, ?> leftVal = dpl.get(streamedMeasure);
 						ScalarValue<?, ?, ?, ?> rightVal = dpr.get(indexedMeasure);
@@ -187,15 +186,14 @@ public class ArithmeticTransformation extends BinaryTransformation
 								.addAll(dpl.getValues(Identifier.class))
 								.addAll(dpr.getValues(Identifier.class))
 								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata);						
-					}, false);
+					});
 			}
 			else
 			{
 				// Scan the dataset with less identifiers and find the matches
 				DataSetStructure streamedStructure = streamed.getMetadata();
 				DataSetStructure indexedStructure = indexed.getMetadata();
-				return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, 
-					(dpl, dpr) -> {
+				return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dpl, dpr) -> {
 						return new DataPointBuilder(resultMeasures.stream()
 								.map(toEntryWithValue(compToCalc -> {
 									return compute(operator, swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
@@ -205,7 +203,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 							.addAll(dpl.getValues(Identifier.class))
 							.addAll(dpr.getValues(Identifier.class))
 							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata);
-					}, false);
+					});
 			}
 		}
 	}

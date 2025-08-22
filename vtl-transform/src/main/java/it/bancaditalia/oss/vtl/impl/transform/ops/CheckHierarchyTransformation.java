@@ -367,7 +367,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 						.orElseThrow(() -> new VTLMissingComponentsException(opMeta.getIDs(), ruleset.getRuleComponent()));
 				
 				ResolvedHierarchicalRuleset resolved = new ResolvedHierarchicalRuleset(scheme.getRepository(), ruleset);
-				EnumeratedDomainSubset<?, ?, ?> domain = resolved.getDomain();
+				EnumeratedDomainSubset<?, ?, ?, ?> domain = resolved.getDomain();
 				
 				if (!domain.isAssignableFrom(idComp.getDomain()))
 					throw new VTLIncompatibleTypesException("check_hierarchy", idComp, domain);

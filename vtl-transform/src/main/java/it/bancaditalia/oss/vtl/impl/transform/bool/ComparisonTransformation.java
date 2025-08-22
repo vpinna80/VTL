@@ -137,12 +137,11 @@ public class ComparisonTransformation extends BinaryTransformation
 			casted = (l, r) -> operator.apply(rDomain.cast(l), r);
 		
 		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
-		return left.filteredMappedJoin((DataSetStructure) metadata, right, DataSet.ALL,
-				(dpl, dpr) -> new DataPointBuilder()
-						.addAll(dpl.getValues(Identifier.class))
-						.addAll(dpr.getValues(Identifier.class))
-						.add(resultMeasure, casted.apply(dpl.get(lMeasure), dpr.get(rMeasure)))
-						.build(enricher.apply(List.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata), false);
+		return left.mappedJoin((DataSetStructure) metadata, right, (dpl, dpr) -> new DataPointBuilder()
+				.addAll(dpl.getValues(Identifier.class))
+				.addAll(dpr.getValues(Identifier.class))
+				.add(resultMeasure, casted.apply(dpl.get(lMeasure), dpr.get(rMeasure)))
+				.build(enricher.apply(List.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata));
 	}
 
 	@Override

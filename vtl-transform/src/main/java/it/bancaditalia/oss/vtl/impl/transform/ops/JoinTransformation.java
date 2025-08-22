@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.transform.ops.JoinTransformation.Join
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder.toDataStructure;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineage2Enricher;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineagesEnricher;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
@@ -113,7 +114,7 @@ import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -224,20 +225,20 @@ public class JoinTransformation extends TransformationImpl
 			result = joinCaseB2(repo, values);
 
 		if (filter != null)
-			result = (DataSet) filter.eval(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSet) filter.eval(new ThisScope(scheme, result));
 
 		if (apply != null)
 			result = applyClause(metadata, scheme, result);
 		else if (calc != null)
-			result = (DataSet) calc.eval(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSet) calc.eval(new ThisScope(scheme, result));
 		else if (aggr != null)
-			result = (DataSet) aggr.eval(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSet) aggr.eval(new ThisScope(scheme, result));
 		
 		if (keepOrDrop != null)
-			result = (DataSet) keepOrDrop.eval(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSet) keepOrDrop.eval(new ThisScope(scheme, result));
 		
 		if (rename != null)
-			result = (DataSet) rename.eval(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSet) rename.eval(new ThisScope(scheme, result));
 
 		Set<DataSetComponent<?, ?, ?>> remaining = new HashSet<>(result.getMetadata());
 		remaining.removeAll(metadata);
@@ -374,7 +375,7 @@ public class JoinTransformation extends TransformationImpl
 		Set<VTLAlias> lDsComponentNames = lDs.getMetadata().stream().map(DataSetComponent::getAlias).collect(toSet());
 		DataSetStructure stepMetadata = rDs.getMetadata().stream().filter(component -> !lDsComponentNames.contains(component.getAlias())).collect(toDataStructure());
 		
-		SerBiFunction<DataPoint, DataPoint, Lineage> enricher = LineageNode.lineage2Enricher(this).before(DataPoint::getLineage, DataPoint::getLineage);
+		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
 		DataSet stepResult = lDs.mapKeepingKeys(stepMetadata, identity(), dp -> {
 			var key = dp.getValuesByNames(usingNames);
 			if (index.containsKey(key))
@@ -435,7 +436,7 @@ public class JoinTransformation extends TransformationImpl
 
 		LOGGER.debug("Joining all datapoints");
 
-		SerBiFunction<DataPoint, DataPoint, Lineage> enricher = LineageNode.lineage2Enricher(this).before(DataPoint::getLineage, DataPoint::getLineage);
+		SerBinaryOperator<Lineage> enricher = lineage2Enricher(this);
 		result = new FunctionDataSet<>(structureBefore, dataset -> dataset.stream().peek(refDP -> LOGGER.trace("Joining {}", refDP)).map(refDP -> {
 			// Get all datapoints from other datasets (there is no more than 1 for each
 			// dataset)
@@ -594,7 +595,7 @@ public class JoinTransformation extends TransformationImpl
 
 		// modify the result structure as needed
 		if (filter != null)
-			result = (DataSetStructure) filter.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSetStructure) filter.getMetadata(new ThisScope(scheme, result));
 		if (apply != null)
 		{
 			DataSetStructure applyResult = result;
@@ -612,13 +613,13 @@ public class JoinTransformation extends TransformationImpl
 					.reduce(new DataSetStructureBuilder(), DataSetStructureBuilder::addComponent, DataSetStructureBuilder::merge).addComponents(applyComponents).build();
 		}
 		else if (calc != null)
-			result = (DataSetStructure) calc.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSetStructure) calc.getMetadata(new ThisScope(scheme, result));
 		else if (aggr != null)
-			result = (DataSetStructure) aggr.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSetStructure) aggr.getMetadata(new ThisScope(scheme, result));
 		if (keepOrDrop != null)
-			result = (DataSetStructure) keepOrDrop.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSetStructure) keepOrDrop.getMetadata(new ThisScope(scheme, result));
 		if (rename != null)
-			result = (DataSetStructure) rename.getMetadata(new ThisScope(scheme.getRepository(), result, scheme));
+			result = (DataSetStructure) rename.getMetadata(new ThisScope(scheme, result));
 
 		// check if keep - drop - rename has made some components unambiguous
 		Map<VTLAlias, List<VTLAlias>> unaliasedNames = result.stream().map(c -> c.getAlias())

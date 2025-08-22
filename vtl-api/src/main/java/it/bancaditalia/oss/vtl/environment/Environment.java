@@ -35,30 +35,31 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public interface Environment
 {
 	/**
-	 * Checks if this environment provides a VTL object with the specified name.
-	 * 
-	 * @param alias The name of requested object.
-	 * @return true if this environment provides the specified object.
-	 */
-	public default boolean contains(VTLAlias alias)
-	{
-		return getValueMetadata(alias).isPresent();
-	}
-	
-	/**
 	 * Returns an {@link Optional} reference to a VTL object with the specified name in this environment.
 	 * 
 	 * @param alias The name of requested object.
-	 * @param repo TODO
-	 * @return An Optional with a reference to the requested object o {@link Optional#empty()} if the object is not found in this environment.
+	 * @param repo A possibly null instance of a {@link MetadataRepository} used to fetch the metadata of the requested object
+	 * @return An Optional possibly containing the metadata of the requested object if it was found in this environment.
 	 */
 	public default Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		return Optional.empty();
 	}
+	
+	/**
+	 * Returns an {@link Optional} reference to the metadata of a VTL object with the specified name in this environment.
+	 * NOTE: in most cases it is better to rely on the {@link MetadataRepository#getMetadata(VTLAlias)} method instead.
+	 * 
+	 * @param alias The name of requested object
+	 * @return An Optional possibly containing the metadata of the requested object if it was found in this environment.
+	 */
+	public default Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
+	{
+		return getValue(null, alias).map(DataSet.class::cast).map(DataSet::getMetadata);
+	}
 
 	/**
-	 * Persistently store the given value in this environment for later use
+	 * Persistently store the given value in this environment for later use.
 	 * 
 	 * @param value The value to store
 	 * @param alias The alias under which the value must be stored
@@ -67,16 +68,5 @@ public interface Environment
 	public default boolean store(VTLValue value, VTLAlias alias)
 	{
 		return false;
-	}
-	
-	/**
-	 * Returns an {@link Optional} reference to the metadata of a VTL object with the specified name in this environment.
-	 * 
-	 * @param alias The name of requested object
-	 * @return An Optional with a reference to the metadata of the requested object o {@link Optional#empty()} if the object is not found in this environment.
-	 */
-	public default Optional<VTLValueMetadata> getValueMetadata(VTLAlias alias)
-	{
-		return getValue(null, alias).map(DataSet.class::cast).map(DataSet::getMetadata);
 	}
 }

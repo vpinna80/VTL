@@ -109,18 +109,6 @@ public class CSVPathEnvironment implements Environment
 	}
 	
 	@Override
-	public boolean contains(VTLAlias name)
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Optional<VTLValueMetadata> getValueMetadata(VTLAlias alias)
-	{
-		throw new UnsupportedOperationException(alias.toString());
-	}
-	
-	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		String source = repo.getDataSource(alias);

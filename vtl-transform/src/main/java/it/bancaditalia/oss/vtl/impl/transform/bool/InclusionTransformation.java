@@ -99,17 +99,17 @@ public class InclusionTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected VTLValue evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		checkSet(repo);
+		checkSet(scheme.getRepository());
 		return BooleanValue.of(operator.test(set, scalar));
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataSetComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		checkSet(repo);
+		checkSet(scheme.getRepository());
 		
 		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
 				dp -> singletonMap(BOOL_VAR, BooleanValue.of(operator.test(set, dp.get(measure)))));
@@ -119,7 +119,7 @@ public class InclusionTransformation extends UnaryTransformation
 	{
 		if (set.isEmpty())
 		{
-			EnumeratedDomainSubset<?, ?, ?> domain = (EnumeratedDomainSubset<?, ?, ?>) repo.getDomain(domainName)
+			EnumeratedDomainSubset<?, ?, ?, ?> domain = (EnumeratedDomainSubset<?, ?, ?, ?>) repo.getDomain(domainName)
 					.orElseThrow(() -> new VTLUndefinedObjectException("Domain", domainName));
 			set.addAll(domain.getCodeItems());
 		}

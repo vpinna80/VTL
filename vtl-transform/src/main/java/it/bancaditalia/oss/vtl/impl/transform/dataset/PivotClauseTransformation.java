@@ -144,7 +144,7 @@ public class PivotClauseTransformation extends DatasetClauseTransformation
 		DataSetStructureBuilder builder = new DataSetStructureBuilder();
 		ValueDomainSubset<?, ?> measureDomain = pivotMeasure.getDomain();
 
-		for (CodeItem<?, ?, ?, ?> codeItem: ((EnumeratedDomainSubset<?, ?, ?>) pivotId.getDomain()).getCodeItems())
+		for (CodeItem<?, ?, ?, ?> codeItem: ((EnumeratedDomainSubset<?, ?, ?, ?>) pivotId.getDomain()).getCodeItems())
 			builder.addComponent(DataSetComponentImpl.of(VTLAliasImpl.of(true, codeItem.get().toString()), measureDomain, Measure.class));
 		
 		return builder.addComponents(ids)

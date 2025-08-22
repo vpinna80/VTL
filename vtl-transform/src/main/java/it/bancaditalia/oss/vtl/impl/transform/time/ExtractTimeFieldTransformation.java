@@ -40,7 +40,6 @@ import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class ExtractTimeFieldTransformation extends UnaryTransformation
 {
@@ -54,13 +53,13 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	public VTLValue evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return IntegerValue.of((long) ((TimeValue<?, ?, ?, ?>) scalar).getEndDate().get().get(field.getField()));
 	}
 
 	@Override
-	public VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
+	public VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -88,6 +87,6 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 				throw new VTLIncompatibleTypesException(field.toString(), TIMEDS, domain);
 		}
 		else
-			return computeMetadata(new ThisScope(scheme.getRepository(), (DataSetStructure) input, scheme));
+			return computeMetadata(new ThisScope(scheme, (DataSetStructure) input));
 	}
 }

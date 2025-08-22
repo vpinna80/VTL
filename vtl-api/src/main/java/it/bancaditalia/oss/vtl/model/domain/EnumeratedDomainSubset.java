@@ -19,6 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.model.domain;
 
+import java.io.Serializable;
+import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
@@ -31,9 +33,10 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
  *
  * @param <S> the enumerated domain subset
  * @param <C> The {@link CodeItem} subtype
+ * @param <R> The {@link CodeItem} representation type
  * @param <D> the base domain
  */
-public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, C, D>, C extends CodeItem<?, ?, S, D>, D extends ValueDomain> extends ValueDomainSubset<S, D>
+public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, C, R, D>, C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable, D extends ValueDomain> extends ValueDomainSubset<S, D>
 {
 	/**
 	 * @return the domain name.
@@ -46,4 +49,12 @@ public interface EnumeratedDomainSubset<S extends EnumeratedDomainSubset<S, C, D
 	 * @return the set of all the code items in this domain.
 	 */
 	public Set<C> getCodeItems();
+	
+	/**
+	 * Gets a {@link CodeItem} corresponding to a given code.
+	 * 
+	 * @param scalarValue the value of the desired code
+	 * @return an {@link Optional} possibly containing the requested code item if found 
+	 */
+	public Optional<C> getCodeItem(R scalarValue); 
 }

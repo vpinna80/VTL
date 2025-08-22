@@ -31,8 +31,8 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STD
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_SAMP;
+import static it.bancaditalia.oss.vtl.model.data.DataPoint.combinator;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
-import static it.bancaditalia.oss.vtl.util.SerFunction.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
@@ -55,7 +55,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException
 import it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.AggregateTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
@@ -77,7 +76,6 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public class AggrClauseTransformation extends DatasetClauseTransformation
@@ -144,10 +142,9 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 	@Override
 	public VTLValue eval(TransformationScheme scheme)
 	{
-		DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 		DataSet dataset = (DataSet) getThisValue(scheme);
 
-		TransformationScheme thisScope = new ThisScope(scheme.getRepository(), dataset, scheme);
+		TransformationScheme thisScope = new ThisScope(scheme, dataset);
 		
 		List<DataSet> resultList = aggrItems.stream()
 			.map(AggrClauseItem::getOperand)
@@ -164,26 +161,22 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			DataSet other = resultList.get(i);
 			DataSetStructure otherStructure = other.getMetadata();
 			currentStructure = new DataSetStructureBuilder(currentStructure).addComponents(otherStructure).build();
-			result = result.filteredMappedJoin(currentStructure, other, DataSet.ALL, (dp1, dp2) -> {
-				return dp1.combine(dp2, (d1, d2) -> enricher.apply(dp1.getLineage(), dp2.getLineage()));
-			}, false);
+			result = result.mappedJoin(currentStructure, other, combinator(enricher));
 		}
 
-		MetadataRepository repo = scheme.getRepository();
 		if (having != null)
 		{
-			DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
+			DataSet dsHaving = (DataSet) having.eval(new ThisScope(scheme, dataset));
 			DataSetComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> condMeasure = dsHaving.getMetadata().getSingleton(Measure.class, BOOLEANDS);
-			result = result.filteredMappedJoin(currentStructure, dsHaving, (dp, cond) -> cond.get(condMeasure) == BooleanValue.TRUE, (a, b) -> a, false);
+			result = result.filteredMappedJoin(currentStructure, dsHaving, condMeasure, lineage2Enricher(having));
 		}
 
-		return result.mapKeepingKeys(metadata, lineageEnricher(this), identity());
+		return result.enrichLineage(lineageEnricher(this));
 	}
 
 	protected VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata meta = getThisMetadata(scheme);
-		MetadataRepository repo = scheme.getRepository();
 
 		if (meta.isDataSet())
 		{
@@ -246,7 +239,7 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			
 			if (having != null)
 			{
-				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, structure, scheme));
+				VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(scheme, structure));
 				ValueDomainSubset<?, ?> domain;
 				if (!havingMeta.isDataSet())
 					domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();

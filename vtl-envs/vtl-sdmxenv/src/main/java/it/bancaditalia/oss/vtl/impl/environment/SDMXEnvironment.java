@@ -119,12 +119,11 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
-import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SDMXEnvironment implements Environment, Serializable
@@ -229,12 +228,6 @@ public class SDMXEnvironment implements Environment, Serializable
 
 		AbstractDataSet sdmxDataflow = new StreamWrapperDataSet(structure, () -> getData(repo, alias, structure, dataflow, resource, dims));
 		return Optional.of(sdmxDataflow);
-	}
-
-	@Override
-	public Optional<VTLValueMetadata> getValueMetadata(VTLAlias alias)
-	{
-		throw new IllegalStateException("SDMXEnvironment.getValueMetadata should never be called.");
 	}
 
 	private static class ObsIterator implements Iterator<DataPoint>

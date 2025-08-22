@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public abstract class TimeSeriesTransformation extends UnaryTransformation
 {
@@ -49,7 +48,7 @@ public abstract class TimeSeriesTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected final VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected final VTLValue evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new VTLInvalidParameterException(scalar, DataSet.class);
 	}

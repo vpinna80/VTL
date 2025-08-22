@@ -257,8 +257,8 @@ public class CalcClauseTransformation extends DatasetClauseTransformation
 	private DataSet joinByIDs(DataSet left, DataSet right)
 	{
 		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
-		return left.filteredMappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, DataSet.ALL, 
-				(dpl, dpr) -> dpl.combine(dpr, (dp1, dp2) -> enricher.apply(dp1.getLineage(), dp2.getLineage())), false);
+		return left.mappedJoin(left.getMetadata().joinForOperators(right.getMetadata()), right, 
+				(dpl, dpr) -> dpl.combine(dpr, (l1, l2) -> enricher.apply(l1, l2)));
 	}
 
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)

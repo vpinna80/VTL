@@ -35,5 +35,5 @@ public interface DescribedDomainSubset<S extends DescribedDomainSubset<S, D>, D 
 {
 	public Transformation getCriterion();
 	
-	public boolean test(ScalarValue<?, ?, S, D> value);
+	public boolean test(ScalarValue<?, ?, ?, D> value);
 }

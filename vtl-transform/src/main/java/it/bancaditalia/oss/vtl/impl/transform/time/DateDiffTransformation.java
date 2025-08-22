@@ -101,11 +101,11 @@ public class DateDiffTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> func = streamed == left ? DateDiffTransformation::computeScalar : (a, b) -> computeScalar(b, a);
 		
 		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
-		return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder(dps.getValues(Identifier.class), DONT_SYNC)
+		return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dps, dpi) -> new DataPointBuilder(dps.getValues(Identifier.class), DONT_SYNC)
 			.addAll(dpi.getValues(Identifier.class))
 			.delete(measure)
 			.add(INT_VAR, func.apply(dps.get(measure), dps.get(measure)))
-			.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata), false);
+			.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata));
 	}
 
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> computeScalar(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)

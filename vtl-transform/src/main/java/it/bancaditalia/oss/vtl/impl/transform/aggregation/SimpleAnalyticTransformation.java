@@ -63,7 +63,6 @@ import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class SimpleAnalyticTransformation extends UnaryTransformation implements AnalyticTransformation
 {
@@ -86,13 +85,13 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	}
 
 	@Override
-	protected VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected VTLValue evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
 	{
 		List<SortCriterion> ordering;
 		if (orderByClause.isEmpty())

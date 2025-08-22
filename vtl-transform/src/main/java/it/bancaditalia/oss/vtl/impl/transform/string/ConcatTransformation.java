@@ -111,11 +111,11 @@ public class ConcatTransformation extends BinaryTransformation
 			DataSetComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			BinaryOperator<ScalarValue<?, ?, ?, ?>> finalOperator = CONCAT.reverseIf(!leftHasMoreIdentifiers);
-			return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder()
+			return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dps, dpi) -> new DataPointBuilder()
 				.add(resultMeasure, finalOperator.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata), false);
+				.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata));
 		}
 		else
 		{
@@ -133,14 +133,14 @@ public class ConcatTransformation extends BinaryTransformation
 			}
 			
 			// Scan the dataset with less identifiers and find the matches
-			return streamed.filteredMappedJoin((DataSetStructure) metadata, indexed, DataSet.ALL, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
+			return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
 						.map(rm -> new SimpleEntry<>(rm, finalOperator.apply(
 								STRINGDS.cast(dpi.get(measuresMap.get(rm).getKey())), 
 								STRINGDS.cast(dps.get(measuresMap.get(rm).getValue())))))
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata), false);
+					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata));
 		}
 	}
 

@@ -35,7 +35,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
  * @param <S> The {@link ValueDomainSubset} of the item
  * @param <D> The parent {@link ValueDomain} of the domain of the item
  */
-public interface CodeItem<C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, C, D>, D extends ValueDomain> extends ScalarValue<C, R, S, D>
+public interface CodeItem<C extends CodeItem<C, R, S, D>, R extends Comparable<?> & Serializable, S extends EnumeratedDomainSubset<S, C, R, D>, D extends ValueDomain> extends ScalarValue<C, R, S, D>
 {
 
 }

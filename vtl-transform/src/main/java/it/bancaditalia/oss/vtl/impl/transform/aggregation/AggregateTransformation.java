@@ -29,6 +29,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
+import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineage2Enricher;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_POP;
@@ -67,7 +68,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
 import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
-import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.Frequency;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
@@ -212,9 +212,8 @@ public class AggregateTransformation extends TransformationImpl
 			
 			if (having != null)
 			{
-				DataSet dsHaving = (DataSet) having.eval(new ThisScope(repo, dataset, scheme));
-				result = result.filteredMappedJoin(structure, dsHaving, (dp, having) -> 
-						having.getValue(BOOL_VAR) == BooleanValue.TRUE, (dp, havingCond) -> dp, false);
+				DataSet dsHaving = (DataSet) having.eval(new ThisScope(scheme, dataset));
+				result = result.filteredMappedJoin(structure, dsHaving, BOOL_VAR, lineage2Enricher(having));
 			}
 			
 			return result;
@@ -260,7 +259,6 @@ public class AggregateTransformation extends TransformationImpl
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata opmeta = operand == null ? scheme.getMetadata(THIS) : operand.getMetadata(scheme);
-		MetadataRepository repo = scheme.getRepository();
 		
 		if (!opmeta.isDataSet())
 			if (NUMBER.isAssignableFrom(((ScalarValueMetadata<?, ?>) opmeta).getDomain()))
@@ -336,7 +334,7 @@ public class AggregateTransformation extends TransformationImpl
 				
 				if (having != null)
 				{
-					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(repo, dataset, scheme));
+					VTLValueMetadata havingMeta = having.getMetadata(new ThisScope(scheme, dataset));
 					ValueDomainSubset<?, ?> domain = null;
 					if (!havingMeta.isDataSet())
 						domain = ((ScalarValueMetadata<?, ?>) havingMeta).getDomain();

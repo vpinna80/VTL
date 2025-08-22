@@ -33,7 +33,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public abstract class UnaryTransformation extends TransformationImpl
 {
@@ -65,9 +64,9 @@ public abstract class UnaryTransformation extends TransformationImpl
 		try
 		{
 			if (value.isDataSet())
-				return evalOnDataset(scheme.getRepository(), (DataSet) value, getMetadata(scheme), scheme);
+				return evalOnDataset(scheme, (DataSet) value, getMetadata(scheme));
 			else
-				return evalOnScalar(scheme.getRepository(), (ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme), scheme);
+				return evalOnScalar(scheme, (ScalarValue<?, ?, ?, ?>) value, getMetadata(scheme));
 		}
 		catch (VTLException e)
 		{
@@ -80,7 +79,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 		return operand;
 	}
 
-	protected abstract VTLValue evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme);
+	protected abstract VTLValue evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata);
 
-	protected abstract VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme);
+	protected abstract VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata);
 }

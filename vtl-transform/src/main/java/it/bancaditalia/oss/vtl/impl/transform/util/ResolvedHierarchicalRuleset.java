@@ -57,7 +57,7 @@ public class ResolvedHierarchicalRuleset implements Serializable
 	private final Set<CodeItem<?, ?, ?, ?>> leafCodes;
 	private final Map<String, CodeItem<?, ?, ?, ?>> codesMap;
 	private final Map<CodeItem<?, ?, ?, ?>, List<HierarchicalRule>> computingRules;
-	private final EnumeratedDomainSubset<?, ?, ?> codelist;
+	private final EnumeratedDomainSubset<?, ?, ?, ?> codelist;
 
 	public ResolvedHierarchicalRuleset(MetadataRepository repo, HierarchicalRuleSet ruleset)
 	{
@@ -73,7 +73,7 @@ public class ResolvedHierarchicalRuleset implements Serializable
 		if (!(domain instanceof StringDomainSubset))
 			throw new VTLException("Expected a string codelist for " + ruleComp + " but it was " + domain);
 		
-		codelist = (EnumeratedDomainSubset<?, ?, ?>) domain;
+		codelist = (EnumeratedDomainSubset<?, ?, ?, ?>) domain;
 		
 		Map<String, HierarchicalRule> ruleCodes = ruleset.getRules().stream()
 				.filter(rule -> rule.getRuleType() == EQ)
@@ -100,7 +100,7 @@ public class ResolvedHierarchicalRuleset implements Serializable
 				.collect(toSet());
 	}
 	
-	public EnumeratedDomainSubset<?, ?, ?> getDomain()
+	public EnumeratedDomainSubset<?, ?, ?, ?> getDomain()
 	{
 		return codelist;
 	}

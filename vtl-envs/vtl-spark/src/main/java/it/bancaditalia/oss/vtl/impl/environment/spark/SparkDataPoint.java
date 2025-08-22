@@ -37,7 +37,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
-import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
 public class SparkDataPoint extends AbstractMap<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> implements DataPoint, Serializable 
@@ -87,7 +87,7 @@ public class SparkDataPoint extends AbstractMap<DataSetComponent<?, ?, ?>, Scala
 	}
 
 	@Override
-	public DataPoint combine(DataPoint other, SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
+	public DataPoint combine(DataPoint other, SerBinaryOperator<Lineage> lineageCombiner)
 	{
 		SparkDataPoint dp = new SparkDataPoint(other, lineage);
 		dp.map.putAll(this);

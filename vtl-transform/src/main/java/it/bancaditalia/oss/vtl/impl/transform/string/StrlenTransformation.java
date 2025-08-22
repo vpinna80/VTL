@@ -44,7 +44,6 @@ import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class StrlenTransformation extends UnaryTransformation
 {
@@ -55,19 +54,19 @@ public class StrlenTransformation extends UnaryTransformation
 		super(operand);
 	}
 
-	private static ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> staticEvalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
+	private static ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> staticEvalOnScalar(ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		return scalar.isNull() ? NullValue.instance(INTEGERDS) : IntegerValue.of((long) ((StringValue<?, ?>) scalar).get().length());
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected ScalarValue<?, ?, ? extends IntegerDomainSubset<?>, IntegerDomain> evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		return staticEvalOnScalar(repo, scalar, metadata);
+		return staticEvalOnScalar(scalar, metadata);
 	}
 
 	@Override
-	protected DataSet evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected DataSet evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataSetComponent<Measure, ?, ?> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		
@@ -75,7 +74,7 @@ public class StrlenTransformation extends UnaryTransformation
 				.addComponent(INT_VAR)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(INT_VAR, staticEvalOnScalar(repo, dp.get(originalMeasure), metadata)));
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(INT_VAR, staticEvalOnScalar(dp.get(originalMeasure), metadata)));
 	}
 
 	@Override

@@ -46,7 +46,6 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class BetweenTransformation extends UnaryTransformation
 {
@@ -64,7 +63,7 @@ public class BetweenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		ScalarValue<?, ?, ?, ?> fromValue = (ScalarValue<?, ?, ?, ?>) from.eval(scheme);
 		ScalarValue<?, ?, ?, ?> toValue = (ScalarValue<?, ?, ?, ?>) to.eval(scheme);
@@ -73,7 +72,7 @@ public class BetweenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
 	{
 		ScalarValue<?, ?, ?, ?> fromValue = (ScalarValue<?, ?, ?, ?>) from.eval(scheme);
 		ScalarValue<?, ?, ?, ?> toValue = (ScalarValue<?, ?, ?, ?>) to.eval(scheme);

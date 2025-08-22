@@ -41,23 +41,20 @@ public class ThisScope extends AbstractScope
 	
 	private final DataSet thisValue;
 	private final DataSetStructure thisMetadata;
-	private final MetadataRepository repo;
-	private final TransformationScheme parent;
+	private final TransformationScheme parentScheme;
 	
-	public ThisScope(MetadataRepository repo, DataSet thisValue, TransformationScheme parent)
+	public ThisScope(TransformationScheme parentScheme, DataSet thisValue)
 	{
 		this.thisValue = thisValue;
 		this.thisMetadata = thisValue.getMetadata();
-		this.repo = repo;
-		this.parent = parent;
+		this.parentScheme = parentScheme;
 	}
 
-	public ThisScope(MetadataRepository repo, DataSetStructure thisMetadata, TransformationScheme parent)
+	public ThisScope(TransformationScheme parentScheme, DataSetStructure thisMetadata)
 	{
 		this.thisValue = null;
 		this.thisMetadata = thisMetadata;
-		this.repo = repo;
-		this.parent = parent;
+		this.parentScheme = parentScheme;
 	}
 	
 	@Override
@@ -91,12 +88,12 @@ public class ThisScope extends AbstractScope
 	@Override
 	public Optional<Statement> getRule(VTLAlias node)
 	{
-		return parent.getRule(node);
+		return parentScheme.getRule(node);
 	}
 
 	@Override
 	public MetadataRepository getRepository()
 	{
-		return repo;
+		return parentScheme.getRepository();
 	}
 }

@@ -45,7 +45,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
-import it.bancaditalia.oss.vtl.session.MetadataRepository;
 import it.bancaditalia.oss.vtl.util.Utils;
 
 public class TimeAggTransformation extends UnaryTransformation
@@ -68,7 +67,7 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalOnScalar(MetadataRepository repo, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected ScalarValue<?, ?, ?, ?> evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
 		if (scalar.isNull())
 			return scalar;
@@ -87,12 +86,12 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(MetadataRepository repo, DataSet dataset, VTLValueMetadata metadata, TransformationScheme scheme)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
 	{
 		DataSetComponent<Measure, ?, ?> measure = ((DataSetStructure) metadata).getComponents(Measure.class).iterator().next();
 		
 		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
-				dp -> singletonMap(measure, evalOnScalar(repo, dp.get(measure), null, scheme)));
+				dp -> singletonMap(measure, evalOnScalar(scheme, dp.get(measure), null)));
 	}
 
 	@Override
