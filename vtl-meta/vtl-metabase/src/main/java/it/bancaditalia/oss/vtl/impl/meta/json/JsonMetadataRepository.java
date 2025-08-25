@@ -203,10 +203,14 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 				TypeReference<List<Map<String, Object>>> typeRef = new TypeReference<List<Map<String, Object>>>() {};
 				ObjectNode root = parser.readValueAsTree();
 				
-				gatheredDomains.addAll(coalesce(root.get("domains").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
-				gatheredVariables.addAll(coalesce(root.get("variables").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
-				gatheredStructures.addAll(coalesce(root.get("structures").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
-				gatheredData.addAll(coalesce(root.get("data").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+				if (root.has("domains"))
+					gatheredDomains.addAll(coalesce(root.get("domains").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+				if (root.has("variables"))
+					gatheredVariables.addAll(coalesce(root.get("variables").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+				if (root.has("structures"))
+					gatheredStructures.addAll(coalesce(root.get("structures").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
+				if (root.has("data"))
+					gatheredData.addAll(coalesce(root.get("data").traverse(parser.getCodec()).readValueAs(typeRef), List.of()));
 			}
 			catch (JsonParseException e)
 			{

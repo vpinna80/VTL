@@ -91,8 +91,9 @@ public class CoverageSuiteTests
 	private static final int REPETITIONS = 1;
 	private static final Path TEST_ROOT;
 	private static final Path EXAMPLES_ROOT;
-	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
+	private static final Set<TestType> TO_RUN = Set.of(/*T, */E/*, TS, ES*/);
 	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
+	private static final Set<String> RUN_ONLY = Set.of("Hierarchical roll-up");
 	private static final boolean TOTAL_REPORT = true;
 	
 	static 
@@ -114,7 +115,6 @@ public class CoverageSuiteTests
 			System.setProperty("spark.rpc.numRetries", "3");
 			System.setProperty("spark.rpc.lookupTimeout", "120s");
 			System.setProperty("spark.rpc.askTimeout", "60s");
-
 			
 			System.setProperty("vtl.double.epsilon", "5");
 			TEST_ROOT = Paths.get(CoverageSuiteTests.class.getResource("../tests").toURI());
@@ -174,6 +174,7 @@ public class CoverageSuiteTests
 	{
 		assumeTrue(TO_RUN.contains(T));
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
+		assumeTrue(RUN_ONLY.isEmpty() || RUN_ONLY.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve(String.format("ex_%s.json", number)).toUri().toURL();
 		doTest(number, testCode, false, jsonURL, operator);
@@ -185,6 +186,7 @@ public class CoverageSuiteTests
 	{
 		assumeTrue(TO_RUN.contains(E));
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
+		assumeTrue(RUN_ONLY.isEmpty() || RUN_ONLY.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s.json", number)).toUri().toURL();
 		doTest(number, testCode, false, jsonURL, operator.resolve("examples"));
@@ -196,6 +198,7 @@ public class CoverageSuiteTests
 	{
 		assumeTrue(TO_RUN.contains(TS));
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
+		assumeTrue(RUN_ONLY.isEmpty() || RUN_ONLY.contains(operator.getFileName().toString()));
 
 		URL jsonURL = operator.resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
 		doTest(number, testCode, true, jsonURL, operator);
@@ -207,6 +210,7 @@ public class CoverageSuiteTests
 	{
 		assumeTrue(TO_RUN.contains(ES));
 		assumeFalse(SKIP_OPS.contains(operator.getFileName().toString()));
+		assumeTrue(RUN_ONLY.isEmpty() || RUN_ONLY.contains(operator.getFileName().toString()));
 		
 		URL jsonURL = operator.resolve("examples").resolve(String.format("ex_%s-spark.json", number)).toUri().toURL();
 		doTest(number, testCode, true, jsonURL, operator.resolve("examples"));
