@@ -24,6 +24,7 @@ import static it.bancaditalia.oss.vtl.config.ConfigurationManager.newConfigurati
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.registerSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
+import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
 import static it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository.JSON_METADATA_URL;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -41,6 +42,7 @@ import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -70,8 +72,8 @@ import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -88,8 +90,8 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	private static final Set<String> EXCLUDED_OPERATORS = Set.of("Pivoting", "Random", "Persistent assignment", 
 		"Duration to number days", "Fill time series", "Number days to duration");
 	
-	public static final VTLProperty EXAMPLES_CATEGORY = new VTLPropertyImpl("vtl.examples.category", "", "", Set.of());
-	public static final VTLProperty EXAMPLES_OPERATOR = new VTLPropertyImpl("vtl.examples.operator", "", "", Set.of());
+	public static final VTLProperty EXAMPLES_CATEGORY = new VTLPropertyImpl("vtl.examples.category", "Operator category", "", EnumSet.of(IS_REQUIRED));
+	public static final VTLProperty EXAMPLES_OPERATOR = new VTLPropertyImpl("vtl.examples.operator", "Operator name", "", EnumSet.of(IS_REQUIRED));
 	
 	static
 	{

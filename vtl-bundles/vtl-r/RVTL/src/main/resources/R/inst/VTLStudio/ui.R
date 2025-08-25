@@ -20,6 +20,8 @@
 
 library(RVTL)
 
+environments <- as.list(RVTL::vtlAvailableEnvironments())
+
 labels <- list(
   compile = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
   saveas = HTML('<span style="margin-right: 1em">Export code as...</span><span style="font-family: monospace">(Ctrl+S)</span>'),
@@ -90,13 +92,6 @@ makeDictSearchableList <- \(item) tagList(
     tags$i(class = "bi bi-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted")
   ),
   tags$div(id = paste0(item, 'sList'), class = "list-group scroll-list")
-)
-
-environments <- list(
-  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
-  , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
-  , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
-  #  , `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
 )
 
 activeEnvs <- function(active) {

@@ -268,3 +268,36 @@ vtlLogLevel <- function (level = c('debug', 'trace', 'info', 'warn', 'fatal', 'o
     )
   })
 }
+
+#' @title Returns available VTL environments.
+#' @description This function returns a character vector containing names and classes for all available environments.
+#' @usage vtlAvailableEnvironments()
+#' @export
+vtlAvailableEnvironments <- function () {
+  envs <- tryCatch({
+    J("java.lang.Class")$forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment")
+    
+    c(`Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment")
+  }, error = \(e) character())
+  
+  c(
+      `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
+    , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
+    , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
+    , `Examples demo environment` = "it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment"
+    , envs
+  )
+}
+
+#' @title Returns available VTL repositories.
+#' @description This function returns a character vector containing names and classes for all available repositories.
+#' @usage vtlAvailableRepositories()
+#' @export
+vtlAvailableRepositories <- function () {
+  c(
+      `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository'
+    , `Json URL repository` = 'it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository'
+    , `SDMX REST Metadata repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository'
+    , `SDMX REST & Json combined repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository'
+  )
+}

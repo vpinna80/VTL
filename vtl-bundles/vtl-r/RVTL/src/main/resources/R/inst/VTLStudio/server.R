@@ -20,19 +20,9 @@
 
 library(RVTL)
 
-repoImpls <- c(
-  `In-Memory repository` = 'it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository',
-  `Json URL repository` = 'it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository',
-  `SDMX REST Metadata repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository',
-  `SDMX REST & Json combined repository` = 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository'
-)
+repos <- vtlAvailableRepositories()
 
-environments <- c(
-  `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
-  , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
-  , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
-#  , `Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment"
-)
+environments <- vtlAvailableEnvironments()
 
 configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")
 exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
@@ -323,7 +313,7 @@ vtlServer <- function(input, output, session) {
     settingsFirstOpened <- observe({
       currentSession <- VTLSessionManager$getOrCreate(vtlSession)
       updateSelectInput(session, makeID('selectEnv'), NULL, environments)
-      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, globalRepo())
+      updateSelectInput(session, makeID('repoClass'), NULL, repos, globalRepo())
       session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = currentSession$text))
 
       if (currentSession$isCompiled()) {
@@ -568,7 +558,7 @@ vtlServer <- function(input, output, session) {
   # Initially populate environment list and load properties
   envlistdone <- observe({
     updateSelectInput(inputId = 'selectEnv', choices = environments)
-    updateSelectInput(inputId = 'repoClass', choices = repoImpls, selected = globalRepo())
+    updateSelectInput(inputId = 'repoClass', choices = repos, selected = globalRepo())
     # Single execution only when VTL Studio starts
     envlistdone$destroy()
   })
@@ -582,7 +572,7 @@ vtlServer <- function(input, output, session) {
       activeEnvs <- names(environments)[match(unlist(activeEnvs), environments)]
       session$sendCustomMessage('update-envs', list(rank = makeID('envs'), active = c('', activeEnvs)))
       activeRepo <- VTLSessionManager$getOrCreate(vtlSession)$getProperty(vtlProps$METADATA_REPOSITORY)
-      updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, activeRepo)
+      updateSelectInput(session, makeID('repoClass'), NULL, repos, activeRepo)
       updateSelectInput(session, makeID('selectEnv'), NULL, environments, "it.bancaditalia.oss.vtl.impl.environment.REnvironment")
     }
   }) |> bindEvent(input$applyConfAll, ignoreInit = T)
