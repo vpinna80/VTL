@@ -119,7 +119,7 @@ public class CSVParseUtils
 		else if (domain instanceof IntegerDomainSubset)
 			try
 			{
-				if (stringRepresentation.trim().isEmpty())
+				if (stringRepresentation.strip().isEmpty())
 					return NullValue.instance(INTEGERDS);
 				else
 					return IntegerValue.of(Long.parseLong(stringRepresentation.trim()));
@@ -133,7 +133,7 @@ public class CSVParseUtils
 		else if (domain instanceof NumberDomainSubset)
 			try
 			{
-				if (stringRepresentation.trim().isEmpty())
+				if (stringRepresentation.strip().isEmpty())
 					return NullValue.instance(NUMBERDS);
 				else 
 					return createNumberValue(stringRepresentation.trim());

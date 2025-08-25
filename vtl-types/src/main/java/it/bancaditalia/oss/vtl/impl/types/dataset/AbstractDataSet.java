@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -59,21 +58,23 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
@@ -148,9 +149,11 @@ public abstract class AbstractDataSet implements DataSet
 	{
 		return dataStructure;
 	}
-
+	
 	@Override
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other,
+		SerBinaryOperator<DataPoint> mergeOp,
+		DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having)
 	{
 		Set<DataSetComponent<Identifier, ?, ?>> ids = getMetadata().getIDs();
 		Set<DataSetComponent<Identifier, ?, ?>> otherIds = other.getMetadata().getIDs();
@@ -168,24 +171,24 @@ public abstract class AbstractDataSet implements DataSet
 		}
 		
 		return ofLambda(metadata, () -> stream()
-				.map(dpThis -> flatMapDataPoint(where, mergeOp, commonIds, index, leftJoin, dpThis))
+				.map(dpThis -> flatMapDataPoint(having, mergeOp, dpThis, index.get(dpThis.getValues(commonIds, Identifier.class))))
 				.collect(concatenating(ORDERED)));
 	}
 
-	protected static Stream<DataPoint> flatMapDataPoint(BiPredicate<DataPoint, DataPoint> predicate,
-			BinaryOperator<DataPoint> mergeOp, Set<DataSetComponent<Identifier, ?, ?>> commonIds,
-			Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, ? extends Collection<DataPoint>> indexed,
-			boolean leftJoin, DataPoint dpThis)
+	protected static Stream<DataPoint> flatMapDataPoint(DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having,
+			BinaryOperator<DataPoint> mergeOp, DataPoint dpThis, Collection<DataPoint>  otherSubGroup)
 	{
-		Collection<DataPoint> otherSubGroup = indexed.get(dpThis.getValues(commonIds, Identifier.class));
 		if (otherSubGroup == null)
-			if (leftJoin)
-				return Stream.of(mergeOp.apply(dpThis, null));
+			return Stream.empty();
+		else if (having == null)
+			return Utils.getStream(otherSubGroup).map(dpOther -> mergeOp.apply(dpThis, dpOther));
+		else if (dpThis.containsKey(having))
+			if (dpThis.get(having) == BooleanValue.TRUE)
+				return Utils.getStream(otherSubGroup).map(dpOther -> mergeOp.apply(dpThis, dpOther));
 			else
 				return Stream.empty();
 		else
-			return otherSubGroup.stream()
-				.filter(dpOther -> predicate.test(dpThis, dpOther))
+			return Utils.getStream(otherSubGroup).filter(dpOther -> dpOther.get(having) == BooleanValue.TRUE)
 				.map(dpOther -> mergeOp.apply(dpThis, dpOther));
 	}
 
@@ -330,6 +333,18 @@ public abstract class AbstractDataSet implements DataSet
 		return new StreamWrapperDataSet(dataStructure, () -> stream()
 			.filter(predicate)
 			.map(dp -> new DataPointBuilder(dp).build(linOp.apply(dp.getLineage()), dataStructure)));
+	}
+	
+	@Override
+	public VTLValue enrichLineage(SerUnaryOperator<Lineage> lineageEnricher)
+	{
+		return new AbstractDataSet(dataStructure) {
+			@Override
+			protected Stream<DataPoint> streamDataPoints()
+			{
+				return AbstractDataSet.this.stream().map(dp -> dp.enrichLineage(lineageEnricher));
+			}
+		};
 	}
 	
 	@Override

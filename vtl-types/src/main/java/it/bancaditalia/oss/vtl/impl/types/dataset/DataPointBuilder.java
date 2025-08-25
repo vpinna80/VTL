@@ -62,7 +62,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
-import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -282,7 +282,7 @@ public class DataPointBuilder implements Serializable
 		}
 
 		@Override
-		public DataPoint combine(DataPoint other, SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner)
+		public DataPoint combine(DataPoint other, SerBinaryOperator<Lineage> lineageCombiner)
 		{
 			Objects.requireNonNull(other);
 
@@ -292,7 +292,7 @@ public class DataPointBuilder implements Serializable
 					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
 			DataSetStructure newStructure = new DataSetStructureBuilder(finalMap.keySet()).build();
 
-			return new DataPointImpl(lineageCombiner.apply(this, other), newStructure, finalMap);
+			return new DataPointImpl(lineageCombiner.apply(lineage, other.getLineage()), newStructure, finalMap);
 		}
 
 		@Override

@@ -39,7 +39,7 @@ import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.NonIdentifier;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
-import it.bancaditalia.oss.vtl.util.SerBiFunction;
+import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerComparator;
 import it.bancaditalia.oss.vtl.util.SerToIntBiFunction;
@@ -112,11 +112,11 @@ public interface DataPoint extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?,
 	 * Create a new datapoint combining this and another datapoint.
 	 * All existing components keep their values in this datapoint and aren't updated with new values.
 	 * @param other the datapoint to combine with this datapoint
-	 * @param lineageCombiner A function that returns the lineage for the combined data point
+	 * @param lineageCombiner An operator used to combine the lineages of the two data points
 	 * 
 	 * @return a new datapoint that is the combination of this and another datapoint.
 	 */
-	public DataPoint combine(DataPoint other, SerBiFunction<DataPoint, DataPoint, Lineage> lineageCombiner);
+	public DataPoint combine(DataPoint other, SerBinaryOperator<Lineage> lineageCombiner);
 
 	/**
 	 * Get the source transformation of this DataPoint

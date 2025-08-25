@@ -54,7 +54,7 @@ public class RangeIntegerDomainSubset<S extends RangeIntegerDomainSubset<S>> ext
 	}
 
 	@Override
-	public boolean test(ScalarValue<?, ?, RangeIntegerDomainSubset<S>, IntegerDomain> value)
+	public boolean test(ScalarValue<?, ?, ?, IntegerDomain> value)
 	{
 		Long val = (Long) value.get();
 		

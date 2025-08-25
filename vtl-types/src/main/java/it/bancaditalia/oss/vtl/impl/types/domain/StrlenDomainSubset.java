@@ -55,7 +55,7 @@ public class StrlenDomainSubset extends CriterionDomainSubset<StrlenDomainSubset
 	}
 
 	@Override
-	public boolean test(ScalarValue<?, ?, StrlenDomainSubset, StringDomain> value)
+	public boolean test(ScalarValue<?, ?, ?, StringDomain> value)
 	{
 		int len = ((String) value.get()).length();
 		if (minLenInclusive.isPresent() && len < minLenInclusive.getAsInt())

@@ -31,7 +31,6 @@ import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STD
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_SAMP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_POP;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.VAR_SAMP;
-import static it.bancaditalia.oss.vtl.model.data.DataPoint.combinator;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.Collections.emptySet;
@@ -161,14 +160,14 @@ public class AggrClauseTransformation extends DatasetClauseTransformation
 			DataSet other = resultList.get(i);
 			DataSetStructure otherStructure = other.getMetadata();
 			currentStructure = new DataSetStructureBuilder(currentStructure).addComponents(otherStructure).build();
-			result = result.mappedJoin(currentStructure, other, combinator(enricher));
+			result = result.mappedJoin(currentStructure, other, (a, b) -> a.combine(b, enricher));
 		}
 
 		if (having != null)
 		{
 			DataSet dsHaving = (DataSet) having.eval(new ThisScope(scheme, dataset));
 			DataSetComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> condMeasure = dsHaving.getMetadata().getSingleton(Measure.class, BOOLEANDS);
-			result = result.filteredMappedJoin(currentStructure, dsHaving, condMeasure, lineage2Enricher(having));
+			result = result.filteredMappedJoin(currentStructure, dsHaving, (a, b) -> a, condMeasure);
 		}
 
 		return result.enrichLineage(lineageEnricher(this));

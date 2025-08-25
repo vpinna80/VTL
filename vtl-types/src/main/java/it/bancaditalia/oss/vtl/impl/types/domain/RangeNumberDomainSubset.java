@@ -54,7 +54,7 @@ public class RangeNumberDomainSubset<S extends RangeNumberDomainSubset<S>> exten
 	}
 
 	@Override
-	public boolean test(ScalarValue<?, ?, S, NumberDomain> value)
+	public boolean test(ScalarValue<?, ?, ?, NumberDomain> value)
 	{
 		Double val = (Double) value.get();
 		

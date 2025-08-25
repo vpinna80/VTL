@@ -156,7 +156,7 @@ public class VTLSessionImpl implements VTLSession
 				return statement.getMetadata(this);
 		}
 		else
-			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getValueMetadata)
+			return cacheHelper(alias, metacache, n -> acquireValue(n, Environment::getMetadata)
 					.orElseThrow(() -> buildUnboundException(alias, "getMetadata")));
 	}
 

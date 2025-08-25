@@ -148,7 +148,7 @@ public class JDBCConfiguration implements Serializable
 			if (user != null)
 				info.setProperty("user", user);
 			if (password != null)
-				info.setProperty("user", password);
+				info.setProperty("password", password);
 			conn = getDriver().connect(jdbcURL, info);
 			pool.set(conn);
 			return conn;

@@ -98,6 +98,8 @@ import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -426,7 +428,9 @@ public class JDBCDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, DataSetComponent<?, ?, ?> having, SerBinaryOperator<Lineage> lineageOp)
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other,
+		SerBinaryOperator<DataPoint> mergeOp,
+		DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having)
 	{
 		Set<DataSetComponent<Identifier, ?, ?>> ids = getMetadata().getIDs();
 		Set<DataSetComponent<Identifier, ?, ?>> otherIds = other.getMetadata().getIDs();

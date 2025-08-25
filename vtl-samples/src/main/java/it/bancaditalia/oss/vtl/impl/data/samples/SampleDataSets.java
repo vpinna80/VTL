@@ -59,19 +59,21 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
@@ -105,6 +107,11 @@ public enum SampleDataSets implements DataSet
 	private SampleDataSets(SampleVariables... components)
 	{
 		dataset = createSample(components);
+	}
+	
+	public VTLAlias getAlias()
+	{
+		return VTLAliasImpl.of(name());
 	}
 
 	public static DataSetStructure createStructure(SampleVariables... variables)
@@ -184,12 +191,20 @@ public enum SampleDataSets implements DataSet
 		return dataset.getMatching(keyValues);
 	}
 
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet rightDataset, SerBiPredicate<DataPoint, DataPoint> having,
-			SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
+	@Override
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other,
+		SerBinaryOperator<DataPoint> merge,
+		DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having)
 	{
-		return dataset.filteredMappedJoin(metadata, rightDataset, having, mergeOp, leftJoin);
+		return dataset.filteredMappedJoin(metadata, other, merge, having);
 	}
-
+	
+	@Override
+	public VTLValue enrichLineage(SerUnaryOperator<Lineage> lineageEnricher)
+	{
+		return dataset.enrichLineage(lineageEnricher);
+	}
+	
 	@Override
 	public DataSet filter(SerPredicate<DataPoint> predicate, SerUnaryOperator<Lineage> lineageOperator)
 	{

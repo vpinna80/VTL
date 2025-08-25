@@ -31,6 +31,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBiPredicate;
@@ -102,6 +104,13 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	}
 
 	/**
+	 * Enrich the lineage of each datapoint in this DataSet using the provided operator 
+	 * @param lineageEnricher the operator
+	 * @return A new dataset where each datapoint lineage is enriched.
+	 */
+	public VTLValue enrichLineage(SerUnaryOperator<Lineage> lineageEnricher);
+
+	/**
 	 * Creates a new DataSet by retaining only the datapoints in this DataSet which match a given {@link Predicate}.
 	 * 
 	 * @param predicate The {@link Predicate} to be applied.
@@ -139,17 +148,30 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public DataSet flatmapKeepingKeys(DataSetStructure metadata, SerUnaryOperator<Lineage> lineageOp, SerFunction<? super DataPoint, ? extends Stream<? extends Map<? extends DataSetComponent<?, ?, ?>, ? extends ScalarValue<?, ?, ?, ?>>>> operator);
 
 	/**
-	 * Creates a new DataSet by joining each DataPoint of this DataSet to all indexed DataPoints of another DataSet by matching the common identifiers.
+	 * Creates a new DataSet by joining each DataPoint of this DataSet with all data points of another DataSet by matching the common identifiers.
 	 * 
 	 * @param metadata The {@link DataSetStructure structure} the new DataSet must conform to.
-	 * @param indexed another DataSet that will be indexed and joined to each DataPoint of this DataSet.
-	 * @param where a {@link SerBiPredicate} used to select only a subset of the joined {@link DataPoint}s.
+	 * @param other another DataSet that will be indexed and joined to each DataPoint of this DataSet.
 	 * @param merge a {@link BinaryOperator} that merges two selected joined DataPoints together into one.
-	 * @param leftJoin true if a left outer join is to be performed, false for inner join
+	 * @param having if not null, data points are filtered according to values of this component
 	 * @return The new DataSet.
 	 */
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet indexed, SerBiPredicate<DataPoint, DataPoint> where, SerBinaryOperator<DataPoint> merge, boolean leftJoin);
-	
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, SerBinaryOperator<DataPoint> merge,
+		DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having);
+
+	/**
+	 * Creates a new DataSet by joining each DataPoint of this DataSet with all data points of another DataSet by matching the common identifiers.
+	 * 
+	 * @param metadata The {@link DataSetStructure structure} the new DataSet must conform to.
+	 * @param other another DataSet that will be indexed and joined to each DataPoint of this DataSet.
+	 * @param combiner the operator used to combine the two datapoints
+	 * @return The new DataSet.
+	 */
+	public default DataSet mappedJoin(DataSetStructure metadata, DataSet other, SerBinaryOperator<DataPoint> combiner)
+	{
+		return filteredMappedJoin(metadata, other, combiner, null);
+	}
+
 	/**
 	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers.
 	 * If no grouping identifiers are specified, the dataset is aggregated to a scalar.

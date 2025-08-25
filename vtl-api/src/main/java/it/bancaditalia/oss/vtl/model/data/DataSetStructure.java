@@ -165,7 +165,7 @@ public interface DataSetStructure extends Set<DataSetComponent<?, ?, ?>>, VTLVal
 	 * @param subspace the identifiers that must be subspaced
 	 * @return The new structure.
 	 */
-	public DataSetStructure subspace(Collection<? extends DataSetComponent<Identifier, ?, ?>> subspace);
+	public DataSetStructure subspace(Collection<? extends DataSetComponent<? extends Identifier, ?, ?>> subspace);
 
 	/**
 	 * Creates a new structure by performing a VTL membership operation on this structure.

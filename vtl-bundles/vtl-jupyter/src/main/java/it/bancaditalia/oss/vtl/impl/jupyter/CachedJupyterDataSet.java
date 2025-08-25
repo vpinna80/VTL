@@ -47,8 +47,6 @@ import java.util.concurrent.ForkJoinPool.ManagedBlocker;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -60,12 +58,13 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.session.VTLSession;
-import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public class CachedJupyterDataSet extends NamedDataSet
@@ -234,7 +233,9 @@ public class CachedJupyterDataSet extends NamedDataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, SerBiPredicate<DataPoint, DataPoint> predicate, SerBinaryOperator<DataPoint> mergeOp, boolean leftJoin)
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other,
+		SerBinaryOperator<DataPoint> mergeOp,
+		DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having)
 	{
 		if (!lock())
 			return new StreamWrapperDataSet(metadata, Stream::empty);
@@ -251,17 +252,15 @@ public class CachedJupyterDataSet extends NamedDataSet
 			waiter.done();
 		}
 
-		BiPredicate<DataPoint, DataPoint> newPredicate = (a, b) -> predicate.test(b, a);
-		BinaryOperator<DataPoint> newMergeOp = (a, b) -> mergeOp.apply(b, a);
 		Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Set<DataPoint>> finalValue = value;
-		
+
 		return new AbstractDataSet(metadata)
 		{
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
 				return other.stream()
-						.map(dpThis -> flatMapDataPoint(newPredicate, newMergeOp, commonIds, finalValue, leftJoin, dpThis))
+						.map(dpThis -> flatMapDataPoint(having, mergeOp, dpThis, finalValue.get(dpThis.getValues(commonIds))))
 						.collect(concatenating(ORDERED));
 			}
 		};

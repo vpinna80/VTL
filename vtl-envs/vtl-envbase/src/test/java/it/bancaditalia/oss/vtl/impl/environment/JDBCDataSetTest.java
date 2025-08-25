@@ -48,17 +48,12 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
 public class JDBCDataSetTest
 {
-	private static DataSet sample5;
-	private static DataSet sample6;
-	private static DataSet sample10;
+	private static MetadataRepository repo;
 
 	@BeforeAll
 	public static void init() throws SQLException
 	{
-		DBMSEnvironment env = new DBMSEnvironment("jdbc:hsqldb:mem:schema;shutdown=true", "sa", "", "schema", "schema", "");
-		env.loadDatasets(Map.of("sample5", SAMPLE5, "sample6", SAMPLE6, "sample10", SAMPLE10));
-	
-		MetadataRepository repo = mock(MetadataRepository.class);
+		repo = mock(MetadataRepository.class);
 		when(repo.getMetadata(any(VTLAlias.class))).thenAnswer(args -> {
 			switch (args.getArgument(0).toString().toLowerCase())
 			{
@@ -68,15 +63,15 @@ public class JDBCDataSetTest
 				default: throw new MockitoException("Unexpected value");
 			}
 		});
-
-		sample5 = (DataSet) env.getValue(repo, SAMPLE5.getAlias()).get();
-		sample6 = (DataSet) env.getValue(repo, SAMPLE6.getAlias()).get();
-		sample10 = (DataSet) env.getValue(repo, SAMPLE10.getAlias()).get();
 	}
 	
 	@Test
-	public void testMembership()
+	public void testMembership() throws SQLException
 	{
+		DBMSEnvironment env = new DBMSEnvironment("jdbc:hsqldb:mem:test1;shutdown=true", "sa", "", "test1", "test1", "");
+		env.loadDatasets(Map.of("sample5", SAMPLE5, "sample6", SAMPLE6, "sample10", SAMPLE10));
+	
+		DataSet sample10 = (DataSet) env.getValue(repo, SAMPLE10.getAlias()).get();
 		VTLAlias string_1 = VTLAliasImpl.of("string_1");
 		DataSet membership = sample10.membership(string_1, identity());
 		assertEquals(sample10.size(), membership.size(), "Size differs");
@@ -84,8 +79,12 @@ public class JDBCDataSetTest
 	}
 	
 	@Test
-	public void testSubspace()
+	public void testSubspace() throws SQLException
 	{
+		DBMSEnvironment env = new DBMSEnvironment("jdbc:hsqldb:mem:test2;shutdown=true", "sa", "", "test2", "test2", "");
+		env.loadDatasets(Map.of("sample5", SAMPLE5, "sample6", SAMPLE6, "sample10", SAMPLE10));
+		
+		DataSet sample10 = (DataSet) env.getValue(repo, SAMPLE10.getAlias()).get();
 		DataSetComponent<Identifier, ?, ?> subspaceId = sample10.getComponent(VTLAliasImpl.of("string_1")).get().asRole(Identifier.class);
 		DataSet subspace = sample10.subspace(Map.of(subspaceId, StringValue.of("A")), identity());
 		assertEquals(1, subspace.size(), "Size differs");
@@ -93,8 +92,14 @@ public class JDBCDataSetTest
 	}
 
 	@Test
-	public void testUnion()
+	public void testUnion() throws SQLException
 	{
+		DBMSEnvironment env = new DBMSEnvironment("jdbc:hsqldb:mem:test3;shutdown=true", "sa", "", "test3", "test3", "");
+		env.loadDatasets(Map.of("sample5", SAMPLE5, "sample6", SAMPLE6, "sample10", SAMPLE10));
+
+		DataSet sample5 = (DataSet) env.getValue(repo, SAMPLE5.getAlias()).get();
+		DataSet sample6 = (DataSet) env.getValue(repo, SAMPLE6.getAlias()).get();
+		DataSet sample10 = (DataSet) env.getValue(repo, SAMPLE10.getAlias()).get();
 		DataSet union = sample5.union(List.of(sample6, sample10), identity());
 		assertEquals(9, union.size(), "Size differs");
 		assertEquals(sample10.getMetadata(), union.getMetadata(), "Structure differs");

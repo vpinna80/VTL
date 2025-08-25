@@ -238,7 +238,7 @@ public class DataSetStructureBuilder
 		}
 
 		@Override
-		public DataSetStructure subspace(Collection<? extends DataSetComponent<Identifier, ?, ?>> subspace)
+		public DataSetStructure subspace(Collection<? extends DataSetComponent<? extends Identifier, ?, ?>> subspace)
 		{
 			return new DataSetStructureBuilder().addComponents(byName.values().parallelStream().filter(c -> !subspace.contains(c)).collect(toSet())).build();
 		}

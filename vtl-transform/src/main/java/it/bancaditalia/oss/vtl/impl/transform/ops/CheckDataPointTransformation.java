@@ -26,6 +26,7 @@ import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.FALSE;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCODE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
+import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.RULEID;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VARIABLE;
@@ -48,10 +49,8 @@ import it.bancaditalia.oss.vtl.impl.transform.ops.CheckHierarchyTransformation.O
 import it.bancaditalia.oss.vtl.impl.transform.scope.DatapointScope;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
-import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -62,7 +61,6 @@ import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -112,20 +110,17 @@ public class CheckDataPointTransformation extends TransformationImpl
 		DataPointRuleSet ruleset = scheme.findDatapointRuleset(rulesetID);
 		RuleSetType type = ruleset.getType();
 		List<DataPointRule> rules = ruleset.getRules();
-		Variable<?, ?> variable = repo.getVariable(VTLAliasImpl.of("ruleid")).orElseThrow(() -> new VTLUndefinedObjectException("Variable", VTLAliasImpl.of("ruleid")));
-		DataSetComponent<Identifier, ?, ?> ruleid = DataSetComponentImpl.of(variable.getAlias(), variable.getDomain(), Identifier.class);
 		
 		Output output = this.output;
 		DataSetStructure metadata = dataset.getMetadata();
 		return dataset.flatmapKeepingKeys(structure, identity(), dp -> rules.stream()
-			.map(rule -> evalRule(new DatapointScope(repo, dp, metadata, null), type, output, BOOL_VAR, ruleid, dp, rule))
+			.map(rule -> evalRule(new DatapointScope(repo, dp, metadata, null), type, output, BOOL_VAR, dp, rule))
 			.filter(Objects::nonNull));
 	}
 
 	private static Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> evalRule(TransformationScheme scope,
-			RuleSetType type, Output output,
-			DataSetComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var, 
-			DataSetComponent<Identifier, ?, ?> ruleid, DataPoint dp, DataPointRule rule)
+			RuleSetType type, Output output, DataSetComponent<Measure, EntireBooleanDomainSubset, BooleanDomain> bool_var, 
+			DataPoint dp, DataPointRule rule)
 	{
 		if (type != VARIABLE)
 			throw new UnsupportedOperationException("check_datapoint on valuedomain ruleset not implemented");
@@ -135,7 +130,7 @@ public class CheckDataPointTransformation extends TransformationImpl
 			return null;
 
 		Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>();
-		map.put(ruleid, StringValue.of(rule.getRuleId().getName()));
+		map.put(RULEID.get(), StringValue.of(rule.getRuleId().getName()));
 		map.put(ERRORCODE.get(), res == FALSE ? rule.getErrorCode() : NullValue.instance(STRINGDS));
 		map.put(ERRORLEVEL.get(), res == FALSE ? rule.getErrorLevel() : NullValue.instance(INTEGERDS));
 		
@@ -188,11 +183,10 @@ public class CheckDataPointTransformation extends TransformationImpl
 			if (output == INVALID || output == ALL_MEASURES)
 				builder = builder.addComponents(structure.getMeasures());
 			
-			Variable<?, ?> variable = repo.getVariable(VTLAliasImpl.of("ruleid")).orElseThrow(() -> new VTLUndefinedObjectException("Variable", VTLAliasImpl.of("ruleid")));
 			return builder
 					.addComponent(ERRORCODE.get())
 					.addComponent(ERRORLEVEL.get())
-					.addComponent(DataSetComponentImpl.of(variable.getAlias(), variable.getDomain(), Identifier.class))
+					.addComponent(RULEID.get())
 					.build();
 		}
 		else

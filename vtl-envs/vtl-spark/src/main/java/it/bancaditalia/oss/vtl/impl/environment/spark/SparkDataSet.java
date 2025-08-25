@@ -116,6 +116,8 @@ import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
 import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
@@ -389,7 +391,9 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, DataSetComponent<?, ?, ?> having, SerBinaryOperator<Lineage> lineageOp)
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other,
+		SerBinaryOperator<DataPoint> mergeOp,
+		DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having)
 	{
 		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(exportSize, session, other.getMetadata(), other);
 

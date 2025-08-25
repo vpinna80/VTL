@@ -72,7 +72,6 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.StringDomain;
-import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 
 public class AbstractDataSetTest
 {
@@ -137,11 +136,7 @@ public class AbstractDataSetTest
 	@Test
 	void testFilteredMappedJoin()
 	{
-		SerBiPredicate<DataPoint, DataPoint> filter = (dp1, dp2) -> {
-			assertEquals(dp1, dp2, "Joining unrelated datapoints");
-			return true;
-		};
-		DataSet result = INSTANCE.filteredMappedJoin(STRUCTURE, INSTANCE, filter, (a, b) -> a, false);
+		DataSet result = INSTANCE.filteredMappedJoin(STRUCTURE, INSTANCE, (a, b) -> a, null);
 		assertEquals(STRUCTURE, result.getMetadata());
 		assertEquals(new HashSet<>(Arrays.asList(DATAPOINTS)), result.stream().collect(toSet()));
 	}

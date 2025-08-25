@@ -29,7 +29,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
-import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineage2Enricher;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.STDDEV_POP;
@@ -213,7 +212,7 @@ public class AggregateTransformation extends TransformationImpl
 			if (having != null)
 			{
 				DataSet dsHaving = (DataSet) having.eval(new ThisScope(scheme, dataset));
-				result = result.filteredMappedJoin(structure, dsHaving, BOOL_VAR, lineage2Enricher(having));
+				result = result.filteredMappedJoin(structure, dsHaving, (a, b) -> a, BOOL_VAR);
 			}
 			
 			return result;
