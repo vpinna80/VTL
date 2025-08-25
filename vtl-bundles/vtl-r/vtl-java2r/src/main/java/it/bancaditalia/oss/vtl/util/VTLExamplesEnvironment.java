@@ -85,8 +85,8 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
 	private static final Map<Entry<String, String>, VTLSession> SESSIONS = new HashMap<>();
 	private static final Map<String, List<String>> OPERATORS = new LinkedHashMap<>();
-	private static final Set<String> EXCLUDED_OPERATORS = Set.of("Pivoting", "Random", "Hierarchical roll-up", "Check datapoint", 
-			"Check hierarchy", "Persistent assignment", "Duration to number days", "Fill time series", "Number days to duration");
+	private static final Set<String> EXCLUDED_OPERATORS = Set.of("Pivoting", "Random", "Persistent assignment", 
+		"Duration to number days", "Fill time series", "Number days to duration");
 	
 	public static final VTLProperty EXAMPLES_CATEGORY = new VTLPropertyImpl("vtl.examples.category", "", "", Set.of());
 	public static final VTLProperty EXAMPLES_OPERATOR = new VTLPropertyImpl("vtl.examples.operator", "", "", Set.of());
@@ -195,16 +195,6 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		}
 		inputs = csv_lines.toArray(String[][]::new);
 		LOGGER.info("Loaded {} datasets for {}", inputs.length, operator);
-	}
-	
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		for (int i = 0; i < inputs.length; i++)
-			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
-				return true;
-		
-		return false;
 	}
 	
 	@Override

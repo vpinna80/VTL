@@ -231,7 +231,12 @@ function datasetModal(source) {
       ds.dataset.structure = strSelect.value
       nullables = table.column(4).nodes().toArray().map(n => n.children[0])
       table.rows().data().toArray()
-        .filter((r, i) => r[2] !== r[3] || !nullables[r.i].disabled && !nullables[r.i].checked)
+        .filter((r, i) => {
+          let t1 = r[1] !== r[2]
+          let t2 = !nullables[i].disabled
+          let t3 = !nullables[i].checked
+          return t1 || t2 && t3
+        })
         .forEach(r => {
           const component = document.createElement('template')
           component.dataset.name = r[0]
@@ -267,11 +272,6 @@ function structureModal(source) {
   const varnamelist = document.getElementById('varnamelist')
   const table = jQuery.fn.dataTable.isDataTable(tableElem) ? tableElem.DataTable() : (() => {
     resizeHandleListener(modal, handle, bodyHeight)
-    modal.querySelector('.add-row .btn').onclick = e => {
-      const row = table.row.add([ '', '', 'Identifier', '', false, '' ])
-      row.draw()
-      row.node().children[0].click()
-    }
     return tableElem.DataTable({ paging: false, searching: false, info: false, ordering: false, 
       rowReorder: { selector: 'i.handle' }, scrollY: bodyHeight, autoWidth: false, columns: [
         {
@@ -351,6 +351,7 @@ function structureModal(source) {
   Array.from(structures.children).map(d => d.dataset.name).forEach(d => strImport.selectize.addOption({ value: d, text: d }))
   strImport.selectize.clear()
 
+  addrowListener(modal.querySelector('.add-row .btn'), table, [ '', '', 'Identifier', '', false, '' ])
   modal.classList.add('modal-lg')
   modal.querySelector("h5").textContent = `${ source ? 'Edit' : 'Add' } a DataStructure`
   submit.textContent = source ? 'Save' : 'Add'
@@ -489,7 +490,7 @@ function domainModal(source) {
     })
 
   resizeHandleListener(modal, modal.querySelector('.handle'), bodyHeight)
-  addrowListener(modal.querySelector('.add-row .btn'), table, [ '', '', '' ]).draw()
+  addrowListener(modal.querySelector('.add-row .btn'), table, [ '', '', '' ])
   domname.disabled = !!source
   domname.value = source?.dataset?.name || ''
   domdesc.value = source?.dataset?.description || ''
@@ -570,15 +571,26 @@ function domainModal(source) {
   setTimeout(() => new bootstrap.Modal(modal).show(), 0)
 }
 
+function showDomainModalPane() {
+  let domainType = document.querySelector('input[name="domtype"]:checked')?.value
+  document.querySelectorAll(".domain-type").forEach(e => e.classList.add('d-none'))
+  document.querySelector(".domain-type." + domainType).classList.remove('d-none')
+}
+
 function createEditDictWindow(msg) {
   const modal = document.getElementById('dictEditor')
   const classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center ps-3"
+
+  document.getElementById('datasetsList').innerHTML = ""
+  document.getElementById('structuresList').innerHTML = ""
+  document.getElementById('variablesList').innerHTML = ""
+  document.getElementById('domainsList').innerHTML = ""
 
   msg?.data?.forEach(item => {
     const ds = createModelElement(item)
     const badge = ds.querySelector("span")
     ds.dataset[item.structure ? "structure" : "subset"] = item.structure || item.subset
-    item.structure && item.components.forEach(c => {
+    item.structure && item.components && item.components.forEach(c => {
       const component = document.createElement('template')
       component.dataset.name = c.name
       c.description && (component.dataset.description = c.description)
@@ -670,7 +682,7 @@ function resizeHandleListener(modal, handle, minH) {
 function addrowListener(button, table, row) {
   const newbutton = button.cloneNode(true)
   button.replaceWith(newbutton)
-  return table.row.add(row)
+  newbutton.addEventListener('click', () => table.row.add(row).draw())
 }
 
 function downloadJson() {

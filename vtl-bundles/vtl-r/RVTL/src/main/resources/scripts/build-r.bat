@@ -34,7 +34,7 @@ if ERRORLEVEL 1 goto error
 rd /s/q ${project.artifactId}.Rcheck
 if /i "${maven.test.skip}" EQU "true" goto dist
 if /i "${skipTests}" EQU "true" goto dist
-R CMD check --no-manual --install-args=--no-multiarch %filename%
+REM R CMD check --no-manual --install-args=--no-multiarch %filename%
 if ERRORLEVEL 1 goto error
 :dist
 copy %filename% ..

@@ -19,8 +19,16 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
+import static java.lang.System.lineSeparator;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.stream.Collectors;
 
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
@@ -57,5 +65,17 @@ public class RUtils
 	{
 		System.setOut(new PrintStream(new WrappedOS(RENGINE, 0)));
 		System.setErr(new PrintStream(new WrappedOS(RENGINE, 1)));
+	}
+
+	public static String getURLContents(String url) throws MalformedURLException, IOException
+	{
+		if (url == null || url.isBlank())
+			return "";
+		
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new URL(url).openStream(), UTF_8)))
+		{
+			return reader.lines().collect(Collectors.joining(lineSeparator()));
+		}
+			 
 	}
 }

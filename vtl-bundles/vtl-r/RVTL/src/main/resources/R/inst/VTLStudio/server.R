@@ -250,9 +250,7 @@ vtlServer <- function(input, output, session) {
         jsonUrl = req(debounced())
         con <- NULL
         allOK <- tryCatch({
-            con <- url(jsonUrl, 'rt')
-            # test read first line
-            readLines(con, 1, T, F)
+            J('it.bancaditalia.oss.vtl.impl.environment.RUtils')$getURLContents(jsonUrl)
             shinyjs::removeClass(inputIDj, 'disabled')
           },
           warning = \(w) shinyjs::addClass(inputIDj, 'disabled'),
@@ -265,8 +263,7 @@ vtlServer <- function(input, output, session) {
         jsonUrl = req(debounced())
         con <- NULL
         jsonFile <- tryCatch({
-            con <- url(jsonUrl, 'rt')
-            paste0(readLines(con, warn = F), collapse = '\n')
+            J('it.bancaditalia.oss.vtl.impl.environment.RUtils')$getURLContents(jsonUrl)
           }, error = \(e) {
             invisible(NULL)
           }, finally = {
@@ -322,21 +319,21 @@ vtlServer <- function(input, output, session) {
     output[[makeID('output')]] <- renderPrint(cat(' '))
     
     # Populate environments and repositories lists in session settings
-    envlistdone <- observe({
+    sheetID <- makeID('sheets')
+    settingsFirstOpened <- observe({
       currentSession <- VTLSessionManager$getOrCreate(vtlSession)
       updateSelectInput(session, makeID('selectEnv'), NULL, environments)
       updateSelectInput(session, makeID('repoClass'), NULL, repoImpls, globalRepo())
       session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = currentSession$text))
 
       if (currentSession$isCompiled()) {
-        updateSelectInput(session, makeID('structName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
+        updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
         updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
       }
       
-      # Single execution only when the tab is first created
-      envlistdone$destroy()
+      settingsFirstOpened$destroy()
     })
-    
+
     # Controls and observers for properties of selected environment in active session
     output[[makeID('envprops')]] <- renderUI({
       getValue <- VTLSessionManager$getOrCreate(vtlSession)$getProperty
@@ -456,9 +453,9 @@ vtlServer <- function(input, output, session) {
               df <- data.table::transpose(data.frame(c(jstr$getDomain()$toString()), check.names = FALSE))
               colnames(df) <- c("Domain")
               df
-            } else if (jstr %instanceof% "it.bancaditalia.oss.vtl.impl.types.dataset.DataStructureBuilder$DataStructureImpl") {
+            } else if (jstr %instanceof% "it.bancaditalia.oss.vtl.model.data.DataSetStructure") {
               df <- data.table::transpose(data.frame(lapply(jstr, function(x) {
-                c(x$getVariable()$getAlias()$getName(), x$getVariable()$getDomain()$toString(), x$getRole()$getSimpleName())
+                c(x$getAlias()$getName(), x$getDomain()$toString(), x$getRole()$getSimpleName())
               } ), check.names = FALSE))
               colnames(df) <- c("Name", "Domain", "Role")
               df

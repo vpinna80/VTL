@@ -33,12 +33,46 @@
     },
     {
       "name": "Id_2",
-      "domain": "string"
+      "domain": "VD_1"
     },
     {
       "name": "Me_1",
       "domain": "integer"
     }
   ],
-  "domains": []
+  "domains": [
+    {
+      "name": "VD_1",
+      "parent": "string",
+      "enumerated": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z"
+      ]
+    }
+  ]
+
 }

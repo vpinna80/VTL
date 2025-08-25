@@ -105,7 +105,7 @@ public class REnvironment implements Environment
 	}
 	
 	@Override
-	public Optional<VTLValueMetadata> getValueMetadata(VTLAlias name)
+	public Optional<VTLValueMetadata> getMetadata(VTLAlias name)
 	{
 		LOGGER.info("Searching for {} in R global environment...");
 		if (reval("exists('???')", name).asBool().isTRUE())
@@ -187,7 +187,7 @@ public class REnvironment implements Environment
 		if (reval("exists('???')", name).asBool().isTRUE())
 			if (reval("is.data.frame(`???`)", name).asBool().isTRUE())
 			{
-				Optional<VTLValueMetadata> maybeMeta = repo.getMetadata(name).or(() -> getValueMetadata(name));
+				Optional<VTLValueMetadata> maybeMeta = repo.getMetadata(name).or(() -> getMetadata(name));
 				if (maybeMeta.isEmpty())
 					return Optional.empty();
 				
@@ -284,12 +284,6 @@ public class REnvironment implements Environment
 			throw new VTLMissingComponentsException(metadata, missing);
 		
 		return new ColumnarDataSet(name, dataContainer);
-	}
-
-	@Override
-	public boolean contains(VTLAlias alias)
-	{
-		return reval("exists('???')", alias).asBool().isTRUE();
 	}
 	
 	private REXP reval(String format, VTLAlias name) 

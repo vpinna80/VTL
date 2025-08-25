@@ -24,9 +24,4 @@ end datapoint ruleset;
 
 DS_r1 := check_datapoint ( DS_1, dpr1 );
 
-define datapoint ruleset dpr1 ( variable Id_3, Me_1 ) is
-    when Id_3 = "CREDIT" then Me_1 >= 0 errorcode "Bad credit"
-    ; when Id_3 = "DEBIT" then Me_1 >= 0 errorcode "Bad debit"
-end datapoint ruleset;
-
 DS_r2 := check_datapoint ( DS_1, dpr1 all );

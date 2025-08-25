@@ -222,7 +222,7 @@ let createTree = function(text: string, ctxName: string = 'start') {
 
 let VTLLang = new Language(facet, new class extends LezerParser {
 	createParse(input) {
-		let doc = input.doc.text.join("\n")
+		let doc = input.doc.toString()
 		let tree = createTree(doc)
 		let partialParse = {
 			parsedPos: doc.length,

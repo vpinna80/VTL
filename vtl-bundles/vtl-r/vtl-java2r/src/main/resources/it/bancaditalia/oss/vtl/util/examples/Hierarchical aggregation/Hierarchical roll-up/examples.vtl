@@ -31,30 +31,6 @@ end hierarchical ruleset;
 
 DS_r1 := hierarchy ( DS_1, HR_1 rule Id_2 non_null );
 
-define hierarchical ruleset HR_1 ( valuedomain rule VD_1 ) is
-	A = J + K + L
-	; B = M + N + O
-	; C = P + Q
-	; D = R + S
-	; E = T + U + V
-	; F = Y + W + Z
-	; G = B + C
-	; H = D + E
-	; I = D + G
-end hierarchical ruleset;
-
 DS_r2 := hierarchy ( DS_1, HR_1 rule Id_2 non_zero );
-
-define hierarchical ruleset HR_1 ( valuedomain rule VD_1 ) is
-	A = J + K + L
-	; B = M + N + O
-	; C = P + Q
-	; D = R + S
-	; E = T + U + V
-	; F = Y + W + Z
-	; G = B + C
-	; H = D + E
-	; I = D + G
-end hierarchical ruleset;
 
 DS_r3 := hierarchy ( DS_1, HR_1 rule Id_2 partial_null );

@@ -122,11 +122,6 @@ public class Paginator
 		return (int[]) result[i];
 	}
 
-	public long[] getLongColumn(int i)
-	{
-		return (long[]) result[i];
-	}
-	
 	public double[] getDoubleColumn(int i)
 	{
 		return (double[]) result[i];
@@ -166,7 +161,7 @@ public class Paginator
 				case 2: 
 				case 3: test = ((int[]) result[0]).length != newSize; break;
 				case 4: test = ((String[]) result[0]).length != newSize; break;
-				case 5: test = ((long[]) result[0]).length != newSize; break;
+				case 5: test = ((double[]) result[0]).length != newSize; break;
 			}
 		if (test)
 			for (int i = 0; i < comps.length; i++)
@@ -176,7 +171,7 @@ public class Paginator
 					case 2: result[i] = new int[newSize]; break;
 					case 3: result[i] = new int[newSize]; break;
 					case 4: result[i] = new String[newSize]; break;
-					case 5: result[i] = new long[newSize]; break;
+					case 5: result[i] = new double[newSize]; break;
 					default: throw new IllegalStateException();
 				}
 		
@@ -192,7 +187,7 @@ public class Paginator
 					case 2: ((int[]) array)[j] = value == null ? R_INT_NA : value == Boolean.TRUE ? 1 : 0; break;
 					case 3: ((int[]) array)[j] = value == null ? R_INT_NA : (int) DAYS.between(R_EPOCH_DATE, (LocalDate) value); break;
 					case 4: ((String[]) array)[j] = value == null ? null : value.toString(); break;
-					case 5: ((long[]) array)[j] = value == null ? R_INT_NA : ((Number) value).longValue(); break;
+					case 5: ((double[]) array)[j] = value == null ? R_DOUBLE_NA : ((Number) value).doubleValue(); break;
 				}
 			}		
 		}
