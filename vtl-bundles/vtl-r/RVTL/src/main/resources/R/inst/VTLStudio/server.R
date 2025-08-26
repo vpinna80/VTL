@@ -29,7 +29,9 @@ exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
 
 vtlProps <- list(
   ENVIRONMENT_IMPLEMENTATION = J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION,
-  METADATA_REPOSITORY = J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY
+  METADATA_REPOSITORY = J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY,
+  EXAMPLE_CATEGORY = exampleEnv$EXAMPLES_CATEGORY,
+  EXAMPLE_OPERATOR = exampleEnv$EXAMPLES_OPERATOR
 )
 
 globalEnvs <- function(newenvs = NULL) {
@@ -85,6 +87,17 @@ controlsGen <- function(javaclass, getValue = configManager$getGlobalPropertyVal
           actionButton(inputIDj, '', tags$i(class = 'bi bi-pencil-square'), class = 'disabled')
         )
       )
+    } else if (prop$getName() == 'vtl.examples.category') {
+      categories <- sapply(sapply(exampleEnv$getCategories(), .jstrVal), \(categ) categ)
+      selectInput(inputID, '', c(`Choose a category...` = '', categories), getValue(prop))
+    } else if (prop$getName() == 'vtl.examples.operator') {
+      category <- getValue(vtlProps$EXAMPLE_CATEGORY)
+      if (is.null(category)) {
+        selectInput(inputID, '', c(`Choose an operator...` = ''))
+      } else {
+        opNames <- sapply(sapply(exampleEnv$getOperators(category), .jstrVal), \(opName) opName)
+        selectInput(inputID, '', c(`Choose an operator...` = '', opNames), getValue(prop))
+      }
     } else {
       textInput(inputID, prop$getDescription(), val, placeholder = prop$getPlaceholder())
     }
@@ -273,6 +286,15 @@ vtlServer <- function(input, output, session) {
       output[[makeID('confOutput')]] <- renderPrint({
         cat("Set property", prop$getDescription(), "to", printValue, "\n")
       }) |> bindEvent(input[[inputID]])
+      
+      # If selecting a operator category also update the operator name select
+      if (prop$getName() == 'vtl.examples.category') {
+        opNameID <- makeID('vtl.examples.operator')
+        opNames <- sapply(sapply(exampleEnv$getOperators(value), .jstrVal), \(opName) opName)
+        selected <- input[[opNameID]]
+        updateSelectInput(inputId = opNameID, choices = c(`Choose an operator...` = '', opNames), selected = selected)
+      }
+      
     }) |> bindEvent(input[[inputID]])
   }
 
