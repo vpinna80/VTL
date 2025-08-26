@@ -202,10 +202,14 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
+		if (repo == null)
+			return Optional.empty();
+		
 		for (int i = 0; i < inputs.length; i++)
 			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
 			{
-				DataSetStructure structure = repo.getMetadata(alias).map(DataSetStructure.class::cast)
+				DataSetStructure structure = repo.getMetadata(alias)
+					.map(DataSetStructure.class::cast)
 					.orElseThrow(() -> new VTLUndefinedObjectException("Metadata", alias));
 				
 				return Optional.of(streamInput(inputs[i], structure));
