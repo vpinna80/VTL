@@ -57,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Aliasparam;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Caseparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Check;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Context;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Customparam;
@@ -326,6 +327,8 @@ public class MappingTest
 		if (param instanceof Stringparam)
 			return null;
 		else if (param instanceof Customparam)
+			return null;
+		else if (param instanceof Caseparam)
 			return null;
 		else if (param instanceof Valueparam)
 			return null;
