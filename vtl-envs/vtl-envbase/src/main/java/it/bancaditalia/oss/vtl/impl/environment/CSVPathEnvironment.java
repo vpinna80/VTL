@@ -111,6 +111,9 @@ public class CSVPathEnvironment implements Environment
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
+		if (repo == null)
+			return Optional.empty();
+		
 		String source = repo.getDataSource(alias);
 		String fileName;
 		
