@@ -19,8 +19,11 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
+import static it.bancaditalia.oss.vtl.util.Utils.SEQUENTIAL;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.ForkJoinTask.adapt;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinTask;
 import java.util.function.BinaryOperator;
 
@@ -31,7 +34,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.util.SerFunction;
-import it.bancaditalia.oss.vtl.util.Utils;
+import it.bancaditalia.oss.vtl.util.SerSupplier;
 
 /**
  * Helper class to parallelize over the two sides of a {@link BinaryTransformation}
@@ -59,11 +62,11 @@ public class ThreadUtils
 		return transformation -> {
 			LOGGER.trace("Extracting subexpressions from {}", transformation);
 			
-			if (Utils.SEQUENTIAL)
+			if (SEQUENTIAL)
 				return combiner.apply(leftExpr.apply(transformation), rightExpr.apply(transformation));
 			
-			ForkJoinTask<T> left = adapt(() -> leftExpr.apply(transformation)).fork();
-			ForkJoinTask<T> right = adapt(() -> rightExpr.apply(transformation)).fork();
+			ForkJoinTask<T> left = adapt(wrap(() -> leftExpr.apply(transformation))).fork();
+			ForkJoinTask<T> right = adapt(wrap(() -> rightExpr.apply(transformation))).fork();
 			
 			left.quietlyJoin();
 			right.quietlyJoin();
@@ -74,6 +77,23 @@ public class ThreadUtils
 				throw new VTLNestedException("While evaluating " + transformation, left.getException());
 			else
 				throw new VTLNestedException("While evaluating " + transformation, right.getException());
+		};
+	}
+
+	private static <T> Callable<T> wrap(SerSupplier<T> supplier)
+	{
+		ClassLoader loader = currentThread().getContextClassLoader();
+		return () -> {
+			ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+			try
+			{
+				Thread.currentThread().setContextClassLoader(loader);
+				return supplier.get();
+			}
+			finally
+			{
+				Thread.currentThread().setContextClassLoader(oldLoader);
+			}
 		};
 	}
 }

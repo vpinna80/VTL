@@ -274,19 +274,25 @@ vtlLogLevel <- function (level = c('debug', 'trace', 'info', 'warn', 'fatal', 'o
 #' @usage vtlAvailableEnvironments()
 #' @export
 vtlAvailableEnvironments <- function () {
-  envs <- tryCatch({
+  sparkEnv <- tryCatch({
     J("java.lang.Class")$forName("it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment")
     
     c(`Spark environment` = "it.bancaditalia.oss.vtl.impl.environment.spark.SparkEnvironment")
   }, error = \(e) character())
   
-  c(
+  envs <- c(
       `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
     , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
     , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
     , `Examples demo environment` = "it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment"
-    , envs
+    , sparkEnv
   )
+  
+  vtlTryCatch({
+    lapply(envs, J("java.lang.Class")$forName)
+  })
+  
+  return(envs)
 }
 
 #' @title Returns available VTL repositories.

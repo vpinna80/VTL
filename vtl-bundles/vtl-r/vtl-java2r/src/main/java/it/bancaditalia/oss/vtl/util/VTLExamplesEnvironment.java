@@ -133,12 +133,12 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		return SESSIONS.computeIfAbsent(new SimpleEntry<>(category, operator), k -> createExample(category, operator));
 	}
 	
-	private static URL computeJsonURL(String category, String operator)
+	public static URL computeJsonURL(String category, String operator)
 	{
 		return VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.json");
 	}
 	
-	private static URL computeCodeURL(String category, String operator)
+	public static URL computeCodeURL(String category, String operator)
 	{
 		return VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.vtl");
 	}

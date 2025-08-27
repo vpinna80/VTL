@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.config;
 
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
+import static java.lang.Thread.currentThread;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -183,7 +184,7 @@ public class ConfigurationManager
 	{
 		try
 		{
-			return Class.forName(className, true, Thread.currentThread().getContextClassLoader()).asSubclass(instanceClass).getDeclaredConstructor().newInstance();
+			return Class.forName(className, true, currentThread().getContextClassLoader()).asSubclass(instanceClass).getDeclaredConstructor().newInstance();
 		}
 		catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
 		{
