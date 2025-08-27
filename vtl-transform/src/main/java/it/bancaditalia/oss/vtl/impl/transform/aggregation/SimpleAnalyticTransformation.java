@@ -114,7 +114,7 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				throw new VTLException("Cannot order by " + orderingComponent.getAlias() + " because the component is used in partition by " + partitionBy);
 
 		WindowCriterion criterion = coalesce(windowCriterion, orderByClause.isEmpty() 
-				? RANGE_UNBOUNDED_PRECEDING_TO_CURRENT : DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING);
+				? DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING : RANGE_UNBOUNDED_PRECEDING_TO_CURRENT);
 		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, criterion);
 		
 		for (DataSetComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
