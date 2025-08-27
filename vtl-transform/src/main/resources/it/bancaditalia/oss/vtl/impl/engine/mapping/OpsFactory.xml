@@ -491,7 +491,7 @@
 		</nestedparam>
 		<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl">
 			<tokensetparam tokenset="WindowRangeType" />
-			<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
+			<caseparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
 				<case>
 					<context context="SignedInteger" ordinal="1" />
 					<tokensetparam name="dir" tokenset="WindowDirection" />
@@ -503,8 +503,8 @@
 					</tokens>
 					<tokensetparam name="dir" tokenset="WindowDirection" />
 				</case>
-			</customparam>
-			<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
+			</caseparam>
+			<caseparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
 				<case>
 					<context context="SignedInteger" ordinal="1" />
 					<tokensetparam name="dir" tokenset="WindowDirection" />
@@ -516,7 +516,7 @@
 					</tokens>
 					<tokensetparam name="dir" tokenset="WindowDirection" />
 				</case>
-			</customparam>
+			</caseparam>
 		</customparam>
 	</mapping>
 
@@ -601,14 +601,32 @@
 		</nestedparam>
 		<customparam name="windowingClause" class="it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl">
 			<tokensetparam tokenset="WindowRangeType" />
-			<customparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
-				<tokensetparam name="dir" tokenset="WindowDirection" />
-				<valueparam />
-			</customparam>
-			<customparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
-				<tokensetparam name="dir" tokenset="WindowDirection" />
-				<valueparam />
-			</customparam>
+			<caseparam name="from_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
+				<case>
+					<context context="SignedInteger" ordinal="1" />
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam ordinal="1" />
+				</case>
+				<case>
+					<tokens ordinal="1">
+						<value>UNBOUNDED</value>
+					</tokens>
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+				</case>
+			</caseparam>
+			<caseparam name="to_" class="it.bancaditalia.oss.vtl.impl.transform.util.LimitClause">
+				<case>
+					<context context="SignedInteger" ordinal="1" />
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+					<valueparam ordinal="1" />
+				</case>
+				<case>
+					<tokens ordinal="1">
+						<value>UNBOUNDED</value>
+					</tokens>
+					<tokensetparam name="dir" tokenset="WindowDirection" />
+				</case>
+			</caseparam>
 		</customparam>
 	</mapping>
 
@@ -634,7 +652,7 @@
 		<tokensetparam name="op" tokenset="AggregateOperator" />
 		<exprparam name="expr" />
 		<nestedparam name="groupingClause" type="groupby">
-			<customparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl">
+			<caseparam class="it.bancaditalia.oss.vtl.impl.transform.GroupingClauseImpl">
 				<case>
 					<tokens ordinal="2">
 						<value>BY</value>
@@ -654,7 +672,7 @@
 					<nullparam />
 					<valueparam name="STRING_CONSTANT" />
 				</case>
-			</customparam>
+			</caseparam>
 		</nestedparam>
 		<exprparam name="havingClause" />
 	</mapping>

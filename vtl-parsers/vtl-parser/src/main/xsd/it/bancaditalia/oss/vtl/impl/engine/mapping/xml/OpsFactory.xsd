@@ -216,6 +216,7 @@
 				<xs:element name="paramparam" type="paramparam" />
 				<xs:element name="typeparam" type="typeparam" />
 				<xs:element name="customparam" type="customparam" />
+				<xs:element name="caseparam" type="caseparam" />
 				<xs:element name="nestedparam" type="nestedparam" />
 			</xs:choice>
 		</xs:choice>
@@ -321,21 +322,30 @@
 	<xs:complexType name="customparam">
 		<xs:complexContent>
 			<xs:extension base="nonnullparam">
-				<xs:choice>
-					<xs:element name="case" minOccurs="2" maxOccurs="unbounded">
-						<xs:complexType>
-							<xs:sequence>
-								<xs:group ref="checks" minOccurs="1" maxOccurs="1" />
-								<xs:group ref="params" minOccurs="1" maxOccurs="unbounded" />
-							</xs:sequence>
-						</xs:complexType>
-					</xs:element>
-					<xs:group ref="params" minOccurs="1" maxOccurs="unbounded" />
-				</xs:choice>
+				<xs:group ref="params" minOccurs="1" maxOccurs="unbounded" />
 				<xs:attribute name="class" type="xs:string" use="required" />
 				<xs:attribute name="method" type="xs:string" />
 			</xs:extension>
 		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="caseparam">
+		<xs:complexContent>
+			<xs:extension base="nonnullparam">
+				<xs:sequence>
+					<xs:element name="case" type="case" minOccurs="2" maxOccurs="unbounded" />
+				</xs:sequence>
+				<xs:attribute name="class" type="xs:string" use="required" />
+				<xs:attribute name="method" type="xs:string" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="case">
+		<xs:sequence>
+			<xs:group ref="checks" minOccurs="1" maxOccurs="1" />
+			<xs:group ref="params" minOccurs="1" maxOccurs="unbounded" />
+		</xs:sequence>
 	</xs:complexType>
 
 	<xs:complexType name="nestedparam">

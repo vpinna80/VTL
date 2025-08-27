@@ -22,6 +22,7 @@ package it.bancaditalia.oss.vtl.impl.engine.mapping;
 import static it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Type.GROUPBY;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -66,12 +67,13 @@ import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedContextException;
 import it.bancaditalia.oss.vtl.impl.engine.exceptions.VTLUnmappedTokenException;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Aliasparam;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Case;
+import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Caseparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Check;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Componentparamtype;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Context;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Contextcheck;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Customparam;
-import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Customparam.Case;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Datasetparamtype;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Exprparam;
 import it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Listparam;
@@ -174,6 +176,7 @@ public class OpsFactory implements Serializable
 		paramMappers.put(Mapparam.class, (ParamBuilder<Mapparam>) this::parseMapParam);
 		paramMappers.put(Nestedparam.class, (ParamBuilder<Nestedparam>) this::parseNestedParam);
 		paramMappers.put(Customparam.class, (ParamBuilder<Customparam>) this::parseCustomParam);
+		paramMappers.put(Caseparam.class, (ParamBuilder<Caseparam>) this::parseCaseParam);
 		paramMappers.put(Exprparam.class, (ParamBuilder<Exprparam>) this::parseExprParam);
 		paramMappers.put(Paramparam.class, (ParamBuilder<Paramparam>) this::parseParamParam);
 		paramMappers.put(Typeparam.class, (ParamBuilder<Typeparam>) this::parseTypeParam);
@@ -568,11 +571,11 @@ public class OpsFactory implements Serializable
 				LOGGER.trace("|{}>> {}: {} from same context", tabs, ctxClass, paramClassName);
 
 			@SuppressWarnings("unchecked")
-			ParamBuilder<P> contextParser = (ParamBuilder<P>) paramMappers.get(paramClass);
-			if (contextParser == null)
+			ParamBuilder<P> paramParser = (ParamBuilder<P>) paramMappers.get(paramClass);
+			if (paramParser == null)
 				throw new IllegalStateException("Not implemented: " + paramClassName);
 				
-			result = contextParser.apply(ctx, currentGroupBy, level, (P) param);
+			result = paramParser.apply(ctx, currentGroupBy, level, (P) param);
 
 			if (param.getName() != null)
 				LOGGER.trace("|{}<< {}: {} from subrule '{}' yield {}", tabs, ctxClass, paramClassName, param.getName(), result);
@@ -650,47 +653,26 @@ public class OpsFactory implements Serializable
 
 	private Object parseCustomParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Customparam customParam)
 	{
-		ParserRuleContext customCtx = null;
-		List<Param> innerParams = null;
-		List<Object> args = null;
-		Class<?> customClass = null;
 		try
 		{
 			// get the nested context by looking up the name attribute of nestedparam in current context
-			customCtx = getFieldOrMethod(customParam, ctx, ParserRuleContext.class, level);
+			ParserRuleContext customCtx = getFieldOrMethod(customParam, ctx, ParserRuleContext.class, level);
 			
 			if (customCtx == null)
 				return null;
 			
-			List<Serializable> customSpec = customParam.getCaseOrNullparamOrAliasparam();
-			if (!customSpec.isEmpty() && customSpec.get(0).getClass() == Case.class)
+			List<Param> innerParams = customParam.getParams();
+			List<Object> args = new ArrayList<>(innerParams.size());
+			for (Param inner: innerParams)
 			{
-				Case found = null;
-				@SuppressWarnings("unchecked")
-				List<Case> cases = (List<Case>) (List<?>) customSpec;
-				for (Case c: cases)
-					if (found == null && checkMapping(c.getChecks(), customCtx))
-						found = c;
-				
-				if (found != null)
-					innerParams = found.getParams();
-				else
-					throw new IllegalStateException("No matching cases for customparam");
-			}
-			else
-				innerParams = customSpec.stream().map(Param.class::cast).collect(toList());
-			
-			args = new ArrayList<>(innerParams.size());
-			for (Param child : innerParams)
-			{
-				Object arg = parseGenericParam(customCtx, currentGroupBy, level + 1, child);
-				if (child instanceof Nestedparam)
+				Object arg = parseGenericParam(customCtx, currentGroupBy, level + 1, inner);
+				if (inner instanceof Nestedparam)
 					args.addAll((Collection<?>) arg);
 				else
 					args.add(arg);
 			}
 			
-			customClass = Class.forName(customParam.getClazz());
+			Class<?> customClass = Class.forName(customParam.getClazz());
 			if (customParam.getMethod() != null)
 				return Arrays.stream(customClass.getMethods())
 						.filter(m -> m.getName().equals(customParam.getMethod()))
@@ -714,6 +696,66 @@ public class OpsFactory implements Serializable
 				}
 			
 			throw new NoSuchMethodException("Method not found for " + ctx.getClass().getSimpleName() + ": " + customParam.getMethod());
+		}
+		catch (Exception e)
+		{
+			throw new VTLParsingException(ctx, e);
+		}
+	}
+
+	private Object parseCaseParam(ParserRuleContext ctx, GroupingClause currentGroupBy, int level, Caseparam caseParam)
+	{
+		try
+		{
+			// get the nested context by looking up the name attribute of nestedparam in current context
+			ParserRuleContext customCtx = getFieldOrMethod(caseParam, ctx, ParserRuleContext.class, level);
+			
+			if (customCtx == null)
+				return null;
+			
+			Case found = null;
+			for (Case c: coalesce(caseParam.getCase(), List.<Case>of()))
+				if (found == null && checkMapping(c.getChecks(), customCtx))
+					found = c;
+			
+			if (found == null)
+				throw new IllegalStateException("No matching cases for customparam");
+			
+			List<Param> innerParams = found.getParams();
+			List<Object> args = new ArrayList<>(innerParams.size());
+			for (Param child : innerParams)
+			{
+				Object arg = parseGenericParam(customCtx, currentGroupBy, level + 1, child);
+				if (child instanceof Nestedparam)
+					args.addAll((Collection<?>) arg);
+				else
+					args.add(arg);
+			}
+			
+			Class<?> caseClass = Class.forName(caseParam.getClazz());
+			if (caseParam.getMethod() != null)
+				return Arrays.stream(caseClass.getMethods())
+						.filter(m -> m.getName().equals(caseParam.getMethod()))
+						.findAny()
+						.orElseThrow(() -> new NoSuchMethodException(caseParam.getMethod()))
+						.invoke(null, args.toArray());
+			else
+				for (Constructor<?> ctor: caseClass.getConstructors())
+				{					
+					Class<?>[] types = ctor.getParameterTypes();
+					boolean bad = types.length != args.size();
+					for (int i = 0; !bad && i < ctor.getParameterCount(); i++)
+					{
+						Object ith = args.get(i);
+						if (ith != null && !types[i].isAssignableFrom(ith.getClass()))
+							bad = true;
+					}
+					
+					if (!bad)
+						return ctor.newInstance(args.toArray());
+				}
+			
+			throw new NoSuchMethodException("Method not found for " + ctx.getClass().getSimpleName() + ": " + caseParam.getMethod());
 		}
 		catch (Exception e)
 		{
