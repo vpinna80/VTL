@@ -100,24 +100,33 @@ public class VTLSessionImpl implements VTLSession
 		this(new StringReader(code), null);
 	}
 
+	// The reader is always closed on returning
 	public VTLSessionImpl(Reader reader) throws IOException, ClassNotFoundException
 	{
 		this(reader, null);
 	}
 
+	// The reader is always closed on returning
 	public VTLSessionImpl(Reader reader, VTLConfiguration configuration) throws IOException, ClassNotFoundException
 	{
-		StringWriter writer = new StringWriter();
-		char[] buffer = new char[1048576];
-		int read = 0;
-		while ((read = reader.read(buffer)) >= 0)
-			writer.write(buffer, 0, read);
-		writer.flush();
+		try
+		{
+			StringWriter writer = new StringWriter();
+			char[] buffer = new char[1048576];
+			int read = 0;
+			while ((read = reader.read(buffer)) >= 0)
+				writer.write(buffer, 0, read);
+			writer.flush();
 		
-		this.configuration = configuration != null ? new VTLConfiguration(configuration) : newConfiguration();
-		this.code = writer.toString();
-		
-		LOGGER.info("Created new VTL session.");
+			this.configuration = configuration != null ? new VTLConfiguration(configuration) : newConfiguration();
+			this.code = writer.toString();
+			
+			LOGGER.info("Created new VTL session.");
+		}
+		finally
+		{
+			reader.close();
+		}
 	}
 
 	@Override

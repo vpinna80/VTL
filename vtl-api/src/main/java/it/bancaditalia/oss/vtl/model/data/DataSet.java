@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -66,6 +68,13 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public Stream<DataPoint> stream();
 
 	/**
+	 * Obtains an {@link Iterator} over the {@link DataPoint}s in the this DataSet.
+	 * 
+	 * NOTE: invoking this method may cause the invoking thread to deadlock if
+	 * files must be opened to retrieve data points. To avoid deadlocks, first
+	 * obtain a {@link DataSet#stream()} through a try-with-resources, then 
+	 * obtain the iterator from that.
+	 * 
 	 * @return an {@link Iterator} of this dataset's {@link DataPoint}s.
 	 * The iterating order is undefined and may change on subsequent invocations.
 	 */
@@ -73,6 +82,38 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public default Iterator<DataPoint> iterator()
 	{
 		return stream().iterator();
+	}
+	
+	/**
+	 * Obtains a {@link Spliterator} over the {@link DataPoint}s in the this DataSet.
+	 * 
+	 * NOTE: invoking this method may cause the invoking thread to deadlock if
+	 * files must be opened to retrieve data points. To avoid deadlocks, first
+	 * obtain a {@link DataSet#stream()} through a try-with-resources, then 
+	 * obtain the spliterator from that.
+	 * 
+	 * @return an {@link Spliterator} of this dataset's {@link DataPoint}s.
+	 * The spliterator characteristics may vary depending on this DataSet input source.
+	 */
+	@Override
+	public default Spliterator<DataPoint> spliterator()
+	{
+		return stream().spliterator();
+	}
+
+    /**
+     * Performs the given action for each {@link DataPoint} in this DataSet.
+     * The processing order is not specified and may change over 
+     * subsequent invocations.
+     *
+     * @param action The action to be performed for each element
+     */
+	public default void forEach(Consumer<? super DataPoint> action)
+	{
+		try (Stream<DataPoint> stream = stream())
+		{
+			stream.forEach(action);
+		}
 	}
 
 	/**

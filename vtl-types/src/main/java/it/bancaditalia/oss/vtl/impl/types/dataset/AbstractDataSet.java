@@ -403,6 +403,6 @@ public abstract class AbstractDataSet implements DataSet
 			seen.clear();
 		}
 	}
-
+	
 	protected abstract Stream<DataPoint> streamDataPoints();
 }
