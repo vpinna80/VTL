@@ -210,6 +210,11 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-envdocs</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-sdmxenv</artifactId>
 				<version>${project.version}</version>
 			</dependency>

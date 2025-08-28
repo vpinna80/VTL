@@ -20,14 +20,18 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.DATAPOINTS;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.teeing;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toConcurrentSet;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
@@ -35,6 +39,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.lang.ref.SoftReference;
+import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,12 +56,14 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
@@ -76,8 +83,8 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 	private final DataSet source;
 	private final Set<? extends DataSetComponent<?, ?, ?>> partitionIds;
 	private final Comparator<DataPoint> orderBy;
-	private final int inf;
-	private final int sup;
+	private final List<SortCriterion> sortCriteria;
+	private final WindowCriterion window;
 	private final SerUnaryOperator<Lineage> lineageOp;
 	private final DataSetComponent<?, ?, ?> destComponent;
 	private final SerFunction<DataPoint, T> extractor;
@@ -85,6 +92,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 	private final SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher;
 
 	private final transient WeakHashMap<DataSet, SoftReference<Collection<DataPoint[]>>> cache;
+
 
 	public AnalyticDataSet(DataSet source, DataSetStructure structure, SerUnaryOperator<Lineage> lineageOp, WindowClause clause,
 			DataSetComponent<?, ?, ?> srcComponent, DataSetComponent<?, ?, ?> destComponent,
@@ -100,7 +108,9 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		this.extractor = coalesce(extractor, dp -> (T) dp.get(srcComponent));
 		this.collector = collector;
 		this.partitionIds = clause.getPartitioningComponents();
+		this.sortCriteria = clause.getSortCriteria();
 		this.finisher = finisher;
+		this.window = clause.getWindowCriterion();
 		
 		this.orderBy = (dp1, dp2) -> {
 				for (SortCriterion criterion: clause.getSortCriteria())
@@ -114,18 +124,6 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 				return 0;
 			};
 
-		WindowCriterion window = clause.getWindowCriterion();
-		if (window != null)
-		{
-			LimitCriterion infBound = window.getInfBound(), supBound = window.getSupBound();
-			inf = (infBound.getDirection() == PRECEDING ? -1 : 1) * (int) infBound.getCount(); 
-			sup = (supBound.getDirection() == PRECEDING ? -1 : 1) * (int) supBound.getCount();
-		}
-		else
-		{
-			inf = Integer.MIN_VALUE;
-			sup = Integer.MAX_VALUE;
-		}
 
 		this.cache = CACHES.computeIfAbsent(new SimpleEntry<>(partitionIds, clause.getSortCriteria()), c -> {
 			LOGGER.info("Creating cache for partitioning {}{} with clause #{}", source.getClass().getSimpleName(), source.getMetadata(), clause.hashCode());
@@ -191,9 +189,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		if (LOGGER.isTraceEnabled())
 			Arrays.stream(partition).forEach(dp -> LOGGER.trace("\tcontaining {}", dp));
 		
-		IntStream indexes = IntStream.range(0, partition.length);
-		if (!Utils.SEQUENTIAL)
-			indexes = indexes.parallel();
+		IntStream indexes = Utils.getStream(partition.length);
 		
 		// performance shortcut for single-valued analytic functions 
 		Stream<Entry<TT, DataPoint>> exploded = indexes.mapToObj(index -> applyToWindow(partition, index));
@@ -221,15 +217,141 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 	// computes the result(s) for a component in a given row of the window
 	private Entry<TT, DataPoint> applyToWindow(DataPoint[] partition, int index)
 	{
-		int safeInf = max(0, safeSum(index, inf));
-		int safeSup = 1 + min(partition.length - 1, safeSum(index, sup));
+		LimitCriterion infBound = window.getInfBound();
+		LimitCriterion supBound = window.getSupBound();
+
+		int inf, sup;
 		
-		Stream<DataPoint> window = safeInf < safeSup ? Arrays.stream(partition, safeInf, safeSup) : Stream.empty();
-		
-		LOGGER.trace("\tAnalysis over {} datapoints for datapoint {}", safeSup - safeInf, partition[index]);
-		var processed = processSingleComponent(partition[index], window);
-		
-		return new SimpleEntry<>(processed, partition[index]);
+		if (window.getType() == DATAPOINTS)
+		{
+			if (infBound.isUnbounded())
+				inf = 0;
+			else
+			{
+				int safeInf = (infBound.getDirection() == PRECEDING ? -1 : 1) * (int) infBound.getCount(); 
+				inf = infBound.isUnbounded() ? 0 : max(0, index + safeInf);
+			}
+
+			if (supBound.isUnbounded())
+				sup = partition.length;
+			else
+			{
+				int safeSup = (supBound.getDirection() == PRECEDING ? -1 : 1) * (int) supBound.getCount();
+				sup = supBound.isUnbounded() ? partition.length : min(partition.length, 1 + index + safeSup);
+			}
+		}
+		else
+		{
+			if (sortCriteria.size() == 0)
+			{
+				inf = 0;
+				sup = partition.length;
+			}
+			else if ((infBound.isUnbounded() || infBound.getCount() == 0) && 
+				(supBound.isUnbounded() || supBound.getCount() == 0))
+			{
+				Set<DataSetComponent<?, ?, ?>> comps = sortCriteria.stream().map(SortCriterion::getComponent).collect(toSet());
+				
+				if (infBound.isUnbounded())
+					inf = 0;
+				else if (infBound.getCount() == 0)
+				{
+					Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> refValues = partition[index].getValues(comps);
+					
+					inf = index;
+					while (inf >= 0)
+					{
+						if (!refValues.equals(partition[inf].getValues(comps)))
+							break;
+						
+						inf--;
+					}
+				}
+				else
+					throw new InvalidParameterException("The frame specification is invalid: " + window);
+				
+				if (supBound.isUnbounded())
+					sup = partition.length;
+				else if (supBound.getCount() == 0)
+				{
+					Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> refValues = partition[index].getValues(comps);
+					
+					sup = index;
+					while (sup < partition.length)
+					{
+						if (!refValues.equals(partition[sup].getValues(comps)))
+							break;
+						
+						sup++;
+					}
+				}
+				else
+					throw new InvalidParameterException("The frame specification is invalid: " + window);
+			}
+			else if (sortCriteria.size() == 1)
+			{
+				SortCriterion sortCriterion = sortCriteria.get(0);
+				DataSetComponent<?, ?, ?> sortKey = sortCriterion.getComponent();
+				if (!(sortKey instanceof NumberDomainSubset))
+					throw new VTLIncompatibleTypesException(window.toString(), sortKey, NUMBERDS);
+				
+				double currentKeyValue = ((Number) partition[index].get(sortKey).get()).doubleValue();
+
+				if (infBound.isUnbounded())
+					inf = 0;
+				else
+				{
+					boolean direction = infBound.getDirection() == PRECEDING ^ sortCriterion.getMethod() == DESC;
+					int increment = direction ? -1 : 1;
+					double rangeInf = currentKeyValue + increment * (int) infBound.getCount();
+					
+					inf = index;
+					while (inf >= 0 && inf < partition.length)
+					{
+						if (direction && ((Number) partition[inf].get(sortKey).get()).doubleValue() < rangeInf)
+							break;
+						else if (!direction && ((Number) partition[inf].get(sortKey).get()).doubleValue() > rangeInf)
+							break;
+
+						inf += increment;
+					}
+				}
+
+				if (supBound.isUnbounded())
+					sup = partition.length;
+				else
+				{
+					boolean direction = supBound.getDirection() == PRECEDING ^ sortCriterion.getMethod() == DESC;
+					int increment = direction ? -1 : 1;
+					double rangeSup = currentKeyValue + increment * (int) supBound.getCount();
+					
+					sup = index;
+					while (sup >= 0 && sup < partition.length)
+					{
+						if (direction && ((Number) partition[sup].get(sortKey).get()).doubleValue() < rangeSup)
+							break;
+						else if (!direction && ((Number) partition[sup].get(sortKey).get()).doubleValue() > rangeSup)
+							break;
+
+						sup += increment;
+					}
+				}
+				
+				if (sup < inf)
+				{
+					int tmp = sup;
+					sup = inf;
+					inf = tmp;
+				}
+			}
+			else
+				throw new InvalidParameterException("The frame specification is invalid: " + window);
+		}
+
+		LOGGER.trace("\tAnalysis over {} datapoints for datapoint {}", sup - inf, partition[index]);
+		Stream<DataPoint> frame = inf < sup ? Arrays.stream(partition, inf, sup) : Stream.empty();
+
+		return new SimpleEntry<>(processSingleComponent(partition[index], frame), partition[index]);
 	}
 	
 	private TT processSingleComponent(DataPoint dp, Stream<DataPoint> window)
@@ -249,19 +371,5 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 			});
 		
 		return window.map(extractor).collect(withFinisher);
-	}
-
-	protected static int safeInc(int a)
-	{
-		return safeSum(a, 1);
-	}
-
-	/*
-	 * Detects overflows in sum and caps it to Integer.MAX_VALUE 
-	 */
-	protected static int safeSum(int x, int y)
-	{
-		int r = x + y;
-		return ((x ^ r) & (y ^ r)) < 0 ? Integer.MAX_VALUE : r;
 	}
 }

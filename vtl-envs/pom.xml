@@ -52,6 +52,7 @@
 	<modules>
 		<module>vtl-envbase</module>
 		<module>vtl-envsamples</module>
+		<module>vtl-envdocs</module>
 	</modules>
 
 	<build>

@@ -81,6 +81,10 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-envdocs</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-metabase</artifactId>
 		</dependency>
 		<dependency>

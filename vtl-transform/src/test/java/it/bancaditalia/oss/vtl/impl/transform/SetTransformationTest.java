@@ -19,8 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform;
 
-import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE10;
-import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE5;
+import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE10;
+import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE5;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.INTERSECT;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.SETDIFF;
 import static it.bancaditalia.oss.vtl.impl.transform.ops.SetTransformation.SetOperator.SYMDIFF;

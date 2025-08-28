@@ -51,7 +51,7 @@
 		</dependency>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
-			<artifactId>vtl-samples</artifactId>
+			<artifactId>vtl-envsamples</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

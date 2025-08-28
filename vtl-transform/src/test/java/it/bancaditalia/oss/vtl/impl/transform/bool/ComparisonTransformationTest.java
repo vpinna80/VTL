@@ -36,7 +36,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets;
+import it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets;
 import it.bancaditalia.oss.vtl.impl.transform.VarIDOperand;
 import it.bancaditalia.oss.vtl.impl.transform.testutils.TestUtils;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;

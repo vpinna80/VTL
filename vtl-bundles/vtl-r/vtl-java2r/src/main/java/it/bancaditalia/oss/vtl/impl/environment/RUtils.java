@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
 
+import it.bancaditalia.oss.vtl.session.VTLSession;
+
 public class RUtils
 {
 	public static final Rengine RENGINE = new Rengine();
@@ -67,6 +69,11 @@ public class RUtils
 		System.setErr(new PrintStream(new WrappedOS(RENGINE, 1)));
 	}
 
+	public static synchronized VTLSession createSession(String category, String operator)
+	{
+		return DocsExamplesSupport.createSession(category, operator);
+	}
+
 	public static String getURLContents(String url) throws MalformedURLException, IOException
 	{
 		if (url == null || url.isBlank())
@@ -76,6 +83,5 @@ public class RUtils
 		{
 			return reader.lines().collect(Collectors.joining(lineSeparator()));
 		}
-			 
 	}
 }

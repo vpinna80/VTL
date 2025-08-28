@@ -51,7 +51,7 @@ VTLSession <- R6Class("VTLSession",
         
       tryCatch({
         if (is.character(category) && length(category) == 1 && nchar(category) != 0) {
-          exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
+          exampleEnv <- J("it.bancaditalia.oss.vtl.impl.environment.RUtils")
           private$instance <- exampleEnv$createSession(category, name)
           self$text <- private$instance$getOriginalCode()
         } else {

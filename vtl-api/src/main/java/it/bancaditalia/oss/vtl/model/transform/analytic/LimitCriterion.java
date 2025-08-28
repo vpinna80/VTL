@@ -41,4 +41,11 @@ public interface LimitCriterion
 	 * @return The distance of the bound from current data point
 	 */
 	public int getCount();
+
+	/**
+	 * Tests if this {@link LimitCriterion} is of the form UNBOUNDED PRECEDING or UNBOUNDED FOLLOWING
+	 * 
+	 * @return true if the coondition holds
+	 */
+	public boolean isUnbounded();
 }

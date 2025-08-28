@@ -22,10 +22,15 @@ package it.bancaditalia.oss.vtl.impl.transform.util;
 import static it.bancaditalia.oss.vtl.impl.transform.util.LimitClause.CURRENT_DATA_POINT;
 import static it.bancaditalia.oss.vtl.impl.transform.util.LimitClause.UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.transform.util.LimitClause.UNBOUNDED_PRECEDING;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.FOLLOWING;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.DATAPOINTS;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
+import java.security.InvalidParameterException;
+import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion;
@@ -47,9 +52,14 @@ public class WindowCriterionImpl implements WindowCriterion, Serializable
 
 	public WindowCriterionImpl(LimitType type, LimitCriterion infBound, LimitCriterion supBound)
 	{
-		this.type = type;
-		this.infBound = infBound;
-		this.supBound = supBound;
+		this.type = requireNonNull(type);
+		this.infBound = requireNonNull(infBound);
+		this.supBound = requireNonNull(supBound);
+		
+		if (infBound.isUnbounded() && infBound.getDirection() == FOLLOWING)
+			throw new InvalidParameterException("The frame specification is invalid: " + infBound);
+		if (supBound.isUnbounded() && supBound.getDirection() == PRECEDING)
+			throw new InvalidParameterException("The frame specification is invalid: " + supBound);
 	}
 
 	@Override
@@ -79,12 +89,7 @@ public class WindowCriterionImpl implements WindowCriterion, Serializable
 	@Override
 	public int hashCode()
 	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((infBound == null) ? 0 : infBound.hashCode());
-		result = prime * result + ((supBound == null) ? 0 : supBound.hashCode());
-		result = prime * result + ((type == null) ? 0 : type.hashCode());
-		return result;
+		return Objects.hash(infBound, supBound, type);
 	}
 
 	@Override
@@ -97,22 +102,6 @@ public class WindowCriterionImpl implements WindowCriterion, Serializable
 		if (getClass() != obj.getClass())
 			return false;
 		WindowCriterionImpl other = (WindowCriterionImpl) obj;
-		if (infBound == null)
-		{
-			if (other.infBound != null)
-				return false;
-		}
-		else if (!infBound.equals(other.infBound))
-			return false;
-		if (supBound == null)
-		{
-			if (other.supBound != null)
-				return false;
-		}
-		else if (!supBound.equals(other.supBound))
-			return false;
-		if (type != other.type)
-			return false;
-		return true;
+		return type == other.type && Objects.equals(infBound, other.infBound) && Objects.equals(supBound, other.supBound);
 	}
 }

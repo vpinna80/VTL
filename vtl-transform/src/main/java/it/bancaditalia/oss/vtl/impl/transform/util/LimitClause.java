@@ -21,9 +21,11 @@ package it.bancaditalia.oss.vtl.impl.transform.util;
 
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.FOLLOWING;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion.LimitDirection.PRECEDING;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.util.Objects;
 
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
@@ -64,7 +66,7 @@ public class LimitClause implements LimitCriterion, Serializable
 		if (count < 0)
 			throw new InvalidParameterException("In a window clause of an analytic invocation, limit count must be non-negative, but it is " + count);
 		
-		this.direction = direction;
+		this.direction = requireNonNull(direction);
 		this.count = count;
 	}
 
@@ -74,6 +76,12 @@ public class LimitClause implements LimitCriterion, Serializable
 		return direction;
 	}
 
+	@Override
+	public boolean isUnbounded()
+	{
+		return count == Integer.MAX_VALUE;
+	}
+	
 	@Override
 	public int getCount()
 	{
@@ -85,7 +93,7 @@ public class LimitClause implements LimitCriterion, Serializable
 	{
 		if (count == 0)
 			return "current data point";
-		else if (count == Long.MAX_VALUE)
+		else if (count == Integer.MAX_VALUE)
 			return "unbounded " + direction.toString().toLowerCase();
 		else
 			return count + " " + direction.toString().toLowerCase();
@@ -94,11 +102,7 @@ public class LimitClause implements LimitCriterion, Serializable
 	@Override
 	public int hashCode()
 	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (count ^ (count >>> 32));
-		result = prime * result + ((direction == null) ? 0 : direction.hashCode());
-		return result;
+		return Objects.hash(count, direction);
 	}
 
 	@Override
@@ -111,10 +115,6 @@ public class LimitClause implements LimitCriterion, Serializable
 		if (getClass() != obj.getClass())
 			return false;
 		LimitClause other = (LimitClause) obj;
-		if (count != other.count)
-			return false;
-		if (direction != other.direction)
-			return false;
-		return true;
+		return count == other.count && direction == other.direction;
 	}
 }

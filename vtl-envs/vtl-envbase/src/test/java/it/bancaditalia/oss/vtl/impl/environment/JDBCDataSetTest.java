@@ -19,9 +19,9 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment;
 
-import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE10;
-import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE5;
-import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE6;
+import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE10;
+import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE5;
+import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE6;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;

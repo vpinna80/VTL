@@ -17,16 +17,12 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.impl.environment.docs;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
-import static it.bancaditalia.oss.vtl.config.ConfigurationManager.newConfiguration;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.registerSupportedProperties;
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
-import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_REQUIRED;
 import static it.bancaditalia.oss.vtl.impl.environment.util.CSVParseUtils.mapValue;
-import static it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository.JSON_METADATA_URL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
@@ -34,20 +30,16 @@ import static java.util.stream.Collectors.toList;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidParameterException;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -56,15 +48,12 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.bancaditalia.oss.vtl.config.VTLConfiguration;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingValueException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
-import it.bancaditalia.oss.vtl.impl.meta.json.JsonMetadataRepository;
-import it.bancaditalia.oss.vtl.impl.session.VTLSessionImpl;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
@@ -78,14 +67,12 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
-import it.bancaditalia.oss.vtl.session.VTLSession;
 
 public class VTLExamplesEnvironment implements Environment, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(VTLExamplesEnvironment.class);
 	private static final Pattern TOKEN_PATTERN = Pattern.compile("(?<=,|\r\n|\n|^)(\"(?:\"\"|[^\"])*\"|([^\",\r\n]*))(?=,|\r\n|\n|$)");
-	private static final Map<Entry<String, String>, VTLSession> SESSIONS = new HashMap<>();
 	private static final Map<String, List<String>> OPERATORS = new LinkedHashMap<>();
 	private static final Set<String> EXCLUDED_OPERATORS = Set.of("Pivoting", "Random", "Persistent assignment", 
 		"Duration to number days", "Fill time series", "Number days to duration");
@@ -128,11 +115,6 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		return OPERATORS.get(category);
 	}
 	
-	public static synchronized VTLSession createSession(String category, String operator)
-	{
-		return SESSIONS.computeIfAbsent(new SimpleEntry<>(category, operator), k -> createExample(category, operator));
-	}
-	
 	public static URL computeJsonURL(String category, String operator)
 	{
 		return VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.json");
@@ -142,31 +124,6 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	{
 		return VTLExamplesEnvironment.class.getResource("examples/" + category + "/" + operator + "/examples.vtl");
 	}
-	
-	private static Reader retrieveCode(String category, String operator) throws IOException
-	{
-		return new InputStreamReader(computeCodeURL(category, operator).openStream(), UTF_8);
-	}
-
-	private static VTLSession createExample(String category, String operator)
-	{
-		try
-		{
-			LOGGER.info("Initializing metadata for {}", operator);
-			VTLConfiguration config = newConfiguration();
-			config.setPropertyValue(METADATA_REPOSITORY, JsonMetadataRepository.class);
-			config.setPropertyValue(JSON_METADATA_URL, computeJsonURL(category, operator));
-			config.setPropertyValue(ENVIRONMENT_IMPLEMENTATION, VTLExamplesEnvironment.class);
-			config.setPropertyValue(EXAMPLES_CATEGORY, category);
-			config.setPropertyValue(EXAMPLES_OPERATOR, operator);
-			
-			return new VTLSessionImpl(retrieveCode(category, operator), config);
-		}
-		catch (IOException | ClassNotFoundException | SecurityException | IllegalArgumentException e)
-		{
-			throw new RuntimeException(e);
-		}
-	}
 
 	private final String[][] inputs;
 	
@@ -175,7 +132,7 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 		this(getLocalPropertyValue(EXAMPLES_CATEGORY), getLocalPropertyValue(EXAMPLES_OPERATOR));
 	}
 	
-	private VTLExamplesEnvironment(String category, String operator) throws IOException, URISyntaxException
+	public VTLExamplesEnvironment(String category, String operator) throws IOException, URISyntaxException
 	{
 		if (category == null || category.isBlank())
 			throw new InvalidParameterException("Example category not specified.");

@@ -17,14 +17,13 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment;
+package it.bancaditalia.oss.vtl.impl.environment.samples;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;

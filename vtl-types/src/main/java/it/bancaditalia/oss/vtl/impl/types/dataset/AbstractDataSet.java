@@ -20,7 +20,6 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
-import static it.bancaditalia.oss.vtl.model.transform.analytic.WindowCriterion.LimitType.RANGE;
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.mapping;
@@ -266,9 +265,6 @@ public abstract class AbstractDataSet implements DataSet
 	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataSetComponent<?, ?, ?> sourceComp, DataSetComponent<?, ?, ?> destComp, WindowClause clause,
 			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
-		if (clause.getWindowCriterion() != null && clause.getWindowCriterion().getType() == RANGE)
-			throw new UnsupportedOperationException("Range windows are not implemented in analytic invocation");
-
 		DataSetStructure newStructure = new DataSetStructureBuilder(getMetadata())
 				.addComponent(destComp)
 				.build();

@@ -19,7 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.string;
 
-import static it.bancaditalia.oss.vtl.impl.data.samples.SampleDataSets.SAMPLE13;
+import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE13;
 import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator.LCASE;
 import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator.LTRIM;
 import static it.bancaditalia.oss.vtl.impl.transform.string.StringUnaryTransformation.StringOperator.RTRIM;

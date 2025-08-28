@@ -17,11 +17,11 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.util;
+package it.bancaditalia.oss.vtl.impl.environment;
 
-import static it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment.createSession;
-import static it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment.getCategories;
-import static it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment.getOperators;
+import static it.bancaditalia.oss.vtl.impl.environment.DocsExamplesSupport.createSession;
+import static it.bancaditalia.oss.vtl.impl.environment.docs.VTLExamplesEnvironment.getCategories;
+import static it.bancaditalia.oss.vtl.impl.environment.docs.VTLExamplesEnvironment.getOperators;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.session.VTLSession;
 
-public class VTLExamplesEnvironmentTest
+public class DocsExampleSessionsTest
 {
 	public static Stream<Arguments> getOperatorsTest() throws IOException
 	{

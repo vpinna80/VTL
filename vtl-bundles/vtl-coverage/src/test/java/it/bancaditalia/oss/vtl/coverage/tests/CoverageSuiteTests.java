@@ -89,12 +89,12 @@ public class CoverageSuiteTests
 	}
 	
 	private static final int REPETITIONS = 5;
-	private static final Path TEST_ROOT;
-	private static final Path EXAMPLES_ROOT;
 	private static final Set<TestType> TO_RUN = Set.of(T, E, TS, ES);
 	private static final Set<String> SKIP_OPS = Set.of("Random", "Duration to number days", "Number days to duration");
 	private static final Set<String> RUN_ONLY = Set.of();
 	private static final boolean TOTAL_REPORT = true;
+	private static final Path EXAMPLES_ROOT;
+	private static final Path TEST_ROOT;
 	
 	static 
 	{
