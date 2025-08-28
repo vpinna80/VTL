@@ -19,8 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.bool;
 
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE3;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE4;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE3;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE4;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.AND;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.OR;
 import static it.bancaditalia.oss.vtl.impl.transform.bool.BooleanTransformation.BooleanBiOperator.XOR;

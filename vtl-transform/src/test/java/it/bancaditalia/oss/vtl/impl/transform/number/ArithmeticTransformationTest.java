@@ -19,8 +19,8 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.number;
 
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE1;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE2;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE1;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE2;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIV;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.MOD;

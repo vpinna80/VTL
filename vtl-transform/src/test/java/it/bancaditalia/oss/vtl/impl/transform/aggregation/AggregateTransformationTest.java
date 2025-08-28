@@ -19,10 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE16;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE17;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE5;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleDataSets.SAMPLE6;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE16;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE17;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE5;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleDataSets.SAMPLE6;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.COUNT;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AggregateOperator.MAX;

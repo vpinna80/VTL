@@ -17,30 +17,30 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.samples;
+package it.bancaditalia.oss.vtl.impl.environment.sampledata;
 
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleValues.VAR_SAMPLE_LEN;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_BOOLEAN_1;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_DATE_1;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_DATE_2;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_DATE_3;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_STRING_1;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_STRING_3;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_STRING_5;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_STRING_6;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.IDENT_STRING_7;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_BOOLEAN_1;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_BOOLEAN_2;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_BOOLEAN_3;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_BOOLEAN_4;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_INTEGER_1;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_INTEGER_2;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_INTEGER_3;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_NUMBER_1;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_NUMBER_2;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_STRING_3;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_STRING_4;
-import static it.bancaditalia.oss.vtl.impl.environment.samples.SampleVariables.MEASURE_STRING_8;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleValues.VAR_SAMPLE_LEN;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_BOOLEAN_1;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_DATE_1;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_DATE_2;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_DATE_3;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_STRING_1;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_STRING_3;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_STRING_5;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_STRING_6;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.IDENT_STRING_7;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_BOOLEAN_1;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_BOOLEAN_2;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_BOOLEAN_3;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_BOOLEAN_4;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_INTEGER_1;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_INTEGER_2;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_INTEGER_3;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_NUMBER_1;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_NUMBER_2;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_STRING_3;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_STRING_4;
+import static it.bancaditalia.oss.vtl.impl.environment.sampledata.SampleVariables.MEASURE_STRING_8;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.toDataPoint;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 

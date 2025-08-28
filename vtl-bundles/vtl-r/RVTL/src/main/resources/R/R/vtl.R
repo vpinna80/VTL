@@ -284,7 +284,8 @@ vtlAvailableEnvironments <- function () {
       `R Environment` = "it.bancaditalia.oss.vtl.impl.environment.REnvironment"
     , `CSV environment` = "it.bancaditalia.oss.vtl.impl.environment.CSVPathEnvironment"
     , `SDMX environment` = "it.bancaditalia.oss.vtl.impl.environment.SDMXEnvironment"
-    , `Examples demo environment` = "it.bancaditalia.oss.vtl.impl.environment.docs.VTLExamplesEnvironment"
+    , `Documentation Examples environment` = "it.bancaditalia.oss.vtl.impl.environment.docs.VTLExamplesEnvironment"
+    , `Data Samples environment` = "it.bancaditalia.oss.vtl.impl.environment.sampledata.VTLSampleDataEnvironment"
     , sparkEnv
   )
   

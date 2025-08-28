@@ -17,25 +17,27 @@
  * See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package it.bancaditalia.oss.vtl.impl.environment.samples;
+package it.bancaditalia.oss.vtl.impl.environment.sampledata;
 
+import static java.util.stream.Collectors.toSet;
+
+import java.util.Arrays;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Set;
 
 import it.bancaditalia.oss.vtl.environment.Environment;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
 
-public class SamplesEnvironment implements Environment
+public class VTLSampleDataEnvironment implements Environment
 {
-	private static final Pattern SAMPLE_PATTERN = Pattern.compile("sample(1[0-7]|[1-9])");
-
+	private static final Set<VTLAlias> ALIASES = Arrays.stream(SampleDataSets.values()).map(Object::toString).map(VTLAliasImpl::of).collect(toSet()); 
+	
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
-		Matcher matcher = SAMPLE_PATTERN.matcher(alias.toString());
-		return matcher.matches() ? Optional.of(SampleDataSets.valueOf("SAMPLE" + matcher.group(1))) : Optional.empty();
+		return ALIASES.contains(alias) ? Optional.of(SampleDataSets.valueOf(alias.toString().toUpperCase())) : Optional.empty();
 	}
 }

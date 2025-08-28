@@ -34,12 +34,22 @@
 	</parent>
 
 	<name>vtl-envsamples</name>
-	<description>Environment that provides sample datasets from vtl-samples</description>
+	<description>Environment that provides sample datasets to use in any VTL transformation</description>
 
 	<dependencies>
 		<dependency>
 			<groupId>it.bancaditalia.oss.vtl</groupId>
 			<artifactId>vtl-samples</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-params</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
