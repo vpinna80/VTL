@@ -84,7 +84,7 @@ public class LineageNode extends LineageImpl
 			return lineage;
 		}).get();
 
-		// Small chance that the reference if gced while being resolved
+		// Small chance that the reference is gced while being resolved
 		if (instance == null)
 		{
 			instance = new LineageNode(transformation, sources);
@@ -110,23 +110,19 @@ public class LineageNode extends LineageImpl
 	@Override
 	public String toString()
 	{
-		return getTransformation().toString();
+		return transformation.toString();
 	}
 
 	@Override
 	public Lineage resolveExternal(TransformationScheme scheme)
 	{
-		return of(getTransformation(), LineageCall.of(sources.resolveExternal(scheme)));
+		return of(transformation, LineageCall.of(sources.resolveExternal(scheme)));
 	}
 
 	@Override
 	public int hashCode()
 	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((sources == null) ? 0 : sources.hashCode());
-		result = prime * result + ((getTransformation() == null) ? 0 : getTransformation().hashCode());
-		return result;
+		return Objects.hash(sources, transformation);
 	}
 
 	@Override
@@ -139,19 +135,7 @@ public class LineageNode extends LineageImpl
 		if (getClass() != obj.getClass())
 			return false;
 		LineageNode other = (LineageNode) obj;
-		if (sources == null)
-		{
-			if (other.sources != null)
-				return false;
-		} else if (!sources.equals(other.sources))
-			return false;
-		if (getTransformation() == null)
-		{
-			if (other.getTransformation() != null)
-				return false;
-		} else if (!getTransformation().equals(other.getTransformation()))
-			return false;
-		return true;
+		return Objects.equals(sources, other.sources) && Objects.equals(transformation, other.transformation);
 	}
 
 	public String getTransformation()

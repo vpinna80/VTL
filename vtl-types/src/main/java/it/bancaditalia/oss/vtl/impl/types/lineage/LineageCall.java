@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.lineage;
 
+import static java.lang.System.lineSeparator;
 import static java.util.stream.Collectors.toList;
 
 import java.lang.ref.SoftReference;
@@ -111,5 +112,20 @@ public class LineageCall extends LineageImpl implements LineageSet
 	public long size()
 	{
 		return sources.size();
+	}
+	
+	@Override
+	public String toString()
+	{
+		if (sources.size() == 0)
+			return "";
+		if (sources.size() == 1)
+			return sources.iterator().next().toString();
+		
+		StringBuilder builder = new StringBuilder(1000);
+		Lineage[] sourceArray = sources.toArray(Lineage[]::new);
+		for (int i = 0; i < sourceArray.length; i++)
+			builder.append("(").append(i + 1).append("): ").append(sourceArray[i]).append(lineSeparator()); 
+		return builder.toString();
 	}
 }
