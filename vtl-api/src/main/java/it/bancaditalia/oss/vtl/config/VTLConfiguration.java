@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getGlobalPrope
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getSupportedProperties;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.instanceOfClass;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.newConfiguration;
+import static it.bancaditalia.oss.vtl.config.ConfigurationManager.tryLoading;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENGINE_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.ENVIRONMENT_IMPLEMENTATION;
 import static it.bancaditalia.oss.vtl.config.VTLGeneralProperties.METADATA_REPOSITORY;
@@ -60,9 +61,8 @@ public class VTLConfiguration implements Serializable
 	/**
 	 * Create a deep-copy instance of current configuration
 	 * @param source The configuration to be copied
-	 * @throws ClassNotFoundException if one of the classes referenced by a {@link VTLGeneralProperties} cannot be loaded.
 	 */
-	public VTLConfiguration(VTLConfiguration source) throws ClassNotFoundException
+	public VTLConfiguration(VTLConfiguration source)
 	{
 		reset(source);
 	}
@@ -83,7 +83,10 @@ public class VTLConfiguration implements Serializable
 	 */
 	public void setPropertyValue(VTLProperty property, Object newValue)
 	{
-		values.put(property, Objects.toString(newValue));
+		if (newValue == null)
+			values.remove(property);
+		else
+			values.put(property, Objects.toString(newValue));
 	}
 
 	/**
@@ -113,23 +116,15 @@ public class VTLConfiguration implements Serializable
 	 * @param property the property to inquiry.
 	 * @return If the property {@link VTLProperty#isMultiple()}, a {@link List} where the elements are 
 	 * 		classes whose names match each of the property's values
-	 * @throws ClassNotFoundException if one of the values is the name of a class that cannot be loaded  
 	 */
-	public List<Class<?>> getPropertyClasses(VTLProperty property) throws ClassNotFoundException
+	public List<Class<?>> getPropertyClasses(VTLProperty property)
 	{
 		String value = getPropertyValue(property);
 		if (value == null || value.trim().isEmpty())
 			return List.of();
 		List<Class<?>> classes = new ArrayList<>();
 		for (String className: property.isMultiple() ? Arrays.asList(value.split(",")) : List.of(value))
-			try
-			{
-				classes.add(Class.forName(className, true, Thread.currentThread().getContextClassLoader()));
-			}
-			catch (ClassNotFoundException e)
-			{
-				throw e;
-			}
+			classes.add(tryLoading(className));
 		return classes;
 	}
 
@@ -173,11 +168,10 @@ public class VTLConfiguration implements Serializable
 	
 	/**
 	 * Resets this configuration to the same values as the global configration.
-	 * @throws ClassNotFoundException if a class mentioned in the global configuration cannot be found
 	 * 
 	 * NOTE: This method is not thread-safe.
 	 */
-	public void reset() throws ClassNotFoundException
+	public void reset()
 	{
 		reset(newConfiguration());
 	}
@@ -187,7 +181,7 @@ public class VTLConfiguration implements Serializable
 
 	}
 
-	private void reset(VTLConfiguration source) throws ClassNotFoundException
+	private void reset(VTLConfiguration source)
 	{
 		values.clear();
 		
