@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseTemporal;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.getDefaultMeasure;
@@ -39,7 +40,6 @@ import java.util.Arrays;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
 import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
@@ -54,6 +54,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
@@ -134,6 +135,8 @@ public class CastTransformation extends UnaryTransformation
 			return DATE;
 		else if (domain instanceof TimeDomainSubset && target == STRING)
 			return STRING;
+		else if (domain instanceof IntegerDomainSubset && target == NUMBER)
+			return NUMBER;
 		else if (domain instanceof NumberDomainSubset && target == INTEGER)
 			return INTEGER;
 		else if (domain instanceof NumberDomainSubset && target == STRING)
@@ -167,9 +170,11 @@ public class CastTransformation extends UnaryTransformation
 		else if (scalar instanceof StringValue && target == INTEGER)
 			return IntegerValue.of(Long.parseLong((String) scalar.get()));
 		else if (scalar instanceof StringValue && target == NUMBER)
-			return NumberValueImpl.createNumberValue((String) scalar.get());
+			return createNumberValue((String) scalar.get());
 		else if (scalar instanceof NumberValue && target == INTEGER)
 			return IntegerValue.of(((Number) scalar.get()).longValue());
+		else if (scalar instanceof NumberValue && target == NUMBER)
+			return createNumberValue((Number) scalar.get());
 		else if (scalar instanceof IntegerValue && target == STRING)
 			return StringValue.of(formatter.format(((Number) scalar.get()).longValue()));
 		else if (scalar instanceof NumberValue && target == STRING)
