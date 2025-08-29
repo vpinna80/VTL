@@ -21,11 +21,9 @@
 library(RVTL)
 
 repos <- vtlAvailableRepositories()
-
 environments <- vtlAvailableEnvironments()
-
 configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")
-exampleEnv <- J("it.bancaditalia.oss.vtl.util.VTLExamplesEnvironment")
+exampleEnv <- J(environments['Documentation Examples environment'])
 
 vtlProps <- list(
   ENVIRONMENT_IMPLEMENTATION = J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION,
