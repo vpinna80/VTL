@@ -47,7 +47,7 @@ VTLSession <- R6Class("VTLSession",
         stop("name must be a non-empty character vector with exactly 1 element")
       
       self$name <- name
-      private$env <- new.env(parent = emptyenv())
+      private$cache <- new.env(parent = emptyenv())
         
       tryCatch({
         if (is.character(category) && length(category) == 1 && nchar(category) != 0) {
@@ -93,6 +93,7 @@ VTLSession <- R6Class("VTLSession",
     #' Compiles the VTL statements submitted for this session.
     compile = function () {
       private$updateInstance()$compile()
+      private$cache <- new.env(parent = emptyenv())
       return(invisible(self))
     },
 
@@ -129,7 +130,7 @@ VTLSession <- R6Class("VTLSession",
     #' value is also cached.
     getValues = function (nodes, max.rows = -1L) {
       nodesdf <- lapply(nodes, function(node) {
-        df <- get0(node, envir = private$env)
+        df <- get0(node, envir = private$cache)
         if (!is.null(df)) {
           return(df)
         }
@@ -160,7 +161,7 @@ VTLSession <- R6Class("VTLSession",
         }
         
         if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue" || !is.integer(max.rows) || max.rows <= 0) {
-          assign(node, df, envir = private$env)
+          assign(node, df, envir = private$cache)
         }
         
         return(df)
@@ -283,7 +284,7 @@ VTLSession <- R6Class("VTLSession",
     }
   ), private = list(
     instance = NULL,
-    env = NULL,
+    cache = NULL,
     finalized = F,
     
     finalize = function() { 
@@ -316,7 +317,7 @@ VTLSession <- R6Class("VTLSession",
     
     clearInstance = function() {
       private$instance <- NULL
-      private$env <- new.env(parent = emptyenv())
+      private$cache <- new.env(parent = emptyenv())
       .jgc()
     }
   ) # private
