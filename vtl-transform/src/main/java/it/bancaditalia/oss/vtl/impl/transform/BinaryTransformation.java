@@ -89,7 +89,7 @@ public abstract class BinaryTransformation extends TransformationImpl
 			else if (isNull(rightOperand))
 				return requireNonNull(leftOperand, "Left operand is null.").getMetadata(scheme);
 			else
-				return metadataCombiner(leftOperand.getMetadata(scheme), rightOperand.getMetadata(scheme));
+				return metadataCombiner(scheme, leftOperand.getMetadata(scheme), rightOperand.getMetadata(scheme));
 		}
 		catch (VTLException | NullPointerException e)
 		{
@@ -107,7 +107,7 @@ public abstract class BinaryTransformation extends TransformationImpl
 
 	protected abstract VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar);
 
-	protected abstract VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right);
+	protected abstract VTLValueMetadata getMetadataTwoDatasets(TransformationScheme scheme, DataSetStructure left, DataSetStructure right);
 
 	@Override
 	public Set<LeafTransformation> getTerminals()
@@ -129,12 +129,12 @@ public abstract class BinaryTransformation extends TransformationImpl
 		};
 	}
 
-	private VTLValueMetadata metadataCombiner(VTLValueMetadata left, VTLValueMetadata right) 
+	private VTLValueMetadata metadataCombiner(TransformationScheme scheme, VTLValueMetadata left, VTLValueMetadata right) 
 	{
 		if (left instanceof UnknownValueMetadata || right instanceof UnknownValueMetadata)
 			return INSTANCE;
 		if (left.isDataSet() && right.isDataSet())
-			return getMetadataTwoDatasets((DataSetStructure) left, (DataSetStructure) right);
+			return getMetadataTwoDatasets(scheme, (DataSetStructure) left, (DataSetStructure) right);
 		else if (left.isDataSet() && !right.isDataSet())
 			return getMetadataDatasetWithScalar(true, (DataSetStructure) left, (ScalarValueMetadata<?, ?>) right);
 		else if (!left.isDataSet() && right.isDataSet())

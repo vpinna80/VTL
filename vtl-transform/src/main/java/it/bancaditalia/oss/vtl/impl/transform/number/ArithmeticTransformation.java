@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.transform.number;
 
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.NUM_VAR;
-import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.getDefaultMeasure;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
@@ -34,7 +33,6 @@ import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
 import static it.bancaditalia.oss.vtl.util.Utils.splitting;
 import static it.bancaditalia.oss.vtl.util.Utils.splittingConsumer;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
-import static java.util.Collections.singleton;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
@@ -47,8 +45,10 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLExpectedRoleException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLInvariantIdentifiersException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
@@ -73,6 +73,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
@@ -262,7 +263,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
+	protected VTLValueMetadata getMetadataTwoDatasets(TransformationScheme scheme, DataSetStructure left, DataSetStructure right)
 	{
 		Set<DataSetComponent<Measure, ?, ?>> leftMeasures = left.getMeasures();
 		Set<DataSetComponent<Measure, ?, ?>> rightMeasures = right.getMeasures();
@@ -274,18 +275,25 @@ public class ArithmeticTransformation extends BinaryTransformation
 
 		if (!left.getIDs().containsAll(right.getIDs())
 				&& !right.getIDs().containsAll(left.getIDs()))
-			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");
+			throw new VTLInvariantIdentifiersException(operator.toString(), left.getIDs(), right.getIDs());
 
 		// check if measures are the same, unless we are at component level
 		Set<DataSetComponent<Measure, ?, ?>> resultMeasures;
 		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
 		{
-			ValueDomainSubset<?, ?> leftDomain = leftMeasures.iterator().next().getDomain();
-			ValueDomainSubset<?, ?> rightDomain = rightMeasures.iterator().next().getDomain();
-			
-			ValueDomainSubset<?, ?> domain = INTEGERDS.isAssignableFrom(leftDomain) && INTEGERDS.isAssignableFrom(rightDomain) ? INTEGERDS : NUMBERDS;
-			
-			resultMeasures = singleton(getDefaultMeasure(domain));
+			final DataSetComponent<Measure, ?, ?> leftMeasure = leftMeasures.iterator().next();
+			final DataSetComponent<Measure, ?, ?> rightMeasure = rightMeasures.iterator().next();
+			ValueDomainSubset<?, ?> leftDomain = leftMeasure.getDomain();
+			ValueDomainSubset<?, ?> rightDomain = rightMeasure.getDomain();
+
+			if (!NUMBERDS.isAssignableFrom(leftDomain))
+				throw new VTLIncompatibleTypesException(operator.toString(), leftMeasure, NUMBERDS);
+			if (!NUMBERDS.isAssignableFrom(rightDomain))
+				throw new VTLIncompatibleTypesException(operator.toString(), rightMeasure, NUMBERDS);
+			if (!(scheme instanceof ThisScope) && !leftMeasure.getAlias().equals(rightMeasure.getAlias()))
+				throw new VTLIncompatibleTypesException(operator.toString(), leftMeasure, rightMeasure);
+
+			resultMeasures = INTEGERDS.isAssignableFrom(rightDomain) ? leftMeasures : rightMeasures;
 		}
 		else
 		{
@@ -294,16 +302,15 @@ public class ArithmeticTransformation extends BinaryTransformation
 			
 			resultMeasures = Stream.concat(leftMeasuresMap.keySet().stream(), rightMeasuresMap.keySet().stream())
 				.map(name -> new SimpleEntry<>(leftMeasuresMap.get(name), rightMeasuresMap.get(name)))
-				.peek(splittingConsumer((lm, rm) -> 
-					{
+				.peek(splittingConsumer((lm, rm) -> {
 						if (lm == null)
 							throw new VTLMissingComponentsException(leftMeasures, rm);
 						if (rm == null)
 							throw new VTLMissingComponentsException(rightMeasures, lm);
 						if (!NUMBERDS.isAssignableFrom(lm.getDomain()))
-							throw new UnsupportedOperationException("Expected numeric measure but found: " + lm);
+							throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, lm);
 						if (!NUMBERDS.isAssignableFrom(rm.getDomain()))
-							throw new UnsupportedOperationException("Expected numeric measure but found: " + rm);
+							throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, rm);
 					}))
 				// if at least one components is floating point, use floating point otherwise integer
 				.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
@@ -312,12 +319,13 @@ public class ArithmeticTransformation extends BinaryTransformation
 				.collect(toSet());
 		}
 		
-		return new DataSetStructureBuilder().addComponents(left.getIDs())
-				.addComponents(right.getIDs())
-				.addComponents(resultMeasures)
-				.addComponents(left.getComponents(ViralAttribute.class))
-				.addComponents(right.getComponents(ViralAttribute.class))
-				.build();
+		return new DataSetStructureBuilder()
+			.addComponents(left.getIDs())
+			.addComponents(right.getIDs())
+			.addComponents(resultMeasures)
+			.addComponents(left.getComponents(ViralAttribute.class))
+			.addComponents(right.getComponents(ViralAttribute.class))
+			.build();
 	}
 	
 	@Override

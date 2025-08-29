@@ -51,6 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public class BooleanTransformation extends BinaryTransformation
@@ -194,7 +195,7 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
+	protected VTLValueMetadata getMetadataTwoDatasets(TransformationScheme scheme, DataSetStructure left, DataSetStructure right)
 	{
 		if (!left.getIDs().containsAll(right.getIDs()) && !right.getIDs().containsAll(left.getIDs()))
 			throw new UnsupportedOperationException("One dataset must have all the identifiers of the other.");

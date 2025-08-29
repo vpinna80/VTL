@@ -55,6 +55,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class NumericIntTransformation extends BinaryTransformation
 {
@@ -138,7 +139,7 @@ public class NumericIntTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
+	protected VTLValueMetadata getMetadataTwoDatasets(TransformationScheme scheme, DataSetStructure left, DataSetStructure right)
 	{
 		throw new VTLInvalidParameterException(right, ScalarValueMetadata.class);
 	}

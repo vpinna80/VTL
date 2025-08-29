@@ -32,3 +32,4 @@ vtl-parser/.gitignore
 **/*_BASE_*
 **/*_LOCAL_*
 **/*_REMOTE_*
+vtl-bundles/vtl-coverage/src/test/java/it/bancaditalia/oss/vtl/coverage/tests/Main.java

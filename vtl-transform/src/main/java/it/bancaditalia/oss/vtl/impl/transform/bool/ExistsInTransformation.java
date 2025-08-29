@@ -51,6 +51,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 
 public class ExistsInTransformation extends BinaryTransformation
 {
@@ -121,7 +122,7 @@ public class ExistsInTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected DataSetStructure getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
+	protected DataSetStructure getMetadataTwoDatasets(TransformationScheme scheme, DataSetStructure left, DataSetStructure right)
 	{
 		Set<DataSetComponent<Identifier, ?, ?>> leftIDs = left.getIDs();
 		Set<DataSetComponent<Identifier, ?, ?>> rightIDs = right.getIDs();

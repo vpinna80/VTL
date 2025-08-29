@@ -56,6 +56,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
+import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 
 public class DateDiffTransformation extends BinaryTransformation
@@ -143,7 +144,7 @@ public class DateDiffTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValueMetadata getMetadataTwoDatasets(DataSetStructure left, DataSetStructure right)
+	protected VTLValueMetadata getMetadataTwoDatasets(TransformationScheme scheme, DataSetStructure left, DataSetStructure right)
 	{
 		for (DataSetComponent<Measure, ?, ?> measure: List.of(left.getSingleton(Measure.class), right.getSingleton(Measure.class)))
 			if (!(measure.getDomain() instanceof TimeDomainSubset))
