@@ -76,6 +76,17 @@ public interface DataSetComponent<R extends Component, S extends ValueDomainSubs
 	public DataSetComponent<R, S, D> getRenamed(VTLAlias newAlias);
 	
 	/**
+	 * Create a new DataSetComponent as a copy of this component with a new subset, if this 
+	 * {@link DataSetComponent}'s domain can be casted implicitly to the new domain subset.
+	 * 
+	 * @param <S1> The new domain subset type
+	 * @param <D1> The new domain type
+	 * @param domain The new domain subset 
+	 * @return the requested component.
+	 */
+	public <S1 extends ValueDomainSubset<S1, D1>, D1 extends ValueDomain> DataSetComponent<R, S1, D1> getCasted(S1 domain);
+
+	/**
 	 * Checks if this {@link DataSetComponent} has the specified role.
 	 * 
 	 * @param role the role
@@ -85,7 +96,7 @@ public interface DataSetComponent<R extends Component, S extends ValueDomainSubs
 	{
 		return role.isAssignableFrom(getRole());
 	}
-	
+
 	/**
 	 * Convencience method that narrows the role of this {@link DataSetComponent} to the specified role if possible.
 	 * 

@@ -29,6 +29,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 import java.util.HashMap;
 import java.util.Map;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireBooleanDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireDurationDomainSubset;
 import it.bancaditalia.oss.vtl.impl.types.domain.EntireIntegerDomainSubset;
@@ -128,6 +129,15 @@ public class DataSetComponentImpl<R extends Component, S extends ValueDomainSubs
 	public Class<R> getRole()
 	{
 		return role;
+	}
+	
+	@Override
+	public <S1 extends ValueDomainSubset<S1, D1>, D1 extends ValueDomain> DataSetComponent<R, S1, D1> getCasted(S1 domain)
+	{
+		if (domain.isAssignableFrom(this.domain))
+			return new DataSetComponentImpl<>(alias, role, domain);
+		else
+			throw new VTLCastException(domain, this.domain);
 	}
 
 	@Override

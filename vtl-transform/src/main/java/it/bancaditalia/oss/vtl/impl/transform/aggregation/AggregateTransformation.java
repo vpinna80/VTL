@@ -22,7 +22,6 @@ package it.bancaditalia.oss.vtl.impl.transform.aggregation;
 import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
-import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.NUM_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEAN;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
@@ -254,7 +253,7 @@ public class AggregateTransformation extends TransformationImpl
 		else if (aggregation == COUNT)
 			dest = INT_VAR;
 		else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
-			dest = INTEGERDS.isAssignableFrom(src.getDomain()) ? NUM_VAR : src;
+			dest = src.getCasted(NUMBERDS);
 		else if (targetName != null)
 			dest = metadata.getComponent(targetName).orElseThrow(() -> new VTLMissingComponentsException(metadata, targetName));
 		else
@@ -287,13 +286,7 @@ public class AggregateTransformation extends TransformationImpl
 				if (aggregation == COUNT)
 					newMeasures = singleton(INT_VAR);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
-					if (newMeasures.size() == 1)
-					{
-						DataSetComponent<Measure, ?, ?> c = newMeasures.iterator().next();
-						newMeasures = Set.of(INTEGERDS.isAssignableFrom(c.getDomain()) ? NUM_VAR : c);
-					}
-					else if (newMeasures.stream().map(DataSetComponent::getDomain).anyMatch(INTEGERDS::isAssignableFrom))
-						throw new UnsupportedOperationException("Only number measures are allowed for " + this);
+					newMeasures = newMeasures.stream().map(c -> c.getCasted(NUMBERDS)).collect(toSet());
 
 				if (newMeasures.size() == 1 && operand != null)
 					return ScalarValueMetadata.of(newMeasures.iterator().next().getDomain());
@@ -325,7 +318,7 @@ public class AggregateTransformation extends TransformationImpl
 					newComps = singleton(INT_VAR);
 				else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
 					newComps = newComps.stream()
-						.map(c -> INTEGERDS.isAssignableFrom(c.getDomain()) ? NUM_VAR : c)
+						.map(c -> c.getCasted(NUMBERDS))
 						.collect(toSet());
 				
 				if (targetName != null)
