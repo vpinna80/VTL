@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.impl.transform.BinaryTransformation;
+import it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
@@ -191,7 +192,7 @@ public class ConcatTransformation extends BinaryTransformation
 			.filter(d -> !STRINGDS.isAssignableFrom(d))
 			.forEach(d -> { throw new VTLIncompatibleTypesException("concat", STRINGDS, d); });
 
-		if (leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
+		if (scheme instanceof ThisScope && leftMeasures.size() == 1 && rightMeasures.size() == 1 && !leftMeasures.equals(rightMeasures))
 			return new DataSetStructureBuilder()
 				.addComponents(leftIds)
 				.addComponents(rightIds)

@@ -31,6 +31,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 
 public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerDomainSubset, IntegerDomain> implements IntegerDomainSubset<EntireIntegerDomainSubset>, Serializable
@@ -51,7 +52,7 @@ public class EntireIntegerDomainSubset extends EntireDomainSubset<EntireIntegerD
 	@Override
 	public boolean isAssignableFrom(ValueDomain other)
 	{
-		return other instanceof NullDomain || other instanceof IntegerDomainSubset;
+		return other instanceof NullDomain || other instanceof NumberDomainSubset;
 	}
 
 	@Override
