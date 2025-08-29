@@ -53,7 +53,7 @@ public class Paginator
 	private final int size;
 	private final Object[] result;
 	
-	private boolean closed = false;
+	private volatile boolean closed = false;
 	
 	public Paginator(DataSet dataset, int size)
 	{
@@ -78,24 +78,26 @@ public class Paginator
 				types[i] = 4;
 		}
 
+		Stream<DataPoint> finalStream = dataset.stream().onClose(() -> closed = true);
+		
 		Thread t = new Thread(() -> {
-			try (Stream<DataPoint> stream = dataset.stream().onClose(() -> closed = true))
+			try (Stream<DataPoint> stream = finalStream)
 			{
 				stream.forEach(dp -> {
-					try
-					{
-						if (!closed)
+					if (!closed)
+						try
+						{
 							queue.put(dp);
-					}
-					catch (InterruptedException e)
-					{
-						closed = true;
-					}
+						}
+						catch (InterruptedException e)
+						{
+							closed = true;
+						}
 				});
 			}
 			finally
 			{
-				closed = true;
+				finalStream.close();
 			}
 		}, "Paginator@" + hashCode());
 		t.setDaemon(true);
@@ -134,64 +136,72 @@ public class Paginator
 	
 	public void prepareMore()
 	{
-		ArrayList<DataPoint> dps = new ArrayList<>(size);
-		queue.drainTo(dps);
-		while (!closed && dps.size() == 0)
+		try
 		{
-			try
+			ArrayList<DataPoint> dps = new ArrayList<>(size);
+			queue.drainTo(dps);
+			while (!closed && dps.size() == 0)
 			{
-				Thread.sleep(500);
-				queue.drainTo(dps);
-			}
-			catch (InterruptedException e)
-			{
-				break;
-			}
-		}
-		
-		int newSize = dps.size();
-		
-		LOGGER.info("Retrieving {} rows from dataset.", newSize);
-
-		boolean test = result[0] == null;
-		if (!test)
-			switch (types[0])
-			{
-				case 1: test = ((double[]) result[0]).length != newSize; break;
-				case 2: 
-				case 3: test = ((int[]) result[0]).length != newSize; break;
-				case 4: test = ((String[]) result[0]).length != newSize; break;
-				case 5: test = ((double[]) result[0]).length != newSize; break;
-			}
-		if (test)
-			for (int i = 0; i < comps.length; i++)
-				switch (types[i])
+				try
 				{
-					case 1: result[i] = new double[newSize]; break;
-					case 2: result[i] = new int[newSize]; break;
-					case 3: result[i] = new int[newSize]; break;
-					case 4: result[i] = new String[newSize]; break;
-					case 5: result[i] = new double[newSize]; break;
-					default: throw new IllegalStateException();
+					Thread.sleep(500);
+					queue.drainTo(dps);
 				}
-		
-		for (int i = 0; i < result.length; i++)
+				catch (InterruptedException e)
+				{
+					break;
+				}
+			}
+			
+			int newSize = dps.size();
+			
+			LOGGER.info("Retrieving {} rows from dataset.", newSize);
+	
+			boolean test = result[0] == null;
+			if (!test)
+				switch (types[0])
+				{
+					case 1: test = ((double[]) result[0]).length != newSize; break;
+					case 2: 
+					case 3: test = ((int[]) result[0]).length != newSize; break;
+					case 4: test = ((String[]) result[0]).length != newSize; break;
+					case 5: test = ((double[]) result[0]).length != newSize; break;
+				}
+			if (test)
+				for (int i = 0; i < comps.length; i++)
+					switch (types[i])
+					{
+						case 1: result[i] = new double[newSize]; break;
+						case 2: result[i] = new int[newSize]; break;
+						case 3: result[i] = new int[newSize]; break;
+						case 4: result[i] = new String[newSize]; break;
+						case 5: result[i] = new double[newSize]; break;
+						default: throw new IllegalStateException();
+					}
+			
+			for (int i = 0; i < result.length; i++)
+			{
+				Object array = result[i];
+				for (int j = 0; j < newSize; j++)
+				{
+					Serializable value = dps.get(j).get(comps[i]).get();
+					switch (types[i])
+					{
+						case 1: ((double[]) array)[j] = value == null ? R_DOUBLE_NA : ((Number) value).doubleValue(); break;
+						case 2: ((int[]) array)[j] = value == null ? R_INT_NA : value == Boolean.TRUE ? 1 : 0; break;
+						case 3: ((int[]) array)[j] = value == null ? R_INT_NA : (int) DAYS.between(R_EPOCH_DATE, (LocalDate) value); break;
+						case 4: ((String[]) array)[j] = value == null ? null : value.toString(); break;
+						case 5: ((double[]) array)[j] = value == null ? R_DOUBLE_NA : ((Number) value).doubleValue(); break;
+					}
+				}		
+			}
+			
+			LOGGER.debug("Retrieving {} rows from dataset finished.", newSize);
+		}
+		catch (RuntimeException e)
 		{
-			Object array = result[i];
-			for (int j = 0; j < newSize; j++)
-			{
-				Serializable value = dps.get(j).get(comps[i]).get();
-				switch (types[i])
-				{
-					case 1: ((double[]) array)[j] = value == null ? R_DOUBLE_NA : ((Number) value).doubleValue(); break;
-					case 2: ((int[]) array)[j] = value == null ? R_INT_NA : value == Boolean.TRUE ? 1 : 0; break;
-					case 3: ((int[]) array)[j] = value == null ? R_INT_NA : (int) DAYS.between(R_EPOCH_DATE, (LocalDate) value); break;
-					case 4: ((String[]) array)[j] = value == null ? null : value.toString(); break;
-					case 5: ((double[]) array)[j] = value == null ? R_DOUBLE_NA : ((Number) value).doubleValue(); break;
-				}
-			}		
+			closed = true;
+			throw e;
 		}
-		
-		LOGGER.debug("Retrieving {} rows from dataset finished.", newSize);
 	}
 }
