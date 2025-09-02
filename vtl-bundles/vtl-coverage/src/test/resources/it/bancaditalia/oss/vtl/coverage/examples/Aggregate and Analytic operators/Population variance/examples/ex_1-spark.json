@@ -42,7 +42,7 @@
           "role": "Identifier"
         },
         {
-          "name": "num_var",
+          "name": "Me_1",
           "role": "Measure"
         }
       ]
@@ -62,12 +62,8 @@
       "domain": "string"
     },
     {
-      "name": "num_var",
-      "domain": "number"
-    },
-    {
       "name": "Me_1",
-      "domain": "integer"
+      "domain": "number"
     }
   ]
 }

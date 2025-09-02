@@ -2,7 +2,7 @@
   "vtl-schema-version": "2.2.0",
   "data": [
     {
-      "name": "in_2_data",
+      "name": "in_2",
       "source": "spark:csv:in_2.csv",
       "structure": "in_2_str"
     },

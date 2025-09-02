@@ -63,7 +63,7 @@
     },
     {
       "name": "year",
-      "domain": "number"
+      "domain": "integer"
     },
     {
       "name": "bool_var",

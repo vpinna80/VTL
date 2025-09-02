@@ -46,7 +46,7 @@
           "role": "Identifier"
         },
         {
-          "name": "num_var",
+          "name": "Me_1",
           "role": "Measure"
         }
       ]
@@ -71,10 +71,6 @@
     },
     {
       "name": "Me_1",
-      "domain": "integer"
-    },
-    {
-      "name": "num_var",
       "domain": "number"
     }
   ]
