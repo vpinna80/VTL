@@ -59,7 +59,6 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.data.Variable;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -91,31 +90,7 @@ public class ConditionalTransformation extends TransformationImpl
 		
 		if (!cond.isDataSet())
 		{
-			VTLValueMetadata thenMeta = thenExpr.getMetadata(session);
-			VTLValueMetadata elseMeta = elseExpr.getMetadata(session);
-
-			ValueDomainSubset<?, ?> thenDomain;
-			if (thenMeta instanceof Variable)
-				thenDomain = ((Variable<?, ?>) thenMeta).getDomain();
-			else if (!thenMeta.isDataSet())
-				thenDomain = ((ScalarValueMetadata<?, ?>) thenMeta).getDomain();
-			else
-				throw new IllegalStateException(thenMeta.getClass().getName());
-
-			ValueDomainSubset<?, ?> elseDomain;
-			if (elseMeta instanceof Variable)
-				elseDomain = ((Variable<?, ?>) elseMeta).getDomain();
-			else if (!elseMeta.isDataSet())
-				elseDomain = ((ScalarValueMetadata<?, ?>) elseMeta).getDomain();
-			else
-				throw new IllegalStateException(elseMeta.getClass().getName());
-			
-			ValueDomainSubset<?, ?> castDomain = thenDomain.isAssignableFrom(elseDomain) ? thenDomain : elseDomain;
-			
-			if (TRUE == BOOLEANDS.cast((ScalarValue<?, ?, ?, ?>) cond))
-				return castDomain.cast((ScalarValue<?, ?, ?, ?>) thenExpr.eval(session));
-			else
-				return castDomain.cast((ScalarValue<?, ?, ?, ?>) elseExpr.eval(session));
+			return TRUE == BOOLEANDS.cast((ScalarValue<?, ?, ?, ?>) cond) ? thenExpr.eval(session) : elseExpr.eval(session);
 		}
 		else
 		{
@@ -268,6 +243,12 @@ public class ConditionalTransformation extends TransformationImpl
 
 			return dataset;
 		}
+	}
+
+	@Override
+	public boolean hasAnalytic()
+	{
+		return condition.hasAnalytic() || thenExpr.hasAnalytic() || elseExpr.hasAnalytic();
 	}
 	
 	@Override

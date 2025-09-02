@@ -54,7 +54,7 @@ public class EntireDateDomainSubset extends EntireDomainSubset<EntireDateDomainS
 	}
 
 	@Override
-	public ScalarValue<?, ?, EntireDateDomainSubset, DateDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireDateDomainSubset, DateDomain> entireDomainCast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()) && value.isNull())
 			return NullValue.instance(this);

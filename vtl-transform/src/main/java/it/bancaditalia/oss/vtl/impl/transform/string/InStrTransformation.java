@@ -173,6 +173,12 @@ public class InStrTransformation extends TransformationImpl
 					.build();
 		}
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return leftOperand.hasAnalytic() || rightOperand.hasAnalytic();
+	}
 
 	@Override
 	public boolean isTerminal()

@@ -72,7 +72,7 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left.isNull() || right.isNull())
 			return NullValue.instance(BOOLEANDS);
@@ -86,9 +86,9 @@ public class ComparisonTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected DataSet evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected DataSet evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) resultMetadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataSetComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
 		boolean castToLeft;
@@ -116,15 +116,15 @@ public class ComparisonTransformation extends BinaryTransformation
 				extractor = dp -> operator.apply(castedScalar, dp.get(measure));
 
 		SerUnaryOperator<Lineage> enricher = lineageEnricher(this);
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, 
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, 
 				lineage -> enricher.apply(lineage), 
 				dp -> singletonMap(resultMeasure, extractor.apply(dp)));
 	}
 
 	@Override
-	protected DataSet evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected DataSet evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
-		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) resultMetadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataSetComponent<? extends Measure, ?, ?> lMeasure = left.getMetadata().getMeasures().iterator().next();
 		DataSetComponent<? extends Measure, ?, ?> rMeasure = right.getMetadata().getMeasures().iterator().next();
 		
@@ -138,11 +138,11 @@ public class ComparisonTransformation extends BinaryTransformation
 			casted = (l, r) -> operator.apply(rDomain.cast(l), r);
 		
 		SerFunction<Collection<Lineage>, Lineage> enricher = lineagesEnricher(this);
-		return left.mappedJoin((DataSetStructure) metadata, right, (dpl, dpr) -> new DataPointBuilder()
+		return left.mappedJoin((DataSetStructure) resultMetadata, right, (dpl, dpr) -> new DataPointBuilder()
 				.addAll(dpl.getValues(Identifier.class))
 				.addAll(dpr.getValues(Identifier.class))
 				.add(resultMeasure, casted.apply(dpl.get(lMeasure), dpr.get(rMeasure)))
-				.build(enricher.apply(List.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata));
+				.build(enricher.apply(List.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) resultMetadata));
 	}
 
 	@Override

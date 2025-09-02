@@ -97,11 +97,11 @@ public abstract class BinaryTransformation extends TransformationImpl
 		}
 	}
 
-	protected abstract VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right);
+	protected abstract VTLValue evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right);
 
-	protected abstract VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar);
+	protected abstract VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar);
 
-	protected abstract VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right);
+	protected abstract VTLValue evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right);
 
 	protected abstract VTLValueMetadata getMetadataTwoScalars(ScalarValueMetadata<?, ?> left, ScalarValueMetadata<?, ?> right);
 
@@ -115,17 +115,17 @@ public abstract class BinaryTransformation extends TransformationImpl
 		return Stream.concat(leftOperand.getTerminals().stream(), rightOperand.getTerminals().stream()).collect(toSet()); 
 	}
 
-	private BinaryOperator<VTLValue> evalCombiner(VTLValueMetadata metadata) 
+	private BinaryOperator<VTLValue> evalCombiner(VTLValueMetadata resultMetadata) 
 	{
 		return (left, right) -> {
 			if (left.isDataSet() && right.isDataSet())
-				return evalTwoDatasets(metadata, (DataSet) left, (DataSet) right);
+				return evalTwoDatasets(resultMetadata, (DataSet) left, (DataSet) right);
 			else if (left.isDataSet() && !right.isDataSet())
-				return evalDatasetWithScalar(metadata, true, (DataSet) left, (ScalarValue<?, ?, ?, ?>) right);
+				return evalDatasetWithScalar(resultMetadata, true, (DataSet) left, (ScalarValue<?, ?, ?, ?>) right);
 			else if (!left.isDataSet() && right.isDataSet())
-				return evalDatasetWithScalar(metadata, false, (DataSet) right, (ScalarValue<?, ?, ?, ?>) left);
+				return evalDatasetWithScalar(resultMetadata, false, (DataSet) right, (ScalarValue<?, ?, ?, ?>) left);
 			else // both scalars
-				return evalTwoScalars(metadata, (ScalarValue<?, ?, ?, ?>) left, (ScalarValue<?, ?, ?, ?>) right);
+				return evalTwoScalars(resultMetadata, (ScalarValue<?, ?, ?, ?>) left, (ScalarValue<?, ?, ?, ?>) right);
 		};
 	}
 
@@ -143,6 +143,12 @@ public abstract class BinaryTransformation extends TransformationImpl
 			return getMetadataTwoScalars((ScalarValueMetadata<?, ?>) left, (ScalarValueMetadata<?, ?>) right);
 	}
 
+	@Override
+	public boolean hasAnalytic()
+	{
+		return leftOperand.hasAnalytic() || rightOperand.hasAnalytic();
+	}
+	
 	public Transformation getLeftOperand()
 	{
 		return leftOperand;

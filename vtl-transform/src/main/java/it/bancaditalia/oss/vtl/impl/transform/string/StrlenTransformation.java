@@ -66,7 +66,7 @@ public class StrlenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected DataSet evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected DataSet evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		DataSetComponent<Measure, ?, ?> originalMeasure = dataset.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 		
@@ -74,7 +74,7 @@ public class StrlenTransformation extends UnaryTransformation
 				.addComponent(INT_VAR)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(INT_VAR, staticEvalOnScalar(dp.get(originalMeasure), metadata)));
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(INT_VAR, staticEvalOnScalar(dp.get(originalMeasure), resultMetadata)));
 	}
 
 	@Override

@@ -108,11 +108,11 @@ public class StringUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		Set<DataSetComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 		
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), dp -> {
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), dp -> {
 					Map<DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(components, Measure.class));
 					map.replaceAll((c, v) -> {
 						ValueDomainSubset<?, ?> domain = c.getDomain();

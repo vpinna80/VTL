@@ -69,19 +69,19 @@ public class DateDiffTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		return computeScalar(left, right);
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		DataSetComponent<Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> func = datasetIsLeftOp ? DateDiffTransformation::computeScalar : (a, b) -> computeScalar(b, a);
 		
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), dp -> {
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), dp -> {
 			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(NonIdentifier.class));
 			map.remove(measure);
 			map.put(INT_VAR, func.apply(dp.get(measure), scalar));
@@ -90,7 +90,7 @@ public class DateDiffTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
 		Set<DataSetComponent<Identifier, ?, ?>> idsLeft = left.getMetadata().getIDs();
 		Set<DataSetComponent<Identifier, ?, ?>> idsRight = right.getMetadata().getIDs();
@@ -102,11 +102,11 @@ public class DateDiffTransformation extends BinaryTransformation
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> func = streamed == left ? DateDiffTransformation::computeScalar : (a, b) -> computeScalar(b, a);
 		
 		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
-		return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dps, dpi) -> new DataPointBuilder(dps.getValues(Identifier.class), DONT_SYNC)
+		return streamed.mappedJoin((DataSetStructure) resultMetadata, indexed, (dps, dpi) -> new DataPointBuilder(dps.getValues(Identifier.class), DONT_SYNC)
 			.addAll(dpi.getValues(Identifier.class))
 			.delete(measure)
 			.add(INT_VAR, func.apply(dps.get(measure), dps.get(measure)))
-			.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata));
+			.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) resultMetadata));
 	}
 
 	private static ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> computeScalar(ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)

@@ -72,19 +72,19 @@ public class ExistsInTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected VTLValue evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected DataSet evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected DataSet evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
 		DataSetComponent<Measure, ?, ?> boolMeasure = BOOL_VAR;
 		
@@ -97,7 +97,7 @@ public class ExistsInTransformation extends BinaryTransformation
 			rightIDValues = stream.map(dp -> dp.getValues(commonIDs)).collect(toSet());
 		}
 				
-		DataSet unfiltered = left.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
+		DataSet unfiltered = left.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), 
 				dp -> singletonMap(boolMeasure, BooleanValue.of(rightIDValues.contains(dp.getValues(commonIDs)))));
 		
 		switch (mode)

@@ -54,7 +54,7 @@ public class MatchTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> string, ScalarValue<?, ?, ?, ?> pattern)
+	protected VTLValue evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> string, ScalarValue<?, ?, ?, ?> pattern)
 	{
 		if (string.isNull() || pattern.isNull())
 			return NullValue.instance(BOOLEANDS);
@@ -63,7 +63,7 @@ public class MatchTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> patternV)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> patternV)
 	{
 		DataSetStructure structure = new DataSetStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(BOOL_VAR)
@@ -78,7 +78,7 @@ public class MatchTransformation extends BinaryTransformation
 	}
 	
 	@Override
-	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
 		// This should never happen
 		throw new UnsupportedOperationException();

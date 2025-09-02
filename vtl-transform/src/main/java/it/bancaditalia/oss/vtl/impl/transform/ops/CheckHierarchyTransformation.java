@@ -386,6 +386,12 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		else
 			throw new VTLInvalidParameterException(metadata, DataSetStructure.class);
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
 
 	@Override
 	public String toString()

@@ -44,6 +44,12 @@ public class CurrentDateOperand extends TransformationImpl implements LeafTransf
 	{
 		return DATE;
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
 
 	@Override
 	public String toString()

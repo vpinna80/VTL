@@ -59,7 +59,7 @@ public abstract class UnaryTransformation extends TransformationImpl
 	@Override
 	public final VTLValue eval(TransformationScheme scheme)
 	{
-		VTLValue value = operand == null ? scheme.resolve(THIS) : operand.eval(scheme);
+		VTLValue value = operand == null && hasAnalytic() ? scheme.resolve(THIS) : operand.eval(scheme);
 		
 		try
 		{
@@ -78,8 +78,14 @@ public abstract class UnaryTransformation extends TransformationImpl
 	{
 		return operand;
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return operand.hasAnalytic();
+	}
 
 	protected abstract VTLValue evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata);
 
-	protected abstract VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata);
+	protected abstract VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata);
 }

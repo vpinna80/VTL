@@ -157,6 +157,12 @@ public class CheckTransformation extends TransformationImpl
 	}
 	
 	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
+	
+	@Override
 	public String toString()
 	{
 		return "check(" + operand 

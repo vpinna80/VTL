@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static java.math.RoundingMode.DOWN;
 import static java.math.RoundingMode.HALF_UP;
 
@@ -69,7 +68,7 @@ public enum NumericIntOperator implements SerBiFunction<
 		else
 			result = opDouble.applyAsDouble(((Number) t.get()).doubleValue(), ((Number) u.get()).intValue());
 
-		return INTEGERDS.isAssignableFrom(t.getDomain()) ? IntegerValue.of(result.longValue()) : createNumberValue(result);
+		return t.getDomain() instanceof IntegerDomain ? IntegerValue.of(result.longValue()) : createNumberValue(result);
 	}
 	
 	@Override

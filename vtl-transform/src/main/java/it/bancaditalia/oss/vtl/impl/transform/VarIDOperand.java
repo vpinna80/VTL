@@ -52,6 +52,12 @@ public class VarIDOperand implements LeafTransformation
 	}
 
 	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
+
+	@Override
 	public String getText()
 	{
 		return alias.toString();

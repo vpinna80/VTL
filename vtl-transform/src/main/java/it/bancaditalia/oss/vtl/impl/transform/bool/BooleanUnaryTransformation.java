@@ -83,7 +83,7 @@ public class BooleanUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		Set<DataSetComponent<Measure, ?, ?>> components = dataset.getMetadata().getMeasures();
 

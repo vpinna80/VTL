@@ -73,34 +73,34 @@ public class NumericIntTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		return operator.apply(left, INTEGERDS.cast(right));
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetStructure dsMeta = (DataSetStructure) metadata;
+		DataSetStructure dsMeta = (DataSetStructure) resultMetadata;
 		Set<VTLAlias> measureNames = dataset.getMetadata().getComponents(Measure.class, NUMBERDS).stream()
 				.map(DataSetComponent::getAlias)
 				.collect(toSet());
 		
-		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> integer = INTEGERDS.cast(scalar);
+		ScalarValue<?, ?, EntireIntegerDomainSubset, IntegerDomain> positions = INTEGERDS.cast(scalar);
 		return dataset.mapKeepingKeys(dsMeta, lineageEnricher(this), dp -> { 
 				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> result = new HashMap<>(dp.getValues(Attribute.class));
 				for (VTLAlias name: measureNames)
 				{
 					DataSetComponent<Measure, ?, ?> comp = dsMeta.getComponent(name)
 							.orElseThrow(() -> new VTLMissingComponentsException(dp.keySet(), name)).asRole(Measure.class);
-					result.put(comp, operator.apply(dp.get(comp), integer));
+					result.put(comp, operator.apply(dp.get(comp), positions));
 				}
 				return result;
 			});
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
 		throw new UnsupportedOperationException(operator + "with two datasets");
 	}

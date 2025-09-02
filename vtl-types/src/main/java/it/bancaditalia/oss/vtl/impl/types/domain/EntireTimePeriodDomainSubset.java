@@ -41,7 +41,7 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 		super(TIME_PERIODDS);
 	}
 
-	public ScalarValue<?, ?, EntireTimePeriodDomainSubset, TimePeriodDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireTimePeriodDomainSubset, TimePeriodDomain> entireDomainCast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value.isNull())
 			return NullValue.instance(this);

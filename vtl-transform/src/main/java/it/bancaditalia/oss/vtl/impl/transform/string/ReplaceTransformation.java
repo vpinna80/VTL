@@ -172,6 +172,12 @@ public class ReplaceTransformation extends TransformationImpl
 	}
 
 	@Override
+	public boolean hasAnalytic()
+	{
+		return exprOperand.hasAnalytic();
+	}
+
+	@Override
 	public boolean isTerminal()
 	{
 		return false;

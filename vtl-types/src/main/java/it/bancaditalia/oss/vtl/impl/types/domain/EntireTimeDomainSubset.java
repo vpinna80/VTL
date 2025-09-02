@@ -51,7 +51,7 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> entireDomainCast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (isAssignableFrom(value.getDomain()))
 			// Safe

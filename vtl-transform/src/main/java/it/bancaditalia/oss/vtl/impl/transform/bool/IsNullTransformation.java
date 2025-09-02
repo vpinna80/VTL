@@ -56,7 +56,7 @@ public class IsNullTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		DataSetStructure structure = new DataSetStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(BOOL_VAR)

@@ -79,13 +79,13 @@ public class ConcatTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		return concat(STRINGDS.cast(left), STRINGDS.cast(right));
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> function = CONCAT.reverseIf(!datasetIsLeftOp);
 		DataSetStructure structure = dataset.getMetadata();
@@ -97,13 +97,13 @@ public class ConcatTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
 		boolean leftHasMoreIdentifiers = left.getMetadata().getIDs().containsAll(right.getMetadata().getIDs());
 
 		DataSet streamed = leftHasMoreIdentifiers ? right: left;
 		DataSet indexed = leftHasMoreIdentifiers ? left: right;
-		Set<DataSetComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = ((DataSetStructure) metadata).getComponents(Measure.class, STRINGDS);
+		Set<DataSetComponent<Measure, EntireStringDomainSubset, StringDomain>> resultMeasures = ((DataSetStructure) resultMetadata).getComponents(Measure.class, STRINGDS);
 		
 		SerBinaryOperator<Lineage> enricher = LineageNode.lineage2Enricher(this);
 		if (resultMeasures.size() == 1 && (!left.getMetadata().containsAll(resultMeasures) || !right.getMetadata().containsAll(resultMeasures)))
@@ -113,11 +113,11 @@ public class ConcatTransformation extends BinaryTransformation
 			DataSetComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, STRINGDS).iterator().next();
 			
 			BinaryOperator<ScalarValue<?, ?, ?, ?>> finalOperator = CONCAT.reverseIf(!leftHasMoreIdentifiers);
-			return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dps, dpi) -> new DataPointBuilder()
+			return streamed.mappedJoin((DataSetStructure) resultMetadata, indexed, (dps, dpi) -> new DataPointBuilder()
 				.add(resultMeasure, finalOperator.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
 				.addAll(dpi.getValues(Identifier.class))
 				.addAll(dps.getValues(Identifier.class))
-				.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata));
+				.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) resultMetadata));
 		}
 		else
 		{
@@ -135,14 +135,14 @@ public class ConcatTransformation extends BinaryTransformation
 			}
 			
 			// Scan the dataset with less identifiers and find the matches
-			return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
+			return streamed.mappedJoin((DataSetStructure) resultMetadata, indexed, (dps, dpi) -> new DataPointBuilder(resultMeasures.stream()
 						.map(rm -> new SimpleEntry<>(rm, finalOperator.apply(
 								STRINGDS.cast(dpi.get(measuresMap.get(rm).getKey())), 
 								STRINGDS.cast(dps.get(measuresMap.get(rm).getValue())))))
 						.collect(entriesToMap()))		
 					.addAll(dpi.getValues(Identifier.class))
 					.addAll(dps.getValues(Identifier.class))
-					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata));
+					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) resultMetadata));
 		}
 	}
 

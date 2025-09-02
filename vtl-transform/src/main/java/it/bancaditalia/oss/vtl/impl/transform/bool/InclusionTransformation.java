@@ -106,12 +106,12 @@ public class InclusionTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		DataSetComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
 		checkSet(scheme.getRepository());
 		
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), 
 				dp -> singletonMap(BOOL_VAR, BooleanValue.of(operator.test(set, dp.get(measure)))));
 	}
 

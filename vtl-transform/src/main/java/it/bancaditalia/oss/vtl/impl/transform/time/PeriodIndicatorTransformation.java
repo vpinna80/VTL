@@ -142,6 +142,12 @@ public class PeriodIndicatorTransformation extends TransformationImpl
 	}
 
 	@Override
+	public boolean hasAnalytic()
+	{
+		return operand.hasAnalytic();
+	}
+
+	@Override
 	public boolean isTerminal()
 	{
 		return operand == null;

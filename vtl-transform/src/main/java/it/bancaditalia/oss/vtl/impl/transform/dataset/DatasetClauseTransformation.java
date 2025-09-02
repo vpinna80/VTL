@@ -61,4 +61,10 @@ public abstract class DatasetClauseTransformation extends TransformationImpl
 		else
 			return operandMetadata = (DataSetStructure) session.getMetadata(THIS);
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
 }

@@ -58,6 +58,7 @@ import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
+import java.security.InvalidParameterException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -83,6 +84,7 @@ import it.bancaditalia.oss.vtl.exceptions.VTLAmbiguousComponentException;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleStructuresException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnaliasedExpressionException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUniqueAliasException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
@@ -109,6 +111,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -155,7 +158,7 @@ public class JoinTransformation extends TransformationImpl
 		@Override
 		public String toString()
 		{
-			return operand + (id != null ? " AS " + id : "");
+			return operand + (id != null ? " as " + id : "");
 		}
 	}
 
@@ -559,86 +562,99 @@ public class JoinTransformation extends TransformationImpl
 
 	public DataSetStructure computeMetadata(TransformationScheme scheme)
 	{
-		// check if expressions have aliases
-		operands.stream().filter(o -> o.getId() == null).map(JoinOperand::getOperand).findAny().ifPresent(unaliased -> {
-			throw new VTLUnaliasedExpressionException(unaliased);
-		});
-
-		// check for duplicate aliases
-		operands.stream().map(JoinOperand::getId).collect(groupingByConcurrent(identity(), counting())).entrySet().stream()
-				.filter(e -> e.getValue() > 1)
-				.map(Entry::getKey)
-				.findAny()
-				.ifPresent(alias -> {
-					throw new VTLUniqueAliasException(operator.toString().toLowerCase(), alias);
-				});
-
-		Map<JoinOperand, DataSetStructure> datasetsMeta = new HashMap<>();
-		for (JoinOperand op: operands)
-			datasetsMeta.put(op, (DataSetStructure) op.getOperand().getMetadata(scheme));
-
-		DataSetStructure result;
-		if (operator == CROSS_JOIN || operator == FULL_JOIN)
+		try
 		{
-			result = virtualStructure(scheme.getRepository(), datasetsMeta, datasetsMeta.get(refOperand), false);
-			LOGGER.info("{}ing {}", operator, operands.stream().collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)));
+			// check if expressions have aliases
+			operands.stream().filter(o -> o.getId() == null).map(JoinOperand::getOperand).findAny().ifPresent(unaliased -> {
+				throw new VTLUnaliasedExpressionException(unaliased);
+			});
+	
+			// check for duplicate aliases
+			operands.stream().map(JoinOperand::getId).collect(groupingByConcurrent(identity(), counting())).entrySet().stream()
+					.filter(e -> e.getValue() > 1)
+					.map(Entry::getKey)
+					.findAny()
+					.ifPresent(alias -> {
+						throw new VTLUniqueAliasException(operator.toString().toLowerCase(), alias);
+					});
+	
+			Map<JoinOperand, DataSetStructure> datasetsMeta = new HashMap<>();
+			for (JoinOperand op: operands)
+			{
+				VTLValueMetadata opMeta = op.getOperand().getMetadata(scheme);
+				if (opMeta instanceof DataSetStructure)
+					datasetsMeta.put(op, (DataSetStructure) opMeta);
+				else
+					throw new InvalidParameterException("Scalar expressions cannot be used in " + operator.toString().toLowerCase() + ": " + op);
+			}
+	
+			DataSetStructure result;
+			if (operator == CROSS_JOIN || operator == FULL_JOIN)
+			{
+				result = virtualStructure(scheme.getRepository(), datasetsMeta, datasetsMeta.get(refOperand), false);
+				LOGGER.info("{}ing {}", operator, operands.stream().collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)));
+			}
+			else
+			{
+				Entry<JoinOperand, Boolean> caseAorB1 = isCaseAorB1(datasetsMeta);
+				refOperand = caseAorB1.getKey();
+				result = virtualStructure(scheme.getRepository(), datasetsMeta, datasetsMeta.get(refOperand), caseAorB1.getValue());
+				LOGGER.info("Joining {} to ({}: {})", 
+							operands.stream().filter(op -> op != refOperand).collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)), 
+							refOperand.getId(), datasetsMeta.get(refOperand));
+			}
+	
+			// modify the result structure as needed
+			if (filter != null)
+				result = (DataSetStructure) filter.getMetadata(new ThisScope(scheme, result));
+			if (apply != null)
+			{
+				DataSetStructure applyResult = result;
+				Set<? extends DataSetComponent<Measure, ?, ?>> applyComponents = applyResult.getMeasures().stream()
+						.map(c -> c.getAlias().getMemberAlias())
+						.distinct()
+						.map(name -> { 
+							JoinApplyScope scope = new JoinApplyScope(scheme, name, applyResult);
+							ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(scope)).getDomain();
+							DataSetComponent<Measure, ?, ?> measure = DataSetComponentImpl.of(name, domain, Measure.class);
+							return measure;
+						}).collect(toSet());
+	
+				result = applyResult.stream().filter(c -> !c.is(Measure.class) || !c.getAlias().isComposed())
+						.reduce(new DataSetStructureBuilder(), DataSetStructureBuilder::addComponent, DataSetStructureBuilder::merge).addComponents(applyComponents).build();
+			}
+			else if (calc != null)
+				result = (DataSetStructure) calc.getMetadata(new ThisScope(scheme, result));
+			else if (aggr != null)
+				result = (DataSetStructure) aggr.getMetadata(new ThisScope(scheme, result));
+			if (keepOrDrop != null)
+				result = (DataSetStructure) keepOrDrop.getMetadata(new ThisScope(scheme, result));
+			if (rename != null)
+				result = (DataSetStructure) rename.getMetadata(new ThisScope(scheme, result));
+	
+			// check if keep - drop - rename has made some components unambiguous
+			Map<VTLAlias, List<VTLAlias>> unaliasedNames = result.stream().map(c -> c.getAlias())
+					.filter(VTLAlias::isComposed)
+					.map(name -> name.split())
+					.collect(groupingByConcurrent(Entry::getValue, mapping(Entry::getKey, toList())));
+	
+			DataSetStructureBuilder dealiased = new DataSetStructureBuilder(result);
+			for (VTLAlias cName: unaliasedNames.keySet())
+			{
+				List<VTLAlias> sources = unaliasedNames.get(cName);
+				if (sources.size() != 1)
+					new VTLAmbiguousComponentException(cName, sources.stream().map(s -> cName.in(s)).map(result::getComponent).map(Optional::get).collect(toSet()));
+				DataSetComponent<?, ?, ?> comp = result.getComponent(cName.in(sources.get(0))).get();
+				dealiased = dealiased.removeComponent(comp)
+						.addComponent(comp.getRenamed(cName));
+			}
+	
+			return dealiased.build();
 		}
-		else
+		catch (RuntimeException e)
 		{
-			Entry<JoinOperand, Boolean> caseAorB1 = isCaseAorB1(datasetsMeta);
-			refOperand = caseAorB1.getKey();
-			result = virtualStructure(scheme.getRepository(), datasetsMeta, datasetsMeta.get(refOperand), caseAorB1.getValue());
-			LOGGER.info("Joining {} to ({}: {})", 
-						operands.stream().filter(op -> op != refOperand).collect(toConcurrentMap(JoinOperand::getId, datasetsMeta::get)), 
-						refOperand.getId(), datasetsMeta.get(refOperand));
+			throw new VTLNestedException("In expression " + this, e);
 		}
-
-		// modify the result structure as needed
-		if (filter != null)
-			result = (DataSetStructure) filter.getMetadata(new ThisScope(scheme, result));
-		if (apply != null)
-		{
-			DataSetStructure applyResult = result;
-			Set<? extends DataSetComponent<Measure, ?, ?>> applyComponents = applyResult.getMeasures().stream()
-					.map(c -> c.getAlias().getMemberAlias())
-					.distinct()
-					.map(name -> { 
-						JoinApplyScope scope = new JoinApplyScope(scheme, name, applyResult);
-						ValueDomainSubset<?, ?> domain = ((ScalarValueMetadata<?, ?>) apply.getMetadata(scope)).getDomain();
-						DataSetComponent<Measure, ?, ?> measure = DataSetComponentImpl.of(name, domain, Measure.class);
-						return measure;
-					}).collect(toSet());
-
-			result = applyResult.stream().filter(c -> !c.is(Measure.class) || !c.getAlias().isComposed())
-					.reduce(new DataSetStructureBuilder(), DataSetStructureBuilder::addComponent, DataSetStructureBuilder::merge).addComponents(applyComponents).build();
-		}
-		else if (calc != null)
-			result = (DataSetStructure) calc.getMetadata(new ThisScope(scheme, result));
-		else if (aggr != null)
-			result = (DataSetStructure) aggr.getMetadata(new ThisScope(scheme, result));
-		if (keepOrDrop != null)
-			result = (DataSetStructure) keepOrDrop.getMetadata(new ThisScope(scheme, result));
-		if (rename != null)
-			result = (DataSetStructure) rename.getMetadata(new ThisScope(scheme, result));
-
-		// check if keep - drop - rename has made some components unambiguous
-		Map<VTLAlias, List<VTLAlias>> unaliasedNames = result.stream().map(c -> c.getAlias())
-				.filter(VTLAlias::isComposed)
-				.map(name -> name.split())
-				.collect(groupingByConcurrent(Entry::getValue, mapping(Entry::getKey, toList())));
-
-		DataSetStructureBuilder dealiased = new DataSetStructureBuilder(result);
-		for (VTLAlias cName: unaliasedNames.keySet())
-		{
-			List<VTLAlias> sources = unaliasedNames.get(cName);
-			if (sources.size() != 1)
-				new VTLAmbiguousComponentException(cName, sources.stream().map(s -> cName.in(s)).map(result::getComponent).map(Optional::get).collect(toSet()));
-			DataSetComponent<?, ?, ?> comp = result.getComponent(cName.in(sources.get(0))).get();
-			dealiased = dealiased.removeComponent(comp)
-					.addComponent(comp.getRenamed(cName));
-		}
-
-		return dealiased.build();
 	}
 
 	private Entry<JoinOperand, Boolean> isCaseAorB1(Map<JoinOperand, DataSetStructure> datasetsMeta)
@@ -750,6 +766,12 @@ public class JoinTransformation extends TransformationImpl
 				.filter(entryByValue(c -> c.intValue() == howMany))
 				.map(Entry::getKey)
 				.collect(toSet());
+	}
+
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
 	}
 
 	private DataSetStructure virtualStructure(MetadataRepository repo, Map<JoinOperand, DataSetStructure> datasetsMeta, DataSetStructure refDataSet, boolean isCaseAorB1)

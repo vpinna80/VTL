@@ -55,7 +55,7 @@ public class EntireDurationDomainSubset extends EntireDomainSubset<EntireDuratio
 	}
 
 	@Override
-	public ScalarValue<?, ?, EntireDurationDomainSubset, DurationDomain> cast(ScalarValue<?, ?, ?, ?> value)
+	public ScalarValue<?, ?, EntireDurationDomainSubset, DurationDomain> entireDomainCast(ScalarValue<?, ?, ?, ?> value)
 	{
 		if (value.isNull())
 			return NullValue.instance(INSTANCE);

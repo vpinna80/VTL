@@ -56,6 +56,12 @@ public class SortClause implements SortCriterion, Serializable
 	{
 		return method;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return component.getAlias() + " " + method.toString().toLowerCase();
+	}
 
 	@Override
 	public int hashCode()

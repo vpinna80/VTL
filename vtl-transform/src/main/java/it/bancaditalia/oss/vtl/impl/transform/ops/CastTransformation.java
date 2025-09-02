@@ -94,7 +94,7 @@ public class CastTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		DataSetComponent<Measure, ?, ?> oldMeasure = dataset.getMetadata().getMeasures().iterator().next();
 		if (target.getDomain() == oldMeasure.getDomain())

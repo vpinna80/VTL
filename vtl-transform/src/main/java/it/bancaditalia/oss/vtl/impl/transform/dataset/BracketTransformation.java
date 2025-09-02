@@ -94,6 +94,12 @@ public class BracketTransformation extends TransformationImpl
 	}
 	
 	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
+
+	@Override
 	public String toString()
 	{
 		return operand + (clause != null ? "[" + clause.toString() + "]": "") + (componentName != null ? "#" + componentName : "");

@@ -141,6 +141,12 @@ public class CheckDataPointTransformation extends TransformationImpl
 		
 		return map;
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
 
 	@Override
 	protected DataSetStructure computeMetadata(TransformationScheme scheme)

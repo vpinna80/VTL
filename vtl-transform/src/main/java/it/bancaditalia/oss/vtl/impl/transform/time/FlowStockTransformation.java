@@ -131,7 +131,7 @@ public class FlowStockTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		DataSetStructure dsMeta = dataset.getMetadata();
 
@@ -178,7 +178,7 @@ public class FlowStockTransformation extends UnaryTransformation
 		}
 		
 		// remove the freq measure
-		return partial.mapKeepingKeys((DataSetStructure) metadata, identity(), dp -> {
+		return partial.mapKeepingKeys((DataSetStructure) resultMetadata, identity(), dp -> {
 				var map = new HashMap<>(dp.getValues(NonIdentifier.class));
 				map.remove(DURATION_VAR);
 				return map;

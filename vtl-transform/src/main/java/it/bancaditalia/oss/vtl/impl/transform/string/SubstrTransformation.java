@@ -181,6 +181,12 @@ public class SubstrTransformation extends TransformationImpl
 	}
 
 	@Override
+	public boolean hasAnalytic()
+	{
+		return lenOperand.hasAnalytic();
+	}
+
+	@Override
 	public boolean isTerminal()
 	{
 		return false;

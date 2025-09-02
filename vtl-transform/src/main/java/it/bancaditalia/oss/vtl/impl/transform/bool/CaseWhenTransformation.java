@@ -58,6 +58,12 @@ public class CaseWhenTransformation extends TransformationImpl
 	}
 
 	@Override
+	public boolean hasAnalytic()
+	{
+		return firstCondition.hasAnalytic();
+	}
+
+	@Override
 	public boolean isTerminal()
 	{
 		return false;

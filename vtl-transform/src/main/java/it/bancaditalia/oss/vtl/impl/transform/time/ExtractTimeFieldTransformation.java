@@ -59,7 +59,7 @@ public class ExtractTimeFieldTransformation extends UnaryTransformation
 	}
 
 	@Override
-	public VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	public VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		throw new UnsupportedOperationException();
 	}

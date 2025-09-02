@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.environment.spark;
 
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithKeys;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithValues;
 import static it.bancaditalia.oss.vtl.util.Utils.getStream;
 import static java.util.Collections.unmodifiableCollection;
@@ -37,6 +38,9 @@ import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 
@@ -89,9 +93,26 @@ public class SparkDataPoint extends AbstractMap<DataSetComponent<?, ?, ?>, Scala
 	@Override
 	public DataPoint combine(DataPoint other, SerBinaryOperator<Lineage> lineageCombiner)
 	{
-		SparkDataPoint dp = new SparkDataPoint(other, lineage);
-		dp.map.putAll(this);
-		return dp;
+		Map<VTLAlias, DataSetComponent<?, ?, ?>> remaining = new HashMap<>(other.keySet().stream().collect(toMapWithKeys(DataSetComponent::getAlias)));
+		Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> combined = new HashMap<>();
+
+		for (Entry<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> e: map.entrySet())
+		{
+			DataSetComponent<?, ?, ?> thisComp = e.getKey();
+			DataSetComponent<?, ?, ?> otherComp = remaining.remove(e.getKey().getAlias());
+			
+			if (otherComp == null)
+				combined.put(thisComp, e.getValue());
+			else if (otherComp.getDomain() instanceof NumberDomain && thisComp.getDomain() instanceof IntegerDomain)
+				combined.put(otherComp, other.get(otherComp));
+			else 
+				combined.put(thisComp, e.getValue());
+		}
+		
+		for (DataSetComponent<?, ?, ?> otherComp: remaining.values())
+			combined.put(otherComp, other.get(otherComp));
+
+		return new SparkDataPoint(combined, lineageCombiner.apply(this.lineage, other.getLineage()));
 	}
 
 	@Override

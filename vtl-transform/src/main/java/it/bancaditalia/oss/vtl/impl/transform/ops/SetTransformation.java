@@ -128,6 +128,12 @@ public class SetTransformation extends TransformationImpl
 
 		return (DataSetStructure) allMetadata.get(0);
 	}
+
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
 	
 	@Override
 	public boolean isTerminal()

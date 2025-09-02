@@ -45,6 +45,12 @@ public class ConstantOperand extends TransformationImpl implements LeafTransform
 	{
 		return value;
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
 
 	@Override
 	public String getText()

@@ -89,11 +89,25 @@ public class AssignStatement extends AbstractStatement implements DMLStatement
 	{
 		return persistent;
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return expression.hasAnalytic();
+	}
 
 	@Override
 	public VTLValueMetadata getMetadata(TransformationScheme scheme)
 	{
-		VTLValueMetadata metadata = expression.getMetadata(scheme);
+		VTLValueMetadata metadata;
+		try
+		{
+			metadata = expression.getMetadata(scheme);
+		}
+		catch (RuntimeException e)
+		{
+			throw new VTLNestedException("In assignment " + this, e); 
+		}
 		
 		if (persistent)
 			try

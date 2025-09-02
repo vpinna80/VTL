@@ -126,7 +126,7 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		return evalTwoScalars(left, right);
 	}
@@ -137,26 +137,26 @@ public class BooleanTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) resultMetadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataSetComponent<? extends Measure, ?, ?> datasetMeasure = dataset.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> evalTwoScalars = this::evalTwoScalars;
 		SerBinaryOperator<ScalarValue<?, ?, ?, ?>> reversedIf = evalTwoScalars.reverseIf(!datasetIsLeftOp);
 
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), 
 				dp -> singletonMap(resultMeasure, reversedIf.apply(dp.get(datasetMeasure), scalar)));
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
 		boolean leftHasMoreIdentifiers = left.getMetadata().getIDs().containsAll(right.getMetadata().getIDs());
 
 		DataSet streamed = leftHasMoreIdentifiers ? right : left;
 		DataSet indexed = leftHasMoreIdentifiers ? left : right;
-		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) metadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
+		DataSetComponent<Measure, ?, ?> resultMeasure = ((DataSetStructure) resultMetadata).getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataSetComponent<? extends Measure, ?, ?> indexedMeasure = indexed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 		DataSetComponent<? extends Measure, ?, ?> streamedMeasure = streamed.getMetadata().getComponents(Measure.class, BOOLEANDS).iterator().next();
 
@@ -165,11 +165,11 @@ public class BooleanTransformation extends BinaryTransformation
 		
 		// Scan the dataset with less identifiers and find the matches
 		SerBinaryOperator<Lineage> enricher = lineage2Enricher(this);
-		return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dps, dpi) -> new DataPointBuilder()
+		return streamed.mappedJoin((DataSetStructure) resultMetadata, indexed, (dps, dpi) -> new DataPointBuilder()
 					.addAll(dps.getValues(Identifier.class))
 					.addAll(dpi.getValues(Identifier.class))
 					.add(resultMeasure, reversedIf.apply(dps.get(streamedMeasure), dpi.get(indexedMeasure)))
-					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) metadata));
+					.build(enricher.apply(dps.getLineage(), dpi.getLineage()), (DataSetStructure) resultMetadata));
 	}
 
 	@Override

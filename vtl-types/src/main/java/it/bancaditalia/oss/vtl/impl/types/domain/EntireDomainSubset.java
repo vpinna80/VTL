@@ -62,6 +62,12 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 		{
 			throw new UnsupportedOperationException();
 		}
+
+		@Override
+		public boolean hasAnalytic()
+		{
+			return false;
+		}
 		
 		@Override
 		public Set<LeafTransformation> getTerminals()
@@ -108,6 +114,18 @@ public abstract class EntireDomainSubset<S extends EntireDomainSubset<S, D>, D e
 	public int hashCode()
 	{
 		return getClass().hashCode();
+	}
+
+	protected abstract ScalarValue<?, ?, S, D> entireDomainCast(ScalarValue<?, ?, ?, ?> value);
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public final ScalarValue<?, ?, S, D> cast(ScalarValue<?, ?, ?, ?> value)
+	{
+		if (this == value.getDomain())
+			return (ScalarValue<?, ?, S, D>) value;
+		else
+			return entireDomainCast(value);
 	}
 	
 	@Override

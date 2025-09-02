@@ -107,7 +107,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet ds, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet ds, VTLValueMetadata resultMetadata)
 	{
 		DataSetStructure structure = ds.getMetadata();
 		DataSetComponent<Identifier, EntireTimeDomainSubset, TimeDomain> timeID = ds.getMetadata().getComponents(Identifier.class, TIMEDS).iterator().next();

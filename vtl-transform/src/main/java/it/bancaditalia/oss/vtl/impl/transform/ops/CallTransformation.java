@@ -112,6 +112,12 @@ public class CallTransformation extends TransformationImpl
 	}
 	
 	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
+	
+	@Override
 	public String toString()
 	{
 		return operator + args.stream().map(Transformation::toString).collect(joining(", ", "(", ")"));

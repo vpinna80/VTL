@@ -129,9 +129,9 @@ public class NumericUnaryTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), dp -> {
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), dp -> {
 				Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> map = new HashMap<>(dp.getValues(Measure.class));
 				map.replaceAll((k, v) -> operator.apply(v));
 				map.putAll(dp.getValues(ViralAttribute.class));

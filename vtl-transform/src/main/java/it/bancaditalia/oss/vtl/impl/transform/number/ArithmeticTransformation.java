@@ -70,6 +70,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
@@ -94,30 +95,30 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata metadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
+	protected ScalarValue<?, ?, ?, ?> evalTwoScalars(VTLValueMetadata resultMetadata, ScalarValue<?, ?, ?, ?> left, ScalarValue<?, ?, ?, ?> right)
 	{
 		if (left.isNull() || right.isNull())
-			if (operator != DIV && INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(right.getDomain()))
+			if (operator != DIV && left.getDomain() instanceof IntegerDomain && right.getDomain() instanceof IntegerDomain)
 				return NullValue.instance(INTEGERDS);
 			else
 				return NullValue.instance(NUMBERDS);
 		else 
-			return operator != DIV && INTEGERDS.isAssignableFrom(left.getDomain()) && INTEGERDS.isAssignableFrom(right.getDomain())
+			return operator != DIV && left.getDomain() instanceof IntegerDomain && right.getDomain() instanceof IntegerDomain
 					? operator.applyAsInteger(left, right) 
 					: operator.applyAsNumber(left, right);
 	}
 
 	@Override
-	protected VTLValue evalDatasetWithScalar(VTLValueMetadata metadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
+	protected VTLValue evalDatasetWithScalar(VTLValueMetadata resultMetadata, boolean datasetIsLeftOp, DataSet dataset, ScalarValue<?, ?, ?, ?> scalar)
 	{
-		DataSetStructure dsMeta = (DataSetStructure) metadata;
+		DataSetStructure dsMeta = (DataSetStructure) resultMetadata;
 		Set<VTLAlias> measureNames = dataset.getMetadata().getComponents(Measure.class, NUMBERDS).stream()
 				.map(DataSetComponent::getAlias)
 				.collect(toSet());
 		
 		// check if both a measure and the scalar are integers
-		SerPredicate<DataSetComponent<?, ?, ?>> bothIntegers = comp -> INTEGERDS.isAssignableFrom(scalar.getDomain())
-				&& INTEGERDS.isAssignableFrom(comp.getDomain());
+		SerPredicate<DataSetComponent<?, ?, ?>> bothIntegers = comp -> scalar.getDomain() instanceof IntegerDomain
+				&& comp.getDomain() instanceof IntegerDomain;
 		
 		// must remember which is the left operand because some operators are not commutative
 		SerBiFunction<DataPoint, DataSetComponent<Measure, ?, ?>, ScalarValue<?, ?, ?, ?>> finisher = (dp, comp) -> 
@@ -138,7 +139,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalTwoDatasets(VTLValueMetadata metadata, DataSet left, DataSet right)
+	protected VTLValue evalTwoDatasets(VTLValueMetadata resultMetadata, DataSet left, DataSet right)
 	{
 		// index (as right operand) the one with less keys and stream the other (as left operand)
 		boolean swap = left.getMetadata().getIDs().containsAll(right.getMetadata().getIDs());
@@ -146,12 +147,12 @@ public class ArithmeticTransformation extends BinaryTransformation
 		DataSet indexed = swap ? left : right;
 		ArithmeticOperator operator = this.operator;
 
-		if (metadata == null)
+		if (resultMetadata == null)
 		{
 			DataSetComponent<Measure, ?, ?> leftMeasure = streamed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
 			DataSetComponent<Measure, ?, ?> rightMeasure = indexed.getMetadata().getComponents(Measure.class, NUMBERDS).iterator().next();
 			DataSetComponent<Measure, ?, ?> resultComp;
-			if (operator != DIV && INTEGERDS.isAssignableFrom(leftMeasure.getDomain()) && INTEGERDS.isAssignableFrom(rightMeasure.getDomain()))
+			if (operator != DIV && leftMeasure.getDomain() instanceof IntegerDomain && rightMeasure.getDomain() instanceof IntegerDomain)
 				resultComp = INT_VAR;
 			else
 				resultComp = NUM_VAR;
@@ -160,7 +161,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 					.addComponent(resultComp)
 					.build();
 			
-			boolean intResult = INTEGERDS.isAssignableFrom(resultComp.getDomain());
+			boolean intResult = resultComp.getDomain() instanceof IntegerDomain;
 			return streamed.mappedJoin(newStructure, indexed, (dpl, dpr) -> new DataPointBuilder()
 				.add(resultComp, compute(operator, swap, intResult, dpl.get(leftMeasure), dpr.get(rightMeasure)))
 				.addAll(dpl.getValues(Identifier.class))
@@ -169,7 +170,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		}
 		else
 		{
-			Set<DataSetComponent<Measure, ?, ?>> resultMeasures = ((DataSetStructure) metadata).getMeasures();
+			Set<DataSetComponent<Measure, ?, ?>> resultMeasures = ((DataSetStructure) resultMetadata).getMeasures();
 			
 			if (resultMeasures.size() == 1)
 			{
@@ -178,15 +179,15 @@ public class ArithmeticTransformation extends BinaryTransformation
 				DataSetComponent<Measure, ?, ?> indexedMeasure = indexed.getMetadata().getMeasures().iterator().next(); 
 				
 				// at component level, source measures can have different names but there is only 1 for each operand
-				return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dpl, dpr) -> {
-						boolean isResultInt = operator != DIV && INTEGERDS.isAssignableFrom(resultMeasure.getDomain());
+				return streamed.mappedJoin((DataSetStructure) resultMetadata, indexed, (dpl, dpr) -> {
+						boolean isResultInt = operator != DIV && resultMeasure.getDomain() instanceof IntegerDomain;
 						ScalarValue<?, ?, ?, ?> leftVal = dpl.get(streamedMeasure);
 						ScalarValue<?, ?, ?, ?> rightVal = dpr.get(indexedMeasure);
 						return new DataPointBuilder()
 								.add(resultMeasure, compute(operator, swap, isResultInt, leftVal, rightVal))
 								.addAll(dpl.getValues(Identifier.class))
 								.addAll(dpr.getValues(Identifier.class))
-								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata);						
+								.build(LineageNode.of(ArithmeticTransformation.this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) resultMetadata);						
 					});
 			}
 			else
@@ -194,16 +195,16 @@ public class ArithmeticTransformation extends BinaryTransformation
 				// Scan the dataset with less identifiers and find the matches
 				DataSetStructure streamedStructure = streamed.getMetadata();
 				DataSetStructure indexedStructure = indexed.getMetadata();
-				return streamed.mappedJoin((DataSetStructure) metadata, indexed, (dpl, dpr) -> {
+				return streamed.mappedJoin((DataSetStructure) resultMetadata, indexed, (dpl, dpr) -> {
 						return new DataPointBuilder(resultMeasures.stream()
 								.map(toEntryWithValue(compToCalc -> {
-									return compute(operator, swap, INTEGERDS.isAssignableFrom(compToCalc.getDomain()), 
+									return compute(operator, swap, compToCalc.getDomain() instanceof IntegerDomain, 
 											dpl.get(streamedStructure.getComponent(compToCalc.getAlias()).get()), 
 											dpr.get(indexedStructure.getComponent(compToCalc.getAlias()).get()));
 								})).collect(entriesToMap()))		
 							.addAll(dpl.getValues(Identifier.class))
 							.addAll(dpr.getValues(Identifier.class))
-							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) metadata);
+							.build(LineageNode.of(this, LineageCall.of(dpl.getLineage(), dpr.getLineage())), (DataSetStructure) resultMetadata);
 					});
 			}
 		}
@@ -225,7 +226,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 		ValueDomain domainLeft = left.getDomain();
 		ValueDomain domainRight = right.getDomain();
 		
-		if (INTEGERDS.isAssignableFrom(domainLeft) && INTEGERDS.isAssignableFrom(domainRight))
+		if (domainLeft instanceof IntegerDomain && domainRight instanceof IntegerDomain)
 			return INTEGER;
 		else if (NUMBERDS.isAssignableFrom(domainLeft) && NUMBERDS.isAssignableFrom(domainRight))
 			return NUMBER;
@@ -246,13 +247,13 @@ public class ArithmeticTransformation extends BinaryTransformation
 			.forEach(e -> { throw e; });
 
 		ValueDomainSubset<?, ?> scalarDomain = scalar.getDomain();
-		if (!INTEGERDS.isAssignableFrom(scalarDomain))
+		if (!(scalarDomain instanceof IntegerDomain))
 		{
 			if (!NUMBERDS.isAssignableFrom(scalarDomain))
 				throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), NUMBERDS, scalarDomain);
 			
 			for (DataSetComponent<Measure, ?, ?> measure: dataset.getMeasures())
-				if (INTEGERDS.isAssignableFrom(measure.getDomain()))
+				if (measure.getDomain() instanceof IntegerDomain)
 					throw new VTLIncompatibleTypesException(operator.toString().toLowerCase(), NUMBERDS, measure);
 		}
 		
@@ -293,7 +294,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 			if (!(scheme instanceof ThisScope) && !leftMeasure.getAlias().equals(rightMeasure.getAlias()))
 				throw new VTLIncompatibleTypesException(operator.toString(), leftMeasure, rightMeasure);
 
-			resultMeasures = INTEGERDS.isAssignableFrom(rightDomain) ? leftMeasures : rightMeasures;
+			resultMeasures = rightDomain instanceof IntegerDomain ? leftMeasures : rightMeasures;
 		}
 		else
 		{
@@ -314,7 +315,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 					}))
 				// if at least one components is floating point, use floating point otherwise integer
 				.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
-						? INTEGERDS.isAssignableFrom(rm.getDomain())
+						? rm.getDomain() instanceof IntegerDomain
 						? lm : rm : lm))
 				.collect(toSet());
 		}

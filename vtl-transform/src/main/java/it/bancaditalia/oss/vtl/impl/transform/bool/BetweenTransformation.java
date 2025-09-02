@@ -72,13 +72,13 @@ public class BetweenTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		ScalarValue<?, ?, ?, ?> fromValue = (ScalarValue<?, ?, ?, ?>) from.eval(scheme);
 		ScalarValue<?, ?, ?, ?> toValue = (ScalarValue<?, ?, ?, ?>) to.eval(scheme);
 		
 		DataSetComponent<? extends Measure, ?, ?> measure = dataset.getMetadata().getMeasures().iterator().next();
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), 
 				dp -> singletonMap(BOOL_VAR, test(dp.get(measure), fromValue, toValue)));
 	}
 

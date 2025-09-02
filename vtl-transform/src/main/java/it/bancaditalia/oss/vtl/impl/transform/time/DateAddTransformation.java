@@ -132,6 +132,12 @@ public class DateAddTransformation extends TransformationImpl
 		
 		return meta;
 	}
+	
+	@Override
+	public boolean hasAnalytic()
+	{
+		return operand.hasAnalytic();
+	}
 
 	@Override
 	public boolean isTerminal()

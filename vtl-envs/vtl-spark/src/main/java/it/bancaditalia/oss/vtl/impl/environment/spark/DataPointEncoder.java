@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.environment.spark;
 
 import static it.bancaditalia.oss.vtl.impl.environment.spark.SparkUtils.createStructFromComponents;
 import static it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT.LineageSparkUDT;
+import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static java.util.Objects.requireNonNull;
 import static org.apache.spark.sql.types.DataTypes.createStructType;
 
@@ -39,11 +40,14 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
+import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 
 public class DataPointEncoder implements Serializable
 {
@@ -78,11 +82,11 @@ public class DataPointEncoder implements Serializable
 			vals[i] = dp.get(components[i]);
 			if (((ScalarValue<?, ?, ?, ?>) vals[i]).isNull())
 				vals[i] = null;
+			else if (vals[i] instanceof IntegerValue
+					&& components[i].getDomain() instanceof NumberDomain
+					&& !(components[i].getDomain() instanceof IntegerDomain))
+				vals[i] = createNumberValue((Number) ((ScalarValue<?, ?, ?, ?>) vals[i]).get());
 		}
-		
-		for (int i = 0; i < vals.length; i++)
-			if (vals[i] instanceof NullValue)
-				throw new NullPointerException();
 		
 		vals[components.length] = dp.getLineage();
 		return new GenericRowWithSchema(vals, schema);
