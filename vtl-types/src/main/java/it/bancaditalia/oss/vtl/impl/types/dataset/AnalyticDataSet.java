@@ -86,6 +86,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 	private final List<SortCriterion> sortCriteria;
 	private final WindowCriterion window;
 	private final SerUnaryOperator<Lineage> lineageOp;
+	private final DataSetComponent<?, ?, ?> srcComponent;
 	private final DataSetComponent<?, ?, ?> destComponent;
 	private final SerFunction<DataPoint, T> extractor;
 	private final SerCollector<T, ?, TT> collector;
@@ -104,6 +105,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		
 		this.source = source;
 		this.lineageOp = lineageOp;
+		this.srcComponent = srcComponent;
 		this.destComponent = destComponent;
 		this.extractor = coalesce(extractor, dp -> (T) dp.get(srcComponent));
 		this.collector = collector;
@@ -157,7 +159,15 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 				partitioned = source.stream()
 					.collect(groupingByConcurrent(dp -> dp.getValues(partitionIds), collectingAndThen(toList(), list -> {
 							DataPoint[] window = list.toArray(new DataPoint[list.size()]);
-							Arrays.sort(window, orderBy); 
+							if (sortCriteria.size() > 0)
+								try
+								{
+									Arrays.sort(window, orderBy);
+								}
+								catch (Exception e)
+								{
+									e.printStackTrace();
+								} 
 							return window;
 						}))
 					).values();
@@ -197,12 +207,18 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 		if (finisher != null)
 			finished = exploded.map(splitting(this::explode))
 				.collect(concatenating(ORDERED));
-		
+
+		DataSetStructure destStructure = getMetadata();
+		boolean remove = srcComponent.getAlias().equals(destComponent.getAlias());
 		return finished.map(e -> new SimpleEntry<>((ScalarValue<?, ?, ?, ?>) e.getKey(), e.getValue()))
-			.map(splitting((value, dp) -> new DataPointBuilder(dp, DONT_SYNC)
-				.delete(destComponent)
-				.add(destComponent, value)
-				.build(lineageOp.apply(dp.getLineage()), getMetadata())));
+			.map(splitting((value, dp) -> {
+				DataPointBuilder builder = new DataPointBuilder(dp, DONT_SYNC);
+				if (remove)
+					builder = builder.delete(srcComponent);
+					
+				builder = builder.delete(destComponent).add(destComponent, value);
+				return builder.build(lineageOp.apply(dp.getLineage()), destStructure);
+			}));
 	}
 
 	// Explode the collections resulting from the application of the window function to single components

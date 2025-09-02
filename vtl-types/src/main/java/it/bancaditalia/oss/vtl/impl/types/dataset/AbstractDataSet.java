@@ -96,13 +96,15 @@ public abstract class AbstractDataSet implements DataSet
 
 	private static AbstractDataSet ofLambda(DataSetStructure metadata, SerSupplier<Stream<DataPoint>> supplier)
 	{
-		return new AbstractDataSet(metadata) {
+		AbstractDataSet ds = new AbstractDataSet(metadata) {
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
 			{
 				return supplier.get();
 			}
 		};
+
+		return ds;
 	}
 
 	@Override
@@ -200,7 +202,6 @@ public abstract class AbstractDataSet implements DataSet
 			throw new VTLInvariantIdentifiersException("map", identifiers, metadata.getIDs());
 		
 		LOGGER.debug("Creating dataset by mapping from {} to {}", dataStructure, metadata);
-		
 		return new AbstractDataSet(metadata) {
 			@Override
 			protected Stream<DataPoint> streamDataPoints()
@@ -265,10 +266,11 @@ public abstract class AbstractDataSet implements DataSet
 	public <T, TT> DataSet analytic(SerUnaryOperator<Lineage> lineageOp, DataSetComponent<?, ?, ?> sourceComp, DataSetComponent<?, ?, ?> destComp, WindowClause clause,
 			SerFunction<DataPoint, T> extractor, SerCollector<T, ?, TT> collector, SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
 	{
-		DataSetStructure newStructure = new DataSetStructureBuilder(getMetadata())
-				.addComponent(destComp)
-				.build();
+		DataSetStructureBuilder builder = new DataSetStructureBuilder(getMetadata());
+		if (sourceComp.getAlias().equals(destComp.getAlias()))
+			builder = builder.removeComponent(sourceComp);
 		
+		DataSetStructure newStructure = builder.addComponent(destComp).build();
 		return new AnalyticDataSet<>(this, newStructure, lineageOp, clause, sourceComp, destComp, extractor, collector, finisher);
 	}
 	

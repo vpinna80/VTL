@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithKeys;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static java.lang.invoke.MethodHandles.lookup;
@@ -27,7 +28,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collector.Characteristics.CONCURRENT;
 import static java.util.stream.Collector.Characteristics.UNORDERED;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Serializable;
@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -159,8 +158,7 @@ public class DataPointBuilder implements Serializable
 		if (!component.getDomain().isAssignableFrom(value.getDomain()))
 			throw new VTLCastException(component, value);
 		
-		final ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, value);
-
+		ScalarValue<?, ?, ?, ?> oldValue = delegate.putIfAbsent(component, component.getDomain().cast(value));
 		if (value.isNull() && oldValue != null && component.is(Identifier.class)) {
 			throw new NullPointerException("Null value for identifier " + component);
 		}
@@ -220,11 +218,10 @@ public class DataPointBuilder implements Serializable
 		private DataPointImpl(Lineage lineage, DataSetStructure structure, Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> values)
 		{
 			this.lineage = lineage;
-			values.putAll(values);
 
-			for (DataSetComponent<?, ?, ?> c: structure)
-				if (c.is(Attribute.class))
-					values.putIfAbsent(c, NullValue.instanceFrom(c));
+			for (DataSetComponent<?, ?, ?> component: structure)
+				if (component.is(Attribute.class) && !values.containsKey(component))
+					values.put(component, NullValue.instanceFrom(component));
 
 //			if (LOGGER.isTraceEnabled())
 //			{
@@ -263,7 +260,9 @@ public class DataPointBuilder implements Serializable
 					ids = Utils.getStream(values).filter(entryByKey(k -> k.is(role))).map(keepingValue(k -> k.asRole(Identifier.class))).collect(SerCollectors.entriesToMap());
 				// safe cast, R is Identifier
 				@SuppressWarnings({ "unchecked", "rawtypes" })
-				final Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = (Map) ids;
+				Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>> result = 
+						(Map<DataSetComponent<R, ?, ?>, ScalarValue<?, ?, ?, ?>>)
+						(Map<? extends DataSetComponent, ? extends ScalarValue>) (Map<?, ?>) ids;
 				return result;
 			}
 			else
@@ -284,15 +283,24 @@ public class DataPointBuilder implements Serializable
 		@Override
 		public DataPoint combine(DataPoint other, SerBinaryOperator<Lineage> lineageCombiner)
 		{
-			Objects.requireNonNull(other);
+			Map<VTLAlias, DataSetComponent<?, ?, ?>> remaining = new HashMap<>(other.keySet().stream().collect(toMapWithKeys(DataSetComponent::getAlias)));
+			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> combined = new HashMap<>();
 
-			Set<VTLAlias> thisComponentNames = keySet().stream().map(DataSetComponent::getAlias).collect(toSet());
-			Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> finalMap = other.keySet().stream()
-					.filter(c -> !thisComponentNames.contains(c.getAlias()))
-					.collect(toConcurrentMap(c -> c, other::get, (a, b) -> null, () -> new ConcurrentHashMap<>(this)));
-			DataSetStructure newStructure = new DataSetStructureBuilder(finalMap.keySet()).build();
+			for (Entry<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> e: values.entrySet())
+			{
+				DataSetComponent<?, ?, ?> otherComp = remaining.remove(e.getKey().getAlias());
+				
+				if (otherComp == null)
+					combined.put(e.getKey(), e.getValue());
+				else
+					combined.put(otherComp, other.get(otherComp));
+			}
+			
+			for (DataSetComponent<?, ?, ?> otherComp: remaining.values())
+				combined.put(otherComp, other.get(otherComp));
 
-			return new DataPointImpl(lineageCombiner.apply(lineage, other.getLineage()), newStructure, finalMap);
+			DataSetStructure newStructure = new DataSetStructureBuilder(combined.keySet()).build();
+			return new DataPointImpl(lineageCombiner.apply(lineage, other.getLineage()), newStructure, combined);
 		}
 
 		@Override

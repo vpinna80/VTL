@@ -157,10 +157,25 @@ public class AggregateTransformation extends TransformationImpl
 		else
 			// Create a single collector that combines each collector that aggregates a measure into one
 			for (DataSetComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
-				if (combined == null)
-					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getDomain()), v -> new HashMap<>(Map.of(measure, v)))));
+			{
+				DataSetComponent<?, ?, ?> destMeasure;
+				if (targetName != null)
+					destMeasure = ((DataSetStructure) metadata).getComponent(targetName)
+							.orElseThrow(() -> new VTLMissingComponentsException((DataSetStructure) metadata, measure.getAlias()));
+				else if (metadata instanceof DataSetStructure)
+					destMeasure = ((DataSetStructure) metadata).getComponent(measure.getAlias())
+							.orElseThrow(() -> new VTLMissingComponentsException((DataSetStructure) metadata, measure.getAlias()));
 				else
-					combined = teeing(mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(measure.getDomain()), v -> new SimpleEntry<>(measure, v)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
+					destMeasure = measure;
+				
+				if (combined == null)
+					combined = mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), 
+						collectingAndThen(aggregation.getReducer(destMeasure.getDomain()), 
+							v -> new HashMap<>(Map.of(destMeasure, v))
+						)));
+				else
+					combined = teeing(mapping(dp -> dp.get(measure), filtering(not(NullValue.class::isInstance), collectingAndThen(aggregation.getReducer(destMeasure.getDomain()), v -> new SimpleEntry<>(destMeasure, v)))), combined, (e, m) -> { m.put(e.getKey(), e.getValue()); return m; });
+			}
 		
 		Set<DataSetComponent<Identifier, ?, ?>> groupIDs = groupingClause == null ? emptySet() : groupingClause.getGroupingComponents(dataset.getMetadata());
 
@@ -365,6 +380,12 @@ public class AggregateTransformation extends TransformationImpl
 		}
 	}
 
+	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
+	
 	public AggregateOperator getAggregation()
 	{
 		return aggregation;

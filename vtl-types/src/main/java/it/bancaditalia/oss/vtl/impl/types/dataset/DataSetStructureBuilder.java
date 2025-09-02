@@ -42,11 +42,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleRolesException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents;
 import it.bancaditalia.oss.vtl.model.data.Component;
@@ -57,6 +60,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 
@@ -164,9 +169,16 @@ public class DataSetStructureBuilder
 		
 		private DataSetMetadataImpl(Set<DataSetComponent<?, ?, ?>> components)
 		{
-			byName = components.stream()
-				.sorted(DataSetComponent::byNameAndRole)
-				.collect(collectingAndThen(toMap(c -> c.getAlias(), identity(), LinkedHashMap::new), Collections::unmodifiableMap));
+			try
+			{
+				byName = components.stream()
+					.sorted(DataSetComponent::byNameAndRole)
+					.collect(collectingAndThen(toMap(c -> c.getAlias(), identity(), LinkedHashMap::new), Collections::unmodifiableMap));
+			}
+			catch (RuntimeException e)
+			{
+				throw e;
+			}
 			byRole = components.stream()
 					.collect(groupingBy(DataSetComponent::getRole, DataSetStructureBuilder::createEmptyStructure, toSet()));
 			byRole.get(Attribute.class).addAll(byRole.get(ViralAttribute.class));
@@ -232,9 +244,38 @@ public class DataSetStructureBuilder
 		}
 
 		@Override
-		public DataSetStructure joinForOperators(DataSetStructure VTLDataSetMetadata)
+		public DataSetStructure joinForOperators(DataSetStructure other)
 		{
-			return new DataSetStructureBuilder(this).addComponents(VTLDataSetMetadata).build();
+			Set<DataSetComponent<?, ?, ?>> remaining = new HashSet<>(other);
+			Set<DataSetComponent<?, ?, ?>> commonIDs = new HashSet<>(byRole.get(Identifier.class));
+			commonIDs.retainAll(other);
+			
+			DataSetStructureBuilder builder = new DataSetStructureBuilder();
+			for (Entry<VTLAlias, DataSetComponent<?, ?, ?>> e: byName.entrySet())
+			{
+				final DataSetComponent<?, ?, ?> thisComp = e.getValue();
+				Optional<DataSetComponent<?, ?, ?>> maybeOther = other.getComponent(e.getKey());
+
+				if (maybeOther.isPresent())
+				{
+					DataSetComponent<?, ?, ?> otherComp = maybeOther.get();
+					remaining.remove(otherComp);
+					if (thisComp.getRole() != otherComp.getRole())
+						throw new VTLIncompatibleRolesException("jfop", otherComp, thisComp.getRole());
+					else if (commonIDs.contains(otherComp) && commonIDs.contains(thisComp))
+						builder = builder.addComponent(thisComp);
+					else if (thisComp.getDomain() instanceof IntegerDomain && thisComp.getDomain() instanceof NumberDomain)
+						builder = builder.addComponent(otherComp);
+					else if (thisComp.getDomain() instanceof NumberDomain && thisComp.getDomain() instanceof NumberDomain)
+						builder = builder.addComponent(thisComp);
+					else
+						throw new VTLIncompatibleTypesException("jfop", thisComp, otherComp);
+				}
+				else
+					builder = builder.addComponent(thisComp);
+			}
+			
+			return builder.addComponents(remaining).build();
 		}
 
 		@Override

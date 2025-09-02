@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
+import static java.util.Objects.requireNonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,14 +91,14 @@ public class DataSetComponentImpl<R extends Component, S extends ValueDomainSubs
 
 	public DataSetComponentImpl(DataStructureComponent<R> template, S domain)
 	{
-		this(template.getAlias(), template.getRole(), domain);
+		this(template.getAlias(), template.getRole(), requireNonNull(domain));
 	}
 
 	public DataSetComponentImpl(VTLAlias alias, Class<R> role, S domain)
 	{
-		this.alias = alias;
-		this.role = role;
-		this.domain = domain;
+		this.alias = requireNonNull(alias);
+		this.role = requireNonNull(role);
+		this.domain = requireNonNull(domain);
 		this.hashCode = defaultHashCode();
 	}
 	

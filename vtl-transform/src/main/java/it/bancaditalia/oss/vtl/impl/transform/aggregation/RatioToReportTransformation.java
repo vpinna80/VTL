@@ -80,7 +80,7 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		Set<DataSetComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
 		Set<DataSetComponent<Measure, ?, ?>> measures = dataset.getMetadata().getMeasures();
@@ -127,6 +127,12 @@ public class RatioToReportTransformation extends UnaryTransformation implements 
 		return new DataSetStructureBuilder(dataset.getIDs())
 				.addComponents(dataset.getMeasures())
 				.build();
+	}
+
+	@Override
+	public boolean hasAnalytic()
+	{
+		return true;
 	}
 	
 	@Override

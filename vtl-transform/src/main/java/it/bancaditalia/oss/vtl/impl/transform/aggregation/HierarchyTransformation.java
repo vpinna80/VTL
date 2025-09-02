@@ -406,6 +406,12 @@ public class HierarchyTransformation extends TransformationImpl
 	}
 	
 	@Override
+	public boolean hasAnalytic()
+	{
+		return false;
+	}
+	
+	@Override
 	public String toString()
 	{
 		return 	"hierarchy(" + operand + ", " + rulesetID + (conditions.isEmpty() ? "" : " condition " + String.join(", ", conditions.toString())) + (id == null ? "" : " rule " + id)

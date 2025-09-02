@@ -23,8 +23,14 @@ import static it.bancaditalia.oss.vtl.impl.transform.scope.ThisScope.THIS;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING;
 import static it.bancaditalia.oss.vtl.impl.transform.util.WindowCriterionImpl.RANGE_UNBOUNDED_PRECEDING_TO_CURRENT;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.INT_VAR;
+import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.AVG;
 import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.COUNT;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.STDDEV_POP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.STDDEV_SAMP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.VAR_POP;
+import static it.bancaditalia.oss.vtl.impl.types.operators.AnalyticOperator.VAR_SAMP;
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toSet;
@@ -35,12 +41,14 @@ import static it.bancaditalia.oss.vtl.util.Utils.toEntry;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLIncompatibleTypesException;
 import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
@@ -58,6 +66,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
@@ -91,24 +101,25 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
 		List<SortCriterion> ordering;
 		if (orderByClause.isEmpty())
-			ordering = dataset.getMetadata().getIDs().stream()
-				.map(SortClause::new)
-				.collect(toList());
+			ordering = emptyList();
 		else
+		{
+			// else 
 			ordering = orderByClause.stream()
 				.map(toEntry(OrderByItem::getAlias, OrderByItem::getMethod))
 				.map(keepingValue(dataset::getComponent))
 				.map(keepingValue(Optional::get))
 				.map(splitting(SortClause::new))
 				.collect(toList());
-
+		}
+		
 		Set<DataSetComponent<Identifier, ?, ?>> partitionIDs = dataset.getMetadata().matchIdComponents(partitionBy, "partition by");
 		partitionIDs.removeAll(ordering.stream().map(SortCriterion::getComponent).collect(toSet()));
-		
+
 		for (DataSetComponent<?, ?, ?> orderingComponent: ordering.stream().map(SortCriterion::getComponent).collect(toSet()))
 			if (partitionIDs.contains(orderingComponent))
 				throw new VTLException("Cannot order by " + orderingComponent.getAlias() + " because the component is used in partition by " + partitionBy);
@@ -117,9 +128,11 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 				? DATAPOINTS_UNBOUNDED_PRECEDING_TO_UNBOUNDED_FOLLOWING : RANGE_UNBOUNDED_PRECEDING_TO_CURRENT);
 		WindowClause clause = new WindowClauseImpl(partitionIDs, ordering, criterion);
 		
-		for (DataSetComponent<Measure, ?, ?> measure: dataset.getMetadata().getMeasures())
-			dataset = dataset.analytic(lineageEnricher(this), measure, measure, clause, 
-					null, aggregation.getReducer(measure.getDomain()), null);
+		for (DataSetComponent<Measure, ?, ?> src: dataset.getMetadata().getMeasures())
+		{
+			DataSetComponent<?, ?, ?> dest = ((DataSetStructure) resultMetadata).getComponent(src.getAlias()).orElseThrow(() -> new VTLMissingComponentsException((DataSetStructure) resultMetadata, src.getAlias()));
+			dataset = dataset.analytic(lineageEnricher(this), src, dest, clause, null, aggregation.getReducer(src.getDomain()), null);
+		}
 
 		return dataset;
 	}
@@ -154,16 +167,27 @@ public class SimpleAnalyticTransformation extends UnaryTransformation implements
 			else
 				builder = builder.removeComponent(dataset.getMeasures().iterator().next())
 						.addComponent(INT_VAR);
+		else if (EnumSet.of(AVG, STDDEV_POP, STDDEV_SAMP, VAR_POP, VAR_SAMP).contains(aggregation))
+		{
+			for (DataSetComponent<Measure, ?, ?> measure: dataset.getMeasures())
+				if (measure.getDomain() instanceof IntegerDomain)
+					builder = builder.removeComponent(measure).addComponent(measure.getCasted(NUMBERDS));
+				else if (!(measure.getDomain() instanceof NumberDomain))
+					throw new VTLIncompatibleTypesException(aggregation.toString().toLowerCase(), measure, NUMBERDS);
+		}
 			
 		return builder.build();
+	}
+
+	@Override
+	public boolean hasAnalytic()
+	{
+		return true;
 	}
 	
 	@Override
 	public String toString()
 	{
-		return aggregation + "(" + operand + " over (" 
-				+ (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().map(VTLAlias::toString).collect(joining(", ", " partition by ", " ")))
-				+ (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " ")))
-				+ windowCriterion + ")";
+		return aggregation + "(" + operand + " over (" + (partitionBy == null || partitionBy.isEmpty() ? "" : partitionBy.stream().map(VTLAlias::toString).collect(joining(", ", " partition by ", " "))) + (orderByClause == null || orderByClause.isEmpty() ? "" : orderByClause.stream().map(Object::toString).collect(joining(", ", " order by ", " "))) + windowCriterion + ")";
 	}
 }

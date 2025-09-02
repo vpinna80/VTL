@@ -43,7 +43,7 @@ public interface LimitCriterion
 	public int getCount();
 
 	/**
-	 * Tests if this {@link LimitCriterion} is of the form UNBOUNDED PRECEDING or UNBOUNDED FOLLOWING
+	 * Tests if this {@link LimitCriterion} is of the form UNLIMITED PRECEDING or UNLIMITED FOLLOWING
 	 * 
 	 * @return true if the coondition holds
 	 */

@@ -56,4 +56,9 @@ public interface AnalyticTransformation
 			return (method != null ? method + " " : "") + alias;
 		}
 	}
+
+	public default boolean hasAnalytic()
+	{
+		return false;
+	}
 }

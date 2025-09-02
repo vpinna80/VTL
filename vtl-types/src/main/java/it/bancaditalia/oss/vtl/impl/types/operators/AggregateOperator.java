@@ -21,7 +21,6 @@ package it.bancaditalia.oss.vtl.impl.types.operators;
 
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.isUseBigDecimal;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.collectingAndThen;
@@ -44,6 +43,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerDoubleSumAvgCount;
@@ -99,12 +99,12 @@ public enum AggregateOperator
 	
 	static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getSummingCollector(ValueDomainSubset<? ,?> targetDomain)
 	{
-		return SerCollector.of(() -> new SerDoubleSumAvgCount(INTEGERDS.isAssignableFrom(targetDomain)), SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::sum, EnumSet.of(UNORDERED, CONCURRENT));
+		return SerCollector.of(() -> new SerDoubleSumAvgCount(targetDomain instanceof IntegerDomain), SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::sum, EnumSet.of(UNORDERED, CONCURRENT));
 	}
 
 	static SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getAveragingCollector(ValueDomainSubset<? ,?> targetDomain)
 	{
-		return SerCollector.of(() -> new SerDoubleSumAvgCount(INTEGERDS.isAssignableFrom(targetDomain)), SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::avg, EnumSet.of(UNORDERED, CONCURRENT));
+		return SerCollector.of(() -> new SerDoubleSumAvgCount(targetDomain instanceof IntegerDomain), SerDoubleSumAvgCount::accumulate, SerDoubleSumAvgCount::combine, AggregateOperator::avg, EnumSet.of(UNORDERED, CONCURRENT));
 	}
 
 	public SerCollector<ScalarValue<?, ?, ?, ?>, ?, ScalarValue<?, ?, ?, ?>> getReducer(ValueDomainSubset<?, ?> domain)

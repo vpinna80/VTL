@@ -41,6 +41,8 @@ import static java.util.Arrays.binarySearch;
 import static java.util.Collections.emptyMap;
 import static org.apache.spark.sql.Encoders.INT;
 import static org.apache.spark.sql.expressions.Window.partitionBy;
+import static org.apache.spark.sql.expressions.Window.unboundedFollowing;
+import static org.apache.spark.sql.expressions.Window.unboundedPreceding;
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.explode;
 import static org.apache.spark.sql.functions.lit;
@@ -116,8 +118,6 @@ import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
 import it.bancaditalia.oss.vtl.impl.types.window.RankedPartition;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
-import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
@@ -128,6 +128,8 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
+import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.LimitCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
@@ -135,7 +137,6 @@ import it.bancaditalia.oss.vtl.util.SerBiConsumer;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
-import it.bancaditalia.oss.vtl.util.SerCollectors;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerPredicate;
 import it.bancaditalia.oss.vtl.util.SerSupplier;
@@ -143,6 +144,7 @@ import it.bancaditalia.oss.vtl.util.SerTriFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
 import it.bancaditalia.oss.vtl.util.Utils;
 import scala.Option;
+import scala.collection.JavaConverters;
 import scala.collection.immutable.ArraySeq;
 
 public class SparkDataSet extends AbstractDataSet
@@ -238,6 +240,18 @@ public class SparkDataSet extends AbstractDataSet
 	}
 	
 	@Override
+	public VTLValue enrichLineage(SerUnaryOperator<Lineage> lineageEnricher)
+	{
+		Dataset<Row> enriched = dataFrame.map((MapFunction<Row, Row>) r -> {
+			Serializable[] row = JavaConverters.asJava(r.toSeq()).toArray(Serializable[]::new);
+			row[row.length - 1] = lineageEnricher.apply((Lineage) row[row.length - 1]);
+			return new GenericRow(row);
+		}, encoder.getRowEncoder());
+		
+		return new SparkDataSet(exportSize, session, dataStructure, enriched);
+	}
+	
+	@Override
 	protected Stream<DataPoint> streamDataPoints()
 	{
 		LOGGER.warn("Streaming datapoints into the driver from Spark dataset {}", getMetadata());
@@ -262,18 +276,23 @@ public class SparkDataSet extends AbstractDataSet
 		DataSetStructure membershipStructure = getMetadata().membership(alias);
 		LOGGER.debug("Creating dataset by membership on {} from {} to {}", alias, getMetadata(), membershipStructure);
 		
-		Column[] cols = getColumnsFromComponents(membershipStructure).toArray(Column[]::new);
+		List<Column> cols = new ArrayList<>(getColumnsFromComponents(membershipStructure));
+		cols.add(col("$lineage$"));
 		Dataset<Row> newDF = getMetadata().getComponent(alias)
 			.filter(comp -> !comp.is(Measure.class))
 			.map(comp -> {
 				VTLAlias defaultName = getDefaultMeasure(comp.getDomain()).getAlias();
 				return dataFrame.withColumn(defaultName.getName(), dataFrame.col(alias.getName()));
 			}).orElse(dataFrame)
-			.select(cols);
+			.select(cols.toArray(Column[]::new));
 		
-		Row lineageRow = new GenericRow(new Object[] { LineageExternal.of("#" + alias) });
-		Dataset<Row> lineageDF = session.createDataFrame(List.of(lineageRow), createStructType(List.of(new StructField("$lineage$", LineageSparkUDT, false, Metadata.empty()))));
-		return new SparkDataSet(exportSize, session, membershipStructure, newDF.drop("$lineage$").crossJoin(lineageDF));
+		newDF = newDF.map((MapFunction<Row, Row>) r -> {
+			Serializable[] row = JavaConverters.asJava(r.toSeq()).toArray(Serializable[]::new);
+			row[row.length - 1] = lineageOp.apply((Lineage) row[row.length - 1]);
+			return new GenericRow(row);
+		}, newDF.encoder());
+		
+		return new SparkDataSet(exportSize, session, membershipStructure, newDF);
 	}
 
 	@Override
@@ -391,8 +410,7 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@Override
-	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other,
-		SerBinaryOperator<DataPoint> mergeOp,
+	public DataSet filteredMappedJoin(DataSetStructure metadata, DataSet other, SerBinaryOperator<DataPoint> mergeOp,
 		DataSetComponent<?, ? extends BooleanDomainSubset<?>, ? extends BooleanDomain> having)
 	{
 		SparkDataSet sparkOther = other instanceof SparkDataSet ? ((SparkDataSet) other) : new SparkDataSet(exportSize, session, other.getMetadata(), other);
@@ -418,15 +436,18 @@ public class SparkDataSet extends AbstractDataSet
 		else
 			joined = leftDataframe.join(rightDataframe, joinKeys, "inner");
 		
-		if (having != DataSet.ALL)
-			joined = joined.filter(udf(v -> v == BooleanValue.TRUE, BooleanType).apply(col(having.getAlias().getName())));
+		DataPointEncoder lenc = encoder;
+		DataPointEncoder renc = sparkOther.encoder;
+		DataPointEncoder resultEnc = new DataPointEncoder(session, metadata);
 		
-		Column[] columns = Arrays.stream(leftDataframe.columns())
-			.map(leftDataframe::col)
-			.collect(SerCollectors.toArray(new Column[leftDataframe.columns().length]));
+		if (having != null)
+			joined = joined.filter(udf(v -> v == BooleanValue.TRUE, BooleanType).apply(col(having.getAlias().getName())));
 
-		joined = joined.select(columns);
-		return new SparkDataSet(exportSize, session, metadata, joined);
+		joined = joined.select(struct(leftDataframe.col("*")).alias("a"), struct(rightDataframe.col("*")).alias("b"))
+			.map((MapFunction<Row, Row>) row -> resultEnc.encode(mergeOp.apply(lenc.decode(row.getAs("a")), renc.decode(row.getAs("b")))),
+				resultEnc.getRowEncoder());
+		
+		return new SparkDataSet(exportSize, session, metadata, resultEnc, joined);
 	}
 	
 	@Override
@@ -456,12 +477,8 @@ public class SparkDataSet extends AbstractDataSet
 		LimitCriterion infBound = clause.getWindowCriterion().getInfBound();
 		LimitCriterion supBound = clause.getWindowCriterion().getSupBound();
 		
-		long inf = infBound.getCount();  
-		long sup = supBound.getCount();
-		if (infBound.getDirection() == PRECEDING)
-			inf = inf == Long.MAX_VALUE ? Long.MIN_VALUE : -inf;
-		if (supBound.getDirection() == PRECEDING)
-			sup = sup == Long.MAX_VALUE ? Long.MIN_VALUE : -sup;
+		long inf = infBound.isUnbounded() ? unboundedPreceding() : (infBound.getDirection() == PRECEDING ? -1 : 1) * infBound.getCount();
+		long sup = supBound.isUnbounded() ? unboundedFollowing() : (supBound.getDirection() == PRECEDING ? -1 : 1) * supBound.getCount();
 			
 		windowSpec = clause.getWindowCriterion().getType() == RANGE 
 				? windowSpec.rangeBetween(inf, sup)

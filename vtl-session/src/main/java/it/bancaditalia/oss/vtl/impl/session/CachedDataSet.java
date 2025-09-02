@@ -151,7 +151,7 @@ public class CachedDataSet extends NamedDataSet
 			while ((lockingThread = lockingRef.get()) != currentThread)
 				if (count++ > 0 && semaphore.tryAcquire(500, MILLISECONDS))
 					return lockingRef.compareAndSet(lockingThread, currentThread);
-				else if (count > 10)
+				else if (count > 2)
 					return false;
 			return true;
 		}

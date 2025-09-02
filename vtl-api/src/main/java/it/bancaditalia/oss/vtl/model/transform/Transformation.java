@@ -63,4 +63,10 @@ public interface Transformation extends Serializable
 	 * @throws VTLException if the metadata is incoherent within the given {@link TransformationScheme}.
 	 */
 	public VTLValueMetadata getMetadata(TransformationScheme scheme);
+	
+	/**
+	 * Tests whether this {@link Transformation} contains a nested analytic invocation.
+	 * @return true if the condition holds.
+	 */
+	public boolean hasAnalytic();
 }

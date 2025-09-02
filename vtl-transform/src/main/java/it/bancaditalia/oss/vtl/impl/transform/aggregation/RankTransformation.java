@@ -177,7 +177,13 @@ public class RankTransformation extends TransformationImpl implements AnalyticTr
 				.addComponent(INT_VAR)
 				.build();
 	}
-	
+
+	@Override
+	public boolean hasAnalytic()
+	{
+		return true;
+	}
+
 	@Override
 	public String toString()
 	{

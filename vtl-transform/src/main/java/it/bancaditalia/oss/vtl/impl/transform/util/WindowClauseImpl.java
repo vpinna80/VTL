@@ -66,6 +66,12 @@ public class WindowClauseImpl implements WindowClause, Serializable
 		return windowCriterion;
 	}
 
+	@Override
+	public String toString()
+	{
+		return "partition by " + partitioningIds + ", order by " + sortCriteria + " " + windowCriterion;
+	}
+
 
 	@Override
 	public int hashCode()

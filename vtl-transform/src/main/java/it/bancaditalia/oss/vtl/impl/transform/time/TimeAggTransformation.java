@@ -86,11 +86,11 @@ public class TimeAggTransformation extends UnaryTransformation
 	}
 
 	@Override
-	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata metadata)
+	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
-		DataSetComponent<Measure, ?, ?> measure = ((DataSetStructure) metadata).getComponents(Measure.class).iterator().next();
+		DataSetComponent<Measure, ?, ?> measure = ((DataSetStructure) resultMetadata).getComponents(Measure.class).iterator().next();
 		
-		return dataset.mapKeepingKeys((DataSetStructure) metadata, lineageEnricher(this), 
+		return dataset.mapKeepingKeys((DataSetStructure) resultMetadata, lineageEnricher(this), 
 				dp -> singletonMap(measure, evalOnScalar(scheme, dp.get(measure), null)));
 	}
 

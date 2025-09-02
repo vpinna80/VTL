@@ -37,7 +37,6 @@ import it.bancaditalia.oss.vtl.model.domain.BooleanDomain;
 import it.bancaditalia.oss.vtl.model.domain.BooleanDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.analytic.WindowClause;
 import it.bancaditalia.oss.vtl.util.SerBiFunction;
-import it.bancaditalia.oss.vtl.util.SerBiPredicate;
 import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
@@ -53,8 +52,6 @@ import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
  */
 public interface DataSet extends VTLValue, Iterable<DataPoint>
 {
-	public static final SerBiPredicate<DataPoint, DataPoint> ALL = (a,  b) -> true;
-
 	/**
 	 * @return The {@link DataSetStructure structure} of this DataSet.
 	 */
