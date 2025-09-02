@@ -140,6 +140,7 @@ let createTree = function(text: string, ctxName: string = 'start') {
 	let treeToArray = function(ctx: antlr4.tree.ParseTree, dsName = ""): [number, Tree, boolean] {
 		if (ctx instanceof antlr4.tree.RuleNode) {
 			if (ctx instanceof StartContext && ctx.getSourceInterval() === antlr4.misc.Interval.INVALID_INTERVAL) {
+				// mark entire tree as invalid
 				return [0, new Tree(EOF, [], [], text.length), false]
 			}
 			let tokenStream = parser._input as antlr4.CommonTokenStream
@@ -173,6 +174,7 @@ let createTree = function(text: string, ctxName: string = 'start') {
 					throw ctx.exception
 				}
 			} else {
+				// parsing successful for this subtree
 				let children: [number, Tree, boolean][] = []
 				if (ctx instanceof StartContext) {
 					start = 0
@@ -181,22 +183,29 @@ let createTree = function(text: string, ctxName: string = 'start') {
 					let startIndex = lastToken && lastToken.tokenIndex + 1 || 0
 					children = [...children, ...addCommentTokens(tokenStream.getTokens(startIndex, ctx.start.tokenIndex))]
 				}
-				for (let i = 0; i < ctx.children.length; i++) {
-					let lastIndex = lastToken && lastToken.tokenIndex + 1 || 0
-					let child = treeToArray(ctx.children[i], dsName)
-					if (i > 0 && lastIndex && ctx.children[i] instanceof antlr4.tree.TerminalNode && !ctx.children[i].isErrorNode) {
-						children = [...children, ...addCommentTokens(tokenStream.getTokens(lastIndex + 1, ctx.children[i].symbol.tokenIndex))]
+				// fetch comments in between children, if any
+				if (ctx.children) {
+					for (let i = 0; i < ctx.children.length; i++) {
+						let lastIndex = lastToken && lastToken.tokenIndex + 1 || 0
+						let child = treeToArray(ctx.children[i], dsName)
+						if (i > 0 && lastIndex && ctx.children[i] instanceof antlr4.tree.TerminalNode && !ctx.children[i].isErrorNode) {
+							children = [...children, ...addCommentTokens(tokenStream.getTokens(lastIndex + 1, ctx.children[i].symbol.tokenIndex))]
+						}
+						children = [...children, child].filter(e => e)
 					}
-					children = [...children, child].filter(e => e)
 				}
 				// fetch eventual skipped comments at the end of the code
 				if (ctx instanceof StartContext) {
 					children = [...children, ...addCommentTokens(tokenStream.getTokens(ctx.stop.tokenIndex + 1, parser._input.tokens.length - 1))]
 				}
+				// Transpose children arrays for better consumption
 				let tchildren: [number[], Tree[], boolean] = [children.map(r => r[0] - start), children.map(r => r[1]), children.some(r => r[2])]
 				let props: [NodeProp<any>, any][] = ctx instanceof StartContext && [[idsProp, ids]] || []
 				props.push([ctxProp, ctx])
-				return [start, new Tree(nodeset.types[ctx.ruleIndex + rulesStartIndex], tchildren[1], tchildren[0], tchildren[0].at(-1) + tchildren[1].at(-1).length + 1, props), tchildren[2]]
+				if (children.length > 0)
+					return [start, new Tree(nodeset.types[ctx.ruleIndex + rulesStartIndex], tchildren[1], tchildren[0], tchildren[0].at(-1) + tchildren[1].at(-1).length + 1, props), tchildren[2]]
+				else
+					return [start, new Tree(nodeset.types[ctx.ruleIndex + rulesStartIndex], [], [], ctx.stop.stop), false]
 			}
 		} else if (ctx instanceof antlr4.tree.TerminalNode) {
 			let token = ctx.getSymbol()
