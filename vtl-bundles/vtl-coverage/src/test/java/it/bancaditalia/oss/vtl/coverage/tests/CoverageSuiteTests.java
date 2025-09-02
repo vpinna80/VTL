@@ -168,7 +168,7 @@ public class CoverageSuiteTests
 		return tests;
 	}
 
-	@RepeatedParameterizedTest(value = REPETITIONS, name = "{1} test {2} rep {currentRepetition}/{totalRepetitions}")
+	@RepeatedParameterizedTest(value = REPETITIONS, name = "{0} test {2} of {1} rep {currentRepetition}/{totalRepetitions}")
 	@MethodSource("test")
 	public void test(Path categ, Path operator, String number, String testCode) throws Throwable 
 	{
@@ -192,7 +192,7 @@ public class CoverageSuiteTests
 		doTest(number, testCode, false, jsonURL, operator.resolve("examples"));
 	}
 
-	@RepeatedParameterizedTest(value = REPETITIONS, name = "{1} test {2} rep {currentRepetition}/{totalRepetitions}")
+	@RepeatedParameterizedTest(value = REPETITIONS, name = "{0} test {2} of {1} rep {currentRepetition}/{totalRepetitions}")
 	@MethodSource("test")
 	public void testSpark(Path categ, Path operator, String number, String testCode) throws Throwable 
 	{
