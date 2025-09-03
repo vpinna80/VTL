@@ -687,6 +687,7 @@ function addrowListener(button, table, row) {
 
 function downloadJson() {
   const json = {
+	"vtl-schema-version": "2.2.0",
     data: Array.from(document.getElementById("datasetsList").children)
             .map(ds => ({ 
               name: ds.dataset.name,
