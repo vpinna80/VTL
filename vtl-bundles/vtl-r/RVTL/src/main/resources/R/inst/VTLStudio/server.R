@@ -32,13 +32,6 @@ vtlProps <- list(
   EXAMPLE_OPERATOR = exampleEnv$EXAMPLES_OPERATOR
 )
 
-globalEnvs <- function(newenvs = NULL) {
-  if (is.null(newenvs))
-    return(sapply(configManager$getGlobalPropertyValues(vtlProps$ENVIRONMENT_IMPLEMENTATION), .jstrVal))
-  else
-    configManager$setGlobalPropertyValue(vtlProps$ENVIRONMENT_IMPLEMENTATION, newenvs)
-}
-
 globalRepo <- function(newrepo = NULL) {
   if (is.null(newrepo))
     return(configManager$getGlobalPropertyValue(vtlProps$METADATA_REPOSITORY))
@@ -156,10 +149,7 @@ createPanel <- function(vtlSession) {
           bslib::card(
             bslib::card_header('VTL Environments', makeButton(makeID('card_envs'))),
             bslib::card_body(id = makeID('card_envs'), class = 'collapse show', 
-              sortable::bucket_list(header = NULL, orientation = 'horizontal',
-                sortable::add_rank_list("Available", activeSessionEnvs(F), makeID("envs_inactive")),
-                sortable::add_rank_list("Active", activeSessionEnvs(T), makeID("envs"))
-              )
+              DT::dataTableOutput(makeID('envs'), fill = F)
             )
           ),
           bslib::card(
@@ -331,18 +321,34 @@ vtlServer <- function(input, output, session) {
     # Populate environments and repositories lists in session settings
     sheetID <- makeID('sheets')
     settingsFirstOpened <- observe({
+      req(input[[sheetID]] == 'settings')
       currentSession <- VTLSessionManager$getOrCreate(vtlSession)
-      updateSelectInput(session, makeID('selectEnv'), NULL, environments)
-      updateSelectInput(session, makeID('repoClass'), NULL, repos, globalRepo())
+      envs <- strsplit(.jstrVal(currentSession$getProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION)), ",", T)[[1]]
+      checked <- unname(unlist(which(sapply(vtlAvailableEnvironments(), `%in%`, envs))))
+      
+      output[[makeID('envs')]] <- DT::renderDT(
+        expr = data.frame(name = names(vtlAvailableEnvironments()), check.names = F),
+        selection = list(mode = "multiple", selected = checked),
+        rownames = FALSE, colnames = NULL,
+        options = list(
+          dom = 't', paging = FALSE, ordering = FALSE, info = FALSE, stripeClasses = list(),
+          columnDefs = list(list(targets = 0, className = "select-checkbox")),
+          select = list(style = "multi", selector = "td:first-child"),
+          headerCallback = htmlwidgets::JS("function(thead) { thead.classList.add('d-none') }")
+        )
+      )
+      
+      # Single execution only when VTL Studio starts
+      updateSelectInput(inputId = makeID('selectEnv'), choices = vtlAvailableEnvironments())
+      updateSelectInput(inputId = makeID('repoClass'), choices = repos, selected = globalRepo())
       session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = currentSession$text))
 
       if (currentSession$isCompiled()) {
         updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
-        updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
       }
       
       settingsFirstOpened$destroy()
-    })
+    }) |> bindEvent(input[[sheetID]])
 
     # Controls and observers for properties of selected environment in active session
     output[[makeID('envprops')]] <- renderUI({
@@ -359,33 +365,41 @@ vtlServer <- function(input, output, session) {
       getValue <- VTLSessionManager$getOrCreate(vtlSession)$getProperty
       setValue <- VTLSessionManager$getOrCreate(vtlSession)$setProperty
       repoClass <- isolate(req(input[[makeID('repoClass')]]))
+      setValue(vtlProps$METADATA_REPOSITORY, repoClass)
+      repoName <- names(vtlAvailableRepositories()[match(repoClass, vtlAvailableRepositories())])
       output[[makeID('confOutput')]] <- renderPrint({
-        setValue(vtlProps$METADATA_REPOSITORY, repoClass)
-        cat("Set metadata repository to", repoClass, "\n")
+        cat("Set session", vtlSession, "metadata repository to", repoName, "\n")
       })
       lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observersGen,
              getValue = getValue, setValue = setValue, makeID = makeID)
       controlsGen(repoClass, getValue, makeID)
     }) |> bindEvent(input[[makeID('repoClass')]], ignoreInit = T)
-    
+
     # Update active environments in active session
-    output[[makeID('confOutput')]] <- renderPrint({
-      envs <- req(input[[makeID('envs')]])
-      VTLSessionManager$getOrCreate(vtlSession)$setProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION, paste0(environments[envs], collapse = ","))
-      cat("Set active environments to:\n    -", paste0(envs, collapse = "\n    - "), "\n")
-    }) |> bindEvent(input[[makeID('envs')]])
+    observe({
+      selected <- input[[makeID('envs_rows_selected')]]
+      activeEnvs <- vtlAvailableEnvironments()[selected]
+      configManager$setGlobalPropertyValue(vtlProps$ENVIRONMENT_IMPLEMENTATION, paste0(activeEnvs, collapse =","))
+      output[[makeID('confOutput')]] <- renderPrint({
+        cat("Set ", vtlSession, " environments to:\n", paste0("    - ", activeEnvs, collapse = "\n"), sep = "")
+      })
+    }) |> bindEvent(input[[makeID('envs_rows_selected')]], ignoreInit = T)
     
     # dataset table display
-    output[[makeID('datasetsInfo')]] <- renderPrint({
+    observe({
       datasetName <- req(input[[makeID('datasetName')]])
       session <- VTLSessionManager$getOrCreate(vtlSession)
       statements <- sapply(session$getStatements()$entrySet(), function (x) {
         stats::setNames(list(x$getValue()), x$getKey()$getName())
       })
       ddf <- session$getValues(datasetName)[[1]]
-      formula <- get0(datasetName, as.environment(statements), ifnotfound = 'Source data')
-      cat(datasetName, " := ", formula, " (", nrow(ddf), "by", ncol(ddf), ")")
-    }) |> bindEvent(input[[makeID('datasetName')]])
+      statement <- get0(datasetName, as.environment(statements), ifnotfound = paste0('Source data: ', datasetName))
+      
+      # Output the rule
+      output[[makeID('datasetsInfo')]] <- renderPrint({
+        cat(statement, "\nSize is:", nrow(ddf), "by", ncol(ddf))
+      })
+	}) |> bindEvent(input[[makeID('datasetName')]])
     
     # Lineage display
     output[[makeID('lineage')]] <- networkD3::renderSankeyNetwork({
@@ -412,24 +426,37 @@ vtlServer <- function(input, output, session) {
         shinyjs::alert(paste("Node", datasetName, "is a scalar or a source node."))
     }) |> bindEvent(input[[makeID('datasetName')]])
 
+    # Dataset display
     output[[makeID('dptable')]] <- DT::renderDataTable({
       maxlines = as.integer(isolate(req(input[[makeID('maxlines')]])))
       selected <- req(input[[makeID('datasetName')]])
       ddf = tryCatch({
-        VTLSessionManager$getOrCreate(vtlSession)$getValues(selected)[[1]]
-      }, error = function(e) {
-        stop('Error retriveing data for ', selected, ': ', e)
-      })
-      if (ncol(ddf) <= 1 || names(ddf)[1] == 'Scalar') {
+          VTLSessionManager$getOrCreate(vtlSession)$getValues(selected)[[1]]
+        }, error = function(e) {
+          if (!is.null(e[['jobj']]) && is.function(e$jobj[['getMessage']])) {
+            print(paste0("ERROR: ", e$jobj$getMessage()))
+            e$jobj$printStackTrace()
+          }
+          else
+            print(e)
+          return(F)
+        })
+      if (!is.data.frame(ddf)) {
+        return (data.frame())
+      } else if (ncol(ddf) <= 1 || names(ddf)[1] == 'Scalar') {
         return (ddf)
       } else {
         linesLimit = ifelse(nrow(ddf) > maxlines , yes = maxlines, no = nrow(ddf))
         ddf = ddf[1:linesLimit,]
+
         # not a scalar, order columns and add component role
-        neworder = which(names(ddf) %in% attr(ddf, 'measures'))
-        neworder = c(neworder, which(names(ddf) %in% attr(ddf, 'identifiers')))
-        if (input[[makeID('showAttrs')]]) {
-          neworder = c(neworder, which(!(1:ncol(ddf) %in% neworder)))
+        if (ncol(ddf) > 1) {
+	        neworder = which(names(ddf) %in% attr(ddf, 'measures'))
+	        neworder = c(neworder, which(names(ddf) %in% attr(ddf, 'identifiers')))
+	        if (input[[makeID('showAttrs')]]) {
+	          neworder = c(neworder, which(!(1:ncol(ddf) %in% neworder)))
+	        }
+          ddf = ddf[, neworder]
         }
         
         names(ddf) = sapply(names(ddf), \(x) {
@@ -442,16 +469,14 @@ vtlServer <- function(input, output, session) {
           }
         })
         
-        if (ncol(ddf) > 1) {
-          result = ddf[, neworder]
-        }
+        return(ddf)
       }
     }, options = list(
       lengthMenu = list(c(50, 1000, -1), c('50', '1000', 'All')),
       pageLength = 10
     )) |> bindEvent(input[[makeID('datasetName')]])
     
-    # View data, structures and transformation graph for this session
+    # Display structures and transformation graph
     observe({
       switch (
         req(input[[makeID('sheets')]]),
@@ -484,15 +509,6 @@ vtlServer <- function(input, output, session) {
     panel <- createPanel(vtlSession)
     prependTab("navtab", panel, T)
   }) |> bindEvent(vtlSessions(), tabs())
-  
-  # Update global active environments
-  observe({
-    output$confOutput <- renderPrint({
-      envs <- req(input$envs)
-      globalEnvs(paste0(environments[envs], collapse = ","))
-      cat("Set active environments to:\n    -", paste0(envs, collapse = "\n    - "), "\n")
-    }) |> bindEvent(input$envs)
-  }) |> bindEvent(input$envs)
 
   # contextual menus for session tabs
   observe({
@@ -577,11 +593,36 @@ vtlServer <- function(input, output, session) {
   
   # Initially populate environment list and load properties
   envlistdone <- observe({
-    updateSelectInput(inputId = 'selectEnv', choices = environments)
-    updateSelectInput(inputId = 'repoClass', choices = repos, selected = globalRepo())
+    envs <- sapply(configManager$getGlobalPropertyValues(vtlProps$ENVIRONMENT_IMPLEMENTATION), .jstrVal)
+    checked <- unname(which(sapply(vtlAvailableEnvironments(), `%in%`, envs)))
+    
+    output$envs <- DT::renderDT(
+      expr = data.frame(name = names(vtlAvailableEnvironments()), check.names = F),
+      selection = list(mode = "multiple", selected = checked),
+      rownames = FALSE, colnames   = NULL,
+      options = list(
+        dom = 't', paging = FALSE, ordering = FALSE, info = FALSE, stripeClasses = list(),
+        columnDefs = list(list(targets = 0, className = "select-checkbox")),
+        select = list(style = "multi", selector = "td:first-child"),
+        headerCallback = htmlwidgets::JS("function(thead) { thead.classList.add('d-none') }")
+      )
+    )
+
     # Single execution only when VTL Studio starts
+    updateSelectInput(inputId = 'selectEnv', choices = vtlAvailableEnvironments())
+    updateSelectInput(inputId = 'repoClass', choices = repos, selected = globalRepo())
     envlistdone$destroy()
   })
+  
+  # Enable/disable environments in global configuration
+  observe({
+    selected <- input[['envs_rows_selected']]
+    activeEnvs <- vtlAvailableEnvironments()[selected]
+    configManager$setGlobalPropertyValue(vtlProps$ENVIRONMENT_IMPLEMENTATION, paste0(activeEnvs, collapse =","))
+    output$confOutput <- renderPrint({
+      cat("Set global environments to:\n", paste0("    - ", names(activeEnvs), collapse = "\n"), sep = "")
+    })
+  }) |> bindEvent(input[['envs_rows_selected']], ignoreInit = T)
 
   # Apply configuration to all active vtlSessions
   observe({
@@ -611,10 +652,11 @@ vtlServer <- function(input, output, session) {
     controls <- controlsGen(repoClass)
     output$repoProperties <- renderUI(controls)
     lapply(configManager$getSupportedProperties(J(repoClass)@jobj), observersGen)
-
+    
+    globalRepo(req(repoClass))
+    repoName <- names(vtlAvailableRepositories()[match(repoClass, vtlAvailableRepositories())])
     output$confOutput <- renderPrint({
-      globalRepo(req(repoClass))
-      cat("Set metadata repository to", repoClass, "\n")
+      cat("Set metadata repository to", repoName, "\n")
     })
   }) |> bindEvent(input$repoClass, ignoreInit = T)
 

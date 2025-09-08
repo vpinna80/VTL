@@ -20,8 +20,6 @@
 
 library(RVTL)
 
-environments <- as.list(RVTL::vtlAvailableEnvironments())
-
 labels <- list(
   compile = HTML('<span style="margin-right: 1em">Compile</span><span style="font-family: monospace">(Ctrl+Enter)</span>'), 
   saveas = HTML('<span style="margin-right: 1em">Export code as...</span><span style="font-family: monospace">(Ctrl+S)</span>'),
@@ -94,14 +92,6 @@ makeDictSearchableList <- \(item) tagList(
   tags$div(id = paste0(item, 'sList'), class = "list-group scroll-list")
 )
 
-activeEnvs <- function(active) {
-  configManager <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")
-  ENVIRONMENT_IMPLEMENTATION <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$ENVIRONMENT_IMPLEMENTATION
-  envs <- sapply(configManager$getGlobalPropertyValues(ENVIRONMENT_IMPLEMENTATION), .jstrVal)
-  items <- names(environments[xor(!active, environments %in% envs)])
-  if (length(items) > 0) items else NULL
-}
-
 vtlUI <- bslib::page_sidebar(
   window_title = 'VTL Studio!',
   theme = bslib::bs_theme(version = 5, preset = 'cosmo', `bs5icons` = TRUE)
@@ -109,7 +99,7 @@ vtlUI <- bslib::page_sidebar(
   sidebar = bslib::sidebar(
     width = 350,
     img(src = "static/logo.svg", class = "vtlLogo"),
-    tags$div(style = "text-align: right; width: 98%", "${r.package.version}"),
+    tags$div(style = "text-align: right; width: 98%", "1.2.2-20250903090920"),
     uiOutput("shinyapps"),
     hr(),
     bslib::input_switch(id = 'demomode', label = 'Demo mode'),
@@ -173,10 +163,7 @@ vtlUI <- bslib::page_sidebar(
         bslib::card(
           bslib::card_header('VTL Environments', makeMinButton('card_envs')),
           bslib::card_body(id = 'card_envs', class = 'collapse show', 
-            sortable::bucket_list(header = NULL, orientation = 'horizontal',
-              sortable::add_rank_list(text = "Available", labels = activeEnvs(F)),
-              sortable::add_rank_list(input_id = "envs", text = "Active", labels = activeEnvs(T))
-            )
+            DT::dataTableOutput("envs", fill = F)
           )
         ),
         bslib::card(
