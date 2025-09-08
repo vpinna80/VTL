@@ -35,6 +35,13 @@
 	<name>vtl-api</name>
 	<description>API of the VTL prototypal engine</description>
 
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>

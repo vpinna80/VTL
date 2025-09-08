@@ -285,21 +285,28 @@
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-parser</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-parsers</artifactId>
 				<version>${project.version}</version>
 				<type>pom</type>
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-parser</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
+				<artifactId>vtl-parser</artifactId>
+				<version>${project.version}</version>
+				<classifier>grammar</classifier>
+				<type>zip</type>
+			</dependency>
+			<dependency>
+				<groupId>it.bancaditalia.oss.vtl</groupId>
 				<artifactId>vtl-jsparser</artifactId>
 				<version>${project.version}</version>
-				<type>zip</type>
 				<classifier>grammar</classifier>
+				<type>zip</type>
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>

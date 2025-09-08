@@ -40,6 +40,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.bancaditalia.oss.vtl.engine.Engine;
 import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -55,6 +58,7 @@ import it.bancaditalia.oss.vtl.session.MetadataRepository;
 public class VTLConfiguration implements Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(VTLConfiguration.class);
 	
 	protected final Map<VTLProperty, String> values = new ConcurrentHashMap<>();
 	
@@ -84,9 +88,15 @@ public class VTLConfiguration implements Serializable
 	public void setPropertyValue(VTLProperty property, Object newValue)
 	{
 		if (newValue == null)
+		{
 			values.remove(property);
+			LOGGER.debug("Unset configuration property {}", property);
+		}
 		else
+		{
 			values.put(property, Objects.toString(newValue));
+			LOGGER.debug("Set configuration property {} to {}", property, Objects.toString(newValue));
+		}
 	}
 
 	/**

@@ -71,20 +71,20 @@ public interface MetadataRepository
 	public Optional<DataStructureDefinition> getStructureDefinition(VTLAlias alias);
 
 	/**
-	 * Returns a data point ruleset with the specified name if it exists.
+	 * Returns an {@link Optional} possibly containing a {@link DataPointRuleSet} with the specified name if one exists.
 	 * 
 	 * @param name the name of the ruleset
-	 * @return the ruleset or null if none exists.
+	 * @return the possibly empty optional.
 	 */
-	public DataPointRuleSet getDataPointRuleset(VTLAlias name);
+	public Optional<DataPointRuleSet> getDataPointRuleset(VTLAlias name);
 
 	/**
-	 * Returns a hierarchical ruleset with the specified name if it exists.
+	 * Returns an {@link Optional} possibly containing a {@link HierarchicalRuleSet} with the specified name if one exists.
 	 * 
 	 * @param name the name of the ruleset
-	 * @return the ruleset or null if none exists.
+	 * @return the possibly empty optional.
 	 */
-	public HierarchicalRuleSet getHierarchyRuleset(VTLAlias name);
+	public Optional<HierarchicalRuleSet> getHierarchyRuleset(VTLAlias name);
 	
 	/**
 	 * Returns a {@link Variable} referred by an alias if defined in this TransformationScheme.

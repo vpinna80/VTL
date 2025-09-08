@@ -25,7 +25,7 @@ import java.util.Map.Entry;
 /**
  * A interface that captures the behavior of VTL identifiers
  */
-public interface VTLAlias
+public interface VTLAlias extends Comparable<VTLAlias>
 {
 	/**
 	 * Compares two aliases by lowercased name. Quoting is not considered.
@@ -56,6 +56,10 @@ public interface VTLAlias
 	 */
 	public VTLAlias in(VTLAlias dataset);
 	
+	/**
+	 * If this alias is composed, return only the member alias part. Otherwise return the input alias unchanged.
+	 * @return the member alias part.
+	 */
 	public default VTLAlias getMemberAlias()
 	{
 		return this;
