@@ -646,7 +646,12 @@ public class JoinTransformation extends TransformationImpl
 			if (ambiguousComp != null)
 				throw new VTLAmbiguousComponentException(ambiguousComp.getKey(), ambiguousComp.getValue());
 			
-			return result;
+			// de-alias components for the final structure
+			DataSetStructureBuilder builder = new DataSetStructureBuilder();
+			for (DataSetComponent<?, ?, ?> comp: result)
+				builder = builder.addComponent(comp.getAlias().isComposed() ? comp.getRenamed(comp.getAlias().getMemberAlias()) : comp);
+			
+			return builder.build();
 		}
 		catch (RuntimeException e)
 		{

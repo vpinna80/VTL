@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithKeys;
+import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
 import static java.lang.invoke.MethodHandles.lookup;
@@ -225,8 +226,9 @@ public class DataPointBuilder implements Serializable
 
 //			if (LOGGER.isTraceEnabled())
 //			{
+				Set<String> aliases = structure.stream().map(DataSetComponent::getAlias).map(VTLAlias::getName).collect(toSet());
 				values.keySet().stream()
-					.filter(c -> !structure.contains(c))
+					.filter(c -> !aliases.contains(c.getAlias().getName()))
 					.findAny()
 					.ifPresent(nonExistingComp -> {
 						throw new VTLMissingComponentsException(structure, nonExistingComp);
@@ -240,7 +242,7 @@ public class DataPointBuilder implements Serializable
 			
 			this.values = values;
 			hashCode = values.hashCode();
-			enricher = SerUnaryOperator.identity();
+			enricher = identity();
 		}
 
 		private DataPointImpl(SerUnaryOperator<Lineage> enricher, DataPointImpl other)
