@@ -99,7 +99,7 @@ vtlUI <- bslib::page_sidebar(
   sidebar = bslib::sidebar(
     width = 350,
     img(src = "static/logo.svg", class = "vtlLogo"),
-    tags$div(style = "text-align: right; width: 98%", "1.2.2-20250903090920"),
+    tags$div(style = "text-align: right; width: 98%", "${r.package.version}"),
     uiOutput("shinyapps"),
     hr(),
     bslib::input_switch(id = 'demomode', label = 'Demo mode'),

@@ -379,7 +379,7 @@ vtlServer <- function(input, output, session) {
     observe({
       selected <- input[[makeID('envs_rows_selected')]]
       activeEnvs <- vtlAvailableEnvironments()[selected]
-      configManager$setGlobalPropertyValue(vtlProps$ENVIRONMENT_IMPLEMENTATION, paste0(activeEnvs, collapse =","))
+      VTLSessionManager$getOrCreate(vtlSession)$setProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION, paste0(activeEnvs, collapse =","))
       output[[makeID('confOutput')]] <- renderPrint({
         cat("Set ", vtlSession, " environments to:\n", paste0("    - ", activeEnvs, collapse = "\n"), sep = "")
       })
