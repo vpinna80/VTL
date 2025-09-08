@@ -44,10 +44,11 @@ VTLSessionManagerClass <- R6Class("VTLSessionManager",
         sessions <- list()
         metaProp <- J("it.bancaditalia.oss.vtl.config.VTLGeneralProperties")$METADATA_REPOSITORY
         metaRepo <- J("it.bancaditalia.oss.vtl.config.ConfigurationManager")$getGlobalPropertyValue(metaProp)
-        if (metaRepo == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' 
-            || metaRepo == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository') {
-          sessions <- sapply(.jnew('it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository', TRUE)$getAvailableSchemes(), .jstrVal)
-        }
+        # TODO: Temporarily disabled, causes issues
+#        if (metaRepo == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository' 
+#            || metaRepo == 'it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXJsonRepository') {
+#          sessions <- sapply(.jnew('it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository', TRUE)$getAvailableSchemes(), .jstrVal)
+#        }
         unique(c(ls(private$sessions), sessions))
       }, error = function(e) {
         if (!is.null(e$jobj)) {

@@ -33,7 +33,7 @@ vtlTryCatch <- function(expr) {
     expr
     return(T)
   }, error = function(e) {
-    if (is.function(e$jobj$getMessage)) {
+    if (!is.null(e[['jobj']]) && is.function(e$jobj[['getMessage']])) {
       print(paste0("ERROR: ", e$jobj$getMessage()))
       e$jobj$printStackTrace()
     }
