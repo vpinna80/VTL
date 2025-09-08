@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl;
 import it.bancaditalia.oss.vtl.impl.types.dataset.VariableImpl;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
@@ -87,17 +86,15 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	}
 	
 	@Override
-	public HierarchicalRuleSet getHierarchyRuleset(VTLAlias alias)
+	public Optional<HierarchicalRuleSet> getHierarchyRuleset(VTLAlias alias)
 	{
-		return Optional.ofNullable(chained).map(chained -> chained.getHierarchyRuleset(alias))
-				.orElseThrow(() -> new VTLException("Hierarchical ruleset " + alias + " not found."));
+		return Optional.ofNullable(chained).flatMap(chained -> chained.getHierarchyRuleset(alias));
 	}
 	
 	@Override
-	public DataPointRuleSet getDataPointRuleset(VTLAlias alias)
+	public Optional<DataPointRuleSet> getDataPointRuleset(VTLAlias alias)
 	{
-		return Optional.ofNullable(chained).map(chained -> chained.getDataPointRuleset(alias))
-				.orElseThrow(() -> new VTLException("Data Point ruleset " + alias + " not found."));
+		return Optional.ofNullable(chained).flatMap(chained -> chained.getDataPointRuleset(alias));
 	}
 
 	@Override
@@ -116,7 +113,7 @@ public class InMemoryMetadataRepository implements MetadataRepository, Serializa
 	@Override
 	public Optional<DataStructureDefinition> getStructureDefinition(VTLAlias alias)
 	{
-		return chained == null ? Optional.empty() : chained.getStructureDefinition(alias);
+		return Optional.ofNullable(chained).flatMap(chained -> chained.getStructureDefinition(alias));
 	}
 
 	@Override

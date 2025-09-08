@@ -173,6 +173,9 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 	{
 		super(chained);
 
+		for (String jsonURL : jsonURLs)
+			LOGGER.info("Loaded metadata from {}", jsonURL);
+		
 		try (InputStream schemaIn = JsonMetadataRepository.class.getResourceAsStream("vtl-dict-schema.json"))
 		{
 			IJsonValue schemaJson = new com.github.erosb.jsonsKema.JsonParser(schemaIn).parse();
@@ -301,8 +304,11 @@ public class JsonMetadataRepository extends InMemoryMetadataRepository
 		{
 			VTLAlias alias = VTLAliasImpl.of((String) entry.get("name"));
 			T processed = processor.apply(alias, entry);
-			if (processed != null && result.putIfAbsent(alias, processed) != null)
-				LOGGER.warn("Replaced definition of {} {}", element, alias);
+			if (processed != null)
+				if (result.putIfAbsent(alias, processed) != null)
+					LOGGER.warn("Replaced definition of {} {}", element, alias);
+				else
+					LOGGER.debug("Definition of {} {}", element, alias);
 		}
 		
 		return result;

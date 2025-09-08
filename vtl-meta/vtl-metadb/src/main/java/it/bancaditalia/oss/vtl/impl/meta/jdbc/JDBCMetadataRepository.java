@@ -72,6 +72,7 @@ import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
@@ -248,7 +249,7 @@ public class JDBCMetadataRepository extends InMemoryMetadataRepository
 					.filter(a -> a.length == 2)
 					.map(a -> a[0].trim())
 					.filter(s -> !s.isEmpty());
-				if (INTEGERDS.isAssignableFrom(domain))
+				if (domain instanceof IntegerDomain)
 				{
 					Set<Long> set = stream
 								.filter(JDBCMetadataRepository::matchesLong)

@@ -63,6 +63,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -123,6 +124,7 @@ import it.bancaditalia.oss.vtl.model.data.DataStructureDefinition;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.Variable;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
@@ -138,6 +140,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	private static final RegExpDomainSubset VTL_ALPHA = new RegExpDomainSubset(VTLAliasImpl.of(true, "ALPHA"), "(?U)^\\p{Alpha}*$", STRINGDS);
 	private static final RegExpDomainSubset VTL_ALPHA_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of(true, "ALPHA_NUMERIC"), "(?U)^\\p{Alnum}*$", STRINGDS);
 	private static final RegExpDomainSubset VTL_NUMERIC = new RegExpDomainSubset(VTLAliasImpl.of(true, "NUMERIC"), "(?U)^\\p{Digit}*$", STRINGDS);
+	private static final Map<String, SDMXRepository> CACHE = new ConcurrentHashMap<>();
 
 	public static final VTLProperty SDMX_REGISTRY_ENDPOINT = new VTLPropertyImpl("vtl.sdmx.meta.endpoint", "SDMX REST metadata base URL", "https://www.myurl.com/service", EnumSet.of(IS_REQUIRED, IS_URL));
 	public static final VTLProperty SDMX_API_VERSION = new VTLPropertyImpl("vtl.sdmx.meta.version", "SDMX REST API version", "1.5.0", EnumSet.of(IS_REQUIRED), "1.5.0");
@@ -157,209 +160,183 @@ public class SDMXRepository extends InMemoryMetadataRepository
 
 	public final SdmxRestToBeanRetrievalManager rbrm;
 	
-	private final Map<VTLAlias, Entry<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>>> dataflows = new HashMap<>();
-	private final Map<VTLAlias, DataSetStructure> dsds = new HashMap<>();
-	private final Map<VTLAlias, Map<String, Variable<?, ?>>> variables = new HashMap<>();
-	private final Map<VTLAlias, String> schemes = new HashMap<>();
-	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains = new HashMap<>();
+	private final Map<VTLAlias, Entry<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>>> dataflows;
+	private final Map<VTLAlias, DataSetStructure> dsds;
+	private final Map<VTLAlias, Map<String, Variable<?, ?>>> variables;
+	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains;
+	private final Map<VTLAlias, String> schemes;
 
 	/* Only used to load transformation schemes from a registry */
 	public SDMXRepository(boolean ignored) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		String endpoint = getGlobalPropertyValue(SDMX_REGISTRY_ENDPOINT);
-		String username = getGlobalPropertyValue(SDMX_META_USERNAME);
-		String password = getGlobalPropertyValue(SDMX_META_PASSWORD);
-		
-		if (endpoint == null || endpoint.isEmpty())
-			throw new IllegalStateException("No endpoint configured for SDMX REST service.");
-
-		URI uri = new URI(endpoint);
-		Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
-		if (proxy.type() == Type.HTTP)
-		{
-			String proxyHost = ((InetSocketAddress) proxy.address()).getHostName();
-			LOGGER.info("Fetching SDMX data through proxy {}", proxyHost);
-			RestMessageBroker.setProxies(singletonMap(uri.getHost(), 
-			new IHttpProxy() {
-				@Override public String getProxyUser() { return null; }
-				@Override public String getProxyUrl() { return proxyHost; }
-				@Override public Integer getProxyPort() { return ((InetSocketAddress) proxy.address()).getPort(); }
-				@Override public String getProxyPassword() { return null; }
-				@Override public String getDomain() { return null; }
-				@Override public String getDecryptedPassword() { return null; }
-			}));
-		}
-		else
-			RestMessageBroker.setProxies(emptyMap());
-		
-		if (username != null && !username.isEmpty() && password != null && !password.isEmpty())
-			RestMessageBroker.storeGlobalAuthorization(username, password);
-		
-		LOGGER.info("Loading metadata from {}", endpoint);
-
-		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, 
-			REST_API_VERSION.parseVersion(getLocalPropertyValue(SDMX_API_VERSION))));
-		
-		// Load transformation schemes
-		try
-		{
-			for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
-			{
-				VTLAlias tsName = sdmxRef2VtlName(scheme.asReference());
-				LOGGER.info("Loading transformation scheme {}", tsName);
-				String code = scheme.getItems().stream()
-					.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
-					.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
-				LOGGER.debug("Loaded transformation scheme {} with code:\n{}\n", tsName, code);
-				schemes.put(tsName, code);
-			}
-		}
-		catch (RuntimeException e)
-		{
-			if (e.getCause() instanceof SdmxNoResultsException)
-				LOGGER.info("No VTL transformation schemes found in SDMX registry.");
-			else
-				LOGGER.error("Error accessing transformation schemes in registry", e);
-		}
+		this(null, getGlobalPropertyValue(SDMX_REGISTRY_ENDPOINT), getGlobalPropertyValue(SDMX_API_VERSION), getGlobalPropertyValue(SDMX_META_USERNAME), getGlobalPropertyValue(SDMX_META_PASSWORD));
 	}
 
 	public SDMXRepository() throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		this(null, getLocalPropertyValue(SDMX_REGISTRY_ENDPOINT), getLocalPropertyValue(SDMX_META_USERNAME), getLocalPropertyValue(SDMX_META_PASSWORD));
+		this(null, getLocalPropertyValue(SDMX_REGISTRY_ENDPOINT), getLocalPropertyValue(SDMX_API_VERSION), getLocalPropertyValue(SDMX_META_USERNAME), getLocalPropertyValue(SDMX_META_PASSWORD));
 	}
 
 	public SDMXRepository(String endpoint, String username, String password) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
-		this(null, endpoint, username, password);
+		this(null, endpoint, getLocalPropertyValue(SDMX_API_VERSION), username, password);
 	}
 	
-	public SDMXRepository(MetadataRepository chained, String endpoint, String username, String password) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
+	public SDMXRepository(MetadataRepository chained, String endpoint, String apiVersion, String username, String password) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		super(chained);
 		
 		if (endpoint == null || endpoint.isEmpty())
 			throw new IllegalStateException("No endpoint configured for SDMX REST service.");
-
-		URI uri = new URI(endpoint);
-		Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
-		if (proxy.type() == Type.HTTP)
+		
+		SDMXRepository cached = CACHE.putIfAbsent(endpoint, this);
+		
+		if (cached != null)
 		{
-			String proxyHost = ((InetSocketAddress) proxy.address()).getHostName();
-			LOGGER.info("Fetching SDMX data through proxy {}", proxyHost);
-			RestMessageBroker.setProxies(singletonMap(uri.getHost(), 
-			new IHttpProxy() {
-				@Override public String getProxyUser() { return null; }
-				@Override public String getProxyUrl() { return proxyHost; }
-				@Override public Integer getProxyPort() { return ((InetSocketAddress) proxy.address()).getPort(); }
-				@Override public String getProxyPassword() { return null; }
-				@Override public String getDomain() { return null; }
-				@Override public String getDecryptedPassword() { return null; }
-			}));
+			dataflows = cached.dataflows;
+			dsds = cached.dsds;
+			variables = cached.variables;
+			domains = cached.domains;
+			schemes = cached.schemes;
+			rbrm = cached.rbrm;
+
+			LOGGER.info("SDMX Environment configuration recovered from cache.");
 		}
 		else
-			RestMessageBroker.setProxies(emptyMap());
-		
-		if (username != null && !username.isEmpty() && password != null && !password.isEmpty())
-			RestMessageBroker.storeGlobalAuthorization(username, password);
-		
-		LOGGER.info("Loading metadata from {}", endpoint);
-
-		rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, 
-			REST_API_VERSION.parseVersion(getLocalPropertyValue(SDMX_API_VERSION))));
-		
-		// Load codelists
-		for (CodelistBean codelist: rbrm.getMaintainableBeans(CodelistBean.class, new MaintainableRefBeanImpl(null, null, "*")))
 		{
-			VTLAlias clName = sdmxRef2VtlName(codelist.asReference());
-			LOGGER.info("Loading codelist " + clName);
-			domains.put(clName, new SdmxCodeList(codelist));
-		}
+			dataflows = new HashMap<>();
+			dsds = new HashMap<>();
+			variables = new HashMap<>();
+			domains = new HashMap<>();
+			schemes = new HashMap<>();
 
-		// Define ALPHA and ALPHA_NUMERIC domains
-		domains.put(VTLAliasImpl.of(true, "ALPHA"), VTL_ALPHA);
-		domains.put(VTLAliasImpl.of(true, "ALPHA_NUMERIC"), VTL_ALPHA_NUMERIC);
-		
-		// Load dsds
-		Map<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>> enumIDMap = new HashMap<>();
-		for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
-		{
-			DataSetStructureBuilder builder = new DataSetStructureBuilder();
-			VTLAlias dsdName = sdmxRef2VtlName(dsd.asReference());
-			LOGGER.info("Loading structure {}", dsdName);
-			Map<Integer, DataSetComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
-			
-			for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
+			URI uri = new URI(endpoint);
+			Proxy proxy = ProxySelector.getDefault().select(uri).get(0);
+			if (proxy.type() == Type.HTTP)
 			{
-				ValueDomainSubset<?, ?> domain;
-
-				if (dimBean.isTimeDimension())
-					domain = TIMEDS;
-				else if (dimBean.hasCodedRepresentation())
-				{
-					VTLAlias alias = sdmxRef2VtlName(dimBean.getEnumeratedRepresentation());
-					domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
-				}
-				else
-					domain = sdmxRepr2VTLDomain(dimBean);
-
-				DataSetComponent<Identifier, ?, ?> id = createComponent(dimBean, Identifier.class, domain);
-				LOGGER.debug("From dsd {} created identifier {}", dsdName, id);
-				builder.addComponent(id);
-				enumIds.put(dimBean.getPosition() - 1, id);
+				String proxyHost = ((InetSocketAddress) proxy.address()).getHostName();
+				LOGGER.info("Fetching SDMX data through proxy {}", proxyHost);
+				RestMessageBroker.setProxies(singletonMap(uri.getHost(), 
+				new IHttpProxy() {
+					@Override public String getProxyUser() { return null; }
+					@Override public String getProxyUrl() { return proxyHost; }
+					@Override public Integer getProxyPort() { return ((InetSocketAddress) proxy.address()).getPort(); }
+					@Override public String getProxyPassword() { return null; }
+					@Override public String getDomain() { return null; }
+					@Override public String getDecryptedPassword() { return null; }
+				}));
 			}
-
-			builder.addComponent(createObsValue(dsd.getPrimaryMeasure()));
-			
-			for (AttributeBean attrBean: dsd.getAttributeList().getAttributes())
-			{
-				ValueDomainSubset<?, ?> domain;
-				
-				if (attrBean.hasCodedRepresentation())
-				{
-					VTLAlias alias = sdmxRef2VtlName(attrBean.getEnumeratedRepresentation());
-					domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
-				}
-				else
-					domain = sdmxRepr2VTLDomain(attrBean);
-				
-				DataSetComponent<Attribute, ?, ?> attr = createComponent(attrBean, Attribute.class, domain);
-				LOGGER.debug("From dsd {} created attribute {}", dsdName, attr);
-				builder.addComponent(attr);
-			}
-
-			dsds.put(dsdName, builder.build());
-			enumIDMap.put(dsdName, new ArrayList<>(enumIds.values()));
-		}
-		
-		// Load dataflows
-		for (DataflowBean dataflow: rbrm.getIdentifiables(DataflowBean.class))
-		{
-			VTLAlias dataflowName = sdmxRef2VtlName(dataflow.asReference());
-			VTLAlias dsdName = sdmxRef2VtlName(dataflow.getDataStructureRef());
-			LOGGER.info("Loading dataflow {} with structure {}", dataflowName, dsdName);
-			dataflows.put(dataflowName, new SimpleEntry<>(dsdName, enumIDMap.get(dsdName)));
-		}
-
-		// Load transformation schemes
-		try
-		{
-			for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
-			{
-				VTLAlias tsName = sdmxRef2VtlName(scheme.asReference());
-				LOGGER.info("Loading transformation scheme {}", tsName);
-				String code = scheme.getItems().stream()
-					.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
-					.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
-				LOGGER.debug("Loaded transformation scheme {} with code:\n{}\n", tsName, code);
-				schemes.put(tsName, code);
-			}
-		}
-		catch (RuntimeException e)
-		{
-			if (e.getCause() instanceof SdmxNoResultsException)
-				LOGGER.info("No VTL transformation schemes found in SDMX registry.");
 			else
-				LOGGER.error("Error accessing transformation schemes in registry", e);
+				RestMessageBroker.setProxies(emptyMap());
+			
+			if (username != null && !username.isEmpty() && password != null && !password.isEmpty())
+				RestMessageBroker.storeGlobalAuthorization(username, password);
+			
+			LOGGER.info("Loading metadata from {}", endpoint);
+	
+			rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, 
+				REST_API_VERSION.parseVersion(apiVersion)));
+			
+			// Load codelists
+			for (CodelistBean codelist: rbrm.getMaintainableBeans(CodelistBean.class, new MaintainableRefBeanImpl(null, null, "*")))
+			{
+				VTLAlias clName = sdmxRef2VtlName(codelist.asReference());
+				LOGGER.debug("Loading codelist " + clName);
+				domains.put(clName, new SdmxCodeList(codelist));
+			}
+			LOGGER.info("Loaded codelists.");
+	
+			// Define ALPHA and ALPHA_NUMERIC domains
+			domains.put(VTLAliasImpl.of(true, "ALPHA"), VTL_ALPHA);
+			domains.put(VTLAliasImpl.of(true, "ALPHA_NUMERIC"), VTL_ALPHA_NUMERIC);
+			
+			// Load dsds
+			Map<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>> enumIDMap = new HashMap<>();
+			for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
+			{
+				DataSetStructureBuilder builder = new DataSetStructureBuilder();
+				VTLAlias dsdName = sdmxRef2VtlName(dsd.asReference());
+				LOGGER.debug("Loading structure {}", dsdName);
+				Map<Integer, DataSetComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
+				
+				for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
+				{
+					ValueDomainSubset<?, ?> domain;
+	
+					if (dimBean.isTimeDimension())
+						domain = TIMEDS;
+					else if (dimBean.hasCodedRepresentation())
+					{
+						VTLAlias alias = sdmxRef2VtlName(dimBean.getEnumeratedRepresentation());
+						domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
+					}
+					else
+						domain = sdmxRepr2VTLDomain(dimBean);
+	
+					DataSetComponent<Identifier, ?, ?> id = createComponent(dimBean, Identifier.class, domain);
+					builder.addComponent(id);
+					enumIds.put(dimBean.getPosition() - 1, id);
+					LOGGER.trace("Created identifier {} from DSD {}", dsdName, id);
+				}
+	
+				builder.addComponent(createObsValue(dsd.getPrimaryMeasure()));
+				
+				for (AttributeBean attrBean: dsd.getAttributeList().getAttributes())
+				{
+					ValueDomainSubset<?, ?> domain;
+					
+					if (attrBean.hasCodedRepresentation())
+					{
+						VTLAlias alias = sdmxRef2VtlName(attrBean.getEnumeratedRepresentation());
+						domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
+					}
+					else
+						domain = sdmxRepr2VTLDomain(attrBean);
+					
+					DataSetComponent<Attribute, ?, ?> attr = createComponent(attrBean, Attribute.class, domain);
+					builder.addComponent(attr);
+					LOGGER.trace("Created attribute {} from DSD {}", attr, dsdName);
+				}
+	
+				dsds.put(dsdName, builder.build());
+				enumIDMap.put(dsdName, new ArrayList<>(enumIds.values()));
+			}
+			LOGGER.info("Loaded data structure definitions.");
+	
+			// Load dataflows
+			for (DataflowBean dataflow: rbrm.getIdentifiables(DataflowBean.class))
+			{
+				VTLAlias dataflowName = sdmxRef2VtlName(dataflow.asReference());
+				VTLAlias dsdName = sdmxRef2VtlName(dataflow.getDataStructureRef());
+				LOGGER.debug("Loaded dataflow {} with structure {}", dataflowName, dsdName);
+				dataflows.put(dataflowName, new SimpleEntry<>(dsdName, enumIDMap.get(dsdName)));
+			}
+			LOGGER.info("Loaded data flows.");
+	
+			// Load transformation schemes
+			try
+			{
+				for (ITransformationSchemeBean scheme: rbrm.getIdentifiables(ITransformationSchemeBean.class))
+				{
+					VTLAlias tsName = sdmxRef2VtlName(scheme.asReference());
+					LOGGER.info("Loading transformation scheme {}", tsName);
+					String code = scheme.getItems().stream()
+						.map(t -> t.getResult() + (t.isPersistent() ? "<-" : ":=") + t.getExpression())
+						.collect(joining(";" + lineSeparator() + lineSeparator(), "", ";" + lineSeparator()));
+					LOGGER.debug("Loaded transformation scheme {} with code:\n{}\n", tsName, code);
+					schemes.put(tsName, code);
+				}
+				LOGGER.info("Loaded transformation schemes.");
+			}
+			catch (RuntimeException e)
+			{
+				if (e.getCause() instanceof SdmxNoResultsException)
+					LOGGER.info("No VTL transformation schemes found in SDMX registry.");
+				else
+					LOGGER.error("Error accessing transformation schemes in registry: {}", e.getMessage());
+			}
+			
+			LOGGER.info("SDMX Environment initialization complete.");
 		}
 	}
 	
@@ -370,18 +347,18 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	}
 	
 	@Override
-	public HierarchicalRuleSet getHierarchyRuleset(VTLAlias alias)
+	public Optional<HierarchicalRuleSet> getHierarchyRuleset(VTLAlias alias)
 	{
 		return getDomain(alias)
 				.filter(SdmxCodeList.class::isInstance)
 				.map(SdmxCodeList.class::cast)
 				.map(SdmxCodeList::getDefaultRuleSet)
 				.map(HierarchicalRuleSet.class::cast)
-				.orElseGet(() -> super.getHierarchyRuleset(alias));
+				.or(() -> super.getHierarchyRuleset(alias));
 	}
 	
 	@Override
-	public DataPointRuleSet getDataPointRuleset(VTLAlias alias)
+	public Optional<DataPointRuleSet> getDataPointRuleset(VTLAlias alias)
 	{
 		return super.getDataPointRuleset(alias);
 	}
@@ -510,7 +487,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				OptionalInt maxLen = Stream.ofNullable(format.getMaxLength()).mapToInt(BigInteger::intValueExact).findAny();
 				domain = new StrlenDomainSubset(STRINGDS, minLen, maxLen);
 			}
-			else if (INTEGERDS.isAssignableFrom(domain))
+			else if (domain instanceof IntegerDomain)
 			{
 				OptionalLong minLen = Stream.ofNullable(format.getMinValue()).mapToLong(BigDecimal::longValueExact).findAny();
 				OptionalLong maxLen = Stream.ofNullable(format.getMaxValue()).mapToLong(BigDecimal::longValueExact).findAny();
@@ -555,7 +532,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		
 		String sdmxType = bean.getClass().getSimpleName();
 		sdmxType = sdmxType.substring(0, sdmxType.length() - 8);
-		LOGGER.debug("{} {} converted to component {}", sdmxType, alias, component);
+		LOGGER.trace("{} {} converted to component {}", sdmxType, alias, component);
 		
 		return component;
 	}
