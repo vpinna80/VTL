@@ -195,13 +195,13 @@ public class VTLSessionImpl implements VTLSession
 	@Override
 	public DataPointRuleSet findDatapointRuleset(VTLAlias alias)
 	{
-		return findRuleset(alias, DataPointRuleSet.class);
+		return getRepository().getDataPointRuleset(alias).orElseGet(() -> findRuleset(alias, DataPointRuleSet.class));
 	}
 	
 	@Override
 	public HierarchicalRuleSet findHierarchicalRuleset(VTLAlias alias)
 	{
-		return findRuleset(alias, HierarchicalRuleSet.class);
+		return getRepository().getHierarchyRuleset(alias).orElseGet(() -> findRuleset(alias, HierarchicalRuleSet.class));
 	}
 	
 	@Override
@@ -411,6 +411,7 @@ public class VTLSessionImpl implements VTLSession
 		if (cached != null)
 			return cached;
 		cache[0] = withConfig(configuration, () -> getLocalConfigurationObject(what));
+		LOGGER.debug("Session is using {}", cache[0]);
 		return cache[0];
 	}
 	
