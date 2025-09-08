@@ -54,6 +54,7 @@
 	
 	<modules>
 		<module>vtl-parser</module>
+		<module>vtl-jsparser</module>
 	</modules>
 
 
