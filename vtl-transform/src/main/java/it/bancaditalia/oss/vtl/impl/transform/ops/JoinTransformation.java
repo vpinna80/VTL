@@ -47,6 +47,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.entryByKey;
 import static it.bancaditalia.oss.vtl.util.Utils.entryByValue;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingKey;
 import static it.bancaditalia.oss.vtl.util.Utils.keepingValue;
+import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithKey;
 import static it.bancaditalia.oss.vtl.util.Utils.toEntryWithValue;
 import static it.bancaditalia.oss.vtl.util.Utils.tryWith;
 import static java.lang.Boolean.FALSE;
@@ -121,7 +122,6 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
-import it.bancaditalia.oss.vtl.util.Utils;
 
 public class JoinTransformation extends TransformationImpl
 {
@@ -636,8 +636,11 @@ public class JoinTransformation extends TransformationImpl
 			// check if keep - drop - rename has made some components unambiguous
 			Map<VTLAlias, Set<DataSetComponent<?, ?, ?>>> ambiguousComps = result.stream()
 					.filter(c -> c.getAlias().isComposed())
-					.map(Utils.toEntryWithKey(c -> c.getAlias().split().getValue()))
+					.map(toEntryWithKey(c -> c.getAlias().split().getValue()))
 					.collect(groupingByConcurrent(Entry::getKey, mapping(Entry::getValue, toSet())));
+			
+			ambiguousComps = new HashMap<>(ambiguousComps);
+			ambiguousComps.values().removeIf(s -> s.size() < 2);
 			Entry<VTLAlias, Set<DataSetComponent<?, ?, ?>>> ambiguousComp = ambiguousComps.isEmpty() ? null : ambiguousComps.entrySet().iterator().next();
 	
 			if (ambiguousComp != null)
