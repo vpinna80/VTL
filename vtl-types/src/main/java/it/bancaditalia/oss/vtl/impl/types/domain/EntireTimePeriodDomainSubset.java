@@ -22,11 +22,20 @@ package it.bancaditalia.oss.vtl.impl.types.domain;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
 
 import java.io.Serializable;
+import java.time.Year;
+import java.time.YearMonth;
+
+import org.threeten.extra.YearQuarter;
 
 import it.bancaditalia.oss.vtl.exceptions.VTLCastException;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomainSubset;
@@ -47,6 +56,20 @@ public class EntireTimePeriodDomainSubset extends EntireDomainSubset<EntireTimeP
 			return NullValue.instance(this);
 		else if (value instanceof TimePeriodValue)
 			return TimePeriodValue.of((PeriodHolder<?>) value.get(), this);
+		else if (value instanceof StringValue)
+		{
+			String timeString = (String) value.get();
+			if (timeString.matches("^[0-9]{4,4}$"))
+				return TimePeriodValue.of(new YearPeriodHolder(Year.parse(timeString)));
+			if (timeString.matches("^[0-9]{4,4}H(?:[12])$"))
+				return TimePeriodValue.of(new SemesterPeriodHolder(YearQuarter.parse(timeString.replace("H", "-S"))));
+			if (timeString.matches("^[0-9]{4,4}Q(?:[1234])$"))
+				return TimePeriodValue.of(new QuarterPeriodHolder(YearQuarter.parse(timeString.replace("Q", "-Q"))));
+			if (timeString.matches("^[0-9]{4,4}M(?:1[0-2]|0[1-9])$"))
+				return TimePeriodValue.of(new MonthPeriodHolder(YearMonth.parse(timeString.replace('M', '-'))));
+			else
+				throw new VTLCastException(this, value);
+		}
 		else
 			throw new VTLCastException(this, value);
 	}
