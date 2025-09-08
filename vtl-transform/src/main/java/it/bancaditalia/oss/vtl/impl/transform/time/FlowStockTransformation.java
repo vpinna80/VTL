@@ -57,7 +57,6 @@ import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
-import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
@@ -69,6 +68,7 @@ import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -155,7 +155,7 @@ public class FlowStockTransformation extends UnaryTransformation
 			WindowClause window = new WindowClauseImpl(ids, List.of(new SortClause(timeId)), size);
 
 			Class<?> repr;
-			if (Domains.INTEGERDS.isAssignableFrom(measure.getDomain())) 
+			if (measure.getDomain() instanceof IntegerDomain) 
 				repr = Long.class;
 			else if (isUseBigDecimal())
 				repr = BigDecimal.class;

@@ -121,6 +121,7 @@ import it.bancaditalia.oss.vtl.util.SerBinaryOperator;
 import it.bancaditalia.oss.vtl.util.SerCollector;
 import it.bancaditalia.oss.vtl.util.SerFunction;
 import it.bancaditalia.oss.vtl.util.SerUnaryOperator;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class JoinTransformation extends TransformationImpl
 {
@@ -633,23 +634,16 @@ public class JoinTransformation extends TransformationImpl
 				result = (DataSetStructure) rename.getMetadata(new ThisScope(scheme, result));
 	
 			// check if keep - drop - rename has made some components unambiguous
-			Map<VTLAlias, List<VTLAlias>> unaliasedNames = result.stream().map(c -> c.getAlias())
-					.filter(VTLAlias::isComposed)
-					.map(name -> name.split())
-					.collect(groupingByConcurrent(Entry::getValue, mapping(Entry::getKey, toList())));
+			Map<VTLAlias, Set<DataSetComponent<?, ?, ?>>> ambiguousComps = result.stream()
+					.filter(c -> c.getAlias().isComposed())
+					.map(Utils.toEntryWithKey(c -> c.getAlias().split().getValue()))
+					.collect(groupingByConcurrent(Entry::getKey, mapping(Entry::getValue, toSet())));
+			Entry<VTLAlias, Set<DataSetComponent<?, ?, ?>>> ambiguousComp = ambiguousComps.isEmpty() ? null : ambiguousComps.entrySet().iterator().next();
 	
-			DataSetStructureBuilder dealiased = new DataSetStructureBuilder(result);
-			for (VTLAlias cName: unaliasedNames.keySet())
-			{
-				List<VTLAlias> sources = unaliasedNames.get(cName);
-				if (sources.size() != 1)
-					new VTLAmbiguousComponentException(cName, sources.stream().map(s -> cName.in(s)).map(result::getComponent).map(Optional::get).collect(toSet()));
-				DataSetComponent<?, ?, ?> comp = result.getComponent(cName.in(sources.get(0))).get();
-				dealiased = dealiased.removeComponent(comp)
-						.addComponent(comp.getRenamed(cName));
-			}
-	
-			return dealiased.build();
+			if (ambiguousComp != null)
+				throw new VTLAmbiguousComponentException(ambiguousComp.getKey(), ambiguousComp.getValue());
+			
+			return result;
 		}
 		catch (RuntimeException e)
 		{

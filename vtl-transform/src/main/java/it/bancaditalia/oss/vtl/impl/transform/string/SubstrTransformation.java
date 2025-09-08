@@ -152,9 +152,9 @@ public class SubstrTransformation extends TransformationImpl
 			throw new VTLInvalidParameterException(start, DataSetStructure.class);
 		if (!(!len.isDataSet()))
 			throw new VTLInvalidParameterException(len, DataSetStructure.class);
-		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) start).getDomain()))
+		if (!(((ScalarValueMetadata<?, ?>) start).getDomain() instanceof IntegerDomain))
 			throw new VTLIncompatibleTypesException("substr: start parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) start).getDomain());
-		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) len).getDomain()))
+		if (!(((ScalarValueMetadata<?, ?>) len).getDomain() instanceof IntegerDomain))
 			throw new VTLIncompatibleTypesException("substr: len parameter", STRINGDS, ((ScalarValueMetadata<?, ?>) len).getDomain());
 		
 		if (!source.isDataSet())

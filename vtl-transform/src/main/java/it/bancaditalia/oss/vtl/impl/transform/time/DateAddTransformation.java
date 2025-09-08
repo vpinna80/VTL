@@ -47,6 +47,7 @@ import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -112,7 +113,7 @@ public class DateAddTransformation extends TransformationImpl
 		
 		if (!(!metashift.isDataSet()))
 			throw new VTLInvalidParameterException(metashift, ScalarValueMetadata.class);
-		if (!INTEGERDS.isAssignableFrom(((ScalarValueMetadata<?, ?>) metashift).getDomain()))
+		if (!(((ScalarValueMetadata<?, ?>) metashift).getDomain() instanceof IntegerDomain))
 			throw new VTLIncompatibleTypesException("dateadd", INTEGERDS, ((ScalarValueMetadata<?, ?>) metashift).getDomain());
 		if (!(!metaduration.isDataSet()))
 			throw new VTLInvalidParameterException(metaduration, ScalarValueMetadata.class);

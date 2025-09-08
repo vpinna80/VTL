@@ -33,7 +33,6 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCO
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.IMBALANCE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.RULEID;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.operators.ArithmeticOperator.DIFF;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
@@ -93,6 +92,7 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.EnumeratedDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRule;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -162,9 +162,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 		// Determine which missing value to use
 		ScalarValue<?, ?, ?, ?> missingValue;
 		if (mode.isZero())
-			missingValue = INTEGERDS.isAssignableFrom(measure.getDomain())
-					? IntegerValue.of(0L)
-					: createNumberValue(0.0);
+			missingValue = measure.getDomain() instanceof IntegerDomain ? IntegerValue.of(0L) : createNumberValue(0.0);
 		else
 			missingValue = NullValue.instanceFrom(measure);
 
@@ -184,7 +182,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 					Set<CodeItem<?, ?, ?, ?>> missingCodes = new HashSet<>();
 					Map<CodeItem<?, ?, ?, ?>, ScalarValue<?, ?, ?, ?>> computedDpGroup = new HashMap<>();
 					LOGGER.debug("check_hierarchy(): Start processing group {}", keyValues);
-					boolean integerComputation = INTEGERDS.isAssignableFrom(measure.getDomain());
+					boolean integerComputation = measure.getDomain() instanceof IntegerDomain;
 					List<DataPoint> results = new ArrayList<>();
 	
 					// Add missing values for non-computed codes, so that computation may proceed in any case

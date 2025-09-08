@@ -314,7 +314,7 @@ public class ArithmeticTransformation extends BinaryTransformation
 							throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, rm);
 					}))
 				// if at least one components is floating point, use floating point otherwise integer
-				.map(splitting((lm, rm) -> INTEGERDS.isAssignableFrom(lm.getDomain()) 
+				.map(splitting((lm, rm) -> lm.getDomain() instanceof IntegerDomain 
 						? rm.getDomain() instanceof IntegerDomain
 						? lm : rm : lm))
 				.collect(toSet());

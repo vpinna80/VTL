@@ -113,7 +113,7 @@ public class NumericIntTransformation extends BinaryTransformation
 		
 		if (!NUMBERDS.isAssignableFrom(domainLeft))
 			throw new VTLIncompatibleTypesException(operator.toString(), NUMBERDS, domainLeft);
-		if (!INTEGERDS.isAssignableFrom(domainRight))
+		if (!(domainRight instanceof IntegerDomain))
 			throw new VTLIncompatibleTypesException(operator.toString(), domainRight, INTEGERDS);
 
 		return left;
@@ -122,7 +122,7 @@ public class NumericIntTransformation extends BinaryTransformation
 	@Override
 	protected VTLValueMetadata getMetadataDatasetWithScalar(boolean datasetIsLeftOp, DataSetStructure dataset, ScalarValueMetadata<?, ?> scalar)
 	{
-		if (!INTEGERDS.isAssignableFrom(scalar.getDomain()))
+		if (!(scalar.getDomain() instanceof IntegerDomain))
 			throw new VTLIncompatibleTypesException(operator.toString(), scalar.getDomain(), INTEGERDS);
 		
 		Set<DataSetComponent<Measure, ?, ?>> measures = dataset.getMeasures();

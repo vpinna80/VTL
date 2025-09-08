@@ -27,7 +27,6 @@ import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransf
 import static it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyOutput.COMPUTED;
 import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMAIN;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.groupingByConcurrent;
@@ -76,13 +75,14 @@ import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.Lineage;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
+import it.bancaditalia.oss.vtl.model.domain.IntegerDomain;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRule;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.model.transform.LeafTransformation;
@@ -172,9 +172,7 @@ public class HierarchyTransformation extends TransformationImpl
 		
 		ScalarValue<?, ?, ?, ?> missingValue;
 		if (mode.isZero())
-			missingValue = INTEGERDS.isAssignableFrom(measure.getDomain())
-					? IntegerValue.of(0L)
-					: createNumberValue(0.0);
+			missingValue = measure.getDomain() instanceof IntegerDomain ? IntegerValue.of(0L) : createNumberValue(0.0);
 		else
 			missingValue = NullValue.instanceFrom(measure);
 
@@ -277,9 +275,7 @@ public class HierarchyTransformation extends TransformationImpl
 					if (!allIsNonNull)
 						aggResult = NullValue.instanceFrom(measure);
 					else
-						aggResult = INTEGERDS.isAssignableFrom(measure.getDomain())
-								? IntegerValue.of(round(accumulator))
-								: createNumberValue(accumulator);
+						aggResult = measure.getDomain() instanceof IntegerDomain ? IntegerValue.of(round(accumulator)) : createNumberValue(accumulator);
 					
 					DataPointBuilder builder = new DataPointBuilder(keyValues, DONT_SYNC)
 							.add(codeId, code)
@@ -415,7 +411,7 @@ public class HierarchyTransformation extends TransformationImpl
 	public String toString()
 	{
 		return 	"hierarchy(" + operand + ", " + rulesetID + (conditions.isEmpty() ? "" : " condition " + String.join(", ", conditions.toString())) + (id == null ? "" : " rule " + id)
-				+ " " + mode.toString().toLowerCase() + " " + input.toString().toLowerCase() + " " + output.toString().toLowerCase() + "\")";
+				+ " " + mode.toString().toLowerCase() + " " + input.toString().toLowerCase() + " " + output.toString().toLowerCase() + ")";
 	}
 
 	@Override
