@@ -83,6 +83,12 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 		else
 			return new MembershipAlias(dataset, this);
 	}
+	
+	@Override
+	public int compareTo(VTLAlias o)
+	{
+		return o.isComposed() ? -o.compareTo(this) : name.compareTo(o.getName());
+	}
 
 	public boolean isQuoted()
 	{

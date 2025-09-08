@@ -41,7 +41,8 @@ public class MembershipAlias implements VTLAlias, Serializable
 	{
 		this.dsName = requireNonNull(dsName);
 		this.member = requireNonNull(member);
-		hash = Objects.hash(dsName, member);
+		// Only use member for hash
+		hash = Objects.hash(member);
 	}
 
 	@Override
@@ -81,6 +82,22 @@ public class MembershipAlias implements VTLAlias, Serializable
 	}
 	
 	@Override
+	public int compareTo(VTLAlias o)
+	{
+		if (o.isComposed())
+		{
+			Entry<VTLAlias, VTLAlias> split = o.split();
+			int cdsName = dsName.compareTo(split.getKey());
+			return cdsName == 0 ? member.compareTo(split.getValue()) : cdsName;
+		}
+		else
+		{
+			int cmember = member.compareTo(o);
+			return cmember == 0 ? 1 : cmember;
+		}
+	}
+	
+	@Override
 	public int hashCode()
 	{
 		return hash;
@@ -96,7 +113,13 @@ public class MembershipAlias implements VTLAlias, Serializable
 		if (getClass() != obj.getClass())
 			return false;
 
-		MembershipAlias other = (MembershipAlias) obj;
-		return dsName.equals(other.dsName) && member.equals(other.member);
+		VTLAlias other = (VTLAlias) obj;
+		if (!other.isComposed())
+			return member.equals(other);
+		else
+		{
+			Entry<VTLAlias, VTLAlias> split = other.split();
+			return dsName.equals(split.getKey()) && member.equals(split.getValue());
+		}
 	}
 }
