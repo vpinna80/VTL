@@ -36,6 +36,15 @@
 	<name>vtl-jsparser</name>
 	<description>VTL grammar and generated parser for TypeScript</description>
 
+	<dependencies>
+		<dependency>
+			<groupId>it.bancaditalia.oss.vtl</groupId>
+			<artifactId>vtl-parser</artifactId>
+			<classifier>grammar</classifier>
+			<type>zip</type>
+		</dependency>
+	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -43,10 +52,28 @@
 				<artifactId>flatten-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>unpack-dependencies</goal>
+						</goals>
+						<configuration>
+							<includeArtifactIds>vtl-parser</includeArtifactIds>
+							<classifier>grammar</classifier>
+							<includeTypes>zip</includeTypes>
+							<outputDirectory>${project.build.directory}/antlr4</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr4-maven-plugin</artifactId>
 				<!-- IMPORTANT: keep this version until the main version reaches it -->
-				<version>4.13.1</version><!--$NO-MVN-MAN-VER$-->
+				<version>4.13.2</version><!--$NO-MVN-MAN-VER$-->
 				<executions>
 					<execution>
 						<phase>generate-sources</phase>
@@ -54,6 +81,7 @@
 							<goal>antlr4</goal>
 						</goals>
 						<configuration>
+							<sourceDirectory>${project.build.directory}/antlr4</sourceDirectory>
 							<arguments>
 								<argument>-Dlanguage=TypeScript</argument>
 							</arguments>
