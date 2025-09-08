@@ -160,7 +160,10 @@ public class VTLExamplesEnvironment implements Environment, Serializable
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		if (repo == null)
+		{
+			LOGGER.warn("Metadata repository is null. Did you ask for an undeclared alias?");
 			return Optional.empty();
+		}
 		
 		for (int i = 0; i < inputs.length; i++)
 			if (VTLAliasImpl.of("ds_" + (i + 1)).equals(alias))
