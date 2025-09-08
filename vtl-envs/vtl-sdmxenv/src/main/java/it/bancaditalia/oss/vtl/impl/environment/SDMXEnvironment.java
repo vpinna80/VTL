@@ -207,7 +207,7 @@ public class SDMXEnvironment implements Environment, Serializable
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
 		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
-		if (!matcher.matches())
+		if (repo == null || !matcher.matches())
 			return Optional.empty();
 		
 		Optional<DataSetStructure> maybeMeta = repo.getMetadata(alias).map(DataSetStructure.class::cast);
