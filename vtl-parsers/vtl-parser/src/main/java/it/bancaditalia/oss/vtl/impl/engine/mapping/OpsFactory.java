@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,6 +60,8 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.sdmx.vtl.Vtl;
+import org.sdmx.vtl.Vtl.ScalarWithCastContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +105,7 @@ import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
+import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.names.MembershipAlias;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.statement.ComponentParameterTypeImpl;
@@ -902,13 +906,21 @@ public class OpsFactory implements Serializable
 			element = resolveRecursiveContext((ParserRuleContext) element, level);
 		
 		String text = element.getText();
-		SerFunction<String, ? extends ScalarValue<?, ?, ?, ?>> builder = valueBuilders.get(element.getClass());
-		if (builder != null)
-			return builder.apply(text);
+		if (valueBuilders.containsKey(element.getClass()))
+			return valueBuilders.get(element.getClass()).apply(text);
 		else if (element instanceof TerminalNode)
 			return StringValue.of(text.matches("^\".*\"$") ? text.substring(1, text.length() - 1) : text);
+		else if (element instanceof Vtl.ScalarWithCastContext)
+		{
+			Vtl.ScalarWithCastContext sctx = (ScalarWithCastContext) element;
+			element = sctx.constant();
+			if (element instanceof RuleNode)
+				element = resolveRecursiveContext((ParserRuleContext) element, level);
+			ScalarValue<?, ?, ?, ?> toBeCasted = valueBuilders.get(element.getClass()).apply(element.getText());
+			return Domains.valueOf(sctx.basicScalarType().getText().toUpperCase()).getDomain().cast(toBeCasted);
+		}
 		else
-			throw new IllegalStateException("Invalid context for valueparam: " + element.getClass());
+			throw new InvalidParameterException("Invalid context for valueparam: " + element.getClass());
 	}
 
 	private ParserRuleContext resolveRecursiveContext(ParserRuleContext ctx, int level)
