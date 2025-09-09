@@ -19,45 +19,28 @@
  */
 package it.bancaditalia.oss.vtl.impl.transform.ops;
 
-import static it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl.createNumberValue;
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseString;
-import static it.bancaditalia.oss.vtl.impl.types.data.date.VTLTimePatterns.parseTemporal;
 import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.getDefaultMeasure;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.DATE;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGER;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBER;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRING;
-import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIOD;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static java.util.Collections.singletonMap;
-import static java.util.Locale.ENGLISH;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.time.LocalDate;
-import java.util.Arrays;
-
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.transform.UnaryTransformation;
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
-import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
-import it.bancaditalia.oss.vtl.model.data.NumberValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValueMetadata;
+import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
-import it.bancaditalia.oss.vtl.model.domain.IntegerDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.NumberDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.StringDomainSubset;
-import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.model.domain.DateDomain;
+import it.bancaditalia.oss.vtl.model.domain.NumberDomain;
+import it.bancaditalia.oss.vtl.model.domain.StringDomain;
+import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
+import it.bancaditalia.oss.vtl.model.domain.TimePeriodDomain;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.transform.Transformation;
 import it.bancaditalia.oss.vtl.model.transform.TransformationScheme;
@@ -66,54 +49,57 @@ public class CastTransformation extends UnaryTransformation
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final Domains target;
+	private final VTLAlias targetAlias; 
 	private final String mask;
-	private final ThreadLocal<DecimalFormat> numberFormatter; 
 
-	public CastTransformation(Transformation operand, Domains target, String mask)
+	public CastTransformation(Transformation operand, Domains targetDomain, String mask)
 	{
 		super(operand);
-		this.target = target;
+
+		this.targetAlias = targetDomain.getDomain().getAlias();
 		this.mask = mask != null ? mask.substring(1, mask.length() - 1) : "";
-		numberFormatter = ThreadLocal.withInitial(() -> new DecimalFormat(this.mask, DecimalFormatSymbols.getInstance(ENGLISH)));
 	}
 
-	public CastTransformation(Transformation operand, String targetDomainName, String mask)
+	public CastTransformation(Transformation operand, VTLAlias targetAlias, String mask)
 	{
-		this(operand, Arrays.stream(Domains.values())
-				.filter(domain -> domain.name().equalsIgnoreCase(targetDomainName))
-				.findAny()
-				.orElseThrow(() -> new UnsupportedOperationException("Cast with non-basic domain name '" + targetDomainName + "' not implemented")),
-			mask);
+		super(operand);
+		
+		this.targetAlias = targetAlias;
+		this.mask = mask != null ? mask.substring(1, mask.length() - 1) : "";
 	}
 
 	@Override
 	protected VTLValue evalOnScalar(TransformationScheme scheme, ScalarValue<?, ?, ?, ?> scalar, VTLValueMetadata metadata)
 	{
-		return castScalar(scalar);
+		ValueDomainSubset<?, ?> targetDomain = scheme.getRepository().getDomain(targetAlias).orElseThrow(() -> new VTLUndefinedObjectException("domain", targetAlias));
+		
+		return castScalar(scalar, targetDomain);
 	}
 
 	@Override
 	protected VTLValue evalOnDataset(TransformationScheme scheme, DataSet dataset, VTLValueMetadata resultMetadata)
 	{
+		ValueDomainSubset<?, ?> targetDomain = scheme.getRepository().getDomain(targetAlias).orElseThrow(() -> new VTLUndefinedObjectException("domain", targetAlias));
+		
 		DataSetComponent<Measure, ?, ?> oldMeasure = dataset.getMetadata().getMeasures().iterator().next();
-		if (target.getDomain() == oldMeasure.getDomain())
+		if (targetDomain == oldMeasure.getDomain())
 			return dataset;
 		
-		DataSetComponent<Measure, ?, ?> measure = getDefaultMeasure(target.getDomain());
+		DataSetComponent<Measure, ?, ?> measure = getDefaultMeasure(targetDomain);
 		DataSetStructure structure = new DataSetStructureBuilder(dataset.getMetadata().getIDs())
 				.addComponent(measure)
 				.build();
 		
-		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure))));
+		return dataset.mapKeepingKeys(structure, lineageEnricher(this), dp -> singletonMap(measure, castScalar(dp.get(oldMeasure), targetDomain)));
 	}
 
 	@Override
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
 	{
 		VTLValueMetadata meta = operand.getMetadata(scheme);
+		ValueDomainSubset<?, ?> targetDomain = scheme.getRepository().getDomain(targetAlias).orElseThrow(() -> new VTLUndefinedObjectException("domain", targetAlias));
+
 		ValueDomainSubset<?, ?> domain;
-		
 		if (!meta.isDataSet())
 			domain = ((ScalarValueMetadata<?, ?>) meta).getDomain();
 		else
@@ -123,69 +109,41 @@ public class CastTransformation extends UnaryTransformation
 			domain = measure.getDomain();
 		}
 
-		if (domain == target.getDomain())
-			return target;
-		else if (domain instanceof StringDomainSubset && target == TIME_PERIOD)
-			return target;
-		else if (domain instanceof StringDomainSubset && target == INTEGER)
-			return INTEGER;
-		else if (domain instanceof StringDomainSubset && target == NUMBER)
-			return NUMBER;
-		else if (domain instanceof StringDomainSubset && target == DATE)
-			return DATE;
-		else if (domain instanceof TimeDomainSubset && target == STRING)
-			return STRING;
-		else if (domain instanceof IntegerDomainSubset && target == NUMBER)
-			return NUMBER;
-		else if (domain instanceof NumberDomainSubset && target == INTEGER)
-			return INTEGER;
-		else if (domain instanceof NumberDomainSubset && target == STRING)
-			return STRING;
+		// All possible casts
+		if (domain == targetDomain)
+			return ScalarValueMetadata.of(targetDomain);
+		else if (domain instanceof StringDomain && targetDomain instanceof StringDomain)
+			return ScalarValueMetadata.of(targetDomain);
+		else if (domain instanceof StringDomain && targetDomain instanceof TimePeriodDomain)
+			return ScalarValueMetadata.of(targetDomain);
+		else if (domain instanceof StringDomain && targetDomain instanceof NumberDomain)
+			return ScalarValueMetadata.of(targetDomain);
+		else if (domain instanceof StringDomain && targetDomain instanceof DateDomain)
+			return ScalarValueMetadata.of(targetDomain);
+		else if (domain instanceof TimeDomain && targetDomain instanceof StringDomain)
+			return ScalarValueMetadata.of(targetDomain);
+		else if (domain instanceof NumberDomain && targetDomain instanceof NumberDomain)
+			return ScalarValueMetadata.of(targetDomain);
+		else if (domain instanceof NumberDomain && targetDomain instanceof StringDomain)
+			return ScalarValueMetadata.of(targetDomain);
 		else
-			throw new UnsupportedOperationException("cast " + domain + " => " + target.getDomain() + " not implemented ");
+			throw new UnsupportedOperationException("cast " + domain + " => " + targetDomain + " not implemented ");
 	}
 
-	private DecimalFormat getNumberFormatter()
+	private ScalarValue<?, ?, ?, ?> castScalar(ScalarValue<?, ?, ?, ?> scalar, ValueDomainSubset<?, ?> targetDomain)
 	{
-		return numberFormatter.get();
-	}
-
-	private ScalarValue<?, ?, ?, ?> castScalar(ScalarValue<?, ?, ?, ?> scalar)
-	{
-		if (scalar.getDomain() == target.getDomain())
+		if (scalar.getDomain() == targetDomain)
 			return scalar;
 		
-		DecimalFormat formatter = getNumberFormatter();
-		
-		if (scalar.isNull())
-			return target.getDomain().cast(scalar);
-		else if (scalar instanceof StringValue && target == DATE)
-			return DateValue.of(parseString(scalar.get().toString(), mask));
-		else if (scalar instanceof StringValue && target == TIME_PERIOD)
-			return TimePeriodValue.of(scalar.get().toString(), mask);
-		else if (scalar instanceof DateValue && target == STRING)
-			return StringValue.of(parseTemporal((LocalDate) scalar.get(), mask));
-		else if (scalar instanceof TimePeriodValue && target == STRING)
-			return StringValue.of(parseTemporal((PeriodHolder<?>) scalar.get(), mask));
-		else if (scalar instanceof StringValue && target == INTEGER)
-			return IntegerValue.of(Long.parseLong((String) scalar.get()));
-		else if (scalar instanceof StringValue && target == NUMBER)
-			return createNumberValue((String) scalar.get());
-		else if (scalar instanceof NumberValue && target == INTEGER)
-			return IntegerValue.of(((Number) scalar.get()).longValue());
-		else if (scalar instanceof NumberValue && target == NUMBER)
-			return createNumberValue((Number) scalar.get());
-		else if (scalar instanceof IntegerValue && target == STRING)
-			return StringValue.of(formatter.format(((Number) scalar.get()).longValue()));
-		else if (scalar instanceof NumberValue && target == STRING)
-			return StringValue.of(formatter.format(((Number) scalar.get()).doubleValue()));
+		if (mask == null || mask.isBlank())
+			return targetDomain.cast(scalar);
 		else
-			throw new UnsupportedOperationException("cast " + scalar.getDomain() + " => " + target.getDomain() + " not implemented ");
+			throw new UnsupportedOperationException("cast with mask not implemented.");
 	}
 	
 	@Override
 	public String toString()
 	{
-		return "cast(" + operand + ", " + target + ", \"" + mask + "\")";
+		return "cast(" + operand + ", " + targetAlias + ", \"" + mask + "\")";
 	}
 }
