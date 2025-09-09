@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.dataset;
 
 import static it.bancaditalia.oss.vtl.impl.types.data.BooleanValue.TRUE;
+import static it.bancaditalia.oss.vtl.impl.types.dataset.DataSetComponentImpl.BOOL_VAR;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.BOOLEANDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 
@@ -66,14 +67,22 @@ public class FilterClauseTransformation extends DatasetClauseTransformation
 	public VTLValue eval(TransformationScheme scheme)
 	{
 		DataSet operand = (DataSet) getThisValue(scheme);
-		final DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
+		DataSetStructure metadata = (DataSetStructure) getMetadata(scheme);
 
 		MetadataRepository repo = scheme.getRepository();
-		return operand.filter(dp -> {
-			DatapointScope dpScope = new DatapointScope(repo, dp, metadata, null);
-			ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
-			return TRUE.equals(BOOLEANDS.cast(filterValue));
-		}, lineageEnricher(this));
+		
+		if (filterClause.hasAnalytic())
+		{
+			// do a analytic calc and then filter
+			DataSet anResult = (DataSet) filterClause.eval(scheme);
+			return operand.filteredMappedJoin(metadata, anResult, (a, b) -> a, BOOL_VAR);
+		}
+		else
+			return operand.filter(dp -> {
+				DatapointScope dpScope = new DatapointScope(repo, dp, metadata, null);
+				ScalarValue<?, ?, ?, ?> filterValue = (ScalarValue<?, ?, ?, ?>) filterClause.eval(dpScope);
+				return TRUE.equals(BOOLEANDS.cast(filterValue));
+			}, lineageEnricher(this));
 	}
 
 	public VTLValueMetadata computeMetadata(TransformationScheme scheme)
