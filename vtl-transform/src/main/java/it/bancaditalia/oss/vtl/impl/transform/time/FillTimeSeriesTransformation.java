@@ -217,7 +217,7 @@ public class FillTimeSeriesTransformation extends TimeSeriesTransformation
 		// Find the effective series frequency
 		Iterator<TimeValue<?, ?, ?, ?>> iter = timeSequence.iterator();
 		TimeValue<?, ?, ?, ?> last = iter.next();
-		Frequency frequency = null;
+		Frequency frequency = last.getFrequency().get();
 		while (iter.hasNext())
 		{
 			TimeValue<?, ?, ?, ?> current = iter.next();

@@ -23,6 +23,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 
 import java.io.Serializable;
 
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
@@ -70,6 +71,6 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 	@Override
 	public Class<?> getValueClass()
 	{
-		throw new UnsupportedOperationException();
+		return TimeValue.class;
 	}
 }
