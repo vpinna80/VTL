@@ -45,25 +45,25 @@ vtlTryCatch <- function(expr) {
 
 convertDF <- function(pager, nc, max.rows = -1L) {
   total <- NULL
-  repeat {               
+  repeat {
     pager$prepareMore()
     part <- lapply(0:(nc - 1), function(i) {
       switch (pager$getType(i),
-    	pager$getDoubleColumn(i),  
+    	  pager$getDoubleColumn(i),  
         sapply(pager$getIntColumn(i), as.logical),
-        as.Date(pager$getIntColumn(i)),
+        sapply(pager$getIntColumn(i), as.Date),
         sapply(pager$getStringColumn(i), .jstrVal),
         pager$getDoubleColumn(i)
       )  
     })
+    # Guard against empty String[] and return chatacter(0) instead
+    part <- lapply(1:nc, \(i) if (is.list(part[[i]])) character(0) else part[[i]])
     names(part) <- sapply(0:(nc - 1), function(i) .jstrVal(pager$getName(i)))
     part <- as.data.frame(part)
-    if (nrow(part) > 0) {
-      total <- if (is.null(total)) part else rbind(total, part)
-      if (is.integer(max.rows) && max.rows > 0 && total > max.rows) {
-        break
-      }
-    } else {
+
+    total <- if (is.null(total)) part else rbind(total, part)
+    
+    if (nrow(part) <= 0 || is.integer(max.rows) && max.rows > 0 && nrow(total) > max.rows) {
       break
     }
   }

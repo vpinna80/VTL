@@ -119,58 +119,21 @@ VTLSession <- R6Class("VTLSession",
     },
       
     #' @description
-    #' Evaluates the given VTL nodes as data.frames.
-    #' @param nodes a list of names of nodes to compute from this session
+    #' Evaluates the given VTL values as scalars or data.frames.
+    #' @param aliases a list of aliases to compute from this session
     #' @param max.rows The maximum number of rows to retrieve from each node
     #' @details
-    #' Returns a list of vertors or data frames containing the values of the 
-    #' named nodes defined in this session. Each alias is retrieved up to 
+    #' Returns a list of vectors or data.frames containing the VTL values defined in 
+    #' this session referenced by the given aliases. Each value is retrieved up to 
     #' max.rows number of observations, or all observations are retrieved if
     #' max.rows is not a positive long integer. In the latter case, the dataset
     #' value is also cached.
-    getValues = function (nodes, max.rows = -1L) {
-      nodesdf <- lapply(nodes, function(alias) {
-        df <- get0(alias, envir = private$cache)
-        if (!is.null(df)) {
-          return(df)
-        }
-        
-        alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(alias)
-        jnode <- tryCatch(private$checkInstance()$resolve(alias), error = function(e) {
-          if (!is.null(e$jobj)) {
-            e$jobj$printStackTrace()
-          }
-          signalCondition(e)
-        })
-      
-        if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
-          df <- as.data.frame(list(Scalar = jnode$get()))
-          assign(alias, df, envir = private$cache)
-        } else {
-          pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
-            .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
-          nc <- jnode$getMetadata()$size()
-          df <- tryCatch({
-            convertDF(pager, nc, max.rows)
-          }, error = function(e) {
-            if (!is.null(e$jobj)) {
-              e$jobj$printStackTrace()
-            }
-            signalCondition(e)
-          })
-
-          attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getAlias()$getName() })
-          attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getAlias()$getName() })
-          assign(alias$getName(), df, envir = private$cache)
-        }
-
-        return(df)
-      })
-        
-      names(nodesdf) <- nodes
-      return(nodesdf)
+    getValues = function (aliases, max.rows = -1L) {
+      datalist <- lapply(aliases, self$getSingleValue, max.rows)
+      names(datalist) <- aliases
+      return(datalist)
     },
-      
+    
     #' @description
     #' Returns a lineage for the value of the named node defined in this session.
     #' @param node
@@ -281,7 +244,50 @@ VTLSession <- R6Class("VTLSession",
     reset = function() {
       private$checkInstance()$getConfiguration()$reset()
       return(invisible(self))
-    }
+    },
+    
+    getSingleValue = function(alias, max.rows = -1L) {
+      df <- get0(alias, envir = private$cache)
+      if (!is.null(df)) {
+        return(df)
+      }
+      
+      alias = J('it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl')$of(alias)
+      jnode <- tryCatch(private$checkInstance()$resolve(alias), error = function(e) {
+        if (!is.null(e$jobj)) {
+          e$jobj$printStackTrace()
+        }
+        signalCondition(e)
+      })
+      
+      if (jnode %instanceof% "it.bancaditalia.oss.vtl.model.data.ScalarValue") {
+        df <- as.data.frame(list(Scalar = jnode$get()))
+        assign(alias, df, envir = private$cache)
+      } else {
+        pager <- .jnew("it.bancaditalia.oss.vtl.util.Paginator", 
+          .jcast(jnode, "it.bancaditalia.oss.vtl.model.data.DataSet"), 100L)
+        nc <- jnode$getMetadata()$size()
+        df <- tryCatch({
+          convertDF(pager, nc, max.rows)
+        }, error = function(e) {
+          if (!is.null(e$jobj)) {
+            e$jobj$printStackTrace()
+          }
+          signalCondition(e)
+        })
+        
+        if (!is.null(df)) {
+          attr(df, 'measures') <- sapply(jnode$getMetadata()$getMeasures(), function(x) { x$getAlias()$getName() })
+          attr(df, 'identifiers') <- sapply(jnode$getMetadata()$getIDs(), function(x) { x$getAlias()$getName() })
+          assign(alias$getName(), df, envir = private$cache)
+        } else {
+          df <- data.frame('NULL' = "NULL")
+        }
+      }
+
+      return(df)
+	} 
+
   ), private = list(
     instance = NULL,
     cache = NULL,
