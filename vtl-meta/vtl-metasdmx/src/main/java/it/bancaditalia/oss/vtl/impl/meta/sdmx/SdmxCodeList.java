@@ -67,12 +67,16 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 			addChildren(codelist, hierarchy, new StringCodeItem(codeBean.getId(), this));
 
 		List<HierarchicalRule> rules = new ArrayList<>();
+		int ruleOrder = 1;
 		for (StringCodeItem ruleComp: hierarchy.keySet())
 		{
 			VTLAlias ruleName = VTLAliasImpl.of(true, ruleComp.get());
+			if (ruleName == null)
+				ruleName = VTLAliasImpl.of(true, "" + ruleOrder);
 			List<String> list = hierarchy.get(ruleComp).stream().map(StringCodeItem::get).collect(toList());
 			rules.add(new HierarchicalRuleImpl(ruleName, null, ruleComp.get(), EQ, list, nCopies(list.size(), PLUS), List.of(), null, null));
 			LOGGER.trace("Created hierarchy rule {} for codelist {}", ruleComp, getAlias());
+			ruleOrder++;
 		}
 		
 		defaultRuleSet = rules.isEmpty() ? null : new HierarchicalRuleSetImpl(clAlias, VALUE_DOMAIN, clAlias, List.of(), rules);

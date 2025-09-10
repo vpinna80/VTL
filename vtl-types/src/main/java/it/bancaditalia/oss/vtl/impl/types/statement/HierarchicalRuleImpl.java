@@ -56,9 +56,9 @@ public class HierarchicalRuleImpl implements HierarchicalRule
 	public HierarchicalRuleImpl(VTLAlias name, Transformation when, String leftCodeItem, RuleType operator, List<String> rightCodes, 
 			List<HierarchicalRuleSign> signs, List<Transformation> rightConds, ScalarValue<?, ?, ?, ?> errorCode, ScalarValue<?, ?, ?, ?> errorLevel)
 	{
-		this.name = name;
 		this.when = when;
 		this.leftCodeItem = VTLAliasImpl.of(needsQuotes(leftCodeItem), leftCodeItem).getName();
+		this.name = name != null ? name : VTLAliasImpl.of(needsQuotes(leftCodeItem), leftCodeItem);
 		this.operator = operator;
 		this.errorCode = coalesce(errorCode, NullValue.instance(ERRORCODE.get().getDomain()));
 		this.errorLevel = coalesce(errorLevel, NullValue.instance(ERRORLEVEL.get().getDomain()));

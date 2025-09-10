@@ -285,25 +285,25 @@ public class CheckHierarchyTransformation extends TransformationImpl
 									.add(ERRORCODE, (ScalarValue<?, ?, ?, ?>) rule.getErrorCode())
 									.add(ERRORLEVEL, (ScalarValue<?, ?, ?, ?>) rule.getErrorLevel());
 							
+							ScalarValue<?, ?, ?, ?> test;
+							if (imbalance.isNull())
+								test = BooleanValue.NULL;
+							else if (integerComputation)
+								test = BooleanValue.of(rule.getRuleType().test(imbalance, IntegerValue.of(0L)));
+							else
+								test = BooleanValue.of(rule.getRuleType().test(imbalance, NumberValueImpl.createNumberValue(0.0)));
+							
 							if (output == ALL || output == ALL_MEASURES)
-							{
-								ScalarValue<?, ?, ?, ?> test;
-								if (imbalance.isNull())
-									test = BooleanValue.NULL;
-								else if (integerComputation)
-									test = BooleanValue.of(rule.getRuleType().test(imbalance, IntegerValue.of(0L)));
-								else
-									test = BooleanValue.of(rule.getRuleType().test(imbalance, NumberValueImpl.createNumberValue(0.0)));
-	
 								builder = builder.add(BOOL_VAR, test);
-							}
 							if (output == INVALID || output == ALL_MEASURES)
 								builder = builder.add(measure, originalLeftValue);
 									
-							DataPoint dp = builder.build(LineageNode.of(this), newStructure);
-							
-							LOGGER.trace("Created output datapoint {}", dp);
-							results.add(dp);
+							if (output != INVALID || test == BooleanValue.FALSE)
+							{
+								DataPoint dp = builder.build(LineageNode.of(this), newStructure);
+								LOGGER.trace("Created output datapoint {}", dp);
+								results.add(dp);
+							}
 						}
 					}
 				return results.stream();
