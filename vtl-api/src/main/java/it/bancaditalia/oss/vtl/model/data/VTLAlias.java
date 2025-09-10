@@ -19,14 +19,20 @@
  */
 package it.bancaditalia.oss.vtl.model.data;
 
+import static java.util.function.Predicate.not;
+import static java.util.regex.Pattern.compile;
+
 import java.util.Comparator;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 
 /**
  * A interface that captures the behavior of VTL identifiers
  */
 public interface VTLAlias extends Comparable<VTLAlias>
 {
+	public static final Predicate<String> PATTERN = compile("^[A-Za-z_][A-Za-z0-9_.]*|[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_.]*(?:\\([0-9._+*~]+\\))?(?::(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+)?$").asMatchPredicate();
+
 	/**
 	 * Compares two aliases by lowercased name. Quoting is not considered.
 	 * 
@@ -35,6 +41,17 @@ public interface VTLAlias extends Comparable<VTLAlias>
 	public static Comparator<VTLAlias> byName()
 	{
 		return (a, b) -> a == null ? -1 : b == null ? 1 : a.getMemberAlias().getName().toLowerCase().compareTo(b.getMemberAlias().getName().toLowerCase());
+	}
+	
+	/**
+	 * Tests whether a given string can be used as an alias without quotes
+	 * 
+	 * @param alias The alias string to test
+	 * @return true if the string must be quoted in order to be used as an alias
+	 */
+	public static boolean needsQuotes(String alias)
+	{
+		return not(PATTERN).test(alias);
 	}
 	
 	/**

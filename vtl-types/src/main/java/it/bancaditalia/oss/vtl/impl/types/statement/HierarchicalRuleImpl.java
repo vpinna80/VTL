@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.types.statement;
 
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORCODE;
 import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.ERRORLEVEL;
+import static it.bancaditalia.oss.vtl.model.data.VTLAlias.needsQuotes;
 import static it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet.HierarchicalRuleSign.MINUS;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.util.stream.Collectors.joining;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.CodeItem;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
@@ -56,17 +58,18 @@ public class HierarchicalRuleImpl implements HierarchicalRule
 	{
 		this.name = name;
 		this.when = when;
-		this.leftCodeItem = leftCodeItem;
+		this.leftCodeItem = VTLAliasImpl.of(needsQuotes(leftCodeItem), leftCodeItem).getName();
 		this.operator = operator;
 		this.errorCode = coalesce(errorCode, NullValue.instance(ERRORCODE.get().getDomain()));
 		this.errorLevel = coalesce(errorLevel, NullValue.instance(ERRORLEVEL.get().getDomain()));
 		
 		for (int i = 0; i < rightCodes.size(); i++)
 		{
-			this.rightCodes.put(rightCodes.get(i), signs.get(i) != MINUS);
+			String rightCode = VTLAliasImpl.of(needsQuotes(rightCodes.get(i)), rightCodes.get(i)).getName();
+			this.rightCodes.put(rightCode, signs.get(i) != MINUS);
 			
 			if (rightConds != null && i < rightConds.size()  && rightConds.get(i) != null)
-				this.rightConds.put(rightCodes.get(i), rightConds.get(i));
+				this.rightConds.put(rightCode, rightConds.get(i));
 		}
 	}
 
