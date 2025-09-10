@@ -246,6 +246,15 @@ VTLSession <- R6Class("VTLSession",
       return(invisible(self))
     },
     
+    #' @description
+    #' Evaluates and returns the VTL value bound to the given alias.
+    #' @param alias a character vector of length 1 with the alias to compute
+    #' @param max.rows The maximum number of rows to retrieve from the result
+    #' @details
+    #' Returns a data.frame containing the VTL value bound in this session 
+    #' to the given alias. The data.frame is populated up to max.rows number 
+    #' of observations, or all observations are retrieved if max.rows is not 
+    #' a positive long integer, in which case the data.frame is also cached.
     getSingleValue = function(alias, max.rows = -1L) {
       df <- get0(alias, envir = private$cache)
       if (!is.null(df)) {
