@@ -338,7 +338,6 @@ vtlServer <- function(input, output, session) {
       # Single execution only when VTL Studio starts
       updateSelectInput(inputId = makeID('selectEnv'), choices = vtlAvailableEnvironments())
       updateSelectInput(inputId = makeID('repoClass'), choices = repos, selected = globalRepo())
-      session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = vtlSessionInstance$text))
 
       if (vtlSessionInstance$isCompiled()) {
         updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(vtlSessionInstance$getNodes()))), '')
@@ -396,7 +395,7 @@ vtlServer <- function(input, output, session) {
       output[[makeID('datasetsInfo')]] <- renderPrint({
         cat(statement, "\nSize is:", nrow(ddf), "by", ncol(ddf))
       })
-  }) |> bindEvent(input[[makeID('datasetName')]])
+    }) |> bindEvent(input[[makeID('datasetName')]])
     
     # Lineage display
     output[[makeID('lineage')]] <- networkD3::renderSankeyNetwork({
@@ -505,6 +504,7 @@ vtlServer <- function(input, output, session) {
 
     panel <- createPanel(vtlSession)
     prependTab("navtab", panel, T)
+    session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = VTLSessionManager$getOrCreate(vtlSession)$text))
   }) |> bindEvent(vtlSessions(), tabs())
 
   # contextual menus for session tabs
