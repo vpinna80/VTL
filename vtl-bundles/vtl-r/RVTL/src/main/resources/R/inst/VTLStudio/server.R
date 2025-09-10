@@ -119,12 +119,12 @@ createPanel <- function(vtlSession) {
         tags$script(HTML(sprintf("createEditorPanel('%s')", newEditorID)))
       ), bslib::nav_panel_hidden(value = "structures",
         fluidRow(
-          column(width=5, selectInput(makeID('structName'), 'Select structure:', c(''), ''))
+          column(width=5, uiOutput(makeID('structNameOutput'), inline = T))
         ),
         DT::dataTableOutput(makeID('dsStr'))
       ), bslib::nav_panel_hidden(value = "datasets",
         fluidRow(class = 'g-0',
-          column(width=12, selectInput(makeID('datasetName'), 'Select dataset:', c(''), ''))
+          column(width=12, uiOutput(makeID('datasetNameOutput'), inline = T))
         ),
         hr(),
         tabsetPanel(id = makeID("dataview"), type = "tabs",
@@ -187,7 +187,11 @@ vtlServer <- function(input, output, session) {
 
   vtlSessions <- reactiveVal(NULL)
   isCompiled <- reactiveVal(F)
-  currentSession <- reactiveVal(NULL)
+  currentSession <- reactive({
+    if (input$navtab != "Global settings") {
+      VTLSessionManager$getOrCreate(input$navtab)
+    } else NULL
+  }) |> bindEvent(input$navtab)
   tabs <- reactiveVal(NULL)
   
   # Create startup tabs for each active session
@@ -195,13 +199,6 @@ vtlServer <- function(input, output, session) {
     vtlSessions(VTLSessionManager$list())
     inittabs$destroy()
   })
-  
-  # Monitor switching tabs to determine current session
-  observe({
-    if (input$navtab != "Global settings") {
-      currentSession(VTLSessionManager$getOrCreate(input$navtab))
-    }
-  }) |> bindEvent(input$navtab)
 
   # Controls when running on shinyapps
   output$shinyapps <- renderUI({
@@ -322,8 +319,8 @@ vtlServer <- function(input, output, session) {
     sheetID <- makeID('sheets')
     settingsFirstOpened <- observe({
       req(input[[sheetID]] == 'settings')
-      currentSession <- VTLSessionManager$getOrCreate(vtlSession)
-      envs <- strsplit(.jstrVal(currentSession$getProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION)), ",", T)[[1]]
+      vtlSessionInstance <- VTLSessionManager$getOrCreate(vtlSession)
+      envs <- strsplit(.jstrVal(vtlSessionInstance$getProperty(vtlProps$ENVIRONMENT_IMPLEMENTATION)), ",", T)[[1]]
       checked <- unname(unlist(which(sapply(vtlAvailableEnvironments(), `%in%`, envs))))
       
       output[[makeID('envs')]] <- DT::renderDT(
@@ -341,10 +338,10 @@ vtlServer <- function(input, output, session) {
       # Single execution only when VTL Studio starts
       updateSelectInput(inputId = makeID('selectEnv'), choices = vtlAvailableEnvironments())
       updateSelectInput(inputId = makeID('repoClass'), choices = repos, selected = globalRepo())
-      session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = currentSession$text))
+      session$sendCustomMessage("editor-text", list(panel = makeID('editor'), text = vtlSessionInstance$text))
 
-      if (currentSession$isCompiled()) {
-        updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(currentSession$getNodes()))), '')
+      if (vtlSessionInstance$isCompiled()) {
+        updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(vtlSessionInstance$getNodes()))), '')
       }
       
       settingsFirstOpened$destroy()
@@ -399,7 +396,7 @@ vtlServer <- function(input, output, session) {
       output[[makeID('datasetsInfo')]] <- renderPrint({
         cat(statement, "\nSize is:", nrow(ddf), "by", ncol(ddf))
       })
-	}) |> bindEvent(input[[makeID('datasetName')]])
+  }) |> bindEvent(input[[makeID('datasetName')]])
     
     # Lineage display
     output[[makeID('lineage')]] <- networkD3::renderSankeyNetwork({
@@ -451,11 +448,11 @@ vtlServer <- function(input, output, session) {
 
         # not a scalar, order columns and add component role
         if (ncol(ddf) > 1) {
-	        neworder = which(names(ddf) %in% attr(ddf, 'measures'))
-	        neworder = c(neworder, which(names(ddf) %in% attr(ddf, 'identifiers')))
-	        if (input[[makeID('showAttrs')]]) {
-	          neworder = c(neworder, which(!(1:ncol(ddf) %in% neworder)))
-	        }
+          neworder = which(names(ddf) %in% attr(ddf, 'measures'))
+          neworder = c(neworder, which(names(ddf) %in% attr(ddf, 'identifiers')))
+          if (input[[makeID('showAttrs')]]) {
+            neworder = c(neworder, which(!(1:ncol(ddf) %in% neworder)))
+          }
           ddf = ddf[, neworder]
         }
         
@@ -538,25 +535,16 @@ vtlServer <- function(input, output, session) {
     fun[[1 + demoindex]]('democtrl', 'd-none')
     fun[[2 - demoindex]]('normalctrl', 'd-none')
     
-  	VTLSessionManager$clear()
-  	for (tab in tabs())
-  	  removeTab('navtab', tab)
-	  tabs(NULL)
-  	
-  	if (isTRUE(input$demomode)) {
-  	  vtlSessions(NULL)
-	    categories <- c(
-	      list(list(label = 'Select category...', value = '', categ = '')),
-	      lapply(sapply(exampleEnv$getCategories(), .jstrVal), \(categ) list(label = categ, value = categ, categ = ''))
-	    )
-	    updateSelectizeInput(session, 'excat', 'Categories', NULL, options = list(
+    if (isTRUE(input$demomode)) {
+      categories <- c(
+        list(list(label = 'Select category...', value = '', categ = '')),
+          lapply(sapply(exampleEnv$getCategories(), .jstrVal), \(categ) list(label = categ, value = categ, categ = ''))
+      )
+      updateSelectizeInput(session, 'excat', 'Categories', NULL, options = list(
         render = I('{ option: generateLabel }'),
         options = categories
       ))
-  	} else {
-  	  sList <- VTLSessionManager$list()
-  	  vtlSessions(sList)
-  	}
+    }
   }) |> bindEvent(input$demomode, ignoreInit = T)
   
   # Populate demo mode operators when selecting a category
@@ -771,19 +759,23 @@ vtlServer <- function(input, output, session) {
   
   # compile VTL code
   observe({
-    shinyjs::disable("compile")
-    vtlSession <- isolate(currentSession())
-    makeID <- makeUIElemName(isolate(vtlSession$name))
-    statements <- input$vtlStatements
+    shinyjs::disable('compile')
+    vtlSession <- currentSession()
+    makeID <- makeUIElemName(vtlSession$name)
+    statements <- input[[makeID('editor_vtlStatements')]]
+    vtlSession$setText(statements)
     withProgress(message = 'Compiling...', value = 0, tryCatch({
-      vtlSession$setText(statements)
       setProgress(value = 0.5)
       vtlSession$compile()
       isCompiled(T)
       shinyjs::addClass(makeID('pane'), 'compiled')
       shinyjs::html(makeID('output'), cat("Compilation successful.\n"))
-      updateSelectInput(session, makeID('structName'), 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
-      updateSelectInput(session, makeID('datasetName'), 'Select Node', c('', sort(unlist(vtlSession$getNodes()))), '')
+      output[[makeID('structNameOutput')]] <- renderUI({
+        selectInput(makeID('structName'), 'Select VTL alias', c('', sort(unlist(vtlSession$getNodes()))), '')
+      })
+      output[[makeID('datasetNameOutput')]] <- renderUI({
+        selectInput(makeID('datasetName'), 'Select VTL alias', c('', sort(unlist(vtlSession$getNodes()))), '')
+      })
     }, error = function(e) {
       isCompiled(vtlSession$isCompiled())
       msg <- conditionMessage(e)
@@ -800,7 +792,7 @@ vtlServer <- function(input, output, session) {
       )
     }, finally = {
       setProgress(value = 1)
-      shinyjs::enable("compile")
+      shinyjs::enable('compile')
     }))
   }) |> bindEvent(input$compile)
   

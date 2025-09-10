@@ -28,6 +28,7 @@ const vtlEditorItems = [
   { label: 'Close',                action: "close",      isdisabled: false }
 ]
 
+// Attaches an editor instance to the VTL session
 function createEditorPanel(panelName) {
   const vtlwell = document.getElementById(panelName)
   if (!vtlwell?.querySelector('.cm-editor')) {
@@ -105,9 +106,12 @@ function updateEditorText({ panel, text }) {
   }
 }
 
+// Send editor changes back to Shiny
 function updateSessionText() {
-  const activeTab = document.querySelector('.active .vtlwell').id;
-  Shiny.setInputValue('vtlStatements', VTLEditor.views[activeTab].state.doc.toString(), { priority: 'event' });
+  // The first .active is for the session
+  const activeTab = document.querySelector('#navtab+.tab-content .tab-pane.active .tab-pane[data-value="editor"] .vtlwell').id
+  const UIElemName = `${activeTab}_vtlStatements`.replace(/[^A-Za-z0-9_]/g, '_')
+  Shiny.setInputValue(UIElemName, VTLEditor.views[activeTab].state.doc.toString(), { priority: 'event' });
 }
 
 jQuery(document).ready(function () {
