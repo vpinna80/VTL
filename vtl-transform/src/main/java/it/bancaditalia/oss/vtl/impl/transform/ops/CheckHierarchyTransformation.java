@@ -395,7 +395,7 @@ public class CheckHierarchyTransformation extends TransformationImpl
 	public String toString()
 	{
 		return "check_hierarchy(" + operand + ", " + rulesetID + (conditions.isEmpty() ? "" : " condition " + join(", ", conditions.toString())) + (id == null ? "" : " rule " + id) + " "
-				+ mode.toString().toLowerCase() + " " + input.toString().toLowerCase() + " " + output.toString().toLowerCase() + "\")";
+				+ mode.toString().toLowerCase() + " " + input.toString().toLowerCase() + " " + output.toString().toLowerCase() + ")";
 	}
 
 	@Override
