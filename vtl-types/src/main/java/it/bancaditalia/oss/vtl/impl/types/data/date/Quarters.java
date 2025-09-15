@@ -19,8 +19,10 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data.date;
 
+import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.YEARS;
+import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 import static java.time.temporal.IsoFields.QUARTER_YEARS;
 import static org.threeten.extra.TemporalFields.HALF_YEARS;
 
@@ -30,6 +32,8 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.List;
+
+import org.threeten.extra.YearQuarter;
 
 public class Quarters implements TemporalAmount, Serializable
 {
@@ -50,7 +54,21 @@ public class Quarters implements TemporalAmount, Serializable
 	@Override
 	public Temporal subtractFrom(Temporal temporal)
 	{
-		throw new UnsupportedOperationException();
+		if (temporal instanceof YearQuarter)
+		{
+			int newQuarter = temporal.get(QUARTER_OF_YEAR) - quarters;
+			
+			int leap = 0;
+			for (; newQuarter < 1; newQuarter += 4)
+				leap--;
+			for (; newQuarter > 4; newQuarter -= 4)
+				leap++;
+			
+			int newYear = temporal.get(YEAR) - quarters / 4 + leap;
+			return YearQuarter.of(newYear, newQuarter);
+		}
+		else
+			throw new UnsupportedOperationException();
 	}
 
 	@Override
