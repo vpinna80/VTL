@@ -37,6 +37,9 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.UserDefinedType;
 
+import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
+import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 
 public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends UserDefinedType<T>
@@ -54,12 +57,15 @@ public abstract class ScalarValueUDT<T extends ScalarValue<?, ?, ?, ?>> extends 
 			new DoubleValueUDT(),
 			new BigDecimalValueUDT(),
 			new DurationValueUDT(),
-			new GenericTimeValueUDT(),
-			new DateValueUDT(),
-			new TimePeriodValueUDT()
+			new TimeValueUDT()
 		};
 		
 		IntStream.range(0, UDTS.length).forEach(i -> TAGS.put(UDTS[i].userClass(), new SimpleEntry<>(i, UDTS[i])));
+		
+		int i = UDTS.length;
+		// Add tags for subclasses of TimeValue
+		for (Class<?> clazz: List.of(GenericTimeValue.class, DateValue.class, TimePeriodValue.class))
+			TAGS.put(clazz, new SimpleEntry<>(i++, UDTS[UDTS.length - 1]));
 	}
 
 	public static final ScalarValueUDT<?> getUDTforTag(Integer tag)

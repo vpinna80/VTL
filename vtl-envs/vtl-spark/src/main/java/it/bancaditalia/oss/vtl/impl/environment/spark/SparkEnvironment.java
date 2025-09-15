@@ -63,25 +63,21 @@ import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BigDecimalValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BooleanValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DateValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DoubleValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DurationValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.GenericTimeValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.IntegerValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimeValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.BigDecimalValue;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DoubleValue;
 import it.bancaditalia.oss.vtl.impl.types.data.DurationValue;
-import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageCall;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -131,17 +127,10 @@ public class SparkEnvironment implements Environment
 			UDTRegistration.register(DoubleValue.class.getName(), DoubleValueUDT.class.getName());
 			UDTRegistration.register(BigDecimalValue.class.getName(), BigDecimalValueUDT.class.getName());
 			UDTRegistration.register(BooleanValue.class.getName(), BooleanValueUDT.class.getName());
-			UDTRegistration.register(DateValue.class.getName(), DateValueUDT.class.getName());
-			UDTRegistration.register(GenericTimeValue.class.getName(), GenericTimeValueUDT.class.getName());
-			UDTRegistration.register(TimePeriodValue.class.getName(), TimePeriodValueUDT.class.getName());
+			UDTRegistration.register(TimeValue.class.getName(), TimeValueUDT.class.getName());
 			UDTRegistration.register(DurationValue.class.getName(), DurationValueUDT.class.getName());
 			UDTRegistration.register(TimeWithFreq.class.getName(), TimeWithFreqUDT.class.getName());
 		}
-	}
-
-	public static void startContextCleaner()
-	{
-		
 	}
 
 	public static class VTLKryoRegistrator implements KryoRegistrator

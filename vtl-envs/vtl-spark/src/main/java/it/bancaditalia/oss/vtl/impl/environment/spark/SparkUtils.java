@@ -48,7 +48,9 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.JavaTypeInference;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoder;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ArrayEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.PrimitiveIntEncoder$;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ProductEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.UDTEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
@@ -61,14 +63,12 @@ import org.slf4j.LoggerFactory;
 
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BigDecimalValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.BooleanValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DateValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DoubleValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DurationValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.GenericTimeValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.IntegerValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.StringValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimeValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.PartitionToRankUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.TimeWithFreqUDT;
 import it.bancaditalia.oss.vtl.impl.types.data.BaseScalarValue;
@@ -81,6 +81,9 @@ import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
 import it.bancaditalia.oss.vtl.impl.types.data.IntegerValue;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue.FillTimeSeriesHolder;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue.FillTimeSeriesTimeList;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 import it.bancaditalia.oss.vtl.impl.types.operators.PartitionToRank;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
@@ -111,24 +114,26 @@ public class SparkUtils
 	
 	static
 	{
-		SCALAR_ENCODERS.put(BooleanValue.class, new BooleanValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(StringValue.class, new StringValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(IntegerValue.class, new IntegerValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(DoubleValue.class, new DoubleValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(BigDecimalValue.class, new BigDecimalValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(DurationValue.class, new DurationValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(GenericTimeValue.class, new GenericTimeValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(DateValue.class, new DateValueUDT().getEncoder());
-		SCALAR_ENCODERS.put(TimePeriodValue.class, new TimePeriodValueUDT().getEncoder());
-
 		DOMAIN_DATATYPES.put(BOOLEANDS, new BooleanValueUDT());
 		DOMAIN_DATATYPES.put(STRINGDS, new StringValueUDT());
 		DOMAIN_DATATYPES.put(INTEGERDS, new IntegerValueUDT());
 		DOMAIN_DATATYPES.put(NUMBERDS, isUseBigDecimal() ? new BigDecimalValueUDT() : new DoubleValueUDT());
 		DOMAIN_DATATYPES.put(DURATIONDS, new DurationValueUDT());
-		DOMAIN_DATATYPES.put(TIMEDS, new GenericTimeValueUDT());
-		DOMAIN_DATATYPES.put(TIME_PERIODDS, new TimePeriodValueUDT());
-		DOMAIN_DATATYPES.put(DATEDS, new DateValueUDT());
+		DOMAIN_DATATYPES.put(TIMEDS, new TimeValueUDT());
+		DOMAIN_DATATYPES.put(TIME_PERIODDS, DOMAIN_DATATYPES.get(TIMEDS));
+		DOMAIN_DATATYPES.put(DATEDS, DOMAIN_DATATYPES.get(TIMEDS));
+		
+		SCALAR_ENCODERS.put(BooleanValue.class, DOMAIN_DATATYPES.get(BOOLEANDS).getEncoder());
+		SCALAR_ENCODERS.put(StringValue.class, DOMAIN_DATATYPES.get(STRINGDS).getEncoder());
+		SCALAR_ENCODERS.put(IntegerValue.class, DOMAIN_DATATYPES.get(INTEGERDS).getEncoder());
+		SCALAR_ENCODERS.put(DoubleValue.class, DOMAIN_DATATYPES.get(NUMBERDS).getEncoder());
+		SCALAR_ENCODERS.put(BigDecimalValue.class, DOMAIN_DATATYPES.get(NUMBERDS).getEncoder());
+		SCALAR_ENCODERS.put(DurationValue.class, DOMAIN_DATATYPES.get(DURATIONDS).getEncoder());
+		SCALAR_ENCODERS.put(TimeValue.class, DOMAIN_DATATYPES.get(TIMEDS).getEncoder());
+		SCALAR_ENCODERS.put(GenericTimeValue.class, SCALAR_ENCODERS.get(TimeValue.class));
+		SCALAR_ENCODERS.put(DateValue.class, SCALAR_ENCODERS.get(TimeValue.class));
+		SCALAR_ENCODERS.put(TimePeriodValue.class, SCALAR_ENCODERS.get(TimeValue.class));
+
 	}
 
 	public static MapFunction<Row, Row> parseCSVStrings(DataSetStructure structure, Lineage lineage,
@@ -284,6 +289,22 @@ public class SparkUtils
 		else if (clazz == SerDoubleSumAvgCount.class)
 		{
 			resultEncoder = JavaTypeInference.encoderFor(SerDoubleSumAvgCount.class);
+		}
+		else if (clazz == FillTimeSeriesHolder.class)
+		{
+			List<EncoderField> fieldEncoders = new ArrayList<>();
+			fieldEncoders.add(new EncoderField("duration", new UDTEncoder<>(new DurationValueUDT(), DurationValueUDT.class), false, new Metadata(), Option.empty(), Option.empty()));
+			fieldEncoders.add(new EncoderField("key", new ArrayEncoder<>(new UDTEncoder<>(new TimeValueUDT(), TimeValueUDT.class), true), false, new Metadata(), Option.empty(), Option.empty()));
+			fieldEncoders.add(new EncoderField("value", PrimitiveIntEncoder$.MODULE$ , false, new Metadata(), Option.empty(), Option.empty()));
+			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
+			resultEncoder = new ProductEncoder<>(ClassTag.apply(FillTimeSeriesHolder.class), seq, Option.empty());
+		}
+		else if (clazz == FillTimeSeriesTimeList.class)
+		{
+			List<EncoderField> fieldEncoders = new ArrayList<>();
+			fieldEncoders.add(new EncoderField("list", new ArrayEncoder<>(new UDTEncoder<>(new TimeValueUDT(), TimeValueUDT.class), true), false, new Metadata(), Option.empty(), Option.empty()));
+			Seq<EncoderField> seq = asScala((Iterable<EncoderField>) fieldEncoders).toSeq();
+			resultEncoder = new ProductEncoder<>(ClassTag.apply(FillTimeSeriesTimeList.class), seq, Option.empty());
 		}
 		else if (clazz == Holder.class)
 		{

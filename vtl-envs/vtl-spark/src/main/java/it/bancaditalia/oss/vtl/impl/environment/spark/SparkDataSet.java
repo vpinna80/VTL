@@ -66,7 +66,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -87,9 +86,9 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.api.java.UDF2;
-import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.ArrayEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.EncoderField;
+import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.PrimitiveLongEncoder$;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.RowEncoder;
 import org.apache.spark.sql.catalyst.encoders.AgnosticEncoders.UDTEncoder;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
@@ -111,6 +110,8 @@ import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.ScalarValueUDT;
 import it.bancaditalia.oss.vtl.impl.environment.spark.udts.LineageUDT;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
 import it.bancaditalia.oss.vtl.impl.types.data.NullValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.types.data.TimeValue.FillTimeSeriesTimeList;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataSetStructureBuilder;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
@@ -500,13 +501,13 @@ public class SparkDataSet extends AbstractDataSet
 		{
 			// patch the collector's finisher so that GenericRows in PartitionToRank are correctly decoded to data points
 			collector = patchCollector(collector, serEncoder);
-			patchedFinisher = patchFinisher(finisher, serEncoder);
+			patchedFinisher = patchFinisherRowsToDataPoints(finisher, serEncoder);
 			
 			List<EncoderField> dpFields = new ArrayList<>(createFieldFromComponents(structure));
 			dpFields.add(new EncoderField("$lineage$", new UDTEncoder<>(LineageSparkUDT, LineageUDT.class), false, Metadata.empty(), Option.empty(), Option.empty()));
 			
 			RowEncoder rankEncoder = new RowEncoder(asScala(List.of(
-				new EncoderField("rank", AgnosticEncoders.PrimitiveLongEncoder$.MODULE$, false, Metadata.empty(), Option.empty(), Option.empty()),
+				new EncoderField("rank", PrimitiveLongEncoder$.MODULE$, false, Metadata.empty(), Option.empty(), Option.empty()),
 				new EncoderField("datapoint", new RowEncoder(asScala(dpFields.iterator()).toSeq()), false, Metadata.empty(), Option.empty(), Option.empty())
 			).iterator()).toSeq());
 			
@@ -515,16 +516,25 @@ public class SparkDataSet extends AbstractDataSet
 				
 			ttEncoder = ttUncheckedEncoder;
 		}
+		else if (tag instanceof FillTimeSeriesTimeList)
+		{
+			ttEncoder = ExpressionEncoder.apply(getEncoderFor(tag, structure));
+			patchedFinisher = patchFinisherRowsToFillTimeSeriesTimeList(finisher);
+		}
 		else
 		{
 			ttEncoder = ExpressionEncoder.apply(getEncoderFor(tag, structure));
 			patchedFinisher = finisher;
 		}
 		
-		@SuppressWarnings("unchecked")
-		Encoder<T> inputEncoder = (Encoder<T>) (extractor == null 
-				? ExpressionEncoder.apply(getEncoderFor(NullValue.instanceFrom(sourceComp), null)) 
-				: encoder.getRowEncoder());
+		Encoder<T> inputEncoder;
+		if (extractor == null)
+			inputEncoder = ExpressionEncoder.apply(getEncoderFor(NullValue.instanceFrom(sourceComp), null));
+		else
+		{
+			inputEncoder = (Encoder<T>) encoder.getRowEncoder();
+			collector = mapping(r -> (T) serEncoder.decode((Row) r), collector);
+		}
 		
 		Column[] allColumns = Arrays.stream(dataFrame.columns()).map(functions::col).toArray(Column[]::new);
 		Column[] columns = extractor != null ? allColumns : new Column[] { col(sourceComp.getAlias().getName()) };
@@ -561,17 +571,23 @@ public class SparkDataSet extends AbstractDataSet
 	}
 
 	@SuppressWarnings("unchecked")
+	private <T, TT> SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> patchFinisherRowsToFillTimeSeriesTimeList(
+		SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher)
+	{
+		return (SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>>) finisher
+			.before(r -> { 
+				ArraySeq<TimeValue<?, ?, ?, ?>> seq = ((Row) r).getAs(0);
+				return (TT) new FillTimeSeriesTimeList().list(asJava(seq).toArray(TimeValue<?, ?, ?, ?>[]::new));
+			}, identity());
+	}
+
+	@SuppressWarnings("unchecked")
 	private <T, I, TT> SerCollector<T, ?, TT> patchCollector(SerCollector<?, ?, ?> collector, DataPointEncoder serEncoder)
 	{
 		SerSupplier<PartitionToRank> supplier = (SerSupplier<PartitionToRank>) collector.supplier();
 		SerBiConsumer<PartitionToRank, T> accumulator = (SerBiConsumer<PartitionToRank, T>) collector.accumulator();
 		SerBinaryOperator<PartitionToRank> combiner = (SerBinaryOperator<PartitionToRank>) collector.combiner();
-		SerFunction<PartitionToRank, TT> patchedFinisher = ((SerUnaryOperator<PartitionToRank>) ptr -> {
-			ListIterator<DataPoint> iter = ptr.listIterator();
-			while (iter.hasNext())
-				iter.set(serEncoder.decode((Row) iter.next()));
-			return ptr;
-		}).andThen((SerFunction<PartitionToRank, TT>) collector.finisher().andThen(ranked -> {
+		SerFunction<PartitionToRank, TT> patchedFinisher = (SerFunction<PartitionToRank, TT>) collector.finisher().andThen(ranked -> {
 			Set<Entry<DataPoint, Long>> ranks = ((RankedPartition) ranked).entrySet();
 			Iterator<Entry<DataPoint, Long>> it = ranks.iterator();
 			Row[] rows = new Row[ranks.size()];
@@ -581,11 +597,11 @@ public class SparkDataSet extends AbstractDataSet
 				rows[i] = new GenericRow(new Object[] { rank.getValue(), serEncoder.encode(rank.getKey()) });
 			}
 			return (TT) rows;
-		}));
+		});
 		return SerCollector.of(supplier, accumulator, combiner, patchedFinisher, collector.characteristics());
 	}
 
-	private <T, TT, TTT> SerBiFunction<TTT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> patchFinisher(
+	private <T, TT, TTT> SerBiFunction<TTT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> patchFinisherRowsToDataPoints(
 		SerBiFunction<TT, T, Collection<? extends ScalarValue<?, ?, ?, ?>>> finisher, DataPointEncoder serEncoder)
 	{
 		return finisher

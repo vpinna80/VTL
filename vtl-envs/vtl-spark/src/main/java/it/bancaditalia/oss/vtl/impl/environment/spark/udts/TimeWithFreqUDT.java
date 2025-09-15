@@ -31,26 +31,16 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.UserDefinedType;
 
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.DateValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.GenericTimeValueUDT;
-import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimePeriodValueUDT;
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.GenericTimeValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimeValue;
+import it.bancaditalia.oss.vtl.impl.environment.spark.scalars.TimeValueUDT;
 import it.bancaditalia.oss.vtl.impl.types.data.date.TimeWithFreq;
 
 public class TimeWithFreqUDT extends UserDefinedType<TimeWithFreq>
 {
 	private static final long serialVersionUID = 1L;
-	private static final DateValueUDT DV_UDT = new DateValueUDT();
-	private static final TimePeriodValueUDT TPV_UDT = new TimePeriodValueUDT();
-	private static final GenericTimeValueUDT GTV_UDT = new GenericTimeValueUDT();
+	private static final TimeValueUDT TV_UDT = new TimeValueUDT();
 	private static final StructType SQL_TYPE = createStructType(List.of(
 			createStructField("freq", IntegerType, false),
-			createStructField("current1", DV_UDT, true),
-			createStructField("current2", TPV_UDT, true),
-			createStructField("current3", GTV_UDT, true)
+			createStructField("time", TV_UDT, true)
 		));
 
 	@Override
@@ -58,15 +48,9 @@ public class TimeWithFreqUDT extends UserDefinedType<TimeWithFreq>
 	{
 		InternalRow row = (InternalRow) datum;
 		TimeWithFreq twf = new TimeWithFreq();
+		
 		twf.freq = row.getInt(0);
-		if (!row.isNullAt(1))
-			twf.current = (TimeValue<?, ?, ?, ?>) row.get(1, DV_UDT);
-		else if (!row.isNullAt(2))
-			twf.current = (TimeValue<?, ?, ?, ?>) row.get(2, TPV_UDT);
-		else if (!row.isNullAt(3))
-			twf.current = (TimeValue<?, ?, ?, ?>) row.get(3, GTV_UDT);
-		else
-			throw new IllegalStateException();
+		twf.current = TV_UDT.deserialize(row.get(1, TV_UDT));
 		
 		return twf;
 	}
@@ -77,13 +61,7 @@ public class TimeWithFreqUDT extends UserDefinedType<TimeWithFreq>
 		SpecificInternalRow row = new SpecificInternalRow(SQL_TYPE);
 		
 		row.setInt(0, obj.freq);
-		Class<?> clazz = obj.current.getClass();
-		if (clazz == DateValue.class)
-			row.update(1, DV_UDT.serialize((DateValue<?>) obj.current));
-		else if (clazz == TimePeriodValue.class)
-			row.update(2, TPV_UDT.serialize((TimePeriodValue<?>) obj.current));
-		else if (clazz == GenericTimeValue.class)
-			row.update(3, GTV_UDT.serialize((GenericTimeValue<?>) obj.current));
+		row.update(1, TV_UDT.serialize(obj.current));
 		
 		return row;
 	}
