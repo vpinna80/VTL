@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.transform.util;
 
 import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.ASC;
+import static it.bancaditalia.oss.vtl.model.transform.analytic.SortCriterion.SortingMethod.DESC;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 
 import java.io.Serializable;
@@ -33,6 +34,16 @@ public class SortClause implements SortCriterion, Serializable
 
 	private final DataSetComponent<?, ?, ?> component;
 	private final SortingMethod method;
+	
+	public static SortCriterion asc(DataSetComponent<?, ?, ?> component)
+	{
+		return new SortClause(component, ASC);
+	}
+
+	public static SortCriterion desc(DataSetComponent<?, ?, ?> component)
+	{
+		return new SortClause(component, DESC);
+	}
 
 	public SortClause(DataSetComponent<?, ?, ?> component)
 	{

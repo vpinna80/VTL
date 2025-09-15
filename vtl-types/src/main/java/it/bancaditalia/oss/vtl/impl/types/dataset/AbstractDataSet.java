@@ -238,13 +238,14 @@ public abstract class AbstractDataSet implements DataSet
 	}
 
 	@Override
-	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
-			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
-			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(
+		VTLValueMetadata resultMetadata, Set<DataSetComponent<Identifier, ?, ?>> keys,
+		SerCollector<DataPoint, ?, T> groupCollector,
+		SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
 		// if the result is a dataset, then we are performing a group by
-		if (metadata.isDataSet())
-			return new StreamWrapperDataSet((DataSetStructure) metadata, () -> {
+		if (resultMetadata.isDataSet())
+			return new StreamWrapperDataSet((DataSetStructure) resultMetadata, () -> {
 				try (Stream<DataPoint> stream = AbstractDataSet.this.stream())
 				{
 					Map<Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, Entry<T, List<Lineage>>> result = stream.collect(

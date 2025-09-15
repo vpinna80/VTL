@@ -45,6 +45,11 @@ public class WindowCriterionImpl implements WindowCriterion, Serializable
 			new WindowCriterionImpl(DATAPOINTS, UNBOUNDED_PRECEDING, UNBOUNDED_FOLLOWING);
 	
 	private static final long serialVersionUID = 1L;
+	
+	public static final WindowCriterion dataPointsBetween(LimitCriterion infBound, LimitClause supBound)
+	{
+		return new WindowCriterionImpl(DATAPOINTS, infBound, supBound);
+	}
 
 	private final LimitType type;
 	private final LimitCriterion infBound;
