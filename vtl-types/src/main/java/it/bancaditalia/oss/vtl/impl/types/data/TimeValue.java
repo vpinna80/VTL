@@ -19,19 +19,103 @@
  */
 package it.bancaditalia.oss.vtl.impl.types.data;
 
+import static it.bancaditalia.oss.vtl.impl.types.data.Frequency.A;
+
 import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.time.Period;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAmount;
+import java.util.Arrays;
+import java.util.List;
 
+import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomain;
 import it.bancaditalia.oss.vtl.model.domain.TimeDomainSubset;
+import it.bancaditalia.oss.vtl.util.SerSupplier;
 
 public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Comparable<? super R> & TemporalAccessor & Serializable, S extends TimeDomainSubset<S, D>, D extends TimeDomain> 
 		extends BaseScalarValue<I, R, S, D>
 {
 	private static final long serialVersionUID = 1L;
+
+	public static class FillTimeSeriesHolder implements Serializable
+	{
+		private static final long serialVersionUID = 1L;
+		
+		private DurationValue duration = A.get();
+		private TimeValue<?, ?, ?, ?>[] key = new TimeValue<?, ?, ?, ?>[6];
+		private int index = 3;
+		
+		public TimeValue<?, ?, ?, ?> get(int i)
+		{
+			return key[i];
+		}
+
+		public void add(TimeValue<?, ?, ?, ?> value)
+		{
+			key[index++] = value;
+		}
+
+		public DurationValue getDuration()
+		{
+			return duration;
+		}
+
+		public void setDuration(DurationValue duration)
+		{
+			this.duration = duration;
+		}
+
+		public void setConstants(DurationValue duration, SerSupplier<ScalarValue<?, ?, ?, ?>> min, SerSupplier<ScalarValue<?, ?, ?, ?>> max, SerSupplier<ScalarValue<?, ?, ?, ?>> end)
+		{
+			this.duration = duration;
+			if (key[0] == null)
+			{
+				ScalarValue<?, ?, ?, ?> minV = min.get();
+				key[0] = minV.isNull() ? null : (TimeValue<?, ?, ?, ?>) minV;
+				ScalarValue<?, ?, ?, ?> maxV = max.get();
+				key[1] = maxV.isNull() ? null : (TimeValue<?, ?, ?, ?>) maxV;
+				ScalarValue<?, ?, ?, ?> endV = end.get();
+				key[2] = endV.isNull() ? null : (TimeValue<?, ?, ?, ?>) endV;
+			}
+			
+		}
+	}
+
+	public static class FillTimeSeriesTimeList implements Serializable
+	{
+		private static final long serialVersionUID = 1L;
+
+		private TimeValue<?, ?, ?, ?>[] list;
+		
+		public FillTimeSeriesTimeList()
+		{
+			list = null;
+		}
+		
+		public TimeValue<?, ?, ?, ?>[] list()
+		{
+			return list;
+		}
+		
+		public FillTimeSeriesTimeList list(TimeValue<?, ?, ?, ?>[] list)
+		{
+			this.list = list;
+			return this;
+		}
+		
+		public List<TimeValue<?, ?, ?, ?>> getList()
+		{
+			return Arrays.asList(list);
+		}
+
+		public FillTimeSeriesTimeList setList(List<TimeValue<?, ?, ?, ?>> list)
+		{
+			this.list = list.toArray(TimeValue<?, ?, ?, ?>[]::new);
+			return this;
+		}
+	}
 
 	public TimeValue(R value, S domain)
 	{
@@ -50,7 +134,7 @@ public abstract class TimeValue<I extends TimeValue<I, R, S, D>, R extends Compa
 	public abstract DateValue<?> getEndDate();
 	
 	/**
-	 * Determines the intrinsic frequency of this time value expressed as a {@link DurationValue}
+	 * Determines the intrinsic frequency of this time index expressed as a {@link DurationValue}
 	 * 
 	 * @return
 	 */

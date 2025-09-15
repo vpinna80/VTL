@@ -160,14 +160,7 @@ public final class AnalyticDataSet<T, TT> extends AbstractDataSet
 					.collect(groupingByConcurrent(dp -> dp.getValues(partitionIds), collectingAndThen(toList(), list -> {
 							DataPoint[] window = list.toArray(new DataPoint[list.size()]);
 							if (sortCriteria.size() > 0)
-								try
-								{
-									Arrays.sort(window, orderBy);
-								}
-								catch (Exception e)
-								{
-									e.printStackTrace();
-								} 
+								Arrays.sort(window, orderBy);
 							return window;
 						}))
 					).values();
