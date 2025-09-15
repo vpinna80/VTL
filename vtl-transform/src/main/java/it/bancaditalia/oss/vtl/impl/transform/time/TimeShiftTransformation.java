@@ -26,13 +26,11 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.lineage.LineageNode.lineageEnricher;
 import static it.bancaditalia.oss.vtl.util.SerUnaryOperator.identity;
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collector.Characteristics;
 
 import it.bancaditalia.oss.vtl.impl.transform.util.SortClause;
 import it.bancaditalia.oss.vtl.impl.transform.util.WindowClauseImpl;
@@ -82,7 +80,7 @@ public class TimeShiftTransformation extends TimeSeriesTransformation
 		DataSetComponent<Identifier, ?, ?> timeID = dsMeta.getComponents(Identifier.class, TIMEDS).iterator().next();
 		
 		SerCollector<TimeValue<?, ?, ?, ?>, ?, DurationValue> timesToFreq = SerCollector.of(TimeWithFreq::new, 
-				TimeWithFreq::setTime, TimeWithFreq::combine, TimeWithFreq::getDuration, EnumSet.noneOf(Characteristics.class));
+				TimeWithFreq::setTime, TimeWithFreq::combine, TimeWithFreq::getDuration, Set.of());
 		DataSetComponent<Identifier, EntireDurationDomainSubset, DurationDomain> freqComp = 
 					new DataSetComponentImpl<>(DURATION_VAR.getAlias(), Identifier.class, DURATIONDS);
 		

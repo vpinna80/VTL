@@ -218,11 +218,12 @@ public enum SampleDataSets implements DataSet
 	}
 
 	@Override
-	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata metadata, 
-			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector, 
-			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(
+		VTLValueMetadata resultMetadata, Set<DataSetComponent<Identifier, ?, ?>> keys,
+		SerCollector<DataPoint, ?, T> groupCollector,
+		SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
 	{
-		return dataset.aggregate(metadata, keys, groupCollector, finisher);
+		return dataset.aggregate(resultMetadata, keys, groupCollector, finisher);
 	}
 
 	@Override

@@ -226,6 +226,28 @@ public interface DataSet extends VTLValue, Iterable<DataPoint>
 	public <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> VTLValue aggregate(VTLValueMetadata resultMetadata, 
 			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
 			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher);
+
+	/**
+	 * Perform a reduction over a dataset, producing a result for each group defined common values of the specified identifiers.
+	 * If no grouping identifiers are specified, the dataset is aggregated to a scalar.
+	 * 
+	 * @param <T> The type of elements fed into the aggregation
+	 * @param <TT> The type of the result produced by the aggregation
+	 * @param <A> The VTL type of the result  
+	 * @param aggrType The VTL type of the result
+	 * @param resultMetadata the metadata of the result value produced
+	 * @param keys the identifiers on whose values datapoints should be grouped 
+	 * @param groupCollector the aggregator that performs the reduction
+	 * @param finisher a finisher that may manipulate the result given the group where it belongs
+	 * 
+	 * @return a new VTL value, either a scalar or a dataset, that is the result of the aggregation.
+	 */
+	public default <T extends Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT, A extends VTLValue> A aggregate(Class<A> aggrType, VTLValueMetadata resultMetadata, 
+			Set<DataSetComponent<Identifier, ?, ?>> keys, SerCollector<DataPoint, ?, T> groupCollector,
+			SerTriFunction<? super T, ? super List<Lineage>, ? super Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>>, TT> finisher)
+	{
+		return aggrType.cast(aggregate(resultMetadata, keys, groupCollector, finisher));
+	}
 	
 	/**
 	 * Creates a new DataSet by applying a window function over a component of this DataSet.
