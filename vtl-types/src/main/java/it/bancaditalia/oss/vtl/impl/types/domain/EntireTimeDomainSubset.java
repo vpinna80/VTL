@@ -54,7 +54,7 @@ public class EntireTimeDomainSubset extends EntireDomainSubset<EntireTimeDomainS
 	@Override
 	public ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain> entireDomainCast(ScalarValue<?, ?, ?, ?> value)
 	{
-		if (isAssignableFrom(value.getDomain()))
+		if (value.getDomain() instanceof TimeDomain)
 			// Safe
 			return (ScalarValue<?, ?, EntireTimeDomainSubset, TimeDomain>) value; 
 
