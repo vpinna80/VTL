@@ -90,7 +90,6 @@
 				<module>vtl-envs</module>
 				<module>vtl-meta</module>
 				<module>vtl-parsers</module>
-				<module>vtl-samples</module>
 				<module>vtl-session</module>
 				<module>vtl-transform</module>
 				<module>vtl-types</module>
@@ -307,11 +306,6 @@
 				<version>${project.version}</version>
 				<classifier>grammar</classifier>
 				<type>zip</type>
-			</dependency>
-			<dependency>
-				<groupId>it.bancaditalia.oss.vtl</groupId>
-				<artifactId>vtl-samples</artifactId>
-				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>it.bancaditalia.oss.vtl</groupId>
