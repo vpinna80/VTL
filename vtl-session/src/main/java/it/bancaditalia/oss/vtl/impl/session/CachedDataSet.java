@@ -21,6 +21,7 @@ package it.bancaditalia.oss.vtl.impl.session;
 
 import static it.bancaditalia.oss.vtl.util.ConcatSpliterator.concatenating;
 import static it.bancaditalia.oss.vtl.util.Utils.ORDERED;
+import static it.bancaditalia.oss.vtl.util.Utils.getStream;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -226,7 +227,7 @@ public class CachedDataSet extends NamedDataSet
 		if (cache != null)
 		{
 			waiter.done();
-			return cache.stream();
+			return getStream(cache);
 		}
 		else
 			return getUnindexedCache(true);
