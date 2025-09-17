@@ -391,10 +391,10 @@ public abstract class AbstractDataSet implements DataSet
 			Map<DataSetComponent<Identifier, ?, ?>, ScalarValue<?, ?, ?, ?>> keyVals = dp.getValues(Identifier.class);
 			DataPoint prev = seen.put(keyVals, dp);
 			if (prev != null)
-			{
-				LOGGER.error("Duplicated datapoints with key {}:\n    1)  {}\n    2)  {}", keyVals, dp, prev);
-				throw new IllegalStateException("Duplicated datapoints with hashcodes: " + dp.hashCode() + " - " + prev.hashCode());
-			}
+				if (dp.hashCode() != prev.hashCode())
+					throw new IllegalStateException("Duplicated datapoints with hashcodes: " + dp.hashCode() + " - " + prev.hashCode());
+				else
+					throw new IllegalStateException("Duplicated datapoints:\n    - " + dp + "\n    - " + prev);
 		}
 		else
 		{
