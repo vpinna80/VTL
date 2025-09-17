@@ -75,7 +75,7 @@ controlsGen <- function(javaclass, getValue = configManager$getGlobalPropertyVal
       tags$div(style = "display: flex; gap: 6px; align-items: flex-end;",
         textInput(inputID, prop$getDescription(), val, placeholder = prop$getPlaceholder()),
         tags$div(class = 'form-group shiny-input-container', style = "align-self: end;",
-          actionButton(inputIDj, '', tags$i(class = 'bi bi-pencil-square'), class = 'disabled')
+          actionButton(inputIDj, '', tags$i(class = 'bi bi-pencil-square'), class = 'disabled', "aria-label" = "Edit json dictionary")
         )
       )
     } else if (prop$getName() == 'vtl.examples.category') {
@@ -155,14 +155,16 @@ createPanel <- function(vtlSession) {
           bslib::card(
             bslib::card_header('Environment Properties', makeButton(makeID('card_envprops'))),
             bslib::card_body(id = makeID('card_envprops'), class = 'collapse show',
-              selectInput(makeID('selectEnv'), NULL, c("Select an environment..." = "")),
+              htmltools::tagQuery(selectInput(makeID('selectEnv'), "Select a data environment", 
+                c("Select an environment..." = "")))$find(paste0('#', makeID('selectEnv'), '-label'))$addClass("visually-hidden")$allTags(),
               uiOutput(makeID("envprops"))
             )
           ),
           bslib::card(
             bslib::card_header('Metadata Repository', makeButton(makeID('card_meta'))),
             bslib::card_body(id = makeID('card_meta'), class = 'collapse show',
-              selectInput(makeID('repoClass'), NULL, c("Select a repository..." = "")),
+              htmltools::tagQuery(selectInput(makeID('repoClass'), "Select a metadata repository", 
+                c("Select a repository..." = "")))$find(paste0('#', makeID('repoClass'), '-label'))$addClass("visually-hidden")$allTags(),
               uiOutput(makeID("repoProperties"))
             )
           ),

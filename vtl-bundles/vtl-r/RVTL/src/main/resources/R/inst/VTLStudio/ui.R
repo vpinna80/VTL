@@ -98,7 +98,7 @@ vtlUI <- bslib::page_sidebar(
     |> bslib::bs_add_variables(bslib_spacer = "0.5rem"),
   sidebar = bslib::sidebar(
     width = 350,
-    img(src = "static/logo.svg", class = "vtlLogo"),
+    img(src = "static/logo.svg", class = "vtlLogo", alt = ""),
     tags$div(style = "text-align: right; width: 98%", "${r.package.version}"),
     uiOutput("shinyapps"),
     hr(),
@@ -156,7 +156,8 @@ vtlUI <- bslib::page_sidebar(
         bslib::card(
           bslib::card_header('Metadata Repository', makeMinButton('card_meta')),
           bslib::card_body(id = 'card_meta', class = 'collapse show',
-            selectInput(inputId = 'repoClass', label = NULL, choices = c("Select a repository..." = "")),
+            htmltools::tagQuery(selectInput('repoClass', "Select a metadata repository", 
+              c("Select a repository..." = "")))$find("#repoClass-label")$addClass("visually-hidden")$allTags(),
             uiOutput(outputId = "repoProperties")
           )
         ),
@@ -169,7 +170,8 @@ vtlUI <- bslib::page_sidebar(
         bslib::card(
           bslib::card_header('Environment Properties', makeMinButton('card_envprops')),
           bslib::card_body(id = 'card_envprops', class = 'collapse show',
-            selectInput(inputId = 'selectEnv', label = NULL, choices = c("Select an environment..." = "")),
+            htmltools::tagQuery(selectInput('selectEnv', "Select a data environment", 
+              c("Select an environment..." = "")))$find("#selectEnv-label")$addClass("visually-hidden")$allTags(),
             uiOutput(outputId = "envprops")
           )
         ),

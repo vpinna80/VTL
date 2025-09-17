@@ -20,7 +20,7 @@
 
 import { Compartment, SelectionRange, EditorState } from "@codemirror/state"
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, crosshairCursor, highlightActiveLine } from "@codemirror/view"
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands"
+import { defaultKeymap, history, historyKeymap, indentWithTab, toggleTabFocusMode } from "@codemirror/commands"
 import { linter, lintKeymap, Diagnostic, Action } from "@codemirror/lint"
 import { searchKeymap, search, highlightSelectionMatches } from "@codemirror/search"
 import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap, CompletionContext } from "@codemirror/autocomplete"
@@ -291,7 +291,8 @@ let baseKeyBindings = [
 	...historyKeymap,
 	...foldKeymap,
 	...completionKeymap,
-	...lintKeymap
+	...lintKeymap,
+	indentWithTab
 ];
 
 let extensions = [
@@ -331,7 +332,8 @@ export function createEditor(name: string, themeName?: string): EditorView {
 			]
 		})
 	})
-	
+
+	toggleTabFocusMode(view)	
 	views[name] = view
 	return view
 }

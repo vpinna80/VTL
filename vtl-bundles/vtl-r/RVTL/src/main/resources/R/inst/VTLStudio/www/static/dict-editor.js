@@ -101,16 +101,34 @@ function getDomainTree(name) {
 }
 
 function createModelElement(item) {
-  const elem = document.createElement("button")
-  elem.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-  elem.textContent = item.name
-  elem.tabIndex = 0
-  elem.type = "button"
+  const badge = document.createElement("span")
+  badge.setAttribute("aria-hidden", "true")
+  badge.className = 'badge text-secondary'
+
+  const title = document.createElement("button")
+  title.type = "button"
+  title.className = "btn flex-grow-1 text-start d-flex justify-content-between align-items-center pe-0"
+  title.textContent = item.name
+  title.setAttribute("aria-label", `Edit ${item.name}`)
+  title.setAttribute("aria-haspopup", "dialog")
+  title.appendChild(badge)
+
+  const delicon = document.createElement("i")
+  delicon.setAttribute("aria-hidden", "true")
+  delicon.className = "bi bi-trash"
+
+  const delbtn = document.createElement("button")
+  delbtn.type = "button"
+  delbtn.className = "btn btn-outline-danger border-0"
+  delbtn.setAttribute("aria-label", `Delete ${item.name}`)
+  delbtn.appendChild(delicon)
+
+  const elem = document.createElement("div")
+  elem.className = "list-group-item d-flex align-items-center p-0"
   elem.dataset.name = item.name
   item.description && (elem.dataset.description = item.description)
-  const badge = document.createElement("span")
-  badge.className = 'badge text-secondary'
-  elem.appendChild(badge)
+  elem.appendChild(title)
+  elem.appendChild(delbtn)
   return elem
 }
 
@@ -601,8 +619,9 @@ function createEditDictWindow(msg) {
     const icon = document.createElement('i')
     icon.className = item.structure ? 'bi bi-table' : 'bi bi-123'
     badge.appendChild(icon)
-    ds.appendChild(badge)
-    item.structure && ds.addEventListener('click', e => datasetModal(ds))
+    item.structure && ds.querySelector(':scope > button:nth-of-type(1)').addEventListener('click', e => datasetModal(ds))
+    item.structure && ds.querySelector(':scope > button:nth-of-type(1)').setAttribute("aria-controls", "datasetModal")
+    ds.querySelector(':scope > button:nth-of-type(2)').addEventListener('click', e => ds.remove())
     document.getElementById('datasetsList').appendChild(ds)
   })
   msg?.structures?.forEach(item => {
@@ -618,13 +637,16 @@ function createEditDictWindow(msg) {
     })
     document.getElementById("structuresList").appendChild(struct)
     badge.textContent = getStrComps(item.name).length + " components"
-    struct.appendChild(badge)
-    struct.addEventListener('click', e => structureModal(struct))
+    struct.querySelector(':scope > button:nth-of-type(1)').addEventListener('click', e => structureModal(struct))
+    struct.querySelector(':scope > button:nth-of-type(1)').setAttribute("aria-controls", "structureModal")
+    struct.querySelector(':scope > button:nth-of-type(2)').addEventListener('click', e => struct.remove())
   })
   msg?.variables?.forEach(item => {
     const variable = createModelElement(item)
     variable.dataset.domain = item.domain
-    variable.addEventListener('click', e => variableModal(variable))
+    variable.querySelector(':scope > button:nth-of-type(1)').addEventListener('click', e => variableModal(variable))
+    variable.querySelector(':scope > button:nth-of-type(1)').setAttribute("aria-controls", "variableModal")
+    variable.querySelector(':scope > button:nth-of-type(2)').addEventListener('click', e => variable.remove())
     document.getElementById("variablesList").appendChild(variable)
   }) // ({ name, parent, enumerated, described })
   msg?.domains?.forEach(item => {
@@ -647,7 +669,9 @@ function createEditDictWindow(msg) {
       })
     }
     item.described && (domain.dataset.described = item.described)
-    domain.addEventListener('click', e => domainModal(domain))
+    domain.querySelector(':scope > button:nth-of-type(1)').addEventListener('click', e => domainModal(domain))
+    domain.querySelector(':scope > button:nth-of-type(1)').setAttribute("aria-controls", "domain")
+    domain.querySelector(':scope > button:nth-of-type(2)').addEventListener('click', e => domain.remove())
     document.getElementById("domainsList").appendChild(domain)
   })
 

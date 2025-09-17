@@ -240,3 +240,21 @@ td .selectize-input {
 .resizable-table td input.form-control-sm {
   border: none;
 }
+
+.list-group-item:has(> .btn:first-of-type:focus)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 0 0 .25rem rgba(71,147,231,.35) inset;
+  pointer-events: none;
+}
+
+table.dataTable tbody tr.selected td {
+  background-color: #0a58ca !important;
+}
+
+.selectize-dropdown .option.selected,
+.selectize-dropdown .option[aria-selected="true"] {
+  background-color: #0a58ca !important;
+  color: #fff !important;
+}
