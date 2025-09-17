@@ -46,6 +46,7 @@ import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
 import static java.lang.Math.round;
 import static java.lang.String.join;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -67,7 +68,6 @@ import it.bancaditalia.oss.vtl.exceptions.VTLInvalidParameterException;
 import it.bancaditalia.oss.vtl.exceptions.VTLMissingComponentsException;
 import it.bancaditalia.oss.vtl.exceptions.VTLSingletonComponentRequiredException;
 import it.bancaditalia.oss.vtl.impl.transform.TransformationImpl;
-import it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation;
 import it.bancaditalia.oss.vtl.impl.transform.aggregation.HierarchyTransformation.HierarchyMode;
 import it.bancaditalia.oss.vtl.impl.transform.util.ResolvedHierarchicalRuleset;
 import it.bancaditalia.oss.vtl.impl.types.data.BooleanValue;
@@ -104,7 +104,7 @@ import it.bancaditalia.oss.vtl.util.Utils;
 public class CheckHierarchyTransformation extends TransformationImpl
 {
 	private static final long serialVersionUID = 1L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(HierarchyTransformation.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CheckHierarchyTransformation.class);
 
 	public enum Input implements Serializable
 	{
@@ -254,11 +254,17 @@ public class CheckHierarchyTransformation extends TransformationImpl
 						{
 							computedDpGroup.put(code, aggResult);
 							
-							// Mode codes could now be computed with this new code result
-							for (HierarchicalRule dependingRule: ruleset.getDependingRules(code))
-								if (!computedDpGroup.containsKey(resolved.mapCode(dependingRule.getLeftCodeItem())) 
-										&& canBeComputedNow(resolved, dependingRule, computedCodes, missingCodes, originalDpGroup, computedDpGroup))
-									toCompute.add(dependingRule);
+							// More codes could be computed with this new code result if the original code was null
+							if (input == DATASET_PRIORITY)
+								for (HierarchicalRule dependingRule: ruleset.getDependingRules(code))
+								{
+									CodeItem<?, ?, ?, ?> dependingLeft = resolved.mapCode(dependingRule.getLeftCodeItem());
+									
+									if (originalDpGroup.get(dependingLeft).isNull()  
+											&& !computedDpGroup.containsKey(dependingLeft) 
+											&& canBeComputedNow(resolved, dependingRule, computedCodes, missingCodes, originalDpGroup, computedDpGroup))
+										toCompute.add(dependingRule);
+								}
 						}
 						
 						allIsNonNull &= !originalLeftValue.isNull();
@@ -306,6 +312,10 @@ public class CheckHierarchyTransformation extends TransformationImpl
 							}
 						}
 					}
+					
+				LOGGER.debug("check_hierarchy(): Group {} produced {} datapoints.", keyValues, results.size());
+				if (LOGGER.isTraceEnabled())
+					LOGGER.trace("Output datapoints are:\n    - {}", results.stream().map(DataPoint::toString).collect(joining("\n    - ")));
 				return results.stream();
 			}).collect(concatenating(ORDERED));
 		}, dataset);
