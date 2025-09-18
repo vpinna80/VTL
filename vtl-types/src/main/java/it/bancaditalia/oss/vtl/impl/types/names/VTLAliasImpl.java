@@ -23,6 +23,8 @@ import static it.bancaditalia.oss.vtl.model.data.VTLAlias.needsQuotes;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 
@@ -33,6 +35,9 @@ import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 public class VTLAliasImpl implements VTLAlias, Serializable
 {
 	private static final long serialVersionUID = 1L;
+	private static final Pattern SDMX_PATTERN = Pattern.compile(
+		"^(?:(?<agency>[A-Za-z_][A-Za-z0-9_.]*):)?(?<id>[A-Za-z_][A-Za-z0-9_.]*)(?:\\((?<version>[0-9._+*~]+)\\))?(?::(?<query>(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+))?$"
+	);
 
 	public static VTLAlias of(String alias)
 	{
@@ -44,7 +49,27 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 
 	public static VTLAlias of(boolean isQuoted, String alias)
 	{
-		return alias == null ? null : new VTLAliasImpl(alias, isQuoted);
+		if (alias == null)
+			return null;
+		
+		String name = isQuoted && alias.startsWith("'") && alias.endsWith("'") ? alias.substring(1, alias.length() - 1) : alias;
+		Matcher matcher = SDMX_PATTERN.matcher(name); 
+		if (matcher.matches())
+		{
+			String id = matcher.group("id");
+			String agency = matcher.group("agency");
+			String version = matcher.group("version");
+			String component = matcher.group("query");
+			
+			if (component != null && (id != null || agency != null || version != null))
+				return new SDMXComponentAlias(new SDMXAlias(agency, id, version), component);
+			else if (id != null && (agency != null || version != null))
+				return new SDMXAlias(agency, id, version);
+			else
+				return new VTLAliasImpl(alias, isQuoted);
+		}
+		else
+			return new VTLAliasImpl(alias, isQuoted);
 	}
 
 	private final String name;
@@ -112,10 +137,19 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
-			return false;
 
-		VTLAliasImpl other = (VTLAliasImpl) obj;
-		return isQuoted && other.isQuoted ? name.equals(other.name) : name.equalsIgnoreCase(other.name);
+		if (obj instanceof SDMXAlias)
+			return name.equals(((SDMXAlias) obj).getId().getName());
+		else if (obj instanceof SDMXComponentAlias)
+			return name.equals(((SDMXComponentAlias) obj).getComponent().getName());
+		else if (obj instanceof VTLAliasImpl)
+		{
+			VTLAliasImpl other = (VTLAliasImpl) obj;
+			return isQuoted && other.isQuoted ? name.equals(other.name) : name.equalsIgnoreCase(other.name);
+		}
+		else if (obj instanceof MembershipAlias)
+			return name.equals(((MembershipAlias) obj).getMemberAlias().getName());
+		else
+			return false;
 	}
 }

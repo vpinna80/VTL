@@ -37,6 +37,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static java.util.Spliterator.IMMUTABLE;
 import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,9 +67,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -114,6 +114,8 @@ import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
 import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
 import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
+import it.bancaditalia.oss.vtl.impl.types.names.SDMXAlias;
+import it.bancaditalia.oss.vtl.impl.types.names.SDMXComponentAlias;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
@@ -136,7 +138,6 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
-	private static final Pattern SDMX_DATAFLOW_PATTERN = Pattern.compile("^(?:(?<agency>[A-Za-z_][A-Za-z0-9_.]*):)(?<dataflow>[A-Za-z_][A-Za-z0-9_.]*)(?:\\((?<version>[0-9._+*~]+)\\))?(?::(?<query>(?:\\.|[A-Za-z_][A-Za-z0-9_]*)+))?$");
 
 	static
 	{
@@ -206,27 +207,48 @@ public class SDMXEnvironment implements Environment, Serializable
 	@Override
 	public Optional<VTLValue> getValue(MetadataRepository repo, VTLAlias alias)
 	{
-		Matcher matcher = SDMX_DATAFLOW_PATTERN.matcher(alias.getName());
-		if (repo == null || !matcher.matches())
+		if (repo == null)
 			return Optional.empty();
+		
+		SDMXAlias dataflow;
+		String agency = null;
+		String id = null;
+		String version = null;
+		String query = null;
+		if (alias instanceof SDMXComponentAlias)
+		{
+			SDMXComponentAlias maint = (SDMXComponentAlias) alias;
+			dataflow = maint.getMaintainable();
+			agency = dataflow.getAgency();
+			id = dataflow.getId().getName().toString();
+			version = dataflow.getVersion();
+			query = maint.getComponent().getName().toString();
+		}
+		else if (alias instanceof SDMXAlias)
+		{
+			dataflow = (SDMXAlias) alias;
+			agency = dataflow.getAgency();
+			id = dataflow.getId().getName().toString();
+			version = dataflow.getVersion();
+		}
+		else
+			id = alias.getName().toString();
 		
 		Optional<DataSetStructure> maybeMeta = repo.getMetadata(alias).map(DataSetStructure.class::cast);
 		if (maybeMeta.isEmpty())
 			return Optional.empty();
 		
 		DataSetStructure structure = maybeMeta.get();
-		
-		String version = coalesce(matcher.group("version"), "");
-		String dataflow;
-		if (version.isEmpty())
-			dataflow = matcher.group("agency") + "," + matcher.group("dataflow");
-		else
-			dataflow = matcher.group("agency") + "," + matcher.group("dataflow") + "," + version;
 
-		String resource = coalesce(matcher.group("query"), "");
+		String resource = coalesce(query, "");
 		String[] dims = resource.isEmpty() ? new String[] {} : resource.split("\\.");
 
-		AbstractDataSet sdmxDataflow = new StreamWrapperDataSet(structure, () -> getData(repo, alias, structure, dataflow, resource, dims));
+		String path = endpoint + "/data/" + Stream.of(agency, id, version).filter(Objects::nonNull).map(Object::toString).collect(joining(","));
+		if (!resource.isEmpty())
+			 path += "/" + resource;
+		String restPath = path;
+
+		AbstractDataSet sdmxDataflow = new StreamWrapperDataSet(structure, () -> getData(repo, alias, structure, restPath, dims));
 		return Optional.of(sdmxDataflow);
 	}
 
@@ -267,8 +289,12 @@ public class SDMXEnvironment implements Environment, Serializable
 				if (i >= dims.length || dims[i].isEmpty() || dims[i].indexOf('+') >= 0)
 				{
 					KeyValue k = keys.get(i);
-					DataSetComponent<Identifier, ?, ?> dim = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Identifier.class)
-							.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
+					VTLAlias idComp = VTLAliasImpl.of(true, k.getConcept());
+					
+					DataSetComponent<Identifier, ?, ?> dim = structure.getComponent(idComp, Identifier.class)
+							.orElseThrow(() -> {
+								return new NoSuchElementException(k.getConcept());
+							});
 						dmap.put(dim, dim.getDomain().cast(StringValue.of(k.getCode())));
 				}
 			for (KeyValue k: dre.getCurrentKey().getAttributes())
@@ -371,12 +397,8 @@ public class SDMXEnvironment implements Environment, Serializable
 		throw last;
 	}
 
-	private synchronized Stream<DataPoint> getData(MetadataRepository repo, VTLAlias alias, DataSetStructure structure, String dataflow, String resource, String[] dims)
+	private synchronized Stream<DataPoint> getData(MetadataRepository repo, VTLAlias alias, DataSetStructure structure, String path, String[] dims)
 	{
-		String path = endpoint + "/data/" + dataflow;
-		if (!resource.isEmpty())
-			 path += "/" + resource;
-		
 		ReadableDataLocation rdl;
 		try 
 		{

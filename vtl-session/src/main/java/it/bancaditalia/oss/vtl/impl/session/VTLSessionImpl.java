@@ -154,6 +154,8 @@ public class VTLSessionImpl implements VTLSession
 		VTLValueMetadata definedStructure = cacheHelper(alias, metacache, n -> getRepository().getMetadata(alias).orElse(null));
 		if (definedStructure != null)
 			return definedStructure;
+		else
+			LOGGER.info("No metadata available for {} in {}.", alias, getRepository().getClass().getSimpleName());
 		
 		Optional<Statement> rule = getRule(alias);
 		if (rule.filter(DMLStatement.class::isInstance).isPresent())
@@ -171,8 +173,6 @@ public class VTLSessionImpl implements VTLSession
 
 	private VTLUnboundAliasException buildUnboundException(VTLAlias alias, String op)
 	{
-		for (Environment env: getEnvironments())
-			LOGGER.warn("Environment {} reported empty value for operation {} with {}", env.getClass().getSimpleName(), op, alias);
 		return new VTLUnboundAliasException(alias);
 	}
 	
@@ -278,9 +278,11 @@ public class VTLSessionImpl implements VTLSession
 				if (result instanceof DataSet && ((DataSet) result).isCacheable())
 					result = (T) new CachedDataSet(this, alias, (DataSet) result);
 
-				LOGGER.trace("Finished resolving {}", alias);
+				LOGGER.info("Found {} in {} ", alias, env.getClass().getSimpleName());
 				return Optional.of(result);
 			}
+			else
+				LOGGER.warn("Environment {} doesn't contain {}", env.getClass().getSimpleName(), alias);
 		}
 		
 		return Optional.empty();
