@@ -85,16 +85,10 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 
 	public HierarchicalRuleSet getDefaultRuleSet()
 	{
-		if (inited)
-			return defaultRuleSet.get();
-		
-		synchronized (this)
-		{
-			if (!inited)
-				init(SDMXRepository.fetchCodelist(endpoint, clRef));
-			
-			return defaultRuleSet.get();
-		}
+		// This will trigger the lazy initialization
+		getCodeItems();
+
+		return defaultRuleSet.get();
 	}
 	
 	@Override

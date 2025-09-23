@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Set;
 
@@ -67,8 +68,8 @@ import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
 import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
 import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.Component.ViralAttribute;
-import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
+import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
 import it.bancaditalia.oss.vtl.model.data.VTLValueMetadata;
 import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -82,16 +83,27 @@ public class SDMXJsonRepositoryTest
 	public SDMXJsonRepositoryTest(MockServerClient client) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
 	{
 		for (String[] entry: new String[][] { 
-			{ "codelists.xml", "/codelist/all/all/all/" },
-			{ "dsds.xml", "/datastructure/all/all/latest/" },
 			{ "dataflows.xml", "/dataflow/all/all/latest/" },
+			{ "ECB_EXR1.xml", "/datastructure/ECB/ECB_EXR1/1.0/" },
+			{ "CL_CURRENCY.xml", "/codelist/ECB/CL_CURRENCY/1.0/" },
+			{ "CL_FREQ.xml", "/codelist/ECB/CL_FREQ/1.0/" },
+			{ "CL_UNIT_MULT.xml", "/codelist/ECB/CL_UNIT_MULT/1.0/" },
+			{ "CL_UNIT.xml", "/codelist/ECB/CL_UNIT/1.0/" },
+			{ "CL_EXR_TYPE.xml", "/codelist/ECB/CL_EXR_TYPE/1.0/" },
+			{ "CL_EXR_SUFFIX.xml", "/codelist/ECB/CL_EXR_SUFFIX/1.0/" },
+			{ "CL_OBS_STATUS.xml", "/codelist/ECB/CL_OBS_STATUS/1.0/" },
+			{ "CL_OBS_CONF.xml", "/codelist/ECB/CL_OBS_CONF/1.0/" },
+			{ "CL_COLLECTION.xml", "/codelist/ECB/CL_COLLECTION/1.0/" },
+			{ "CL_ORGANISATION.xml", "/codelist/ECB/CL_ORGANISATION/1.0/" },
+			{ "CL_DECIMALS.xml", "/codelist/ECB/CL_DECIMALS/1.0/" },
+			{ "ECB_CONCEPTS.xml", "/conceptscheme/ECB/ECB_CONCEPTS/1.0/" },
 			{ "schemes.xml", "/transformationscheme/all/all/latest/" }
 		}) try (InputStream resource = requireNonNull(SDMXJsonRepositoryTest.class.getResourceAsStream(entry[0])))
 			{
 				client.when(request().withPath(entry[1]), exactly(1)).respond(response().withBody(new StringBody(IOUtils.toString(resource, "UTF-8"))));
 			}
 
-		URL jsonURL = requireNonNull(SDMXJsonRepositoryTest.class.getResource("test.json"));
+		client.when(request()).respond(req -> { throw new InvalidParameterException(req.getPath().toString()); });
 		
 		try (MockedStatic<ConfigurationManager> cmMock = mockStatic(ConfigurationManager.class, call -> {
 				String method = call.getMethod().getName();
@@ -104,6 +116,7 @@ public class SDMXJsonRepositoryTest
 				}
 			}))
 		{
+			URL jsonURL = requireNonNull(SDMXJsonRepositoryTest.class.getResource("test.json"));
 			repo = new SDMXJsonRepository("http://localhost:" + client.getPort(), null, null, jsonURL, mock(Engine.class));
 		}
 	}

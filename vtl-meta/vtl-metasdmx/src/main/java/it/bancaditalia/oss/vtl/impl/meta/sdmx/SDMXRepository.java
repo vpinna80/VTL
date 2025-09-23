@@ -105,6 +105,7 @@ import io.sdmx.utils.sdmx.xs.MaintainableRefBeanImpl;
 import it.bancaditalia.oss.vtl.config.ConfigurationManager;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.exceptions.VTLAmbiguousAliasException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.impl.meta.InMemoryMetadataRepository;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
@@ -300,7 +301,8 @@ public class SDMXRepository extends InMemoryMetadataRepository
 				}
 				catch (Exception e)
 				{
-					LOGGER.debug("Could not fetch SDMX codelist " + alias, e);
+					LOGGER.debug("Could not fetch SDMX codelist {}", alias);
+					LOGGER.trace("Could not fetch SDMX codelist " + alias + ": " + e.getMessage(), e);
 					return Optional.empty();
 				}
 			}).or(() -> super.getDomain(alias)); 
@@ -611,7 +613,14 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	{
 		SDMXRepository instance = CACHE.get(endpoint);
 		synchronized (instance.rbrm) {
-			return instance.rbrm.getMaintainableBean(CodelistBean.class, clRef);
+			try
+			{
+				return instance.rbrm.getMaintainableBean(CodelistBean.class, clRef);
+			}
+			catch (RuntimeException e)
+			{
+				throw new VTLNestedException("Could not fetch SDMX codelist " + clRef, e);
+			}
 		}
 	}
 }

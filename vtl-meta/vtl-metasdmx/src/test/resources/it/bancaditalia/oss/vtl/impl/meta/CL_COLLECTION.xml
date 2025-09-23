@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<mes:Structure
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xml="http://www.w3.org/XML/1998/namespace"
+	xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+	xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+	xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common"
+	xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message https://registry.sdmx.org/schemas/v2_1/SDMXMessage.xsd">
+	<mes:Header>
+		<mes:ID>IREF347175</mes:ID>
+		<mes:Test>false</mes:Test>
+		<mes:Prepared>2025-09-23T13:38:31Z</mes:Prepared>
+		<mes:Sender id="Unknown" />
+		<mes:Receiver id="not_supplied" />
+	</mes:Header>
+	<mes:Structures>
+		<str:Codelists>
+			<str:Codelist
+				urn="urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_COLLECTION(1.0)"
+				isExternalReference="false" agencyID="ECB" id="CL_COLLECTION"
+				isFinal="false" version="1.0">
+				<com:Name xml:lang="en">Collection indicator code list</com:Name>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).A"
+					id="A">
+					<com:Name xml:lang="en">Average of observations through period</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).B"
+					id="B">
+					<com:Name xml:lang="en">Beginning of period</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).E"
+					id="E">
+					<com:Name xml:lang="en">End of period</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).H"
+					id="H">
+					<com:Name xml:lang="en">Highest in period</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).L"
+					id="L">
+					<com:Name xml:lang="en">Lowest in period</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).M"
+					id="M">
+					<com:Name xml:lang="en">Middle of period</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).S"
+					id="S">
+					<com:Name xml:lang="en">Summed through period</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).U"
+					id="U">
+					<com:Name xml:lang="en">Unknown</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).V"
+					id="V">
+					<com:Name xml:lang="en">Other</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_COLLECTION(1.0).Y"
+					id="Y">
+					<com:Name xml:lang="en">Annualised summed</com:Name>
+				</str:Code>
+			</str:Codelist>
+		</str:Codelists>
+	</mes:Structures>
+</mes:Structure>

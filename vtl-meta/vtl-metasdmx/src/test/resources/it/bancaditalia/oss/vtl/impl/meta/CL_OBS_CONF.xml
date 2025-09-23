@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<mes:Structure
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xml="http://www.w3.org/XML/1998/namespace"
+	xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+	xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+	xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common"
+	xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message https://registry.sdmx.org/schemas/v2_1/SDMXMessage.xsd">
+	<mes:Header>
+		<mes:ID>IREF347174</mes:ID>
+		<mes:Test>false</mes:Test>
+		<mes:Prepared>2025-09-23T13:38:30Z</mes:Prepared>
+		<mes:Sender id="Unknown" />
+		<mes:Receiver id="not_supplied" />
+	</mes:Header>
+	<mes:Structures>
+		<str:Codelists>
+			<str:Codelist
+				urn="urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_OBS_CONF(1.0)"
+				isExternalReference="false" agencyID="ECB" id="CL_OBS_CONF"
+				isFinal="false" version="1.0">
+				<com:Name xml:lang="en">Observation confidentiality code list</com:Name>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).A"
+					id="A">
+					<com:Name xml:lang="en">Primary confidentiality due to small counts</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).C"
+					id="C">
+					<com:Name xml:lang="en">Confidential statistical information</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).D"
+					id="D">
+					<com:Name xml:lang="en">Secondary confidentiality set by the sender, not for publication</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).F"
+					id="F">
+					<com:Name xml:lang="en">Free</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).G"
+					id="G">
+					<com:Name xml:lang="en">Primary confidentiality due to dominance by one or two units</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).M"
+					id="M">
+					<com:Name xml:lang="en">Primary confidentiality due to data declared confidential based on other measures of concentration</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).N"
+					id="N">
+					<com:Name xml:lang="en">Not for publication, restricted for internal use only</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).O"
+					id="O">
+					<com:Name xml:lang="en">Primary confidentiality due to dominance by one unit</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).S"
+					id="S">
+					<com:Name xml:lang="en">Secondary confidentiality set and managed by the receiver, not for publication</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).T"
+					id="T">
+					<com:Name xml:lang="en">Primary confidentiality due to dominance by two units</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_CONF(1.0).E"
+					id="E">
+					<com:Name xml:lang="en">Not for publication, restricted for internal use only (equivalent to the code N) until the embargo time elapses - free for publication (equivalent to the code F) after the embargo time elapses</com:Name>
+				</str:Code>
+			</str:Codelist>
+		</str:Codelists>
+	</mes:Structures>
+</mes:Structure>

@@ -1,0 +1,202 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<mes:Structure
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xml="http://www.w3.org/XML/1998/namespace"
+	xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+	xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+	xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common"
+	xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message https://registry.sdmx.org/schemas/v2_1/SDMXMessage.xsd">
+	<mes:Header>
+		<mes:ID>IREF342506</mes:ID>
+		<mes:Test>false</mes:Test>
+		<mes:Prepared>2025-09-23T13:30:50Z</mes:Prepared>
+		<mes:Sender id="Unknown" />
+		<mes:Receiver id="not_supplied" />
+	</mes:Header>
+	<mes:Structures>
+		<str:Codelists>
+			<str:Codelist
+				urn="urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_UNIT_MULT(1.0)"
+				isExternalReference="false" agencyID="ECB" id="CL_UNIT_MULT"
+				isFinal="false" version="1.0">
+				<com:Name xml:lang="en">Unit multiplier code list</com:Name>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).0"
+					id="0">
+					<com:Name xml:lang="en">Units</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).1"
+					id="1">
+					<com:Name xml:lang="en">Tens</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-1"
+					id="-1">
+					<com:Name xml:lang="en">Tenths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).10"
+					id="10">
+					<com:Name xml:lang="en">Tens of billions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-10"
+					id="-10">
+					<com:Name xml:lang="en">Ten-billionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).11"
+					id="11">
+					<com:Name xml:lang="en">Hundreds of billions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-11"
+					id="-11">
+					<com:Name xml:lang="en">Hundred-billionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).12"
+					id="12">
+					<com:Name xml:lang="en">Trillions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-12"
+					id="-12">
+					<com:Name xml:lang="en">Trillionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).13"
+					id="13">
+					<com:Name xml:lang="en">Tens of trillions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-13"
+					id="-13">
+					<com:Name xml:lang="en">Ten-trillionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).14"
+					id="14">
+					<com:Name xml:lang="en">Hundreds of trillions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-14"
+					id="-14">
+					<com:Name xml:lang="en">Hundred-trillionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).15"
+					id="15">
+					<com:Name xml:lang="en">Quadrillions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-15"
+					id="-15">
+					<com:Name xml:lang="en">Quadrillionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).2"
+					id="2">
+					<com:Name xml:lang="en">Hundreds</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-2"
+					id="-2">
+					<com:Name xml:lang="en">Hundredth</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).3"
+					id="3">
+					<com:Name xml:lang="en">Thousands</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-3"
+					id="-3">
+					<com:Name xml:lang="en">Thousandths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).4"
+					id="4">
+					<com:Name xml:lang="en">Tens of thousands</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-4"
+					id="-4">
+					<com:Name xml:lang="en">Ten-thousandths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).5"
+					id="5">
+					<com:Name xml:lang="en">Hundreds of thousands</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-5"
+					id="-5">
+					<com:Name xml:lang="en">Hundred-thousandths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).6"
+					id="6">
+					<com:Name xml:lang="en">Millions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-6"
+					id="-6">
+					<com:Name xml:lang="en">Millionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).7"
+					id="7">
+					<com:Name xml:lang="en">Tens of millions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-7"
+					id="-7">
+					<com:Name xml:lang="en">Ten-millionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).8"
+					id="8">
+					<com:Name xml:lang="en">Hundreds of millions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-8"
+					id="-8">
+					<com:Name xml:lang="en">Hundred-millionths</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).9"
+					id="9">
+					<com:Name xml:lang="en">Billions</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_UNIT_MULT(1.0).-9"
+					id="-9">
+					<com:Name xml:lang="en">Billionths</com:Name>
+				</str:Code>
+			</str:Codelist>
+		</str:Codelists>
+	</mes:Structures>
+</mes:Structure>

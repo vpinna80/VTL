@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<mes:Structure
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xml="http://www.w3.org/XML/1998/namespace"
+	xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+	xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+	xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common"
+	xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message https://registry.sdmx.org/schemas/v2_1/SDMXMessage.xsd">
+	<mes:Header>
+		<mes:ID>IREF347177</mes:ID>
+		<mes:Test>false</mes:Test>
+		<mes:Prepared>2025-09-23T13:38:32Z</mes:Prepared>
+		<mes:Sender id="Unknown" />
+		<mes:Receiver id="not_supplied" />
+	</mes:Header>
+	<mes:Structures>
+		<str:Codelists>
+			<str:Codelist
+				urn="urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_DECIMALS(1.0)"
+				isExternalReference="false" agencyID="ECB" id="CL_DECIMALS"
+				isFinal="false" version="1.0">
+				<com:Name xml:lang="en">Decimals code list</com:Name>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).0"
+					id="0">
+					<com:Name xml:lang="en">Zero</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).1"
+					id="1">
+					<com:Name xml:lang="en">One</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).10"
+					id="10">
+					<com:Name xml:lang="en">Ten</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).11"
+					id="11">
+					<com:Name xml:lang="en">Eleven</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).12"
+					id="12">
+					<com:Name xml:lang="en">Twelve</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).13"
+					id="13">
+					<com:Name xml:lang="en">Thirteen</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).14"
+					id="14">
+					<com:Name xml:lang="en">Fourteen</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).15"
+					id="15">
+					<com:Name xml:lang="en">Fifteen</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).2"
+					id="2">
+					<com:Name xml:lang="en">Two</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).3"
+					id="3">
+					<com:Name xml:lang="en">Three</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).4"
+					id="4">
+					<com:Name xml:lang="en">Four</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).5"
+					id="5">
+					<com:Name xml:lang="en">Five</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).6"
+					id="6">
+					<com:Name xml:lang="en">Six</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).7"
+					id="7">
+					<com:Name xml:lang="en">Seven</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).8"
+					id="8">
+					<com:Name xml:lang="en">Eight</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_DECIMALS(1.0).9"
+					id="9">
+					<com:Name xml:lang="en">Nine</com:Name>
+				</str:Code>
+			</str:Codelist>
+		</str:Codelists>
+	</mes:Structures>
+</mes:Structure>

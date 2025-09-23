@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+
+    Copyright © 2020 Banca D'Italia
+
+    Licensed under the EUPL, Version 1.2 (the "License");
+    You may not use this work except in compliance with the
+    License.
+    You may obtain a copy of the License at:
+
+    https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+
+    Unless required by applicable law or agreed to in
+    writing, software distributed under the License is
+    distributed on an "AS IS" basis,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.
+
+    See the License for the specific language governing
+    permissions and limitations under the License.
+
+-->
+<mes:Structure
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xml="http://www.w3.org/XML/1998/namespace"
+	xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+	xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+	xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common"
+	xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message https://registry.sdmx.org/schemas/v2_1/SDMXMessage.xsd">
+	<mes:Header>
+		<mes:ID>IREF347173</mes:ID>
+		<mes:Test>false</mes:Test>
+		<mes:Prepared>2025-09-23T13:38:30Z</mes:Prepared>
+		<mes:Sender id="Unknown" />
+		<mes:Receiver id="not_supplied" />
+	</mes:Header>
+	<mes:Structures>
+		<str:Codelists>
+			<str:Codelist
+				urn="urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_OBS_STATUS(1.0)"
+				isExternalReference="false" agencyID="ECB" id="CL_OBS_STATUS"
+				isFinal="false" version="1.0">
+				<com:Name xml:lang="en">Observation status code list</com:Name>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).A"
+					id="A">
+					<com:Name xml:lang="en">Normal value</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).B"
+					id="B">
+					<com:Name xml:lang="en">Time series break</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).D"
+					id="D">
+					<com:Name xml:lang="en">Definition differs</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).E"
+					id="E">
+					<com:Name xml:lang="en">Estimated value</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).F"
+					id="F">
+					<com:Name xml:lang="en">Forecast value</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).G"
+					id="G">
+					<com:Name xml:lang="en">Experimental value</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).H"
+					id="H">
+					<com:Name xml:lang="en">Missing value; holiday or weekend</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).I"
+					id="I">
+					<com:Name xml:lang="en">Imputed value (CCSA definition)</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).J"
+					id="J">
+					<com:Name xml:lang="en">Derogation</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).K"
+					id="K">
+					<com:Name xml:lang="en">Data included in another category</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).L"
+					id="L">
+					<com:Name xml:lang="en">Missing value; data exist but were not collected</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).M"
+					id="M">
+					<com:Name xml:lang="en">Missing value; data cannot exist</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).N"
+					id="N">
+					<com:Name xml:lang="en">Not significant</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).P"
+					id="P">
+					<com:Name xml:lang="en">Provisional value</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).Q"
+					id="Q">
+					<com:Name xml:lang="en">Missing value; suppressed</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).S"
+					id="S">
+					<com:Name xml:lang="en">Strike and any special events</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).U"
+					id="U">
+					<com:Name xml:lang="en">Low reliability</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).V"
+					id="V">
+					<com:Name xml:lang="en">Unvalidated value</com:Name>
+				</str:Code>
+				<str:Code
+					urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=ECB:CL_OBS_STATUS(1.0).R"
+					id="R">
+					<com:Name xml:lang="en">Revised value</com:Name>
+				</str:Code>
+			</str:Codelist>
+		</str:Codelists>
+	</mes:Structures>
+</mes:Structure>
