@@ -25,6 +25,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.INTEGERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
+import static it.bancaditalia.oss.vtl.model.data.VTLAlias.needsQuotes;
 import static java.util.Objects.requireNonNull;
 
 import java.util.HashMap;
@@ -80,8 +81,8 @@ public class DataSetComponentImpl<R extends Component, S extends ValueDomainSubs
 
 	public static DataSetComponent<Measure, ?, ?> getDefaultMeasure(ValueDomainSubset<?, ?> domain)
 	{
-		VTLAliasImpl domAlias = (VTLAliasImpl) domain.getAlias();
-		return DOMAIN_TO_VAR.getOrDefault(domain, DataSetComponentImpl.of(VTLAliasImpl.of(domAlias.isQuoted(), domAlias.getName() + "_var"), domain, Measure.class));
+		String domref = domain.getAlias().getName();
+		return DOMAIN_TO_VAR.getOrDefault(domain, DataSetComponentImpl.of(VTLAliasImpl.of(needsQuotes(domref), domref + "_var"), domain, Measure.class));
 	}
 
 	private final VTLAlias alias;

@@ -25,47 +25,103 @@ import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleSetType.VALUE_DOMA
 import static it.bancaditalia.oss.vtl.model.rules.RuleSet.RuleType.EQ;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
 import static java.util.Collections.nCopies;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.sdmx.api.sdmx.model.beans.codelist.CodeBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
+import io.sdmx.api.sdmx.model.beans.reference.MaintainableRefBean;
 import it.bancaditalia.oss.vtl.impl.types.domain.StringCodeList;
+import it.bancaditalia.oss.vtl.impl.types.names.SDMXAlias;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.statement.HierarchicalRuleImpl;
 import it.bancaditalia.oss.vtl.impl.types.statement.HierarchicalRuleSetImpl;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRule;
+import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 
 public class SdmxCodeList extends StringCodeList implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SdmxCodeList.class);
 	
-	private final HierarchicalRuleSetImpl defaultRuleSet;
-	private final String agency;
-	
-	public SdmxCodeList(CodelistBean codelist)
-	{
-		super(STRINGDS, VTLAliasImpl.of(true, codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")"));
-		
-		this.agency = codelist.getAgencyId();
-		
-		// retrieve codelist 
-		VTLAlias clAlias = VTLAliasImpl.of(true, codelist.getAgencyId() + ":" + codelist.getId() + "(" + codelist.getVersion() + ")");
+	private final AtomicReference<HierarchicalRuleSet> defaultRuleSet = new AtomicReference<>();
+	private final String endpoint;
+	private final MaintainableRefBean clRef;
 
+	private volatile boolean inited = false;
+
+	public SdmxCodeList(String endpoint, CodelistBean codelist)
+	{
+		super(STRINGDS, new SDMXAlias(codelist.getAgencyId(), codelist.getId(), codelist.getVersion()));
+		
+		this.endpoint = null;
+		this.clRef = null;
+		this.inited = true;
+		
+		init(codelist);
+	}
+
+	public SdmxCodeList(String endpoint, MaintainableRefBean clRef, SDMXAlias alias)
+	{
+		super(STRINGDS, alias);
+		
+		requireNonNull(alias.getAgency());
+		requireNonNull(alias.getVersion());
+		
+		this.endpoint = endpoint;
+		this.clRef = clRef;
+	}
+
+	public HierarchicalRuleSet getDefaultRuleSet()
+	{
+		if (inited)
+			return defaultRuleSet.get();
+		
+		synchronized (this)
+		{
+			if (!inited)
+				init(SDMXRepository.fetchCodelist(endpoint, clRef));
+			
+			return defaultRuleSet.get();
+		}
+	}
+	
+	@Override
+	public synchronized Set<StringCodeItem> getCodeItems()
+	{
+		if (inited)
+			return items;
+		
+		synchronized (items)
+		{
+			if (!inited)
+				init(SDMXRepository.fetchCodelist(endpoint, clRef));
+			
+			return items;
+		}
+	}
+
+	private void init(CodelistBean codelist)
+	{
 		// build hierarchy if present
 		Map<StringCodeItem, List<StringCodeItem>> hierarchy = new HashMap<>();
+
+		// recursively resolve code hierarchies
 		for (CodeBean codeBean: codelist.getRootCodes())
 			addChildren(codelist, hierarchy, new StringCodeItem(codeBean.getId(), this));
 
+		// build the ruleset
 		List<HierarchicalRule> rules = new ArrayList<>();
 		int ruleOrder = 1;
 		for (StringCodeItem ruleComp: hierarchy.keySet())
@@ -79,13 +135,14 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 			ruleOrder++;
 		}
 		
-		defaultRuleSet = rules.isEmpty() ? null : new HierarchicalRuleSetImpl(clAlias, VALUE_DOMAIN, clAlias, List.of(), rules);
-		if (defaultRuleSet != null)
-			LOGGER.debug("Created default hierarchy ruleset for codelist {}", getAlias());
-
-		hashCode = 31 + clAlias.hashCode() + this.items.hashCode();
+		if (!rules.isEmpty())
+			defaultRuleSet.set(new HierarchicalRuleSetImpl(alias, VALUE_DOMAIN, alias, List.of(), rules));
+		if (defaultRuleSet.get() != null)
+			LOGGER.debug("Created default hierarchy ruleset for codelist {}", alias);
+		
+		inited = true;
 	}
-
+	
 	private void addChildren(CodelistBean cl, Map<StringCodeItem, List<StringCodeItem>> hierarchy, StringCodeItem parent)
 	{
 		items.add(parent);
@@ -99,15 +156,5 @@ public class SdmxCodeList extends StringCodeList implements Serializable
 		
 		if (!children.isEmpty())
 			hierarchy.put(parent, children);
-	}
-
-	public HierarchicalRuleSetImpl getDefaultRuleSet()
-	{
-		return defaultRuleSet;
-	}
-	
-	public String getAgency()
-	{
-		return agency;
 	}
 }

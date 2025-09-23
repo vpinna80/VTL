@@ -73,18 +73,14 @@ public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeLi
 	protected final StringDomainSubset<?> parent;
 	protected final VTLAlias alias; 
 	protected final Set<StringCodeItem> items = new HashSet<>();
-	
-	protected int hashCode;
+	protected final int hashCode;
 
 	public StringCodeList(StringDomainSubset<?> parent, VTLAlias alias, Set<? extends String> items)
 	{
-		this.alias = alias;
-		this.parent = parent;
+		this(parent, alias);
 		
 		for (String item: items)
 			this.items.add(new StringCodeItem(item, this));
-		hashCode = 31 + alias.hashCode() + this.items.hashCode();
-
 		if (parent instanceof StringEnumeratedDomainSubset)
 		{
 			Set<? extends CodeItem<?, String, ?, StringDomain>> parentCodeItems = ((StringEnumeratedDomainSubset<?, ?>) parent).getCodeItems();
@@ -99,6 +95,7 @@ public class StringCodeList implements StringEnumeratedDomainSubset<StringCodeLi
 	{
 		this.alias = alias;
 		this.parent = parent;
+		hashCode = alias.hashCode();
 	}
 
 

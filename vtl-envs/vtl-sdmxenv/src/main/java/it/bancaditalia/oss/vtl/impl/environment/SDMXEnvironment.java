@@ -28,21 +28,21 @@ import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatte
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.QUARTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.SEMESTER_PERIOD_FORMATTER;
 import static it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder.Formatter.YEAR_PERIOD_FORMATTER;
-import static it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder.Option.DONT_SYNC;
-import static it.bancaditalia.oss.vtl.impl.types.domain.CommonComponents.TIME_PERIOD;
 import static it.bancaditalia.oss.vtl.util.Utils.SEQUENTIAL;
 import static it.bancaditalia.oss.vtl.util.Utils.coalesce;
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static java.util.Spliterator.IMMUTABLE;
 import static java.util.Spliterators.spliteratorUnknownSize;
-import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -55,19 +55,13 @@ import java.net.URLConnection;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -76,12 +70,11 @@ import java.util.zip.GZIPInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.sdmx.api.collection.KeyValue;
 import io.sdmx.api.exception.SdmxUnauthorisedException;
+import io.sdmx.api.format.FILE_FORMAT;
 import io.sdmx.api.io.ReadableDataLocation;
 import io.sdmx.api.sdmx.engine.DataReaderEngine;
 import io.sdmx.api.sdmx.manager.structure.SdmxBeanRetrievalManager;
-import io.sdmx.api.sdmx.model.data.Observation;
 import io.sdmx.core.data.api.manager.DataReaderManager;
 import io.sdmx.core.data.manager.DataFormatManagerImpl;
 import io.sdmx.core.data.manager.DataReaderManagerImpl;
@@ -94,36 +87,23 @@ import io.sdmx.format.ml.factory.structure.SdmxMLStructureReaderFactory;
 import io.sdmx.fusion.service.builder.StructureQueryBuilderRest;
 import io.sdmx.fusion.service.engine.RESTQueryBrokerEngineImpl;
 import io.sdmx.utils.core.application.SingletonStore;
+import io.sdmx.utils.core.io.AbstractReadableDataLocation;
 import io.sdmx.utils.core.io.SdmxSourceReadableDataLocationFactory;
 import io.sdmx.utils.http.api.model.IHttpProxy;
 import io.sdmx.utils.http.broker.RestMessageBroker;
 import it.bancaditalia.oss.vtl.config.VTLProperty;
 import it.bancaditalia.oss.vtl.environment.Environment;
-import it.bancaditalia.oss.vtl.exceptions.VTLException;
+import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.impl.types.config.VTLPropertyImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.DateValue;
-import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
-import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
-import it.bancaditalia.oss.vtl.impl.types.data.TimePeriodValue;
 import it.bancaditalia.oss.vtl.impl.types.data.date.MonthPeriodHolder;
-import it.bancaditalia.oss.vtl.impl.types.data.date.PeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.QuarterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.SemesterPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.data.date.YearPeriodHolder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.AbstractDataSet;
-import it.bancaditalia.oss.vtl.impl.types.dataset.DataPointBuilder;
 import it.bancaditalia.oss.vtl.impl.types.dataset.StreamWrapperDataSet;
-import it.bancaditalia.oss.vtl.impl.types.lineage.LineageExternal;
-import it.bancaditalia.oss.vtl.impl.types.names.SDMXAlias;
 import it.bancaditalia.oss.vtl.impl.types.names.SDMXComponentAlias;
-import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
-import it.bancaditalia.oss.vtl.model.data.Component.Attribute;
-import it.bancaditalia.oss.vtl.model.data.Component.Identifier;
-import it.bancaditalia.oss.vtl.model.data.Component.Measure;
 import it.bancaditalia.oss.vtl.model.data.DataPoint;
-import it.bancaditalia.oss.vtl.model.data.DataSetComponent;
 import it.bancaditalia.oss.vtl.model.data.DataSetStructure;
-import it.bancaditalia.oss.vtl.model.data.ScalarValue;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
@@ -138,6 +118,11 @@ public class SDMXEnvironment implements Environment, Serializable
 	private static final Logger LOGGER = LoggerFactory.getLogger(SDMXEnvironment.class); 
 	private static final Map<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> FORMATTERS = new HashMap<>();
 	private static final SdmxSourceReadableDataLocationFactory RDL_FACTORY = new SdmxSourceReadableDataLocationFactory();
+	
+	// This is a field present only in SDMXMetadataRepository and SDMXJsonMetadataRepository classes 
+	private static final Field RBRM; 
+	// This is a method present only in SDMXMetadataRepository and SDMXJsonMetadataRepository classes
+	private static final Method RESOLVE_DATAFLOW; 
 
 	static
 	{
@@ -151,8 +136,58 @@ public class SDMXEnvironment implements Environment, Serializable
 		FORMATTERS.put(QUARTER_PERIOD_FORMATTER.get(), QuarterPeriodHolder::new);
 		FORMATTERS.put(SEMESTER_PERIOD_FORMATTER.get(), SemesterPeriodHolder::new);
 		FORMATTERS.put(YEAR_PERIOD_FORMATTER.get(), YearPeriodHolder::new);
+
+		try
+		{
+			Class<?> sdmxRepoClass = Class.forName("it.bancaditalia.oss.vtl.impl.meta.sdmx.SDMXRepository", true, currentThread().getContextClassLoader());
+			RBRM = sdmxRepoClass.getField("rbrm");
+			RESOLVE_DATAFLOW = sdmxRepoClass.getMethod("resolveDataflow", VTLAlias.class);
+		}
+		catch (ClassNotFoundException | NoSuchFieldException | SecurityException | NoSuchMethodException e)
+		{
+			throw new ExceptionInInitializerError(e);
+		}
 	}
 
+	private static class GzippedRDL extends AbstractReadableDataLocation
+	{
+		private static final long serialVersionUID = 1L;
+
+		public GzippedRDL(ReadableDataLocation rdl)
+		{
+			super(rdl);
+		}
+
+		@Override
+		public String getName()
+		{
+			return "";
+		}
+		
+		@Override
+		public FILE_FORMAT getFormat()
+		{
+			return super.getFormat();
+		}
+
+		@Override
+		public ReadableDataLocation copy()
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		protected void closeInternal()
+		{
+		}
+
+		@Override
+		protected InputStream getStreamInternal() throws IOException
+		{
+			return new GZIPInputStream(getProxy().getInputStream());
+		}
+	}
+	
 	private final String endpoint;
 	private final String username;
 	private final String password;
@@ -210,177 +245,28 @@ public class SDMXEnvironment implements Environment, Serializable
 		if (repo == null)
 			return Optional.empty();
 		
-		SDMXAlias dataflow;
-		String agency = null;
-		String id = null;
-		String version = null;
-		String query = null;
-		if (alias instanceof SDMXComponentAlias)
+		SDMXComponentAlias query;
+		try
 		{
-			SDMXComponentAlias maint = (SDMXComponentAlias) alias;
-			dataflow = maint.getMaintainable();
-			agency = dataflow.getAgency();
-			id = dataflow.getId().getName().toString();
-			version = dataflow.getVersion();
-			query = maint.getComponent().getName().toString();
+			query = (SDMXComponentAlias) RESOLVE_DATAFLOW.invoke(repo, alias);
 		}
-		else if (alias instanceof SDMXAlias)
+		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
 		{
-			dataflow = (SDMXAlias) alias;
-			agency = dataflow.getAgency();
-			id = dataflow.getId().getName().toString();
-			version = dataflow.getVersion();
+			throw new IllegalStateException("The SDMX Environment must be used with a SDMX Metadata Repository.");
 		}
-		else
-			id = alias.getName().toString();
-		
-		Optional<DataSetStructure> maybeMeta = repo.getMetadata(alias).map(DataSetStructure.class::cast);
-		if (maybeMeta.isEmpty())
+		if (query == null)
+			return Optional.empty();
+
+		Optional<DataSetStructure> maybeStructure = repo.getMetadata(query).map(DataSetStructure.class::cast);
+		if (maybeStructure.isEmpty())
 			return Optional.empty();
 		
-		DataSetStructure structure = maybeMeta.get();
-
-		String resource = coalesce(query, "");
-		String[] dims = resource.isEmpty() ? new String[] {} : resource.split("\\.");
-
-		String path = endpoint + "/data/" + Stream.of(agency, id, version).filter(Objects::nonNull).map(Object::toString).collect(joining(","));
-		if (!resource.isEmpty())
-			 path += "/" + resource;
-		String restPath = path;
-
-		AbstractDataSet sdmxDataflow = new StreamWrapperDataSet(structure, () -> getData(repo, alias, structure, restPath, dims));
+		DataSetStructure structure = maybeStructure.get();
+		AbstractDataSet sdmxDataflow = new StreamWrapperDataSet(structure, () -> getData(repo, query, structure));
 		return Optional.of(sdmxDataflow);
 	}
 
-	private static class ObsIterator implements Iterator<DataPoint>
-	{
-		private final String[] dims;
-		private final DataSetStructure structure;
-		private final VTLAlias alias;
-		private final DataReaderEngine dre;
-
-		private boolean more;
-		private Map<DataSetComponent<?, ?, ?>, ScalarValue<?, ?, ?, ?>> dmap = new HashMap<>();
-		private Entry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> parser;
-
-		public ObsIterator(VTLAlias alias, DataReaderEngine dre, DataSetStructure structure, String[] dims)
-		{
-			this.dims = dims;
-			this.structure = structure;
-			this.alias = alias;
-			this.dre = dre;
-			
-			if (structure.getMeasures().size() > 1)
-				throw new UnsupportedOperationException("Unsupported dataset with multiple measures.");
-
-			more = dre.moveNextDataset() && dre.moveNextKeyable();
-			while (!dre.getCurrentKey().isSeries())
-				more = dre.moveNextKeyable();
-			more &= dre.moveNextObservation();
-			if (more)
-				setDims(dre, structure);
-		}
-
-		private void setDims(DataReaderEngine dre, DataSetStructure structure)
-		{
-			dmap.clear();
-			List<KeyValue> keys = dre.getCurrentKey().getKey();
-			for (int i = 0; i < keys.size(); i++)
-				if (i >= dims.length || dims[i].isEmpty() || dims[i].indexOf('+') >= 0)
-				{
-					KeyValue k = keys.get(i);
-					VTLAlias idComp = VTLAliasImpl.of(true, k.getConcept());
-					
-					DataSetComponent<Identifier, ?, ?> dim = structure.getComponent(idComp, Identifier.class)
-							.orElseThrow(() -> {
-								return new NoSuchElementException(k.getConcept());
-							});
-						dmap.put(dim, dim.getDomain().cast(StringValue.of(k.getCode())));
-				}
-			for (KeyValue k: dre.getCurrentKey().getAttributes())
-			{
-				DataSetComponent<Attribute, ?, ?> attr = structure.getComponent(VTLAliasImpl.of(true, k.getConcept()), Attribute.class)
-						.orElseThrow(() -> new NoSuchElementException(k.getConcept()));
-					dmap.put(attr, attr.getDomain().cast(StringValue.of(k.getCode())));
-			}
-		}
-
-		@Override
-		public boolean hasNext()
-		{
-			return more;
-		}
-
-		@Override
-		public synchronized DataPoint next()
-		{
-			Observation obs = dre.getCurrentObservation();
-			DataPointBuilder builder = new DataPointBuilder(dmap, DONT_SYNC);
-
-			if (parser == null)
-				parser = getDateParser(obs.getDimensionValue());
-			
-			for (KeyValue a: obs.getAttributes())
-			{
-				DataSetComponent<?, ?, ?> c = structure.getComponent(VTLAliasImpl.of(true, a.getConcept())).get();
-				builder.add(c, c.getDomain().cast(StringValue.of(a.getCode())));
-			}
-			
-			DataSetComponent<Measure, ?, ?> measure = structure.getMeasures().iterator().next();
-			List<String> values = obs.getMeasureValues(measure.getAlias().getName());
-			if (values.size() > 1)
-				throw new UnsupportedOperationException("Unsupported measure with multiple values (found " + values.size() + " values).");
-			builder.add(measure, NumberValueImpl.createNumberValue(values.iterator().next()));
-
-			TemporalAccessor parsed; 
-			for (;;)
-			{
-				if (parser == null)
-					parser = getDateParser(obs.getDimensionValue());
-				
-				try
-				{
-					parsed = parser.getKey().parse(obs.getDimensionValue());
-					break;
-				}
-				catch (DateTimeParseException e)
-				{
-					parser = null;
-				}
-			}
-			
-			TemporalAccessor holder = parser.getValue().queryFrom(parsed);
-			ScalarValue<?, ?, ?, ?> value;
-			if (holder instanceof PeriodHolder)
-				value = TimePeriodValue.of((PeriodHolder<?>) holder);
-			else
-				value = DateValue.of((LocalDate) holder);
-			builder.add(TIME_PERIOD, value);
-			
-			if (!(more = dre.moveNextObservation()))
-			{
-				more = dre.moveNextKeyable();
-				while (more && !dre.getCurrentKey().isSeries())
-					more = dre.moveNextKeyable();
-				more &= dre.moveNextObservation();
-				
-				if (!more)
-				{
-					more = dre.moveNextDataset() && dre.moveNextKeyable();
-					while (more && !dre.getCurrentKey().isSeries())
-						more = dre.moveNextKeyable();
-					more &= dre.moveNextObservation();
-				}
-			
-				if (more)
-					setDims(dre, structure);
-			}
-
-			return builder.build(LineageExternal.of(alias.toString()), structure);
-		}
-	}
-
-	private static SimpleEntry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> getDateParser(String dateStr)
+	static SimpleEntry<DateTimeFormatter, TemporalQuery<? extends TemporalAccessor>> getDateParser(String dateStr)
 	{
 		DateTimeException last = null;
 		for (DateTimeFormatter formatter : FORMATTERS.keySet())
@@ -397,8 +283,14 @@ public class SDMXEnvironment implements Environment, Serializable
 		throw last;
 	}
 
-	private synchronized Stream<DataPoint> getData(MetadataRepository repo, VTLAlias alias, DataSetStructure structure, String path, String[] dims)
+	private synchronized Stream<DataPoint> getData(MetadataRepository repo, SDMXComponentAlias dataflow, DataSetStructure structure)
 	{
+		String path = String.format("%s/data/%s,%s,%s", endpoint, coalesce(dataflow.getMaintainable().getAgency(), "all"), 
+			dataflow.getMaintainable().getId().getName(), coalesce(dataflow.getMaintainable().getVersion(), "latest"));
+		String resource = dataflow.getComponent().getName();
+		if (!resource.isBlank())
+			 path += "/" + resource;
+		
 		ReadableDataLocation rdl;
 		try 
 		{
@@ -406,39 +298,45 @@ public class SDMXEnvironment implements Environment, Serializable
 		}
 		catch (SdmxUnauthorisedException e)
 		{
-			try
-			{
-				URL url = new URI(path).toURL();
-				URLConnection urlc = url.openConnection();
-				urlc.setDoOutput(true);
-				urlc.setAllowUserInteraction(false);
-				urlc.addRequestProperty("Accept-Encoding", "gzip");
-				urlc.addRequestProperty("Accept", "*/*;q=1.0");
-				urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
-				((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
-				InputStream is = urlc.getInputStream();
-				rdl = RDL_FACTORY.getReadableDataLocation("gzip".equals(urlc.getContentEncoding()) ? new GZIPInputStream(is) : is);
-			}
-			catch (IOException | URISyntaxException e1)
-			{
-				throw new VTLException("Error in creating readableDataLocation", e);
-			}
+			if (username != null && password != null && !username.isBlank() && !password.isEmpty())
+				try
+				{
+					URL url = new URI(path).toURL();
+					URLConnection urlc = url.openConnection();
+					urlc.setDoOutput(true);
+					urlc.setAllowUserInteraction(false);
+					urlc.addRequestProperty("Accept-Encoding", "gzip");
+					urlc.addRequestProperty("Accept", "*/*;q=1.0");
+					urlc.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
+					((HttpURLConnection) urlc).setInstanceFollowRedirects(true);
+					InputStream is = urlc.getInputStream();
+					rdl = RDL_FACTORY.getReadableDataLocation(is);
+				}
+				catch (IOException | URISyntaxException e1)
+				{
+					throw new VTLNestedException("Error connecting to " + path, e);
+				}
+			else
+				throw new VTLNestedException("Error connecting to " + path, e);
 		}
 
 		SdmxBeanRetrievalManager brm = null;
 		try
 		{
-			// This is a field present only in SDMXMetadataRepository and SDMXJsonMetadataRepository classes 
-			Field field = repo.getClass().getField("rbrm");
-			brm = (SdmxBeanRetrievalManager) field.get(repo);
+			brm = (SdmxBeanRetrievalManager) RBRM.get(repo);
 		}
-		catch (SecurityException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException e)
+		catch (SecurityException | ReflectiveOperationException | IllegalArgumentException e)
 		{
 			throw new IllegalStateException("The SDMX Environment must be used with a SDMX Metadata Repository.");
 		}
 		
+		if (rdl.getFormat() == FILE_FORMAT.GZIP)
+			rdl = new GzippedRDL(rdl);
+		
 		DataReaderManager manager = new DataReaderManagerImpl(new DataFormatManagerImpl(null, new InformationFormatManager()));
-		DataReaderEngine dre = manager.getDataReaderEngine(rdl, brm, new FirstFailureErrorHandler());
-		return StreamSupport.stream(spliteratorUnknownSize(new ObsIterator(alias, dre, structure, dims), IMMUTABLE), SEQUENTIAL);
+		synchronized (brm) {
+			DataReaderEngine dre = manager.getDataReaderEngine(rdl, brm, new FirstFailureErrorHandler());
+			return StreamSupport.stream(spliteratorUnknownSize(new ObsIterator(dataflow, dre, structure), IMMUTABLE), SEQUENTIAL);
+		}
 	}
 }

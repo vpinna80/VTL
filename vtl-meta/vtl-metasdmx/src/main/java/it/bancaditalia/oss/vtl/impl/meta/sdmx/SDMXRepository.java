@@ -20,6 +20,7 @@
 package it.bancaditalia.oss.vtl.impl.meta.sdmx;
 
 import static io.sdmx.api.sdmx.constants.TEXT_TYPE.STRING;
+import static io.sdmx.core.sdmx.util.BeanRetreivalUtil.getEnumeratedRepMap;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getGlobalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.ConfigurationManager.getLocalPropertyValue;
 import static it.bancaditalia.oss.vtl.config.VTLProperty.Options.IS_PASSWORD;
@@ -33,6 +34,7 @@ import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NUMBERDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.STRINGDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIMEDS;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.TIME_PERIODDS;
+import static it.bancaditalia.oss.vtl.util.SerCollectors.toMapWithKeys;
 import static java.lang.System.lineSeparator;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -80,16 +82,17 @@ import io.sdmx.api.sdmx.model.beans.base.MaintainableBean;
 import io.sdmx.api.sdmx.model.beans.base.RepresentationBean;
 import io.sdmx.api.sdmx.model.beans.base.TextFormatBean;
 import io.sdmx.api.sdmx.model.beans.codelist.CodelistBean;
-import io.sdmx.api.sdmx.model.beans.datastructure.AttributeBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataStructureBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DataflowBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.DimensionBean;
 import io.sdmx.api.sdmx.model.beans.datastructure.PrimaryMeasureBean;
 import io.sdmx.api.sdmx.model.beans.reference.CrossReferenceBean;
+import io.sdmx.api.sdmx.model.beans.reference.MaintainableRefBean;
 import io.sdmx.api.sdmx.model.beans.reference.StructureReferenceBean;
 import io.sdmx.api.sdmx.model.beans.transformation.ITransformationSchemeBean;
 import io.sdmx.core.sdmx.manager.structure.SdmxRestToBeanRetrievalManager;
 import io.sdmx.core.sdmx.manager.structure.StructureReaderManagerImpl;
+import io.sdmx.format.ml.factory.data.SdmxMLDataReaderFactory;
 import io.sdmx.format.ml.factory.structure.SdmxMLStructureReaderFactory;
 import io.sdmx.fusion.service.builder.StructureQueryBuilderRest;
 import io.sdmx.fusion.service.constant.REST_API_VERSION;
@@ -133,6 +136,7 @@ import it.bancaditalia.oss.vtl.model.domain.ValueDomainSubset;
 import it.bancaditalia.oss.vtl.model.rules.DataPointRuleSet;
 import it.bancaditalia.oss.vtl.model.rules.HierarchicalRuleSet;
 import it.bancaditalia.oss.vtl.session.MetadataRepository;
+import it.bancaditalia.oss.vtl.util.Utils;
 
 public class SDMXRepository extends InMemoryMetadataRepository
 {
@@ -158,16 +162,18 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		SingletonStore.registerInstance(new StructureQueryBuilderRest());
 		SingletonStore.registerInstance(new StructureReaderManagerImpl());
 		SdmxMLStructureReaderFactory.registerInstance();
+		SdmxMLDataReaderFactory.registerInstance();
 	}
-
+	
 	public final SdmxRestToBeanRetrievalManager rbrm;
 	
-	private final Map<VTLAlias, Entry<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>>> dataflows;
-	private final Map<VTLAlias, DataSetStructure> dsds;
+	private final Map<VTLAlias, DataflowBean> dataflows;
+	private final Map<SDMXAlias, Entry<DataSetStructure, List<DataSetComponent<Identifier, ?, ?>>>> dsds;
 	// four-layered map: id - agency - parentid - version > variable
 	private final Map<String, List<Variable<?, ?>>> variables;
 	private final Map<VTLAlias, ValueDomainSubset<?, ?>> domains;
 	private final Map<VTLAlias, String> schemes;
+	private final String endpoint;
 
 	/* Only used to load transformation schemes from a registry */
 	public SDMXRepository(boolean ignored) throws IOException, SAXException, ParserConfigurationException, URISyntaxException
@@ -196,6 +202,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		
 		if (cached != null)
 		{
+			this.endpoint = cached.endpoint;
 			dataflows = cached.dataflows;
 			dsds = cached.dsds;
 			variables = cached.variables;
@@ -207,7 +214,7 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		}
 		else
 		{
-			dataflows = new HashMap<>();
+			this.endpoint = endpoint;
 			dsds = new HashMap<>();
 			variables = new HashMap<>();
 			domains = new HashMap<>();
@@ -239,88 +246,15 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	
 			rbrm = new SdmxRestToBeanRetrievalManager(new RESTSdmxBeanRetrievalManager(endpoint, 
 				REST_API_VERSION.parseVersion(apiVersion)));
-			
-			// Load codelists
-			for (CodelistBean codelist: rbrm.getMaintainableBeans(CodelistBean.class, new MaintainableRefBeanImpl(null, null, "*")))
-			{
-				StructureReferenceBean refBean = codelist.asReference();
-				VTLAlias clName = new SDMXAlias(refBean.getAgencyId(), refBean.getMaintainableId(), refBean.getVersion());
-				LOGGER.debug("Loading codelist " + clName);
-				domains.put(clName, new SdmxCodeList(codelist));
-			}
-			LOGGER.info("Loaded codelists.");
 	
 			// Define ALPHA and ALPHA_NUMERIC domains
 			domains.put(VTLAliasImpl.of(true, "ALPHA"), VTL_ALPHA);
 			domains.put(VTLAliasImpl.of(true, "ALPHA_NUMERIC"), VTL_ALPHA_NUMERIC);
 			
-			// Load dsds
-			Map<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>> enumIDMap = new HashMap<>();
-			for (DataStructureBean dsd: rbrm.getIdentifiables(DataStructureBean.class))
-			{
-				DataSetStructureBuilder builder = new DataSetStructureBuilder();
-				StructureReferenceBean dsdRef = dsd.asReference();
-				VTLAlias dsdName = new SDMXAlias(dsdRef.getAgencyId(), dsdRef.getMaintainableId(), dsdRef.getVersion());
-				LOGGER.debug("Loading structure {}", dsdName);
-				Map<Integer, DataSetComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
-				
-				for (DimensionBean dimBean: dsd.getDimensionList().getDimensions())
-				{
-					ValueDomainSubset<?, ?> domain;
-	
-					if (dimBean.isTimeDimension())
-						domain = TIMEDS;
-					else if (dimBean.hasCodedRepresentation())
-					{
-						CrossReferenceBean reprRef = dimBean.getEnumeratedRepresentation();
-						VTLAlias alias = new SDMXAlias(reprRef.getAgencyId(), reprRef.getMaintainableId(), reprRef.getVersion());
-						domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
-					}
-					else
-						domain = sdmxRepr2VTLDomain(dimBean);
-	
-					DataSetComponent<Identifier, ?, ?> id = createComponent(dimBean, Identifier.class, domain);
-					builder.addComponent(id);
-					enumIds.put(dimBean.getPosition() - 1, id);
-					LOGGER.trace("Created identifier {} from DSD {}", dsdName, id);
-				}
-	
-				builder.addComponent(createObsValue(dsd.getPrimaryMeasure()));
-				
-				for (AttributeBean attrBean: dsd.getAttributeList().getAttributes())
-				{
-					ValueDomainSubset<?, ?> domain;
-					
-					if (attrBean.hasCodedRepresentation())
-					{
-						CrossReferenceBean reprRef = attrBean.getEnumeratedRepresentation();
-						VTLAlias alias = new SDMXAlias(reprRef.getAgencyId(), reprRef.getMaintainableId(), reprRef.getVersion());
-						domain = getDomain(alias).orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
-					}
-					else
-						domain = sdmxRepr2VTLDomain(attrBean);
-					
-					DataSetComponent<Attribute, ?, ?> attr = createComponent(attrBean, Attribute.class, domain);
-					builder.addComponent(attr);
-					LOGGER.trace("Created attribute {} from DSD {}", attr, dsdName);
-				}
-	
-				dsds.put(dsdName, builder.build());
-				enumIDMap.put(dsdName, new ArrayList<>(enumIds.values()));
-			}
-			LOGGER.info("Loaded data structure definitions.");
-	
 			// Load dataflows
-			for (DataflowBean dataflow: rbrm.getIdentifiables(DataflowBean.class))
-			{
-				StructureReferenceBean flowRef = dataflow.asReference();
-				VTLAlias dataflowName = new SDMXAlias(flowRef.getAgencyId(), flowRef.getMaintainableId(), flowRef.getVersion());
-				CrossReferenceBean dsdRef = dataflow.getDataStructureRef();
-				VTLAlias dsdName = new SDMXAlias(dsdRef.getAgencyId(), dsdRef.getMaintainableId(), dsdRef.getVersion());
-				LOGGER.debug("Loaded dataflow {} with structure {}", dataflowName, dsdName);
-				dataflows.put(dataflowName, new SimpleEntry<>(dsdName, enumIDMap.get(dsdName)));
-			}
-			LOGGER.info("Loaded data flows.");
+			LOGGER.debug("Loading dataflows...");
+			dataflows = Utils.getStream(rbrm.getMaintainableBeans(DataflowBean.class))
+				.collect(toMapWithKeys(df -> new SDMXAlias(df.getAgencyId(), df.getId(), df.getVersion())));
 	
 			// Load transformation schemes
 			try
@@ -353,18 +287,32 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	@Override
 	public Optional<ValueDomainSubset<?, ?>> getDomain(VTLAlias alias)
 	{
-		return Optional.<ValueDomainSubset<?, ?>>ofNullable(domains.get(alias)).or(() -> super.getDomain(alias)); 
+		return Optional.<ValueDomainSubset<?, ?>>ofNullable(domains.get(alias))
+			.or(() -> {
+				try
+				{
+					SDMXAlias sdmx = (SDMXAlias) alias;
+					MaintainableRefBean clRef = new MaintainableRefBeanImpl(sdmx.getAgency(), sdmx.getId().getName(), sdmx.getVersion());
+					CodelistBean codelist = fetchCodelist(endpoint, clRef);
+					SdmxCodeList domain = new SdmxCodeList(endpoint, codelist); 
+					domains.put(domain.getAlias(), domain);
+					return Optional.of(domain);
+				}
+				catch (Exception e)
+				{
+					LOGGER.debug("Could not fetch SDMX codelist " + alias, e);
+					return Optional.empty();
+				}
+			}).or(() -> super.getDomain(alias)); 
 	}
 	
 	@Override
 	public Optional<HierarchicalRuleSet> getHierarchyRuleset(VTLAlias alias)
 	{
 		return getDomain(alias)
-				.filter(SdmxCodeList.class::isInstance)
-				.map(SdmxCodeList.class::cast)
-				.map(SdmxCodeList::getDefaultRuleSet)
-				.map(HierarchicalRuleSet.class::cast)
-				.or(() -> super.getHierarchyRuleset(alias));
+			.filter(SdmxCodeList.class::isInstance)
+			.map(d -> ((SdmxCodeList) d).getDefaultRuleSet())
+			.or(() -> super.getHierarchyRuleset(alias));
 	}
 	
 	@Override
@@ -376,42 +324,41 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	@Override
 	public Optional<DataStructureDefinition> getStructureDefinition(VTLAlias alias)
 	{
-		return Optional.ofNullable(dsds.get(alias))
-			.map(dsd -> dsd.stream()
-					.map(c -> new DataStructureComponentImpl<>(c.getAlias(), c.getRole()))
-					.collect(collectingAndThen(toSet(), comps -> (DataStructureDefinition) new DataStructureDefinitionImpl(alias, comps)))
-			).or(() -> super.getStructureDefinition(alias));
+		if (alias instanceof SDMXAlias)
+			return Optional.ofNullable(dsds.get(alias))
+				.map(dsd -> dsd.getKey().stream()
+						.map(c -> new DataStructureComponentImpl<>(c.getAlias(), c.getRole()))
+						.collect(collectingAndThen(toSet(), comps -> (DataStructureDefinition) new DataStructureDefinitionImpl(alias, comps)))
+				).or(() -> super.getStructureDefinition(alias));
+		else
+			return super.getStructureDefinition(alias);
 	}
 	
 	@Override
 	public Optional<VTLValueMetadata> getMetadata(VTLAlias alias)
 	{
-		String query = null;
-		
-		if (alias instanceof SDMXComponentAlias)
+		SDMXComponentAlias query = resolveDataflow(alias);
+		if (query != null && dataflows.containsKey(query.getMaintainable()))
 		{
-			SDMXComponentAlias compAlias = (SDMXComponentAlias) alias;
-			alias = compAlias.getMaintainable();
-			query = compAlias.getComponent().toString();
-		}
-		else if (alias instanceof SDMXAlias)
-			alias = (SDMXAlias) alias;
-		
-		if (dataflows.containsKey(alias))
-		{
-			LOGGER.info("Found SDMX dataflow matching " + alias);
-			Entry<VTLAlias, List<DataSetComponent<Identifier, ?, ?>>> metadata = dataflows.get(alias);
-			DataSetStructure structure = dsds.get(metadata.getKey());
-			List<DataSetComponent<Identifier, ?, ?>> subbedIDs = metadata.getValue();
+			SDMXAlias dataflow = query.getMaintainable();
+			LOGGER.info("Found SDMX dataflow matching " + query);
+			CrossReferenceBean strRefBean = dataflows.get(dataflow).getDataStructureRef();
+			SDMXAlias strAlias = new SDMXAlias(strRefBean.getAgencyId(), strRefBean.getMaintainableId(), strRefBean.getVersion());
+			if (!dsds.containsKey(strAlias))
+				populateDSD(strRefBean);
+			Entry<DataSetStructure, List<DataSetComponent<Identifier, ?, ?>>> structureEntry = dsds.get(strAlias);
+			DataSetStructure structure = structureEntry.getKey();
 			
 			// drop identifiers in the query part of the id
-			if (query != null)
+			String cube = query.getComponent().getName();
+			if (cube != null && !cube.isBlank())
 			{
+				List<DataSetComponent<Identifier, ?, ?>> subbedIDs = structureEntry.getValue();
 				DataSetStructureBuilder builder = new DataSetStructureBuilder(structure);
 				
-				String[] dims = query.split("\\.");
+				String[] dims = cube.split("\\.", -1);
 				for (int i = 0; i < dims.length; i++)
-					if (!dims[i].isEmpty() && dims[i].indexOf('+') <= 0)
+					if (!dims[i].isEmpty() && dims[i].indexOf('+') < 0)
 						builder.removeComponent(subbedIDs.get(i));
 				
 				structure = builder.build();
@@ -423,6 +370,68 @@ public class SDMXRepository extends InMemoryMetadataRepository
 			return super.getMetadata(alias);
 	}
 	
+	private void populateDSD(CrossReferenceBean strRefBean)
+	{
+		SDMXAlias dsdName = new SDMXAlias(strRefBean.getAgencyId(), strRefBean.getMaintainableId(), strRefBean.getVersion());
+		LOGGER.debug("Loading structure {}", dsdName);
+		
+		DataStructureBean dsd;
+		Map<ComponentBean, CrossReferenceBean> clRefs;
+		synchronized (rbrm)
+		{
+			dsd = rbrm.getMaintainableBean(DataStructureBean.class, strRefBean);
+			clRefs = getEnumeratedRepMap(rbrm, dsd);
+		}
+
+		DataSetStructureBuilder builder = new DataSetStructureBuilder();
+		
+		// Get all codelist refs used in the structure, either from it or the list of concepts 
+		
+		Map<Integer, DataSetComponent<Identifier, ?, ?>> enumIds = new TreeMap<>();
+		for (List<? extends ComponentBean> compsOfType: List.of(dsd.getDimensions(), dsd.getMeasures(), dsd.getAttributes()))
+			for (ComponentBean compBean: compsOfType)
+			{
+				ValueDomainSubset<?, ?> domain;
+
+				if (compBean instanceof DimensionBean && ((DimensionBean) compBean).isTimeDimension())
+					domain = TIMEDS;
+				else if (compBean instanceof PrimaryMeasureBean)
+					domain = NUMBERDS;
+				else
+				{
+					CrossReferenceBean clRef = clRefs.get(compBean);
+					if (clRef != null)
+					{
+						SDMXAlias alias = new SDMXAlias(clRef.getAgencyId(), clRef.getMaintainableId(), clRef.getVersion());
+						domain = getDomain(alias)
+							.or(() -> Optional.of(domains.computeIfAbsent(alias, a -> new SdmxCodeList(endpoint, clRef, alias))))
+							.orElseThrow(() -> new VTLUndefinedObjectException("Domain", alias));
+					}
+					else
+						domain = sdmxRepr2VTLDomain(compBean);
+				}
+				
+				Class<? extends Component> role;
+				switch (compBean.getType())
+				{
+					case ATTRIBUTE: role = Attribute.class; break;
+					case DIMENSION: role = Identifier.class; break;
+					case MEASURE: role = Measure.class; break;
+					default: continue;
+				}
+				
+				DataSetComponent<?, ?, ?> comp = createComponent(compBean, role, domain);
+				if (compBean instanceof DimensionBean)
+					enumIds.put(((DimensionBean) compBean).getPosition() - 1, comp.asRole(Identifier.class));
+				builder.addComponent(comp);
+				LOGGER.trace("Created {} {} from DSD {}", comp.getRole().getSimpleName(), dsdName, comp);
+			}
+
+		DataSetStructure structure = builder.build();
+		dsds.put(dsdName, new SimpleEntry<>(structure, new ArrayList<>(enumIds.values())));
+		LOGGER.debug("Created datastructure {} as {}", dsdName, structure);
+	}
+
 	@Override
 	public Optional<Variable<?, ?>> getVariable(VTLAlias alias)
 	{
@@ -484,6 +493,35 @@ public class SDMXRepository extends InMemoryMetadataRepository
 	public Set<VTLAlias> getAvailableSchemeAliases()
 	{
 		return schemes.keySet();
+	}
+	
+	public SDMXComponentAlias resolveDataflow(VTLAlias alias)
+	{
+		if (alias instanceof SDMXAlias)
+		{
+			SDMXAlias sdmx = (SDMXAlias) alias;
+			DataflowBean df = dataflows.get(sdmx);
+			if (df != null)
+				return new SDMXComponentAlias(df.getAgencyId(), df.getId(), df.getVersion(), "");
+			else if (sdmx.getVersion() == null)
+				return resolveDataflow(new SDMXComponentAlias(null, sdmx.getAgency(), null, sdmx.getId().getName()));
+			else
+				return null;
+		}
+		else if (alias instanceof SDMXComponentAlias)
+		{
+			SDMXComponentAlias sdmx = (SDMXComponentAlias) alias;
+			DataflowBean df = dataflows.get(sdmx.getMaintainable());
+			
+			if (df != null)
+				return new SDMXComponentAlias(df.getAgencyId(), df.getId(), df.getVersion(), sdmx.getComponent().getName());
+			else
+				return null;
+		}
+		else if (alias instanceof VTLAlias)
+			return resolveDataflow(new SDMXComponentAlias(null, alias.getName(), null, ""));
+		else
+			return null;
 	}
 
 	private static ValueDomainSubset<?, ?> sdmxRepr2VTLDomain(ComponentBean compBean)
@@ -554,15 +592,6 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		return domain;
 	}
 	
-	private DataSetComponent<Measure, ?, ?> createObsValue(PrimaryMeasureBean obs_value)
-	{
-		MaintainableBean strRef = obs_value.getMaintainableParent();
-		VTLAlias compAlias = new SDMXComponentAlias(new SDMXAlias(strRef.getAgencyId(), strRef.getId(), strRef.getVersion()), obs_value.getId());
-
-		variables.computeIfAbsent(obs_value.getId(), id -> new ArrayList<>()).add(VariableImpl.of(compAlias, NUMBERDS));
-		return new DataSetComponentImpl<>(compAlias, Measure.class, NUMBERDS);
-	}
-
 	private <R extends Component> DataSetComponent<R, ?, ?> createComponent(ComponentBean bean, Class<R> role, ValueDomainSubset<?, ?> domain)
 	{
 		MaintainableBean strRef = bean.getMaintainableParent();
@@ -576,5 +605,13 @@ public class SDMXRepository extends InMemoryMetadataRepository
 		LOGGER.trace("{} {} converted to component {}", sdmxType, compAlias, component);
 		
 		return component;
+	}
+
+	public static CodelistBean fetchCodelist(String endpoint, MaintainableRefBean clRef)
+	{
+		SDMXRepository instance = CACHE.get(endpoint);
+		synchronized (instance.rbrm) {
+			return instance.rbrm.getMaintainableBean(CodelistBean.class, clRef);
+		}
 	}
 }

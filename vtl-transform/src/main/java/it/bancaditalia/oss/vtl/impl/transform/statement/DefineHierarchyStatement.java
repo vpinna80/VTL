@@ -61,37 +61,4 @@ public class DefineHierarchyStatement extends AbstractStatement implements Rules
 	{
 		return ruleset;
 	}
-//	{
-//		ValueDomainSubset<?, ?> cl;
-//
-//		if (rulesetType == VALUE_DOMAIN)
-//			cl = scheme.getRepository().getDomain(ruleComp).orElseThrow(() -> new VTLUndefinedObjectException("Domain", ruleComp));
-//		else
-//		{
-//			Variable<?, ?> variable = scheme.getRepository().getVariable(ruleComp)
-//					.orElseThrow(() -> new NullPointerException("Variable ruleid is not defined"));
-//			cl = variable.getDomain();
-//		}
-//
-//		if (cl instanceof EnumeratedDomainSubset)
-//			if (cl instanceof StringCodeList)
-//			{
-//				StringCodeList codelist = (StringCodeList) cl;
-//				
-//				List<HierarchicalRule> rules = IntStream.range(0, names.length)
-//					.mapToObj(i -> {
-//						StringCodeItem leftOp = (StringCodeItem) codelist.cast(StringValue.of(leftOps[i]));
-//						Map<String, Boolean> right = rightOps.get(i);
-//						Map<StringCodeItem, Boolean> codes = right.keySet().stream()
-//							.collect(toMap(codelist::getCodeItem, c -> coalesce(right.get(c), true)));
-//						return new StringRule(names[i], leftOp, compOps[i], whenOps[i], codes, ercodes[i], erlevels[i]);
-//					}).collect(toList());
-//				
-//				return new HierarchicalRuleSetImpl(getAlias(), ruleID, codelist, rulesetType, rules);
-//			}
-//			else
-//				throw new UnsupportedOperationException("define hierarchical ruleset on codelist of " + cl.getParentDomain() + " not implemented.");
-//		else
-//			throw new VTLException(ruleID + " was expected to be a codelist but it is " + cl.getClass().getSimpleName() + " instead.");
-//	}
 }
