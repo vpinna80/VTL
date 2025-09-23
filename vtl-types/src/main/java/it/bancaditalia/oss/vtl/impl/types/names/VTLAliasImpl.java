@@ -82,7 +82,7 @@ public class VTLAliasImpl implements VTLAlias, Serializable
 		this.name = isQuoted && alias.startsWith("'") && alias.endsWith("'") ? alias.substring(1, alias.length() - 1) : alias;
 		this.hash = this.name.toLowerCase().hashCode();
 		
-		if (!isQuoted && needsQuotes(alias))
+		if (!alias.isEmpty() && !isQuoted && needsQuotes(alias))
 			throw new InvalidParameterException("Trying to create an unquoted illegal alias: " + alias);
 	}
 

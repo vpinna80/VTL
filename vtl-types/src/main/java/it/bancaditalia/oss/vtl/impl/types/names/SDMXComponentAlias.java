@@ -1,3 +1,22 @@
+/*
+ * Copyright © 2020 Banca D'Italia
+ *
+ * Licensed under the EUPL, Version 1.2 (the "License");
+ * You may not use this work except in compliance with the
+ * License.
+ * You may obtain a copy of the License at:
+ *
+ * https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the License is
+ * distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied.
+ *
+ * See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 package it.bancaditalia.oss.vtl.impl.types.names;
 
 import java.io.Serializable;
@@ -8,19 +27,24 @@ public class SDMXComponentAlias implements VTLAlias, Serializable
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final SDMXAlias structure;
+	private final SDMXAlias maintainable;
 	private final VTLAlias component;
 	private final String name;
 	private final int hash;
 	
 	public SDMXComponentAlias(SDMXAlias structure, String component)
 	{
-		this.structure = structure;
+		this.maintainable = structure;
 		this.component = VTLAliasImpl.of(component);
 		this.hash = component.toLowerCase().hashCode();
-		this.name = String.format("%s:%s", structure, component);
+		this.name = structure + ":" + component;
 	}
-	
+
+	public SDMXComponentAlias(String agency, String id, String version, String component)
+	{
+		this(new SDMXAlias(agency, id, version), component);
+	}
+
 	@Override
 	public int compareTo(VTLAlias o)
 	{
@@ -29,7 +53,7 @@ public class SDMXComponentAlias implements VTLAlias, Serializable
 		
 		int compare = component.compareTo(o);
 		if (o instanceof SDMXComponentAlias && compare == 0)
-			return structure.compareTo(o); 
+			return maintainable.compareTo(o); 
 		else
 			return compare;
 	}
@@ -69,7 +93,7 @@ public class SDMXComponentAlias implements VTLAlias, Serializable
 		if (obj instanceof SDMXComponentAlias)
 		{
 			SDMXComponentAlias other = (SDMXComponentAlias) obj;
-			return structure.equals(other.structure) && component.equals(other.component);
+			return maintainable.equals(other.maintainable) && component.equals(other.component);
 		}
 		else if (obj instanceof VTLAlias)
 		{
@@ -90,7 +114,7 @@ public class SDMXComponentAlias implements VTLAlias, Serializable
 	
 	public SDMXAlias getMaintainable()
 	{
-		return structure;
+		return maintainable;
 	}
 	
 	public VTLAlias getComponent()

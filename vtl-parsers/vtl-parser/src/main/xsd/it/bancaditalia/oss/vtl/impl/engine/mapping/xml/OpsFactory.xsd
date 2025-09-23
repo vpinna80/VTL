@@ -21,7 +21,8 @@
 
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://oss.bancaditalia.it/vtl" 
-	xmlns="http://oss.bancaditalia.it/vtl" elementFormDefault="qualified" version="1.1">
+	xmlns="http://oss.bancaditalia.it/vtl" xmlns:jxb="https://jakarta.ee/xml/ns/jaxb" jxb:version="3.0" 
+	elementFormDefault="qualified" version="1.1">
 
 	<xs:element name="parserconfig" type="parserconfig">
 		<xs:unique name="tokenset_unique">
@@ -262,7 +263,21 @@
 
 	<xs:complexType name="aliasparam">
 		<xs:complexContent>
-			<xs:extension base="nonnullparam" />
+			<xs:extension base="nonnullparam">
+				<xs:attribute name="level" use="required">
+					<xs:simpleType>
+						<xs:annotation>
+							<xs:appinfo>
+								<jxb:typesafeEnumClass name="AliasLevel" />
+							</xs:appinfo>
+						</xs:annotation>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="component" />
+							<xs:enumeration value="toplevel" />
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
 

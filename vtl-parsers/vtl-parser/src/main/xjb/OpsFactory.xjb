@@ -20,11 +20,13 @@
     permissions and limitations under the License.
 
 -->
-<bindings xmlns="https://jakarta.ee/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
- 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="https://jakarta.ee/xml/ns/jaxb https://jakarta.ee/xml/ns/jaxb/bindingschema_3_0.xsd
-        http://java.sun.com/xml/ns/jaxb/xjc http://java.sun.com/xml/ns/jaxb/xjc.xsd" version="3.0">
-	<globalBindings choiceContentProperty="true">
-		<xjc:serializable uid="1"/>
-	</globalBindings>
-</bindings>
+<jxb:bindings version="3.0"
+	xmlns:jxb="https://jakarta.ee/xml/ns/jaxb" 	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vtl="http://oss.bancaditalia.it/vtl"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jaxb
+	https://jakarta.ee/xml/ns/jaxb/bindingschema_3_0.xsd http://java.sun.com/xml/ns/jaxb/xjc http://java.sun.com/xml/ns/jaxb/xjc.xsd">
+
+	<jxb:globalBindings choiceContentProperty="true">
+		<xjc:serializable uid="1" />
+	</jxb:globalBindings>
+</jxb:bindings>

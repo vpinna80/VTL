@@ -19,6 +19,7 @@
  */
 package it.bancaditalia.oss.vtl.impl.engine.mapping;
 
+import static it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Aliasparam.AliasLevel.COMPONENT;
 import static it.bancaditalia.oss.vtl.impl.engine.mapping.xml.Type.GROUPBY;
 import static it.bancaditalia.oss.vtl.impl.types.domain.Domains.NULLDS;
 import static it.bancaditalia.oss.vtl.util.SerCollectors.toList;
@@ -107,6 +108,8 @@ import it.bancaditalia.oss.vtl.impl.types.data.NumberValueImpl;
 import it.bancaditalia.oss.vtl.impl.types.data.StringValue;
 import it.bancaditalia.oss.vtl.impl.types.domain.Domains;
 import it.bancaditalia.oss.vtl.impl.types.names.MembershipAlias;
+import it.bancaditalia.oss.vtl.impl.types.names.SDMXAlias;
+import it.bancaditalia.oss.vtl.impl.types.names.SDMXComponentAlias;
 import it.bancaditalia.oss.vtl.impl.types.names.VTLAliasImpl;
 import it.bancaditalia.oss.vtl.impl.types.statement.ComponentParameterTypeImpl;
 import it.bancaditalia.oss.vtl.impl.types.statement.DataSetParameterTypeImpl;
@@ -855,7 +858,13 @@ public class OpsFactory implements Serializable
 			return new MembershipAlias(VTLAliasImpl.of(split[0]), VTLAliasImpl.of(split[1]));
 		}
 		else
-			return VTLAliasImpl.of(result);
+		{
+			VTLAlias alias = VTLAliasImpl.of(result);
+			if (aliasparam.getLevel() == COMPONENT && alias instanceof SDMXAlias && ((SDMXAlias) alias).getAgency() != null && ((SDMXAlias) alias).getVersion() == null)
+				alias = new SDMXComponentAlias(new SDMXAlias(null, ((SDMXAlias) alias).getAgency(), null), ((SDMXAlias) alias).getId().getName());
+			
+			return alias;
+		}
 	}
 
 	private Class<? extends Component> parseRoleParam(ParserRuleContext ctx, Object currentGroupBy, int level, Roleparam param)
