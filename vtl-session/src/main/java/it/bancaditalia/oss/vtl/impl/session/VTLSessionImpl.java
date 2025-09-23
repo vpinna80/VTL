@@ -59,6 +59,7 @@ import it.bancaditalia.oss.vtl.environment.Environment;
 import it.bancaditalia.oss.vtl.exceptions.VTLException;
 import it.bancaditalia.oss.vtl.exceptions.VTLNestedException;
 import it.bancaditalia.oss.vtl.exceptions.VTLUnboundAliasException;
+import it.bancaditalia.oss.vtl.exceptions.VTLUndefinedObjectException;
 import it.bancaditalia.oss.vtl.model.data.DataSet;
 import it.bancaditalia.oss.vtl.model.data.VTLAlias;
 import it.bancaditalia.oss.vtl.model.data.VTLValue;
@@ -189,7 +190,7 @@ public class VTLSessionImpl implements VTLSession
 				.map(RulesetStatement::getRuleSet)
 				.filter(c::isInstance)
 				.map(c::cast)
-				.orElseThrow(() -> new VTLUnboundAliasException(alias));
+				.orElseThrow(() -> new VTLUndefinedObjectException("Hierarchical ruleset", alias));
 	}
 	
 	@Override

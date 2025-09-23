@@ -35,7 +35,7 @@ public class VTLUndefinedObjectException extends VTLException {
 
 	public VTLUndefinedObjectException(String what, VTLAlias alias) 
 	{
-		super(what + " '" + alias.getName() + "' is not defined in metadata.");
+		super(what + " '" + alias + "' is not defined in metadata.");
 	
 		this.alias = alias;
 	}
