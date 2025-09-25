@@ -1,0 +1,66 @@
+name: Maven CI
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      JAVA_VERSION: '11'
+      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Checkout sdmx-core-bom from BIS
+        uses: actions/checkout@v4
+        with:
+          repository: bis-med-it/sdmx-core-bom
+          ref: refs/tags/v11.21.0
+          token: ${{ secrets.BIS_MED_IT_TOKEN }}
+          path: sdmx-core-bom
+          fetch-depth: 1
+
+      - name: Build and install sdmx-core-bom
+        working-directory: sdmx-core-bom
+        run: mvn -B -ntp -DskipTests install
+
+      - name: Checkout sdmx-core from BIS
+        uses: actions/checkout@v4
+        with:
+          repository: bis-med-it/sdmx-core
+          ref: refs/tags/v11.21.0
+          token: ${{ secrets.BIS_MED_IT_TOKEN }}
+          path: sdmx-core
+          fetch-depth: 1
+
+      - name: Build and install sdmx-core
+        working-directory: sdmx-core
+        run: mvn -B -ntp -Dmaven.javadoc.skip=true -Dgpg.skip=true -Dlicense.skip=true -Dmaven.test.skip=true install
+
+      - name: Build, test, and generate JaCoCo reports
+        run: |
+          mvn -B -ntp -Dmaven.javadoc.skip=true -Dgpg.skip=true -Dlicense.skip=true -P with-spark,with-sdmx install
+      
+      - name: Upload reports to Codacy
+        uses: codacy/codacy-coverage-reporter-action@v1.3.0
+        with:
+          project-token: ${{ secrets.CODACY_VTL_TOKEN }}
+          coverage-reports: "vtl-bundles/vtl-coverage/target/site/jacoco-aggregate/jacoco.xml"

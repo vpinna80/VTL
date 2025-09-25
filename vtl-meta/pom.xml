@@ -44,11 +44,16 @@
 				<module>vtl-metasdmx</module>
 			</modules>
 		</profile>
+		<profile>
+			<id>with-db</id>
+			<modules>
+				<module>vtl-metadb</module>
+			</modules>
+		</profile>
 	</profiles>
 
 	<modules>
 		<module>vtl-metabase</module>
-		<module>vtl-metadb</module>
 	</modules>
 
 	<build>

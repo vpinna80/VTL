@@ -105,6 +105,9 @@
 			<id>with-spark</id>
 		</profile>
 		<profile>
+			<id>with-db</id>
+		</profile>
+		<profile>
 			<id>with-cli</id>
 		</profile>
 		<profile>
@@ -612,7 +615,7 @@
 					</executions>
 					<configuration>
 						<includes>
-							<include>it/bancaditalia/oss/vtl/impl/**</include>
+							<include>it/bancaditalia/oss/vtl/**</include>
 						</includes>
 						<excludes>
 							<exclude>it/bancaditalia/oss/vtl/impl/engine/mapping/xml/**</exclude>
